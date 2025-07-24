@@ -64,7 +64,7 @@ isolated function fetchVehiclesQuery(string? owner, VehicleStatus? vehicleStatus
             mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${offset}`);
         }
     } else {
-        mainQuery = sql:queryConcat(mainQuery, ` LIMIT 100`);
+        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${DEFAULT_LIMIT}`);
     }
 
     return mainQuery;
