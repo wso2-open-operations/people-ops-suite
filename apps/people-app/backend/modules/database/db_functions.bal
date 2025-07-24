@@ -68,8 +68,8 @@ public isolated function addVehicle(AddVehiclePayload payload) returns int|error
 # + return - Error is so
 public isolated function updateVehicle(UpdateVehiclePayload payload) returns boolean|error {
     sql:ExecutionResult executionResults = check databaseClient->execute(updateVehicleQuery(payload));
-    if executionResults.affectedRowCount < 0 {
-        return false;
+    if executionResults.affectedRowCount > 0 {
+        return true;
     }
-    return true;
+    return false;
 }
