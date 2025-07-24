@@ -72,7 +72,7 @@ public type FetchVehicleResponse record {|
 public type Vehicles record {|
     # List of vehicles.
     Vehicle[] vehicles;
-    # Total number od records.
+    # Total number of records.
     int totalCount;
 |};
 
