@@ -65,7 +65,7 @@ public isolated function addVehicle(AddVehiclePayload payload) returns int|error
 # Update specific vehicle.
 #
 # + payload - Payload containing the update details
-# + return - Error is so
+# + return - true if the update was successful or error
 public isolated function updateVehicle(UpdateVehiclePayload payload) returns boolean|error {
     sql:ExecutionResult executionResults = check databaseClient->execute(updateVehicleQuery(payload));
     if executionResults.affectedRowCount > 0 {

@@ -22,8 +22,8 @@ type NewVehicle record {|
     # Registration number of the vehicle
     @constraint:String {
         pattern: {
-            value: re `^(?:.*\S)[ -~]+$`,
-            message: "Vehicle registration number should be a non-empty string with printable characters."
+            value: re `^(?:[A-Za-z]{2,3}|\d{1,3})[- ]\d{4}$`,
+            message: "Vehicle registration number should be a valid pattern in Sri Lanka."
         }
     }
     string vehicleRegistrationNumber;
