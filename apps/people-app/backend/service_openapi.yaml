@@ -1,0 +1,238 @@
+openapi: 3.0.1
+info:
+  title: Service Openapi Yaml
+  version: 0.1.0
+servers:
+- url: "{server}:{port}/"
+  variables:
+    server:
+      default: http://localhost
+    port:
+      default: "9090"
+paths:
+  /employees/{employeeEmail}/vehicles:
+    get:
+      summary: Fetch vehicles of a specific employee.
+      operationId: getEmployeesEmployeeemailVehicles
+      parameters:
+      - name: employeeEmail
+        in: path
+        description: 'The email of the employee  '
+        required: true
+        schema:
+          type: string
+      - name: vehicleStatus
+        in: query
+        description: "filter :  status of the vehicle"
+        schema:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/VehicleStatus'
+      - name: offset
+        in: query
+        description: 'offset of the response  '
+        schema:
+          type: integer
+          format: int64
+          nullable: true
+      - name: limit
+        in: query
+        description: limit of the response
+        schema:
+          type: integer
+          format: int64
+          nullable: true
+      responses:
+        "200":
+          description: Ok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicles'
+        "500":
+          description: InternalServerError
+        "403":
+          description: Forbidden
+        "404":
+          description: NotFound
+        "400":
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+    post:
+      summary: Persist new vehicle.
+      operationId: postEmployeesEmployeeemailVehicles
+      parameters:
+      - name: employeeEmail
+        in: path
+        description: The email of the employee
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: The vehicle details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewVehicle'
+        required: true
+      responses:
+        "201":
+          description: Created
+        "500":
+          description: InternalServerError
+        "403":
+          description: Forbidden
+        "400":
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+  /employees/{employeeEmail}/vehicles/{vehicleId}:
+    delete:
+      operationId: deleteEmployeesEmployeeemailVehiclesVehicleid
+      parameters:
+      - name: employeeEmail
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: vehicleId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: Ok
+        "400":
+          description: BadRequest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+        "500":
+          description: InternalServerError
+        "403":
+          description: Forbidden
+components:
+  schemas:
+    AddVehiclePayload:
+      required:
+      - createdBy
+      - owner
+      - vehicleRegistrationNumber
+      - vehicleStatus
+      - vehicleType
+      type: object
+      properties:
+        owner:
+          type: string
+          description: Owner of the vehicle
+        vehicleRegistrationNumber:
+          type: string
+          description: Registration number of the vehicle
+        vehicleType:
+          $ref: '#/components/schemas/VehicleTypes'
+        vehicleStatus:
+          $ref: '#/components/schemas/VehicleStatus'
+        createdBy:
+          type: string
+          description: User who created the vehicle record
+      additionalProperties: false
+      description: "[Database] Insert type for vehicle."
+    ErrorPayload:
+      required:
+      - message
+      - method
+      - path
+      - reason
+      - status
+      - timestamp
+      type: object
+      properties:
+        timestamp:
+          type: string
+        status:
+          type: integer
+          format: int64
+        reason:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        method:
+          type: string
+    NewVehicle:
+      required:
+      - vehicleRegistrationNumber
+      - vehicleType
+      type: object
+      properties:
+        vehicleRegistrationNumber:
+          pattern: "^(?:[A-Za-z]{2,3}|\\d{1,3})[- ]\\d{4}$"
+          type: string
+          description: Registration number of the vehicle
+        vehicleType:
+          $ref: '#/components/schemas/VehicleTypes'
+      additionalProperties: false
+    Vehicle:
+      type: object
+      description: "[Database] Vehicle type."
+      allOf:
+      - $ref: '#/components/schemas/AddVehiclePayload'
+      - required:
+        - createdOn
+        - updatedBy
+        - updatedOn
+        - vehicleId
+        type: object
+        properties:
+          vehicleId:
+            type: integer
+            description: Auto-increment vehicle ID
+            format: int64
+          createdOn:
+            type: string
+            description: Timestamp when created
+          updatedOn:
+            type: string
+            description: Timestamp when updated
+          updatedBy:
+            type: string
+            description: Person who updated the vehicle record
+        additionalProperties: false
+    VehicleStatus:
+      type: string
+      description: "[Database] Enum for vehicle statuses."
+      enum:
+      - INACTIVE
+      - ACTIVE
+    VehicleTypes:
+      type: string
+      description: "[Database] Enum for vehicle types."
+      enum:
+      - MOTORCYCLE
+      - CAR
+    Vehicles:
+      required:
+      - totalCount
+      - vehicles
+      type: object
+      properties:
+        vehicles:
+          type: array
+          description: List of vehicles.
+          items:
+            $ref: '#/components/schemas/Vehicle'
+        totalCount:
+          type: integer
+          description: Total number of records.
+          format: int64
+      additionalProperties: false
+      description: Vehicles array with total count.
