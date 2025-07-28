@@ -1,0 +1,17 @@
+[people.authorization.authorizedRoles]
+EMPLOYEE_ROLE = ""
+
+[people.database.dbConfig]
+    host = ""
+    user = ""
+    password = ""
+    database = ""
+    port = 
+    [people.database.dbConfig.connectionPool]
+    maxOpenConnections = 
+    maxConnectionLifeTime = 
+    minIdleConnections= 
+    [people.database.dbConfig.options]
+    connectTimeout = 
+    [people.database.dbConfig.options.ssl]
+    mode = "PREFERRED"
