@@ -15,10 +15,19 @@
 // under the License.
 
 import { AnimatePresence } from "motion/react";
-import { Routes, Route, useLocation, Navigate } from "react-router";
+import {
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+  HashRouter,
+} from "react-router-dom";
 
 import { Home, VehicleManagement } from "@/pages";
-import type { PageProps } from "@/types";
+import type { PageProps, User } from "@/types";
+import { getDisplayNameFromJWT, getEmailFromJWT } from "./utils/utils";
+import { useEffect, useState } from "react";
+import { getToken } from "./components/microapp-bridge";
 
 function AnimatedRoutes({ user }: PageProps) {
   const location = useLocation();
@@ -26,7 +35,7 @@ function AnimatedRoutes({ user }: PageProps) {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Home user={user} />} />
+        <Route path="" element={<Home user={user} />} />
         <Route path="/services/vehicles" element={<VehicleManagement />} />
 
         {/* Catch-all route: Redirect unknown routes to home */}
@@ -36,8 +45,28 @@ function AnimatedRoutes({ user }: PageProps) {
   );
 }
 
-function App({ user }: PageProps) {
-  return <AnimatedRoutes user={user} />;
+function App() {
+  const [user, setUser] = useState<User | undefined>(undefined);
+  useEffect(() => {
+    const init = () => {
+      getToken((token: string | undefined) => {
+        if (token) {
+          setUser({
+            name: getDisplayNameFromJWT(token) ?? "",
+            email: getEmailFromJWT(token) ?? "",
+          });
+        }
+      });
+    };
+
+    init();
+  }, []);
+
+  return (
+    <HashRouter>
+      <AnimatedRoutes user={user} />
+    </HashRouter>
+  );
 }
 
 export default App;

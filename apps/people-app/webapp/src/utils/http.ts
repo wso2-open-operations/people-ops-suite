@@ -21,7 +21,6 @@ import {
   getIdToken,
 } from "./oauth";
 import { getToken } from "../components/microapp-bridge";
-import { INPUT_INVALID_MSG_GATEWAY } from "../config/constants";
 import { prepareUrlWithEmail } from "./utils";
 import { decodeJWT } from "./jwtUtils";
 
@@ -77,19 +76,15 @@ const useHttp = () => {
       });
 
       let responseBody: any = "";
-      let isGatewayForbidden = false;
+      // let isGatewayForbidden = false;
 
       try {
         responseBody = await response.json();
       } catch (e) {
         if (response.status === 403) {
-          isGatewayForbidden = true;
+          // isGatewayForbidden = true;
         }
       } finally {
-        const customErrMsg = isGatewayForbidden
-          ? INPUT_INVALID_MSG_GATEWAY
-          : "";
-
         if ([200, 201, 202].includes(response.status)) {
           successFn(responseBody);
           if (loadingFn) loadingFn(false);

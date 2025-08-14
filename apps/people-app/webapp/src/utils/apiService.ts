@@ -14,34 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { BasicUserInfo, HttpMethod } from "@asgardeo/auth-react";
+import type { HttpMethod } from "@asgardeo/auth-react";
 
 const MAX_TRIES = 2;
 
 export class ApiService {
   private static _apiInstance: ApiService;
   private _getIdToken: (() => Promise<string>) | null = null;
-  private _refreshAccessToken: (() => Promise<BasicUserInfo>) | null = null;
 
-  private constructor(
-    getIdToken: (() => Promise<string>) | null,
-    refreshAccessToken: (() => Promise<BasicUserInfo>) | null,
-    signIn: () => void
-  ) {
+  private constructor(getIdToken: (() => Promise<string>) | null) {
     this._getIdToken = getIdToken;
-    this._refreshAccessToken = refreshAccessToken;
   }
 
-  public static setApiInstance(
-    getIdToken: () => Promise<string>,
-    refreshAccessToken: (() => Promise<BasicUserInfo>) | null,
-    signIn: () => void
-  ) {
-    ApiService._apiInstance = new ApiService(
-      getIdToken,
-      refreshAccessToken,
-      signIn
-    );
+  public static setApiInstance(getIdToken: () => Promise<string>) {
+    ApiService._apiInstance = new ApiService(getIdToken);
   }
 
   public static getApiInstance(): ApiService {
@@ -58,7 +44,6 @@ export class ApiService {
     successFn: (param: any) => void,
     failFn: (param: any) => void,
     loadingFn: (param: any) => void,
-    headers?: HeadersInit | null,
     currentTry?: number | null
   ) => {
     var tries: number = Boolean(currentTry) ? (currentTry as number) : 0;
@@ -66,8 +51,6 @@ export class ApiService {
       if (loadingFn) {
         loadingFn(true);
       }
-
-      const token = await ApiService._apiInstance?._getIdToken?.();
 
       var encodedUrl = encodeURI(url);
       var bearerToken: string =
@@ -117,8 +100,7 @@ export class ApiService {
               successFn,
               failFn,
               loadingFn,
-              null,
-              ++tries
+              null
             );
           } else {
             console.error(

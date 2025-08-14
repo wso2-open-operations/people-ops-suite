@@ -16,8 +16,12 @@
 
 import { motion } from "motion/react";
 import { useMutation } from "@tanstack/react-query";
-import { deleteVehicle } from "@/services/api";
+// import { deleteVehicle } from "@/services/api";
 import { CircularProgress } from "@mui/material";
+import { executeWithTokenHandling } from "@/utils/utils";
+import { serviceUrls } from "@/config/config";
+import useHttp from "@/utils/http";
+import { useState } from "react";
 
 interface DeleteConfirmationModalProps {
   id: number;
@@ -42,13 +46,21 @@ export default function DeleteConfirmationModal({
   onConfirm,
   onCancel,
 }: DeleteConfirmationModalProps) {
-  const mutation = useMutation({
-    mutationFn: (id: number) => deleteVehicle(id),
-  });
+  const [isPending, setIsPending] = useState<boolean>(false);
+  const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const handleConfirm = async () => {
-    await mutation.mutateAsync(id);
-    onConfirm();
+    setIsPending(true);
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.deleteVehicle.replace("[id]", encodeURIComponent(String(id))),
+      "DELETE",
+      null,
+      () => onConfirm(),
+      (error) => console.log("vehicle delete failed", error),
+      (pending) => setIsPending(pending)
+    );
   };
 
   return (
@@ -77,19 +89,19 @@ export default function DeleteConfirmationModal({
           <button
             className="font-[550] w-full p-[0.35rem] bg-[#E66801] text-white rounded-[0.46rem] transition-colors"
             onClick={handleConfirm}
-            disabled={mutation.isPending}
+            disabled={isPending}
           >
             Confirm
           </button>
           <button
             className="font-[550] w-full p-[0.35rem] bg-[#F5F5F5] text-[#5c5c5c] rounded-[0.46rem] transition-colors"
             onClick={onCancel}
-            disabled={mutation.isPending}
+            disabled={isPending}
           >
             Cancel
           </button>
         </div>
-        {mutation.isPending && (
+        {isPending && (
           <div className="absolute top-0 left-0 size-full bg-white/50 grid place-items-center">
             <CircularProgress
               size={26}

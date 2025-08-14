@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import type { ServiceInfo } from "@/types";
 
 /**

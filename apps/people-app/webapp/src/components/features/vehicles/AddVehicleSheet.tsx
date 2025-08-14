@@ -15,7 +15,6 @@
 // under the License.
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 
 import { CircularProgress } from "@mui/material";
 import { TwoWheelerSharp, DirectionsCarSharp } from "@mui/icons-material";
@@ -25,12 +24,13 @@ import { OptionGroup, IconOption } from "@/components/features/vehicles";
 import { validation } from "@/constants";
 import type { Validity } from "@/types";
 import { TextInput } from "@/components/ui";
-
 import {
   validate,
   format as formatLicensePlate,
 } from "@/utils/helpers/numberplate";
-import { registerVehicle, type CreateVehiclePayload } from "@/services/api";
+import { serviceUrls } from "@/config/config";
+import { executeWithTokenHandling } from "@/utils/utils";
+import useHttp from "@/utils/http";
 
 interface AddVehicleSheetProps {
   onClose: () => void;
@@ -67,24 +67,40 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
     validation.UNCERTAIN
   );
 
-  const mutation = useMutation({
-    mutationFn: (payload: CreateVehiclePayload) => {
-      return registerVehicle(payload);
-    },
-  });
+  const [isPending, setIsPending] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
 
-  const busy = mutation.isPending || mutation.isError;
+  const busy = isPending || isError;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNumber(e.target.value);
     setIsValidPlate(validate(e.target.value));
   };
 
+  const { handleRequest, handleRequestWithNewToken } = useHttp();
+
   const handleVehicleRegistration = async () => {
+    setIsPending(true);
     if (type && isValidPlate === validation.VALID) {
-      await mutation.mutateAsync({ type, number: formatLicensePlate(number) });
-      onSubmit();
-      onClose();
+      executeWithTokenHandling(
+        handleRequest,
+        handleRequestWithNewToken,
+        serviceUrls.registerVehicle,
+        "POST",
+        {
+          vehicleType: type,
+          vehicleRegistrationNumber: formatLicensePlate(number),
+        },
+        () => {
+          onSubmit();
+          onClose();
+        },
+        (error) => {
+          console.error("Error registering vehicle", error);
+          setIsError(true);
+        },
+        (pending) => setIsPending(pending)
+      );
     }
   };
 
