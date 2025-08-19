@@ -16,40 +16,44 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { AuthProvider } from "@asgardeo/auth-react";
+// import { AuthProvider } from "@asgardeo/auth-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router";
 
 import App from "@/App";
 import "@/index.css";
 
-import {
-  ASGARDEO_BASE_URL,
-  CLIENT_ID,
-  SIGN_IN_REDIRECT_URL,
-  SIGN_OUT_REDIRECT_URL,
-} from "@/config/config";
+// import {
+//   ASGARDEO_BASE_URL,
+//   CLIENT_ID,
+//   SIGN_IN_REDIRECT_URL,
+//   SIGN_OUT_REDIRECT_URL,
+// } from "@/config/config";
 
-import { RequireUserInit } from "@/components/shared";
+// import { RequireUserInit } from "@/components/shared";
 
-const authConfig = {
-  clientID: CLIENT_ID || "",
-  baseUrl: ASGARDEO_BASE_URL || "",
-  signInRedirectURL: SIGN_IN_REDIRECT_URL || "",
-  signOutRedirectURL: SIGN_OUT_REDIRECT_URL || "",
-  scope: ["openid", "profile", "email", "groups"],
-};
+// const authConfig = {
+//   clientID: CLIENT_ID || "",
+//   baseUrl: ASGARDEO_BASE_URL || "",
+//   signInRedirectURL: SIGN_IN_REDIRECT_URL || "",
+//   signOutRedirectURL: SIGN_OUT_REDIRECT_URL || "",
+//   scope: ["openid", "profile", "email", "groups"],
+// };
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthProvider config={authConfig}>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <RequireUserInit>{({ user }) => <App user={user} />}</RequireUserInit>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </AuthProvider>
+    {/* <AuthProvider config={authConfig}> */}
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+    {/* </AuthProvider> */}
   </StrictMode>
 );
+
+// <BrowserRouter>
+//   <RequireUserInit>{({ user }) => <App user={user} />}</RequireUserInit>
+// </BrowserRouter>

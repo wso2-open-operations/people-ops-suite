@@ -18,7 +18,10 @@ import { AnimatePresence } from "motion/react";
 import { Routes, Route, useLocation, Navigate } from "react-router";
 
 import { Home, VehicleManagement } from "@/pages";
-import type { PageProps } from "@/types";
+import type { PageProps, User } from "@/types";
+import { getDisplayNameFromJWT, getEmailFromJWT } from "./utils/utils";
+import { useEffect, useState } from "react";
+import { getToken } from "./components/microapp-bridge";
 
 function AnimatedRoutes({ user }: PageProps) {
   const location = useLocation();
@@ -36,7 +39,24 @@ function AnimatedRoutes({ user }: PageProps) {
   );
 }
 
-function App({ user }: PageProps) {
+function App() {
+  const [user, setUser] = useState<User | undefined>(undefined);
+
+  useEffect(() => {
+    const init = () => {
+      getToken((token: string | undefined) => {
+        if (token) {
+          setUser({
+            name: getDisplayNameFromJWT(token) ?? "",
+            email: getEmailFromJWT(token) ?? "",
+          });
+        }
+      });
+    };
+
+    init();
+  }, []);
+
   return <AnimatedRoutes user={user} />;
 }
 

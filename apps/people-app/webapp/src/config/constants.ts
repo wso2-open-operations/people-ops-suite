@@ -20,7 +20,7 @@ export interface DistanceOption {
   value: string;
 }
 
-export const INPUT_INVALID_MSG_GATEWAY = "INPUT_INVALID_MSG_GATEWAY";
+// export const INPUT_INVALID_MSG_GATEWAY = "INPUT_INVALID_MSG_GATEWAY";
 export const INTERNS_GROUP = "wso2-interns";
 export const DEFAULT_OPT_IN_START_DAY = 25;
 export const DEFAULT_OPT_IN_END_DAY = 5;

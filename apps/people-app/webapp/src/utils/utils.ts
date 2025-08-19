@@ -60,7 +60,7 @@ export function executeWithTokenHandling(
       successFn,
       failFn,
       loadingFn,
-      headers
+      null
     );
   }
 }
