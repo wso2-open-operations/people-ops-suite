@@ -16,9 +16,7 @@
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-// import { AuthProvider } from "@asgardeo/auth-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router";
 
 import App from "@/App";
 import "@/index.css";
@@ -29,8 +27,6 @@ import "@/index.css";
 //   SIGN_IN_REDIRECT_URL,
 //   SIGN_OUT_REDIRECT_URL,
 // } from "@/config/config";
-
-// import { RequireUserInit } from "@/components/shared";
 
 // const authConfig = {
 //   clientID: CLIENT_ID || "",
@@ -44,16 +40,8 @@ const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {/* <AuthProvider config={authConfig}> */}
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <App />
     </QueryClientProvider>
-    {/* </AuthProvider> */}
   </StrictMode>
 );
-
-// <BrowserRouter>
-//   <RequireUserInit>{({ user }) => <App user={user} />}</RequireUserInit>
-// </BrowserRouter>

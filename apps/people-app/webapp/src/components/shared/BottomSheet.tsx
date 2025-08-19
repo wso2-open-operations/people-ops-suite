@@ -51,7 +51,7 @@ function BottomSheet({ children, onClose }: BottomSheetProps) {
         onClick={onClose}
       />
       <motion.div
-        className="will-change-transform w-full bg-white rounded-t-[0.53rem] pb-3"
+        className="will-change-transform w-full bg-white rounded-t-[0.53rem] pb-10"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

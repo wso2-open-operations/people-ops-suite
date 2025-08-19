@@ -16,8 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 import { AddSharp, KeyboardBackspaceSharp } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
@@ -31,7 +30,10 @@ import {
   AddVehicleSheet,
   DeleteConfirmationModal,
 } from "@/components/features/vehicles";
-import { fetchVehicles } from "@/services/api";
+import useHttp from "@/utils/http";
+import { executeWithTokenHandling } from "@/utils/utils";
+import { serviceUrls } from "@/config/config";
+import { type Response as VehicleResponse } from "@/types";
 
 function VehicleManagementPage() {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
@@ -42,14 +44,35 @@ function VehicleManagementPage() {
   const [selected, setSelected] = useState<number | undefined>(undefined);
   const [rows, setRows] = useState<Vehicle[]>([]);
 
-  const { data, isPending, refetch } = useQuery({
-    queryKey: ["vehicles"],
-    queryFn: fetchVehicles,
-  });
+  const { handleRequest, handleRequestWithNewToken } = useHttp();
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const fetchVehicles = async () => {
+    executeWithTokenHandling(
+      handleRequest,
+      handleRequestWithNewToken,
+      serviceUrls.fetchVehicles,
+      "GET",
+      null,
+      (data) => {
+        const vehicles = (data as VehicleResponse).vehicles.map(
+          (v): Vehicle => ({
+            id: v.vehicleId,
+            type: v.vehicleType,
+            number: v.vehicleRegistrationNumber,
+          })
+        );
+
+        setRows(vehicles);
+      },
+      (error) => console.error("Error while fetching vehicle list:", error),
+      (loading) => setIsLoading(loading)
+    );
+  };
 
   useEffect(() => {
-    if (data) setRows(data);
-  }, [data]);
+    fetchVehicles();
+  }, []);
 
   const handleDeleteRequest = (id: number) => {
     setVehiclePendingRemoval(id);
@@ -60,7 +83,7 @@ function VehicleManagementPage() {
   const handleDeleteConfirm = async () => {
     setShowDeleteModal(false);
     setVehiclePendingRemoval(undefined);
-    await refetch();
+    fetchVehicles();
   };
 
   const handleDeleteCancel = () => {
@@ -70,14 +93,14 @@ function VehicleManagementPage() {
 
   return (
     <PageTransitionWrapper type="secondary">
-      <div>
+      <div className="h-screen">
         <section className="px-1 pt-8">
           <BackButton />
         </section>
         <div className="flex flex-col-reverse px-4 mt-5">
-          {isPending ? (
+          {isLoading ? (
             <div className="grid place-items-center size-full border-b border-[#E5E5E5] pb-12">
-              <CircularProgress size={33} sx={{ color: "#E66801" }} />
+              <CircularProgress size={29} sx={{ color: "#ff7300" }} />
             </div>
           ) : (
             <>
@@ -105,19 +128,19 @@ function VehicleManagementPage() {
             </>
           )}
         </div>
-        <section className="flex justify-end mt-5 pr-1 mx-5">
-          <AddButton
-            active={showBottomSheet}
-            disabled={!selected}
-            onClick={() => setShowBottomSheet(true)}
-          />
-        </section>
       </div>
+      <section className="pr-1 mx-5 fixed bottom-20 right-1.5">
+        <AddButton
+          active={showBottomSheet}
+          disabled={!selected}
+          onClick={() => setShowBottomSheet(true)}
+        />
+      </section>
       <AnimatePresence>
         {showBottomSheet && (
           <AddVehicleSheet
             onClose={() => setShowBottomSheet(false)}
-            onSubmit={refetch}
+            onSubmit={fetchVehicles}
           />
         )}
         {showDeleteModal && vehiclePendingRemoval && (
@@ -143,15 +166,15 @@ interface AddButtonProps {
 function AddButton({ onClick, disabled, active }: AddButtonProps) {
   return (
     <IconButton
-      className="size-[31px] grid place-items-center rounded-full transition-colors"
+      className="size-[40px] grid place-items-center rounded-full transition-colors"
       onClick={onClick}
       style={{
-        backgroundColor: active ? "#BCBCBC" : "#E66801",
+        backgroundColor: active ? "#BCBCBC" : "#ff7300",
         opacity: disabled ? "100%" : "50%",
         pointerEvents: disabled ? "auto" : "none",
       }}
     >
-      <AddSharp className="text-white" style={{ fontSize: 27.5 }} />
+      <AddSharp className="text-white" style={{ fontSize: 30.5 }} />
     </IconButton>
   );
 }
@@ -159,7 +182,7 @@ function AddButton({ onClick, disabled, active }: AddButtonProps) {
 export function BackButton() {
   return (
     <IconButton component={Link} to="/">
-      <KeyboardBackspaceSharp className="text-black" style={{ fontSize: 30 }} />
+      <KeyboardBackspaceSharp className="text-black" style={{ fontSize: 27 }} />
     </IconButton>
   );
 }

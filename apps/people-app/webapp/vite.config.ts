@@ -1,5 +1,20 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { defineConfig } from "vite";
-// import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import svgr from "vite-plugin-svgr";
@@ -7,41 +22,11 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    svgr(),
-    // VitePWA({
-    //   manifestFilename: "manifest.json",
-    //   registerType: "autoUpdate",
-    //   manifest: {},
-    // }),
-  ],
+  plugins: [react(), tailwindcss(), svgr()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // build: {
-  //   outDir: "build",
-  //   manifest: true,
-  //   rollupOptions: {
-  //     output: {
-  //       entryFileNames: "static/js/[name]-[hash].js",
-  //       chunkFileNames: "static/js/[name]-[hash].js",
-  //       assetFileNames: (asset) => {
-  //         const name = asset.names?.[0] ?? "[name]";
-  //         const ext = name.slice(name.lastIndexOf(".")).toLowerCase();
-
-  //         if (/\.(css)$/.test(ext)) {
-  //           return "static/css/[name]-[hash][extname]";
-  //         }
-  //         if (/\.(js|mjs|cjs|jsx|tsx)$/i.test(ext)) {
-  //           return "static/js/[name]-[hash][extname]";
-  //         }
-  //         return "static/media/[name]-[hash][extname]";
-  //       },
-  //     },
-  //   },
-  // },
+  base: "./",
 });

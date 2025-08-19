@@ -41,7 +41,7 @@ export function TextInput(props: TextInputProps) {
   return (
     <div className="flex flex-col">
       {props.label && (
-        <label className="font-[550] text-[1.2rem] mb-2.5">{props.label}</label>
+        <label className="font-[550] text-lg mb-2.5">{props.label}</label>
       )}
       <input
         type="text"
@@ -49,7 +49,9 @@ export function TextInput(props: TextInputProps) {
           props.validity === validation.INVALID
             ? "focus:outline-[#ffb6b6]"
             : "focus:outline-[#8FC4FF]"
-        } bg-[#EFEFEF] text-gray-700 px-2 py-[0.4rem] rounded-lg text-[1.2rem] placeholder:text-[#8F8F8F] font-medium transition-colors ease-in duration-200`}
+        } bg-[#EFEFEF] text-gray-700 px-3 py-[0.4rem] rounded-lg text-lg placeholder:text-[#8F8F8F] font-medium transition-colors ease-in duration-200 ${
+          props.className
+        }`}
         value={props.value}
         placeholder={props.placeholder}
         onChange={props.onChange}
@@ -60,14 +62,14 @@ export function TextInput(props: TextInputProps) {
 
 export function SearchInput() {
   return (
-    <div className="flex gap-2 items-center w-full bg-[#EFEFEF] px-2 py-1.5 rounded-lg text-[1.2rem] placeholder:text-[#8F8F8F] font-medium mt-2">
+    <div className="flex gap-2 items-center w-full bg-[#EFEFEF] px-2 py-1 rounded-lg text-lg placeholder:text-[#8F8F8F] font-medium mt-2">
       <div className="mb-[2px]">
-        <Search style={{ color: "#787878", fontSize: 25 }} />
+        <Search style={{ color: "#787878", fontSize: 23 }} />
       </div>
       <input
         type="search"
-        placeholder="Search settings and services"
-        className="w-full placeholder:text-[#8F8F8F] font-medium text-[1.2rem] focus:outline-none"
+        placeholder="Search available services"
+        className="w-full placeholder:text-[#8F8F8F] font-medium text-lg focus:outline-none"
       />
     </div>
   );

@@ -21,7 +21,7 @@ export const services: ServiceInfo[] = [
   {
     name: "Manage Personal Vehicles",
     description: "Register and manage your personal vehicles.",
-    route: "/services/vehicles/",
+    route: "/services/vehicles",
     icon: (
       <VehicleServiceIcon width="100%" height="100%" className="scale-[1.16]" />
     ),

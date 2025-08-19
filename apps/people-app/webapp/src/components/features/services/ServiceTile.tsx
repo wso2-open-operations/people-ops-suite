@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import type { ServiceInfo } from "@/types";
 
 /**
@@ -35,14 +35,14 @@ import type { ServiceInfo } from "@/types";
 function ServiceTile(props: ServiceInfo) {
   return (
     <Link to={props.route}>
-      <div className="flex items-center justify-between py-[1rem] border-b-[1px] border-[#E5E5E5]">
+      <div className="flex items-center justify-between py-[0.88rem] border-b-[1px] border-[#E5E5E5]">
         <div className="mr-5">
-          <h3 className="font-semibold text-[1.2rem]">{props.name}</h3>
-          <p className="font-medium text-[1.07rem] text-[#808080]">
+          <h3 className="font-semibold text-lg">{props.name}</h3>
+          <p className="font-medium text-sm text-[#808080]">
             {props.description}
           </p>
         </div>
-        <div className="w-[4rem] h-[4rem] bg-[#FFE1C9] rounded-[1.3rem] relative overflow-hidden shrink-0">
+        <div className="w-[3.7rem] h-[3.7rem] bg-[#FFE1C9] rounded-[1.3rem] relative overflow-hidden shrink-0">
           {props.icon}
         </div>
       </div>

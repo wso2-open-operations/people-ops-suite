@@ -17,12 +17,13 @@
 import { AnimatePresence } from "motion/react";
 import {
   DirectionsCarSharp,
-  MoreHorizSharp,
   TwoWheelerSharp,
+  DeleteSharp,
 } from "@mui/icons-material";
 
 import type { VehicleType } from "@/types";
 import { MoreOptions } from "@/components/features/vehicles";
+import { IconButton } from "@mui/material";
 
 export interface VehicleRowProps {
   id: number;
@@ -72,40 +73,34 @@ function VehicleRow({
   };
 
   return (
-    <div className="font-semibold text-[1.2rem] border-b-[1px] border-[#E5E5E5]">
+    <div className="font-semibold text-lg border-b-[1px] border-[#E5E5E5]">
       <div
-        className="grid grid-cols-[0.5fr_1fr_1.6fr_0.7fr] items-center px-1 py-[0.68rem] transition-opacity ease-out relative"
+        className="grid grid-cols-[0.3fr_0.5fr_1fr_0.8fr] items-center px-1 py-[0.68rem] transition-opacity ease-out relative"
         style={{ opacity: active && !selected ? "50%" : "100%" }}
       >
-        <span className="justify-self-start text-[#A6A6A6] text-[1.22rem]">
+        <span className="justify-self-start text-[#A6A6A6] text-[18px]">
           {index ?? ""}
         </span>
         <span className="justify-self-center">
           {type === "MOTORCYCLE" ? (
-            <TwoWheelerSharp className="scale-[1.36] text-[#E66801]" />
+            <TwoWheelerSharp className="scale-[1.32] text-primary" />
           ) : (
-            <DirectionsCarSharp className="scale-[1.25] text-[#E66801]" />
+            <DirectionsCarSharp className="scale-[1.213] text-primary" />
           )}
         </span>
         <span className="justify-self-center">{number}</span>
         <span className="justify-self-end">
-          <button
-            className="flex p-1 relative"
-            onClick={handleToggleRowOptions}
-          >
-            <MoreHorizSharp className="scale-[1.28] text-[#323232]" />
-          </button>
-        </span>
-      </div>
-      <AnimatePresence>
-        {selected && (
-          <MoreOptions
-            onDelete={async () => {
+          <IconButton
+            onClick={() => {
+              handleToggleRowOptions();
               onDelete();
             }}
-          />
-        )}
-      </AnimatePresence>
+            style={{ padding: 5, backgroundColor: "#f0efed" }}
+          >
+            <DeleteSharp className="scale-[1.05] text-[#fc5a4e]" />
+          </IconButton>
+        </span>
+      </div>
     </div>
   );
 }

@@ -21,11 +21,15 @@ const FULL_THREE_LETTER = /^[A-Z]{3}[- ]?\d{4}$/; // AAA1234, AAA-1234, AAA 1234
 const FULL_TWO_LETTER = /^[A-Z]{2}[- ]?\d{4}$/; // AB1234, AB-1234, AB 1234
 const FULL_SRI = /^\d{1,3}([- ]?)SRI\1\d{4}$/i; // 1 SRI 1234, 1SRI1234, 123-SRI-4567
 const FULL_NUMERIC = /^\d{2}[- ]\d{4}$/; // 12 1234, 12-3456
+const FULL_E_FORMAT = /^E[- ]?\d{4}$/; // E 1234, E-1234
+const FULL_THREE_DIGIT_FORMAT = /^\d{3}[- ]?\d{4}$/; // 251 9572, 251-9572
 
-const PARTIAL_THREE_LETTER = /^[A-Z]{0,3}[- ]?\d{0,4}$/;
+const PARTIAL_THREE_LETTER = /^[A-Z]{1,3}([- ]?\d{0,4})?$/;
 const PARTIAL_TWO_LETTER = /^[A-Z]{0,2}[- ]?\d{0,4}$/;
 const PARTIAL_SRI = /^.*S.*$/i;
 const PARTIAL_NUMERIC = /^(\d{0,2}[- ]\d{0,4}|\d{0,2})$/;
+const PARTIAL_E_FORMAT = /^E([- ]?\d{0,3})?$/;
+const PARTIAL_THREE_DIGIT_FORMAT = /^\d{1,3}([- ]?\d{0,4})?$/;
 
 /**
  * Validates a vehicle license plate number against supported formats and returns validation status.
@@ -35,6 +39,8 @@ const PARTIAL_NUMERIC = /^(\d{0,2}[- ]\d{0,4}|\d{0,2})$/;
  * - Two letter + 4 digits: AB1234, AB-1234, AB 1234
  * - SRI format: 1SRI1234, 123-SRI-4567, 1 SRI 1234
  * - Numeric: 12 1234, 12-3456
+ * - E format: E1234, E-1234, E 1234
+ * - Three digit format: 251-1234, 555 1234, 123-4567
  *
  * @param number - The input string to validate
  * @returns Validity status: VALID (complete format), UNCERTAIN (partial/incomplete), or INVALID
@@ -57,20 +63,18 @@ export function validate(number: string): Validity {
     return validation.INVALID;
   }
 
-  if (FULL_THREE_LETTER.test(normalized)) return validation.VALID;
-
-  if (FULL_TWO_LETTER.test(normalized)) return validation.VALID;
-
   if (FULL_SRI.test(normalized)) return validation.VALID;
-
+  if (FULL_THREE_DIGIT_FORMAT.test(normalized)) return validation.VALID;
+  if (FULL_E_FORMAT.test(normalized)) return validation.VALID;
+  if (FULL_THREE_LETTER.test(normalized)) return validation.VALID;
+  if (FULL_TWO_LETTER.test(normalized)) return validation.VALID;
   if (FULL_NUMERIC.test(normalized)) return validation.VALID;
 
-  if (PARTIAL_THREE_LETTER.test(normalized)) return validation.UNCERTAIN;
-
-  if (PARTIAL_TWO_LETTER.test(normalized)) return validation.UNCERTAIN;
-
   if (PARTIAL_SRI.test(normalized)) return validation.UNCERTAIN;
-
+  if (PARTIAL_THREE_DIGIT_FORMAT.test(normalized)) return validation.UNCERTAIN;
+  if (PARTIAL_E_FORMAT.test(normalized)) return validation.UNCERTAIN;
+  if (PARTIAL_THREE_LETTER.test(normalized)) return validation.UNCERTAIN;
+  if (PARTIAL_TWO_LETTER.test(normalized)) return validation.UNCERTAIN;
   if (PARTIAL_NUMERIC.test(normalized)) return validation.UNCERTAIN;
 
   return validation.INVALID;
@@ -81,7 +85,7 @@ export function validate(number: string): Validity {
  *
  * Converts various input formats to consistent output:
  * - "AAA1234" → "AAA 1234"
- * - "123SRI4567" → "123 SRI 4567"
+ * - "123SRI4567" → "123 4567"
  * - "12-1234" → "12 1234"
  * - Handles mixed separators (spaces, hyphens) and case variations
  *
@@ -92,6 +96,14 @@ export function format(number: string): string {
   const normalized = number.trim().toUpperCase().replace(/[- ]+/g, " ");
   const parts = normalized.split(" ");
 
+  // Format various SRI patterns to "123 SRI 1234"
+  const sriMatch =
+    normalized.match(/^(\d{1,3})\s*SRI\s*(\d{4})$/) ||
+    normalized.match(/^(\d{1,3})SRI(\d{4})$/) ||
+    normalized.match(/^(\d{1,3})[- ]?SRI[- ]?(\d{4})$/i);
+
+  if (sriMatch) return `${sriMatch[1]} ${sriMatch[2]}`;
+
   // Format AAA1234 or AA1234 to "AAA 1234"
   if (/^[A-Z]{2,3}\d{4}$/.test(normalized))
     return `${normalized.slice(0, -4)} ${normalized.slice(-4)}`;
@@ -101,13 +113,6 @@ export function format(number: string): string {
 
   // Already formatted SRI pattern
   if (/^\d{1,3} SRI \d{4}$/.test(normalized)) return normalized;
-
-  // Format various SRI patterns to "123 SRI 1234"
-  const sriMatch =
-    normalized.match(/^(\d{1,3})\s*SRI\s*(\d{4})$/) ||
-    normalized.match(/^(\d{1,3})SRI(\d{4})$/) ||
-    normalized.match(/^(\d{1,3})[- ]?SRI[- ]?(\d{4})$/i);
-  if (sriMatch) return `${sriMatch[1]} SRI ${sriMatch[2]}`;
 
   // Format "AAA1234" to "AAA 1234"
   const alphaNumMatch = normalized.match(/^([A-Z]{2,3})(\d{4})$/);
@@ -120,10 +125,6 @@ export function format(number: string): string {
     /^\d{4}$/.test(parts[1])
   )
     return `${parts[0]} ${parts[1]}`;
-
-  // Format compact SRI patterns
-  const compactSriMatch = normalized.match(/^(\d{1,3})SRI(\d{4})$/i);
-  if (compactSriMatch) return `${compactSriMatch[1]} SRI ${compactSriMatch[2]}`;
 
   // Return as-is if no pattern matches
   return normalized;

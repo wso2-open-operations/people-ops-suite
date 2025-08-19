@@ -29,12 +29,12 @@ function EmptyState() {
       className="border-b border-[#E5E5E5] py-5 text-center"
       layout
     >
-      <h1 className="text-[1.2rem] font-semibold text-[#717171]">
+      <h1 className="text-lg font-semibold text-[#717171]">
         No vehicles added yet.
       </h1>
-      <p className="text-[1.1rem] font-medium text-[#808080]">
+      <p className="text-base font-medium text-[#808080]">
         To get started, click the&nbsp;
-        <AddSharp className="text-[#E66801] " style={{ fontSize: 23 }} />
+        <AddSharp className="text-primary" style={{ fontSize: 23 }} />
         &nbsp;icon and add your vehicle details.
       </p>
     </motion.section>

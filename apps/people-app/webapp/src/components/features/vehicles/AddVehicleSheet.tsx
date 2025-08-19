@@ -15,7 +15,6 @@
 // under the License.
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 
 import { CircularProgress } from "@mui/material";
 import { TwoWheelerSharp, DirectionsCarSharp } from "@mui/icons-material";
@@ -25,12 +24,13 @@ import { OptionGroup, IconOption } from "@/components/features/vehicles";
 import { validation } from "@/constants";
 import type { Validity } from "@/types";
 import { TextInput } from "@/components/ui";
-
 import {
   validate,
   format as formatLicensePlate,
 } from "@/utils/helpers/numberplate";
-import { registerVehicle, type CreateVehiclePayload } from "@/services/api";
+import { serviceUrls } from "@/config/config";
+import { executeWithTokenHandling } from "@/utils/utils";
+import useHttp from "@/utils/http";
 
 interface AddVehicleSheetProps {
   onClose: () => void;
@@ -62,29 +62,45 @@ interface AddVehicleSheetProps {
  */
 function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
   const [number, setNumber] = useState<string>("");
-  const [type, setType] = useState<"MOTORCYCLE" | "CAR" | undefined>(undefined); // TODO: Replace current type with `Vehicle` type
+  const [type, setType] = useState<"MOTORCYCLE" | "CAR" | undefined>("CAR"); // TODO: Replace current type with `Vehicle` type
   const [isValidPlate, setIsValidPlate] = useState<Validity>(
     validation.UNCERTAIN
   );
 
-  const mutation = useMutation({
-    mutationFn: (payload: CreateVehiclePayload) => {
-      return registerVehicle(payload);
-    },
-  });
+  const [isPending, setIsPending] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
 
-  const busy = mutation.isPending || mutation.isError;
+  const busy = isPending || isError;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNumber(e.target.value);
     setIsValidPlate(validate(e.target.value));
   };
 
+  const { handleRequest, handleRequestWithNewToken } = useHttp();
+
   const handleVehicleRegistration = async () => {
+    setIsPending(true);
     if (type && isValidPlate === validation.VALID) {
-      await mutation.mutateAsync({ type, number: formatLicensePlate(number) });
-      onSubmit();
-      onClose();
+      executeWithTokenHandling(
+        handleRequest,
+        handleRequestWithNewToken,
+        serviceUrls.registerVehicle,
+        "POST",
+        {
+          vehicleType: type,
+          vehicleRegistrationNumber: formatLicensePlate(number),
+        },
+        () => {
+          onSubmit();
+          onClose();
+        },
+        (error) => {
+          console.error("Error registering vehicle", error);
+          setIsError(true);
+        },
+        (pending) => setIsPending(pending)
+      );
     }
   };
 
@@ -102,21 +118,26 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
             setType(value as "CAR" | "MOTORCYCLE" | undefined);
           }}
         >
-          <IconOption name="MOTORCYCLE">
-            <TwoWheelerSharp
-              className="text-[#E66801]"
-              style={{ fontSize: 35 }}
-            />
+          <IconOption name="CAR" selected={true}>
+            {({ selected }) => (
+              <DirectionsCarSharp
+                className={selected ? "text-white" : "text-gray-500"}
+                style={{ fontSize: 32 }}
+              />
+            )}
           </IconOption>
-          <IconOption name="CAR">
-            <DirectionsCarSharp
-              className="text-[#E66801] mb-1"
-              style={{ fontSize: 35 }}
-            />
+          <IconOption name="MOTORCYCLE">
+            {({ selected }) => (
+              <TwoWheelerSharp
+                className={selected ? "text-white" : "text-gray-500"}
+                style={{ fontSize: 32 }}
+              />
+            )}
           </IconOption>
         </OptionGroup>
-        <div className="mt-8">
+        <div className="mt-7">
           <TextInput
+            className="uppercase placeholder:normal-case"
             label="Vehicle Number"
             placeholder="What's on your license plate?"
             value={number}
@@ -126,7 +147,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
         </div>
         <div className="relative mt-8">
           <button
-            className="w-full p-[0.46rem] text-[1.2rem] font-semibold rounded-[0.6rem] transition-colors disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7] bg-[#ECECEC] text-[#666666]"
+            className="w-full p-[0.46rem] text-lg font-semibold rounded-[0.6rem] transition-colors disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7] bg-primary text-white"
             disabled={isValidPlate !== validation.VALID || !type || busy}
             onClick={handleVehicleRegistration}
           >
@@ -139,6 +160,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
               size={26}
               thickness={5}
               style={{ color: "#4a4a4a" }}
+              className="mb-16"
             />
           </div>
         )}

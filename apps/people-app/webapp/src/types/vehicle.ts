@@ -31,3 +31,20 @@ export interface Vehicle {
 }
 
 export type Validity = "valid" | "invalid" | "uncertain";
+
+export interface Response {
+  vehicles: VehicleResponse[];
+  totalCount: number;
+}
+
+export interface VehicleResponse {
+  vehicleId: number;
+  createdOn: string;
+  updatedOn: string;
+  updatedBy: string;
+  owner: string;
+  vehicleRegistrationNumber: string;
+  vehicleType: VehicleType;
+  vehicleStatus: string;
+  createdBy: string;
+}
