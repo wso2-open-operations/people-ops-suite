@@ -301,6 +301,9 @@ function CreateVisit() {
               }
 
               dispatch(resetSubmitState());
+
+              // Add visit information to current visitor.
+              // TODO: implement addVisit dispatch
             });
           },
           "Yes",
@@ -320,15 +323,28 @@ function CreateVisit() {
 
   // Fetch visitor details based on ID/Passport number
   const fetchVisitorByNic = useCallback(
-    async (idPassportNumber: string, index: number) => {
-      await dispatch(fetchVisitor(await hash(idPassportNumber)));
-
-      if (
-        visitorState.state === State.success &&
-        visitorState.visitor !== null
-      ) {
-        // TODO : Update the visitor information in the visitor object
-      }
+    async (idPassportNumber: string, index: number, formik: any) => {
+      await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
+        (action) => {
+          if (fetchVisitor.fulfilled.match(action)) {
+            const contactNumber = phoneUtil.parse(action.payload.contactNumber);
+            const countryCode =
+              contactNumber.getCountryCode()?.toString() || "";
+            const nationalNumber =
+              contactNumber.getNationalNumber()?.toString() || "";
+            const fetchedVisitor: VisitorDetail = {
+              idPassportNumber: action.payload.nicNumber,
+              contactNumber: nationalNumber,
+              fullName: action.payload.name,
+              countryCode: "+" + countryCode,
+              emailAddress: action.payload.email || "",
+              passNumber: "",
+              status: VisitorStatus.Draft,
+            };
+            formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
+          }
+        }
+      );
     },
     [dispatch]
   );
@@ -600,7 +616,8 @@ function CreateVisit() {
                                 onBlur={() =>
                                   fetchVisitorByNic(
                                     visitor.idPassportNumber,
-                                    index
+                                    index,
+                                    formik
                                   )
                                 }
                                 error={
@@ -805,9 +822,9 @@ function CreateVisit() {
             timeOfDeparture: "",
             visitors: [defaultVisitor],
           }}
-          // validationSchema={
-          //   activeStep === 0 ? visitValidationSchema : visitorValidationSchema
-          // }
+          validationSchema={
+            activeStep === 0 ? visitValidationSchema : visitorValidationSchema
+          }
           onSubmit={(values, formikHelpers) =>
             submitVisit(values, formikHelpers)
           }
