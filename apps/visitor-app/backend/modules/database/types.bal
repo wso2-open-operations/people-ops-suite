@@ -78,8 +78,8 @@ public type AddVisitorPayload record {|
     # Working phone number of visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The contact number should be a non-empty string with printable characters."
+            value: INTERNATIONAL_CONTACT_NUMBER_REGEX,
+            message: "The contact number should be in valid international format."
         }
     }
     string contactNumber;
