@@ -25,7 +25,6 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
     `;
 
     EmployeeResponse employeeResponse = check hrClient->execute(document, {workEmail});
-
     Employee? employee = employeeResponse.data.employee;
     if employee is () {
         return;

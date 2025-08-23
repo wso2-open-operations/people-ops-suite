@@ -528,9 +528,6 @@ function CreateVisit() {
                     (visitor: VisitorDetail, index: number) => (
                       <Card variant="outlined" sx={{ mb: 2 }} key={index}>
                         <CardContent>
-                          {visitorState.state === State.loading && (
-                            <BackgroundLoader open={true} message={null} />
-                          )}
                           <Box
                             display="flex"
                             justifyContent="space-between"
@@ -793,56 +790,74 @@ function CreateVisit() {
           }
         >
           {(formik) => (
-            <Form>
-              <Stepper activeStep={activeStep}>
-                {steps.map((label, index) => (
-                  <Step key={index}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
-              <Box sx={{ mt: 2 }}>{renderStepContent(activeStep, formik)}</Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent:
-                    activeStep === 0 ? "flex-end" : "space-between",
-                  mt: 3,
-                  bgcolor: "background.form",
-                }}
-              >
-                {activeStep !== 0 && (
-                  <Button
-                    onClick={handleBack}
-                    color="primary"
-                    variant="contained"
-                    sx={{ color: "white" }}
-                    disabled={formik.values.visitors[0].status === "Completed"}
-                  >
-                    Back
-                  </Button>
-                )}
-
-                <Button
-                  startIcon={isLastStep && <AddIcon />}
-                  color="primary"
-                  sx={{ color: "white" }}
-                  variant="contained"
-                  disabled={
-                    isLastStep
-                      ? !formik.values.visitors.every(
-                          (v) => v.status === VisitorStatus.Completed
-                        )
-                      : false
+            <>
+              {(visitorState.state === State.loading ||
+                visitorState.submitState === State.loading) && (
+                <BackgroundLoader
+                  open={true}
+                  message={
+                    visitorState.state === State.loading ||
+                    visitorState.submitState === State.loading
+                      ? visitorState.stateMessage
+                      : ""
                   }
-                  onClick={
-                    isLastStep ? () => addNewVisitorBlock(formik) : handleNext
-                  }
+                />
+              )}
+              <Form>
+                <Stepper activeStep={activeStep}>
+                  {steps.map((label, index) => (
+                    <Step key={index}>
+                      <StepLabel>{label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
+                <Box sx={{ mt: 2 }}>
+                  {renderStepContent(activeStep, formik)}
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent:
+                      activeStep === 0 ? "flex-end" : "space-between",
+                    mt: 3,
+                    bgcolor: "background.form",
+                  }}
                 >
-                  {isLastStep ? "Add Visitor" : "Continue"}
-                </Button>
-              </Box>
-            </Form>
+                  {activeStep !== 0 && (
+                    <Button
+                      onClick={handleBack}
+                      color="primary"
+                      variant="contained"
+                      sx={{ color: "white" }}
+                      disabled={
+                        formik.values.visitors[0].status === "Completed"
+                      }
+                    >
+                      Back
+                    </Button>
+                  )}
+
+                  <Button
+                    startIcon={isLastStep && <AddIcon />}
+                    color="primary"
+                    sx={{ color: "white" }}
+                    variant="contained"
+                    disabled={
+                      isLastStep
+                        ? !formik.values.visitors.every(
+                            (v) => v.status === VisitorStatus.Completed
+                          )
+                        : false
+                    }
+                    onClick={
+                      isLastStep ? () => addNewVisitorBlock(formik) : handleNext
+                    }
+                  >
+                    {isLastStep ? "Add Visitor" : "Continue"}
+                  </Button>
+                </Box>
+              </Form>
+            </>
           )}
         </Formik>
       </Box>

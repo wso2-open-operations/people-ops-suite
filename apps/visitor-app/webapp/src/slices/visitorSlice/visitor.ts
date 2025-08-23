@@ -147,7 +147,7 @@ const VisitorSlice = createSlice({
     builder
       .addCase(fetchVisitor.pending, (state) => {
         state.state = State.loading;
-        state.stateMessage = "Fetching visitors...";
+        state.stateMessage = "Fetching visitor data...";
       })
       .addCase(fetchVisitor.fulfilled, (state, action) => {
         state.state = State.success;

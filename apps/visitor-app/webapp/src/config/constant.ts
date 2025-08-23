@@ -15,10 +15,7 @@
 // under the License.
 
 export const SnackMessage = {
-  success: {
-    addMeetings: "Successfully created the Meeting",
-    deleteMeeting: "Successfully deleted the Meeting",
-  },
+  success: {},
   error: {
     fetchPrivileges: "Failed to fetch Privileges",
     insufficientPrivileges: "Insufficient Privileges",
