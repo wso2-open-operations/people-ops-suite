@@ -17,3 +17,5 @@
 # A constant default limit of a database query
 public const DEFAULT_LIMIT = 500;
 public const HEX_DIGITS = "0123456789abcdef";
+
+public final string:RegExp NONE_EMPTY_PRINTABLE_STRING_REGEX = re `^(?:.*\S)[ -~]+$`;
