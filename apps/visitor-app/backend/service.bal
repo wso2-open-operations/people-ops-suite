@@ -39,11 +39,10 @@ service class ErrorInterceptor {
 
         // Handle data-binding errors.
         if err is http:PayloadBindingError {
-            string customError = string `Payload binding failed!`;
-            log:printError(customError, err);
+            log:printError("Payload binding failed!", err);
             return {
                 body: {
-                    message: customError
+                    message: err.message()
                 }
             };
         }
