@@ -210,6 +210,11 @@ function CreateVisit() {
   const phoneUtil = PhoneNumberUtil.getInstance();
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
+  const isAnySubmittedVisitor = useCallback((formik: any) => {
+    return formik.values.visitors.some(
+      (v: VisitorDetail) => v.status === VisitorStatus.Completed
+    );
+  }, []);
   const defaultVisitor: VisitorDetail = {
     idPassportNumber: "",
     fullName: "",
@@ -240,6 +245,24 @@ function CreateVisit() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
 
+  const handleClose = useCallback(
+    (formik: any) => {
+      dialogContext.showConfirmation(
+        "Do you want to close the current visit?",
+        "Once the visit is closed, you will no longer be able to add new visitors to this visit.",
+        ConfirmationType.accept,
+        async () => {
+          // Reset the form and stepper.
+          formik.resetForm();
+          setActiveStep(0);
+        },
+        "Yes",
+        "Cancel"
+      );
+    },
+    [dialogContext]
+  );
+
   // Handle form submission for each step
   const submitVisit = useCallback(
     (values: any, formikHelpers: any) => {
@@ -256,8 +279,8 @@ function CreateVisit() {
       // Show confirmation dialog before submitting
       if (visitor) {
         dialogContext.showConfirmation(
-          "Confirm Submission",
-          "Are you sure you want to submit this visitor?",
+          "Do you want to submit this visitor?",
+          "Please note, this will add the visitor's information to the system.",
           ConfirmationType.accept,
           async () => {
             await dispatch(
@@ -823,17 +846,18 @@ function CreateVisit() {
                     bgcolor: "background.form",
                   }}
                 >
-                  {activeStep !== 0 && (
+                  {isLastStep && (
                     <Button
-                      onClick={handleBack}
+                      onClick={
+                        isAnySubmittedVisitor(formik)
+                          ? () => handleClose(formik)
+                          : () => handleBack()
+                      }
                       color="primary"
                       variant="contained"
                       sx={{ color: "white" }}
-                      disabled={
-                        formik.values.visitors[0].status === "Completed"
-                      }
                     >
-                      Back
+                      {isAnySubmittedVisitor(formik) ? "Close" : "Back"}
                     </Button>
                   )}
 
