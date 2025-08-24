@@ -167,8 +167,8 @@ const visitValidationSchema = Yup.object().shape({
       return Array.isArray(value) && value.length > 0;
     }
   ),
-  scheduledDate: Yup.string().required("Scheduled date is required"), //TODO: error is showing before entering the date
-  timeOfEntry: Yup.string() //TODO: error is showing before entering the date
+  scheduledDate: Yup.string().required("Scheduled date is required"),
+  timeOfEntry: Yup.string()
     .required("Time of entry is required")
     .test("is-valid-time", "Time of entry cannot be passed", (value) => {
       if (dayjs(value).isBefore(dayjs())) {
@@ -176,7 +176,7 @@ const visitValidationSchema = Yup.object().shape({
       }
       return true;
     }),
-  timeOfDeparture: Yup.string() //TODO: error is showing before entering the date
+  timeOfDeparture: Yup.string()
     .required("Time of departure is required")
     .test(
       "is-valid-time",
@@ -506,19 +506,19 @@ function CreateVisit() {
                         "scheduledDate",
                         dayjs(value).format("YYYY-MM-DD")
                       );
-
-                      // Reset time fields when date changes
-                      formik.setFieldValue("timeOfEntry", "");
-                      formik.setFieldValue("timeOfDeparture", "");
                     }}
                     minDate={dayjs()}
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        error: !!formik.errors.scheduledDate,
+                        error:
+                          formik.touched.scheduledDate &&
+                          Boolean(formik.errors.scheduledDate),
                         helperText:
                           formik.touched.scheduledDate &&
                           formik.errors.scheduledDate,
+                        onBlur: () =>
+                          formik.setFieldTouched("scheduledDate", true),
                       },
                     }}
                   />
@@ -529,7 +529,11 @@ function CreateVisit() {
                   <TimePicker
                     label="Time Of Entry *"
                     name="timeOfEntry"
-                    value={dayjs(formik.values.timeOfEntry).format("HH:mm")}
+                    value={
+                      formik.values.timeOfEntry
+                        ? dayjs(formik.values.timeOfEntry)
+                        : null
+                    }
                     onChange={(value) => {
                       formik.setFieldValue(
                         "timeOfEntry",
@@ -539,17 +543,19 @@ function CreateVisit() {
                             "HH:mm:ss" + dayjs(value).format("Z")
                           )
                       );
-                      // Reset time fields when date changes
-                      formik.setFieldValue("timeOfDeparture", "");
                     }}
                     disabled={formik.values.scheduledDate === ""}
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        error: !!formik.errors.timeOfEntry,
+                        error:
+                          formik.touched.timeOfEntry &&
+                          Boolean(formik.errors.timeOfEntry),
                         helperText:
                           formik.touched.timeOfEntry &&
                           formik.errors.timeOfEntry,
+                        onBlur: () =>
+                          formik.setFieldTouched("timeOfEntry", true),
                       },
                     }}
                   />
@@ -560,7 +566,11 @@ function CreateVisit() {
                   <TimePicker
                     label="Time Of Departure *"
                     name="timeOfDeparture"
-                    value={dayjs(formik.values.timeOfDeparture).format("HH:mm")}
+                    value={
+                      formik.values.timeOfDeparture
+                        ? dayjs(formik.values.timeOfDeparture)
+                        : null
+                    }
                     onChange={(value) => {
                       formik.setFieldValue(
                         "timeOfDeparture",
@@ -575,10 +585,14 @@ function CreateVisit() {
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        error: !!formik.errors.timeOfDeparture,
+                        error:
+                          formik.touched.timeOfDeparture &&
+                          Boolean(formik.errors.timeOfDeparture),
                         helperText:
                           formik.touched.timeOfDeparture &&
                           formik.errors.timeOfDeparture,
+                        onBlur: () =>
+                          formik.setFieldTouched("timeOfDeparture", true),
                       },
                     }}
                   />
@@ -653,8 +667,12 @@ function CreateVisit() {
                                   )
                                 }
                                 error={
-                                  !!formik.errors.visitors?.[index]
-                                    ?.idPassportNumber
+                                  formik.touched.visitors?.[index]
+                                    ?.idPassportNumber &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]
+                                      ?.idPassportNumber
+                                  )
                                 }
                                 helperText={
                                   formik.touched.visitors?.[index]
@@ -678,7 +696,10 @@ function CreateVisit() {
                                 value={visitor.fullName}
                                 onChange={formik.handleChange}
                                 error={
-                                  !!formik.errors.visitors?.[index]?.fullName
+                                  formik.touched.visitors?.[index]?.fullName &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]?.fullName
+                                  )
                                 }
                                 helperText={
                                   formik.touched.visitors?.[index]?.fullName &&
@@ -700,8 +721,12 @@ function CreateVisit() {
                                 value={visitor.contactNumber}
                                 onChange={formik.handleChange}
                                 error={
-                                  !!formik.errors.visitors?.[index]
-                                    ?.contactNumber
+                                  formik.touched.visitors?.[index]
+                                    ?.contactNumber &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]
+                                      ?.contactNumber
+                                  )
                                 }
                                 helperText={
                                   formik.touched.visitors?.[index]
@@ -935,9 +960,25 @@ function CreateVisit() {
                           )
                         : false
                     }
-                    onClick={
-                      isLastStep ? () => addNewVisitorBlock(formik) : handleNext
-                    }
+                    onClick={async () => {
+                      if (isLastStep) {
+                        addNewVisitorBlock(formik);
+                      } else {
+                        // validate step 1
+                        const errors = await formik.validateForm();
+                        if (Object.keys(errors).length === 0) {
+                          handleNext();
+                        } else {
+                          // mark all touched fields so errors show up
+                          formik.setTouched(
+                            Object.keys(errors).reduce((acc: any, key) => {
+                              acc[key] = true;
+                              return acc;
+                            }, {})
+                          );
+                        }
+                      }
+                    }}
                   >
                     {isLastStep ? "Add Visitor" : "Continue"}
                   </Button>
