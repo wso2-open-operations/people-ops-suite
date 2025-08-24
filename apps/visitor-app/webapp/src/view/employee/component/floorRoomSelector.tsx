@@ -17,19 +17,10 @@ import {
   Business as BusinessIcon,
   Room as RoomIcon,
 } from "@mui/icons-material";
-
-export interface FloorRoom {
-  floor: string;
-  rooms: string[];
-}
-
-export interface AvailableFloorRoom {
-  floor: string;
-  rooms: string[];
-}
+import { FloorRoom } from "@root/src/slices/visitSlice/visit";
 
 interface FloorRoomSelectorProps {
-  availableFloorsAndRooms: AvailableFloorRoom[];
+  availableFloorsAndRooms: FloorRoom[];
   selectedFloorsAndRooms: FloorRoom[];
   onChange: (floorsAndRooms: FloorRoom[]) => void;
   error?: string;

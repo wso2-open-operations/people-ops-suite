@@ -107,7 +107,8 @@ export const addVisitor = createAsyncThunk(
           dispatch(
             enqueueSnackbarMessage({
               message:
-                response.data.message || "Successfully added the visitor.",
+                response.data.message ||
+                "Your visitor has been added successfully!",
               type: "success",
             })
           );
@@ -118,7 +119,7 @@ export const addVisitor = createAsyncThunk(
             error.response?.data?.message ||
             (error.response?.status === HttpStatusCode.InternalServerError
               ? error.response?.data?.message
-              : "An unknown error occurred.");
+              : "An error occurred during visitor creation!");
           dispatch(
             enqueueSnackbarMessage({
               message: errorMessage,
@@ -147,28 +148,28 @@ const VisitorSlice = createSlice({
     builder
       .addCase(fetchVisitor.pending, (state) => {
         state.state = State.loading;
-        state.stateMessage = "Fetching visitor data...";
+        state.stateMessage = "Hang tight! We’re fetching visitor data...";
       })
       .addCase(fetchVisitor.fulfilled, (state, action) => {
         state.state = State.success;
-        state.stateMessage = "Successfully fetched!";
+        state.stateMessage = "Successfully fetched visitor data!";
         state.visitor = action.payload;
       })
       .addCase(fetchVisitor.rejected, (state, action) => {
         state.state = State.failed;
-        state.stateMessage = "Failed to fetch!";
+        state.stateMessage = "An error occurred during visitor fetching!";
       })
       .addCase(addVisitor.pending, (state) => {
         state.submitState = State.loading;
-        state.stateMessage = "Adding visitor...";
+        state.stateMessage = "Hang tight! We’re adding your visitor...";
       })
       .addCase(addVisitor.fulfilled, (state, action) => {
         state.submitState = State.success;
-        state.stateMessage = "Successfully added!";
+        state.stateMessage = "Your visitor has been added successfully!";
       })
       .addCase(addVisitor.rejected, (state, action) => {
         state.submitState = State.failed;
-        state.stateMessage = "Failed to add!";
+        state.stateMessage = "An error occurred during visitor creation!";
       });
   },
 });

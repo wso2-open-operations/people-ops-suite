@@ -22,6 +22,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import visitorReducer from "@slices/visitorSlice/visitor";
+import visitReducer from "@slices/visitSlice/visit";
 enableMapSet();
 
 export const store = configureStore({
@@ -31,6 +32,7 @@ export const store = configureStore({
     common: commonReducer,
     appConfig: appConfigReducer,
     visitor: visitorReducer,
+    visit: visitReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

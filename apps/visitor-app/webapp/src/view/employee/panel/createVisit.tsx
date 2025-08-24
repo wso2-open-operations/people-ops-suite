@@ -57,14 +57,15 @@ import {
   useAppSelector,
 } from "@root/src/slices/store";
 import FloorRoomSelector from "@view/employee/component/floorRoomSelector";
-import visitor, {
+import {
   addVisitor,
   fetchVisitor,
-  resetSubmitState,
+  resetSubmitState as resetVisitorSubmitState,
 } from "@slices/visitorSlice/visitor";
 import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
+import { addVisit } from "@root/src/slices/visitSlice/visit";
 
 enum VisitorStatus {
   Draft = "Draft",
@@ -154,10 +155,12 @@ const COUNTRY_CODES = [
   { code: "+55", country: "BR", flag: "🇧🇷" },
   { code: "+94", country: "LK", flag: "🇱🇰" },
 ];
+
+// Validation schema for visit information[Step 0]
 const visitValidationSchema = Yup.object().shape({
   whoTheyMeet: Yup.string().required("Who they meet is required"),
   purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-  accessibleFloors: Yup.array().test(
+  accessibleLocations: Yup.array().test(
     "Accessible floors are required",
     "At least one accessible floor is required",
     (value) => {
@@ -187,7 +190,7 @@ const visitValidationSchema = Yup.object().shape({
       }
     ),
 });
-// Validation schema for visitor information
+// Validation schema for visitor information[Step 1]
 const visitorValidationSchema = Yup.object().shape({
   visitors: Yup.array().of(
     Yup.object().shape({
@@ -195,7 +198,7 @@ const visitorValidationSchema = Yup.object().shape({
       fullName: Yup.string().required("Full name is required"),
       contactNumber: Yup.string()
         .required("Contact number is required")
-        .matches(/^\+?\d{10,15}$/, "Invalid contact number"),
+        .matches(/^\d{6,12}$/, "Invalid contact number"),
 
       emailAddress: Yup.string().email("Invalid email address"),
       passNumber: Yup.string().required("Pass number is required"),
@@ -206,6 +209,7 @@ const visitorValidationSchema = Yup.object().shape({
 function CreateVisit() {
   const dispatch = useAppDispatch();
   const visitorState = useAppSelector((state: RootState) => state.visitor);
+  const visitState = useAppSelector((state: RootState) => state.visit);
   const dialogContext = useConfirmationModalContext();
   const phoneUtil = PhoneNumberUtil.getInstance();
   const [activeStep, setActiveStep] = useState(0);
@@ -225,6 +229,7 @@ function CreateVisit() {
     status: VisitorStatus.Draft,
   };
 
+  // Add a new visitor block to the form
   const addNewVisitorBlock = useCallback(
     (formik: any) => {
       const newVisitor = { ...defaultVisitor };
@@ -245,6 +250,7 @@ function CreateVisit() {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
 
+  // Handle closing the visit form
   const handleClose = useCallback(
     (formik: any) => {
       dialogContext.showConfirmation(
@@ -291,7 +297,7 @@ function CreateVisit() {
                 contactNumber: visitor.countryCode + visitor.contactNumber,
                 email: visitor.emailAddress,
               })
-            ).then((action) => {
+            ).then(async (action) => {
               // Because of the visitor.submitState change slowness, checking the redux thunk action. this will smooth the UI flow
               if (addVisitor.fulfilled.match(action)) {
                 formikHelpers.setFieldValue(
@@ -300,10 +306,22 @@ function CreateVisit() {
                 );
               }
 
-              dispatch(resetSubmitState());
+              dispatch(resetVisitorSubmitState());
 
-              // Add visit information to current visitor.
-              // TODO: implement addVisit dispatch
+              // Submit the visit.
+              await dispatch(
+                addVisit({
+                  nicHash: await hash(visitor.idPassportNumber),
+                  companyName: values.companyName,
+                  passNumber: visitor.passNumber,
+                  whomTheyMeet: values.whoTheyMeet,
+                  purposeOfVisit: values.purposeOfVisit,
+                  accessibleLocations: values.accessibleLocations,
+                  timeOfEntry: values.timeOfEntry,
+                  timeOfDeparture: values.timeOfDeparture,
+                })
+              );
+              // TODO: Handle unsuccessful visit submission
             });
           },
           "Yes",
@@ -434,13 +452,13 @@ function CreateVisit() {
 
               <FloorRoomSelector
                 availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-                selectedFloorsAndRooms={formik.values.accessibleFloors}
+                selectedFloorsAndRooms={formik.values.accessibleLocations}
                 onChange={(value) => {
-                  formik.setFieldValue("accessibleFloors", value);
+                  formik.setFieldValue("accessibleLocations", value);
                 }}
                 error={
-                  formik.touched.accessibleFloors &&
-                  formik.errors.accessibleFloors
+                  formik.touched.accessibleLocations &&
+                  formik.errors.accessibleLocations
                 }
               />
             </Box>
@@ -816,7 +834,7 @@ function CreateVisit() {
             companyName: "",
             whoTheyMeet: "",
             purposeOfVisit: "",
-            accessibleFloors: [],
+            accessibleLocations: [],
             scheduledDate: "",
             timeOfEntry: "",
             timeOfDeparture: "",
@@ -831,6 +849,7 @@ function CreateVisit() {
         >
           {(formik) => (
             <>
+              {/* Background loader */}
               {(visitorState.state === State.loading ||
                 visitorState.submitState === State.loading) && (
                 <BackgroundLoader
@@ -839,6 +858,18 @@ function CreateVisit() {
                     visitorState.state === State.loading ||
                     visitorState.submitState === State.loading
                       ? visitorState.stateMessage
+                      : ""
+                  }
+                />
+              )}
+              {(visitState.state === State.loading ||
+                visitState.submitState === State.loading) && (
+                <BackgroundLoader
+                  open={true}
+                  message={
+                    visitState.state === State.loading ||
+                    visitState.submitState === State.loading
+                      ? visitState.stateMessage
                       : ""
                   }
                 />
