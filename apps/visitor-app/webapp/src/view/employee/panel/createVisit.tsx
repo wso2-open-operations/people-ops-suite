@@ -167,8 +167,8 @@ const visitValidationSchema = Yup.object().shape({
       return Array.isArray(value) && value.length > 0;
     }
   ),
-  scheduledDate: Yup.string().required("Scheduled date is required"),
-  timeOfEntry: Yup.string()
+  scheduledDate: Yup.string().required("Scheduled date is required"), //TODO: error is showing before entering the date
+  timeOfEntry: Yup.string() //TODO: error is showing before entering the date
     .required("Time of entry is required")
     .test("is-valid-time", "Time of entry cannot be passed", (value) => {
       if (dayjs(value).isBefore(dayjs())) {
@@ -176,7 +176,7 @@ const visitValidationSchema = Yup.object().shape({
       }
       return true;
     }),
-  timeOfDeparture: Yup.string()
+  timeOfDeparture: Yup.string() //TODO: error is showing before entering the date
     .required("Time of departure is required")
     .test(
       "is-valid-time",
@@ -194,7 +194,7 @@ const visitValidationSchema = Yup.object().shape({
 const visitorValidationSchema = Yup.object().shape({
   visitors: Yup.array().of(
     Yup.object().shape({
-      idPassportNumber: Yup.string().required("ID/Passport number is required"),
+      idPassportNumber: Yup.string().required("ID/Passport number is required"), // TODO : handle duplicate visitor for same visit
       fullName: Yup.string().required("Full name is required"),
       contactNumber: Yup.string()
         .required("Contact number is required")
@@ -302,7 +302,7 @@ function CreateVisit() {
               if (addVisitor.fulfilled.match(action)) {
                 formikHelpers.setFieldValue(
                   `visitors.${visitorIndex}.status`,
-                  "Completed"
+                  VisitorStatus.Completed
                 );
               }
 
@@ -320,8 +320,22 @@ function CreateVisit() {
                   timeOfEntry: values.timeOfEntry,
                   timeOfDeparture: values.timeOfDeparture,
                 })
-              );
-              // TODO: Handle unsuccessful visit submission
+              ).then((action) => {
+                // Chained dependency failure : if the visit submission fails, reset the visitor status to Draft to allow re-submission
+                if (addVisit.rejected.match(action)) {
+                  dispatch(
+                    enqueueSnackbarMessage({
+                      message:
+                        "An error occurred during visit creation, please try again later.",
+                      type: "error",
+                    })
+                  );
+                  formikHelpers.setFieldValue(
+                    `visitors.${visitorIndex}.status`,
+                    VisitorStatus.Draft
+                  );
+                }
+              });
             });
           },
           "Yes",

@@ -38,7 +38,9 @@ function App() {
         return savedTheme;
       }
 
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      ).matches;
       const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
 
       localStorage.setItem("internal-app-theme", systemTheme);
@@ -54,8 +56,13 @@ function App() {
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        localStorage.setItem("internal-app-theme", mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light);
-        setMode((prevMode) => (prevMode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light));
+        localStorage.setItem(
+          "internal-app-theme",
+          mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light
+        );
+        setMode((prevMode) =>
+          prevMode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light
+        );
       },
     }),
     [mode]

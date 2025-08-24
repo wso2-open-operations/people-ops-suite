@@ -84,17 +84,6 @@ export const addVisit = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
-          const errorMessage =
-            error.response?.data?.message ||
-            (error.response?.status === HttpStatusCode.InternalServerError
-              ? error.response?.data?.message
-              : "An error occurred during visit creation!");
-          dispatch(
-            enqueueSnackbarMessage({
-              message: errorMessage,
-              type: "error",
-            })
-          );
           reject(error);
         });
     });

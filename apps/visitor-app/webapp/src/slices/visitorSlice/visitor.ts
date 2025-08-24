@@ -104,14 +104,6 @@ export const addVisitor = createAsyncThunk(
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                response.data.message ||
-                "Your visitor has been added successfully!",
-              type: "success",
-            })
-          );
           resolve(response.data);
         })
         .catch((error) => {

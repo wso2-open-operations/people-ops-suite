@@ -28,6 +28,7 @@ const initialState: UserState = {
   userInfo: null,
 };
 
+// Todo: Handle enabling loading until user-info and app-config are fetched
 export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
   return new Promise<{
     UserInfo: UserInfoInterface;
