@@ -35,13 +35,9 @@ import {
 import {
   Add as AddIcon,
   Business as BusinessIcon,
-  People as PeopleIcon,
   Schedule as ScheduleIcon,
-  Description as DescriptionIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
-  CheckCircle as CheckCircleIcon,
-  CheckCircleOutlined as CheckCircleIconOutlined,
   Check,
 } from "@mui/icons-material";
 import { FieldArray, Form, Formik } from "formik";
@@ -194,7 +190,26 @@ const visitValidationSchema = Yup.object().shape({
 const visitorValidationSchema = Yup.object().shape({
   visitors: Yup.array().of(
     Yup.object().shape({
-      idPassportNumber: Yup.string().required("ID/Passport number is required"), // TODO : handle duplicate visitor for same visit
+      idPassportNumber: Yup.string()
+        .required("ID/Passport number is required")
+        .test("duplicate", "Visitor already registered", function (value) {
+          const { path, parent, options } = this;
+          const visitors = options.context?.visitors || [];
+
+          if (!value) return true;
+
+          // find index of the first visitor with this value
+          const firstIndex = visitors.findIndex(
+            (v: any) => v.idPassportNumber === value
+          );
+
+          // find current index (by comparing object reference)
+          const currentIndex = visitors.indexOf(parent);
+
+          // Only allow if currentIndex === firstIndex
+          return currentIndex === firstIndex;
+        }),
+
       fullName: Yup.string().required("Full name is required"),
       contactNumber: Yup.string()
         .required("Contact number is required")
