@@ -163,12 +163,15 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
                         />
                       ))
                     }
-                    renderOption={(props, option) => (
-                      <Box component="li" {...props}>
-                        <RoomIcon sx={{ mr: 1 }} fontSize="small" />
-                        {option}
-                      </Box>
-                    )}
+                    renderOption={(props, option) => {
+                      const { key, ...rest } = props; // take key out
+                      return (
+                        <Box component="li" key={key} {...rest}>
+                          <RoomIcon sx={{ mr: 1 }} fontSize="small" />
+                          {option}
+                        </Box>
+                      );
+                    }}
                     sx={{ mt: 1 }}
                   />
                 </CardContent>
