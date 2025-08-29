@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch Visitor.
@@ -69,30 +70,35 @@ public isolated function AddVisit(DatabaseAddVisitPayload payload, string create
 # + 'limit - Limit number of visits to fetch
 # + offset - Offset for pagination
 # + return - Array of Visits objects or error
-public isolated function fetchVisits(int? 'limit, int? offset) returns Visit[]|error {
+public isolated function fetchVisits(int? 'limit, int? offset) returns VisitsResponse|error {
     stream<DatabaseVisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
 
-    Visit[] visits = check from DatabaseVisitRecord visit in resultStream
-        select {
-            visitId: visit.visitId,
-            timeOfEntry: visit.timeOfEntry,
-            timeOfDeparture: visit.timeOfDeparture,
-            passNumber: visit.passNumber,
-            nicHash: visit.nicHash,
-            nicNumber: check decrypt(visit.nicNumber),
-            name: check decrypt(visit.name),
-            email: visit.email is string ? check decrypt(<string>visit.email) : null,
-            contactNumber: check decrypt(visit.contactNumber),
-            companyName: visit.companyName,
-            whomTheyMeet: visit.whomTheyMeet,
-            purposeOfVisit: visit.purposeOfVisit,
-            accessibleLocations: check visit.accessibleLocations.cloneWithType(),
-            status: visit.status,
-            createdBy: visit.createdBy,
-            createdOn: visit.createdOn,
-            updatedBy: visit.updatedBy,
-            updatedOn: visit.updatedOn
+    int totalCount = 0;
+    Visit[] visits = [];
+    check from DatabaseVisitRecord visit in resultStream
+        do {
+            totalCount = visit.totalCount;
+            visits.push({
+                visitId: visit.visitId,
+                timeOfEntry: visit.timeOfEntry,
+                timeOfDeparture: visit.timeOfDeparture,
+                passNumber: visit.passNumber,
+                nicHash: visit.nicHash,
+                nicNumber: check decrypt(visit.nicNumber),
+                name: check decrypt(visit.name),
+                email: visit.email is string ? check decrypt(<string>visit.email) : null,
+                contactNumber: check decrypt(visit.contactNumber),
+                companyName: visit.companyName,
+                whomTheyMeet: visit.whomTheyMeet,
+                purposeOfVisit: visit.purposeOfVisit,
+                accessibleLocations: check visit.accessibleLocations.cloneWithType(),
+                status: visit.status,
+                createdBy: visit.createdBy,
+                createdOn: visit.createdOn,
+                updatedBy: visit.updatedBy,
+                updatedOn: visit.updatedOn
+            });
         };
 
-    return visits;
+    return {totalCount, visits};
 }

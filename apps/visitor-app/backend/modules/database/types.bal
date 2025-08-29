@@ -179,3 +179,11 @@ public type Visit record {|
     string? email;
 
 |};
+
+# Response Record for Visits
+public type VisitsResponse record {|
+    # The total count of visits
+    int totalCount;
+    # Array of visits
+    Visit[] visits;
+|};
