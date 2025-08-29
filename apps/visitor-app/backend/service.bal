@@ -239,4 +239,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     }
+
+    # Fetches visits based on the given filters.
+    #
+    # + 'limit - Limit number of visits to fetch  
+    # + offset - Offset for pagination
+    # + return - Array of visits or error
+    resource function get visits(http:RequestContext ctx, int? 'limit, int? offset)
+        returns database:Visit[]|http:InternalServerError {
+
+        // User information header.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        database:Visit[]|error visits = database:fetchVisits('limit, offset);
+        if visits is error {
+            string customError = "Error occurred while fetching visits!";
+            log:printError(customError, visits);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return visits;
+    }
 }

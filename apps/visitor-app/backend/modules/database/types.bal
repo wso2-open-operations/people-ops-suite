@@ -36,9 +36,8 @@ type DatabaseConfig record {|
     sql:ConnectionPool connectionPool?;
 |};
 
-# Database record for Visitor.
-public type Visitor record {|
-    *AddVisitorPayload;
+# Database audit fields
+public type AuditFields record {|
     # Who created the visitor 
     string createdBy;
     # When the visitor was created 
@@ -47,6 +46,12 @@ public type Visitor record {|
     string updatedBy;
     # When the visitor was updated
     string updatedOn;
+|};
+
+# Database record for Visitor.
+public type Visitor record {|
+    *AddVisitorPayload;
+    *AuditFields;
 |};
 
 # [Database] Insert record for visitor.
@@ -87,6 +92,14 @@ public type AddVisitorPayload record {|
     string? email;
 |};
 
+# [Database] Floor record.
+public type Floor record {|
+    # Floor
+    string floor;
+    # Array of rooms
+    string[] rooms;
+|};
+
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
     # Nic Hash of the visitor
@@ -107,16 +120,62 @@ public type AddVisitPayload record {|
     string timeOfDeparture;
 |};
 
+# [Database] Add visit payload.
 public type DatabaseAddVisitPayload record {|
     *AddVisitPayload;
     # Status of the visit
     Status status;
 |};
 
-# [Database] Floor record.
-public type Floor record {|
-    # Floor
-    string floor;
-    # Array of rooms
-    string[] rooms;
+# [Database] Visit record.
+public type DatabaseVisitRecord record {|
+    *AuditFields;
+    # Nic Hash of the visitor
+    string nicHash;
+    # Unique identifier for the visit
+    int visitId;
+    # Name of the visitor
+    string name;
+    # NIC number of visitor
+    string nicNumber;
+    # Working phone number of visitor
+    string contactNumber;
+    # Email of the visitor
+    string? email;
+    # Company name of visitor
+    string? companyName;
+    # Number in the tag given to visitor
+    string passNumber;
+    # The person the visitor is supposed to meet
+    string whomTheyMeet;
+    # Purpose of the visit
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    json accessibleLocations;
+    # Time at which the visitor is supposed to check in [in UTC]
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    string timeOfDeparture;
+    # Status of the visit
+    Status status;
+    # Total number of visits
+    int totalCount;
+
+|};
+
+# Visit record.
+public type Visit record {|
+    *DatabaseAddVisitPayload;
+    *AuditFields;
+    # Unique identifier for the visit
+    int visitId;
+    # Name of the visitor
+    string name;
+    # NIC number of visitor
+    string nicNumber;
+    # Working phone number of visitor
+    string contactNumber;
+    # Email of the visitor
+    string? email;
+
 |};

@@ -109,3 +109,54 @@ isolated function addVisitQuery(DatabaseAddVisitPayload payload, string createdB
         ${createdBy}
     );`
 ;
+
+# Build query to fetch visits with pagination.
+#
+# + 'limit - Limit number of visits to fetch
+# + offset - Offset for pagination
+# + return - sql:ParameterizedQuery - Select query for the visits with pagination
+isolated function getVisitsQuery(int? 'limit, int? offset) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+        SELECT 
+            v.visit_id as visitId,
+            v.time_of_entry as timeOfEntry,
+            v.time_of_departure as timeOfDeparture,
+            v.pass_number as passNumber,
+            v.nic_hash as nicHash,
+            vs.nic_number as nicNumber,
+            vs.name,
+            vs.email,
+            vs.contact_number as contactNumber,
+            v.company_name as companyName,
+            v.whom_they_meet as whomTheyMeet,
+            v.purpose_of_visit as purposeOfVisit,
+            v.accessible_locations as accessibleLocations,
+            v.status,
+            v.created_by as createdBy,
+            v.created_on as createdOn,
+            v.updated_by as updatedBy,
+            v.updated_on as updatedOn,
+            COUNT(*) OVER() AS totalCount
+        FROM 
+            visit v
+        LEFT JOIN
+            visitor vs
+        ON
+            v.nic_hash = vs.nic_hash
+    `;
+
+    // Sorting the result by created_on.
+    mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
+
+    // Setting the limit and offset.
+    if 'limit is int {
+        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${'limit}`);
+        if offset is int {
+            mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${offset}`);
+        }
+    } else {
+        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${DEFAULT_LIMIT}`);
+    }
+
+    return mainQuery;
+}

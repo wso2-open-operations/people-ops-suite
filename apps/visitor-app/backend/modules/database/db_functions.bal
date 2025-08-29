@@ -63,3 +63,36 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
 public isolated function AddVisit(DatabaseAddVisitPayload payload, string createdBy) returns error? {
     sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy));
 }
+
+# Fetch Visits with pagination.
+#
+# + 'limit - Limit number of visits to fetch
+# + offset - Offset for pagination
+# + return - Array of Visits objects or error
+public isolated function fetchVisits(int? 'limit, int? offset) returns Visit[]|error {
+    stream<DatabaseVisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
+
+    Visit[] visits = check from DatabaseVisitRecord visit in resultStream
+        select {
+            visitId: visit.visitId,
+            timeOfEntry: visit.timeOfEntry,
+            timeOfDeparture: visit.timeOfDeparture,
+            passNumber: visit.passNumber,
+            nicHash: visit.nicHash,
+            nicNumber: check decrypt(visit.nicNumber),
+            name: check decrypt(visit.name),
+            email: visit.email is string ? check decrypt(<string>visit.email) : null,
+            contactNumber: check decrypt(visit.contactNumber),
+            companyName: visit.companyName,
+            whomTheyMeet: visit.whomTheyMeet,
+            purposeOfVisit: visit.purposeOfVisit,
+            accessibleLocations: check visit.accessibleLocations.cloneWithType(),
+            status: visit.status,
+            createdBy: visit.createdBy,
+            createdOn: visit.createdOn,
+            updatedBy: visit.updatedBy,
+            updatedOn: visit.updatedOn
+        };
+
+    return visits;
+}
