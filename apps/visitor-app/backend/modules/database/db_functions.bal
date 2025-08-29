@@ -79,7 +79,7 @@ public isolated function fetchVisits(int? 'limit, int? offset) returns VisitsRes
         do {
             totalCount = visit.totalCount;
             visits.push({
-                visitId: visit.visitId,
+                id: visit.id,
                 timeOfEntry: visit.timeOfEntry,
                 timeOfDeparture: visit.timeOfDeparture,
                 passNumber: visit.passNumber,

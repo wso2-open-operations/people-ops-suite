@@ -246,7 +246,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + offset - Offset for pagination
     # + return - Array of visits or error
     resource function get visits(http:RequestContext ctx, int? 'limit, int? offset)
-        returns database:VisitResponse|http:InternalServerError {
+        returns database:VisitsResponse|http:InternalServerError {
 
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -258,10 +258,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitResponse|error visitResponse = database:fetchVisits('limit, offset);
-        if visitResponse is error {
+        database:VisitsResponse|error visitsResponse = database:fetchVisits('limit, offset);
+        if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
-            log:printError(customError, visitResponse);
+            log:printError(customError, visitsResponse);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -269,6 +269,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return visitResponse;
+        return visitsResponse;
     }
 }

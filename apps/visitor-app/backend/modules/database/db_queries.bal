@@ -118,7 +118,7 @@ isolated function addVisitQuery(DatabaseAddVisitPayload payload, string createdB
 isolated function getVisitsQuery(int? 'limit, int? offset) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
         SELECT 
-            v.visit_id as visitId,
+            v.visit_id as id,
             v.time_of_entry as timeOfEntry,
             v.time_of_departure as timeOfDeparture,
             v.pass_number as passNumber,

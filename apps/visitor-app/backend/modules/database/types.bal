@@ -133,7 +133,7 @@ public type DatabaseVisitRecord record {|
     # Nic Hash of the visitor
     string nicHash;
     # Unique identifier for the visit
-    int visitId;
+    int id;
     # Name of the visitor
     string name;
     # NIC number of visitor
@@ -168,7 +168,7 @@ public type Visit record {|
     *DatabaseAddVisitPayload;
     *AuditFields;
     # Unique identifier for the visit
-    int visitId;
+    int id;
     # Name of the visitor
     string name;
     # NIC number of visitor
