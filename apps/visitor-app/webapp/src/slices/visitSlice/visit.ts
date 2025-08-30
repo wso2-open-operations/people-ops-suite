@@ -188,9 +188,10 @@ const VisitSlice = createSlice({
         state.visits = action.payload;
         state.stateMessage = "Your visits have been fetched successfully!";
       })
-      .addCase(fetchVisits.rejected, (state, action) => {
+      .addCase(fetchVisits.rejected, (state) => {
         state.state = State.failed;
-        state.stateMessage = "Oops! An error occurred during visits fetching!";
+        state.stateMessage =
+          "Oops! Something went wrong while fetching visits!";
       });
   },
 });
