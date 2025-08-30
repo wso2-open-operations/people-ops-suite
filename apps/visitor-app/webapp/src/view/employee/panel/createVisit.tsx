@@ -866,7 +866,7 @@ function CreateVisit() {
           color="primary"
           sx={{ fontWeight: "bold" }}
         >
-          Visitor Pass Registration {visitorState.state}
+          Visitor Pass Registration
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
           Complete the form below to register your visit
