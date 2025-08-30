@@ -1,6 +1,6 @@
 # Visitor Management API
 
-## Version: 0.1.0
+## Version: 1.0.0
 
 **Base URL:** `{server}:{port}/`  
 Default: `http://localhost:9090/`
@@ -65,21 +65,7 @@ Fetches a specific visitor by hashed NIC number.
 }
 ```
 
-- **400 Bad Request**
-
-```json
-{
-  "timestamp": "2025-01-01T12:00:00Z",
-  "status": 400,
-  "reason": "Invalid NIC hash",
-  "message": "Malformed NIC hash",
-  "path": "/visitors/invalid",
-  "method": "GET"
-}
-```
-
-- **404 Not Found**
-- **500 Internal Server Error**
+- **400 Bad Request**, **404 Not Found**, **500 Internal Server Error**
 
 ---
 
@@ -104,24 +90,55 @@ Create a new visitor.
 **Responses:**
 
 - **201 Created**
-- **400 Bad Request**
-
-```json
-{
-  "timestamp": "2025-01-01T12:00:00Z",
-  "status": 400,
-  "reason": "Validation error",
-  "message": "Missing field: nicHash",
-  "path": "/visitors",
-  "method": "POST"
-}
-```
-
-- **500 Internal Server Error**
+- **400 Bad Request**, **500 Internal Server Error**
 
 ---
 
 ### **/visits**
+
+#### GET
+
+Fetch visits based on filters.
+
+**Query Parameters:**
+
+| Name   | In    | Type  | Required | Description                     |
+| ------ | ----- | ----- | -------- | ------------------------------- |
+| limit  | query | int64 | No       | Limit number of visits to fetch |
+| offset | query | int64 | No       | Offset for pagination           |
+
+**Responses:**
+
+- **200 OK**
+
+```json
+{
+  "totalCount": 2,
+  "visits": [
+    {
+      "id": 1,
+      "name": "Alice",
+      "nicNumber": "123456789V",
+      "contactNumber": "0771234567",
+      "email": "alice@example.com",
+      "companyName": "Tech Corp",
+      "passNumber": "PASS001",
+      "whomTheyMeet": "John Doe",
+      "purposeOfVisit": "Business Discussion",
+      "accessibleLocations": [{ "floor": "1", "rooms": ["101", "102"] }],
+      "timeOfEntry": "2025-03-31T12:00:00Z",
+      "timeOfDeparture": "2025-03-31T14:00:00Z",
+      "status": "PENDING",
+      "createdBy": "admin",
+      "createdOn": "2025-03-30T10:00:00Z",
+      "updatedBy": "admin",
+      "updatedOn": "2025-03-30T12:00:00Z"
+    }
+  ]
+}
+```
+
+- **400 Bad Request**, **500 Internal Server Error**
 
 #### POST
 
@@ -136,12 +153,7 @@ Create a new visit.
   "passNumber": "PASS001",
   "whomTheyMeet": "John Doe",
   "purposeOfVisit": "Business Discussion",
-  "accessibleLocations": [
-    {
-      "floor": "1",
-      "rooms": ["101", "102"]
-    }
-  ],
+  "accessibleLocations": [{ "floor": "1", "rooms": ["101", "102"] }],
   "timeOfEntry": "2025-03-31T12:00:00Z",
   "timeOfDeparture": "2025-03-31T14:00:00Z"
 }
@@ -150,20 +162,7 @@ Create a new visit.
 **Responses:**
 
 - **201 Created**
-- **400 Bad Request**
-
-```json
-{
-  "timestamp": "2025-03-31T12:00:00Z",
-  "status": 400,
-  "reason": "Validation error",
-  "message": "Missing field: passNumber",
-  "path": "/visits",
-  "method": "POST"
-}
-```
-
-- **500 Internal Server Error**
+- **400 Bad Request**, **500 Internal Server Error**
 
 ---
 
@@ -186,12 +185,7 @@ Create a new visit.
 
 ### **Visitor**
 
-- Inherits from `AddVisitorPayload`
-- Adds:
-  - `createdBy` (string)
-  - `createdOn` (string)
-  - `updatedBy` (string)
-  - `updatedOn` (string)
+- Inherits from `AddVisitorPayload` and `AuditFields`
 
 ### **AddVisitorPayload**
 
@@ -212,10 +206,37 @@ Create a new visit.
 - `timeOfEntry` (string, UTC)
 - `timeOfDeparture` (string, UTC)
 
+### **DatabaseAddVisitPayload**
+
+- Inherits from `AddVisitPayload`
+- Adds:
+  - `status` (Status enum)
+
+### **AuditFields**
+
+- `createdBy`, `updatedBy` (string)
+- `createdOn`, `updatedOn` (string)
+
+### **Visit**
+
+- Inherits from `DatabaseAddVisitPayload` and `AuditFields`
+- Adds visitor personal info:
+  - `id` (int64)
+  - `name`, `nicNumber`, `contactNumber`, `email`
+
+### **VisitsResponse**
+
+- `totalCount` (int64)
+- `visits` (array of Visit)
+
 ### **Floor**
 
 - `floor` (string)
 - `rooms` (array of strings)
+
+### **Status**
+
+- Enum: `REJECTED`, `ACCEPTED`, `PENDING`
 
 ### **ErrorPayload**
 
@@ -225,5 +246,3 @@ Create a new visit.
 - `message` (string)
 - `path` (string)
 - `method` (string)
-
----
