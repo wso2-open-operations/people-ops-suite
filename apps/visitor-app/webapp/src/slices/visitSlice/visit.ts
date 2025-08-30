@@ -16,7 +16,7 @@
 
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
@@ -24,6 +24,7 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 const initialState: VisitState = {
   state: State.idle,
   submitState: State.idle,
+  visits: null,
   stateMessage: "",
   errorMessage: "",
   backgroundProcess: false,
@@ -33,6 +34,7 @@ const initialState: VisitState = {
 interface VisitState {
   state: State;
   submitState: State;
+  visits: FetchVisitsResponse | null;
   stateMessage: string | null;
   errorMessage: string | null;
   backgroundProcess: boolean;
@@ -60,6 +62,32 @@ export interface AddVisitPayload {
 export interface FloorRoom {
   floor: string;
   rooms: string[];
+}
+
+export interface Visit {
+  id: number;
+  name: string;
+  nicNumber: string;
+  contactNumber: string;
+  email: string;
+  nicHash: string;
+  companyName: string;
+  passNumber: string;
+  whomTheyMeet: string;
+  purposeOfVisit: string;
+  accessibleLocations: FloorRoom[];
+  timeOfEntry: string;
+  timeOfDeparture: string;
+  status: string;
+  createdBy: string;
+  createdOn: string;
+  updatedBy: string;
+  updatedOn: string;
+}
+
+export interface FetchVisitsResponse {
+  totalCount: number;
+  visits: Visit[];
 }
 
 export const addVisit = createAsyncThunk(
@@ -90,6 +118,42 @@ export const addVisit = createAsyncThunk(
   }
 );
 
+export const fetchVisits = createAsyncThunk(
+  "visit/fetchVisits",
+  async (
+    { limit, offset }: { limit: number; offset: number },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<FetchVisitsResponse>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.visits, {
+          params: { limit, offset },
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
 const VisitSlice = createSlice({
   name: "visits",
   initialState,
@@ -113,7 +177,20 @@ const VisitSlice = createSlice({
       })
       .addCase(addVisit.rejected, (state, action) => {
         state.submitState = State.failed;
-        state.stateMessage = "An error occurred during visit creation!";
+        state.stateMessage = "Oops! An error occurred during visit creation!";
+      })
+      .addCase(fetchVisits.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Hang tight! We’re fetching your visits...";
+      })
+      .addCase(fetchVisits.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.visits = action.payload;
+        state.stateMessage = "Your visits have been fetched successfully!";
+      })
+      .addCase(fetchVisits.rejected, (state, action) => {
+        state.state = State.failed;
+        state.stateMessage = "Oops! An error occurred during visits fetching!";
       });
   },
 });

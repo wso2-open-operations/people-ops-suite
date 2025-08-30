@@ -13,9 +13,350 @@
 // // KIND, either express or implied.  See the License for the
 // // specific language governing permissions and limitations
 // // under the License.
+import {
+  Box,
+  Button,
+  Dialog,
+  Tooltip,
+  Backdrop,
+  TextField,
+  IconButton,
+  Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  CircularProgress,
+  Chip,
+  ListItem,
+  Avatar,
+  ListItemAvatar,
+  ListItemText,
+} from "@mui/material";
+import { State } from "@/types/types";
+import { useEffect, useState } from "react";
+import { ConfirmationType } from "@/types/types";
+import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import ErrorHandler from "@component/common/ErrorHandler";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import {
+  Delete,
+  Visibility,
+  CheckCircle,
+  DeleteForever,
+  Search,
+  CorporateFare,
+} from "@mui/icons-material";
+import { fetchVisits, FloorRoom } from "@slices/visitSlice/visit";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import { set } from "lodash";
+import List from "@mui/material/List";
+import Image from "@mui/icons-material/Image";
+import Work from "@mui/icons-material/Work";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
+
+const toLocalDateTime = (utcString: string) => {
+  dayjs.extend(utc);
+  dayjs.extend(timezone);
+  return dayjs
+    .utc(utcString)
+    .tz(dayjs.tz.guess())
+    .format("YYYY-MM-DD HH:mm:ss");
+};
 
 function VisitHistory() {
-  return <> </>;
+  const dispatch = useAppDispatch();
+  const visits = useAppSelector((state) => state.visit);
+  const totalMeetings = visits.visits?.totalCount || 0;
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const visitsList = visits.visits?.visits ?? [];
+  const [viewAccessibleFloors, setViewAccessibleFloors] = useState(false);
+  const [accessibleFloors, setAccessibleFloors] = useState<FloorRoom[]>([]);
+
+  const handleViewAccessibleFloors = (floorRooms: FloorRoom[]) => {
+    console.log(floorRooms);
+    setAccessibleFloors(floorRooms);
+    setViewAccessibleFloors(true);
+  };
+
+  const columns: GridColDef[] = [
+    {
+      field: "timeOfEntry",
+      headerName: "Time of Entry",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => toLocalDateTime(params.value),
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time of Departure",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => toLocalDateTime(params.value),
+    },
+    {
+      field: "passNumber",
+      headerName: "Pass Number",
+      minWidth: 120,
+      flex: 1,
+    },
+    {
+      field: "name",
+      headerName: "Visitor",
+      minWidth: 180,
+      flex: 1.5,
+    },
+    {
+      field: "nicNumber",
+      headerName: "NIC/Passport",
+      minWidth: 160,
+      flex: 1,
+    },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
+      minWidth: 160,
+      flex: 1,
+    },
+    {
+      field: "email",
+      headerName: "Email Address",
+      minWidth: 200,
+      flex: 2,
+    },
+    {
+      field: "accessibleLocations",
+      headerName: "Accessible Floors",
+      minWidth: 220,
+      flex: 2.5,
+      sortable: false,
+      renderCell: (params) => (
+        <>
+          <Tooltip title="View Attachments" arrow>
+            <IconButton
+              color="info"
+              onClick={() =>
+                handleViewAccessibleFloors(params.row.accessibleLocations)
+              }
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+        </>
+        // <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+        //   {(params.value as FloorRoom[])?.map(
+        //     (floorRoom: FloorRoom, index: number) => (
+        //       <div
+        //         key={index}
+        //         style={{ display: "flex", flexWrap: "wrap", gap: 1 }}
+        //       >
+        //         <strong>{floorRoom.floor}:</strong>
+        //         {floorRoom.rooms.length > 0 ? (
+        //           floorRoom.rooms.map((room, i) => <>{room}, </>)
+        //         ) : (
+        //           <>All rooms </>
+        //         )}
+        //       </div>
+        //     )
+        //   )}
+        // </Box>
+      ),
+    },
+    {
+      field: "companyName",
+      headerName: "Company Name",
+      minWidth: 150,
+      flex: 1,
+    },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose of Visit",
+      minWidth: 150,
+      flex: 1,
+    },
+    {
+      field: "whomTheyMeet",
+      headerName: "Whom They Meet",
+      minWidth: 150,
+      flex: 1,
+    },
+  ];
+  useEffect(() => {
+    dispatch(
+      fetchVisits({
+        limit: pageSize,
+        offset: page * pageSize,
+      })
+    );
+  }, [dispatch, page, pageSize]);
+
+  return (
+    <Box>
+      <Dialog
+        open={viewAccessibleFloors}
+        onClose={() => setViewAccessibleFloors(false)}
+      >
+        <DialogTitle>Accessible Floors</DialogTitle>
+        <DialogContent>
+          {accessibleFloors.length === 0 ? (
+            <Typography>
+              Oops! Looks like there are no accessible floors.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+              <List
+                sx={{
+                  width: "100%",
+                  maxWidth: 360,
+                  bgcolor: "background.paper",
+                }}
+              >
+                {accessibleFloors.map((floorRoom: FloorRoom, index: number) => (
+                  <>
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar>
+                          <CorporateFare />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={<>{floorRoom.floor}</>}
+                        secondary={
+                          <>
+                            {floorRoom.rooms.length > 0 ? (
+                              floorRoom.rooms.map((room, i) => (
+                                <>
+                                  {room}
+                                  {i == floorRoom.rooms.length - 1
+                                    ? ""
+                                    : ", "}{" "}
+                                </>
+                              ))
+                            ) : (
+                              <>All rooms </>
+                            )}
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  </>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setViewAccessibleFloors(false)}
+            color="primary"
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* <Box
+        sx={{
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "flex-start",
+          px: 2,
+          pt: 1.5,
+          pb: 1,
+        }}
+      >
+        <TextField
+          label="Search by Title"
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              setFilteredSearchQuery(searchQuery);
+              setPage(0);
+            }
+          }}
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          sx={{
+            width: 300,
+            "& .MuiInputBase-root": {
+              paddingRight: 0,
+            },
+          }}
+          InputProps={{
+            endAdornment: (
+              <IconButton
+                onClick={() => {
+                  setFilteredSearchQuery(searchQuery);
+                  setPage(0);
+                }}
+                sx={{
+                  justifyContent: "center",
+                  borderRadius: 0,
+                }}
+              >
+                <Search />
+              </IconButton>
+            ),
+          }}
+        />
+      </Box> */}
+      {visits.state === State.loading ? (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            py: 4,
+          }}
+        >
+          <CircularProgress />
+          <Typography mt={2} color="textSecondary">
+            {visits.stateMessage}
+          </Typography>
+        </Box>
+      ) : visits.state === State.failed ? (
+        <ErrorHandler message={visits.stateMessage} />
+      ) : visits.state === State.success ? (
+        visitsList.length === 0 ? (
+          <ErrorHandler message="Oops! Looks like there are no meetings scheduled." />
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              paddingX: 2,
+            }}
+          >
+            <DataGrid
+              pagination
+              columns={columns}
+              rows={visitsList}
+              rowCount={totalMeetings}
+              paginationMode="server"
+              pageSizeOptions={[5, 10, 20]}
+              rowHeight={47}
+              columnHeaderHeight={100}
+              disableRowSelectionOnClick
+              paginationModel={{ pageSize, page }}
+              onPaginationModelChange={(model) => {
+                setPageSize(model.pageSize);
+                setPage(model.page);
+              }}
+              sx={{
+                border: 0,
+                width: "100%",
+              }}
+            />
+          </Box>
+        )
+      ) : null}
+    </Box>
+  );
 }
 
 export default VisitHistory;
