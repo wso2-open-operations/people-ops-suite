@@ -135,8 +135,6 @@ const COUNTRY_CODES = [
   { code: "+976", country: "MN", flag: "🇲🇳" },
   { code: "+977", country: "NP", flag: "🇳🇵" },
   { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+92", country: "PK", flag: "🇵🇰" },
-  { code: "+84", country: "VN", flag: "🇻🇳" },
   { code: "+886", country: "TW", flag: "🇹🇼" },
   { code: "+880", country: "BD", flag: "🇧🇩" },
   { code: "+84", country: "VN", flag: "🇻🇳" },
