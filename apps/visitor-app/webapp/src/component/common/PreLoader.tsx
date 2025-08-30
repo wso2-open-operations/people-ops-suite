@@ -18,7 +18,10 @@ import Grid from "@mui/material/Grid";
 import { APP_NAME } from "@config/config";
 import StateWithImage from "@component/ui/StateWithImage";
 import { Box, Container, Paper, alpha, useTheme } from "@mui/material";
-import CircularProgress, { circularProgressClasses, CircularProgressProps } from "@mui/material/CircularProgress";
+import CircularProgress, {
+  circularProgressClasses,
+  CircularProgressProps,
+} from "@mui/material/CircularProgress";
 
 interface PreLoaderProps {
   message: string | null;
@@ -65,7 +68,10 @@ const PreLoader = (props: PreLoaderProps) => {
     <Paper
       elevation={4}
       sx={{
-        background: alpha(theme.palette.primary.main, theme.palette.action.hoverOpacity),
+        background: alpha(
+          theme.palette.primary.main,
+          theme.palette.action.hoverOpacity
+        ),
         display: "flex",
         justifyContent: "center",
         borderRadius: 2,
@@ -77,10 +83,21 @@ const PreLoader = (props: PreLoaderProps) => {
       }}
     >
       <Container maxWidth="md">
-        <Grid container direction="column" justifyContent="center" alignItems="center" gap={2}>
+        <Grid
+          container
+          direction="column"
+          justifyContent="center"
+          alignItems="center"
+          gap={2}
+        >
           <Grid item xs={12}>
             {!props.hideLogo && (
-              <img alt="logo" width="150" height="auto" src={require("@assets/images/wso2-logo.svg").default} />
+              <img
+                alt="logo"
+                width="150"
+                height="auto"
+                src={require("@assets/images/wso2-logo.svg").default}
+              />
             )}
           </Grid>
           <Grid item xs={12}>

@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Container,
   Typography,
@@ -82,65 +82,22 @@ export interface VisitorDetail {
 const steps = ["Visit Information", "Visitor Information"];
 
 const AVAILABLE_FLOORS_AND_ROOMS = [
-  {
-    floor: "Ground Floor",
-    rooms: ["Lobby", "Reception", "Cafe", "Security Office", "Main Entrance"],
-  },
-  {
-    floor: "1st Floor",
-    rooms: [
-      "Meeting Room A",
-      "Meeting Room B",
-      "Conference Hall",
-      "Common Area",
-      "Pantry",
-    ],
-  },
-  {
-    floor: "2nd Floor",
-    rooms: [
-      "Executive Office",
-      "Board Room",
-      "HR Department",
-      "Finance Department",
-      "Break Room",
-    ],
-  },
-  {
-    floor: "3rd Floor",
-    rooms: [
-      "IT Department",
-      "Development Team",
-      "Testing Lab",
-      "Server Room",
-      "Storage",
-    ],
-  },
-  {
-    floor: "4th Floor",
-    rooms: [
-      "Marketing Department",
-      "Sales Team",
-      "Customer Service",
-      "Training Room",
-      "Library",
-    ],
-  },
-  {
-    floor: "5th Floor",
-    rooms: [
-      "Research Lab",
-      "Innovation Center",
-      "Project Room",
-      "Collaboration Space",
-      "Quiet Zone",
-    ],
-  },
+  { floor: "1st Floor", rooms: ["Cafeteria"] },
+  { floor: "6th Floor", rooms: ["The Launchpad"] },
+  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
+  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
+  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
+  { floor: "9th and 10th", rooms: ["The Circuit"] },
+  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
+  { floor: "11th Floor", rooms: ["Tinker Room"] },
+  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
+  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
+  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
 ];
 
 const COUNTRY_CODES = [
   { code: "+1", country: "US/CA", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
+  { code: "+44", country: "GB", flag: "🇬🇧" },
   { code: "+91", country: "IN", flag: "🇮🇳" },
   { code: "+86", country: "CN", flag: "🇨🇳" },
   { code: "+49", country: "DE", flag: "🇩🇪" },
@@ -149,6 +106,40 @@ const COUNTRY_CODES = [
   { code: "+82", country: "KR", flag: "🇰🇷" },
   { code: "+61", country: "AU", flag: "🇦🇺" },
   { code: "+55", country: "BR", flag: "🇧🇷" },
+  { code: "+7", country: "RU/KZ", flag: "🇷🇺🇰🇿" },
+  { code: "+20", country: "EG", flag: "🇪🇬" },
+  { code: "+27", country: "ZA", flag: "🇿🇦" },
+  { code: "+34", country: "ES", flag: "🇪🇸" },
+  { code: "+39", country: "IT", flag: "🇮🇹" },
+  { code: "+31", country: "NL", flag: "🇳🇱" },
+  { code: "+32", country: "BE", flag: "🇧🇪" },
+  { code: "+46", country: "SE", flag: "🇸🇪" },
+  { code: "+47", country: "NO", flag: "🇳🇴" },
+  { code: "+48", country: "PL", flag: "🇵🇱" },
+  { code: "+351", country: "PT", flag: "🇵🇹" },
+  { code: "+41", country: "CH", flag: "🇨🇭" },
+  { code: "+43", country: "AT", flag: "🇦🇹" },
+  { code: "+60", country: "MY", flag: "🇲🇾" },
+  { code: "+62", country: "ID", flag: "🇮🇩" },
+  { code: "+63", country: "PH", flag: "🇵🇭" },
+  { code: "+64", country: "NZ", flag: "🇳🇿" },
+  { code: "+66", country: "TH", flag: "🇹🇭" },
+  { code: "+90", country: "TR", flag: "🇹🇷" },
+  { code: "+92", country: "PK", flag: "🇵🇰" },
+  { code: "+95", country: "MM", flag: "🇲🇲" },
+  { code: "+971", country: "AE", flag: "🇦🇪" },
+  { code: "+972", country: "IL", flag: "🇮🇱" },
+  { code: "+973", country: "BH", flag: "🇧🇭" },
+  { code: "+974", country: "QA", flag: "🇶🇦" },
+  { code: "+975", country: "BT", flag: "🇧🇹" },
+  { code: "+976", country: "MN", flag: "🇲🇳" },
+  { code: "+977", country: "NP", flag: "🇳🇵" },
+  { code: "+966", country: "SA", flag: "🇸🇦" },
+  { code: "+92", country: "PK", flag: "🇵🇰" },
+  { code: "+84", country: "VN", flag: "🇻🇳" },
+  { code: "+886", country: "TW", flag: "🇹🇼" },
+  { code: "+880", country: "BD", flag: "🇧🇩" },
+  { code: "+84", country: "VN", flag: "🇻🇳" },
   { code: "+94", country: "LK", flag: "🇱🇰" },
 ];
 
@@ -839,12 +830,11 @@ function CreateVisit() {
                             {visitor.status === VisitorStatus.Draft && (
                               <Grid item xs={12} sx={{ textAlign: "right" }}>
                                 <Button
-                                  // variant="outlined"
+                                  variant="contained"
                                   color="success"
                                   startIcon={<Check />}
                                   onClick={async () => {
                                     await formik.submitForm();
-                                    // push({ ...defaultVisitor });
                                   }}
                                 >
                                   Submit
@@ -955,48 +945,58 @@ function CreateVisit() {
                           ? () => handleClose(formik)
                           : () => handleBack()
                       }
-                      color="primary"
+                      color="inherit"
                       variant="contained"
-                      sx={{ color: "white" }}
+                      sx={{
+                        color: "white",
+                        bgcolor: "grey.500",
+                        "&:hover": { bgcolor: "grey.700" },
+                      }}
                     >
                       {isAnySubmittedVisitor(formik) ? "Close" : "Back"}
                     </Button>
                   )}
-
-                  <Button
-                    startIcon={isLastStep && <AddIcon />}
-                    color="primary"
-                    sx={{ color: "white" }}
-                    variant="contained"
-                    disabled={
-                      isLastStep
-                        ? !formik.values.visitors.every(
-                            (v) => v.status === VisitorStatus.Completed
-                          )
-                        : false
-                    }
-                    onClick={async () => {
-                      if (isLastStep) {
-                        addNewVisitorBlock(formik);
-                      } else {
-                        // validate step 1
-                        const errors = await formik.validateForm();
-                        if (Object.keys(errors).length === 0) {
-                          handleNext();
-                        } else {
-                          // mark all touched fields so errors show up
-                          formik.setTouched(
-                            Object.keys(errors).reduce((acc: any, key) => {
-                              acc[key] = true;
-                              return acc;
-                            }, {})
-                          );
-                        }
+                  {!(
+                    isLastStep &&
+                    !formik.values.visitors.every(
+                      (v) => v.status === VisitorStatus.Completed
+                    )
+                  ) && (
+                    <Button
+                      startIcon={isLastStep && <AddIcon />}
+                      color="primary"
+                      sx={{ color: "white" }}
+                      variant="contained"
+                      disabled={
+                        isLastStep
+                          ? !formik.values.visitors.every(
+                              (v) => v.status === VisitorStatus.Completed
+                            )
+                          : false
                       }
-                    }}
-                  >
-                    {isLastStep ? "Add Visitor" : "Continue"}
-                  </Button>
+                      onClick={async () => {
+                        if (isLastStep) {
+                          addNewVisitorBlock(formik);
+                        } else {
+                          // validate step 1
+                          const errors = await formik.validateForm();
+                          if (Object.keys(errors).length === 0) {
+                            handleNext();
+                          } else {
+                            // mark all touched fields so errors show up
+                            formik.setTouched(
+                              Object.keys(errors).reduce((acc: any, key) => {
+                                acc[key] = true;
+                                return acc;
+                              }, {})
+                            );
+                          }
+                        }
+                      }}
+                    >
+                      {isLastStep ? "Add Visitor" : "Continue"}
+                    </Button>
+                  )}
                 </Box>
               </Form>
             </>
