@@ -185,7 +185,7 @@ function VisitHistory() {
         <ErrorHandler message={visits.stateMessage} />
       ) : visits.state === State.success ? (
         visitsList.length === 0 ? (
-          <ErrorHandler message="Oops! Looks like there are no meetings scheduled." />
+          <ErrorHandler message="Oops! Looks like there are no visits scheduled." />
         ) : (
           <Box
             sx={{
