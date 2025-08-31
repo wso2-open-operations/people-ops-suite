@@ -20,22 +20,22 @@ import ballerina/sql;
 # + hashedNic - Filter : Hashed NIC of the visitor
 # + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
 isolated function getVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
-=> `
-    SELECT   
-        nic_hash as nicHash,        
-        name,
-        nic_number as nicNumber,
-        contact_number as contactNumber,
-        email,
-        created_by as createdBy,
-        created_on as createdOn,
-        updated_by as updatedBy,
-        updated_on as updatedOn
-    FROM 
-        visitor
-    WHERE 
-        nic_hash = ${hashedNic}
-    `;
+    => `
+        SELECT   
+            nic_hash as nicHash,        
+            name,
+            nic_number as nicNumber,
+            contact_number as contactNumber,
+            email,
+            created_by as createdBy,
+            created_on as createdOn,
+            updated_by as updatedBy,
+            updated_on as updatedOn
+        FROM 
+            visitor
+        WHERE 
+            nic_hash = ${hashedNic};
+        `;
 
 # Build query to persist a visitor.
 #
@@ -43,35 +43,34 @@ isolated function getVisitorByNicQuery(string hashedNic) returns sql:Parameteriz
 # + createdBy - Person who is creating the visitor
 # + return - sql:ParameterizedQuery - Insert query for the new visitor
 isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) returns sql:ParameterizedQuery
-=> `
-    INSERT INTO visitor
-    (
-        nic_hash,
-        name,
-        nic_number,
-        email,
-        contact_number,
-        created_by,
-        updated_by
-    )
-    VALUES
-    (
-        ${payload.nicHash},
-        ${payload.name},
-        ${payload.nicNumber},
-        ${payload.email},
-        ${payload.contactNumber},
-        ${createdBy},
-        ${createdBy}
-    )
-    ON DUPLICATE KEY UPDATE
-        name = ${payload.name},
-        nic_number = ${payload.nicNumber},
-        email = ${payload.email},
-        contact_number = ${payload.contactNumber},
-        updated_by = ${createdBy}
-    ;`
-;
+    => `
+        INSERT INTO visitor
+        (
+            nic_hash,
+            name,
+            nic_number,
+            email,
+            contact_number,
+            created_by,
+            updated_by
+        )
+        VALUES
+        (
+            ${payload.nicHash},
+            ${payload.name},
+            ${payload.nicNumber},
+            ${payload.email},
+            ${payload.contactNumber},
+            ${createdBy},
+            ${createdBy}
+        )
+        ON DUPLICATE KEY UPDATE
+            name = ${payload.name},
+            nic_number = ${payload.nicNumber},
+            email = ${payload.email},
+            contact_number = ${payload.contactNumber},
+            updated_by = ${createdBy}
+        ;`;
 
 # Build query to persist a visit.
 #
@@ -79,36 +78,35 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
 # + createdBy - Person who is creating the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
 isolated function addVisitQuery(AddVisitPayload payload, string createdBy) returns sql:ParameterizedQuery
-=> `
-    INSERT INTO visit
-    (
-        nic_hash,
-        pass_number,
-        company_name,
-        whom_they_meet,
-        purpose_of_visit,
-        accessible_locations,
-        time_of_entry,
-        time_of_departure,
-        status,
-        created_by,
-        updated_by
-    )
-    VALUES
-    (
-        ${payload.nicHash},
-        ${payload.passNumber},
-        ${payload.companyName},
-        ${payload.whomTheyMeet},
-        ${payload.purposeOfVisit},
-        ${payload.accessibleLocations.toJsonString()},
-        ${payload.timeOfEntry},
-        ${payload.timeOfDeparture},
-        ${payload.status},
-        ${createdBy},
-        ${createdBy}
-    );`
-;
+    => `
+        INSERT INTO visit
+        (
+            nic_hash,
+            pass_number,
+            company_name,
+            whom_they_meet,
+            purpose_of_visit,
+            accessible_locations,
+            time_of_entry,
+            time_of_departure,
+            status,
+            created_by,
+            updated_by
+        )
+        VALUES
+        (
+            ${payload.nicHash},
+            ${payload.passNumber},
+            ${payload.companyName},
+            ${payload.whomTheyMeet},
+            ${payload.purposeOfVisit},
+            ${payload.accessibleLocations.toJsonString()},
+            ${payload.timeOfEntry},
+            ${payload.timeOfDeparture},
+            ${payload.status},
+            ${createdBy},
+            ${createdBy}
+        );`;
 
 # Build query to fetch visits with pagination.
 #
