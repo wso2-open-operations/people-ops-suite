@@ -117,9 +117,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetches a specific visitor by hashed nic number.
     #
-    # + hashedNIC - Hashed NIC number of the visitor
+    # + hashedNic - Hashed NIC number of the visitor
     # + return - Visitor or error
-    resource function get visitors/[string hashedNIC](http:RequestContext ctx)
+    resource function get visitors/[string hashedNic](http:RequestContext ctx)
         returns database:Visitor|http:InternalServerError|http:NotFound {
 
         // User information header.
@@ -132,7 +132,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Visitor|error? visitor = database:fetchVisitor(hashedNIC);
+        database:Visitor|error? visitor = database:fetchVisitor(hashedNic);
         if visitor is error {
             string customError = "Error occurred while fetching visitor!";
             log:printError(customError, visitor);

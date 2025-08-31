@@ -26,7 +26,7 @@ type UserInfo record {
 };
 
 # Payload for adding a new visit.
-public type AddVisitPayload record {| //TODO add constraints
+public type AddVisitPayload record {|
     # Nic Hash of the visitor
     @constraint:String {
         pattern: {

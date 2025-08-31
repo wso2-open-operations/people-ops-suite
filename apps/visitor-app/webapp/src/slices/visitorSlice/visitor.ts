@@ -59,12 +59,12 @@ export interface AddVisitorPayload {
 
 export const fetchVisitor = createAsyncThunk(
   "visitor/fetchVisitor",
-  async (hashedNIC: string, { dispatch, rejectWithValue }) => {
+  async (hashedNic: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visitor>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.visitors + `/${hashedNIC}`, {
+        .get(AppConfig.serviceUrls.visitors + `/${hashedNic}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

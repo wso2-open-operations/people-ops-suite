@@ -18,10 +18,10 @@ import ballerina/sql;
 
 # Fetch Visitor.
 #
-# + hashedNIC - Filter :  hashed NIC of the visitor
+# + hashedNic - Filter :  hashed NIC of the visitor
 # + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedNIC) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(getVisitorByNicQuery(hashedNIC));
+public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(getVisitorByNicQuery(hashedNic));
     if visitor is sql:NoRowsError {
         return;
     }

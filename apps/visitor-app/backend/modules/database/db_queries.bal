@@ -17,9 +17,9 @@ import ballerina/sql;
 
 # Build query to fetch a visitor by hashed NIC.
 #
-# + hashedNIC - Filter : Hashed NIC of the visitor
+# + hashedNic - Filter : Hashed NIC of the visitor
 # + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
-isolated function getVisitorByNicQuery(string hashedNIC) returns sql:ParameterizedQuery
+isolated function getVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
 => `
     SELECT   
         nic_hash as nicHash,        
@@ -34,7 +34,7 @@ isolated function getVisitorByNicQuery(string hashedNIC) returns sql:Parameteriz
     FROM 
         visitor
     WHERE 
-        nic_hash = ${hashedNIC}
+        nic_hash = ${hashedNic}
     `;
 
 # Build query to persist a visitor.

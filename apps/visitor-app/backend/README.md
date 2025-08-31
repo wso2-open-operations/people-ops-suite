@@ -1,248 +1,249 @@
-# Visitor Management API
+# Visitor & Visits Management API
 
 ## Version: 1.0.0
 
-**Base URL:** `{server}:{port}/`  
+Base URL: `{server}:{port}/`  
 Default: `http://localhost:9090/`
 
 ---
 
 ## Endpoints
 
-### **/user-info**
+### `/user-info`
 
 #### GET
 
-Fetch logged-in user's details.
+**Summary:** Fetch logged-in user's details.
 
 **Responses:**
 
-- **200 OK**
+| Code | Description |
+| ---- | ----------- |
+| 200  | OK <br/>    |
 
-```json
+````json
 {
   "employeeId": "E123",
-  "workEmail": "user@example.com",
   "firstName": "John",
   "lastName": "Doe",
+  "workEmail": "john.doe@example.com",
   "jobRole": "Software Engineer",
   "employeeThumbnail": "https://example.com/thumbnails/john_doe",
-  "privileges": [101, 202]
+  "privileges": [101, 102]
 }
-```
-
-- **500 Internal Server Error**
+``` |
+| 500  | Internal Server Error |
 
 ---
 
-### **/visitors/{hashedNIC}**
+### `/visitors/{hashedNic}`
 
 #### GET
 
-Fetches a specific visitor by hashed NIC number.
+**Summary:** Fetch a specific visitor by hashed NIC.
 
 **Parameters:**
 
-| Name      | In   | Type   | Required | Description                  |
-| --------- | ---- | ------ | -------- | ---------------------------- |
-| hashedNIC | path | string | Yes      | Hashed NIC number of visitor |
+| Name       | In   | Description              | Required | Type   |
+| ---------- | ---- | ------------------------ | -------- | ------ |
+| hashedNic  | path | Hashed NIC number        | Yes      | string |
 
 **Responses:**
 
-- **200 OK**
-
+| Code | Description |
+| ---- | ----------- |
+| 200  | OK <br/>
 ```json
 {
   "nicHash": "hashed123",
-  "name": "Alice",
+  "name": "Jane Smith",
   "nicNumber": "123456789V",
   "contactNumber": "0771234567",
-  "email": "alice@example.com",
+  "email": "jane.smith@example.com",
   "createdBy": "admin",
-  "createdOn": "2025-01-01T10:00:00Z",
+  "createdOn": "2025-08-30T10:00:00Z",
   "updatedBy": "admin",
-  "updatedOn": "2025-01-10T15:00:00Z"
+  "updatedOn": "2025-08-30T10:00:00Z"
 }
-```
-
-- **400 Bad Request**, **404 Not Found**, **500 Internal Server Error**
+``` |
+| 400  | Bad Request |
+| 404  | Not Found   |
+| 500  | Internal Server Error |
 
 ---
 
-### **/visitors**
+### `/visitors`
 
 #### POST
 
-Create a new visitor.
+**Summary:** Create a new visitor.
 
 **Request Body:**
 
 ```json
 {
   "nicHash": "hashed123",
-  "name": "Alice",
+  "name": "Jane Smith",
   "nicNumber": "123456789V",
   "contactNumber": "0771234567",
-  "email": "alice@example.com"
+  "email": "jane.smith@example.com"
 }
-```
+````
 
 **Responses:**
 
-- **201 Created**
-- **400 Bad Request**, **500 Internal Server Error**
+| Code | Description           |
+| ---- | --------------------- |
+| 201  | Created               |
+| 400  | Bad Request           |
+| 500  | Internal Server Error |
 
 ---
 
-### **/visits**
+### `/visits`
 
 #### GET
 
-Fetch visits based on filters.
+**Summary:** Fetch visits based on filters.
 
 **Query Parameters:**
 
-| Name   | In    | Type  | Required | Description                     |
-| ------ | ----- | ----- | -------- | ------------------------------- |
-| limit  | query | int64 | No       | Limit number of visits to fetch |
-| offset | query | int64 | No       | Offset for pagination           |
+| Name   | Description                     | Required | Type    |
+| ------ | ------------------------------- | -------- | ------- |
+| limit  | Limit number of visits to fetch | No       | integer |
+| offset | Offset for pagination           | No       | integer |
 
 **Responses:**
 
-- **200 OK**
+| Code | Description |
+| ---- | ----------- |
+| 200  | OK <br/>    |
 
-```json
+````json
 {
   "totalCount": 2,
   "visits": [
     {
       "id": 1,
-      "name": "Alice",
+      "nicHash": "hashed123",
+      "name": "Jane Smith",
       "nicNumber": "123456789V",
       "contactNumber": "0771234567",
-      "email": "alice@example.com",
-      "companyName": "Tech Corp",
-      "passNumber": "PASS001",
+      "email": "jane.smith@example.com",
+      "companyName": "ABC Corp",
+      "passNumber": "V001",
       "whomTheyMeet": "John Doe",
-      "purposeOfVisit": "Business Discussion",
-      "accessibleLocations": [{ "floor": "1", "rooms": ["101", "102"] }],
-      "timeOfEntry": "2025-03-31T12:00:00Z",
-      "timeOfDeparture": "2025-03-31T14:00:00Z",
-      "status": "PENDING",
+      "purposeOfVisit": "Meeting",
+      "accessibleLocations": [
+        { "floor": "Ground", "rooms": ["Lobby"] }
+      ],
+      "timeOfEntry": "2025-08-30T09:00:00Z",
+      "timeOfDeparture": "2025-08-30T11:00:00Z",
       "createdBy": "admin",
-      "createdOn": "2025-03-30T10:00:00Z",
+      "createdOn": "2025-08-30T08:50:00Z",
       "updatedBy": "admin",
-      "updatedOn": "2025-03-30T12:00:00Z"
+      "updatedOn": "2025-08-30T08:55:00Z",
+      "status": "ACCEPTED"
     }
   ]
 }
-```
-
-- **400 Bad Request**, **500 Internal Server Error**
+``` |
+| 400  | Bad Request |
+| 500  | Internal Server Error |
 
 #### POST
 
-Create a new visit.
+**Summary:** Create a new visit.
 
 **Request Body:**
 
 ```json
 {
   "nicHash": "hashed123",
-  "companyName": "Tech Corp",
-  "passNumber": "PASS001",
+  "companyName": "ABC Corp",
+  "passNumber": "V001",
   "whomTheyMeet": "John Doe",
-  "purposeOfVisit": "Business Discussion",
-  "accessibleLocations": [{ "floor": "1", "rooms": ["101", "102"] }],
-  "timeOfEntry": "2025-03-31T12:00:00Z",
-  "timeOfDeparture": "2025-03-31T14:00:00Z"
+  "purposeOfVisit": "Meeting",
+  "accessibleLocations": [
+    { "floor": "Ground", "rooms": ["Lobby"] }
+  ],
+  "timeOfEntry": "2025-08-30T09:00:00Z",
+  "timeOfDeparture": "2025-08-30T11:00:00Z"
 }
-```
+````
 
 **Responses:**
 
-- **201 Created**
-- **400 Bad Request**, **500 Internal Server Error**
+| Code | Description           |
+| ---- | --------------------- |
+| 201  | Created               |
+| 400  | Bad Request           |
+| 500  | Internal Server Error |
 
 ---
 
 ## Schemas
 
-### **UserInfo**
+### `UserInfo`
 
-- Inherits from `Employee`
-- Adds:
-  - `privileges`: Array of integers (privileges assigned to the user)
+Combination of `Employee` and privileges.
 
-### **Employee**
+### `Employee`
 
-- `firstName` (string)
-- `lastName` (string)
-- `employeeId` (string)
-- `employeeThumbnail` (string, nullable)
-- `workEmail` (string)
-- `jobRole` (string)
+```json
+{
+  "employeeId": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "workEmail": "string",
+  "jobRole": "string",
+  "employeeThumbnail": "string|null"
+}
+```
 
-### **Visitor**
+### `Visitor`
 
-- Inherits from `AddVisitorPayload` and `AuditFields`
+Visitor record with audit fields.
 
-### **AddVisitorPayload**
+### `Visit`
 
-- `nicHash` (string)
-- `name` (string)
-- `nicNumber` (string)
-- `contactNumber` (string)
-- `email` (string, nullable)
+Visit record with details, accessible locations, and audit fields.
 
-### **AddVisitPayload**
+### `AddVisitorPayload`
 
-- `nicHash` (string)
-- `companyName` (string, nullable)
-- `passNumber` (string)
-- `whomTheyMeet` (string)
-- `purposeOfVisit` (string)
-- `accessibleLocations` (array of Floor)
-- `timeOfEntry` (string, UTC)
-- `timeOfDeparture` (string, UTC)
+Payload for creating a visitor.
 
-### **DatabaseAddVisitPayload**
+### `AddVisitPayload`
 
-- Inherits from `AddVisitPayload`
-- Adds:
-  - `status` (Status enum)
+Payload for creating a visit.
 
-### **AuditFields**
+### `Floor`
 
-- `createdBy`, `updatedBy` (string)
-- `createdOn`, `updatedOn` (string)
+```json
+{
+  "floor": "string",
+  "rooms": ["string"]
+}
+```
 
-### **Visit**
+### `ErrorPayload`
 
-- Inherits from `DatabaseAddVisitPayload` and `AuditFields`
-- Adds visitor personal info:
-  - `id` (int64)
-  - `name`, `nicNumber`, `contactNumber`, `email`
+```json
+{
+  "timestamp": "string",
+  "status": 500,
+  "reason": "string",
+  "message": "string",
+  "path": "string",
+  "method": "GET"
+}
+```
 
-### **VisitsResponse**
+### `VisitsResponse`
 
-- `totalCount` (int64)
-- `visits` (array of Visit)
-
-### **Floor**
-
-- `floor` (string)
-- `rooms` (array of strings)
-
-### **Status**
-
-- Enum: `REJECTED`, `ACCEPTED`, `PENDING`
-
-### **ErrorPayload**
-
-- `timestamp` (string)
-- `status` (integer)
-- `reason` (string)
-- `message` (string)
-- `path` (string)
-- `method` (string)
+```json
+{
+  "totalCount": 0,
+  "visits": []
+}
+```

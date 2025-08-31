@@ -23,12 +23,12 @@ paths:
                 $ref: '#/components/schemas/UserInfo'
         "500":
           description: InternalServerError
-  /visitors/{hashedNIC}:
+  /visitors/{hashedNic}:
     get:
       summary: Fetches a specific visitor by hashed nic number.
       operationId: getVisitorsHashednic
       parameters:
-      - name: hashedNIC
+      - name: hashedNic
         in: path
         description: Hashed NIC number of the visitor
         required: true
@@ -170,7 +170,7 @@ components:
           type: string
           description: "Time at which the visitor is supposed to check out [in UTC]"
       additionalProperties: false
-      description: "[Database] Insert record for visit."
+      description: Payload for adding a new visit.
     AddVisitorPayload:
       required:
       - contactNumber
@@ -220,18 +220,6 @@ components:
           description: When the visitor was updated
       additionalProperties: false
       description: Database audit fields
-    DatabaseAddVisitPayload:
-      type: object
-      description: "[Database] Add visit payload."
-      allOf:
-      - $ref: '#/components/schemas/AddVisitPayload'
-      - required:
-        - status
-        type: object
-        properties:
-          status:
-            $ref: '#/components/schemas/Status'
-        additionalProperties: false
     Employee:
       required:
       - employeeId
@@ -301,13 +289,6 @@ components:
             type: string
       additionalProperties: false
       description: "[Database] Floor record."
-    Status:
-      type: string
-      description: Visitor status
-      enum:
-      - REJECTED
-      - ACCEPTED
-      - PENDING
     UserInfo:
       type: object
       description: Response for fetching user information.
@@ -327,7 +308,7 @@ components:
       type: object
       description: Visit record.
       allOf:
-      - $ref: '#/components/schemas/DatabaseAddVisitPayload'
+      - $ref: '#/components/schemas/AddVisitPayload'
       - $ref: '#/components/schemas/AuditFields'
       - required:
         - contactNumber
