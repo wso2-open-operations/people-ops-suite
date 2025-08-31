@@ -21,8 +21,5 @@ configurable DatabaseConfig dbConfig = ?;
 # Encryption key for sensitive data.
 configurable string encryptionKey = ?;
 
-function initPeopleOpsDbClient() returns mysql:Client|error
-=> new (...dbConfig);
-
 # Database Client.
-final mysql:Client databaseClient = check initPeopleOpsDbClient();
+final mysql:Client databaseClient = check new (...dbConfig);
