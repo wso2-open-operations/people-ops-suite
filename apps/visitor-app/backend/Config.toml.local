@@ -3,16 +3,19 @@ EMPLOYEE_ROLE = ""
 ADMIN_ROLE = ""
 
 [people.database.dbConfig]
-    host = ""
-    user = ""
-    password = ""
-    database = ""
-    port = 
-    [people.database.dbConfig.connectionPool]
-    maxOpenConnections = 
-    maxConnectionLifeTime = 
-    minIdleConnections= 
-    [people.database.dbConfig.options]
-    connectTimeout = 
-    [people.database.dbConfig.options.ssl]
-    mode = "PREFERRED"
+host = ""
+user = ""
+password = ""
+database = ""
+port = 0
+
+[people.database.dbConfig.connectionPool]
+maxOpenConnections = 0
+maxConnectionLifeTime = 0
+minIdleConnections = 0
+
+[people.database.dbConfig.options]
+connectTimeout = 0
+
+[people.database.dbConfig.options.ssl]
+mode = "PREFERRED"

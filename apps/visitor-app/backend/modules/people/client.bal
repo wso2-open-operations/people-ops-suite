@@ -12,11 +12,4 @@ configurable string peopleEndpoint = ?;
     label: "People GraphQL Service",
     id: "hris/entity-graphql-service"
 }
-final graphql:Client hrClient = check new (
-    peopleEndpoint,
-    {
-        auth: {
-            ...clientAuthConfig
-        }
-    }
-);
+final graphql:Client hrClient = check new (peopleEndpoint, {auth: {...clientAuthConfig}});

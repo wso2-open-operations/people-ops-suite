@@ -155,7 +155,6 @@ public type VisitRecord record {|
     Status status;
     # Total number of visits
     int totalCount;
-
 |};
 
 # Visit record.
@@ -172,7 +171,6 @@ public type Visit record {|
     string contactNumber;
     # Email of the visitor
     string? email;
-
 |};
 
 # Response Record for Visits
