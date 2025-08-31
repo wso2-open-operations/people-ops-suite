@@ -20,3 +20,5 @@ public const HEX_DIGITS = "0123456789abcdef";
 
 public final string:RegExp NONE_EMPTY_PRINTABLE_STRING_REGEX = re `^(?:.*\S)[ -~]+$`;
 public final string:RegExp INTERNATIONAL_CONTACT_NUMBER_REGEX = re `^\+[1-9]\d{1,14}$`;
+public final string:RegExp UTC_TIMESTAMP_REGEX =
+    re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`;

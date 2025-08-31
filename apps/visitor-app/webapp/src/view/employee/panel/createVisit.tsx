@@ -44,6 +44,7 @@ import { FieldArray, Form, Formik } from "formik";
 import * as Yup from "yup";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { PhoneNumberUtil } from "google-libphonenumber";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { ConfirmationType, State } from "@root/src/types/types";
@@ -62,6 +63,8 @@ import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
+
+dayjs.extend(utc);
 
 enum VisitorStatus {
   Draft = "Draft",
@@ -321,8 +324,12 @@ function CreateVisit() {
                   whomTheyMeet: values.whoTheyMeet,
                   purposeOfVisit: values.purposeOfVisit,
                   accessibleLocations: values.accessibleLocations,
-                  timeOfEntry: values.timeOfEntry,
-                  timeOfDeparture: values.timeOfDeparture,
+                  timeOfEntry: dayjs(values.timeOfEntry)
+                    .utc()
+                    .format("YYYY-MM-DDTHH:mm:ss"),
+                  timeOfDeparture: dayjs(values.timeOfDeparture)
+                    .utc()
+                    .format("YYYY-MM-DDTHH:mm:ss"),
                 })
               ).then((action) => {
                 // Chained dependency failure : if the visit submission fails, reset the visitor status to Draft to allow re-submission
