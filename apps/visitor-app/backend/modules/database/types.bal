@@ -118,11 +118,6 @@ public type AddVisitPayload record {|
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
     string timeOfDeparture;
-|};
-
-# [Database] Add visit payload.
-public type DatabaseAddVisitPayload record {|
-    *AddVisitPayload;
     # Status of the visit
     Status status;
 |};
@@ -165,7 +160,7 @@ public type DatabaseVisitRecord record {|
 
 # Visit record.
 public type Visit record {|
-    *DatabaseAddVisitPayload;
+    *AddVisitPayload;
     *AuditFields;
     # Unique identifier for the visit
     int id;

@@ -78,7 +78,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(DatabaseAddVisitPayload payload, string createdBy) returns sql:ParameterizedQuery
+isolated function addVisitQuery(AddVisitPayload payload, string createdBy) returns sql:ParameterizedQuery
 => `
     INSERT INTO visit
     (

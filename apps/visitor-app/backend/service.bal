@@ -191,7 +191,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
-    resource function post visits(http:RequestContext ctx, database:AddVisitPayload payload)
+    resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Created {
 
         // User information header.

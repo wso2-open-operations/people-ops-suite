@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import visitor.database;
 import visitor.people;
 
 # Response for fetching user information.
@@ -21,3 +23,23 @@ type UserInfo record {
     # Array of privileges assigned to the user
     int[] privileges;
 };
+
+# Payload for adding a new visit.
+public type AddVisitPayload record {|
+    # Nic Hash of the visitor
+    string nicHash;
+    # Company name of visitor
+    string? companyName;
+    # Number in the tag given to visitor
+    string passNumber;
+    # The person the visitor is supposed to meet
+    string whomTheyMeet;
+    # Purpose of the visit
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    database:Floor[] accessibleLocations;
+    # Time at which the visitor is supposed to check in [in UTC]
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    string timeOfDeparture;
+|};

@@ -61,7 +61,7 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
 # + return - Error if the insertion failed
-public isolated function AddVisit(DatabaseAddVisitPayload payload, string createdBy) returns error? {
+public isolated function AddVisit(AddVisitPayload payload, string createdBy) returns error? {
     sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy));
 }
 
