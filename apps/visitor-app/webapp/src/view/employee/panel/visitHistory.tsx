@@ -256,7 +256,7 @@ function VisitHistory() {
                               floorRoom.rooms.map((room, i) => (
                                 <>
                                   {room}
-                                  {i == floorRoom.rooms.length - 1
+                                  {i === floorRoom.rooms.length - 1
                                     ? ""
                                     : ", "}{" "}
                                 </>
