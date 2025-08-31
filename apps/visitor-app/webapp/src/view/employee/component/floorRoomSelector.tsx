@@ -179,7 +179,7 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
                       ))
                     }
                     renderOption={(props, option) => {
-                      const { key, ...rest } = props; // take key out
+                      const { key, ...rest } = props; // Extract key prop to avoid React warnings when spreading props
                       return (
                         <Box component="li" key={key} {...rest}>
                           <RoomIcon sx={{ mr: 1 }} fontSize="small" />
