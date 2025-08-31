@@ -71,11 +71,11 @@ public isolated function AddVisit(AddVisitPayload payload, string createdBy) ret
 # + offset - Offset for pagination
 # + return - Array of visits objects or error
 public isolated function fetchVisits(int? 'limit, int? offset) returns VisitsResponse|error {
-    stream<DatabaseVisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
 
     int totalCount = 0;
     Visit[] visits = [];
-    check from DatabaseVisitRecord visit in resultStream
+    check from VisitRecord visit in resultStream
         do {
             totalCount = visit.totalCount;
             visits.push({

@@ -123,7 +123,7 @@ public type AddVisitPayload record {|
 |};
 
 # [Database] Visit record.
-public type DatabaseVisitRecord record {|
+public type VisitRecord record {|
     *AuditFields;
     # Nic Hash of the visitor
     string nicHash;
