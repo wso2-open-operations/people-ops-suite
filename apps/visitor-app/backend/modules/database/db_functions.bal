@@ -65,11 +65,11 @@ public isolated function AddVisit(DatabaseAddVisitPayload payload, string create
     sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy));
 }
 
-# Fetch Visits with pagination.
+# Fetch visits with pagination.
 #
 # + 'limit - Limit number of visits to fetch
 # + offset - Offset for pagination
-# + return - Array of Visits objects or error
+# + return - Array of visits objects or error
 public isolated function fetchVisits(int? 'limit, int? offset) returns VisitsResponse|error {
     stream<DatabaseVisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
 
