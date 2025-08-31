@@ -45,7 +45,7 @@ interface RouteDetail {
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
-    text: "Employee",
+    text: "Visit",
     icon: React.createElement(DomainAddIcon),
     element: React.createElement(View.employee),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],

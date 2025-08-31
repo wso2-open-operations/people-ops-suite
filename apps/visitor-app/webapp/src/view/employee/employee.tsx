@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import DuoIcon from "@mui/icons-material/Duo";
+import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
 import HistoryIcon from "@mui/icons-material/History";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
@@ -25,7 +25,7 @@ export default function Visits() {
   return (
     <CommonPage
       title="Visit"
-      icon={<DuoIcon />}
+      icon={<BadgeIcon />}
       commonPageTabs={[
         {
           tabTitle: "New Visit",
