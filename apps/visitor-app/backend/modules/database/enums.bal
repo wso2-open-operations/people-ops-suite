@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# Visitor status
+# Visitor status.
 public enum Status {
     PENDING,
     ACCEPTED,

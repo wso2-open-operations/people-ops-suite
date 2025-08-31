@@ -13,10 +13,4 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-public const DEFAULT_LIMIT = 500;
-public const HEX_DIGITS = "0123456789abcdef";
-
-public final string:RegExp NONE_EMPTY_PRINTABLE_STRING_REGEX = re `^(?:.*\S)[ -~]+$`;
-public final string:RegExp INTERNATIONAL_CONTACT_NUMBER_REGEX = re `^\+[1-9]\d{1,14}$`;
-public final string:RegExp UTC_TIMESTAMP_REGEX =
-    re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`;
+public const USER_INFO_HEADER_NOT_FOUND_ERROR = "User information header not found!";

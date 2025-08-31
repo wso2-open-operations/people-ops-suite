@@ -65,9 +65,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
@@ -82,10 +83,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         people:Employee|error? employee = people:fetchEmployee(userInfo.email);
         if employee is error {
-            string errMsg = string `Error occurred while fetching user information: ${userInfo.email}`;
-            log:printError(errMsg, employee);
+            string customError = string `Error occurred while fetching user information: ${userInfo.email}`;
+            log:printError(customError, employee);
             return <http:InternalServerError>{
-                body: errMsg
+                body: customError
             };
         }
         if employee is () {
@@ -115,7 +116,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Fetches a specific visitor by hashed nic number.
+    # Fetches a specific visitor by hashed NIC/Passport number.
     #
     # + hashedNic - Hashed NIC number of the visitor
     # + return - Visitor or error
@@ -125,9 +126,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
@@ -143,6 +145,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visitor is () {
+            log:printError("No visitor information found for the hashed NIC: " + hashedNic);
             return <http:NotFound>{
                 body: {
                     message: "No visitor found!"
@@ -158,14 +161,15 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
-        returns http:InternalServerError|http:Created {
+        returns http:Created|http:InternalServerError {
 
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
@@ -192,14 +196,15 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Created {
+        returns http:Created|http:BadRequest|http:InternalServerError {
 
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
@@ -251,9 +256,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
