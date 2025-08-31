@@ -22,7 +22,7 @@ import ballerina/sql;
 # + return - Visitor object or error if so
 public isolated function fetchVisitor(string hashedNIC) returns Visitor|error? {
     Visitor|error visitor = databaseClient->queryRow(getVisitorByNicQuery(hashedNIC));
-    if visitor is error && visitor is sql:NoRowsError {
+    if visitor is sql:NoRowsError {
         return;
     }
     if visitor is error {
