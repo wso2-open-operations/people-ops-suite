@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
@@ -36,7 +35,7 @@ type DatabaseConfig record {|
     sql:ConnectionPool connectionPool?;
 |};
 
-# Database audit fields
+# Database audit fields.
 public type AuditFields record {|
     # Who created the visitor 
     string createdBy;
@@ -173,7 +172,7 @@ public type Visit record {|
     string? email;
 |};
 
-# Response Record for Visits
+# Response Record for Visits.
 public type VisitsResponse record {|
     # The total count of visits
     int totalCount;
