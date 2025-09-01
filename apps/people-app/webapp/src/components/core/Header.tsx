@@ -14,15 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { User } from "@/types";
-import { UserPrimaryInfo } from "@/components/features/account";
 import { SearchInput } from "@/components/ui";
 
-function Header(props: User) {
+function Header() {
   return (
     <header className="w-full bg-white px-4 sticky top-0">
-      <UserPrimaryInfo {...props} />
-      <div className="pb-[1.2rem] border-b-[1px] border-[#E5E5E5] mt-3">
+      <div className="pb-[1.2rem] border-b-[1px] border-[#E5E5E5] mt-5">
         <SearchInput />
       </div>
     </header>

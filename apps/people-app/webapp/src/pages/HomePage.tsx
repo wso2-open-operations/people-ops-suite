@@ -23,7 +23,7 @@ import { ServiceTile } from "@/components/features/services";
 function HomePage({ user }: PageProps) {
   return (
     <PageTransitionWrapper type="main">
-      <Header {...user!} />
+      <Header />
       <main className="px-4">
         <div className="flex flex-col">
           {services.map((service, index) => (
