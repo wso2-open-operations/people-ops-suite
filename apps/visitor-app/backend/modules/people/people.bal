@@ -10,7 +10,6 @@
 # + workEmail - Employee email
 # + return - Employee object or Error if so
 public isolated function fetchEmployee(string workEmail) returns Employee|error? {
-
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -26,9 +25,5 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
 
     EmployeeResponse employeeResponse = check hrClient->execute(document, {workEmail});
     Employee? employee = employeeResponse.data.employee;
-    if employee is () {
-        return;
-    }
-
     return employee;
 }

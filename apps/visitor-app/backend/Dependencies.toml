@@ -436,7 +436,7 @@ modules = [
 ]
 
 [[package]]
-org = "wso2_open_operations"
+org = "wso2"
 name = "visitor"
 version = "1.0.0"
 dependencies = [
@@ -455,9 +455,9 @@ dependencies = [
 	{org = "ballerinax", name = "mysql.driver"}
 ]
 modules = [
-	{org = "wso2_open_operations", packageName = "visitor", moduleName = "visitor"},
-	{org = "wso2_open_operations", packageName = "visitor", moduleName = "visitor.authorization"},
-	{org = "wso2_open_operations", packageName = "visitor", moduleName = "visitor.database"},
-	{org = "wso2_open_operations", packageName = "visitor", moduleName = "visitor.people"}
+	{org = "wso2", packageName = "visitor", moduleName = "visitor"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.authorization"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.database"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.people"}
 ]
 

@@ -32,31 +32,13 @@ final cache:Cache cache = new ({
     id: "people-ops-suite/visitor-service"
 }
 
-service class ErrorInterceptor {
-    *http:ResponseErrorInterceptor;
-
-    remote function interceptResponseError(error err, http:RequestContext ctx) returns http:BadRequest|error {
-
-        // Handle data-binding errors.
-        if err is http:PayloadBindingError {
-            log:printError("Payload binding failed!", err);
-            return {
-                body: {
-                    message: err.message()
-                }
-            };
-        }
-        return err;
-    }
-}
-
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
-    # + return - authorization:JwtInterceptor, ErrorInterceptor
+    # + return - authorization:JwtInterceptor, BadRequestInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
-        [new authorization:JwtInterceptor(), new ErrorInterceptor()];
+        [new authorization:JwtInterceptor(), new BadRequestInterceptor()];
 
     # Fetch logged-in user's details.
     #
@@ -123,10 +105,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get visitors/[string hashedNic](http:RequestContext ctx)
         returns database:Visitor|http:InternalServerError|http:NotFound {
 
-        // User information header.
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
@@ -145,7 +126,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visitor is () {
-            log:printError("No visitor information found for the hashed NIC: " + hashedNic);
+            log:printError(string `No visitor information found for the hashed NIC: ${hashedNic}!`);
             return <http:NotFound>{
                 body: {
                     message: "No visitor found!"
@@ -163,10 +144,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
         returns http:Created|http:InternalServerError {
 
-        // User information header.
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
@@ -174,7 +154,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? visitorError = database:AddVisitor(payload, userInfo.email);
+        error? visitorError = database:AddVisitor(payload, invokerInfo.email);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
             log:printError(customError, visitorError);
@@ -198,10 +178,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
         returns http:Created|http:BadRequest|http:InternalServerError {
 
-        // User information header.
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
@@ -228,7 +207,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
-        error? visitError = database:AddVisit({...payload, status: database:ACCEPTED}, userInfo.email);
+        error? visitError = database:AddVisit({...payload, status: database:ACCEPTED}, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -253,10 +232,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get visits(http:RequestContext ctx, int? 'limit, int? offset)
         returns database:VisitsResponse|http:InternalServerError {
 
-        // User information header.
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR

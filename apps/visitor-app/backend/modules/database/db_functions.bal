@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 import ballerina/sql;
 
 # Fetch Visitor.
@@ -53,7 +52,7 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
     payload.email = email is string ? check encrypt(email) : null;
     payload.contactNumber = check encrypt(payload.contactNumber);
 
-    sql:ExecutionResult _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
+    _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
 
 # Add new visit.
