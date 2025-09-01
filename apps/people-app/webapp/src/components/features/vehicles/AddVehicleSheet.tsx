@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 import { CircularProgress } from "@mui/material";
@@ -139,11 +140,31 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
           <TextInput
             className="uppercase placeholder:normal-case"
             label="Vehicle Number"
-            placeholder="What's on your license plate?"
+            placeholder="Enter your vehicle registration number"
             value={number}
             validity={isValidPlate}
             onChange={handleInputChange}
           />
+          <AnimatePresence>
+            {isValidPlate === validation.INVALID && (
+              <motion.div
+                className="text-gray-400 text-[15.5px] px-1 my-2.5"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              >
+                <div className="flex gap-1 items-center text-red-800">
+                  <span>Invalid vehicle license plate format</span>
+                </div>
+                <span className="text-gray-600 opacity-70">
+                  Please use a valid format, such as &nbsp;
+                  <span className="text-green-900 font-semibold">
+                    AAA 1234, 12 1234
+                  </span>
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         <div className="relative mt-8">
           <button
