@@ -1,0 +1,200 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { State } from "@/types/types";
+import { AppConfig } from "@config/config";
+import axios, { HttpStatusCode } from "axios";
+import { APIService } from "@utils/apiService";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+
+const initialState: VisitState = {
+  state: State.idle,
+  submitState: State.idle,
+  visits: null,
+  stateMessage: "",
+  errorMessage: "",
+  backgroundProcess: false,
+  backgroundProcessMessage: null,
+};
+
+interface VisitState {
+  state: State;
+  submitState: State;
+  visits: FetchVisitsResponse | null;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  backgroundProcess: boolean;
+  backgroundProcessMessage: string | null;
+}
+
+export interface Visit extends AddVisitPayload {
+  createdBy: string;
+  createdOn: string;
+  updatedBy: string;
+  updatedOn: string;
+}
+
+export interface AddVisitPayload {
+  nicHash: string;
+  companyName: string | null;
+  passNumber: string;
+  whomTheyMeet: string;
+  purposeOfVisit: string;
+  accessibleLocations: FloorRoom[];
+  timeOfEntry: string;
+  timeOfDeparture: string;
+}
+
+export interface FloorRoom {
+  floor: string;
+  rooms: string[];
+}
+
+export interface Visit {
+  id: number;
+  name: string;
+  nicNumber: string;
+  contactNumber: string;
+  email: string;
+  nicHash: string;
+  companyName: string;
+  passNumber: string;
+  whomTheyMeet: string;
+  purposeOfVisit: string;
+  accessibleLocations: FloorRoom[];
+  timeOfEntry: string;
+  timeOfDeparture: string;
+  status: string;
+  createdBy: string;
+  createdOn: string;
+  updatedBy: string;
+  updatedOn: string;
+}
+
+export interface FetchVisitsResponse {
+  totalCount: number;
+  visits: Visit[];
+}
+
+export const addVisit = createAsyncThunk(
+  "visit/addVisit",
+  async (payload: AddVisitPayload, { dispatch }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<AddVisitPayload>((resolve, reject) => {
+      APIService.getInstance()
+        .post(AppConfig.serviceUrls.visits, payload, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                response.data.message ||
+                "Your visit has been added successfully!",
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+);
+
+export const fetchVisits = createAsyncThunk(
+  "visit/fetchVisits",
+  async (
+    { limit, offset }: { limit: number; offset: number },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<FetchVisitsResponse>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.visits, {
+          params: { limit, offset },
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An unknown error occurred.",
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
+const VisitSlice = createSlice({
+  name: "visits",
+  initialState,
+  reducers: {
+    resetSubmitState(state) {
+      state.submitState = State.idle;
+    },
+    resetState(state) {
+      state.state = State.idle;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(addVisit.pending, (state) => {
+        state.submitState = State.loading;
+        state.stateMessage = "Hang tight! We’re adding your visit...";
+      })
+      .addCase(addVisit.fulfilled, (state, action) => {
+        state.submitState = State.success;
+        state.stateMessage = "Your visit has been added successfully!";
+      })
+      .addCase(addVisit.rejected, (state, action) => {
+        state.submitState = State.failed;
+        state.stateMessage = "Oops! An error occurred during visit creation!";
+      })
+      .addCase(fetchVisits.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Hang tight! We’re fetching your visits...";
+      })
+      .addCase(fetchVisits.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.visits = action.payload;
+        state.stateMessage = "Your visits have been fetched successfully!";
+      })
+      .addCase(fetchVisits.rejected, (state) => {
+        state.state = State.failed;
+        state.stateMessage =
+          "Oops! Something went wrong while fetching visits!";
+      });
+  },
+});
+
+export const { resetSubmitState, resetState } = VisitSlice.actions;
+export default VisitSlice.reducer;
