@@ -130,11 +130,7 @@ function VehicleManagementPage() {
         </div>
       </div>
       <section className="pr-1 mx-5 fixed bottom-20 right-1.5">
-        <AddButton
-          active={showBottomSheet}
-          disabled={!selected}
-          onClick={() => setShowBottomSheet(true)}
-        />
+        <AddButton onClick={() => setShowBottomSheet(true)} />
       </section>
       <AnimatePresence>
         {showBottomSheet && (
@@ -159,19 +155,15 @@ export default VehicleManagementPage;
 
 interface AddButtonProps {
   onClick: () => void;
-  disabled: boolean;
-  active: boolean;
 }
 
-function AddButton({ onClick, disabled, active }: AddButtonProps) {
+function AddButton({ onClick }: AddButtonProps) {
   return (
     <IconButton
       className="size-[40px] grid place-items-center rounded-full transition-colors"
       onClick={onClick}
       style={{
-        backgroundColor: active ? "#BCBCBC" : "#ff7300",
-        opacity: disabled ? "100%" : "50%",
-        pointerEvents: disabled ? "auto" : "none",
+        backgroundColor: "#ff7300",
       }}
     >
       <AddSharp className="text-white" style={{ fontSize: 30.5 }} />

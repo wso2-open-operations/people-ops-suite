@@ -56,7 +56,7 @@ const useHttp = () => {
       }
 
       const token = getAccessToken();
-      if (!token) throw "Token not found";
+      if (!token) throw new Error("Token not found");
 
       const encodedUrl = prepareUrlWithEmail(url, token);
       const defaultHeaders: Record<string, string> = {

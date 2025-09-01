@@ -79,7 +79,9 @@ export function getDisplayNameFromJWT(token: string) {
     );
     const payload = JSON.parse(jsonPayload);
 
-    return payload.given_name + " " + payload.family_name || null;
+    return payload.given_name && payload.family_name
+      ? payload.given_name + " " + payload.family_name
+      : "Unknown Account";
   } catch (e) {
     console.error("Failed to decode JWT", e);
     return null;

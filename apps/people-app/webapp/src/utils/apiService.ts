@@ -46,14 +46,14 @@ export class ApiService {
     loadingFn: (param: any) => void,
     currentTry?: number | null
   ) => {
-    var tries: number = Boolean(currentTry) ? (currentTry as number) : 0;
+    var tries: number = currentTry ?? 0;
     try {
       if (loadingFn) {
         loadingFn(true);
       }
 
-      var encodedUrl = encodeURI(url);
-      var bearerToken: string =
+      const encodedUrl = encodeURI(url);
+      const bearerToken: string =
         "Bearer " + (await ApiService._apiInstance?._getIdToken?.());
 
       const response = await fetch(encodedUrl, {

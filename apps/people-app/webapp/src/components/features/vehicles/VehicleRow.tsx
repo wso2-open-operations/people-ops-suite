@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { AnimatePresence } from "motion/react";
 import {
   DirectionsCarSharp,
   TwoWheelerSharp,
@@ -22,7 +21,6 @@ import {
 } from "@mui/icons-material";
 
 import type { VehicleType } from "@/types";
-import { MoreOptions } from "@/components/features/vehicles";
 import { IconButton } from "@mui/material";
 
 export interface VehicleRowProps {
@@ -52,7 +50,6 @@ export interface VehicleRowProps {
  * - number: string – license plate or vehicle number
  * - selected?: boolean – whether the row is currently selected (i.e., showing options)
  * - active?: boolean – whether the vehicle is currently active (used to dim non-selected rows)
- * - onSelect?: (index?: number) => void – toggles option visibility for this row
  * - onDelete: () => void – callback after successful vehicle deletion
  */
 function VehicleRow({
@@ -61,17 +58,8 @@ function VehicleRow({
   number,
   selected = false,
   active = false,
-  onSelect,
   onDelete,
 }: VehicleRowProps) {
-  const handleToggleRowOptions = () => {
-    if (selected) {
-      onSelect?.(undefined);
-    } else {
-      onSelect?.(index!);
-    }
-  };
-
   return (
     <div className="font-semibold text-lg border-b-[1px] border-[#E5E5E5]">
       <div
@@ -92,8 +80,7 @@ function VehicleRow({
         <span className="justify-self-end">
           <IconButton
             onClick={() => {
-              handleToggleRowOptions();
-              onDelete();
+              onDelete(); // opens the delete confirmation modal
             }}
             style={{ padding: 5, backgroundColor: "#f0efed" }}
           >

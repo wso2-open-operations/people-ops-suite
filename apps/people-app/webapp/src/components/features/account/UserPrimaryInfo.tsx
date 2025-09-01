@@ -54,10 +54,7 @@ function UserPrimaryInfo(props: User) {
             className="absolute object-cover w-full h-full"
           />
         ) : (
-          <Avatar
-            style={{ width: "100%", height: "100%" }}
-            {...stringAvatar("Kent Dodds")}
-          >
+          <Avatar style={{ width: "100%", height: "100%" }}>
             {`${props?.name?.split(" ")[0][0]}${props?.name?.split(" ")[1][0]}`}
           </Avatar>
         )}
