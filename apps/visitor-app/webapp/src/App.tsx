@@ -26,11 +26,15 @@ import { AuthProvider } from "@asgardeo/auth-react";
 import { createContext, useState, useMemo } from "react";
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CreateVisit from "./view/employee/panel/createVisit";
+import ConfirmationModalContextProvider from "@context/DialogContext";
+import VisitorRegisterCard from "@view/external/visitorRegisterCard";
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
 function App() {
   document.title = APP_NAME;
+  const isExternal = window.location.pathname.includes("external");
   const processLocalThemeMode = (): ThemeMode => {
     try {
       const savedTheme = localStorage.getItem("internal-app-theme");
@@ -75,11 +79,17 @@ function App() {
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
-            <AuthProvider config={AsgardeoConfig}>
-              <AppAuthProvider>
-                <AppHandler />
-              </AppAuthProvider>
-            </AuthProvider>
+            {isExternal ? (
+              <ConfirmationModalContextProvider>
+                <VisitorRegisterCard />
+              </ConfirmationModalContextProvider>
+            ) : (
+              <AuthProvider config={AsgardeoConfig}>
+                <AppAuthProvider>
+                  <AppHandler />
+                </AppAuthProvider>
+              </AuthProvider>
+            )}
           </Provider>
         </ThemeProvider>
       </SnackbarProvider>

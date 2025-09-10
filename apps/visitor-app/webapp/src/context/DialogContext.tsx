@@ -73,9 +73,12 @@ type ConfirmationModalContextProviderProps = {
   children: React.ReactNode;
 };
 
-const ConfirmationModalContext = React.createContext<ConfirmationDialogContextType | null>(null);
+const ConfirmationModalContext =
+  React.createContext<ConfirmationDialogContextType | null>(null);
 
-const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProviderProps> = (props) => {
+const ConfirmationDialogContextProvider: React.FC<
+  ConfirmationModalContextProviderProps
+> = (props) => {
   const { setShow, show, onHide } = useDialogShow();
 
   const [comment, setComment] = React.useState("");
@@ -143,7 +146,9 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
     setComment("");
   };
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const onChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setComment(event.target.value);
   };
 
@@ -187,7 +192,9 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
               <CloseIcon />
             </IconButton>
             <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
-              <DialogContentText variant="body2">{content?.message}</DialogContentText>
+              <DialogContentText variant="body2">
+                {content?.message}
+              </DialogContentText>
             </DialogContent>
             {content.inputObj && (
               <TextField
@@ -229,10 +236,18 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
                   variant="contained"
                   size="small"
                   disabled={content?.inputObj?.mandatory && comment === ""}
-                  onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
+                  onClick={() =>
+                    content?.inputObj ? handleOk(comment) : handleOk()
+                  }
                   loadingPosition="start"
                   startIcon={
-                    content.type === "update" ? <SaveAltIcon /> : content.type === "send" ? <SendIcon /> : <DoneIcon />
+                    content.type === "update" ? (
+                      <SaveAltIcon />
+                    ) : content.type === "send" ? (
+                      <SendIcon />
+                    ) : (
+                      <DoneIcon />
+                    )
                   }
                 >
                   {content?.okText ? content.okText : "Yes"}
@@ -248,9 +263,10 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
 
 const useConfirmationModalContext = (): ConfirmationDialogContextType => {
   const context = useContext(ConfirmationModalContext);
-  if (!context) {
-    throw new Error("useConfirmationModalContext must be used within a ConfirmationDialogContextProvider");
-  }
+  if (!context)
+    throw new Error(
+      "useConfirmationModalContext must be used within a ConfirmationDialogContextProvider"
+    );
   return context;
 };
 
