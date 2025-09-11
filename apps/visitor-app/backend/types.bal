@@ -114,9 +114,9 @@ public type invitationDetails record {|
     int isActive;
     # invitations count
     int noOfInvitations;
-    # invitation encode value
-    string encodeValue;
     # visit information
     visitInfo visitDetails;
+    # invitee email
+    string inviteeEmail;
 |};
 

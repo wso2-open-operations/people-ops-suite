@@ -15,11 +15,14 @@
 // under the License. 
 import visitor.authorization;
 import visitor.database;
+import visitor.email;
 import visitor.people;
 
 import ballerina/cache;
 import ballerina/http;
+import ballerina/lang.array;
 import ballerina/log;
+import ballerina/uuid;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -267,7 +270,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? invitationError = database:createInvitation(payload, invokerInfo.email);
+        string encodeString = array:toBase64((uuid:createType4AsString()).toBytes());
+        error? invitationError = database:createInvitation(payload, invokerInfo.email, encodeString);
         if invitationError is error {
             string customError = "Error occurred while creating invitation!";
             log:printError(customError, invitationError);
@@ -276,6 +280,35 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customError
                 }
             };
+        }
+
+        string|error content = email:bindKeyValues(email:inviteTemplate,
+                {
+                    LINK: "http://localhost:3000/external/" + "?token=" + encodeString,
+                    CONTACT_EMAIL: email:contactEmail
+                });
+
+        if content is error {
+            string errMsg = "Error with email template!";
+            log:printError(errMsg, content);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
+        error? emailError = email:sendEmail({
+                                                to: [payload.inviteeEmail],
+                                                'from: email:visitorNotificationFrom,
+                                                subject: "Your Visitor Invitation",
+                                                template: content,
+                                                cc: [email:receptionEmail]
+                                            });
+
+        if emailError is error {
+            string errMsg = "Error occurred while sending the email!";
+            log:printError(errMsg, emailError);
         }
 
         return <http:Created>{

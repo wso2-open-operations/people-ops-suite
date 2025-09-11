@@ -69,8 +69,8 @@ public isolated function AddVisit(AddVisitPayload payload, string createdBy) ret
 # + payload - Payload containing the invitation details
 # + createdBy - Person who is creating the invitation
 # + return - Error if the insertion failed
-public isolated function createInvitation(invitationDetails payload, string createdBy) returns error? {
-    sql:ExecutionResult _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy));
+public isolated function createInvitation(invitationDetails payload, string createdBy, string encodeString) returns error? {
+    sql:ExecutionResult _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
 }
 
 # Fetch visits with pagination.

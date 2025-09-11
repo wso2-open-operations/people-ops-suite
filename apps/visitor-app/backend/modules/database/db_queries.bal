@@ -108,7 +108,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy) retur
             ${createdBy}
         );`;
 
-isolated function createInvitatonQuery(invitationDetails payload, string createdBy) returns sql:ParameterizedQuery
+isolated function createInvitatonQuery(invitationDetails payload, string createdBy, string encodeString) returns sql:ParameterizedQuery
     => `
         INSERT INTO visit_invitation
         (
@@ -125,7 +125,7 @@ isolated function createInvitatonQuery(invitationDetails payload, string created
         (
             ${createdBy},
             ${payload.updatedBy},
-            ${payload.encodeValue},
+            ${encodeString},
             ${payload.createdOn},
             ${payload.updatedOn},
             ${payload.isActive},
