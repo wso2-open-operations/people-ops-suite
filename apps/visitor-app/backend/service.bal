@@ -255,4 +255,33 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return visitsResponse;
     }
+
+    resource function post invitation(http:RequestContext ctx, invitationDetails payload) returns http:Created|http:InternalServerError {
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
+
+        error? invitationError = database:createInvitation(payload, invokerInfo.email);
+        if invitationError is error {
+            string customError = "Error occurred while creating invitation!";
+            log:printError(customError, invitationError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: "Invitation created successfully!"
+            }
+        };
+    }
 }

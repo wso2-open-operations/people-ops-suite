@@ -179,3 +179,40 @@ public type VisitsResponse record {|
     # Array of visits
     Visit[] visits;
 |};
+
+# Visit Invitations.
+public type visitInfo record {|
+    # name of company
+    string nameOfCompany;
+    # person they meet
+    string whomTheyMeet;
+    # purpose of visit
+    string purposeOfVisit;
+    # accessible locations
+    Floor[] accessibleLocations;
+    # scheduled date
+    string sheduledDate;
+    # time of entry
+    string timeOfEntry;
+    # time of departure
+    string timeOfDeparture;
+
+|};
+
+# Details of an invitation.
+public type invitationDetails record {|
+    # invitation creation time
+    string createdOn;
+    # invitation updater
+    string updatedBy;
+    # invitation update time
+    string updatedOn;
+    # invitation status
+    int isActive;
+    # invitations count
+    int noOfInvitations;
+    # invitation encode value
+    string encodeValue;
+    # visit information
+    visitInfo visitDetails;
+|};

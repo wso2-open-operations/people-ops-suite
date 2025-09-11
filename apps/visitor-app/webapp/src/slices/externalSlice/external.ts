@@ -13,6 +13,7 @@ interface SubmitVisitState {
   stateMessage: string;
   error: string | null;
   data: any;
+  visitInvitation: any | null;
 }
 
 const initialState: SubmitVisitState = {
@@ -21,6 +22,7 @@ const initialState: SubmitVisitState = {
   stateMessage: "",
   error: null,
   data: null,
+  visitInvitation: null,
 };
 
 export const submitVisitAsync = createAsyncThunk(
@@ -41,7 +43,33 @@ export const submitVisitAsync = createAsyncThunk(
   }
 );
 
-const submitVisitSlice = createSlice({
+export const getVisitInvitationAsync = createAsyncThunk(
+  "visit/getVisitInvitation",
+  async (invitationId: string, { rejectWithValue }) => {
+    try {
+      const staticVisitData = {
+        id: "2",
+        companyName: "test",
+        purposeOfVisit: "Test visit",
+        accessibleLocations: [{ floor: "11th Floor", rooms: [] }],
+        timeOfEntry: "2025-09-24 09:30:00",
+        timeOfDeparture: "2025-09-24 10:30:00",
+        status: "ACCEPTED",
+      };
+      // Simulate API call to get visit invitation details
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({ success: true, data: staticVisitData });
+        }, 3000);
+      });
+      return response;
+    } catch (error) {
+      return rejectWithValue("Failed to fetch visit invitation");
+    }
+  }
+);
+
+const externalSlice = createSlice({
   name: "submitVisit",
   initialState,
   reducers: {
@@ -71,9 +99,28 @@ const submitVisitSlice = createSlice({
         state.submitState = State.failed;
         state.stateMessage = "Failed to submit visit";
         state.error = action.payload as string;
+      })
+      .addCase(getVisitInvitationAsync.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching invitation...";
+        state.error = null;
+      })
+      .addCase(
+        getVisitInvitationAsync.fulfilled,
+        (state, action: PayloadAction<any>) => {
+          state.state = State.success;
+          state.stateMessage = "Invitation fetched successfully";
+          state.visitInvitation = action.payload.data;
+          state.error = null;
+        }
+      )
+      .addCase(getVisitInvitationAsync.rejected, (state, action) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch invitation";
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { resetSubmitState } = submitVisitSlice.actions;
-export default submitVisitSlice.reducer;
+export const { resetSubmitState } = externalSlice.actions;
+export default externalSlice.reducer;

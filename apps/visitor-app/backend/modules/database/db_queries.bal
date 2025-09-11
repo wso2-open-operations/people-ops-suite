@@ -108,6 +108,31 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy) retur
             ${createdBy}
         );`;
 
+isolated function createInvitatonQuery(invitationDetails payload, string createdBy) returns sql:ParameterizedQuery
+    => `
+        INSERT INTO visit_invitation
+        (
+            created_by,
+            updated_by,
+            encode_value,
+            created_on,
+            updated_on,
+            is_active,
+            no_of_invitations,
+            visit_info
+        )
+        VALUES
+        (
+            ${createdBy},
+            ${payload.updatedBy},
+            ${payload.encodeValue},
+            ${payload.createdOn},
+            ${payload.updatedOn},
+            ${payload.isActive},
+            ${payload.noOfInvitations},
+            ${payload.visitDetails.toJsonString()}
+        );`;
+
 # Build query to fetch visits with pagination.
 #
 # + 'limit - Limit number of visits to fetch
