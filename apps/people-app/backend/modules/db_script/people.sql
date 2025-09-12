@@ -174,10 +174,10 @@ CREATE TABLE `resignation` (
   `final_day_of_employment` DATE NULL,
   `reason` VARCHAR(300) NULL,
   `date` DATE NULL,
-  `created_by` VARCHAR(254) NULL,
+  `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  `updated_by` VARCHAR(254) NULL
+  `updated_by` VARCHAR(254) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Employment_types table
@@ -185,10 +185,10 @@ CREATE TABLE `employment_type` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(255) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
-  `created_on` TIMESTAMP(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `updated_by` VARCHAR(254) NULL,
-  `updated_on` TIMESTAMP(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  `is_active` TINYINT(1) NULL DEFAULT 1,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `is_active` TINYINT(1) NULL DEFAULT 1, 
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_employment_type_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -215,7 +215,7 @@ CREATE TABLE `personal_info` (
   `nok_info` JSON,
   `onboarding_documents` JSON,
   `education_info` JSON,
-    `created_by` VARCHAR(254) NOT NULL,
+  `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
