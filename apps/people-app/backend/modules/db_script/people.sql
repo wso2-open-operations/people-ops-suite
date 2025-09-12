@@ -214,7 +214,11 @@ CREATE TABLE `personal_info` (
   `language_spoken` JSON,
   `nok_info` JSON,
   `onboarding_documents` JSON,
-  `education_info` JSON
+  `education_info` JSON,
+    `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Recruit table
@@ -299,6 +303,10 @@ CREATE TABLE `employee` (
   `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
+    `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `employment_type_id` INT NULL,
   `resignation_id` INT NULL,
   `designation_id` INT NULL,
