@@ -1,8 +1,8 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP DATABASE IF EXISTS `hris_people`;
+DROP DATABASE IF EXISTS `people`;
 CREATE DATABASE `hris_people`;
-USE `hris_people`;
+USE `people`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
