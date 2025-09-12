@@ -1,13 +1,13 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP DATABASE IF EXISTS `people`;
+DROP DATABASE IF EXISTS `hris_people`;
 CREATE DATABASE `hris_people`;
-USE `people`;
+USE `hris_people`;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Org structure tables
-CREATE TABLE `hris_business_unit` (
+CREATE TABLE `business_unit` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   `head_email` VARCHAR(254) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE `hris_business_unit` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `hris_team` (
+CREATE TABLE `team` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   `head_email` VARCHAR(254) NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE `hris_team` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- BU <-> Team link table
-CREATE TABLE `hris_business_unit_team` (
+CREATE TABLE `business_unit_team` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `business_unit_id` INT NOT NULL,
   `team_id` INT NOT NULL,
@@ -41,15 +41,15 @@ CREATE TABLE `hris_business_unit_team` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_but_bu`
-    FOREIGN KEY (`business_unit_id`) REFERENCES `hris_business_unit` (`id`)
+    FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_but_team`
-    FOREIGN KEY (`team_id`) REFERENCES `hris_team` (`id`)
+    FOREIGN KEY (`team_id`) REFERENCES `team` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   UNIQUE KEY `uk_bu_team` (`business_unit_id`, `team_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `hris_sub_team` (
+CREATE TABLE `sub_team` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   `head_email` VARCHAR(254) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE `hris_sub_team` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- (BU-Team) <-> SubTeam link table
-CREATE TABLE `hris_business_unit_team_sub_team` (
+CREATE TABLE `business_unit_team_sub_team` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `business_unit_team_id` INT NOT NULL,
   `sub_team_id` INT NOT NULL,
@@ -72,15 +72,15 @@ CREATE TABLE `hris_business_unit_team_sub_team` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_butst_but`
-    FOREIGN KEY (`business_unit_team_id`) REFERENCES `hris_business_unit_team` (`id`)
+    FOREIGN KEY (`business_unit_team_id`) REFERENCES `business_unit_team` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_butst_st`
-    FOREIGN KEY (`sub_team_id`) REFERENCES `hris_sub_team` (`id`)
+    FOREIGN KEY (`sub_team_id`) REFERENCES `sub_team` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   UNIQUE KEY `uk_but_subteam` (`business_unit_team_id`, `sub_team_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE TABLE `hris_unit` (
+CREATE TABLE `unit` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NOT NULL,
   `head_email` VARCHAR(254) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE `hris_unit` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- (BU-Team-SubTeam) <-> Unit link table
-CREATE TABLE `hris_business_unit_team_sub_team_unit` (
+CREATE TABLE `business_unit_team_sub_team_unit` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `business_unit_team_sub_team_id` INT NOT NULL,
   `unit_id` INT NOT NULL,
@@ -103,10 +103,10 @@ CREATE TABLE `hris_business_unit_team_sub_team_unit` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_butstu_butst`
-    FOREIGN KEY (`business_unit_team_sub_team_id`) REFERENCES `hris_business_unit_team_sub_team` (`id`)
+    FOREIGN KEY (`business_unit_team_sub_team_id`) REFERENCES `business_unit_team_sub_team` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_butstu_unit`
-    FOREIGN KEY (`unit_id`) REFERENCES `hris_unit` (`id`)
+    FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE,
   UNIQUE KEY `uk_butst_unit` (`business_unit_team_sub_team_id`, `unit_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -218,7 +218,7 @@ CREATE TABLE `personal_info` (
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
-  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Recruit table
@@ -254,16 +254,16 @@ CREATE TABLE `recruit` (
     FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT `fk_recruit_bu`
-    FOREIGN KEY (`business_unit`) REFERENCES `hris_business_unit` (`id`)
+    FOREIGN KEY (`business_unit`) REFERENCES `business_unit` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_recruit_team`
-    FOREIGN KEY (`team`) REFERENCES `hris_team` (`id`)
+    FOREIGN KEY (`team`) REFERENCES `team` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_recruit_subteam`
-    FOREIGN KEY (`sub_team`) REFERENCES `hris_sub_team` (`id`)
+    FOREIGN KEY (`sub_team`) REFERENCES `sub_team` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_recruit_unit`
-    FOREIGN KEY (`unit`) REFERENCES `hris_unit` (`id`)
+    FOREIGN KEY (`unit`) REFERENCES `unit` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_recruit_company`
     FOREIGN KEY (`company`) REFERENCES `company` (`id`)
@@ -332,15 +332,15 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`office_id`) REFERENCES `office` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_emp_team`
-    FOREIGN KEY (`team_id`) REFERENCES `hris_team` (`id`)
+    FOREIGN KEY (`team_id`) REFERENCES `team` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_emp_subteam`
-    FOREIGN KEY (`sub_team_id`) REFERENCES `hris_sub_team` (`id`)
+    FOREIGN KEY (`sub_team_id`) REFERENCES `sub_team` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_emp_bu`
-    FOREIGN KEY (`business_unit_id`) REFERENCES `hris_business_unit` (`id`)
+    FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT `fk_emp_unit`
-    FOREIGN KEY (`unit_id`) REFERENCES `hris_unit` (`id`)
+    FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`)
     ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
