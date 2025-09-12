@@ -21,3 +21,5 @@ public const HEADER_USER_INFO = "user-info";
 # Privileges.
 public const EMPLOYEE_PRIVILEGE = 987;
 public const ADMIN_PRIVILEGE = 789;
+
+public const INVITATION = "invitation";

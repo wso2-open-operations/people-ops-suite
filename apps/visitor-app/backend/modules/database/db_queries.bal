@@ -133,6 +133,21 @@ isolated function createInvitatonQuery(invitationDetails payload, string created
             ${payload.visitDetails.toJsonString()}
         );`;
 
+# Query to check whether invitation is active or inactive.
+#
+# + encodeValue - Encoded uuid value
+# + return - Invitation object
+isolated function checkInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
+        SELECT
+            vi.created_on        AS createdOn,
+            vi.is_active         AS isActive,
+            vi.no_of_invitations AS noOfInvitations,
+            vi.visit_info        AS visitDetails
+        FROM visit_invitation vi
+        WHERE vi.encode_value = ${encodeValue}
+        AND vi.is_active = 1;
+    `;
+
 # Build query to fetch visits with pagination.
 #
 # + 'limit - Limit number of visits to fetch

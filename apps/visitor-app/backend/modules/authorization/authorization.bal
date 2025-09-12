@@ -26,6 +26,12 @@ public isolated service class JwtInterceptor {
 
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
         returns http:NextService|http:Forbidden|http:InternalServerError|error? {
+        // For public endpoints that bypass authorization  
+        if path.length() > 0 {
+            if path[0] == INVITATION && req.method == http:HTTP_GET {
+                return ctx.next();
+            }
+        }
 
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
         if idToken is error {

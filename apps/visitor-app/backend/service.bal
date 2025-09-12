@@ -317,4 +317,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     }
+
+    resource function get invitation/[string encodeValue]() returns database:InvitationRecord|http:InternalServerError {
+        database:InvitationRecord|error invitationDetails = database:checkInvitation(encodeValue);
+
+        if invitationDetails is error {
+            string errMsg = invitationDetails.message();
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
+        return invitationDetails;
+    };
 }

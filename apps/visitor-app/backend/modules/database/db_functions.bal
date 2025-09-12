@@ -69,8 +69,24 @@ public isolated function AddVisit(AddVisitPayload payload, string createdBy) ret
 # + payload - Payload containing the invitation details
 # + createdBy - Person who is creating the invitation
 # + return - Error if the insertion failed
+# + encodeString - Encoded uuid value
 public isolated function createInvitation(invitationDetails payload, string createdBy, string encodeString) returns error? {
     sql:ExecutionResult _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
+}
+
+# Checks whether invitation is valid.
+#
+# + encodeValue - Encoded uuid value
+# + return - Invitation object or error
+public isolated function checkInvitation(string encodeValue) returns InvitationRecord|error {
+    InvitationRecord|sql:Error invitation = databaseClient->queryRow(checkInvitationQuery(encodeValue));
+    if invitation is sql:Error {
+        string errMsg = "Error when checking invitation details";
+        return error(errMsg);
+    }
+    visitInfo visitInfo = check invitation.visitDetails.cloneWithType();
+    invitation.visitDetails = visitInfo;
+    return invitation;
 }
 
 # Fetch visits with pagination.

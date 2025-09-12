@@ -196,7 +196,6 @@ public type visitInfo record {|
     string timeOfEntry;
     # time of departure
     string timeOfDeparture;
-
 |};
 
 # Details of an invitation.
@@ -215,4 +214,37 @@ public type invitationDetails record {|
     visitInfo visitDetails;
     # invitee email
     string inviteeEmail;
+|};
+
+# Invitation details.
+public type Invitation record {|
+    # Id of the invitation
+    int invitationId;
+    # Who invited the visitor
+    string invitedBy;
+    # Email of the invitee
+    string inviteeEmail;
+    # Encoded uuid value
+    string encodeValue;
+    # No of invitations
+    int noOfInvitations;
+    # When the invitation was sent
+    string createdOn;
+    # When the invitation was updated
+    string updatedOn;
+    # Validity of the invitation
+    int isActive;
+    # Visit details in the invitation
+    json visitDetails;
+|};
+
+public type InvitationRecord record {|
+    # When the invitation was sent
+    string createdOn;
+    # Validity of the invitation
+    int isActive;
+    # No of invitations
+    int noOfInvitations;
+    # Visit details in the invitation
+    json visitDetails;
 |};
