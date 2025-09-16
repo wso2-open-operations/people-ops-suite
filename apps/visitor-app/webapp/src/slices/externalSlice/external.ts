@@ -1,7 +1,23 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import { createAsyncThunk } from "@reduxjs/toolkit";
-// import { VisitorDetail } from "@root/src/types/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { State } from "../../types/types";
+import axios from "axios";
+import { ServiceBaseUrl } from "@config/config";
 
 interface VisitData {
   visitors: Array<any>;
@@ -27,17 +43,31 @@ const initialState: SubmitVisitState = {
 
 export const submitVisitAsync = createAsyncThunk(
   "visit/submitVisit",
-  async (visitData: VisitData, { rejectWithValue }) => {
+  async (
+    { visitData, invitationId }: { visitData: VisitData; invitationId: string },
+    { rejectWithValue }
+  ) => {
+    console.log("Thunk VisitData", visitData);
     try {
-      // Simulate API call to submit visit data
-      const response = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({ success: true, data: visitData });
-        }, 1000);
-      });
+      const response = await fetch(
+        `${ServiceBaseUrl}/invitation/${invitationId}/fill`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(visitData.visitors[0]),
+        }
+      );
 
-      return response;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
     } catch (error) {
+      console.error("Submit visit failed:", error);
       return rejectWithValue("Failed to submit visit");
     }
   }
@@ -47,24 +77,16 @@ export const getVisitInvitationAsync = createAsyncThunk(
   "visit/getVisitInvitation",
   async (invitationId: string, { rejectWithValue }) => {
     try {
-      const staticVisitData = {
-        id: "2",
-        companyName: "test",
-        purposeOfVisit: "Test visit",
-        accessibleLocations: [{ floor: "11th Floor", rooms: [] }],
-        timeOfEntry: "2025-09-24 09:30:00",
-        timeOfDeparture: "2025-09-24 10:30:00",
-        status: "ACCEPTED",
-      };
-      // Simulate API call to get visit invitation details
-      const response = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({ success: true, data: staticVisitData });
-        }, 3000);
-      });
-      return response;
-    } catch (error) {
-      return rejectWithValue("Failed to fetch visit invitation");
+      const response = await axios.get(
+        `${ServiceBaseUrl}/invitation/${invitationId}/authentication`
+      );
+
+      // assuming backend returns the invitation object directly
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch visit invitation"
+      );
     }
   }
 );

@@ -59,9 +59,10 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
 #
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
+# + inviationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
-public isolated function AddVisit(AddVisitPayload payload, string createdBy) returns error? {
-    sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy));
+public isolated function AddVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
+    sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
 }
 
 # Create a new invitation.
@@ -93,9 +94,10 @@ public isolated function checkInvitation(string encodeValue) returns InvitationR
 #
 # + 'limit - Limit number of visits to fetch
 # + offset - Offset for pagination
+# + invitation_id - Filter by invitation ID
 # + return - Array of visits objects or error
-public isolated function fetchVisits(int? 'limit, int? offset) returns VisitsResponse|error {
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset));
+public isolated function fetchVisits(int? 'limit = (), int? offset = (), int? invitation_id = ()) returns VisitsResponse|error {
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset, invitation_id));
 
     int totalCount = 0;
     Visit[] visits = [];

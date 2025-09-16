@@ -106,7 +106,7 @@ public type AddVisitPayload record {|
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
@@ -139,7 +139,7 @@ public type VisitRecord record {|
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
@@ -154,6 +154,8 @@ public type VisitRecord record {|
     Status status;
     # Total number of visits
     int totalCount;
+    # Invitation ID associated with the visit
+    int? invitationId;
 |};
 
 # Visit record.
@@ -239,6 +241,8 @@ public type Invitation record {|
 |};
 
 public type InvitationRecord record {|
+    # Id of the invitation
+    int invitationId;
     # When the invitation was sent
     string createdOn;
     # Validity of the invitation
@@ -247,4 +251,8 @@ public type InvitationRecord record {|
     int noOfInvitations;
     # Visit details in the invitation
     json visitDetails;
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+    # Invited by
+    string invitedBy;
 |};

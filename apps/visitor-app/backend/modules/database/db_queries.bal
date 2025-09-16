@@ -76,8 +76,9 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
 #
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
+# + inviationId - Invitation ID associated with the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(AddVisitPayload payload, string createdBy) returns sql:ParameterizedQuery
+isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? inviationId) returns sql:ParameterizedQuery
     => `
         INSERT INTO visit
         (
@@ -91,7 +92,8 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy) retur
             time_of_departure,
             status,
             created_by,
-            updated_by
+            updated_by,
+            invitation_id
         )
         VALUES
         (
@@ -105,7 +107,8 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy) retur
             ${payload.timeOfDeparture},
             ${payload.status},
             ${createdBy},
-            ${createdBy}
+            ${createdBy},
+            ${inviationId}
         );`;
 
 isolated function createInvitatonQuery(invitationDetails payload, string createdBy, string encodeString) returns sql:ParameterizedQuery
@@ -139,21 +142,19 @@ isolated function createInvitatonQuery(invitationDetails payload, string created
 # + return - Invitation object
 isolated function checkInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
+            vi.invitation_id     AS invitationId,
             vi.created_on        AS createdOn,
             vi.is_active         AS isActive,
             vi.no_of_invitations AS noOfInvitations,
-            vi.visit_info        AS visitDetails
+            vi.visit_info        AS visitDetails,
+            vi.created_by      AS invitedBy
         FROM visit_invitation vi
         WHERE vi.encode_value = ${encodeValue}
         AND vi.is_active = 1;
     `;
 
-# Build query to fetch visits with pagination.
-#
-# + 'limit - Limit number of visits to fetch
-# + offset - Offset for pagination
-# + return - sql:ParameterizedQuery - Select query for the visits with pagination
-isolated function getVisitsQuery(int? 'limit, int? offset) returns sql:ParameterizedQuery {
+isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId) returns sql:ParameterizedQuery {
+    // Base query with joins to visitor and visit_invitation tables
     sql:ParameterizedQuery mainQuery = `
         SELECT 
             v.visit_id as id,
@@ -174,6 +175,7 @@ isolated function getVisitsQuery(int? 'limit, int? offset) returns sql:Parameter
             v.created_on as createdOn,
             v.updated_by as updatedBy,
             v.updated_on as updatedOn,
+            vi.invitation_id as invitationId,
             COUNT(*) OVER() AS totalCount
         FROM 
             visit v
@@ -181,12 +183,21 @@ isolated function getVisitsQuery(int? 'limit, int? offset) returns sql:Parameter
             visitor vs
         ON
             v.nic_hash = vs.nic_hash
+        LEFT JOIN
+            visit_invitation vi
+        ON
+            v.invitation_id = vi.invitation_id
     `;
 
-    // Sorting the result by created_on.
+    // Add WHERE clause for invitationId if provided
+    if invitationId is int {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.invitation_id = ${invitationId}`);
+    }
+
+    // Sorting the result by time_of_entry in descending order
     mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
 
-    // Setting the limit and offset.
+    // Setting the limit and offset for pagination
     if 'limit is int {
         mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${'limit}`);
         if offset is int {

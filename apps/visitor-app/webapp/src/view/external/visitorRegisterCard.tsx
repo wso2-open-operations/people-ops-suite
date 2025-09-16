@@ -1,3 +1,18 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import React, { useCallback, useEffect } from "react";
 import {
   Container,
@@ -49,6 +64,7 @@ import { addVisit } from "@root/src/slices/visitSlice/visit";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
+import StateWithImage from "@root/src/component/ui/StateWithImage";
 
 dayjs.extend(utc);
 
@@ -139,7 +155,45 @@ const visitorValidationSchema = Yup.object().shape({
   ),
 });
 
+function transformVisitors(visitors: Array<any>): VisitorDetail[] {
+  return visitors.map((v) => {
+    // idPassportNumber → remove the last digit from NIC
+    const idPassportNumber = v.nicNumber.slice(0, -1);
+
+    // Full name → capitalize first + last name if available,
+    // otherwise just capitalize given name
+    const parts = v.name.trim().split(/\s+/);
+    const fullName = parts
+      .map((p: any) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(" ");
+
+    // Contact → separate country code and number
+    const match = v.contactNumber.match(/^(\+\d{2})(\d+)$/);
+    let countryCode = "";
+    let contactNumber = v.contactNumber;
+    if (match) {
+      countryCode = match[1];
+      contactNumber = match[2];
+      // remove leading 0 if exists
+      if (contactNumber.startsWith("0")) {
+        contactNumber = contactNumber.slice(1);
+      }
+    }
+
+    return {
+      idPassportNumber,
+      fullName,
+      contactNumber,
+      countryCode,
+      emailAddress: v.email,
+      // passNumber: "",
+      status: VisitorStatus.Completed,
+    };
+  });
+}
+
 function VisitorRegisterCard() {
+  const token = new URLSearchParams(window.location.search).get("token");
   const dispatch = useAppDispatch();
   const visitorState = useAppSelector((state: RootState) => state.visitor);
   const visitState = useAppSelector((state: RootState) => state.visit);
@@ -149,21 +203,15 @@ function VisitorRegisterCard() {
   const common = useAppSelector((state: RootState) => state.common);
 
   useEffect(() => {
-    dispatch(getVisitInvitationAsync("2"));
+    dispatch(getVisitInvitationAsync(token ?? ""));
   }, []);
 
-  const defaultVisitor: VisitorDetail = {
-    idPassportNumber: "",
-    fullName: "",
-    contactNumber: "",
-    countryCode: "+94",
-    emailAddress: "",
-    // passNumber: "",
-    status: VisitorStatus.Draft,
-  };
+  const defaultVisitors: VisitorDetail[] = externalState.visitInvitation
+    ? transformVisitors(externalState.visitInvitation?.invitees)
+    : [];
 
   // Memoize enqueueSnackbar to prevent unnecessary re-renders
-  const showSnackbar = useCallback(() => {
+  const showSnackbar = () => {
     if (common.timestamp != null) {
       enqueueSnackbar(common.message, {
         variant: common.type,
@@ -171,75 +219,79 @@ function VisitorRegisterCard() {
         anchorOrigin: { horizontal: "right", vertical: "bottom" },
       });
     }
-  }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
+  };
 
   // Show Snackbar Notifications
   useEffect(() => {
     showSnackbar();
   }, [showSnackbar]);
 
-  const submitVisit = useCallback(
-    async (
-      values: { visitors: VisitorDetail[] },
-      formikHelpers: FormikHelpers<any>
-    ) => {
-      const { setSubmitting, resetForm } = formikHelpers;
-      try {
-        const visitorsToSubmit = values.visitors.filter(
-          (visitor) => visitor.status === VisitorStatus.Draft
-        );
+  const submitVisit = async (
+    values: { visitors: VisitorDetail[] },
+    formikHelpers: FormikHelpers<any>
+  ) => {
+    console.log(values.visitors);
+    const { setSubmitting, resetForm } = formikHelpers;
+    try {
+      const visitorsToSubmit = values.visitors.filter(
+        (visitor) => visitor.status === VisitorStatus.Draft
+      );
 
-        if (visitorsToSubmit.length === 0) {
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "No draft visitors to submit",
-              type: "warning",
-            })
-          );
-          return;
-        }
-
-        const visitData = {
-          visitors: visitorsToSubmit.map((visitor) => ({
-            ...visitor,
-            visitDate: dayjs().utc().format(),
-            visitId: hash(
-              `${visitor.idPassportNumber}-${dayjs().utc().format()}`
-            ),
-          })),
-        };
-
-        await dispatch(submitVisitAsync(visitData));
-
+      if (visitorsToSubmit.length === 0) {
         dispatch(
           enqueueSnackbarMessage({
-            message: "Visitors submitted successfully",
-            type: "success",
+            message: "No draft visitors to submit",
+            type: "warning",
           })
         );
-
-        resetForm({
-          values: {
-            visitors: values.visitors.map((visitor) =>
-              visitor.status === VisitorStatus.Draft
-                ? { ...visitor, status: VisitorStatus.Completed }
-                : visitor
-            ),
-          },
-        });
-      } catch (error) {
-        dispatch(
-          enqueueSnackbarMessage({
-            message: "Failed to submit visitors",
-            type: "error",
-          })
-        );
-      } finally {
-        setSubmitting(false);
+        return;
       }
-    },
-    [dispatch]
-  );
+
+      const visitors = await Promise.all(
+        visitorsToSubmit.map(async (visitor) => ({
+          nicHash: await hash(visitor.idPassportNumber),
+          name: visitor.fullName,
+          nicNumber: visitor.idPassportNumber,
+          contactNumber: visitor.countryCode + visitor.contactNumber,
+          email: visitor.emailAddress,
+        }))
+      );
+
+      const visitData = { visitors };
+
+      console.log("VisitDetails", visitData);
+
+      await dispatch(
+        submitVisitAsync({ visitData, invitationId: token ?? "" })
+      );
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Visitors submitted successfully",
+          type: "success",
+        })
+      );
+
+      resetForm({
+        values: {
+          visitors: values.visitors.map((visitor) =>
+            visitor.status === VisitorStatus.Draft
+              ? { ...visitor, status: VisitorStatus.Completed }
+              : visitor
+          ),
+        },
+      });
+    } catch (error) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Failed to submit visitors",
+          type: "error",
+        })
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <>
@@ -276,7 +328,7 @@ function VisitorRegisterCard() {
           }
         />
       )}
-      {externalState.visitInvitation && (
+      {externalState.visitInvitation?.isActive == 1 ? (
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Container maxWidth="md" sx={{ py: 4 }}>
             <Box sx={{ mb: 4, textAlign: "center" }}>
@@ -294,164 +346,161 @@ function VisitorRegisterCard() {
               </Typography>
             </Box>
 
-            <Formik
-              initialValues={{
-                companyName: "",
-                whoTheyMeet: "",
-                purposeOfVisit: "",
-                accessibleLocations: [],
-                scheduledDate: "",
-                timeOfEntry: "",
-                timeOfDeparture: "",
-                visitors: [defaultVisitor],
+            <Card
+              variant="outlined"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)", // For Safari compatibility
+                boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                "@supports not (backdrop-filter: blur(10px))": {
+                  backgroundColor: "rgba(255, 255, 255, 0.4)",
+                },
               }}
-              validationSchema={visitorValidationSchema}
-              onSubmit={(values, formikHelpers) =>
-                submitVisit(values, formikHelpers)
-              }
             >
-              {(formik) => (
-                <Form>
-                  {/* Static Visit Info Card */}
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      mb: 3,
-                      borderRadius: 2,
-                      backgroundColor: "rgba(255, 255, 255, 0.2)",
-                      backdropFilter: "blur(10px)",
-                      WebkitBackdropFilter: "blur(10px)", // For Safari compatibility
-                      boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
-                      border: "1px solid rgba(255, 255, 255, 0.3)",
-                      // Fallback for browsers without backdropFilter support
-                      "@supports not (backdrop-filter: blur(10px))": {
-                        backgroundColor: "rgba(255, 255, 255, 0.4)",
-                      },
-                    }}
-                  >
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        gutterBottom
-                        sx={{ fontWeight: "bold", color: "primary.main" }}
-                      >
-                        Visit Information
-                      </Typography>
-                      <Divider sx={{ mb: 2 }} />
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          {/* <Typography
-                          sx={{
-                            mb: 1,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <PersonIcon color="primary" />
-                          <b>Visitor:</b> {staticVisitData.visitorName}
-                        </Typography> */}
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <BusinessIcon color="primary" />
-                            <b>Company:</b>{" "}
-                            {externalState.visitInvitation?.companyName}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <WorkIcon color="primary" />
-                            <b>Purpose:</b>{" "}
-                            {externalState.visitInvitation?.purposeOfVisit}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <ScheduleIcon color="primary" />
-                            <b>Entry:</b>{" "}
-                            {externalState.visitInvitation?.timeOfEntry}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <ScheduleIcon color="primary" />
-                            <b>Departure:</b>{" "}
-                            {externalState.visitInvitation?.timeOfDeparture}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <CheckCircleIcon color="primary" />
-                            <b>Status:</b>{" "}
-                            <span
-                              style={{
-                                fontWeight: "bold",
-                                color:
-                                  externalState.visitInvitation?.status ===
-                                  "ACCEPTED"
-                                    ? "green"
-                                    : externalState.visitInvitation?.data
-                                        .status === "PENDING"
-                                    ? "orange"
-                                    : "red",
-                              }}
-                            >
-                              {externalState.visitInvitation?.status}
-                            </span>
-                          </Typography>
-                          <Typography
-                            sx={{
-                              mb: 1,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <LocationOnIcon color="primary" />
-                            <b>Location:</b>{" "}
-                            {externalState.visitInvitation?.accessibleLocations
-                              .map((loc: any) => loc.floor)
-                              .join(", ")}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                </Form>
-              )}
-            </Formik>
+              <CardContent>
+                <Typography
+                  variant="h6"
+                  gutterBottom
+                  sx={{ fontWeight: "bold", color: "primary.main" }}
+                >
+                  Visit Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <BusinessIcon color="primary" />
+                      <b>Company:</b>{" "}
+                      {
+                        externalState.visitInvitation?.visitDetails
+                          .nameOfCompany
+                      }
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <PersonIcon color="primary" />
+                      <b>Whom to Meet:</b>{" "}
+                      {externalState.visitInvitation?.visitDetails.whomTheyMeet}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <WorkIcon color="primary" />
+                      <b>Purpose:</b>{" "}
+                      {
+                        externalState.visitInvitation?.visitDetails
+                          .purposeOfVisit
+                      }
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <CheckCircleIcon color="primary" />
+                      <b>Number of Invitations:</b>{" "}
+                      {externalState.visitInvitation?.noOfInvitations}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <ScheduleIcon color="primary" />
+                      <b>Created On:</b>{" "}
+                      {externalState.visitInvitation?.createdOn}
+                    </Typography>
+                    {/* <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <ScheduleIcon color="primary" />
+                      <b>Scheduled Date:</b>{" "}
+                      {externalState.visitInvitation?.visitDetails.sheduledDate}
+                    </Typography> */}
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <ScheduleIcon color="primary" />
+                      <b>Entry:</b>{" "}
+                      {externalState.visitInvitation?.visitDetails.timeOfEntry}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <ScheduleIcon color="primary" />
+                      <b>Departure:</b>{" "}
+                      {
+                        externalState.visitInvitation?.visitDetails
+                          .timeOfDeparture
+                      }
+                    </Typography>
+                    <Typography
+                      sx={{
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
+                    >
+                      <LocationOnIcon color="primary" />
+                      <b>Location:</b>{" "}
+                      {externalState.visitInvitation?.visitDetails.accessibleLocations
+                        .map((loc: any) => loc.floor)
+                        .join(", ")}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
 
             <Formik
               initialValues={{
-                visitors: [defaultVisitor],
+                visitors: defaultVisitors,
               }}
               validationSchema={visitorValidationSchema}
               onSubmit={(values, formikHelpers) =>
@@ -502,9 +551,6 @@ function VisitorRegisterCard() {
                                         onClick={() => remove(index)}
                                         color="error"
                                         size="small"
-                                        disabled={
-                                          visitor.status !== VisitorStatus.Draft
-                                        }
                                       >
                                         <DeleteIcon />
                                       </IconButton>
@@ -732,15 +778,26 @@ function VisitorRegisterCard() {
                           {!formik.values.visitors.some(
                             (visitor: VisitorDetail) =>
                               visitor.status === VisitorStatus.Draft
-                          ) && (
-                            <Button
-                              variant="outlined"
-                              startIcon={<AddIcon />}
-                              onClick={() => push(defaultVisitor)}
-                            >
-                              Add Another Visitor
-                            </Button>
-                          )}
+                          ) &&
+                            externalState.visitInvitation.noOfInvitations >
+                              formik.values.visitors.length && (
+                              <Button
+                                variant="outlined"
+                                startIcon={<AddIcon />}
+                                onClick={() =>
+                                  push({
+                                    idPassportNumber: "",
+                                    fullName: "",
+                                    contactNumber: "",
+                                    countryCode: "+94",
+                                    emailAddress: "",
+                                    status: VisitorStatus.Draft,
+                                  })
+                                }
+                              >
+                                Add Another Visitor
+                              </Button>
+                            )}
 
                           {formik.values.visitors.some(
                             (visitor: VisitorDetail) =>
@@ -764,7 +821,27 @@ function VisitorRegisterCard() {
             </Formik>
           </Container>
         </Box>
-      )}
+      ) : externalState.state !== State.loading ? (
+        <Grid
+          container
+          justifyContent="center"
+          alignItems="center"
+          sx={{
+            mt: { xs: 6, md: 10 },
+            mb: { xs: 3, md: 5 },
+            textAlign: "center",
+          }}
+        >
+          <Grid item xs={12} sm={10} md={8} lg={6}>
+            <Box>
+              <StateWithImage
+                message="Something went wrong!"
+                imageUrl={require("@assets/images/error.svg").default}
+              />
+            </Box>
+          </Grid>
+        </Grid>
+      ) : null}
     </>
   );
 }

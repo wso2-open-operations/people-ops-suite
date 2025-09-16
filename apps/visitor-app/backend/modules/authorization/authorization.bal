@@ -31,6 +31,9 @@ public isolated service class JwtInterceptor {
             if path[0] == INVITATION && req.method == http:HTTP_GET {
                 return ctx.next();
             }
+            if path[0] == INVITATION && req.method == http:HTTP_POST {
+                return ctx.next();
+            }
         }
 
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
