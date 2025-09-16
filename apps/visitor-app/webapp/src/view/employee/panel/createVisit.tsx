@@ -12,8 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
-
+// under the License
 import React, { useCallback, useState } from "react";
 import {
   Container,
@@ -31,6 +30,12 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Paper,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -81,7 +86,7 @@ export interface VisitorDetail {
   passNumber: string;
   status: VisitorStatus;
 }
-// Validation schema for visit information
+
 const steps = ["Visit Information", "Visitor Information"];
 
 const AVAILABLE_FLOORS_AND_ROOMS = [
@@ -144,16 +149,13 @@ const COUNTRY_CODES = [
   { code: "+94", country: "LK", flag: "🇱🇰" },
 ];
 
-// Validation schema for visit information[Step 0]
 const visitValidationSchema = Yup.object().shape({
   whoTheyMeet: Yup.string().required("Who they meet is required"),
   purposeOfVisit: Yup.string().required("Purpose of visit is required"),
   accessibleLocations: Yup.array().test(
     "Accessible floors are required",
     "At least one accessible floor is required",
-    (value) => {
-      return Array.isArray(value) && value.length > 0;
-    }
+    (value) => Array.isArray(value) && value.length > 0
   ),
   scheduledDate: Yup.string().required("Scheduled date is required"),
   timeOfEntry: Yup.string()
@@ -178,7 +180,7 @@ const visitValidationSchema = Yup.object().shape({
       }
     ),
 });
-// Validation schema for visitor information[Step 1]
+
 const visitorValidationSchema = Yup.object().shape({
   visitors: Yup.array().of(
     Yup.object().shape({
@@ -187,33 +189,38 @@ const visitorValidationSchema = Yup.object().shape({
         .test("duplicate", "Visitor already registered", function (value) {
           const { path, parent, options } = this;
           const visitors = options.context?.visitors || [];
-
           if (!value) return true;
-
-          // find index of the first visitor with this value
           const firstIndex = visitors.findIndex(
             (v: any) => v.idPassportNumber === value
           );
-
-          // find current index (by comparing object reference)
           const currentIndex = visitors.indexOf(parent);
-
-          // Only allow if currentIndex === firstIndex
           return currentIndex === firstIndex;
         }),
-
       fullName: Yup.string().required("Full name is required"),
       contactNumber: Yup.string()
         .required("Contact number is required")
         .matches(/^\d{6,12}$/, "Invalid contact number"),
-
       emailAddress: Yup.string().email("Invalid email address"),
       passNumber: Yup.string().required("Pass number is required"),
     })
   ),
+  invitationOption: Yup.string().required("Please select an option"),
+  invitationEmail: Yup.string().when("invitationOption", {
+    is: "sendInvitation",
+    then: Yup.string()
+      .email("Invalid email address")
+      .required("Invitation email is required"),
+    otherwise: Yup.string(),
+  }),
+  inviteeCount: Yup.number().when("invitationOption", {
+    is: "sendInvitation",
+    then: Yup.number()
+      .min(1, "At least one invitee is required")
+      .required("Invitee count is required"),
+    otherwise: Yup.number(),
+  }),
 });
 
-// Render the content for each step
 const renderStepContent = (
   step: number,
   formik: any,
@@ -223,7 +230,6 @@ const renderStepContent = (
     case 0:
       return (
         <>
-          {/* Basic Information */}
           <Box sx={{ mb: 4 }}>
             <Typography
               variant="h5"
@@ -234,7 +240,6 @@ const renderStepContent = (
               Visit Information
             </Typography>
             <Grid container spacing={3}>
-              {/* Name of the company */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -245,8 +250,6 @@ const renderStepContent = (
                   variant="outlined"
                 />
               </Grid>
-
-              {/* Whom They Meet */}
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
@@ -264,8 +267,6 @@ const renderStepContent = (
                   variant="outlined"
                 />
               </Grid>
-
-              {/* Purpose Of Visit */}
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -286,10 +287,7 @@ const renderStepContent = (
               </Grid>
             </Grid>
           </Box>
-
           <Divider sx={{ my: 4 }} />
-
-          {/* Floor and Room Selection */}
           <Box sx={{ mb: 4 }}>
             <Typography
               variant="h5"
@@ -299,7 +297,6 @@ const renderStepContent = (
               <BusinessIcon color="primary" />
               Floors and Rooms *
             </Typography>
-
             <FloorRoomSelector
               availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
               selectedFloorsAndRooms={formik.values.accessibleLocations}
@@ -312,10 +309,7 @@ const renderStepContent = (
               }
             />
           </Box>
-
           <Divider sx={{ my: 4 }} />
-
-          {/* Schedule Information */}
           <Box sx={{ mb: 4 }}>
             <Typography
               variant="h5"
@@ -325,9 +319,7 @@ const renderStepContent = (
               <ScheduleIcon color="primary" />
               Schedule Details
             </Typography>
-
             <Grid container spacing={3}>
-              {/* Scheduled Date */}
               <Grid item xs={12} md={4}>
                 <DatePicker
                   label="Scheduled Date *"
@@ -359,8 +351,6 @@ const renderStepContent = (
                   }}
                 />
               </Grid>
-
-              {/* Time Of Entry */}
               <Grid item xs={12} md={4}>
                 <TimePicker
                   label="Time Of Entry *"
@@ -394,8 +384,6 @@ const renderStepContent = (
                   }}
                 />
               </Grid>
-
-              {/* Time Of Departure */}
               <Grid item xs={12} md={4}>
                 <TimePicker
                   label="Time Of Departure *"
@@ -433,246 +421,401 @@ const renderStepContent = (
               </Grid>
             </Grid>
           </Box>
-
           <Divider sx={{ my: 4 }} />
         </>
       );
     case 1:
       return (
         <>
-          <FieldArray name="visitors">
-            {({ remove }) => (
-              <>
-                {formik.values.visitors.map(
-                  (visitor: VisitorDetail, index: number) => (
-                    <Card variant="outlined" sx={{ mb: 2 }} key={index}>
-                      <CardContent>
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          mb={2}
-                        >
-                          <Typography
-                            variant="h6"
-                            component="h3"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <PersonIcon color="primary" />
-                            Visitor {index + 1}
-                          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 4,
+            }}
+          >
+            <FormControl component="fieldset">
+              <FormLabel
+                component="legend"
+                sx={{
+                  mb: 2,
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  textAlign: "center",
+                  color: "text.primary",
+                }}
+              >
+                Visitor Registration Option
+              </FormLabel>
 
-                          {/* Only show delete button if there is more than one visitor */}
-                          {formik.values.visitors.length > 1 &&
-                            formik.values.visitors[index].status ===
-                              VisitorStatus.Draft && (
-                              <IconButton
-                                onClick={() => remove(index)}
-                                color="error"
-                                size="small"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            )}
-                        </Box>
-                        <Grid container spacing={3}>
-                          {/* Id/Passport Number */}
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="ID/Passport Number"
-                              name={`visitors.${index}.idPassportNumber`}
-                              value={visitor.idPassportNumber}
-                              onChange={(event) => {
-                                formik.setFieldValue(
-                                  `visitors.${index}.idPassportNumber`,
-                                  event.target.value.toUpperCase()
-                                );
+              <RadioGroup
+                row
+                name="invitationOption"
+                value={formik.values.invitationOption}
+                onChange={(e) => {
+                  formik.setFieldValue("invitationOption", e.target.value);
+                  // Reset fields when switching options
+                  formik.setFieldValue("invitationEmail", "");
+                  formik.setFieldValue("inviteeCount", "");
+                  formik.setFieldValue("visitors", [
+                    {
+                      idPassportNumber: "",
+                      fullName: "",
+                      contactNumber: "",
+                      countryCode: "+94",
+                      emailAddress: "",
+                      passNumber: "",
+                      status: VisitorStatus.Draft,
+                    },
+                  ]);
+                }}
+                sx={{
+                  justifyContent: "center",
+                  gap: 2,
+                }}
+              >
+                {[
+                  { value: "addVisitor", label: "Add Visitor Directly" },
+                  { value: "sendInvitation", label: "Send Invitation" },
+                ].map((option) => {
+                  const selected =
+                    formik.values.invitationOption === option.value;
+                  return (
+                    <FormControlLabel
+                      key={option.value}
+                      value={option.value}
+                      control={<Radio sx={{ display: "none" }} />} // hide default radio circle
+                      label={option.label}
+                      sx={{
+                        px: 3,
+                        py: 1.2,
+                        borderRadius: 50,
+                        fontWeight: 500,
+                        fontSize: "0.95rem",
+                        bgcolor: selected ? "primary.main" : "grey.100",
+                        color: selected ? "white" : "text.primary",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          bgcolor: selected ? "primary.dark" : "grey.200",
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </RadioGroup>
+
+              {formik.touched.invitationOption &&
+                formik.errors.invitationOption && (
+                  <Typography
+                    color="error"
+                    variant="caption"
+                    sx={{ mt: 1, textAlign: "center" }}
+                  >
+                    {formik.errors.invitationOption}
+                  </Typography>
+                )}
+            </FormControl>
+          </Box>
+
+          {formik.values.invitationOption === "addVisitor" && (
+            <FieldArray name="visitors">
+              {({ remove }) => (
+                <>
+                  {formik.values.visitors.map(
+                    (visitor: VisitorDetail, index: number) => (
+                      <Card variant="outlined" sx={{ mb: 2 }} key={index}>
+                        <CardContent>
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mb={2}
+                          >
+                            <Typography
+                              variant="h6"
+                              component="h3"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
                               }}
-                              onBlur={() =>
-                                fetchVisitorByNic(
-                                  visitor.idPassportNumber,
-                                  index,
-                                  formik
-                                )
-                              }
-                              error={
-                                formik.touched.visitors?.[index]
-                                  ?.idPassportNumber &&
-                                Boolean(
+                            >
+                              <PersonIcon color="primary" />
+                              Visitor {index + 1}
+                            </Typography>
+                            {formik.values.visitors.length > 1 &&
+                              formik.values.visitors[index].status ===
+                                VisitorStatus.Draft && (
+                                <IconButton
+                                  onClick={() => remove(index)}
+                                  color="error"
+                                  size="small"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              )}
+                          </Box>
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="ID/Passport Number"
+                                name={`visitors.${index}.idPassportNumber`}
+                                value={visitor.idPassportNumber}
+                                onChange={(event) => {
+                                  formik.setFieldValue(
+                                    `visitors.${index}.idPassportNumber`,
+                                    event.target.value.toUpperCase()
+                                  );
+                                }}
+                                onBlur={() =>
+                                  fetchVisitorByNic(
+                                    visitor.idPassportNumber,
+                                    index,
+                                    formik
+                                  )
+                                }
+                                error={
+                                  formik.touched.visitors?.[index]
+                                    ?.idPassportNumber &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]
+                                      ?.idPassportNumber
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.visitors?.[index]
+                                    ?.idPassportNumber &&
                                   formik.errors.visitors?.[index]
                                     ?.idPassportNumber
-                                )
-                              }
-                              helperText={
-                                formik.touched.visitors?.[index]
-                                  ?.idPassportNumber &&
-                                formik.errors.visitors?.[index]
-                                  ?.idPassportNumber
-                              }
-                              variant="outlined"
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                            />
-                          </Grid>
-
-                          {/* Full Name */}
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Full Name"
-                              name={`visitors.${index}.fullName`}
-                              value={visitor.fullName}
-                              onChange={formik.handleChange}
-                              error={
-                                formik.touched.visitors?.[index]?.fullName &&
-                                Boolean(
-                                  formik.errors.visitors?.[index]?.fullName
-                                )
-                              }
-                              helperText={
-                                formik.touched.visitors?.[index]?.fullName &&
-                                formik.errors.visitors?.[index]?.fullName
-                              }
-                              variant="outlined"
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                            />
-                          </Grid>
-
-                          {/* Contact Number */}
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Contact Number"
-                              name={`visitors.${index}.contactNumber`}
-                              value={visitor.contactNumber}
-                              onChange={formik.handleChange}
-                              error={
-                                formik.touched.visitors?.[index]
-                                  ?.contactNumber &&
-                                Boolean(
-                                  formik.errors.visitors?.[index]?.contactNumber
-                                )
-                              }
-                              helperText={
-                                formik.touched.visitors?.[index]
-                                  ?.contactNumber &&
-                                formik.errors.visitors?.[index]?.contactNumber
-                              }
-                              variant="outlined"
-                              InputProps={{
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <TextField
-                                      select
-                                      name={`visitors.${index}.countryCode`}
-                                      value={visitor.countryCode}
-                                      onChange={formik.handleChange}
-                                      variant="standard"
-                                      sx={{ minWidth: 80 }}
-                                      InputProps={{ disableUnderline: true }}
-                                      disabled={
-                                        visitor.status ===
-                                        VisitorStatus.Completed
-                                      }
-                                    >
-                                      {COUNTRY_CODES.map((country) => (
-                                        <MenuItem
-                                          key={country.code}
-                                          value={country.code}
-                                        >
-                                          {country.flag} {country.code}
-                                        </MenuItem>
-                                      ))}
-                                    </TextField>
-                                  </InputAdornment>
-                                ),
-                              }}
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                            />
-                          </Grid>
-
-                          {/* Email Address */}
-                          <Grid item xs={12} md={6}>
-                            <TextField
-                              fullWidth
-                              label="Email Address"
-                              name={`visitors.${index}.emailAddress`}
-                              type="email"
-                              value={visitor.emailAddress}
-                              onChange={formik.handleChange}
-                              error={
-                                !!formik.errors.visitors?.[index]?.emailAddress
-                              }
-                              helperText={
-                                formik.touched.visitors?.[index]
-                                  ?.emailAddress &&
-                                formik.errors.visitors?.[index]?.emailAddress
-                              }
-                              variant="outlined"
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                            />
-                          </Grid>
-
-                          {/* Pass Number */}
-                          <Grid item xs={12}>
-                            <TextField
-                              fullWidth
-                              name={`visitors.${index}.passNumber`}
-                              label="Pass Number"
-                              value={visitor.passNumber}
-                              onChange={formik.handleChange}
-                              error={
-                                formik.touched.visitors?.[index]?.passNumber &&
-                                Boolean(
-                                  formik.errors.visitors?.[index]?.passNumber
-                                )
-                              }
-                              helperText={
-                                formik.touched.visitors?.[index]?.passNumber &&
-                                formik.errors.visitors?.[index]?.passNumber
-                              }
-                              variant="outlined"
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                            />
-                          </Grid>
-
-                          {/* Submit Button */}
-                          {visitor.status === VisitorStatus.Draft && (
-                            <Grid item xs={12} sx={{ textAlign: "right" }}>
-                              <Button
-                                variant="contained"
-                                color="success"
-                                startIcon={<Check />}
-                                onClick={async () => {
-                                  await formik.submitForm();
-                                }}
-                              >
-                                Submit
-                              </Button>
+                                }
+                                variant="outlined"
+                                disabled={
+                                  visitor.status === VisitorStatus.Completed
+                                }
+                              />
                             </Grid>
-                          )}
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  )
-                )}
-              </>
-            )}
-          </FieldArray>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="Full Name"
+                                name={`visitors.${index}.fullName`}
+                                value={visitor.fullName}
+                                onChange={formik.handleChange}
+                                error={
+                                  formik.touched.visitors?.[index]?.fullName &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]?.fullName
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.visitors?.[index]?.fullName &&
+                                  formik.errors.visitors?.[index]?.fullName
+                                }
+                                variant="outlined"
+                                disabled={
+                                  visitor.status === VisitorStatus.Completed
+                                }
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="Contact Number"
+                                name={`visitors.${index}.contactNumber`}
+                                value={visitor.contactNumber}
+                                onChange={formik.handleChange}
+                                error={
+                                  formik.touched.visitors?.[index]
+                                    ?.contactNumber &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]
+                                      ?.contactNumber
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.visitors?.[index]
+                                    ?.contactNumber &&
+                                  formik.errors.visitors?.[index]?.contactNumber
+                                }
+                                variant="outlined"
+                                InputProps={{
+                                  startAdornment: (
+                                    <InputAdornment position="start">
+                                      <TextField
+                                        select
+                                        name={`visitors.${index}.countryCode`}
+                                        value={visitor.countryCode}
+                                        onChange={formik.handleChange}
+                                        variant="standard"
+                                        sx={{ minWidth: 80 }}
+                                        InputProps={{ disableUnderline: true }}
+                                        disabled={
+                                          visitor.status ===
+                                          VisitorStatus.Completed
+                                        }
+                                      >
+                                        {COUNTRY_CODES.map((country) => (
+                                          <MenuItem
+                                            key={country.code}
+                                            value={country.code}
+                                          >
+                                            {country.flag} {country.code}
+                                          </MenuItem>
+                                        ))}
+                                      </TextField>
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                disabled={
+                                  visitor.status === VisitorStatus.Completed
+                                }
+                              />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                              <TextField
+                                fullWidth
+                                label="Email Address"
+                                name={`visitors.${index}.emailAddress`}
+                                type="email"
+                                value={visitor.emailAddress}
+                                onChange={formik.handleChange}
+                                error={
+                                  !!formik.errors.visitors?.[index]
+                                    ?.emailAddress
+                                }
+                                helperText={
+                                  formik.touched.visitors?.[index]
+                                    ?.emailAddress &&
+                                  formik.errors.visitors?.[index]?.emailAddress
+                                }
+                                variant="outlined"
+                                disabled={
+                                  visitor.status === VisitorStatus.Completed
+                                }
+                              />
+                            </Grid>
+                            <Grid item xs={12}>
+                              <TextField
+                                fullWidth
+                                name={`visitors.${index}.passNumber`}
+                                label="Pass Number"
+                                value={visitor.passNumber}
+                                onChange={formik.handleChange}
+                                error={
+                                  formik.touched.visitors?.[index]
+                                    ?.passNumber &&
+                                  Boolean(
+                                    formik.errors.visitors?.[index]?.passNumber
+                                  )
+                                }
+                                helperText={
+                                  formik.touched.visitors?.[index]
+                                    ?.passNumber &&
+                                  formik.errors.visitors?.[index]?.passNumber
+                                }
+                                variant="outlined"
+                                disabled={
+                                  visitor.status === VisitorStatus.Completed
+                                }
+                              />
+                            </Grid>
+                            {visitor.status === VisitorStatus.Draft && (
+                              <Grid item xs={12} sx={{ textAlign: "right" }}>
+                                <Button
+                                  variant="contained"
+                                  color="success"
+                                  startIcon={<Check />}
+                                  onClick={async () => {
+                                    await formik.submitForm();
+                                  }}
+                                >
+                                  Submit
+                                </Button>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    )
+                  )}
+                </>
+              )}
+            </FieldArray>
+          )}
+          {formik.values.invitationOption === "sendInvitation" && (
+            <Card variant="outlined" sx={{ mb: 2 }}>
+              <CardContent>
+                <Typography
+                  variant="h6"
+                  component="h3"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2,
+                  }}
+                >
+                  <PersonIcon color="primary" />
+                  Send Invitation
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Invitation Email"
+                      name="invitationEmail"
+                      type="email"
+                      value={formik.values.invitationEmail}
+                      onChange={formik.handleChange}
+                      error={
+                        formik.touched.invitationEmail &&
+                        Boolean(formik.errors.invitationEmail)
+                      }
+                      helperText={
+                        formik.touched.invitationEmail &&
+                        formik.errors.invitationEmail
+                      }
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Number of Invitees"
+                      name="inviteeCount"
+                      type="number"
+                      value={formik.values.inviteeCount}
+                      onChange={formik.handleChange}
+                      error={
+                        formik.touched.inviteeCount &&
+                        Boolean(formik.errors.inviteeCount)
+                      }
+                      helperText={
+                        formik.touched.inviteeCount &&
+                        formik.errors.inviteeCount
+                      }
+                      variant="outlined"
+                      inputProps={{ min: 1 }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sx={{ textAlign: "right" }}>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      startIcon={<Check />}
+                      onClick={async () => {
+                        await formik.submitForm();
+                      }}
+                    >
+                      Send Invitation
+                    </Button>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
         </>
       );
     default:
@@ -703,7 +846,6 @@ function CreateVisit() {
     status: VisitorStatus.Draft,
   };
 
-  // Add a new visitor block to the form
   const addNewVisitorBlock = useCallback(
     (formik: any) => {
       const newVisitor = { ...defaultVisitor };
@@ -712,19 +854,16 @@ function CreateVisit() {
     [defaultVisitor]
   );
 
-  // Handle going to the next step
   const handleNext = useCallback(() => {
     if (!isLastStep) {
       setActiveStep((prevActiveStep) => prevActiveStep + 1);
     }
-  }, [isLastStep, dispatch]);
+  }, [isLastStep]);
 
-  // Handle going back to the previous step
   const handleBack = useCallback(() => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   }, []);
 
-  // Handle closing the visit form
   const handleClose = useCallback(
     (formik: any) => {
       dialogContext.showConfirmation(
@@ -732,7 +871,6 @@ function CreateVisit() {
         "Once the visit is closed, you will no longer be able to add new visitors to this visit.",
         ConfirmationType.accept,
         async () => {
-          // Reset the form and stepper.
           formik.resetForm();
           setActiveStep(0);
         },
@@ -743,93 +881,102 @@ function CreateVisit() {
     [dialogContext]
   );
 
-  // Handle form submission for each step
   const submitVisit = useCallback(
     (values: any, formikHelpers: any) => {
-      console.log("Test");
-      // Find the visitor to submit
-      const visitor = values.visitors.find(
-        (v: VisitorDetail) => v.status === VisitorStatus.Draft
-      );
-
-      // Find the index of the visitor
-      const visitorIndex = values.visitors.findIndex(
-        (v: VisitorDetail) => v === visitor
-      );
-
-      // Show confirmation dialog before submitting
-      if (visitor) {
+      if (values.invitationOption === "sendInvitation") {
         dialogContext.showConfirmation(
-          "Do you want to submit this visitor?",
-          "Please note, this will add the visitor's information to the system.",
+          "Do you want to send the invitation?",
+          `An invitation will be sent to ${values.invitationEmail} for ${values.inviteeCount} invitee(s).`,
           ConfirmationType.accept,
           async () => {
-            await dispatch(
-              addVisitor({
-                nicHash: await hash(visitor.idPassportNumber),
-                nicNumber: visitor.idPassportNumber,
-                name: visitor.fullName,
-                contactNumber: visitor.countryCode + visitor.contactNumber,
-                email: visitor.emailAddress,
+            // Placeholder for sending invitation logic
+            dispatch(
+              enqueueSnackbarMessage({
+                message: "Invitation sent successfully!",
+                type: "success",
               })
-            ).then(async (action) => {
-              // Because of the visitor.submitState change slowness, checking the redux thunk action. this will smooth the UI flow
-              if (addVisitor.fulfilled.match(action)) {
-                formikHelpers.setFieldValue(
-                  `visitors.${visitorIndex}.status`,
-                  VisitorStatus.Completed
-                );
-              }
-
-              dispatch(resetVisitorSubmitState());
-
-              // Submit the visit.
-              await dispatch(
-                addVisit({
-                  nicHash: await hash(visitor.idPassportNumber),
-                  companyName: values.companyName,
-                  passNumber: visitor.passNumber,
-                  whomTheyMeet: values.whoTheyMeet,
-                  purposeOfVisit: values.purposeOfVisit,
-                  accessibleLocations: values.accessibleLocations,
-                  timeOfEntry: dayjs(values.timeOfEntry)
-                    .utc()
-                    .format("YYYY-MM-DDTHH:mm:ss"),
-                  timeOfDeparture: dayjs(values.timeOfDeparture)
-                    .utc()
-                    .format("YYYY-MM-DDTHH:mm:ss"),
-                })
-              ).then((action) => {
-                // Chained dependency failure : if the visit submission fails, reset the visitor status to Draft to allow re-submission
-                if (addVisit.rejected.match(action)) {
-                  dispatch(
-                    enqueueSnackbarMessage({
-                      message:
-                        "An error occurred during visit creation, please try again later.",
-                      type: "error",
-                    })
-                  );
-                  formikHelpers.setFieldValue(
-                    `visitors.${visitorIndex}.status`,
-                    VisitorStatus.Draft
-                  );
-                }
-              });
-            });
+            );
+            formikHelpers.resetForm();
+            setActiveStep(0);
           },
           "Yes",
           "Cancel"
         );
       } else {
-        dispatch(
-          enqueueSnackbarMessage({
-            message: "No visitor found to submit!",
-            type: "error",
-          })
+        const visitor = values.visitors.find(
+          (v: VisitorDetail) => v.status === VisitorStatus.Draft
         );
+        const visitorIndex = values.visitors.findIndex(
+          (v: VisitorDetail) => v === visitor
+        );
+        if (visitor) {
+          dialogContext.showConfirmation(
+            "Do you want to submit this visitor?",
+            "Please note, this will add the visitor's information to the system.",
+            ConfirmationType.accept,
+            async () => {
+              await dispatch(
+                addVisitor({
+                  nicHash: await hash(visitor.idPassportNumber),
+                  nicNumber: visitor.idPassportNumber,
+                  name: visitor.fullName,
+                  contactNumber: visitor.countryCode + visitor.contactNumber,
+                  email: visitor.emailAddress,
+                })
+              ).then(async (action) => {
+                if (addVisitor.fulfilled.match(action)) {
+                  formikHelpers.setFieldValue(
+                    `visitors.${visitorIndex}.status`,
+                    VisitorStatus.Completed
+                  );
+                }
+                dispatch(resetVisitorSubmitState());
+                await dispatch(
+                  addVisit({
+                    nicHash: await hash(visitor.idPassportNumber),
+                    companyName: values.companyName,
+                    passNumber: visitor.passNumber,
+                    whomTheyMeet: values.whoTheyMeet,
+                    purposeOfVisit: values.purposeOfVisit,
+                    accessibleLocations: values.accessibleLocations,
+                    timeOfEntry: dayjs(values.timeOfEntry)
+                      .utc()
+                      .format("YYYY-MM-DDTHH:mm:ss"),
+                    timeOfDeparture: dayjs(values.timeOfDeparture)
+                      .utc()
+                      .format("YYYY-MM-DDTHH:mm:ss"),
+                  })
+                ).then((action) => {
+                  if (addVisit.rejected.match(action)) {
+                    dispatch(
+                      enqueueSnackbarMessage({
+                        message:
+                          "An error occurred during visit creation, please try again later.",
+                        type: "error",
+                      })
+                    );
+                    formikHelpers.setFieldValue(
+                      `visitors.${visitorIndex}.status`,
+                      VisitorStatus.Draft
+                    );
+                  }
+                });
+              });
+            },
+            "Yes",
+            "Cancel"
+          );
+        } else {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "No visitor found to submit!",
+              type: "error",
+            })
+          );
+        }
       }
     },
-    [dispatch]
+    [dispatch, dialogContext]
   );
 
   const fetchVisitorByNic = async (
@@ -859,34 +1006,6 @@ function CreateVisit() {
     );
   };
 
-  // // Fetch visitor details based on ID/Passport number
-  // const fetchVisitorByNic = useCallback(
-  //   async (idPassportNumber: string, index: number, formik: any) => {
-  //     await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
-  //       (action) => {
-  //         if (fetchVisitor.fulfilled.match(action)) {
-  //           const contactNumber = phoneUtil.parse(action.payload.contactNumber);
-  //           const countryCode =
-  //             contactNumber.getCountryCode()?.toString() || "";
-  //           const nationalNumber =
-  //             contactNumber.getNationalNumber()?.toString() || "";
-  //           const fetchedVisitor: VisitorDetail = {
-  //             idPassportNumber: action.payload.nicNumber,
-  //             contactNumber: nationalNumber,
-  //             fullName: action.payload.name,
-  //             countryCode: "+" + countryCode,
-  //             emailAddress: action.payload.email || "",
-  //             passNumber: "",
-  //             status: VisitorStatus.Draft,
-  //           };
-  //           formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
-  //         }
-  //       }
-  //     );
-  //   },
-  //   [dispatch]
-  // );
-
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4, textAlign: "center" }}>
@@ -914,6 +1033,9 @@ function CreateVisit() {
             timeOfEntry: "",
             timeOfDeparture: "",
             visitors: [defaultVisitor],
+            invitationOption: "",
+            invitationEmail: "",
+            inviteeCount: "",
           }}
           validationSchema={
             activeStep === 0 ? visitValidationSchema : visitorValidationSchema
@@ -924,7 +1046,6 @@ function CreateVisit() {
         >
           {(formik) => (
             <>
-              {/* Background loader */}
               {(visitorState.state === State.loading ||
                 visitorState.submitState === State.loading) && (
                 <BackgroundLoader
@@ -999,22 +1120,24 @@ function CreateVisit() {
                       sx={{ color: "white" }}
                       variant="contained"
                       disabled={
-                        isLastStep
+                        isLastStep &&
+                        formik.values.invitationOption === "addVisitor"
                           ? !formik.values.visitors.every(
                               (v) => v.status === VisitorStatus.Completed
                             )
                           : false
                       }
                       onClick={async () => {
-                        if (isLastStep) {
+                        if (
+                          isLastStep &&
+                          formik.values.invitationOption === "addVisitor"
+                        ) {
                           addNewVisitorBlock(formik);
                         } else {
-                          // validate step 1
                           const errors = await formik.validateForm();
                           if (Object.keys(errors).length === 0) {
                             handleNext();
                           } else {
-                            // mark all touched fields so errors show up
                             formik.setTouched(
                               Object.keys(errors).reduce((acc: any, key) => {
                                 acc[key] = true;
@@ -1025,7 +1148,10 @@ function CreateVisit() {
                         }
                       }}
                     >
-                      {isLastStep ? "Add Visitor" : "Continue"}
+                      {isLastStep &&
+                      formik.values.invitationOption === "addVisitor"
+                        ? "Add Visitor"
+                        : "Continue"}
                     </Button>
                   )}
                 </Box>
