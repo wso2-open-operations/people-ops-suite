@@ -236,32 +236,23 @@ CREATE TABLE `recruit` (
   `designation_id` INT NOT NULL,
   `personal_info_id` INT NULL,
   CONSTRAINT `fk_recruit_personal_info`
-    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
-    ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`),
   CONSTRAINT `fk_recruit_bu`
-    FOREIGN KEY (`business_unit`) REFERENCES `business_unit` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`business_unit`) REFERENCES `business_unit` (`id`),
   CONSTRAINT `fk_recruit_team`
-    FOREIGN KEY (`team`) REFERENCES `team` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`team`) REFERENCES `team` (`id`),
   CONSTRAINT `fk_recruit_subteam`
-    FOREIGN KEY (`sub_team`) REFERENCES `sub_team` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`sub_team`) REFERENCES `sub_team` (`id`),
   CONSTRAINT `fk_recruit_unit`
-    FOREIGN KEY (`unit`) REFERENCES `unit` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`unit`) REFERENCES `unit` (`id`),
   CONSTRAINT `fk_recruit_company`
-    FOREIGN KEY (`company`) REFERENCES `company` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`company`) REFERENCES `company` (`id`),
   CONSTRAINT `fk_recruit_office`
-    FOREIGN KEY (`office`) REFERENCES `office` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`office`) REFERENCES `office` (`id`),
   CONSTRAINT `fk_recruit_designation`
-    FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
   CONSTRAINT `fk_recruit_employment_type`
     FOREIGN KEY (`employment_type`) REFERENCES `employment_type` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 -- Employee table
@@ -301,29 +292,21 @@ CREATE TABLE `employee` (
   `unit_id` INT NULL,
   `personal_info_id` INT NOT NULL,
   CONSTRAINT `fk_emp_personal_info`
-    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`),
   CONSTRAINT `fk_emp_employment_type`
-    FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`),
   CONSTRAINT `fk_emp_designation`
-    FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
   CONSTRAINT `fk_emp_office`
-    FOREIGN KEY (`office_id`) REFERENCES `office` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`office_id`) REFERENCES `office` (`id`),
   CONSTRAINT `fk_emp_team`
-    FOREIGN KEY (`team_id`) REFERENCES `team` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`team_id`) REFERENCES `team` (`id`),
   CONSTRAINT `fk_emp_subteam`
-    FOREIGN KEY (`sub_team_id`) REFERENCES `sub_team` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`sub_team_id`) REFERENCES `sub_team` (`id`),
   CONSTRAINT `fk_emp_bu`
-    FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT,
+    FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`),
   CONSTRAINT `fk_emp_unit`
     FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`)
-    ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 -- Resignation table
