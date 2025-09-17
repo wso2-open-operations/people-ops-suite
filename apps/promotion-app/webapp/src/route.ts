@@ -17,7 +17,6 @@
 import React from "react";
 import { View } from "@view/index";
 import { Role } from "@slices/authSlice/auth";
-import DuoIcon from '@mui/icons-material/Duo';
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
