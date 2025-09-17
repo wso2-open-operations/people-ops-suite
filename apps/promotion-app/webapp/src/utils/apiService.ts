@@ -104,7 +104,7 @@ export class APIService {
         return config;
       },
       (error) => {
-        Promise.reject(error);
+        return Promise.reject(error);
       }
     );
   }
