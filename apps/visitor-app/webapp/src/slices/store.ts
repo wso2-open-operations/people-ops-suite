@@ -24,6 +24,7 @@ import appConfigReducer from "@slices/configSlice/config";
 import visitorReducer from "@slices/visitorSlice/visitor";
 import visitReducer from "@slices/visitSlice/visit";
 import externalReducer from "@slices/externalSlice/external";
+import sendInvitationReducer from "@slices/sendInvitationSlice/sendInvitationSlice";
 enableMapSet();
 
 export const store = configureStore({
@@ -35,6 +36,7 @@ export const store = configureStore({
     visitor: visitorReducer,
     visit: visitReducer,
     external: externalReducer,
+    invitation: sendInvitationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

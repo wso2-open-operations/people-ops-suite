@@ -35,7 +35,6 @@ import {
   FormControlLabel,
   FormControl,
   FormLabel,
-  Paper,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -68,6 +67,7 @@ import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
+import { sendInvitation } from "@slices/sendInvitationSlice/sendInvitationSlice";
 
 dayjs.extend(utc);
 
@@ -182,28 +182,32 @@ const visitValidationSchema = Yup.object().shape({
 });
 
 const visitorValidationSchema = Yup.object().shape({
-  visitors: Yup.array().of(
-    Yup.object().shape({
-      idPassportNumber: Yup.string()
-        .required("ID/Passport number is required")
-        .test("duplicate", "Visitor already registered", function (value) {
-          const { path, parent, options } = this;
-          const visitors = options.context?.visitors || [];
-          if (!value) return true;
-          const firstIndex = visitors.findIndex(
-            (v: any) => v.idPassportNumber === value
-          );
-          const currentIndex = visitors.indexOf(parent);
-          return currentIndex === firstIndex;
-        }),
-      fullName: Yup.string().required("Full name is required"),
-      contactNumber: Yup.string()
-        .required("Contact number is required")
-        .matches(/^\d{6,12}$/, "Invalid contact number"),
-      emailAddress: Yup.string().email("Invalid email address"),
-      passNumber: Yup.string().required("Pass number is required"),
-    })
-  ),
+  visitors: Yup.array().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.array().of(
+      Yup.object().shape({
+        idPassportNumber: Yup.string()
+          .required("ID/Passport number is required")
+          .test("duplicate", "Visitor already registered", function (value) {
+            const { path, parent, options } = this;
+            const visitors = options.context?.visitors || [];
+            if (!value) return true;
+            const firstIndex = visitors.findIndex(
+              (v: any) => v.idPassportNumber === value
+            );
+            const currentIndex = visitors.indexOf(parent);
+            return currentIndex === firstIndex;
+          }),
+        fullName: Yup.string().required("Full name is required"),
+        contactNumber: Yup.string()
+          .required("Contact number is required")
+          .matches(/^\d{6,12}$/, "Invalid contact number"),
+        emailAddress: Yup.string().email("Invalid email address"),
+        passNumber: Yup.string().required("Pass number is required"),
+      })
+    ),
+    otherwise: Yup.array().notRequired(),
+  }),
   invitationOption: Yup.string().required("Please select an option"),
   invitationEmail: Yup.string().when("invitationOption", {
     is: "sendInvitation",
@@ -427,13 +431,7 @@ const renderStepContent = (
     case 1:
       return (
         <>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 4,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
             <FormControl component="fieldset">
               <FormLabel
                 component="legend"
@@ -447,32 +445,34 @@ const renderStepContent = (
               >
                 Visitor Registration Option
               </FormLabel>
-
               <RadioGroup
                 row
                 name="invitationOption"
                 value={formik.values.invitationOption}
                 onChange={(e) => {
-                  formik.setFieldValue("invitationOption", e.target.value);
-                  // Reset fields when switching options
+                  const newValue = e.target.value;
+                  formik.setFieldValue("invitationOption", newValue);
                   formik.setFieldValue("invitationEmail", "");
                   formik.setFieldValue("inviteeCount", "");
-                  formik.setFieldValue("visitors", [
-                    {
-                      idPassportNumber: "",
-                      fullName: "",
-                      contactNumber: "",
-                      countryCode: "+94",
-                      emailAddress: "",
-                      passNumber: "",
-                      status: VisitorStatus.Draft,
-                    },
-                  ]);
+                  formik.setFieldValue(
+                    "visitors",
+                    newValue === "sendInvitation"
+                      ? []
+                      : [
+                          {
+                            idPassportNumber: "",
+                            fullName: "",
+                            contactNumber: "",
+                            countryCode: "+94",
+                            emailAddress: "",
+                            passNumber: "",
+                            status: VisitorStatus.Draft,
+                          },
+                        ]
+                  );
+                  formik.setTouched({ visitors: [] });
                 }}
-                sx={{
-                  justifyContent: "center",
-                  gap: 2,
-                }}
+                sx={{ justifyContent: "center", gap: 2 }}
               >
                 {[
                   { value: "addVisitor", label: "Add Visitor Directly" },
@@ -484,7 +484,7 @@ const renderStepContent = (
                     <FormControlLabel
                       key={option.value}
                       value={option.value}
-                      control={<Radio sx={{ display: "none" }} />} // hide default radio circle
+                      control={<Radio sx={{ display: "none" }} />}
                       label={option.label}
                       sx={{
                         px: 3,
@@ -504,7 +504,6 @@ const renderStepContent = (
                   );
                 })}
               </RadioGroup>
-
               {formik.touched.invitationOption &&
                 formik.errors.invitationOption && (
                   <Typography
@@ -517,7 +516,6 @@ const renderStepContent = (
                 )}
             </FormControl>
           </Box>
-
           {formik.values.invitationOption === "addVisitor" && (
             <FieldArray name="visitors">
               {({ remove }) => (
@@ -545,8 +543,7 @@ const renderStepContent = (
                               Visitor {index + 1}
                             </Typography>
                             {formik.values.visitors.length > 1 &&
-                              formik.values.visitors[index].status ===
-                                VisitorStatus.Draft && (
+                              visitor.status === VisitorStatus.Draft && (
                                 <IconButton
                                   onClick={() => remove(index)}
                                   color="error"
@@ -569,13 +566,17 @@ const renderStepContent = (
                                     event.target.value.toUpperCase()
                                   );
                                 }}
-                                onBlur={() =>
+                                onBlur={() => {
+                                  formik.setFieldTouched(
+                                    `visitors.${index}.idPassportNumber`,
+                                    true
+                                  );
                                   fetchVisitorByNic(
                                     visitor.idPassportNumber,
                                     index,
                                     formik
-                                  )
-                                }
+                                  );
+                                }}
                                 error={
                                   formik.touched.visitors?.[index]
                                     ?.idPassportNumber &&
@@ -603,6 +604,12 @@ const renderStepContent = (
                                 name={`visitors.${index}.fullName`}
                                 value={visitor.fullName}
                                 onChange={formik.handleChange}
+                                onBlur={() =>
+                                  formik.setFieldTouched(
+                                    `visitors.${index}.fullName`,
+                                    true
+                                  )
+                                }
                                 error={
                                   formik.touched.visitors?.[index]?.fullName &&
                                   Boolean(
@@ -626,6 +633,12 @@ const renderStepContent = (
                                 name={`visitors.${index}.contactNumber`}
                                 value={visitor.contactNumber}
                                 onChange={formik.handleChange}
+                                onBlur={() =>
+                                  formik.setFieldTouched(
+                                    `visitors.${index}.contactNumber`,
+                                    true
+                                  )
+                                }
                                 error={
                                   formik.touched.visitors?.[index]
                                     ?.contactNumber &&
@@ -681,6 +694,12 @@ const renderStepContent = (
                                 type="email"
                                 value={visitor.emailAddress}
                                 onChange={formik.handleChange}
+                                onBlur={() =>
+                                  formik.setFieldTouched(
+                                    `visitors.${index}.emailAddress`,
+                                    true
+                                  )
+                                }
                                 error={
                                   !!formik.errors.visitors?.[index]
                                     ?.emailAddress
@@ -703,6 +722,12 @@ const renderStepContent = (
                                 label="Pass Number"
                                 value={visitor.passNumber}
                                 onChange={formik.handleChange}
+                                onBlur={() =>
+                                  formik.setFieldTouched(
+                                    `visitors.${index}.passNumber`,
+                                    true
+                                  )
+                                }
                                 error={
                                   formik.touched.visitors?.[index]
                                     ?.passNumber &&
@@ -728,7 +753,18 @@ const renderStepContent = (
                                   color="success"
                                   startIcon={<Check />}
                                   onClick={async () => {
-                                    await formik.submitForm();
+                                    const errors = await formik.validateForm();
+                                    formik.setTouched({
+                                      [`visitors.${index}.idPassportNumber`]:
+                                        true,
+                                      [`visitors.${index}.fullName`]: true,
+                                      [`visitors.${index}.contactNumber`]: true,
+                                      [`visitors.${index}.emailAddress`]: true,
+                                      [`visitors.${index}.passNumber`]: true,
+                                    });
+                                    if (Object.keys(errors).length === 0) {
+                                      formik.submitForm();
+                                    }
                                   }}
                                 >
                                   Submit
@@ -750,12 +786,7 @@ const renderStepContent = (
                 <Typography
                   variant="h6"
                   component="h3"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    mb: 2,
-                  }}
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
                 >
                   <PersonIcon color="primary" />
                   Send Invitation
@@ -769,6 +800,9 @@ const renderStepContent = (
                       type="email"
                       value={formik.values.invitationEmail}
                       onChange={formik.handleChange}
+                      onBlur={() =>
+                        formik.setFieldTouched("invitationEmail", true)
+                      }
                       error={
                         formik.touched.invitationEmail &&
                         Boolean(formik.errors.invitationEmail)
@@ -788,6 +822,9 @@ const renderStepContent = (
                       type="number"
                       value={formik.values.inviteeCount}
                       onChange={formik.handleChange}
+                      onBlur={() =>
+                        formik.setFieldTouched("inviteeCount", true)
+                      }
                       error={
                         formik.touched.inviteeCount &&
                         Boolean(formik.errors.inviteeCount)
@@ -806,7 +843,15 @@ const renderStepContent = (
                       color="success"
                       startIcon={<Check />}
                       onClick={async () => {
-                        await formik.submitForm();
+                        const errors = await formik.validateForm();
+                        formik.setTouched({
+                          invitationEmail: true,
+                          inviteeCount: true,
+                          invitationOption: true,
+                        });
+                        if (Object.keys(errors).length === 0) {
+                          formik.submitForm();
+                        }
                       }}
                     >
                       Send Invitation
@@ -827,6 +872,10 @@ function CreateVisit() {
   const dispatch = useAppDispatch();
   const visitorState = useAppSelector((state: RootState) => state.visitor);
   const visitState = useAppSelector((state: RootState) => state.visit);
+  const userState = useAppSelector((state: RootState) => state.user);
+  const invitationSendState = useAppSelector(
+    (state: RootState) => state.invitation
+  );
   const dialogContext = useConfirmationModalContext();
   const phoneUtil = PhoneNumberUtil.getInstance();
   const [activeStep, setActiveStep] = useState(0);
@@ -881,103 +930,159 @@ function CreateVisit() {
     [dialogContext]
   );
 
-  const submitVisit = useCallback(
-    (values: any, formikHelpers: any) => {
-      if (values.invitationOption === "sendInvitation") {
-        dialogContext.showConfirmation(
-          "Do you want to send the invitation?",
-          `An invitation will be sent to ${values.invitationEmail} for ${values.inviteeCount} invitee(s).`,
-          ConfirmationType.accept,
-          async () => {
-            // Placeholder for sending invitation logic
-            dispatch(
-              enqueueSnackbarMessage({
-                message: "Invitation sent successfully!",
-                type: "success",
+  const submitVisit = async (values: any, formikHelpers: any) => {
+    if (values.invitationOption === "sendInvitation") {
+      if (!dialogContext?.showConfirmation) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "Error: Confirmation dialog not available",
+            type: "error",
+          })
+        );
+        return;
+      }
+
+      dialogContext.showConfirmation(
+        "Do you want to send the invitation?",
+        `An invitation will be sent to ${values.invitationEmail} for ${values.inviteeCount} invitee(s).`,
+        ConfirmationType.accept,
+        async () => {
+          try {
+            const resultAction = await dispatch(
+              sendInvitation({
+                createdOn: dayjs().utc().format("YYYY-MM-DDTHH:mm:ss"),
+                updatedBy: userState.userInfo?.workEmail ?? "",
+                updatedOn: dayjs().utc().format("YYYY-MM-DDTHH:mm:ss"),
+                isActive: 1,
+                noOfInvitations: values.inviteeCount,
+                visitDetails: {
+                  nameOfCompany: values.companyName,
+                  whomTheyMeet: values.whoTheyMeet,
+                  purposeOfVisit: values.purposeOfVisit,
+                  accessibleLocations: values.accessibleLocations,
+                  sheduledDate: values.scheduledDate,
+                  timeOfEntry: values.timeOfEntry,
+                  timeOfDeparture: values.timeOfDeparture,
+                },
+                inviteeEmail: values.invitationEmail,
               })
             );
-            formikHelpers.resetForm();
-            setActiveStep(0);
-          },
-          "Yes",
-          "Cancel"
-        );
-      } else {
-        const visitor = values.visitors.find(
-          (v: VisitorDetail) => v.status === VisitorStatus.Draft
-        );
-        const visitorIndex = values.visitors.findIndex(
-          (v: VisitorDetail) => v === visitor
-        );
-        if (visitor) {
-          dialogContext.showConfirmation(
-            "Do you want to submit this visitor?",
-            "Please note, this will add the visitor's information to the system.",
-            ConfirmationType.accept,
-            async () => {
-              await dispatch(
-                addVisitor({
-                  nicHash: await hash(visitor.idPassportNumber),
-                  nicNumber: visitor.idPassportNumber,
-                  name: visitor.fullName,
-                  contactNumber: visitor.countryCode + visitor.contactNumber,
-                  email: visitor.emailAddress,
+
+            if (sendInvitation.fulfilled.match(resultAction)) {
+              dispatch(
+                enqueueSnackbarMessage({
+                  message: "Invitation sent successfully!",
+                  type: "success",
                 })
-              ).then(async (action) => {
-                if (addVisitor.fulfilled.match(action)) {
-                  formikHelpers.setFieldValue(
-                    `visitors.${visitorIndex}.status`,
-                    VisitorStatus.Completed
-                  );
-                }
-                dispatch(resetVisitorSubmitState());
-                await dispatch(
-                  addVisit({
-                    nicHash: await hash(visitor.idPassportNumber),
-                    companyName: values.companyName,
-                    passNumber: visitor.passNumber,
-                    whomTheyMeet: values.whoTheyMeet,
-                    purposeOfVisit: values.purposeOfVisit,
-                    accessibleLocations: values.accessibleLocations,
-                    timeOfEntry: dayjs(values.timeOfEntry)
-                      .utc()
-                      .format("YYYY-MM-DDTHH:mm:ss"),
-                    timeOfDeparture: dayjs(values.timeOfDeparture)
-                      .utc()
-                      .format("YYYY-MM-DDTHH:mm:ss"),
-                  })
-                ).then((action) => {
-                  if (addVisit.rejected.match(action)) {
-                    dispatch(
-                      enqueueSnackbarMessage({
-                        message:
-                          "An error occurred during visit creation, please try again later.",
-                        type: "error",
-                      })
-                    );
-                    formikHelpers.setFieldValue(
-                      `visitors.${visitorIndex}.status`,
-                      VisitorStatus.Draft
-                    );
-                  }
-                });
-              });
-            },
-            "Yes",
-            "Cancel"
-          );
-        } else {
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "No visitor found to submit!",
-              type: "error",
-            })
-          );
-        }
+              );
+              formikHelpers.resetForm();
+              setActiveStep(0);
+            } else {
+              dispatch(
+                enqueueSnackbarMessage({
+                  message: "Failed to send invitation.",
+                  type: "error",
+                })
+              );
+            }
+          } catch (error) {
+            dispatch(
+              enqueueSnackbarMessage({
+                message: "An error occurred while sending the invitation.",
+                type: "error",
+              })
+            );
+          }
+        },
+        "Yes",
+        "Cancel"
+      );
+    } else {
+      const visitor = values.visitors.find(
+        (v: VisitorDetail) => v.status === VisitorStatus.Draft
+      );
+      if (!visitor) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "No visitor found to submit!",
+            type: "error",
+          })
+        );
+        return;
       }
-    },
-    [dispatch, dialogContext]
-  );
+
+      const visitorIndex = values.visitors.findIndex(
+        (v: VisitorDetail) => v === visitor
+      );
+
+      dialogContext.showConfirmation(
+        "Do you want to submit this visitor?",
+        "Please note, this will add the visitor's information to the system.",
+        ConfirmationType.accept,
+        async () => {
+          try {
+            const addVisitorAction = await dispatch(
+              addVisitor({
+                nicHash: await hash(visitor.idPassportNumber),
+                nicNumber: visitor.idPassportNumber,
+                name: visitor.fullName,
+                contactNumber: visitor.countryCode + visitor.contactNumber,
+                email: visitor.emailAddress,
+              })
+            );
+
+            if (addVisitor.fulfilled.match(addVisitorAction)) {
+              formikHelpers.setFieldValue(
+                `visitors.${visitorIndex}.status`,
+                VisitorStatus.Completed
+              );
+
+              const addVisitAction = await dispatch(
+                addVisit({
+                  nicHash: await hash(visitor.idPassportNumber),
+                  companyName: values.companyName,
+                  passNumber: visitor.passNumber,
+                  whomTheyMeet: values.whoTheyMeet,
+                  purposeOfVisit: values.purposeOfVisit,
+                  accessibleLocations: values.accessibleLocations,
+                  timeOfEntry: dayjs(values.timeOfEntry)
+                    .utc()
+                    .format("YYYY-MM-DDTHH:mm:ss"),
+                  timeOfDeparture: dayjs(values.timeOfDeparture)
+                    .utc()
+                    .format("YYYY-MM-DDTHH:mm:ss"),
+                })
+              );
+
+              if (addVisit.rejected.match(addVisitAction)) {
+                dispatch(
+                  enqueueSnackbarMessage({
+                    message: "An error occurred during visit creation.",
+                    type: "error",
+                  })
+                );
+                formikHelpers.setFieldValue(
+                  `visitors.${visitorIndex}.status`,
+                  VisitorStatus.Draft
+                );
+              }
+            }
+          } catch (error) {
+            dispatch(
+              enqueueSnackbarMessage({
+                message: "An unexpected error occurred.",
+                type: "error",
+              })
+            );
+          } finally {
+            dispatch(resetVisitorSubmitState());
+          }
+        },
+        "Yes",
+        "Cancel"
+      );
+    }
+  };
 
   const fetchVisitorByNic = async (
     idPassportNumber: string,
@@ -1040,32 +1145,21 @@ function CreateVisit() {
           validationSchema={
             activeStep === 0 ? visitValidationSchema : visitorValidationSchema
           }
-          onSubmit={(values, formikHelpers) =>
-            submitVisit(values, formikHelpers)
-          }
+          onSubmit={(values, formikHelpers) => {
+            submitVisit(values, formikHelpers);
+          }}
         >
           {(formik) => (
             <>
               {(visitorState.state === State.loading ||
-                visitorState.submitState === State.loading) && (
+                visitorState.submitState === State.loading ||
+                invitationSendState.loading) && (
                 <BackgroundLoader
                   open={true}
                   message={
                     visitorState.state === State.loading ||
                     visitorState.submitState === State.loading
                       ? visitorState.stateMessage
-                      : ""
-                  }
-                />
-              )}
-              {(visitState.state === State.loading ||
-                visitState.submitState === State.loading) && (
-                <BackgroundLoader
-                  open={true}
-                  message={
-                    visitState.state === State.loading ||
-                    visitState.submitState === State.loading
-                      ? visitState.stateMessage
                       : ""
                   }
                 />
@@ -1108,12 +1202,9 @@ function CreateVisit() {
                       {isAnySubmittedVisitor(formik) ? "Close" : "Back"}
                     </Button>
                   )}
-                  {!(
-                    isLastStep &&
-                    !formik.values.visitors.every(
-                      (v) => v.status === VisitorStatus.Completed
-                    )
-                  ) && (
+                  {(!isLastStep ||
+                    (isLastStep &&
+                      formik.values.invitationOption === "addVisitor")) && (
                     <Button
                       startIcon={isLastStep && <AddIcon />}
                       color="primary"
