@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import React, { useCallback, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   Container,
   Typography,
@@ -34,7 +34,6 @@ import {
   Check,
   Delete as DeleteIcon,
   Work as WorkIcon,
-  MeetingRoom as MeetingRoomIcon,
   CheckCircle as CheckCircleIcon,
   LocationOn as LocationOnIcon,
   Business as BusinessIcon,
@@ -50,17 +49,12 @@ import {
   useAppSelector,
 } from "@root/src/slices/store";
 import {
-  addVisitor,
-  resetSubmitState as resetVisitorSubmitState,
-} from "@slices/visitorSlice/visitor";
-import {
   getVisitInvitationAsync,
   submitVisitAsync,
-} from "@slices/externalSlice/external";
+} from "@slices/invitationSlice/invitationSlice";
 import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
-import { addVisit } from "@root/src/slices/visitSlice/visit";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
@@ -186,7 +180,6 @@ function transformVisitors(visitors: Array<any>): VisitorDetail[] {
       contactNumber,
       countryCode,
       emailAddress: v.email,
-      // passNumber: "",
       status: VisitorStatus.Completed,
     };
   });
@@ -197,7 +190,7 @@ function VisitorRegisterCard() {
   const dispatch = useAppDispatch();
   const visitorState = useAppSelector((state: RootState) => state.visitor);
   const visitState = useAppSelector((state: RootState) => state.visit);
-  const externalState = useAppSelector((state: RootState) => state.external);
+  const externalState = useAppSelector((state: RootState) => state.invitation);
   // const dialogContext = useConfirmationModalContext();
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
@@ -210,7 +203,6 @@ function VisitorRegisterCard() {
     ? transformVisitors(externalState.visitInvitation?.invitees)
     : [];
 
-  // Memoize enqueueSnackbar to prevent unnecessary re-renders
   const showSnackbar = () => {
     if (common.timestamp != null) {
       enqueueSnackbar(common.message, {
@@ -221,7 +213,6 @@ function VisitorRegisterCard() {
     }
   };
 
-  // Show Snackbar Notifications
   useEffect(() => {
     showSnackbar();
   }, [showSnackbar]);
@@ -316,7 +307,7 @@ function VisitorRegisterCard() {
         visitorState.submitState === State.loading ||
         visitState.state === State.loading ||
         externalState.submitState === State.loading ||
-        externalState.state === State.loading ||
+        externalState.fetchState === State.loading ||
         visitState.submitState === State.loading) && (
         <BackgroundLoader
           open={true}
@@ -353,7 +344,7 @@ function VisitorRegisterCard() {
                 borderRadius: 2,
                 backgroundColor: "rgba(255, 255, 255, 0.2)",
                 backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)", // For Safari compatibility
+                WebkitBackdropFilter: "blur(10px)",
                 boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
                 "@supports not (backdrop-filter: blur(10px))": {
@@ -440,18 +431,6 @@ function VisitorRegisterCard() {
                       <b>Created On:</b>{" "}
                       {externalState.visitInvitation?.createdOn}
                     </Typography>
-                    {/* <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <ScheduleIcon color="primary" />
-                      <b>Scheduled Date:</b>{" "}
-                      {externalState.visitInvitation?.visitDetails.sheduledDate}
-                    </Typography> */}
                     <Typography
                       sx={{
                         mb: 1,
@@ -729,39 +708,6 @@ function VisitorRegisterCard() {
                                       }
                                     />
                                   </Grid>
-                                  {/* <Grid item xs={12}>
-                                  <TextField
-                                    fullWidth
-                                    label="Pass Number"
-                                    name={`visitors.${index}.passNumber`}
-                                    value={visitor.passNumber}
-                                    onChange={formik.handleChange}
-                                    error={
-                                      formik.touched.visitors?.[index]
-                                        ?.passNumber &&
-                                      Boolean(
-                                        (
-                                          formik.errors.visitors?.[
-                                            index
-                                          ] as import("formik").FormikErrors<VisitorDetail>
-                                        )?.passNumber
-                                      )
-                                    }
-                                    helperText={
-                                      formik.touched.visitors?.[index]
-                                        ?.passNumber &&
-                                      (
-                                        formik.errors.visitors?.[
-                                          index
-                                        ] as import("formik").FormikErrors<VisitorDetail>
-                                      )?.passNumber
-                                    }
-                                    variant="outlined"
-                                    disabled={
-                                      visitor.status === VisitorStatus.Completed
-                                    }
-                                  />
-                                </Grid> */}
                                 </Grid>
                               </CardContent>
                             </Card>
@@ -821,7 +767,7 @@ function VisitorRegisterCard() {
             </Formik>
           </Container>
         </Box>
-      ) : externalState.state !== State.loading ? (
+      ) : externalState.loading ? (
         <Grid
           container
           justifyContent="center"

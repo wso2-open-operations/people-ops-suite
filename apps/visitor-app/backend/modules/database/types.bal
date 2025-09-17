@@ -183,7 +183,7 @@ public type VisitsResponse record {|
 |};
 
 # Visit Invitations.
-public type visitInfo record {|
+public type VisitInfo record {|
     # name of company
     string nameOfCompany;
     # person they meet
@@ -201,7 +201,7 @@ public type visitInfo record {|
 |};
 
 # Details of an invitation.
-public type invitationDetails record {|
+public type InvitationDetails record {|
     # invitation creation time
     string createdOn;
     # invitation updater
@@ -213,7 +213,7 @@ public type invitationDetails record {|
     # invitations count
     int noOfInvitations;
     # visit information
-    visitInfo visitDetails;
+    VisitInfo visitDetails;
     # invitee email
     string inviteeEmail;
 |};

@@ -265,7 +265,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Payload containing the invitation details
     # + return - Successfully created or error
-    resource function post invitations(http:RequestContext ctx, invitationDetails payload) returns http:Created|http:InternalServerError {
+    resource function post invitations(http:RequestContext ctx, InvitationDetails payload) returns http:Created|http:InternalServerError {
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
             log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
@@ -328,7 +328,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function get invitation/[string encodeValue]/authentication() returns database:InvitationRecord|http:InternalServerError {
+    resource function get invitations/[string encodeValue]/authentication() returns database:InvitationRecord|http:InternalServerError {
         database:InvitationRecord|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
@@ -369,7 +369,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + encodeValue - Encoded value from the invitation link
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
-    resource function post invitation/[string encodeValue]/fill(database:AddVisitorPayload payload) returns http:Created|http:BadRequest|http:InternalServerError|error? {
+    resource function post invitations/[string encodeValue]/fill(database:AddVisitorPayload payload) returns http:Created|http:BadRequest|http:InternalServerError|error? {
         database:InvitationRecord|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
@@ -435,7 +435,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        visitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
+        VisitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
 
         error? visitError = database:AddVisit({
                                                   nicHash: payload.nicHash,

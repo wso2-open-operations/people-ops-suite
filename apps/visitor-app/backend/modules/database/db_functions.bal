@@ -71,7 +71,7 @@ public isolated function AddVisit(AddVisitPayload payload, string createdBy, int
 # + createdBy - Person who is creating the invitation
 # + return - Error if the insertion failed
 # + encodeString - Encoded uuid value
-public isolated function createInvitation(invitationDetails payload, string createdBy, string encodeString) returns error? {
+public isolated function createInvitation(InvitationDetails payload, string createdBy, string encodeString) returns error? {
     sql:ExecutionResult _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
 }
 
@@ -85,7 +85,7 @@ public isolated function checkInvitation(string encodeValue) returns InvitationR
         string errMsg = "Error when checking invitation details";
         return error(errMsg);
     }
-    visitInfo visitInfo = check invitation.visitDetails.cloneWithType();
+    VisitInfo visitInfo = check invitation.visitDetails.cloneWithType();
     invitation.visitDetails = visitInfo;
     return invitation;
 }

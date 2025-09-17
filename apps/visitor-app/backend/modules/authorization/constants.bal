@@ -15,11 +15,15 @@
 // under the License. 
 
 # Authorization Constants.
-public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
+public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 
 # Privileges.
-public const EMPLOYEE_PRIVILEGE = 987;
 public const ADMIN_PRIVILEGE = 789;
+public const EMPLOYEE_PRIVILEGE = 987;
 
-public const INVITATION = "invitation";
+# Open endpoints
+public const AUTHENTICATION = "authentication";
+public const FILL = "fill";
+public const INVITATIONS = "invitations";
+

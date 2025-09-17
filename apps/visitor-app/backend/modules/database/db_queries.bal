@@ -111,7 +111,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${inviationId}
         );`;
 
-isolated function createInvitatonQuery(invitationDetails payload, string createdBy, string encodeString) returns sql:ParameterizedQuery
+isolated function createInvitatonQuery(InvitationDetails payload, string createdBy, string encodeString) returns sql:ParameterizedQuery
     => `
         INSERT INTO visit_invitation
         (

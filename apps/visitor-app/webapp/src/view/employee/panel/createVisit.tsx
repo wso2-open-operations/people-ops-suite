@@ -67,7 +67,7 @@ import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
-import { sendInvitation } from "@slices/sendInvitationSlice/sendInvitationSlice";
+import { sendInvitation } from "@slices/invitationSlice/invitationSlice";
 
 dayjs.extend(utc);
 

@@ -26,12 +26,12 @@ public isolated service class JwtInterceptor {
 
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
         returns http:NextService|http:Forbidden|http:InternalServerError|error? {
-        // For public endpoints that bypass authorization  
-        if path.length() > 0 {
-            if path[0] == INVITATION && req.method == http:HTTP_GET {
+        // For public endpoints that bypass authorization
+        if path.length() > 0 && path[0] == INVITATIONS {
+            if req.method == http:GET && path.length() == 3 && path[1].length() > 0 && path[2] == AUTHENTICATION {
                 return ctx.next();
             }
-            if path[0] == INVITATION && req.method == http:HTTP_POST {
+            if req.method == http:POST && path.length() == 3 && path[1].length() > 0 && path[2] == FILL {
                 return ctx.next();
             }
         }
