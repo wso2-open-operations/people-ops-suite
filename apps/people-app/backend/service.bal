@@ -207,7 +207,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
-    # Fetch user information of the logged in users.
+    # Endpoint to fetch user information of the logged in users.
     #
     # + ctx - Request object
     # + return - User info object|Error
@@ -263,7 +263,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
-    # Fetch user information of the logged in users.
+    # Endpoint to fetch user information of the logged in users.
     #
     # + email - user's wso2 email
     # + return - Employeeinfo object or an Error
@@ -312,7 +312,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeeInfo;
     }
 
-    # Get organization structure for a given filter criteria (graphql query).
+    # Endpoint to get organization structure for a given filter criteria (graphql query).
     #
     # + filter - Filter criteria for organization structure
     # + limit - Number of records to retrieve
@@ -335,4 +335,34 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return orgData;
     }
+
+    # Endpoint to handle update employee info on only changed fields.
+    #
+    # + email - user's wso2 email 
+    # + updateEmployee - employee payload that includes changed user information
+    # + return - sql-execution result or an error
+    resource function patch employeeInfo/[string email](UpdateEmployeeInfoPlayload updateEmployee) returns http:Ok|error?|http:BadRequest {
+
+        log:printInfo(`Update employee info invoked : ${email}`);
+
+        if !email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        _ = check database:UpdateEmployeeInfo(email, updateEmployee);
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the employee data"
+            }
+        };
+
+    }
 }
+
