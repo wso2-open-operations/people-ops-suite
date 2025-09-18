@@ -196,3 +196,55 @@ public isolated function UpdateEmployeeInfo(string email, UpdatedEmployeeInfo em
     }
     return executionResult;
 }
+
+public isolated function getCompanies() returns json|error? {
+
+    Row|sql:Error row = databaseClient->queryRow(getCompaniesQuery());
+
+    if row is error {
+        return;
+    }
+
+    return row.result;
+
+}
+
+public isolated function getOffices() returns json|error? {
+    Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
+
+    if row is error {
+        return;
+    }
+
+    return row.result;
+}
+
+public isolated function getCareerFunction() returns json|error {
+    Row|sql:Error row = databaseClient->queryRow(getCareerFunctionQuery());
+
+    if row is error {
+        return;
+    }
+
+    return row.result;
+}
+
+public isolated function getDesignation() returns json|error? {
+    Row|sql:Error row = databaseClient->queryRow(getDesignationQuery());
+
+    if row is error {
+        return;
+    }
+
+    return row.result;
+}
+
+public isolated function getEmploymentType() returns json|error {
+    Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
+
+    if row is error {
+        return;
+    }
+
+    return row.result;
+}
