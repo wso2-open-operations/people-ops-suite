@@ -30,3 +30,21 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
+
+# Represents the response structure for retrieving user information.
+public type UserResponse record {|
+    # Id of the employee
+    string employeeId;
+    # Email of the employee
+    string workEmail;
+    # First name of the employee
+    string firstName;
+    # Last name of the employee
+    string lastName;
+    # Job role
+    string jobRole;
+    # Thumbnail of the employee
+    string? employeeThumbnail;
+    # User Privileges
+    int[] privileges;
+|};
