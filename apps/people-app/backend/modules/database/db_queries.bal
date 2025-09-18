@@ -377,3 +377,69 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery {
     return sqlQuery;
 }
 
+# Retrieves a parameterized SQL query to fetch all offices as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of office objects.
+isolated function getOfficesQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+            'id', id, 'name', name
+            )
+        ) as result
+        FROM office 
+        WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch all career functions as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of career function objects.
+isolated function getCareerFunctionQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', career_function
+            )
+        ) as result
+        FROM career_function WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch all designations as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of designation objects.
+isolated function getDesignationQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', designation, 'job_band', job_band, 'career_function_id', career_function_id
+            )
+        ) as result
+        FROM designation WHERE id IS NOT NULL
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch active employment types as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of active employment type objects.
+isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', name
+            )
+        ) as result
+        FROM employment_type
+        WHERE id IS NOT NULL 
+        AND is_active = 1;
+    `;
+
+    return sqlQuery;
+}
