@@ -364,5 +364,92 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
 
     }
+
+    # Endpoint to fetch essential app related information
+    #
+    # + return - Comapany Information or error
+    resource function get appConfig(http:RequestContext ctx) returns Company[]|http:InternalServerError|http:NotFound|json {
+
+        json|error? companies = database:getCompanies();
+
+        json|error? offices = database:getOffices();
+
+        json|error? careerFunctions = database:getOffices();
+
+        json|error? designations = database:getOffices();
+
+        json|error? employmentTypes = database:getOffices();
+
+        if companies is error {
+            string customError = string `Error while retrieving companies`;
+            log:printError(customError, companies);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
+        if offices is error {
+            string customError = string `Error while retrieving offices`;
+            log:printError(customError, offices);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
+        if careerFunctions is error {
+            string customError = string `Error while retrieving career functions`;
+            log:printError(customError, careerFunctions);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
+        if designations is error {
+            string customError = string `Error while retrieving designation`;
+            log:printError(customError, designations);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
+        if employmentTypes is error {
+            string customError = string `Error while retrieving employment types`;
+            log:printError(customError, employmentTypes);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
+        json response = {
+            companies: companies,
+            offices: offices,
+            careerFunctions: careerFunctions,
+            designations: designations,
+            employmentTypes: employmentTypes
+        };
+
+        return response;
+
+    }
 }
 
