@@ -32,6 +32,8 @@ final cache:Cache userInfoCache = new ({
     cleanupInterval: 900.0
 });
 
+final cache:Cache employeeInfoCache = new (capacity = 100, evictionFactor = 0.2);
+
 service class ErrorInterceptor {
     *http:ResponseErrorInterceptor;
 
@@ -259,5 +261,54 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         return userInfoResponse;
 
+    }
+
+    # Fetch user information of the logged in users.
+    #
+    # + email - user's wso2 email
+    # + return - Employeeinfo object or an Error
+    resource function get employee\-info/[string email]() returns http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound|http:Ok|EmployeeInfo|error {
+
+        if !email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if employeeInfoCache.hasKey(email) {
+            EmployeeInfo|error cacheResult = employeeInfoCache.get(email).ensureType();
+
+            if cacheResult is EmployeeInfo {
+                return cacheResult;
+            }
+        }
+
+        EmployeeInfo|error? employeeInfo = database:fetchEmployeeInfo(email);
+
+        if employeeInfo is error {
+            string customError = string `Internal Server Error`;
+            log:printError(customError, employeeInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if employeeInfo is () {
+            string customError = string `User Not Found for email : ${email}`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        check employeeInfoCache.put(email, employeeInfo);
+        return employeeInfo;
     }
 }
