@@ -267,7 +267,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + email - user's wso2 email
     # + return - Employeeinfo object or an Error
-    resource function get employee\-info/[string email]() returns http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound|http:Ok|EmployeeInfo|error {
+    resource function get employeeInfo/[string email]() returns http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound|http:Ok|EmployeeInfo|error {
 
         if !email.matches(WSO2_EMAIL) {
             string customError = string `Input email is not a valid WSO2 email address: ${email}`;
@@ -312,30 +312,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeeInfo;
     }
 
-    # Endpoint to get organization structure for a given filter criteria (graphql query).
-    #
-    # + filter - Filter criteria for organization structure
-    # + limit - Number of records to retrieve
-    # + offset - Number of records to offset
-    # + return - Organization structure or an Error
-    resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
-        returns BusinessUnit[]|http:InternalServerError|error {
-
-        BusinessUnit[]|error orgData = check database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
-
-        if orgData is error {
-            string customError = string `Error while retrieving org details`;
-            log:printError(customError, orgData);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        return orgData;
-    }
-
     # Endpoint to handle update employee info on only changed fields.
     #
     # + email - user's wso2 email 
@@ -365,8 +341,33 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
+    # Endpoint to get organization structure for a given filter criteria (graphql query).
+    #
+    # + filter - Filter criteria for organization structure
+    # + limit - Number of records to retrieve
+    # + offset - Number of records to offset
+    # + return - Organization structure or an Error
+    resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
+        returns BusinessUnit[]|http:InternalServerError|error {
+
+        BusinessUnit[]|error orgData = check database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
+
+        if orgData is error {
+            string customError = string `Error while retrieving org details`;
+            log:printError(customError, orgData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return orgData;
+    }
+
     # Endpoint to fetch essential app related information
     #
+    # + ctx - Request object
     # + return - Comapany Information or error
     resource function get appConfig(http:RequestContext ctx) returns Company[]|http:InternalServerError|http:NotFound|json {
 
