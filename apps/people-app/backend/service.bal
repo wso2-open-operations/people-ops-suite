@@ -15,7 +15,9 @@
 // under the License. 
 import people.authorization;
 import people.database;
+import people.entity;
 
+import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
 
@@ -23,6 +25,12 @@ import ballerina/log;
     label: "People Service",
     id: "people-ops-suite/people-service"
 }
+
+final cache:Cache userInfoCache = new ({
+    capacity: 2000,
+    defaultMaxAge: 1800.0,
+    cleanupInterval: 900.0
+});
 
 service class ErrorInterceptor {
     *http:ResponseErrorInterceptor;
@@ -195,5 +203,61 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return http:OK;
+    }
+
+    # Fetch user information of the logged in users.
+    #
+    # + ctx - Request object
+    # + return - User info object|Error
+    resource function get user\-info(http:RequestContext ctx) returns UserResponse|http:InternalServerError {
+
+        // User information header.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+
+            };
+        }
+
+        // Check cache for logged in user.
+        if userInfo.hasKey(userInfo.email) {
+            UserResponse|error cachedUserInfo = userInfo.get(userInfo.email).ensureType();
+            if cachedUserInfo is UserResponse {
+                return cachedUserInfo;
+            }
+        }
+
+        // Fetch the user information from the entity service.
+        entity:Employee|error loggedInUser = entity:fetchEmployeesBasicInfo(userInfo.email);
+        if loggedInUser is error {
+            string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
+            log:printError(customError, loggedInUser);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Fetch the user's privileges based on the roles.
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.employeeRole], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_ROLE_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            privileges.push(authorization:HEAD_PEOPLE_OPERATIONS_PRIVILEGE);
+        }
+
+        UserResponse userInfoResponse = {...loggedInUser, privileges};
+
+        error? cacheError = userInfoCache.put(userInfo.email, userInfoResponse);
+        if cacheError is error {
+            log:printError("An error occurred while writing user info to the cache", cacheError);
+        }
+        return userInfoResponse;
+
     }
 }
