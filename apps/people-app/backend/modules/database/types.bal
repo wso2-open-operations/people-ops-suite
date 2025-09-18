@@ -150,3 +150,105 @@ public type EmployeeInfo record {|
     # Name of the unit of the employee
     string unit;
 |};
+
+type FilterValue boolean|int|string|int[]|string[]|time:Date;
+
+public type OrgDetailsFilter record {|
+    # Id of the business unit
+    int[]? businessUnitIds = ();
+    # Name of the business unit
+    string[]? businessUnits = ();
+|};
+
+# [OrgRecord] record.
+public type OrgRecord record {
+    # Business Unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub Team
+    string subTeam;
+    # Unit
+    string unit;
+};
+
+# [Entity] Business Unit.
+public type BusinessUnitStr record {
+    # Id of the business unit
+    int id;
+    # Title of the business unit
+    string businessUnit;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of teams
+    string teams;
+};
+
+# [Entity] Team.
+public type TeamStr record {
+    # Id of the team
+    int id;
+    # Title of the team
+    string team;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of sub teams
+    string? subTeams;
+};
+
+# [Entity] Business Unit.
+public type BusinessUnit record {
+    # Id of the business unit
+    int id;
+    # Title of the business unit
+    string businessUnit;
+    # Email of the head
+    string headEmail;
+    # List of teams
+    Team[]? teams;
+};
+
+# [Entity] Team.
+public type Team record {
+    # Id of the team
+    int id;
+    # Title of the team
+    string team;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of sub teams
+    SubTeam[]? subTeams;
+};
+
+# [Entity] Sub Team.
+public type SubTeam record {
+    # Id of the sub team
+    int id;
+    # Title of the sub team
+    string subTeam;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of units
+    Unit[]? units;
+};
+
+# [Entity] Sub Team.
+public type Unit record {
+    # Id of the sub team
+    int id;
+    # Title of the sub team
+    string unit;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+};
+

@@ -62,3 +62,22 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
+
+# Build the filter (WHERE) clause of the SQL query with the given set of filter types
+# and their corresponding literals.
+#
+# + mainQuery - Main query without the new sub query
+# + filterQueries - Array of filter queries needed to be concatenate with the main query
+# + return - SQL filter clause
+isolated function buildSqlQuery(sql:ParameterizedQuery mainQuery, sql:ParameterizedQuery[] filterQueries) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = mainQuery;
+    foreach int i in 0 ... filterQueries.length() - 1 {
+        if i == 0 {
+            sqlQuery = sql:queryConcat(sqlQuery, ` WHERE `, filterQueries[i]);
+        }
+        else {
+            sqlQuery = sql:queryConcat(sqlQuery, ` AND `, filterQueries[i]);
+        }
+    }
+    return sqlQuery;
+}
