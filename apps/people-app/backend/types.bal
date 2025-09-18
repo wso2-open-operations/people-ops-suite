@@ -279,3 +279,44 @@ public type Unit record {
     int isActive;
 };
 
+public type Row record {|
+    json result;
+|};
+
+# [Entity] Company.
+public type Company record {
+    # Id of the company
+    int id;
+    # Name of the company
+    string name;
+    # Location of the company
+    string location;
+};
+
+# [Entity] Office.
+public type Office record {
+    # Id of the office
+    int id;
+    # Name of the office
+    string office;
+    # Location of the office
+    string location;
+};
+
+public type Designation record {|
+    int id;
+    string name;
+    int jobBand;
+    int careerFunctionId;
+|};
+
+public type CareerFunction record {|
+    int id;
+    string name;
+|};
+
+public type EmploymentType record {|
+    int id;
+    string name;
+|};
+
