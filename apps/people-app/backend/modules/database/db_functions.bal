@@ -73,3 +73,49 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     }
     return false;
 }
+
+# fetch employee info from an user email.
+#
+# + email - user's wso2 email
+# + return - employee info or an error
+public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|error? {
+    EmployeeInfo|sql:Error result = databaseClient->queryRow(getEmployeeInfo(email));
+
+    if result is EmployeeInfo {
+        EmployeeInfo employee = {
+            id: result.id,
+            lastName: result.lastName,
+            firstName: result.firstName,
+            workLocation: result.workLocation,
+            epf: result.epf,
+            employeeLocation: result.employeeLocation,
+            wso2Email: result.wso2Email,
+            workPhoneNumber: result.workPhoneNumber,
+            startDate: result.startDate,
+            jobRole: result.jobRole,
+            jobBand: result.jobBand,
+            managerEmail: result.managerEmail,
+            reportToEmail: result.reportToEmail,
+            additionalManagerEmail: result.additionalManagerEmail,
+            additionalReportToEmail: result.additionalReportToEmail,
+            employeeStatus: result.employeeStatus,
+            lengthOfService: result.lengthOfService,
+            relocationStatus: result.relocationStatus,
+            employeeThumbnail: result.employeeThumbnail,
+            subordinateCount: result.subordinateCount,
+            timestamp: result.timestamp,
+            probationEndDate: result.probationEndDate,
+            agreementEndDate: result.agreementEndDate,
+            employmentType: result.employmentType,
+            company: result.company,
+            office: result.office,
+            businessUnit: result.businessUnit,
+            team: result.team,
+            subTeam: result.subTeam,
+            unit: result.unit
+        };
+        return employee;
+    }
+
+    return result;
+}
