@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
+import ballerina/time;
 
 # Build query to fetch vehicles.
 #
@@ -176,6 +177,10 @@ isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =
     LEFT JOIN unit            u  ON u.id   = e.unit_id
     WHERE e.wso2_email = ${email}`;
 
+# Build query to retrieve org data.
+#
+# + email - Identification of the user
+# + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
 isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
     SELECT 
@@ -264,4 +269,93 @@ isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offse
     sqlQuery = sql:queryConcat(sqlQuery, ` LIMIT ${'limit} OFFSET ${offset}`);
 
     return sqlQuery;
+}
+
+# Query to update employee info in the database.
+#
+# + email - user's wso2 email 
+# + employee - employee payload that includes changed user information
+# + return - Update query to update employee info
+isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        UPDATE employee SET
+    `;
+    sql:ParameterizedQuery[] setClauses = [];
+
+    if employee.firstName is string {
+        setClauses.push(`first_name = ${employee.firstName}`);
+    }
+
+    if employee.lastName is string {
+        setClauses.push(`last_name = ${employee.lastName} `);
+    }
+
+    if employee.workPhoneNumber is string {
+        setClauses.push(`work_phone_number = ${employee.workPhoneNumber}`);
+    }
+
+    if employee.employeeLocation is string {
+        setClauses.push(`employee_location = ${employee.employeeLocation}`);
+    }
+
+    if employee.startDate is time:Date {
+        setClauses.push(`start_date = ${employee.startDate}`);
+    }
+
+    if employee.jobRole is string {
+        setClauses.push(`job_role = ${employee.jobRole}`);
+    }
+
+    if employee.jobBand is string {
+        setClauses.push(`job_band = ${employee.jobBand}`);
+    }
+
+    if employee.managerEmail is string {
+        setClauses.push(`manager_email = ${employee.managerEmail}`);
+    }
+
+    if employee.reportToEmail is string {
+        setClauses.push(`report_to_email = ${employee.reportToEmail}`);
+    }
+
+    if employee.additionalManagerEmail is string {
+        setClauses.push(`additional_manager_email = ${employee.additionalManagerEmail}`);
+    }
+    if employee.additionalReportToEmail is string {
+        setClauses.push(`additional_report_to_email = ${employee.additionalReportToEmail}`);
+    }
+    if employee.lengthOfService is int {
+        setClauses.push(`length_of_service = ${employee.lengthOfService}`);
+    }
+    if employee.relocationStatus is string {
+        setClauses.push(`relocation_status = ${employee.relocationStatus}`);
+    }
+    if employee.employeeThumbnail is string {
+        setClauses.push(`employee_thumbnail = ${employee.employeeThumbnail}`);
+    }
+    if employee.subordinateCount is int {
+        setClauses.push(`subordinate_count = ${employee.subordinateCount}`);
+    }
+    if employee.probationEndDate is time:Date {
+        setClauses.push(`probation_end_date = ${employee.probationEndDate}`);
+    }
+
+    if employee.agreementEndDate is time:Date {
+        setClauses.push(`agreement_end_date = ${employee.agreementEndDate}`);
+    }
+
+    if employee.timestamp is time:Utc {
+        setClauses.push(`_timestamp = ${employee.timestamp}`);
+    } else {
+        setClauses.push(`_timestamp = CURRENT_TIMESTAMP`);
+    }
+
+    // Build query
+    if setClauses.length() > 0 {
+        sql:ParameterizedQuery joinedClauses = joinQuery(setClauses, `, `);
+        query = sql:queryConcat(query, joinedClauses);
+    }
+    query = sql:queryConcat(query, ` WHERE id = ${employee.id}`);
+
+    return query;
 }
