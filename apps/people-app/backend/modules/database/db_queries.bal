@@ -177,10 +177,12 @@ isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =
     LEFT JOIN unit            u  ON u.id   = e.unit_id
     WHERE e.wso2_email = ${email}`;
 
-# Build query to retrieve org data.
+# Retrieve query to fetch org data from the db
 #
-# + email - Identification of the user
-# + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
+# + filter - Criteria to filter the data  
+# + limit - Number of records to retrieve
+# + offset - Number of records to offset
+# + return - List of business units
 isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
     SELECT 
