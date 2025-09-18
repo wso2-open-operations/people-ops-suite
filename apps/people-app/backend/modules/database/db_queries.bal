@@ -176,3 +176,92 @@ isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =
     LEFT JOIN unit            u  ON u.id   = e.unit_id
     WHERE e.wso2_email = ${email}`;
 
+isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+    SELECT 
+        bu.id AS id,
+        bu.name AS businessUnit,
+        bu.head_email AS headEmail,
+        bu.is_active AS isActive,
+        (
+            SELECT
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', t.id,
+                    'team', t.name,
+                    'headEmail', t.head_email,
+                    'isActive', t.is_active,
+                    'subTeams', (
+                        SELECT 
+                            JSON_ARRAYAGG(JSON_OBJECT(
+                                'id', st.id,
+                                'subTeam', st.name,
+                                'headEmail', st.head_email,
+                                'isActive', st.is_active,
+                                'units', (
+                                    SELECT
+                                        JSON_ARRAYAGG(JSON_OBJECT(
+                                            'id', u.id,
+                                            'unit', u.name,
+                                            'headEmail', u.head_email,
+                                            'isActive', u.is_active
+                                        ))
+                                    FROM
+                                        unit u
+                                        RIGHT JOIN
+                                        (SELECT * FROM business_unit_team_sub_team_unit WHERE is_active = 1) butstu
+                                        ON u.id = butstu.unit_id
+                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                )
+                            ))
+                        FROM 
+                            sub_team st
+                            RIGHT JOIN
+                            (SELECT * FROM business_unit_team_sub_team WHERE is_active = 1) butst
+                            ON st.id = butst.sub_team_id
+                        WHERE butst.business_unit_team_id = but.id
+                    )
+                ))
+            FROM 
+                team t
+                RIGHT JOIN
+                (SELECT * FROM business_unit_team WHERE is_active = 1) but
+                ON t.id = but.team_id
+            WHERE but.business_unit_id = bu.id
+        ) AS teams
+    FROM 
+        business_unit bu
+    WHERE
+        bu.id IN (SELECT distinct(business_unit_id) FROM business_unit_team WHERE is_active = 1)
+    `;
+
+    OrgDetailsFilter {
+        businessUnitIds,
+        businessUnits
+    } = filter;
+
+    sql:ParameterizedQuery[] filterQueries = [];
+
+    if businessUnitIds is int[] && businessUnitIds.length() > 0 {
+        filterQueries.push(sql:queryConcat(
+                `bu.id IN `,
+                `(`,
+                sql:arrayFlattenQuery(businessUnitIds),
+                `)`)
+        );
+    }
+
+    if businessUnits is string[] && businessUnits.length() > 0 {
+        filterQueries.push(sql:queryConcat(
+                `bu.name IN `,
+                `(`,
+                sql:arrayFlattenQuery(businessUnits),
+                `)`)
+        );
+    }
+
+    sqlQuery = buildSqlQuery(sqlQuery, filterQueries);
+
+    sqlQuery = sql:queryConcat(sqlQuery, ` LIMIT ${'limit} OFFSET ${offset}`);
+
+    return sqlQuery;
+}
