@@ -197,6 +197,9 @@ public isolated function UpdateEmployeeInfo(string email, UpdatedEmployeeInfo em
     return executionResult;
 }
 
+# Retrieves a JSON array of all companies from the database.
+#
+# + return - A JSON array of company objects or an error if the query fails. 
 public isolated function getCompanies() returns json|error? {
 
     Row|sql:Error row = databaseClient->queryRow(getCompaniesQuery());
@@ -209,6 +212,9 @@ public isolated function getCompanies() returns json|error? {
 
 }
 
+# Retrieves a JSON array of all offices from the database.
+#
+# + return - A JSON array of office objects or an error if the query fails.
 public isolated function getOffices() returns json|error? {
     Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
 
@@ -219,6 +225,9 @@ public isolated function getOffices() returns json|error? {
     return row.result;
 }
 
+# Retrieves a JSON array of active employment types from the database.
+#
+# + return - A JSON array of active employment type objects or an error
 public isolated function getCareerFunction() returns json|error {
     Row|sql:Error row = databaseClient->queryRow(getCareerFunctionQuery());
 
@@ -229,6 +238,9 @@ public isolated function getCareerFunction() returns json|error {
     return row.result;
 }
 
+# Retrieves a JSON array of all designations from the database.
+#
+# + return - A JSON array of designation objects or an error 
 public isolated function getDesignation() returns json|error? {
     Row|sql:Error row = databaseClient->queryRow(getDesignationQuery());
 
@@ -239,6 +251,9 @@ public isolated function getDesignation() returns json|error? {
     return row.result;
 }
 
+# Retrieves a JSON array of active employment types from the database.
+#
+# + return - A JSON array of active employment type objects or an error
 public isolated function getEmploymentType() returns json|error {
     Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
 
