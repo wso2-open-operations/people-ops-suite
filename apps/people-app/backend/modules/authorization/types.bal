@@ -28,6 +28,5 @@ public type AppRoles record {|
     string employeeRole;
     # Role for the head of people operations
     string headPeopleOperationsRole;
-    # Role for the employee
-    string EMPLOYEE_ROLE;
+
 |};
