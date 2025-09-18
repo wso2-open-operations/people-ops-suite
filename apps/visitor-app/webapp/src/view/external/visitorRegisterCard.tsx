@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Typography,
@@ -27,6 +27,10 @@ import {
   InputAdornment,
   MenuItem,
   Divider,
+  Chip,
+  Stack,
+  Paper,
+  Collapse,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -38,6 +42,10 @@ import {
   LocationOn as LocationOnIcon,
   Business as BusinessIcon,
   Schedule as ScheduleIcon,
+  ExpandMore,
+  ExpandLess,
+  AccessTime as AccessTimeIcon,
+  Email as EmailIcon,
 } from "@mui/icons-material";
 import { FieldArray, Form, Formik, FormikHelpers } from "formik";
 import * as Yup from "yup";
@@ -59,6 +67,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
 import StateWithImage from "@root/src/component/ui/StateWithImage";
+import { CalendarIcon } from "@mui/x-date-pickers";
 
 dayjs.extend(utc);
 
@@ -74,8 +83,12 @@ export interface VisitorDetail {
   contactNumber: string;
   countryCode: string;
   emailAddress: string;
-  // passNumber: string;
   status: VisitorStatus;
+}
+
+interface location {
+  floor: string;
+  rooms: string[];
 }
 
 const COUNTRY_CODES = [
@@ -144,36 +157,27 @@ const visitorValidationSchema = Yup.object().shape({
         .required("Contact number is required")
         .matches(/^\d{6,12}$/, "Invalid contact number"),
       emailAddress: Yup.string().email("Invalid email address"),
-      // passNumber: Yup.string().required("Pass number is required"),
     })
   ),
 });
 
 function transformVisitors(visitors: Array<any>): VisitorDetail[] {
   return visitors.map((v) => {
-    // idPassportNumber → remove the last digit from NIC
     const idPassportNumber = v.nicNumber.slice(0, -1);
-
-    // Full name → capitalize first + last name if available,
-    // otherwise just capitalize given name
     const parts = v.name.trim().split(/\s+/);
     const fullName = parts
       .map((p: any) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
       .join(" ");
-
-    // Contact → separate country code and number
     const match = v.contactNumber.match(/^(\+\d{2})(\d+)$/);
     let countryCode = "";
     let contactNumber = v.contactNumber;
     if (match) {
       countryCode = match[1];
       contactNumber = match[2];
-      // remove leading 0 if exists
       if (contactNumber.startsWith("0")) {
         contactNumber = contactNumber.slice(1);
       }
     }
-
     return {
       idPassportNumber,
       fullName,
@@ -185,15 +189,33 @@ function transformVisitors(visitors: Array<any>): VisitorDetail[] {
   });
 }
 
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const formatTime = (dateString: string) => {
+  return new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+};
+
 function VisitorRegisterCard() {
   const token = new URLSearchParams(window.location.search).get("token");
   const dispatch = useAppDispatch();
   const visitorState = useAppSelector((state: RootState) => state.visitor);
   const visitState = useAppSelector((state: RootState) => state.visit);
   const externalState = useAppSelector((state: RootState) => state.invitation);
-  // const dialogContext = useConfirmationModalContext();
+  const dialogContext = useConfirmationModalContext();
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
+  const [showLocationDetails, setShowLocationDetails] = useState(false);
 
   useEffect(() => {
     dispatch(getVisitInvitationAsync(token ?? ""));
@@ -221,7 +243,6 @@ function VisitorRegisterCard() {
     values: { visitors: VisitorDetail[] },
     formikHelpers: FormikHelpers<any>
   ) => {
-    console.log(values.visitors);
     const { setSubmitting, resetForm } = formikHelpers;
     try {
       const visitorsToSubmit = values.visitors.filter(
@@ -238,40 +259,49 @@ function VisitorRegisterCard() {
         return;
       }
 
-      const visitors = await Promise.all(
-        visitorsToSubmit.map(async (visitor) => ({
-          nicHash: await hash(visitor.idPassportNumber),
-          name: visitor.fullName,
-          nicNumber: visitor.idPassportNumber,
-          contactNumber: visitor.countryCode + visitor.contactNumber,
-          email: visitor.emailAddress,
-        }))
-      );
+      dialogContext.showConfirmation(
+        "Confirm Submission",
+        "Are you sure you want to save the visitor details?",
+        ConfirmationType.accept,
+        async () => {
+          const visitors = await Promise.all(
+            visitorsToSubmit.map(async (visitor) => ({
+              nicHash: await hash(visitor.idPassportNumber),
+              name: visitor.fullName,
+              nicNumber: visitor.idPassportNumber,
+              contactNumber: visitor.countryCode + visitor.contactNumber,
+              email: visitor.emailAddress,
+            }))
+          );
 
-      const visitData = { visitors };
+          const visitData = { visitors };
 
-      console.log("VisitDetails", visitData);
+          console.log("VisitDetails", visitData);
 
-      await dispatch(
-        submitVisitAsync({ visitData, invitationId: token ?? "" })
-      );
+          await dispatch(
+            submitVisitAsync({ visitData, invitationId: token ?? "" })
+          );
 
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Visitors submitted successfully",
-          type: "success",
-        })
-      );
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Visitors submitted successfully",
+              type: "success",
+            })
+          );
 
-      resetForm({
-        values: {
-          visitors: values.visitors.map((visitor) =>
-            visitor.status === VisitorStatus.Draft
-              ? { ...visitor, status: VisitorStatus.Completed }
-              : visitor
-          ),
+          resetForm({
+            values: {
+              visitors: values.visitors.map((visitor) =>
+                visitor.status === VisitorStatus.Draft
+                  ? { ...visitor, status: VisitorStatus.Completed }
+                  : visitor
+              ),
+            },
+          });
         },
-      });
+        "Yes",
+        "Cancel"
+      );
     } catch (error) {
       dispatch(
         enqueueSnackbarMessage({
@@ -322,19 +352,49 @@ function VisitorRegisterCard() {
       {externalState.visitInvitation?.isActive == 1 ? (
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Container maxWidth="md" sx={{ py: 4 }}>
-            <Box sx={{ mb: 4, textAlign: "center" }}>
+            <Box
+              sx={{
+                mb: 6,
+                textAlign: "center",
+                px: { xs: 2, md: 0 },
+                backgroundColor: "transparent",
+              }}
+            >
               <Typography
                 variant="h2"
                 component="h1"
                 gutterBottom
-                color="primary"
-                sx={{ fontWeight: "bold" }}
+                sx={{
+                  fontWeight: "bold",
+                  color: "#FF7300",
+                }}
               >
                 Visitor Registration
               </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                Complete the form below to register your visitors
+
+              <Typography
+                variant="subtitle1"
+                color="text.secondary"
+                sx={{
+                  maxWidth: "600px",
+                  mx: "auto",
+                  fontSize: { xs: "0.95rem", md: "1.1rem" },
+                  color: "#231F20",
+                }}
+              >
+                Complete the form below to register your visitors.
               </Typography>
+
+              <Box
+                sx={{
+                  mt: 3,
+                  width: "80px",
+                  height: "4px",
+                  bgcolor: "#FF7300", // accent bar in orange
+                  borderRadius: "2px",
+                  mx: "auto",
+                }}
+              />
             </Box>
 
             <Card
@@ -342,138 +402,264 @@ function VisitorRegisterCard() {
               sx={{
                 mb: 3,
                 borderRadius: 2,
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                boxShadow: "0 4px 30px rgba(0, 0, 0, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.3)",
-                "@supports not (backdrop-filter: blur(10px))": {
-                  backgroundColor: "rgba(255, 255, 255, 0.4)",
+                backgroundColor: "rgba(255, 255, 255, 0.25)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                boxShadow: "0 6px 24px rgba(0,0,0,0.08)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                "@supports not (backdrop-filter: blur(12px))": {
+                  backgroundColor: "rgba(255,255,255,0.35)",
                 },
               }}
             >
-              <CardContent>
+              <CardContent sx={{ p: 3 }}>
                 <Typography
                   variant="h6"
                   gutterBottom
-                  sx={{ fontWeight: "bold", color: "primary.main" }}
+                  sx={{
+                    fontWeight: 600,
+                    color: "#222",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    mb: 2,
+                  }}
                 >
+                  <BusinessIcon sx={{ color: "rgba(0,0,0,0.65)" }} />
                   Visit Information
+                  <Chip
+                    label={`ID: #${externalState.visitInvitation?.invitationId}`}
+                    size="small"
+                    sx={{
+                      ml: "auto",
+                      backgroundColor: "rgba(0,0,0,0.05)",
+                      color: "#222",
+                      fontWeight: 600,
+                      fontSize: "0.8rem",
+                    }}
+                  />
                 </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <BusinessIcon color="primary" />
-                      <b>Company:</b>{" "}
-                      {
-                        externalState.visitInvitation?.visitDetails
-                          .nameOfCompany
-                      }
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <PersonIcon color="primary" />
-                      <b>Whom to Meet:</b>{" "}
-                      {externalState.visitInvitation?.visitDetails.whomTheyMeet}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <WorkIcon color="primary" />
-                      <b>Purpose:</b>{" "}
-                      {
-                        externalState.visitInvitation?.visitDetails
-                          .purposeOfVisit
-                      }
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <CheckCircleIcon color="primary" />
-                      <b>Number of Invitations:</b>{" "}
-                      {externalState.visitInvitation?.noOfInvitations}
-                    </Typography>
+
+                <Divider sx={{ mb: 3, borderColor: "rgba(0,0,0,0.15)" }} />
+
+                <Grid container spacing={2.5}>
+                  {/* Left Column */}
+                  <Grid item xs={12} md={6}>
+                    <Stack spacing={2}>
+                      {[
+                        {
+                          icon: <BusinessIcon />,
+                          label: "Company",
+                          value:
+                            externalState.visitInvitation?.visitDetails
+                              .nameOfCompany,
+                        },
+                        {
+                          icon: <PersonIcon />,
+                          label: "Meeting With",
+                          value:
+                            externalState.visitInvitation?.visitDetails
+                              .whomTheyMeet,
+                        },
+                        {
+                          icon: <WorkIcon />,
+                          label: "Purpose",
+                          value:
+                            externalState.visitInvitation?.visitDetails
+                              .purposeOfVisit,
+                        },
+                        {
+                          icon: <CheckCircleIcon />,
+                          label: "Max Visitors",
+                          value: `${externalState.visitInvitation?.noOfInvitations} people`,
+                        },
+                      ].map((item, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          {React.cloneElement(item.icon, {
+                            sx: { color: "rgba(0,0,0,0.6)" },
+                          })}
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: "0.875rem",
+                                color: "#222",
+                              }}
+                            >
+                              {item.label}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                color: "rgba(0,0,0,0.8)",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              {item.value}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
                   </Grid>
-                  <Grid item xs={6}>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <ScheduleIcon color="primary" />
-                      <b>Created On:</b>{" "}
-                      {externalState.visitInvitation?.createdOn}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <ScheduleIcon color="primary" />
-                      <b>Entry:</b>{" "}
-                      {externalState.visitInvitation?.visitDetails.timeOfEntry}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <ScheduleIcon color="primary" />
-                      <b>Departure:</b>{" "}
-                      {
-                        externalState.visitInvitation?.visitDetails
-                          .timeOfDeparture
-                      }
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mb: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <LocationOnIcon color="primary" />
-                      <b>Location:</b>{" "}
-                      {externalState.visitInvitation?.visitDetails.accessibleLocations
-                        .map((loc: any) => loc.floor)
-                        .join(", ")}
-                    </Typography>
+
+                  {/* Right Column */}
+                  <Grid item xs={12} md={6}>
+                    <Stack spacing={2}>
+                      {[
+                        {
+                          icon: <CalendarIcon />,
+                          label: "Visit Date",
+                          value: formatDate(
+                            externalState.visitInvitation?.visitDetails
+                              .scheduledDate
+                          ),
+                        },
+                        {
+                          icon: <AccessTimeIcon />,
+                          label: "Time Slot",
+                          value: `${formatTime(
+                            externalState.visitInvitation?.visitDetails
+                              .timeOfEntry
+                          )} - ${formatTime(
+                            externalState.visitInvitation?.visitDetails
+                              .timeOfDeparture
+                          )}`,
+                        },
+                        {
+                          icon: <EmailIcon />,
+                          label: "Invited By",
+                          value: externalState.visitInvitation?.invitedBy,
+                        },
+                        {
+                          icon: <ScheduleIcon />,
+                          label: "Created On",
+                          value: new Date(
+                            externalState.visitInvitation?.createdOn
+                          ).toLocaleDateString(),
+                        },
+                      ].map((item, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          {React.cloneElement(item.icon, {
+                            sx: { color: "rgba(0,0,0,0.6)" },
+                          })}
+                          <Box>
+                            <Typography
+                              sx={{
+                                fontWeight: 600,
+                                fontSize: "0.875rem",
+                                color: "#222",
+                              }}
+                            >
+                              {item.label}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                color: "rgba(0,0,0,0.8)",
+                                fontSize: "0.85rem",
+                              }}
+                            >
+                              {item.value}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
                   </Grid>
                 </Grid>
+
+                {/* Accessible Locations */}
+                <Box
+                  sx={{ mt: 3, pt: 2, borderTop: "1px solid rgba(0,0,0,0.15)" }}
+                >
+                  <Button
+                    onClick={() => setShowLocationDetails(!showLocationDetails)}
+                    sx={{
+                      width: "100%",
+                      justifyContent: "space-between",
+                      color: "#222",
+                      textTransform: "none",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      p: 1.5,
+                      "&:hover": { backgroundColor: "rgba(0,0,0,0.05)" },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <LocationOnIcon />
+                      Accessible Locations
+                    </Box>
+                    {showLocationDetails ? <ExpandLess /> : <ExpandMore />}
+                  </Button>
+
+                  <Collapse in={showLocationDetails}>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      {externalState.visitInvitation?.visitDetails.accessibleLocations.map(
+                        (location: location, index: number) => (
+                          <Grid item xs={12} sm={6} md={4} key={index}>
+                            <Paper
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 2,
+                                background: "rgba(0,0,0,0.02)",
+                                textAlign: "center",
+                                border: "1px solid rgba(0,0,0,0.12)",
+                              }}
+                            >
+                              <Typography
+                                variant="subtitle1"
+                                sx={{
+                                  fontWeight: 600,
+                                  color: "#222",
+                                  mb: location.rooms?.length ? 1 : 0,
+                                }}
+                              >
+                                {location.floor}
+                              </Typography>
+                              {location.rooms?.length > 0 && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 0.5,
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  {location.rooms.map((room, roomIndex) => (
+                                    <Chip
+                                      key={roomIndex}
+                                      label={room}
+                                      size="small"
+                                      sx={{
+                                        backgroundColor: "rgba(0,0,0,0.08)",
+                                        color: "#222",
+                                        fontWeight: 500,
+                                        fontSize: "0.75rem",
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              )}
+                            </Paper>
+                          </Grid>
+                        )
+                      )}
+                    </Grid>
+                  </Collapse>
+                </Box>
               </CardContent>
             </Card>
 
@@ -767,7 +953,7 @@ function VisitorRegisterCard() {
             </Formik>
           </Container>
         </Box>
-      ) : externalState.loading ? (
+      ) : externalState.error ? (
         <Grid
           container
           justifyContent="center"

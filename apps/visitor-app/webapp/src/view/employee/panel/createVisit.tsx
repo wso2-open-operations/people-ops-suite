@@ -475,7 +475,7 @@ const renderStepContent = (
                 sx={{ justifyContent: "center", gap: 2 }}
               >
                 {[
-                  { value: "addVisitor", label: "Add Visitor Directly" },
+                  { value: "addVisitor", label: "Add Visitors Directly" },
                   { value: "sendInvitation", label: "Send Invitation" },
                 ].map((option) => {
                   const selected =
