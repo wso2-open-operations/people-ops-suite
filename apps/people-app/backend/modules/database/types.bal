@@ -151,109 +151,7 @@ public type EmployeeInfo record {|
     string unit;
 |};
 
-# [Database] filter value to filter db actions
-type FilterValue boolean|int|string|int[]|string[]|time:Date;
-
-public type OrgDetailsFilter record {|
-    # Id of the business unit
-    int[]? businessUnitIds = ();
-    # Name of the business unit
-    string[]? businessUnits = ();
-|};
-
-# [OrgRecord] record.
-public type OrgRecord record {
-    # Business Unit
-    string businessUnit;
-    # Team
-    string team;
-    # Sub Team
-    string subTeam;
-    # Unit
-    string unit;
-};
-
-# [Database] Business Unit.
-public type BusinessUnitStr record {
-    # Id of the business unit
-    int id;
-    # Title of the business unit
-    string businessUnit;
-    # Email of the head
-    string headEmail;
-    # Status of unit
-    int isActive;
-    # List of teams
-    string teams;
-};
-
-# [Database] Team.
-public type TeamStr record {
-    # Id of the team
-    int id;
-    # Title of the team
-    string team;
-    # Email of the head
-    string headEmail;
-    # Status of unit
-    int isActive;
-    # List of sub teams
-    string? subTeams;
-};
-
-# [Database] Business Unit.
-public type BusinessUnit record {
-    # Id of the business unit
-    int id;
-    # Title of the business unit
-    string businessUnit;
-    # Email of the head
-    string headEmail;
-    # List of teams
-    Team[]? teams;
-};
-
-# [Database] Team.
-public type Team record {
-    # Id of the team
-    int id;
-    # Title of the team
-    string team;
-    # Email of the head
-    string headEmail;
-    # Status of unit
-    int isActive;
-    # List of sub teams
-    SubTeam[]? subTeams;
-};
-
-# [Database] Sub Team.
-public type SubTeam record {
-    # Id of the sub team
-    int id;
-    # Title of the sub team
-    string subTeam;
-    # Email of the head
-    string headEmail;
-    # Status of unit
-    int isActive;
-    # List of units
-    Unit[]? units;
-};
-
-# [Database] Sub Team.
-public type Unit record {
-    # Id of the sub team
-    int id;
-    # Title of the sub team
-    string unit;
-    # Email of the head
-    string headEmail;
-    # Status of unit
-    int isActive;
-};
-
-# [Database] Response structure of updating employee_info
+# [Database] Response Structure of updating employee_info
 public type UpdatedEmployeeInfo record {|
     # Id of the employee
     string id;
@@ -315,4 +213,161 @@ public type UpdatedEmployeeInfo record {|
     string subTeam?;
     # Name of the unit of the employee
     string unit?;
+|};
+
+# [Database] filter value to filter db actions
+type FilterValue boolean|int|string|int[]|string[]|time:Date;
+
+public type OrgDetailsFilter record {|
+    # Id of the business unit
+    int[]? businessUnitIds = ();
+    # Name of the business unit
+    string[]? businessUnits = ();
+|};
+
+# [OrgRecord] Structure a record.
+public type OrgRecord record {
+    # Business Unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub Team
+    string subTeam;
+    # Unit
+    string unit;
+};
+
+# [Database] Structure a Business Unit to iterate in a resultstream 
+public type BusinessUnitStr record {
+    # Id of the business unit
+    int id;
+    # Title of the business unit
+    string businessUnit;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of teams
+    string teams;
+};
+
+# [Database] Structure of a Team to iterate in a resultstream 
+public type TeamStr record {
+    # Id of the team
+    int id;
+    # Title of the team
+    string team;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of sub teams
+    string? subTeams;
+};
+
+# [Database] Structure Business Unit to iterate in a resultstream 
+public type BusinessUnit record {
+    # Id of the business unit
+    int id;
+    # Title of the business unit
+    string businessUnit;
+    # Email of the head
+    string headEmail;
+    # List of teams
+    Team[]? teams;
+};
+
+# [Database] Structure a Team to iterate in a resultstream 
+public type Team record {
+    # Id of the team
+    int id;
+    # Title of the team
+    string team;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of sub teams
+    SubTeam[]? subTeams;
+};
+
+# [Database] Sub Team to iterate in a resultstream 
+public type SubTeam record {
+    # Id of the sub team
+    int id;
+    # Title of the sub team
+    string subTeam;
+    # Email of the head
+    string headEmail;
+    # Status of unit
+    int isActive;
+    # List of units
+    Unit[]? units;
+};
+
+# [Database] Sub Team to iterate in a resultstream 
+public type Unit record {
+    # Id of the unit
+    int id;
+    # Title of the unit
+    string unit;
+    # Email of the head 
+    string headEmail;
+    # Status of unit
+    int isActive;
+};
+
+# [Databse] Structure of json type db retrieval 
+public type Row record {|
+    # Result of a db query
+    json result;
+|};
+
+# [Database] Structure of a Company.
+public type Company record {
+    # Id of the company
+    int id;
+    # Name of the company
+    string name;
+    # Location of the company
+    string location;
+
+};
+
+# [Database] Structure of a Office.
+public type Office record {
+    # Id of the office
+    int id;
+    # Name of the office
+    string office;
+    # Location of the office
+    string location;
+};
+
+# Represents a designation in the organization.
+public type Designation record {|
+    # The unique identifier for the designation.
+    int id;
+    # The name of the designation.
+    string name;
+    # The job band or level associated with the designation.
+    int jobBand;
+    # The identifier of the associated career function.
+    int careerFunctionId;
+|};
+
+# Represents a career function within the organization.
+public type CareerFunction record {|
+    # The unique identifier for the career function.
+    int id;
+    # The name of the career function.
+    string name;
+|};
+
+# Represents an employment type in the organization.
+public type EmploymentType record {|
+    # The unique identifier for the employment type.
+    int id;
+    # The name of the employment type.
+    string name;
 |};
