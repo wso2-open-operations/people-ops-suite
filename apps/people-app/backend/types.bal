@@ -303,20 +303,30 @@ public type Office record {
     string location;
 };
 
+# [Database] Represents a designation in the organization.
 public type Designation record {|
+    # The unique identifier for the designation.
     int id;
+    # The name of the designation.
     string name;
+    # The job band or level associated with the designation.
     int jobBand;
+    # The identifier of the associated career function.
     int careerFunctionId;
 |};
 
+# [Database] Represents a career function within the organization.
 public type CareerFunction record {|
+    # The unique identifier for the career function.
     int id;
+    # The name of the career function.
     string name;
 |};
 
+# [Database] Represents an employment type in the organization.
 public type EmploymentType record {|
+    # The unique identifier for the employment type.
     int id;
+    # The name of the employment type.
     string name;
 |};
-

@@ -344,7 +344,7 @@ public type Office record {
     string location;
 };
 
-# Represents a designation in the organization.
+# [Database] Represents a designation in the organization.
 public type Designation record {|
     # The unique identifier for the designation.
     int id;
@@ -356,7 +356,7 @@ public type Designation record {|
     int careerFunctionId;
 |};
 
-# Represents a career function within the organization.
+# [Database] Represents a career function within the organization.
 public type CareerFunction record {|
     # The unique identifier for the career function.
     int id;
@@ -364,7 +364,7 @@ public type CareerFunction record {|
     string name;
 |};
 
-# Represents an employment type in the organization.
+# [Database] Represents an employment type in the organization.
 public type EmploymentType record {|
     # The unique identifier for the employment type.
     int id;
