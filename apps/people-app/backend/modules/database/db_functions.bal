@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import ballerina/log;
 import ballerina/sql;
 
 # Fetch vehicles.
@@ -118,4 +120,49 @@ public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|er
     }
 
     return result;
+}
+
+# Retrieve Organizational details from HRIS.
+#
+# + filter - Criteria to filter the data  
+# + limit - Number of records to retrieve
+# + offset - Number of records to offset
+# + return - List of business units
+public isolated function getOrgDetails(OrgDetailsFilter filter, int 'limit, int offset)
+    returns BusinessUnit[]|error {
+
+    BusinessUnit[] businessUnits = [];
+
+    stream<BusinessUnitStr, sql:Error?> resultStream = databaseClient->query(getOrgDataQuery(
+            filter = filter, 'limit = 'limit, offset = offset));
+
+    error? iterateError = from BusinessUnitStr bu in resultStream
+        do {
+
+            Team[]|error teams = bu.teams.fromJsonStringWithType();
+            if teams is error {
+                string errorMsg = string `An error occurred when retrieving departments data of ${
+                    bu.businessUnit
+                } !`;
+
+                log:printError(errorMsg, teams);
+                return error(errorMsg);
+            }
+
+            businessUnits.push({
+                id: bu.id,
+                businessUnit: bu.businessUnit,
+                headEmail: bu.headEmail,
+                teams: teams
+            });
+
+        };
+
+    if iterateError is sql:Error {
+        string errorMsg = string `An error occurred when retrieving organization details!`;
+        log:printError(errorMsg, iterateError);
+        return error(errorMsg);
+    }
+
+    return businessUnits;
 }
