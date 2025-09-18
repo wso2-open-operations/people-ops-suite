@@ -361,3 +361,19 @@ isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee
 
     return query;
 }
+
+# Retrieves a parameterized SQL query to fetch all companies as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of company objects.
+isolated function getCompaniesQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+                JSON_OBJECT('id', id, 'name', name, 'location', location)
+            ) AS result
+        FROM company
+        WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
