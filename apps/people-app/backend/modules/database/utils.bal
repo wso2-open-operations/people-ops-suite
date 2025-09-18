@@ -81,3 +81,14 @@ isolated function buildSqlQuery(sql:ParameterizedQuery mainQuery, sql:Parameteri
     }
     return sqlQuery;
 }
+
+isolated function joinQuery(sql:ParameterizedQuery[] parts, sql:ParameterizedQuery separator) returns sql:ParameterizedQuery {
+    if parts.length() == 0 {
+        return ``;
+    }
+    sql:ParameterizedQuery result = parts[0];
+    foreach int i in 1 ..< parts.length() {
+        result = sql:queryConcat(result, separator, parts[i]);
+    }
+    return result;
+}
