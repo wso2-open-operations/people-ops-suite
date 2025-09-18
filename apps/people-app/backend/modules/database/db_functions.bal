@@ -78,7 +78,7 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
 
 # fetch employee info from an user email.
 #
-# + email - user's wso2 email
+# + email - user's wso2 email 
 # + return - employee info or an error
 public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|error? {
     EmployeeInfo|sql:Error result = databaseClient->queryRow(getEmployeeInfo(email));
@@ -165,4 +165,34 @@ public isolated function getOrgDetails(OrgDetailsFilter filter, int 'limit, int 
     }
 
     return businessUnits;
+}
+
+# Update employee info on only changed fields.
+#
+# + email - user's wso2 email 
+# + employee - employee payload that includes changed user information
+# + return - sql-execution result or an error
+public isolated function UpdateEmployeeInfo(string email, UpdatedEmployeeInfo employee) returns sql:ExecutionResult|error? {
+
+    if employee.entries().length() === 0 {
+        return error(string `No data to update to employee : ${employee.firstName.toString()} !`);
+    }
+
+    sql:ExecutionResult|sql:Error executionResult = databaseClient->execute(updateEmployeeQuery(email, employee));
+
+    if executionResult is sql:Error {
+
+        string customError = string `Error occurred while updating the employee data  of ${employee.firstName.toString()}`;
+
+        log:printError(customError, executionResult);
+
+        return error(customError);
+
+    }
+
+    if (executionResult.affectedRowCount == 0) {
+        return error(string `No employee were to update from id : ${employee.firstName.toString()} !`);
+
+    }
+    return executionResult;
 }
