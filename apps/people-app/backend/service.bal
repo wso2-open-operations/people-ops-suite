@@ -311,4 +311,28 @@ service http:InterceptableService / on new http:Listener(9090) {
         check employeeInfoCache.put(email, employeeInfo);
         return employeeInfo;
     }
+
+    # Get organization structure for a given filter criteria (graphql query).
+    #
+    # + filter - Filter criteria for organization structure
+    # + limit - Number of records to retrieve
+    # + offset - Number of records to offset
+    # + return - Organization structure or an Error
+    resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
+        returns BusinessUnit[]|http:InternalServerError|error {
+
+        BusinessUnit[]|error orgData = check database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
+
+        if orgData is error {
+            string customError = string `Error while retrieving org details`;
+            log:printError(customError, orgData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return orgData;
+    }
 }
