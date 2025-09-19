@@ -16,23 +16,6 @@
 import ballerina/sql;
 import ballerina/time;
 
-isolated function fetchBasicUserInfoQuery(string email) returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery query = `
-        SELECT 
-            id as employeeId,
-            wso2_email as workEmail,
-            first_name as firstName,
-            last_name as lastName,
-            job_role as jobRole,
-            employee_thumbnail as employeeThumbnail
-        FROM employee 
-        WHERE wso2_email = ${email}
-    `;
-
-    return query;
-}
-
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles
@@ -146,6 +129,27 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     return sql:queryConcat(mainQuery, subQuery);
 }
 
+# Build query to fetch basic userinfo
+#
+# + email - User's email to uniquely identify an user 
+# + return - sql:ParameterizedQuery - fetch basic userinfo
+isolated function fetchBasicUserInfoQuery(string email) returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = `
+        SELECT 
+            id as employeeId,
+            wso2_email as workEmail,
+            first_name as firstName,
+            last_name as lastName,
+            job_role as jobRole,
+            employee_thumbnail as employeeThumbnail
+        FROM employee 
+        WHERE wso2_email = ${email}
+    `;
+
+    return query;
+}
+
 # Build query to retrieve an employee.
 #
 # + email - Identification of the user
@@ -194,7 +198,7 @@ isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =
     LEFT JOIN unit            u  ON u.id   = e.unit_id
     WHERE e.wso2_email = ${email}`;
 
-# Retrieve query to fetch org data from the db
+# Retrieve query to fetch org data from the db.
 #
 # + filter - Criteria to filter the data  
 # + limit - Number of records to retrieve
@@ -292,8 +296,8 @@ isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offse
 
 # Query to update employee info in the database.
 #
-# + email - user's wso2 email 
-# + employee - employee payload that includes changed user information
+# + email - User's wso2 email 
+# + employee - Employee payload that includes changed user information
 # + return - Update query to update employee info
 isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
