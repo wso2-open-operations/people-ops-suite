@@ -348,7 +348,6 @@ public type Company record {
     string name;
     # Location of the company
     string location;
-
 };
 
 # [Database] Structure of a Office.
@@ -387,4 +386,18 @@ public type EmploymentType record {|
     int id;
     # The name of the employment type
     string name;
+|};
+
+# [Databse] Represents an app config type.
+public type AppConfig record {|
+    # A list of companies
+    Company[] companies;
+    # A list of offices
+    Office[] offices;
+    # A list of designations
+    Designation[] designations;
+    # A list of career functions
+    CareerFunction[] careerFunctions;
+    # A list of employment types
+    EmploymentType[] employmentTypes;
 |};
