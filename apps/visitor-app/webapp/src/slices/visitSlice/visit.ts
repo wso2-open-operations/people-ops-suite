@@ -13,23 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-
-const initialState: VisitState = {
-  state: State.idle,
-  submitState: State.idle,
-  visits: null,
-  stateMessage: "",
-  errorMessage: "",
-  backgroundProcess: false,
-  backgroundProcessMessage: null,
-};
 
 interface VisitState {
   state: State;
@@ -39,13 +28,14 @@ interface VisitState {
   errorMessage: string | null;
   backgroundProcess: boolean;
   backgroundProcessMessage: string | null;
+  approveState: State;
+  approveMessage: string | null;
+  approveError: string | null;
 }
 
-export interface Visit extends AddVisitPayload {
-  createdBy: string;
-  createdOn: string;
-  updatedBy: string;
-  updatedOn: string;
+export interface FloorRoom {
+  floor: string;
+  rooms: string[];
 }
 
 export interface AddVisitPayload {
@@ -57,11 +47,6 @@ export interface AddVisitPayload {
   accessibleLocations: FloorRoom[];
   timeOfEntry: string;
   timeOfDeparture: string;
-}
-
-export interface FloorRoom {
-  floor: string;
-  rooms: string[];
 }
 
 export interface Visit {
@@ -90,6 +75,25 @@ export interface FetchVisitsResponse {
   visits: Visit[];
 }
 
+export interface ApproveVisitPayload {
+  id: Number;
+  passNumber: Number;
+  status: string;
+}
+
+const initialState: VisitState = {
+  state: State.idle,
+  submitState: State.idle,
+  visits: null,
+  stateMessage: null,
+  errorMessage: null,
+  backgroundProcess: false,
+  backgroundProcessMessage: null,
+  approveState: State.idle,
+  approveMessage: null,
+  approveError: null,
+};
+
 export const addVisit = createAsyncThunk(
   "visit/addVisit",
   async (payload: AddVisitPayload, { dispatch }) => {
@@ -112,6 +116,15 @@ export const addVisit = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while adding visit!",
+              type: "error",
+            })
+          );
           reject(error);
         });
     });
@@ -121,7 +134,11 @@ export const addVisit = createAsyncThunk(
 export const fetchVisits = createAsyncThunk(
   "visit/fetchVisits",
   async (
-    { limit, offset }: { limit: number; offset: number },
+    {
+      limit,
+      offset,
+      status,
+    }: { limit: number; offset: number; status?: string },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -129,7 +146,7 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset },
+          params: { limit, offset, status },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -154,6 +171,41 @@ export const fetchVisits = createAsyncThunk(
   }
 );
 
+export const approveVisits = createAsyncThunk(
+  "visit/approveVisits",
+  async (payload: ApproveVisitPayload[], { dispatch, rejectWithValue }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<{ message: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .patch(AppConfig.serviceUrls.approveInvitationWithPassNumber, payload, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: response.data.message || "Visits approved successfully!",
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while approving visits!",
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
 const VisitSlice = createSlice({
   name: "visits",
   initialState,
@@ -163,6 +215,11 @@ const VisitSlice = createSlice({
     },
     resetState(state) {
       state.state = State.idle;
+    },
+    resetApproveState(state) {
+      state.approveState = State.idle;
+      state.approveMessage = null;
+      state.approveError = null;
     },
   },
   extraReducers: (builder) => {
@@ -182,19 +239,43 @@ const VisitSlice = createSlice({
       .addCase(fetchVisits.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Hang tight! We’re fetching your visits...";
+        state.errorMessage = null;
       })
-      .addCase(fetchVisits.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.visits = action.payload;
-        state.stateMessage = "Your visits have been fetched successfully!";
-      })
-      .addCase(fetchVisits.rejected, (state) => {
+      .addCase(
+        fetchVisits.fulfilled,
+        (state, action: PayloadAction<FetchVisitsResponse>) => {
+          state.state = State.success;
+          state.visits = action.payload;
+          state.stateMessage = "Your visits have been fetched successfully!";
+        }
+      )
+      .addCase(fetchVisits.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage =
           "Oops! Something went wrong while fetching visits!";
+        state.errorMessage =
+          (action.payload as string) || "Failed to fetch visits";
+      })
+      .addCase(approveVisits.pending, (state) => {
+        state.approveState = State.loading;
+        state.approveMessage = "Hang tight! We’re approving your visits...";
+        state.approveError = null;
+      })
+      .addCase(
+        approveVisits.fulfilled,
+        (state, action: PayloadAction<{ message: string }>) => {
+          state.approveState = State.success;
+          state.approveMessage = action.payload.message;
+        }
+      )
+      .addCase(approveVisits.rejected, (state, action) => {
+        state.approveState = State.failed;
+        state.approveError =
+          (action.payload as string) || "Failed to approve visits";
       });
   },
 });
 
-export const { resetSubmitState, resetState } = VisitSlice.actions;
+export const { resetSubmitState, resetState, resetApproveState } =
+  VisitSlice.actions;
 export default VisitSlice.reducer;

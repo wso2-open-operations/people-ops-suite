@@ -256,3 +256,9 @@ public type InvitationRecord record {|
     # Invited by
     string invitedBy;
 |};
+
+public type VisitApprovePayload record {|
+    int id;
+    int passNumber;
+    string status;
+|};

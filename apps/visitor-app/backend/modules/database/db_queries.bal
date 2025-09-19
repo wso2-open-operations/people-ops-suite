@@ -153,7 +153,7 @@ isolated function checkInvitationQuery(string encodeValue) returns sql:Parameter
         AND vi.is_active = 1;
     `;
 
-isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId) returns sql:ParameterizedQuery {
+isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, string? status) returns sql:ParameterizedQuery {
     // Base query with joins to visitor and visit_invitation tables
     sql:ParameterizedQuery mainQuery = `
         SELECT 
@@ -194,6 +194,11 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId) re
         mainQuery = sql:queryConcat(mainQuery, ` WHERE v.invitation_id = ${invitationId}`);
     }
 
+    // Add WHERE clause for status if provided
+    if status is string {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.status = ${status}`);
+    }
+
     // Sorting the result by time_of_entry in descending order
     mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
 
@@ -209,3 +214,36 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId) re
 
     return mainQuery;
 }
+
+isolated function approveVisitsQuery(VisitApprovePayload[] payloads) returns sql:ParameterizedQuery {
+
+    // Arrays to hold CASE conditions and parameters
+    sql:ParameterizedQuery[] statusCases = [];
+    sql:ParameterizedQuery[] passNumberCases = [];
+    int[] inClauseIds = []; // Changed from anydata[] to int[] since visit_id is likely an integer
+
+    // Build CASE conditions and collect IDs for IN clause
+    foreach VisitApprovePayload update in payloads {
+        statusCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.status}`));
+        passNumberCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.passNumber}`));
+        inClauseIds.push(update.id);
+    }
+
+    // Combine CASE conditions into single queries
+    sql:ParameterizedQuery statusCaseQuery = sql:queryConcat(...statusCases);
+    sql:ParameterizedQuery passNumberCaseQuery = sql:queryConcat(...passNumberCases);
+
+    // Construct the final parameterized query
+    sql:ParameterizedQuery updateQuery = sql:queryConcat(
+            `UPDATE visit SET status = CASE `,
+            statusCaseQuery,
+            ` ELSE status END, pass_number = CASE `,
+            passNumberCaseQuery,
+            ` ELSE pass_number END, updated_on = CURRENT_TIMESTAMP WHERE visit_id IN (`,
+            sql:arrayFlattenQuery(inClauseIds),
+            `)`
+    );
+
+    return updateQuery;
+}
+

@@ -234,7 +234,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + 'limit - Limit number of visits to fetch  
     # + offset - Offset for pagination
     # + return - Array of visits or error
-    resource function get visits(http:RequestContext ctx, int? 'limit, int? offset)
+    resource function get visits(http:RequestContext ctx, int? 'limit, int? offset, string? status)
         returns database:VisitsResponse|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -247,7 +247,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits('limit, offset);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(status, 'limit, offset);
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
             log:printError(customError, visitsResponse);
@@ -463,4 +463,34 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     };
+
+    resource function patch approveInvitaionWithPassNumber(database:VisitApprovePayload[] payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+
+        if payload.length() == 0 {
+            return <http:BadRequest>{
+                body: {
+                    message: "No visits to approve!"
+                }
+            };
+        }
+
+        error? approveError = database:approveVisits(payload);
+
+        if approveError is error {
+            string customError = "Error occurred while approving visits!";
+            log:printError(customError, approveError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Visits approved successfully!"
+            }
+        };
+
+    }
 }

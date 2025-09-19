@@ -239,7 +239,7 @@ function VisitorRegisterCard() {
     showSnackbar();
   }, [showSnackbar]);
 
-  const submitVisit = async (
+  const submitVisit = (
     values: { visitors: VisitorDetail[] },
     formikHelpers: FormikHelpers<any>
   ) => {
@@ -518,7 +518,7 @@ function VisitorRegisterCard() {
                           label: "Visit Date",
                           value: formatDate(
                             externalState.visitInvitation?.visitDetails
-                              .scheduledDate
+                              .sheduledDate
                           ),
                         },
                         {

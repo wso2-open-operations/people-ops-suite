@@ -62,7 +62,7 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
 # + inviationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
 public isolated function AddVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
-    sql:ExecutionResult _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
+    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
 }
 
 # Create a new invitation.
@@ -72,7 +72,7 @@ public isolated function AddVisit(AddVisitPayload payload, string createdBy, int
 # + return - Error if the insertion failed
 # + encodeString - Encoded uuid value
 public isolated function createInvitation(InvitationDetails payload, string createdBy, string encodeString) returns error? {
-    sql:ExecutionResult _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
+    _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
 }
 
 # Checks whether invitation is valid.
@@ -95,9 +95,10 @@ public isolated function checkInvitation(string encodeValue) returns InvitationR
 # + 'limit - Limit number of visits to fetch
 # + offset - Offset for pagination
 # + invitation_id - Filter by invitation ID
+# + status - Filter by visit status
 # + return - Array of visits objects or error
-public isolated function fetchVisits(int? 'limit = (), int? offset = (), int? invitation_id = ()) returns VisitsResponse|error {
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset, invitation_id));
+public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ()) returns VisitsResponse|error {
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset, invitation_id, status));
 
     int totalCount = 0;
     Visit[] visits = [];
@@ -127,4 +128,8 @@ public isolated function fetchVisits(int? 'limit = (), int? offset = (), int? in
         };
 
     return {totalCount, visits};
+}
+
+public isolated function approveVisits(VisitApprovePayload[] payloads) returns error? {
+    sql:ExecutionResult _ = check databaseClient->execute(approveVisitsQuery(payloads));
 }
