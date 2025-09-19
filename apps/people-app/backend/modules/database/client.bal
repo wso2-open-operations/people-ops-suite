@@ -24,4 +24,3 @@ function initPeopleOpsDbClient() returns mysql:Client|error
 
 # Database Client.
 final mysql:Client databaseClient = check initPeopleOpsDbClient();
-
