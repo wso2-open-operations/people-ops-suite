@@ -491,7 +491,7 @@ isolated function getDesignationQuery() returns sql:ParameterizedQuery {
 
 # Retrieves a parameterized SQL query to fetch active employment types as a JSON array.
 #
-# + return - A parameterized query that returns a JSON array of active employment type objects.
+# + return - A parameterized query that returns a JSON array of active employment type objects
 isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
         SELECT JSON_ARRAYAGG(
