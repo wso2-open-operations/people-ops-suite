@@ -210,7 +210,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request object
     # + return - User info object|Error
-    resource function get user\-info(http:RequestContext ctx) returns UserResponse|http:InternalServerError {
+    resource function get user\-info(http:RequestContext ctx)
+        returns UserResponse|http:InternalServerError {
 
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -266,7 +267,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + email - user's wso2 email
     # + return - Employeeinfo object or an Error
-    resource function get employeeInfo/[string email]() returns http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound|http:Ok|EmployeeInfo|error {
+    resource function get employeeInfo/[string email]()
+        returns EmployeeInfo|http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound {
 
         if !email.matches(WSO2_EMAIL) {
             string customError = string `Input email is not a valid WSO2 email address: ${email}`;
@@ -297,6 +299,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
         if employeeInfo is () {
             string customError = string `User Not Found for email : ${email}`;
             log:printError(customError);
@@ -307,16 +310,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        check employeeInfoCache.put(email, employeeInfo);
+        error? employee = employeeInfoCache.put(email, employeeInfo);
+
+        if employee is error {
+            string customError = string `Failed to cache employee : ${email} employee info`;
+            log:printError(customError, employee);
+        }
+
         return employeeInfo;
     }
 
     # Endpoint to handle update employee info on only changed fields.
     #
-    # + email - user's wso2 email 
-    # + updateEmployee - employee payload that includes changed user information
-    # + return - sql-execution result or an error
-    resource function patch employeeInfo/[string email](UpdateEmployeeInfoPlayload updateEmployee) returns http:Ok|error?|http:BadRequest {
+    # + email - User's wso2 email 
+    # + updateEmployee - Employee payload that includes changed user information
+    # + return - SQL-execution result or an error
+    resource function patch employeeInfo/[string email](UpdateEmployeeInfoPlayload updateEmployee)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
 
         log:printInfo(`Update employee info invoked : ${email}`);
 
@@ -330,7 +340,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        _ = check database:UpdateEmployeeInfo(email, updateEmployee);
+        error? result = database:UpdateEmployeeInfo(email, updateEmployee);
+
+        if result is error {
+            string customError = string `Error while updating employee info ${result.message()}`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
 
         return <http:Ok>{
             body: {
@@ -347,9 +367,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + offset - Number of records to offset
     # + return - Organization structure or an Error
     resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
-        returns BusinessUnit[]|http:InternalServerError|error {
+        returns BusinessUnit[]|http:InternalServerError {
 
-        BusinessUnit[]|error orgData = check database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
+        BusinessUnit[]|error orgData = database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
 
         if orgData is error {
             string customError = string `Error while retrieving org details`;
@@ -364,21 +384,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         return orgData;
     }
 
-    # Endpoint to fetch essential app related information
+    # Endpoint to fetch essential app related information.
     # appConfig
     # + ctx - Request object
-    # + return - Comapany Information or error
-    resource function get appConfig(http:RequestContext ctx) returns Company[]|http:InternalServerError|http:NotFound|json {
+    # + return - Comapany Information as a json or an error
+    resource function get appConfig(http:RequestContext ctx)
+        returns json|http:InternalServerError|http:NotFound {
 
+        // Retrieve companies
         json|error? companies = database:getCompanies();
-
-        json|error? offices = database:getOffices();
-
-        json|error? careerFunctions = database:getOffices();
-
-        json|error? designations = database:getOffices();
-
-        json|error? employmentTypes = database:getOffices();
 
         if companies is error {
             string customError = string `Error while retrieving companies`;
@@ -392,6 +406,19 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
+        if companies is () {
+            string customError = string `Coudn\'t retrieve any companies`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Retrieve offices
+        json|error? offices = database:getOffices();
+
         if offices is error {
             string customError = string `Error while retrieving offices`;
             log:printError(customError, offices);
@@ -403,6 +430,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
+
+        if offices is () {
+            string customError = string `Coudn\'t retrieve any offices`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Retrieve career functions
+        json|error? careerFunctions = database:getOffices();
 
         if careerFunctions is error {
             string customError = string `Error while retrieving career functions`;
@@ -416,6 +456,19 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
+        if careerFunctions is () {
+            string customError = string `Coudn\'t retrieve any career functions`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Retrieve desginations
+        json|error? designations = database:getOffices();
+
         if designations is error {
             string customError = string `Error while retrieving designation`;
             log:printError(customError, designations);
@@ -428,6 +481,19 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
+        if designations is () {
+            string customError = string `Coudn\'t retrieve any designations`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Retrieve employment types
+        json|error? employmentTypes = database:getOffices();
+
         if employmentTypes is error {
             string customError = string `Error while retrieving employment types`;
             log:printError(customError, employmentTypes);
@@ -438,6 +504,16 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
 
+        }
+
+        if employmentTypes is () {
+            string customError = string `Coudn\'t retrieve any employement types`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
         }
 
         json response = {
