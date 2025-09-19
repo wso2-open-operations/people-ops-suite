@@ -465,6 +465,9 @@ isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
     return sqlQuery;
 }
 
+# Retrieves a parameterized SQL query to fetch company information
+#
+# + return - A parameterized query that returns a json object that contains json object arrays.
 isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
     
