@@ -1,0 +1,42 @@
+[promotion_app.database.dbConfig]
+host = ""
+user = ""
+password = ""
+database = ""
+port =
+[promotion_app.database.dbConfig.connectionPool]
+maxOpenConnections = 
+maxConnectionLifeTime = 
+minIdleConnections= 
+[promotion_app.database.dbConfig.options]
+connectTimeout = 
+[promotion_app.database.dbConfig.options.ssl]
+mode = ""
+
+
+[promotion_app.authorization.authorizedRoles]
+EMPLOYEE  = ""
+
+[promotion_app.people]
+hrEntityBaseUrl = ""
+[promotion_app.people.retryConfig]
+count = 
+interval = 
+backOffFactor = 
+maxWaitInterval = 
+[promotion_app.people.oauthConfig]
+tokenUrl = ""
+clientId = ""
+clientSecret = ""  
+
+[[promotion_app.appConfig.supportTeamEmails]]
+team = ""
+email = ""
+
+[[promotion_app.appConfig.supportTeamEmails]]
+team = ""
+email = ""
+
+[[promotion_app.appConfig.supportTeamEmails]]
+team = ""
+email = ""
