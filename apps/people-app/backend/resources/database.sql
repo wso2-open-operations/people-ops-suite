@@ -323,4 +323,3 @@ CREATE TABLE `resignation` (
   CONSTRAINT `fk_emp_resignation`
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
-
