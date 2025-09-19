@@ -383,6 +383,52 @@ isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee
     return query;
 }
 
+# Retrieves a parameterized SQL query to fetch company information.
+#
+# + return - A parameterized query that returns a json object that contains json object arrays
+isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+    
+        SELECT JSON_OBJECT(
+            'companies',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', name,
+                    'location', location
+                )), JSON_ARRAY()) FROM company WHERE is_active = 1),
+
+            'offices',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'office', name,          -- maps to Office.office
+                    'location', location     -- include if your schema has it
+                )), JSON_ARRAY()) FROM office WHERE is_active = 1),
+
+            'designations',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', designation,         -- maps to Designation.name
+                    'jobBand', job_band,         -- camelCase
+                    'careerFunctionId', career_function_id
+                )), JSON_ARRAY()) FROM designation WHERE is_active = 1),
+
+            'careerFunctions',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', career_function
+                )), JSON_ARRAY()) FROM career_function WHERE is_active = 1),
+
+            'employmentTypes',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', name
+                )), JSON_ARRAY()) FROM employment_type WHERE is_active = 1)
+        ) AS result;
+    `;
+
+    return query;
+}
+
 # Retrieves a parameterized SQL query to fetch all companies as a JSON array.
 #
 # + return - A parameterized query that returns a JSON array of company objects
@@ -465,48 +511,3 @@ isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
     return sqlQuery;
 }
 
-# Retrieves a parameterized SQL query to fetch company information
-#
-# + return - A parameterized query that returns a json object that contains json object arrays.
-isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-    
-        SELECT JSON_OBJECT(
-            'companies',
-                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', id,
-                    'name', name,
-                    'location', location
-                )), JSON_ARRAY()) FROM company WHERE is_active = 1),
-
-            'offices',
-                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', id,
-                    'office', name,          -- maps to Office.office
-                    'location', location     -- include if your schema has it
-                )), JSON_ARRAY()) FROM office WHERE is_active = 1),
-
-            'designations',
-                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', id,
-                    'name', designation,         -- maps to Designation.name
-                    'jobBand', job_band,         -- camelCase
-                    'careerFunctionId', career_function_id
-                )), JSON_ARRAY()) FROM designation WHERE is_active = 1),
-
-            'careerFunctions',
-                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', id,
-                    'name', career_function
-                )), JSON_ARRAY()) FROM career_function WHERE is_active = 1),
-
-            'employmentTypes',
-                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', id,
-                    'name', name
-                )), JSON_ARRAY()) FROM employment_type WHERE is_active = 1)
-        ) AS result;
-    `;
-
-    return query;
-}
