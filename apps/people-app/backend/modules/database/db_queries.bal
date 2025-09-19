@@ -150,7 +150,7 @@ isolated function fetchBasicUserInfoQuery(string email) returns sql:Parameterize
 #
 # + email - Identification of the user
 # + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
-isolated function fetchEmployeeInfo(string email) returns sql:ParameterizedQuery =>
+isolated function fetchEmployeeInfoQuery(string email) returns sql:ParameterizedQuery =>
 
     `SELECT
         e.id                                         AS id,
