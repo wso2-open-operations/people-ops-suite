@@ -195,6 +195,7 @@ public type UpdateEmployeeInfoPlayload record {|
 
 type FilterValue boolean|int|string|int[]|string[]|time:Date;
 
+# [OrgRecord] Structure of organization filter record
 public type OrgDetailsFilter record {|
     # Id of the business unit
     int[]? businessUnitIds = ();
@@ -202,7 +203,7 @@ public type OrgDetailsFilter record {|
     string[]? businessUnits = ();
 |};
 
-# [OrgRecord] record.
+# [OrgRecord] Structure of org record response.
 public type OrgRecord record {
     # Business Unit
     string businessUnit;
@@ -214,7 +215,7 @@ public type OrgRecord record {
     string unit;
 };
 
-# [Entity] Business Unit.
+# Structure of Business Unit.
 public type BusinessUnitStr record {
     # Id of the business unit
     int id;
@@ -228,7 +229,7 @@ public type BusinessUnitStr record {
     string teams;
 };
 
-# [Entity] Team.
+# Structure of Team.
 public type TeamStr record {
     # Id of the team
     int id;
@@ -242,7 +243,7 @@ public type TeamStr record {
     string? subTeams;
 };
 
-# [Entity] Business Unit.
+# Structure of Business Unit.
 public type BusinessUnit record {
     # Id of the business unit
     int id;
@@ -254,7 +255,7 @@ public type BusinessUnit record {
     Team[]? teams;
 };
 
-# [Entity] Team.
+# Structure of Team.
 public type Team record {
     # Id of the team
     int id;
@@ -268,7 +269,7 @@ public type Team record {
     SubTeam[]? subTeams;
 };
 
-# [Entity] Sub Team.
+# Structure of Sub Team.
 public type SubTeam record {
     # Id of the sub team
     int id;
@@ -282,7 +283,7 @@ public type SubTeam record {
     Unit[]? units;
 };
 
-# [Entity] Sub Team.
+# Structure of Sub Team.
 public type Unit record {
     # Id of the sub team
     int id;
@@ -294,11 +295,13 @@ public type Unit record {
     int isActive;
 };
 
+# Structure of json response
 public type Row record {|
+    # Json execution result
     json result;
 |};
 
-# [Entity] Company.
+# Structure of Company.
 public type Company record {
     # Id of the company
     int id;
@@ -308,7 +311,7 @@ public type Company record {
     string location;
 };
 
-# [Entity] Office.
+# Structure of Office.
 public type Office record {
     # Id of the office
     int id;
@@ -320,28 +323,28 @@ public type Office record {
 
 # [Database] Represents a designation in the organization.
 public type Designation record {|
-    # The unique identifier for the designation.
+    # The unique identifier for the designation
     int id;
-    # The name of the designation.
+    # The name of the designation
     string name;
-    # The job band or level associated with the designation.
+    # The job band or level associated with the designation
     int jobBand;
-    # The identifier of the associated career function.
+    # The identifier of the associated career function
     int careerFunctionId;
 |};
 
 # [Database] Represents a career function within the organization.
 public type CareerFunction record {|
-    # The unique identifier for the career function.
+    # The unique identifier for the career function
     int id;
-    # The name of the career function.
+    # The name of the career function
     string name;
 |};
 
 # [Database] Represents an employment type in the organization.
 public type EmploymentType record {|
-    # The unique identifier for the employment type.
+    # The unique identifier for the employment type
     int id;
-    # The name of the employment type.
+    # The name of the employment type
     string name;
 |};
