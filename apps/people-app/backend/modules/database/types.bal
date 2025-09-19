@@ -71,15 +71,15 @@ public type FetchVehicleResponse record {|
 
 # Vehicles array with total count.
 public type Vehicles record {|
-    # List of vehicles.
+    # List of vehicles
     Vehicle[] vehicles;
-    # Total number of records.
+    # Total number of records
     int totalCount;
 |};
 
 # [Database] Update payload of the vehicle.
 public type UpdateVehiclePayload record {|
-    # Id of the vehicle.
+    # Id of the vehicle
     int vehicleId;
     # Status of the vehicle
     VehicleStatus? vehicleStatus;
@@ -234,6 +234,7 @@ public type UpdatedEmployeeInfo record {|
 # [Database] filter value to filter db actions
 type FilterValue boolean|int|string|int[]|string[]|time:Date;
 
+# [Database] Structure of rganization filter record
 public type OrgDetailsFilter record {|
     # Id of the business unit
     int[]? businessUnitIds = ();
@@ -241,7 +242,7 @@ public type OrgDetailsFilter record {|
     string[]? businessUnits = ();
 |};
 
-# [OrgRecord] Structure a record.
+# [Database] Structure a record.
 public type OrgRecord record {
     # Business Unit
     string businessUnit;
@@ -362,28 +363,28 @@ public type Office record {
 
 # [Database] Represents a designation in the organization.
 public type Designation record {|
-    # The unique identifier for the designation.
+    # The unique identifier for the designation
     int id;
-    # The name of the designation.
+    # The name of the designation
     string name;
-    # The job band or level associated with the designation.
+    # The job band or level associated with the designation
     int jobBand;
-    # The identifier of the associated career function.
+    # The identifier of the associated career function
     int careerFunctionId;
 |};
 
 # [Database] Represents a career function within the organization.
 public type CareerFunction record {|
-    # The unique identifier for the career function.
+    # The unique identifier for the career function
     int id;
-    # The name of the career function.
+    # The name of the career function
     string name;
 |};
 
 # [Database] Represents an employment type in the organization.
 public type EmploymentType record {|
-    # The unique identifier for the employment type.
+    # The unique identifier for the employment type
     int id;
-    # The name of the employment type.
+    # The name of the employment type
     string name;
 |};
