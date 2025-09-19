@@ -174,7 +174,6 @@ public isolated function getOrgDetails(OrgDetailsFilter filter, int 'limit, int 
                 headEmail: bu.headEmail,
                 teams: teams
             });
-
         };
 
     if iterateError is sql:Error {
@@ -214,6 +213,28 @@ public isolated function UpdateEmployeeInfo(string email, UpdatedEmployeeInfo em
     }
 }
 
+# Fetch essential app related data.
+#
+# + return - AppConfig or an error
+public isolated function fetchAppConfig() returns AppConfig|error? {
+    // Read the one-column row: { result: json }
+    Row|error row = databaseClient->queryRow(fetchAppConfigQuery());
+
+    if row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    json payload = row.result;
+
+    AppConfig appConfig = check payload.cloneWithType(AppConfig);
+
+    return appConfig;
+}
+
 # Retrieves a JSON array of all companies from the database.
 #
 # + return - A JSON array of company objects, an error if the query fails or null
@@ -230,7 +251,6 @@ public isolated function getCompanies() returns json|error? {
     }
 
     return row.result;
-
 }
 
 # Retrieves a JSON array of all offices from the database.
