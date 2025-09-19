@@ -87,6 +87,22 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
+# Response structure of retrieving user
+public type UserInfo record {|
+    # Id of the employee
+    string employeeId;
+    # Email of the employee
+    string workEmail;
+    # First name of the employee
+    string firstName;
+    # Last name of the employee
+    string lastName;
+    # Job role
+    string jobRole;
+    # Thumbnail of the employee
+    string? employeeThumbnail;
+|};
+
 # [Database] EmployeeInfo type
 public type EmployeeInfo record {|
     # Id of the employee
