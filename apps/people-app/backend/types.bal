@@ -349,3 +349,17 @@ public type EmploymentType record {|
     # The name of the employment type
     string name;
 |};
+
+# Represents an app config response type.
+public type AppConfig record {|
+    # A list of companies
+    Company[] companies;
+    # A list of offices
+    Office[] offices;
+    # A list of designations
+    Designation[] designations;
+    # A list of career functions
+    CareerFunction[] careerFunctions;
+    # A list of employment types
+    EmploymentType[] employmentTypes;
+|};
