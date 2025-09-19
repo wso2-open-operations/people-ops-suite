@@ -39,7 +39,7 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
     return response.data.employee;
 }
 
-# Retrieves all active or marked-leaver employees with specific employment types.
+# Retrieves employees.
 #
 # + return - Employee Info Array
 public isolated function getEmployees() returns EmployeeBasic[]|error {
