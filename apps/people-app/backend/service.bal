@@ -369,7 +369,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
         returns BusinessUnit[]|http:InternalServerError {
 
-        BusinessUnit[]|error orgData = database:getOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
+        BusinessUnit[]|error orgData = database:fetchOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
 
         if orgData is error {
             string customError = string `Error while retrieving org details`;

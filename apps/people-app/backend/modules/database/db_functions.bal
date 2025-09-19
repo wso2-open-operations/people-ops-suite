@@ -95,7 +95,7 @@ public isolated function fetchBasicUserInfo(string email) returns UserInfo|error
 # + email - User's wso2 email 
 # + return - Employee info or an error
 public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|error? {
-    EmployeeInfo|sql:Error result = databaseClient->queryRow(getEmployeeInfo(email));
+    EmployeeInfo|sql:Error result = databaseClient->queryRow(fetchEmployeeInfoQuery(email));
 
     if result is sql:Error && result is sql:NoRowsError {
         return;
@@ -147,12 +147,12 @@ public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|er
 # + limit - Number of records to retrieve
 # + offset - Number of records to offset
 # + return - List of business units
-public isolated function getOrgDetails(OrgDetailsFilter filter, int 'limit, int offset)
+public isolated function fetchOrgDetails(OrgDetailsFilter filter, int 'limit, int offset)
     returns BusinessUnit[]|error {
 
     BusinessUnit[] businessUnits = [];
 
-    stream<BusinessUnitStr, sql:Error?> resultStream = databaseClient->query(getOrgDataQuery(
+    stream<BusinessUnitStr, sql:Error?> resultStream = databaseClient->query(fetchOrgDataQuery(
             filter = filter, 'limit = 'limit, offset = offset));
 
     error? iterateError = from BusinessUnitStr bu in resultStream

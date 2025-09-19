@@ -150,7 +150,7 @@ isolated function fetchBasicUserInfoQuery(string email) returns sql:Parameterize
 #
 # + email - Identification of the user
 # + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
-isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =>
+isolated function fetchEmployeeInfo(string email) returns sql:ParameterizedQuery =>
 
     `SELECT
         e.id                                         AS id,
@@ -200,7 +200,7 @@ isolated function getEmployeeInfo(string email) returns sql:ParameterizedQuery =
 # + limit - Number of records to retrieve
 # + offset - Number of records to offset
 # + return - List of business units
-isolated function getOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
+isolated function fetchOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
     SELECT 
         bu.id AS id,
