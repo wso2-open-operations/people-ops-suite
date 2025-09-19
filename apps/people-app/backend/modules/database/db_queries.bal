@@ -133,22 +133,18 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 #
 # + email - User's email to uniquely identify an user 
 # + return - sql:ParameterizedQuery - fetch basic userinfo
-isolated function fetchBasicUserInfoQuery(string email) returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery query = `
-        SELECT 
-            id as employeeId,
-            wso2_email as workEmail,
-            first_name as firstName,
-            last_name as lastName,
-            job_role as jobRole,
-            employee_thumbnail as employeeThumbnail
-        FROM employee 
-        WHERE wso2_email = ${email}
-    `;
-
-    return query;
-}
+isolated function fetchBasicUserInfoQuery(string email) returns sql:ParameterizedQuery
+=> `
+    SELECT 
+        id as employeeId,
+        wso2_email as workEmail,
+        first_name as firstName,
+        last_name as lastName,
+        job_role as jobRole,
+        employee_thumbnail as employeeThumbnail
+    FROM employee 
+    WHERE wso2_email = ${email}
+`;
 
 # Build query to retrieve an employee.
 #
