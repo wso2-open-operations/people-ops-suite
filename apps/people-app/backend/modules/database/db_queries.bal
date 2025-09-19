@@ -396,15 +396,15 @@ isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
             'offices',
                 (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
                     'id', id,
-                    'office', name,          -- maps to Office.office
-                    'location', location     -- include if your schema has it
+                    'office', name,          
+                    'location', location     
                 )), JSON_ARRAY()) FROM office WHERE is_active = 1),
 
             'designations',
                 (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
                     'id', id,
-                    'name', designation,         -- maps to Designation.name
-                    'jobBand', job_band,         -- camelCase
+                    'name', designation,         
+                    'jobBand', job_band,         
                     'careerFunctionId', career_function_id
                 )), JSON_ARRAY()) FROM designation WHERE is_active = 1),
 
