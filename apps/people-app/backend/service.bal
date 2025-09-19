@@ -15,7 +15,6 @@
 // under the licence
 import people.authorization;
 import people.database;
-import people.entity;
 
 import ballerina/cache;
 import ballerina/http;
@@ -233,7 +232,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Fetch the user information from the entity service.
-        entity:Employee|error loggedInUser = entity:fetchEmployeesBasicInfo(userInfo.email);
+        UserInfo|error loggedInUser = database:fetchBasicUserInfo(userInfo.email);
         if loggedInUser is error {
             string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
             log:printError(customError, loggedInUser);
@@ -366,7 +365,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Endpoint to fetch essential app related information
-    #
+    # appConfig
     # + ctx - Request object
     # + return - Comapany Information or error
     resource function get appConfig(http:RequestContext ctx) returns Company[]|http:InternalServerError|http:NotFound|json {
