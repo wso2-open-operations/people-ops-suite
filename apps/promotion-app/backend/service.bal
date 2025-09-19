@@ -30,7 +30,7 @@ final cache:Cache cache = new ({
 
 @display {
     label: "Promotion Backend Service",
-    id: "people-ops/promotion-application"
+    id: "people-ops/promotion-backend"
 }
 
 service class ErrorInterceptor {
