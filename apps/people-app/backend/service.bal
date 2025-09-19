@@ -385,146 +385,35 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Endpoint to fetch essential app related information.
-    # appConfig
-    # + ctx - Request object
-    # + return - Comapany Information as a json or an error
-    resource function get appConfig(http:RequestContext ctx)
-        returns json|http:InternalServerError|http:NotFound {
+    #
+    # + return - Comapany Information as app config or an error
+    resource function get appConfig() returns AppConfig|http:InternalServerError|http:NotFound {
 
-        // Retrieve companies
-        json|error? companies = database:getCompanies();
+        log:printInfo("Fetch App Config Invoked!");
 
-        if companies is error {
-            string customError = string `Error while retrieving companies`;
-            log:printError(customError, companies);
+        AppConfig|error? result = database:fetchAppConfig();
 
+        if result is error {
+            string customError = string `Error when retrieving user info ${result.message()}`;
+            log:printError(customError);
             return <http:InternalServerError>{
                 body: {
                     message: customError
                 }
             };
-
         }
 
-        if companies is () {
-            string customError = string `Coudn\'t retrieve any companies`;
+        if result is () {
+            string customError = string `Couldn\'t retrieve any the AppConfigs from the database`;
             log:printError(customError);
-            return <http:NotFound>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Retrieve offices
-        json|error? offices = database:getOffices();
-
-        if offices is error {
-            string customError = string `Error while retrieving offices`;
-            log:printError(customError, offices);
-
             return <http:InternalServerError>{
                 body: {
                     message: customError
                 }
             };
-
         }
 
-        if offices is () {
-            string customError = string `Coudn\'t retrieve any offices`;
-            log:printError(customError);
-            return <http:NotFound>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Retrieve career functions
-        json|error? careerFunctions = database:getOffices();
-
-        if careerFunctions is error {
-            string customError = string `Error while retrieving career functions`;
-            log:printError(customError, careerFunctions);
-
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-
-        }
-
-        if careerFunctions is () {
-            string customError = string `Coudn\'t retrieve any career functions`;
-            log:printError(customError);
-            return <http:NotFound>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Retrieve desginations
-        json|error? designations = database:getOffices();
-
-        if designations is error {
-            string customError = string `Error while retrieving designation`;
-            log:printError(customError, designations);
-
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-
-        }
-
-        if designations is () {
-            string customError = string `Coudn\'t retrieve any designations`;
-            log:printError(customError);
-            return <http:NotFound>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Retrieve employment types
-        json|error? employmentTypes = database:getOffices();
-
-        if employmentTypes is error {
-            string customError = string `Error while retrieving employment types`;
-            log:printError(customError, employmentTypes);
-
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-
-        }
-
-        if employmentTypes is () {
-            string customError = string `Coudn\'t retrieve any employement types`;
-            log:printError(customError);
-            return <http:NotFound>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        json response = {
-            companies: companies,
-            offices: offices,
-            careerFunctions: careerFunctions,
-            designations: designations,
-            employmentTypes: employmentTypes
-        };
-
-        return response;
+        return result;
 
     }
 }
