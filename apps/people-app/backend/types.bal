@@ -32,6 +32,22 @@ type NewVehicle record {|
 |};
 
 # Response structure of retrieving user
+public type UserInfo record {|
+    # Id of the employee
+    string employeeId;
+    # Email of the employee
+    string workEmail;
+    # First name of the employee
+    string firstName;
+    # Last name of the employee
+    string lastName;
+    # Job role
+    string jobRole;
+    # Thumbnail of the employee
+    string? employeeThumbnail;
+|};
+
+# Response structure of retrieving user response to the webapp
 public type UserResponse record {|
     # Id of the employee
     string employeeId;
