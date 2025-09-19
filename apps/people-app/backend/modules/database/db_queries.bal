@@ -464,3 +464,59 @@ isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
 
     return sqlQuery;
 }
+
+isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT JSON_OBJECT(
+            'companies', (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', id, 
+                        'name', name, 
+                        'location', location
+                    )
+                ) 
+                FROM company WHERE is_active = 1
+            ),
+            
+            'offices', (
+                SELECT JSON_ARRAYAGG(
+                    json_object(
+                        'id', id, 'name', name
+                    )
+                ) FROM office WHERE is_active = 1
+            ),
+            
+            'designation', (
+                SELECT JSON_ARRAYAGG(
+                    json_object(
+                        'id', id, 
+                        'designation', designation, 
+                        'job_band', job_band, 
+                        'career_function_id', career_function_id
+                    )
+                ) FROM designation WHERE is_active = 1
+            ),
+            
+            'career_functions', (
+                SELECT JSON_ARRAYAGG(
+                    json_object(
+                        'id', id,
+                        'name', career_function
+                    )
+                ) FROM career_function WHERE is_active = 1
+            ),
+            
+            'employment_type', (
+                SELECT JSON_ARRAYAGG(
+                    json_object(
+                        'id', id, 
+                        'name', name
+                    )
+                ) FROM employment_type WHERE is_active = 1
+            )
+        ) as result
+    `;
+
+    return query;
+}
