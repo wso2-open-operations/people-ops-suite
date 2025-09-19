@@ -385,7 +385,7 @@ isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee
 
 # Retrieves a parameterized SQL query to fetch all companies as a JSON array.
 #
-# + return - A parameterized query that returns a JSON array of company objects.
+# + return - A parameterized query that returns a JSON array of company objects
 isolated function getCompaniesQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
         SELECT JSON_ARRAYAGG(
@@ -400,7 +400,7 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery {
 
 # Retrieves a parameterized SQL query to fetch all offices as a JSON array.
 #
-# + return - A parameterized query that returns a JSON array of office objects.
+# + return - A parameterized query that returns a JSON array of office objects
 isolated function getOfficesQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
         SELECT JSON_ARRAYAGG(
@@ -417,7 +417,7 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery {
 
 # Retrieves a parameterized SQL query to fetch all career functions as a JSON array.
 #
-# + return - A parameterized query that returns a JSON array of career function objects.
+# + return - A parameterized query that returns a JSON array of career function objects
 isolated function getCareerFunctionQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
         SELECT JSON_ARRAYAGG(
@@ -433,7 +433,7 @@ isolated function getCareerFunctionQuery() returns sql:ParameterizedQuery {
 
 # Retrieves a parameterized SQL query to fetch all designations as a JSON array.
 #
-# + return - A parameterized query that returns a JSON array of designation objects.
+# + return - A parameterized query that returns a JSON array of designation objects
 isolated function getDesignationQuery() returns sql:ParameterizedQuery {
     sql:ParameterizedQuery sqlQuery = `
         SELECT JSON_ARRAYAGG(
