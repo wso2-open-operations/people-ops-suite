@@ -169,7 +169,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                p: 0,
               }}
             >
               {content?.title}
