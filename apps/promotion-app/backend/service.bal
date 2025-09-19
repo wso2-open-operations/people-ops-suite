@@ -101,9 +101,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE], userInfo.groups) {
             privileges.push(authorization:EMPLOYEE);
         }
-        // if authorization:checkPermissions([authorization:authorizedRoles.SALES_ADMIN], userInfo.groups) {
-        //     privileges.push(authorization:SALES_ADMIN_PRIVILEGE);
-        // }
 
         UserInfoResponse userInfoResponse = {...loggedInUser, privileges};
 
