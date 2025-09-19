@@ -14,8 +14,22 @@
 // specific language governing permissions and limitations
 // under the License. 
 
+import ballerina/io;
 import ballerina/log;
 import ballerina/sql;
+
+public isolated function fetchBasicUserInfo(string email) returns UserInfo|error {
+    UserInfo|error result = databaseClient->queryRow(fetchBasicUserInfoQuery(email));
+
+    if result is error {
+        return result;
+    }
+
+    io:println("Basic User Info : ", result);
+
+    return result;
+
+}
 
 # Fetch vehicles.
 #
