@@ -193,6 +193,7 @@ public type UpdateEmployeeInfoPlayload record {|
     string unit?;
 |};
 
+# Structure of the org data filter value
 type FilterValue boolean|int|string|int[]|string[]|time:Date;
 
 # [OrgRecord] Structure of organization filter record
