@@ -49,7 +49,7 @@
 
   /* Secondary Colors */
   --color-secondary-default: #212a30;
-  --color-secondary-light: #f3f5f7;
+  --color-secondary-light: #f6f7f9;
   --color-secondary-dark: #171a1c;
 
   /* ====== States : Light and Default ===== */
@@ -91,6 +91,8 @@
   /* Components */
   --color-st-header-bg: var(--color-neutral-white);
   --color-st-sidebar-border: var(--color-neutral-30);
+  --color-st-card-border: #e5e5e5;
+  --color-st-card-inner-border: #e5e5e58f;
 }
 
 /* States : Dark Theme */
@@ -129,6 +131,8 @@
   /* Components */
   --color-st-header-bg: var(--color-st-secondary-100);
   --color-st-sidebar-border: var(--color-neutral-20);
+  --color-st-card-border: #212a30;
+  --color-st-card-inner-border: #e5e5e50a;
 }
 
 /* Typography --------------------------------------------------------*/
@@ -178,7 +182,7 @@
     font-size: 16px;
     font-weight: 600;
     line-height: 130%;
-    letter-spacing: -0.03em;
+    letter-spacing: 0em;
   }
 
   .p-m {
