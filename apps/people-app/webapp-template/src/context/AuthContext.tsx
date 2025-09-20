@@ -13,19 +13,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
+import { useIdleTimer } from "react-idle-timer";
 
 import React, { useContext, useEffect, useState } from "react";
-import { APIService } from "@utils/apiService";
-import { useAuthContext, SecureApp } from "@asgardeo/auth-react";
+
+import PreLoader from "@component/common/PreLoader";
 import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import PreLoader from "@component/common/PreLoader";
 import { getUserInfo } from "@slices/userSlice/user";
-import { useIdleTimer } from "react-idle-timer";
+import { APIService } from "@utils/apiService";
+
 import SessionWarningDialog from "../component/common/SessionWarningDialog";
-import { State } from "../types/types";
-import { fetchAppConfig } from "../slices/configSlice/config";
 import LoginScreen from "../component/ui/LoginScreen";
+import { fetchAppConfig } from "../slices/configSlice/config";
+import { State } from "../types/types";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -75,10 +77,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   } = useAuthContext();
 
   useEffect(() => {
-    if (!localStorage.getItem("iapm-app-redirect-url")) {
+    if (!localStorage.getItem("people_app-redirect-url")) {
       localStorage.setItem(
-        "iapm-app-redirect-url",
-        window.location.href.replace(window.location.origin, "")
+        "people_app-redirect-url",
+        window.location.href.replace(window.location.origin, ""),
       );
     }
   }, []);
@@ -94,7 +96,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       setUserAuthData({
         userInfo: userInfo,
         decodedIdToken: decodedIdToken,
-      })
+      }),
     );
 
     new APIService(idToken, refreshToken);
@@ -165,7 +167,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const appSignOut = async () => {
     setAppState("loading");
-    localStorage.setItem("iapm-app-state", "logout");
+    localStorage.setItem("people_app-state", "logout");
     await signOut();
     setAppState("unauthenticated");
   };
@@ -173,7 +175,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const appSignIn = async () => {
     signIn();
     setAppState("loading");
-    localStorage.setItem("iapm-app-state", "active");
+    localStorage.setItem("people_app-state", "active");
   };
 
   const authContext: AuthContextType = {
@@ -190,11 +192,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <PreLoader isLoading message="Authenticating..." />;
 
       case "authenticated":
-        return (
-          <AuthContext.Provider value={authContext}>
-            {props.children}
-          </AuthContext.Provider>
-        );
+        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       case "unauthenticated":
         return (
