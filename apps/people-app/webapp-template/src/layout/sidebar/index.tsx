@@ -13,15 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { ChevronLeft, ChevronRight, Sun, Moon } from "lucide-react";
-
+import { Tooltip, TooltipContent, TooltipTrigger } from "@root/components/ui/tooltip";
 import pJson from "@root/package.json";
-import { useState, useMemo } from "react";
-import { getActiveRouteDetails } from "@src/route";
-import { ColorModeContext } from "@src/App";
 import SidebarNavItem from "@root/src/component/layout/SidebarNavItem";
+import MeCard from "@root/src/component/ui/MeCard";
 import type { NavState } from "@root/src/types/types";
+import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+
+import { ReactNode, useMemo, useState } from "react";
+
+import { ColorModeContext } from "@src/App";
+import { getActiveRouteDetails } from "@src/route";
 
 interface SidebarProps {
   open: boolean;
@@ -30,10 +32,38 @@ interface SidebarProps {
   currentPath: string;
 }
 
+interface SidebarTogglesPropes {
+  logic: boolean;
+  content: string;
+  onClickAction: () => void;
+  trueContent: ReactNode;
+  falseContent: ReactNode;
+  styles?: string;
+}
+
+export const SidebarToggles = (props: SidebarTogglesPropes) => {
+  const { logic, content, trueContent, falseContent, onClickAction, styles } = props;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger className={`flex ${styles ? styles : "items-start justify-start"}`}>
+        <button
+          onClick={onClickAction}
+          className="w-fit p-2 text-st-nav-link rounded-md cursor-pointer hover:text-st-nav-hover hover:bg-st-nav-hover-bg transition-colors duration-200"
+        >
+          {logic ? <div>{trueContent}</div> : <div>{falseContent}</div>}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="left">
+        <p>{content}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
 const Sidebar = (props: SidebarProps) => {
-  const allRoutes = useMemo(
-    () => getActiveRouteDetails(props.roles),
-    [props.roles]
+  const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]).filter(
+    (route) => route.showInSidebar,
   );
 
   // Single state object for nav state
@@ -68,6 +98,10 @@ const Sidebar = (props: SidebarProps) => {
             props.open ? "w-60" : "w-fit"
           } overflow-visible`}
         >
+          <div className="my-3">
+            <MeCard sidebarOpen={props.open} />
+          </div>
+
           {/* Navigation List */}
           <div
             className={`
@@ -96,7 +130,7 @@ const Sidebar = (props: SidebarProps) => {
                       onClick={() => handleClick(idx)}
                     />
                   </div>
-                )
+                ),
             )}
           </div>
 
@@ -110,10 +144,7 @@ const Sidebar = (props: SidebarProps) => {
               {allRoutes.map(
                 (route, idx) =>
                   route.bottomNav && (
-                    <div
-                      key={idx}
-                      className={`${props.open ? "w-full" : "w-fit"}`}
-                    >
+                    <div key={idx} className={`${props.open ? "w-full" : "w-fit"}`}>
                       <SidebarNavItem
                         route={route}
                         open={props.open}
@@ -123,102 +154,44 @@ const Sidebar = (props: SidebarProps) => {
                         onClick={() => handleClick(idx)}
                       />
                     </div>
-                  )
+                  ),
               )}
 
-              {/* Control Buttons */}
               <div className="flex flex-col gap-2 pl-[2px]">
-                {/* Theme Toggle Button */}
-                <div className="relative group">
-                  <button
-                    onClick={colorMode.toggleColorMode}
-                    className="
-                      w-fit p-2 text-white rounded-md cursor-pointer
-                      hover:bg-st-nav-link-hover transition-colors duration-200"
-                  >
-                    {colorMode.mode === "dark" ? (
-                      <Sun className="w-5 h-5" />
-                    ) : (
-                      <Moon className="w-5 h-5" />
-                    )}
-                  </button>
+                {/* Color swipe button */}
+                <SidebarToggles
+                  logic={colorMode.mode === "dark"}
+                  content={`Switch to ${colorMode.mode === "dark" ? "light" : "dark"} mode`}
+                  onClickAction={colorMode.toggleColorMode}
+                  trueContent={<Sun className="w-5 h-5" />}
+                  falseContent={<Moon className="w-5 h-5" />}
+                />
 
-                  {/* Tooltip */}
-                  {!props.open && (
-                    <div
-                      className="
-                      absolute left-full ml-2 top-1/2 -translate-y-1/2
-                      bg-gray-900 text-white text-sm px-2 py-1 rounded
-                      opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                      transition-all duration-200 whitespace-nowrap z-50
-                      shadow-lg"
-                    >
-                      Switch to {colorMode.mode === "dark" ? "light" : "dark"}{" "}
-                      mode
-                    </div>
-                  )}
-                </div>
+                {/* Sidebar collapse button */}
+                <SidebarToggles
+                  logic={props.open}
+                  content={props.open ? "Collapse Sidebar" : "Expand Sidebar"}
+                  onClickAction={props.handleDrawer}
+                  trueContent={<ChevronLeft className="w-5 h-5" />}
+                  falseContent={<ChevronRight className="w-5 h-5" />}
+                />
 
-                {/* Sidebar Toggle Button */}
-                <div className="relative group">
-                  <button
-                    onClick={props.handleDrawer}
-                    className="
-                      w-fit p-2 text-white rounded-md cursor-pointer
-                      hover:bg-white/5 transition-colors duration-200"
-                  >
-                    {!props.open ? (
-                      <ChevronRight className="w-5 h-5" />
-                    ) : (
-                      <ChevronLeft className="w-5 h-5" />
-                    )}
-                  </button>
-
-                  {/* Tooltip */}
-                  {!props.open && (
-                    <div
-                      className="
-                      absolute left-full ml-2 top-1/2 -translate-y-1/2
-                      bg-gray-900 text-white text-sm px-2 py-1 rounded
-                      opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                      transition-all duration-200 whitespace-nowrap z-50
-                      shadow-lg"
-                    >
-                      {props.open ? "Collapse" : "Expand"} Sidebar
-                    </div>
-                  )}
-                </div>
-
-                {/* Sidebar Toggle Button */}
-                <div className="relative group">
-                  <button
-                    className="
-                      w-full p-2 text-white duration-200"
-                  >
-                    {!props.open ? (
-                      <p>v1</p>
-                    ) : (
-                      <p>
-                        v {pJson.version} | © {new Date().getFullYear()} WSO2
-                        LLC
+                {/* Version */}
+                <>
+                  <div className="w-full h-[1.5px] bg-white/20 "></div>
+                  <SidebarToggles
+                    logic={props.open}
+                    content={`v ${pJson.version} | © ${new Date().getFullYear()} WSO2 LLC`}
+                    onClickAction={() => {}}
+                    trueContent={
+                      <p className="p-s">
+                        v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
                       </p>
-                    )}
-                  </button>
-
-                  {/* Tooltip */}
-                  {!props.open && (
-                    <div
-                      className="
-                      absolute left-full ml-2 top-1/2 -translate-y-1/2
-                      bg-gray-900 text-white text-sm px-2 py-1 rounded
-                      opacity-0 invisible group-hover:opacity-100 group-hover:visible
-                      transition-all duration-200 whitespace-nowrap z-50
-                      shadow-lg"
-                    >
-                      v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
-                    </div>
-                  )}
-                </div>
+                    }
+                    falseContent={<p className="p-s">v1</p>}
+                    styles="items-center justify-center"
+                  />
+                </>
               </div>
             </div>
           </div>
