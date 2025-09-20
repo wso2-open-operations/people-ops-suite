@@ -1,3 +1,4 @@
+import ProfileCard from "@root/src/component/ui/ProfileCard";
 import { Edit, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@component/common/avatar";
@@ -46,7 +47,7 @@ function EmployeeInfo() {
 
         <div className="flex flex-col items-end gap-3 justify-end text-st-200 whitespace-nowrap p-r">
           <div className="bg-[#FFEBDB] px-3 py-1 rounded-[4px]">
-            <p className="text-primary-45">{user.userInfo?.jobRole}</p>
+            <p className="text-primary-45 p-m">{user.userInfo?.jobRole}</p>
           </div>
           <div className="flex items-center justify-center">
             <p>Service Time&nbsp;</p> <p className="h6">{`years`}</p>
@@ -54,6 +55,13 @@ function EmployeeInfo() {
           {/* <p> {`${employee_info?.employeeLocation} - ${now}`} </p> */}
         </div>
       </div>
+
+      <ProfileCard
+        Icon={User}
+        heading="Employee Info"
+        ActionIcon={Edit}
+        IconColor="FF7300"
+      ></ProfileCard>
     </div>
   );
 }
