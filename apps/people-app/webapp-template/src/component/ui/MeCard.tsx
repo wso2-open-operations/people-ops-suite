@@ -1,5 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@root/components/ui/avatar";
 import { RootState, useAppSelector } from "@root/src/slices/store";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@component/common/avatar";
 
 function MeCard() {
   const user = useAppSelector((state: RootState) => state.user);
