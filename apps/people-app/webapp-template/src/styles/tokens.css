@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* DESIGN SYSTEM */
+
+@theme {
+  /* Neutral Colors */
+  --color-neutral-5: #0d0d0d;
+  --color-neutral-10: #1a1a1a;
+  --color-neutral-15: #262626;
+  --color-neutral-20: #333333;
+  --color-neutral-25: #404040;
+  --color-neutral-30: #4d4d4d;
+  --color-neutral-35: #595959;
+  --color-neutral-40: #666666;
+  --color-neutral-45: #737373;
+  --color-neutral-50: #808080;
+  --color-neutral-55: #8c8c8c;
+  --color-neutral-60: #999999;
+  --color-neutral-65: #a6a6a6;
+  --color-neutral-70: #b2b2b2;
+  --color-neutral-75: #bfbfbf;
+  --color-neutral-80: #cccccc;
+  --color-neutral-85: #d9d9d9;
+  --color-neutral-90: #e5e5e5;
+  --color-neutral-95: #f2f2f2;
+  --color-neutral-white: #ffffff;
+  --color-neutral-black: #000000;
+
+  /* Primary Colors */
+  --color-primary-default: #ff7300;
+  --color-primary-95: #fcf1e8;
+  --color-primary-90: #ffe3cc;
+  --color-primary-85: #ffd5b2;
+  --color-primary-80: #ffc799;
+  --color-primary-75: #ffb980;
+  --color-primary-70: #ffab66;
+  --color-primary-65: #ff9d4d;
+  --color-primary-60: #ff8f33;
+  --color-primary-55: #ff811a;
+  --color-primary-45: #e56800;
+  --color-primary-40: #cc5c00;
+  --color-primary-35: #b25100;
+  --color-primary-30: #994500;
+  --color-primary-25: #803a00;
+  --color-primary-20: #662e00;
+  --color-primary-15: #4d2300;
+  --color-primary-10: #331700;
+  --color-primary-5: #1a0c00;
+
+  /* Secondary Colors */
+  --color-secondary-default: #212a30;
+  --color-secondary-light: #f3f5f7;
+  --color-secondary-dark: #171a1c;
+
+  /* ====== States : Light and Default ===== */
+
+  /* Secondary */
+  --color-st-secondary-100: #212a30;
+
+  /* Green */
+  --color-st-green-100: var(--colsor-green-50);
+  --color-st-green-200: var(--color-green-default);
+  --color-st-green-300: var(--color-green-800);
+
+  /* Neutral colors */
+  --color-st-100: var(--color-neutral-black);
+  --color-st-200: #000000cc;
+  --color-st-300: #0000008f;
+
+  /* Border colors */
+  --color-st-border-light: var(--color-neutral-90);
+  --color-st-border-medium: var(--color-neutral-80);
+  --color-st-border-dark: var(--color-neutral-85);
+
+  /* Bg colors */
+  --color-st-bg-main: var(--color-neutral-white);
+  --color-st-bg-main-light: #f7f7f7;
+  --color-st-bg-primary: var(--color-neutral-white);
+  --color-st-bg-primary-light: var(--color-primary-90);
+  --color-st-bg-secondary: var(--color-secondary-default);
+  --color-st-bg-secondary-light: var(--color-secondary-light);
+
+  /* Nav Colors */
+  --color-st-nav-link: #ffffff8f;
+  --color-st-nav-bg: oklch(1 0 0 / 20%);
+  --color-st-nav-hover: #ffffffd9;
+  --color-st-nav-hover-bg: #ffffff0a;
+  --color-st-nav-clicked: var(--color-neutral-white);
+  --color-st-nav-clicked-bg: #ffffff14;
+
+  /* Components */
+  --color-st-header-bg: var(--color-neutral-white);
+  --color-st-sidebar-border: var(--color-neutral-30);
+}
+
+/* States : Dark Theme */
+[data-theme="dark"] {
+  /* Secondary Color */
+  --color-st-secondary-100: #0d0d0d;
+
+  /* Text colors */
+  --color-st-100: var(--color-neutral-white);
+  --color-st-200: #ffffffd9;
+  --color-st-300: #ffffff8f;
+
+  /* Border colors */
+  --color-st-border-light: var(--color-neutral-15);
+  --color-st-border-medium: var(--color-neutral-25);
+  --color-st-border-dark: var(--color-neutral-30);
+
+  /* Bg colors */
+  --color-st-bg-main: var(--color-neutral-10);
+  --color-st-bg-main-light: #121212;
+  --color-st-bg-dark: var(--color-neutral-15);
+  --color-st-bg-nav: #212121;
+  --color-st-bg-primary: var(--color-neutral-10);
+  --color-st-bg-primary-light: var(--color-primary-10);
+  --color-st-bg-secondary: var(--color-neutral-5);
+  --color-st-bg-secondary-light: var(--color-secondary-dark);
+
+  /* Nav item */
+  --color-st-nav-link: #ffffff8f;
+  --color-st-nav-bg: oklch(0.7131 0.1945 47.88 / 20%);
+  --color-st-nav-hover: #ffffffd9;
+  --color-st-nav-hover-bg: #ffffff0a;
+  --color-st-nav-clicked: var(--color-neutral-white);
+  --color-st-nav-clicked-bg: #ffffff14;
+
+  /* Components */
+  --color-st-header-bg: var(--color-st-secondary-100);
+  --color-st-sidebar-border: var(--color-neutral-20);
+}
+
+/* Typography --------------------------------------------------------*/
+@layer utilities {
+  .h1 {
+    font-family: "Poppins";
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 120%;
+    letter-spacing: -0.03em;
+  }
+
+  .h2 {
+    font-family: "Poppins";
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 120%;
+    letter-spacing: -0.03em;
+  }
+
+  .h3 {
+    font-family: "Poppins";
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 120%;
+    letter-spacing: -0.03em;
+  }
+
+  .h4 {
+    font-family: "Poppins";
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 130%;
+    letter-spacing: -0.03em;
+  }
+
+  .h5 {
+    font-family: "Poppins";
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 140%;
+    letter-spacing: -0.03em;
+  }
+
+  .h6 {
+    font-family: "Poppins";
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 130%;
+    letter-spacing: -0.03em;
+  }
+
+  .p-m {
+    font-family: "Poppins";
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 150%;
+    letter-spacing: -0.03em;
+  }
+
+  .p-r {
+    font-family: "Poppins";
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 150%;
+    letter-spacing: -0.03em;
+  }
+
+  .p-s {
+    font-family: "Poppins";
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 160%;
+    letter-spacing: -0.01em;
+  }
+
+  .p-xs {
+    font-family: "Poppins";
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 160%;
+    letter-spacing: 0em;
+  }
+
+  .p-l {
+    font-family: "Poppins";
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 140%;
+    letter-spacing: -0.03em;
+  }
+
+  .p-xl {
+    font-family: "Poppins";
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 135%;
+    letter-spacing: -0.03em;
+  }
+}

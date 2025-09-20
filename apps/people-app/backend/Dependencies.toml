@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.12.7"
+distribution-version = "2201.12.8"
 
 [[package]]
 org = "ballerina"
@@ -29,6 +29,9 @@ dependencies = [
 	{org = "ballerina", name = "task"},
 	{org = "ballerina", name = "time"}
 ]
+modules = [
+	{org = "ballerina", packageName = "cache", moduleName = "cache"}
+]
 
 [[package]]
 org = "ballerina"
@@ -36,6 +39,9 @@ name = "constraint"
 version = "1.7.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
+]
+modules = [
+	{org = "ballerina", packageName = "constraint", moduleName = "constraint"}
 ]
 
 [[package]]
@@ -50,7 +56,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "data.jsondata"
-version = "1.1.0"
+version = "1.1.2"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerina", name = "lang.object"}
@@ -70,7 +76,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "http"
-version = "2.14.2"
+version = "2.14.5"
 dependencies = [
 	{org = "ballerina", name = "auth"},
 	{org = "ballerina", name = "cache"},
@@ -209,7 +215,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "log"
-version = "2.12.0"
+version = "2.13.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -234,7 +240,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "oauth2"
-version = "2.14.0"
+version = "2.14.1"
 dependencies = [
 	{org = "ballerina", name = "cache"},
 	{org = "ballerina", name = "crypto"},
@@ -273,7 +279,7 @@ dependencies = [
 [[package]]
 org = "ballerina"
 name = "sql"
-version = "1.16.0"
+version = "1.17.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -287,11 +293,10 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "task"
-version = "2.10.0"
+version = "2.7.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "time"},
-	{org = "ballerina", name = "uuid"}
+	{org = "ballerina", name = "time"}
 ]
 
 [[package]]
@@ -301,6 +306,9 @@ version = "2.7.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
+modules = [
+	{org = "ballerina", packageName = "time", moduleName = "time"}
+]
 
 [[package]]
 org = "ballerina"
@@ -308,17 +316,6 @@ name = "url"
 version = "2.6.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
-]
-
-[[package]]
-org = "ballerina"
-name = "uuid"
-version = "1.10.0"
-dependencies = [
-	{org = "ballerina", name = "crypto"},
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.int"},
-	{org = "ballerina", name = "time"}
 ]
 
 [[package]]
@@ -342,21 +339,6 @@ dependencies = [
 	{org = "ballerina", name = "data.jsondata"},
 	{org = "ballerina", name = "jballerina.java"},
 	{org = "ballerinai", name = "observe"}
-]
-
-[[package]]
-org = "ballerinax"
-name = "java.jdbc"
-version = "1.14.0"
-dependencies = [
-	{org = "ballerina", name = "io"},
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.string"},
-	{org = "ballerina", name = "sql"},
-	{org = "ballerina", name = "time"}
-]
-modules = [
-	{org = "ballerinax", packageName = "java.jdbc", moduleName = "java.jdbc"}
 ]
 
 [[package]]
@@ -385,22 +367,24 @@ modules = [
 ]
 
 [[package]]
-org = "wso2"
+org = "wso2_open_operations"
 name = "people"
 version = "0.1.0"
 dependencies = [
+	{org = "ballerina", name = "cache"},
+	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "jwt"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "sql"},
+	{org = "ballerina", name = "time"},
 	{org = "ballerinai", name = "observe"},
-	{org = "ballerinax", name = "java.jdbc"},
 	{org = "ballerinax", name = "mysql"},
 	{org = "ballerinax", name = "mysql.driver"}
 ]
 modules = [
-	{org = "wso2", packageName = "people", moduleName = "people"},
-	{org = "wso2", packageName = "people", moduleName = "people.authorization"},
-	{org = "wso2", packageName = "people", moduleName = "people.database"}
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people"},
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people.authorization"},
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people.database"}
 ]
 
