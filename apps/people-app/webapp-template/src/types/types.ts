@@ -43,6 +43,7 @@ export interface RouteDetail {
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+  showInSidebar: boolean;
 }
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -52,4 +53,5 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+  showInSidebar: boolean;
 }

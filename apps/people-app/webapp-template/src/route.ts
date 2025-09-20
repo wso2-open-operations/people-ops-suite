@@ -13,15 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { HomeIcon } from "lucide-react";
+import { CircleQuestionMark } from "lucide-react";
+import type { RouteObject } from "react-router-dom";
 
 import React from "react";
-import { View } from "@view/index";
+
 import { Role } from "@slices/authSlice/auth";
-import { HomeIcon } from "lucide-react";
 import { isIncludedRole } from "@utils/utils";
-import { CircleQuestionMark } from "lucide-react";
+import { View } from "@view/index";
+
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
-import type { RouteObject } from "react-router-dom";
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -30,6 +32,7 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.TEAM],
+    showInSidebar: true,
   },
   {
     path: "/help",
@@ -38,52 +41,7 @@ export const routes: RouteObjectWithRole[] = [
     element: React.createElement(View.help),
     allowRoles: [Role.ADMIN, Role.TEAM],
     bottomNav: true,
-  },
-  {
-    path: "/page",
-    text: "Page 1",
-    icon: React.createElement(CircleQuestionMark),
-    allowRoles: [Role.ADMIN, Role.TEAM],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.TEAM],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.TEAM],
-      },
-    ],
-  },
-
-  {
-    path: "/pageeeeeee-twoo",
-    text: "Page 2",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.page),
-    allowRoles: [Role.ADMIN, Role.TEAM],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.TEAM],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.TEAM],
-      },
-    ],
+    showInSidebar: true,
   },
 
   {
@@ -92,20 +50,22 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(CircleQuestionMark),
     element: React.createElement(View.page),
     allowRoles: [Role.ADMIN, Role.TEAM],
+    showInSidebar: true,
   },
 
   {
-    path: "/demo-tab",
-    text: "Demonstrate Tabs",
+    path: "/profile",
+    text: "profile page",
     icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.demoTabPage),
+    element: React.createElement(View.page),
     allowRoles: [Role.ADMIN, Role.TEAM],
+    showInSidebar: false,
   },
 ];
 
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: string[]
+  roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
   const routesObj: RouteObjectWithRole[] = [];
@@ -151,10 +111,7 @@ interface getActiveParentRoutesProps {
   roles: string[];
 }
 
-export const getActiveParentRoutes = ({
-  routes,
-  roles,
-}: getActiveParentRoutesProps): string[] => {
+export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
   if (!routes) return [];
 
   let activeParentPaths: string[] = [];
