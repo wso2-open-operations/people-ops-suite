@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Tooltip, TooltipContent, TooltipTrigger } from "@root/components/ui/tooltip";
 import pJson from "@root/package.json";
 import SidebarNavItem from "@root/src/component/layout/SidebarNavItem";
 import MeCard from "@root/src/component/ui/MeCard";
@@ -22,6 +21,7 @@ import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
 import { ReactNode, useMemo, useState } from "react";
 
+import { Tooltip, TooltipContent, TooltipTrigger } from "@component/common/tooltip";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
 
@@ -45,19 +45,12 @@ export const SidebarToggles = (props: SidebarTogglesPropes) => {
   const { logic, content, trueContent, falseContent, onClickAction, styles } = props;
 
   return (
-    <Tooltip>
-      <TooltipTrigger className={`flex ${styles ? styles : "items-start justify-start"}`}>
-        <button
-          onClick={onClickAction}
-          className="w-fit p-2 text-st-nav-link rounded-md cursor-pointer hover:text-st-nav-hover hover:bg-st-nav-hover-bg transition-colors duration-200"
-        >
-          {logic ? <div>{trueContent}</div> : <div>{falseContent}</div>}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="left">
-        <p>{content}</p>
-      </TooltipContent>
-    </Tooltip>
+    <button
+      onClick={onClickAction}
+      className="w-fit p-2 text-st-nav-link rounded-md cursor-pointer hover:text-st-nav-hover hover:bg-st-nav-hover-bg transition-colors duration-200"
+    >
+      {logic ? <div>{trueContent}</div> : <div>{falseContent}</div>}
+    </button>
   );
 };
 
