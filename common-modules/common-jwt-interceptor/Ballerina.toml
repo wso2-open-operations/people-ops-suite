@@ -1,0 +1,6 @@
+[package]
+org = "wso2"
+name = "common_jwt_interceptor"
+version = "0.1.0"
+distribution = "2201.8.5"
+visibility = "private"
