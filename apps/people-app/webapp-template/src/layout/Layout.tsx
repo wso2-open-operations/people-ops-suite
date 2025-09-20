@@ -13,16 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+
+import { Suspense, useCallback, useEffect, useState } from "react";
+
+import ConfirmationModalContextProvider from "@context/DialogContext";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
-import { Suspense, useEffect, useState, useCallback } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import ConfirmationModalContextProvider from "@context/DialogContext";
+
 import PreLoader from "../component/common/PreLoader";
 
 export default function Layout() {
@@ -71,10 +73,8 @@ export default function Layout() {
               handleDrawer={() => setOpen(!open)}
             />
           </div>
-          <div className="flex-1 h-full overflow-y-scroll text-st-text-100 p-m p-6">
-            <Suspense
-              fallback={<PreLoader isLoading message="Loading page data" />}
-            >
+          <div className="flex-1 h-full overflow-y-scroll text-st-100 p-m p-6">
+            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
               <Outlet />
             </Suspense>
           </div>
