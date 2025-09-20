@@ -13,53 +13,119 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { State } from "../../types/types";
-import { AppConfig } from "@config/config";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
+
+import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import type { UserState } from "@slices/authSlice/auth";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { APIService } from "@utils/apiService";
 
-interface Employee {
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
+import { State } from "../../types/types";
+
+interface Date {
+  year: number;
+  month: number;
+  day: number;
 }
 
-interface EmployeesState {
+type NullableDate = Date | null;
+
+export interface EmployeeInfo {
+  id: string;
+  lastName: string;
+  firstName: string;
+  wso2Email: string;
+  workPhoneNumber: string;
+  epf: string;
+  workLocation: string | null;
+  employeeLocation: string;
+  startDate: Date;
+  jobRole: string;
+  jobBand: number;
+  managerEmail: string;
+  reportToEmail: string;
+  additionalManagerEmail: string | null;
+  additionalReportToEmail: string | null;
+  employeeStatus: string;
+  lengthOfService: number;
+  relocationStatus: string;
+  employeeThumbnail: string;
+  subordinateCount: number;
+  timestamp: [number, number];
+  probationEndDate: Date;
+  agreementEndDate: NullableDate;
+  employmentType: string;
+  company: string;
+  office: string;
+  businessUnit: number;
+  team: number;
+  subTeam: number;
+  unit: number;
+}
+
+export interface UpdateEmployeeInfoPayload {
+  id: string;
+  lastName?: string;
+  firstName?: string;
+  wso2Email?: string;
+  workPhoneNumber?: string;
+  epf?: string;
+  workLocation?: string | null;
+  employeeLocation?: string;
+  startDate?: Date;
+  jobRole?: number;
+  jobBand?: string;
+  managerEmail?: string;
+  reportToEmail?: string;
+  additionalManagerEmail?: string | null;
+  additionalReportToEmail?: string | null;
+  employeeStatus?: string;
+  lengthOfService?: number;
+  relocationStatus?: string;
+  employeeThumbnail?: string;
+  subordinateCount?: number;
+  timestamp?: [number, number];
+  probationEndDate?: Date;
+  agreementEndDate?: NullableDate;
+  employmentType?: string;
+  company?: string;
+  office?: string;
+  businessUnit?: number;
+  team?: number;
+  subTeam?: number;
+  unit?: number;
+}
+
+export interface EmployeeInfoState {
   state: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  employees: Employee[] | null;
+  employee: EmployeeInfo | null;
 }
 
-const initialState: EmployeesState = {
+const initialState: EmployeeInfoState = {
   state: State.idle,
   stateMessage: null,
   errorMessage: null,
-  employees: null,
+  employee: null,
 };
 
-export const fetchEmployees = createAsyncThunk(
-  "employee/fetchEmployees",
+export const fetchEmployeeInfo = createAsyncThunk(
+  "employee/fetchEmployeeInfo",
   async (_, { getState, dispatch, rejectWithValue }) => {
-    const { userInfo } = (getState() as { user: UserState }).user;
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<Employee[]>((resolve, reject) => {
+
+    const { userInfo } = (getState() as { user: UserState }).user;
+    return new Promise<EmployeeInfo>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.employees, {
+        .get(`${AppConfig.serviceUrls.employee_info}/${userInfo?.workEmail}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-          const filteredEmployees = response.data.filter(
-            (emp: Employee) => emp.workEmail !== userInfo?.workEmail
-          );
-          resolve(filteredEmployees);
+          resolve(response.data);
         })
         .catch((error) => {
           if (axios.isCancel(error)) {
@@ -72,12 +138,44 @@ export const fetchEmployees = createAsyncThunk(
                   ? SnackMessage.error.fetchEmployees
                   : "An unknown error occurred.",
               type: "error",
-            })
+            }),
           );
           reject(error.response.data.message);
         });
     });
-  }
+  },
+);
+
+export const updateEmployeeInfo = createAsyncThunk(
+  "employee/updateEmployeeInfo",
+  async (
+    payload: UpdateEmployeeInfoPayload,
+
+    { rejectWithValue, dispatch },
+  ) => {
+    return new Promise<UpdateEmployeeInfoPayload>((resolve, reject) => {
+      APIService.getInstance()
+        .patch(`${AppConfig.serviceUrls.employee_info}/${payload.wso2Email}`, payload)
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.fetchEmployees
+                  : "An unknown error occurred.",
+              type: "error",
+            }),
+          );
+          reject(error.response.data.message);
+        });
+    });
+  },
 );
 
 const EmployeeSlice = createSlice({
@@ -90,18 +188,30 @@ const EmployeeSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchEmployees.pending, (state) => {
+      .addCase(fetchEmployeeInfo.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching employee data...";
       })
-      .addCase(fetchEmployees.fulfilled, (state, action) => {
+      .addCase(fetchEmployeeInfo.fulfilled, (state, action) => {
         state.state = State.success;
         state.stateMessage = "Successfully fetched!";
-        state.employees = action.payload;
+        state.employee = action.payload;
       })
-      .addCase(fetchEmployees.rejected, (state) => {
+      .addCase(fetchEmployeeInfo.rejected, (state) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(updateEmployeeInfo.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Updating employee data...";
+      })
+      .addCase(updateEmployeeInfo.fulfilled, (state) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully updated!";
+      })
+      .addCase(updateEmployeeInfo.rejected, (state) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to update!";
       });
   },
 });
