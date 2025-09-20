@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React, { useEffect, useState, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+
+import React, { useEffect, useMemo, useState } from "react";
 
 interface TabsPageProps {
   title: string;
@@ -56,11 +56,7 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
   return (
     <div className="h-full transition-colors duration-200">
       {/* Tab Navigation */}
-      <Tabs
-        tabs={tabsPage}
-        activeIndex={value}
-        handleTabClick={handleTabClick}
-      />
+      <Tabs tabs={tabsPage} activeIndex={value} handleTabClick={handleTabClick} />
 
       {/* Tab Content with animations */}
       <AnimatePresence mode="wait">
@@ -79,7 +75,7 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
                   {tab.page}
                 </TabPanel>
               </motion.div>
-            )
+            ),
         )}
       </AnimatePresence>
     </div>
@@ -102,7 +98,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
             onClick={() => handleTabClick(index)}
             className={`
                 flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium relative
-                ${activeIndex === index ? "text-st-text-100 " : "text-gray-500"}
+                ${activeIndex === index ? "text-st-100 " : "text-gray-500"}
               `}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -110,7 +106,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
             <span className="w-fit items-center">
               {React.cloneElement(tab.icon, {
                 className: `w-5 h-5 mb-[2px]  ${
-                  activeIndex === index ? "text-st-text-100" : "text-gray-500 "
+                  activeIndex === index ? "text-st-100" : "text-gray-500 "
                 }`,
               })}
             </span>
@@ -119,7 +115,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
             {/* Animated underline */}
             {activeIndex === index && (
               <motion.div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-st-text-100"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-st-100"
                 layoutId="activeTab"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
