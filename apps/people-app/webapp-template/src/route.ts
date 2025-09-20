@@ -57,7 +57,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/profile",
     text: "profile page",
     icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.page),
+    element: React.createElement(View.profile),
     allowRoles: [Role.ADMIN, Role.TEAM],
     showInSidebar: false,
   },
