@@ -13,22 +13,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React from "react";
-import { APP_NAME } from "@config/config";
+import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+import { Avatar, Box, Menu, MenuItem, Stack, Tooltip } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+
+import React from "react";
+
+import Wso2Logo from "@assets/images/wso2-logo.svg";
+import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { RootState, useAppSelector } from "@slices/store";
-import { Avatar, Box, Menu, MenuItem, Stack, Tooltip } from "@mui/material";
-import Wso2Logo from "@assets/images/wso2-logo.svg";
-import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 
 const Header = () => {
   const authContext = useAppAuthContext();
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const user = useAppSelector((state: RootState) => state.user);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -69,7 +68,7 @@ const Header = () => {
               width: "fit-content",
             }}
           >
-            <p className="text-st-text-100">{APP_NAME}</p>
+            <p className="text-st-100">{APP_NAME}</p>
           </Typography>
           <BasicBreadcrumbs />
         </div>
@@ -93,15 +92,11 @@ const Header = () => {
                     noWrap
                     variant="body1"
                     sx={{ fontWeight: 600 }}
-                    className="text-st-text-100"
+                    className="text-st-100"
                   >
                     {user.userInfo?.firstName + " " + user.userInfo.lastName}
                   </Typography>
-                  <Typography
-                    noWrap
-                    variant="body2"
-                    className="text-st-text-200"
-                  >
+                  <Typography noWrap variant="body2" className="text-st-300">
                     {user.userInfo?.jobRole}
                   </Typography>
                 </Box>
