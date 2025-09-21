@@ -356,6 +356,8 @@ public type Office record {
     string office;
     # Location of the office
     string location;
+    # Comapny id
+    int companyId;
 };
 
 # [Database] Represents a designation in the organization.
