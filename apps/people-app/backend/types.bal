@@ -67,66 +67,64 @@ public type UserResponse record {|
 
 # Response structure of retrieving employee_info
 public type EmployeeInfo record {|
-    # Id of the employee
+    # Employee ID
     string id;
-    # Last name of the employee
+    # Last name
     string lastName;
-    # First name of the employee
+    # First name
     string firstName;
-    # Official WSO2 email address of the employee
-    string wso2Email;
-    # Work phone number of the employee
-    string workPhoneNumber;
-    # Employee Provident Fund (EPF) number
+    # EPF number (optional)
     string? epf;
-    # Work location of the employee
+    # Employee location (optional)
+    string? employeeLocation;
+    # Work location (optional)
     string? workLocation;
-    # Location where the employee is based
-    string employeeLocation;
-    # Start date of employment
-    time:Date startDate;
-    # Job role of the employee
-    string jobRole;
-    # Job band of the employee
-    string jobBand;
-    # Email address of the employee’s direct manager
+    # WSO2 email
+    string wso2Email;
+    # Work phone (optional)
+    string? workPhoneNumber;
+    # Start date (optional)
+    time:Date? startDate;
+    # Job role (optional)
+    string? jobRole;
+    # Manager email (optional)
     string? managerEmail;
-    # Email address of the reporting manager
+    # Report-to email (optional)
     string? reportToEmail;
-    # Email address of the additional manager (if applicable)
+    # Additional manager email (optional)
     string? additionalManagerEmail;
-    # Email address of the additional reporting manager (if applicable)
+    # Additional report-to email (optional)
     string? additionalReportToEmail;
-    # Current status of the employee (e.g., Active, Inactive)
+    # Employee status (optional)
     string? employeeStatus;
-    # Length of service in years or months
+    # Length of service (optional)
     int? lengthOfService;
-    # Relocation status of the employee
-    string? relocationStatus;
-    # URL or path to the employee’s thumbnail image
+    # Thumbnail (optional)
     string? employeeThumbnail;
-    # Number of subordinates reporting to this employee
+    # Subordinate count (optional)
     int? subordinateCount;
-    # Last updated timestamp of the employee record
-    time:Utc? timestamp;
-    # End date of the probation period
-    time:Date probationEndDate;
-    # End date of the employment agreement
+    # Probation end date (optional)
+    time:Date? probationEndDate;
+    # Agreement end date (optional)
     time:Date? agreementEndDate;
-    # Type of employment (e.g., Full-time, Part-time, Contract)
-    string? employmentType;
-    # Name of the company the employee belongs to
-    string company;
-    # Name of the office where the employee works
-    string office;
-    # Name of the business unit of the employee
-    string businessUnit;
-    # Name of the team of the employee
-    string team;
-    # Name of the sub-team of the employee
-    string subTeam;
-    # Name of the unit of the employee
-    string unit;
+    # Employment type ID
+    int employmentTypeId;
+    # Designation ID
+    int designationId;
+    # Office ID
+    int officeId;
+    # Company ID
+    int companyId;
+    # Team ID
+    int teamId;
+    # Sub-team ID
+    int subTeamId;
+    # Business unit ID
+    int businessUnitId;
+    # Unit ID
+    int unitId;
+    # Personal info ID
+    int personalInfoId;
 |};
 
 # Response structure of updating employee_info
