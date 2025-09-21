@@ -393,7 +393,8 @@ isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
                 (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
                     'id', id,
                     'office', name,          
-                    'location', location     
+                    'location', location,
+                    'companyId', company_id
                 )), JSON_ARRAY()) FROM office WHERE is_active = 1),
 
             'designations',
