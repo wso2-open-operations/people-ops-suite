@@ -150,49 +150,45 @@ isolated function fetchBasicUserInfoQuery(string email) returns sql:Parameterize
 #
 # + email - Identification of the user
 # + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
-isolated function fetchEmployeeInfoQuery(string email) returns sql:ParameterizedQuery =>
+isolated function fetchEmployeeInfoQuery(string email) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            e.id                       AS id,
+            e.last_name                AS lastName,
+            e.first_name               AS firstName,
+            e.epf                      AS epf,
+            e.employee_location        AS employeeLocation,
+            e.work_location            AS workLocation,
+            e.wso2_email               AS wso2Email,
+            e.work_phone_number        AS workPhoneNumber,
+            e.start_date               AS startDate,
+            e.job_role                 AS jobRole,
+            e.manager_email            AS managerEmail,
+            e.report_to_email          AS reportToEmail,
+            e.additional_manager_email AS additionalManagerEmail,
+            e.additional_report_to_email AS additionalReportToEmail,
+            e.employee_status          AS employeeStatus,
+            e.length_of_service        AS lengthOfService,
+            e.employee_thumbnail       AS employeeThumbnail,
+            e.subordinate_count        AS subordinateCount,
+            e.probation_end_date       AS probationEndDate,
+            e.agreement_end_date       AS agreementEndDate,
+            e.employment_type_id       AS employmentTypeId,
+            e.designation_id           AS designationId,
+            e.office_id                AS officeId,
+            o.company_id               AS companyId,
+            e.team_id                  AS teamId,
+            e.sub_team_id              AS subTeamId,
+            e.business_unit_id         AS businessUnitId,
+            e.unit_id                  AS unitId,
+            e.personal_info_id         AS personalInfoId
+        FROM employee e
+        LEFT JOIN office o ON o.id = e.office_id
+        WHERE e.wso2_email = ${email};
+    `;
 
-    `SELECT
-        e.id                                         AS id,
-        e.last_name                                  AS lastName,
-        e.first_name                                 AS firstName,
-        e.work_location                                      AS workLocation,
-        e.epf                                        AS epf,
-        e.employee_location                          AS employeeLocation,
-        e.wso2_email                                 AS wso2Email,
-        e.work_phone_number                          AS workPhoneNumber,
-        e.start_date                                 AS startDate,
-        e.job_role                                   AS jobRole,
-        e.manager_email                              AS managerEmail,
-        e.report_to_email                            AS reportToEmail,
-        e.additional_manager_email                   AS additionalManagerEmail,
-        e.additional_report_to_email                 AS additionalReportToEmail,
-        e.employee_status                            AS employeeStatus,
-        e.length_of_service                          AS lengthOfService,
-        e.relocation_status                          AS relocationStatus,
-        e.employee_thumbnail                         AS employeeThumbnail,
-        e.subordinate_count                          AS subordinateCount,
-        e._timestamp                                 AS timestamp,
-        e.probation_end_date                         AS probationEndDate,
-        e.agreement_end_date                         AS agreementEndDate,
-        et.name                                      AS employmentType,
-        d.job_band                                   AS jobBand,
-        c.name                                       AS company,
-        o.name                                       AS office,
-        bu.name                                      AS businessUnit,
-        t.name                                       AS team,
-        st.name                                      AS subTeam,
-        u.name                                       AS unit
-    FROM employee e
-    LEFT JOIN designation          d  ON d.id  = e.designation_id
-    LEFT JOIN employment_type      et ON et.id  = e.employment_type_id
-    LEFT JOIN office               o  ON o.id   = e.office_id
-    LEFT JOIN company              c  ON c.id   = o.company_id
-    LEFT JOIN business_unit   bu ON bu.id  = e.business_unit_id
-    LEFT JOIN team            t  ON t.id   = e.team_id
-    LEFT JOIN sub_team        st ON st.id  = e.sub_team_id
-    LEFT JOIN unit            u  ON u.id   = e.unit_id
-    WHERE e.wso2_email = ${email}`;
+    return query;
+}
 
 # Retrieve query to fetch org data from the db.
 #
