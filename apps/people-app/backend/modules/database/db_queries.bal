@@ -370,7 +370,7 @@ isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee
         sql:ParameterizedQuery joinedClauses = joinQuery(setClauses, `, `);
         query = sql:queryConcat(query, joinedClauses);
     }
-    query = sql:queryConcat(query, ` WHERE id = ${employee.id}`);
+    query = sql:queryConcat(query, ` WHERE wso2_email = ${employee.wso2Email}`);
 
     return query;
 }
