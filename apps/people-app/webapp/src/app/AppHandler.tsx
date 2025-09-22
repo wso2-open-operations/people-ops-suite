@@ -13,24 +13,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
+import { useEffect, useState } from "react";
+
+import ErrorHandler from "@component/common/ErrorHandler";
+import PreLoader from "@component/common/PreLoader";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+
+import Layout from "../layout/Layout";
 import Error from "../layout/pages/404";
 import MaintenancePage from "../layout/pages/Maintenance";
 import { getActiveRoutesV2, routes } from "../route";
-import Layout from "../layout/Layout";
-import { RootState, useAppSelector } from "@slices/store";
-import PreLoader from "@component/common/PreLoader";
-import ErrorHandler from "@component/common/ErrorHandler";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useGetCompanyDataQuery } from "../slices/api/apiSlice";
+import { fetchEmployeeInfo } from "../slices/employeeSlice/employee";
 
 const AppHandler = () => {
-  const [appState, setAppState] = useState<
-    "loading" | "success" | "failed" | "maintenance"
-  >("loading");
+  const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
+    "loading",
+  );
+
+  const dispatch = useAppDispatch();
+  dispatch(fetchEmployeeInfo());
 
   const auth = useAppSelector((state: RootState) => state.auth);
-  const appConfig = useAppSelector((state: RootState) => state.appConfig);
+
+  const { isLoading, isSuccess, isError } = useGetCompanyDataQuery();
+
   let loadingMessage: string;
 
   const router = createBrowserRouter([
@@ -43,20 +52,19 @@ const AppHandler = () => {
   ]);
 
   useEffect(() => {
-    if (auth.status === "loading" || appConfig.state === "loading") {
+    if (auth.status === "loading" || isLoading === true) {
       if (auth.status === "loading")
         loadingMessage = auth.statusMessage ? auth.statusMessage : "loading";
-      if (appConfig.state === "loading")
-        loadingMessage = auth.statusMessage ? auth.statusMessage : "loading";
+      if (isLoading === true) loadingMessage = auth.statusMessage ? auth.statusMessage : "loading";
       setAppState("loading");
-    } else if (auth.status === "success" && appConfig.state === "success") {
+    } else if (auth.status === "success" && isSuccess === true) {
       setAppState("success");
-    } else if (auth.status === "failed" || appConfig.state === "failed") {
+    } else if (auth.status === "failed" || isError === true) {
       setAppState("failed");
     } else if (auth.mode === "maintenance" && auth.status === "success") {
       setAppState("maintenance");
     }
-  }, [auth.status, appConfig.state]);
+  }, [auth.status, isLoading, isSuccess, isError]);
 
   const renderApp = () => {
     switch (appState) {
