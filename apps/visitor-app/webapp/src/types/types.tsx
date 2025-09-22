@@ -28,6 +28,13 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
+export enum VisitStatus {
+  pending = "PENDING",
+  accepted = "ACCEPTED",
+  completed = "COMPLETED",
+  rejected = "REJECTED",
+}
+
 export interface CommonCardProps {
   actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
   dataCardIndex: number;

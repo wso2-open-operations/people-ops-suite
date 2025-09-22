@@ -215,15 +215,19 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
     return mainQuery;
 }
 
-isolated function approveVisitsQuery(VisitApprovePayload[] payloads) returns sql:ParameterizedQuery {
+isolated function bulkUpdateVisitStatusQuery(VisitApprovePayload[] payloads) returns sql:ParameterizedQuery|error {
 
-    // Arrays to hold CASE conditions and parameters
     sql:ParameterizedQuery[] statusCases = [];
     sql:ParameterizedQuery[] passNumberCases = [];
     int[] inClauseIds = []; // Changed from anydata[] to int[] since visit_id is likely an integer
 
     // Build CASE conditions and collect IDs for IN clause
     foreach VisitApprovePayload update in payloads {
+        // Validate that passNumber is not null when status is ACCEPTED
+        if update.status == "ACCEPTED" && update.passNumber is () {
+            return error("passNumber cannot be null when status is ACCEPTED for visit_id: " + update.id.toString());
+        }
+
         statusCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.status}`));
         passNumberCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.passNumber}`));
         inClauseIds.push(update.id);
@@ -242,8 +246,30 @@ isolated function approveVisitsQuery(VisitApprovePayload[] payloads) returns sql
             ` ELSE pass_number END, updated_on = CURRENT_TIMESTAMP WHERE visit_id IN (`,
             sql:arrayFlattenQuery(inClauseIds),
             `)`
-    );
+);
 
     return updateQuery;
 }
 
+# Build queries to update visit status and fetch visitor email.
+#
+# + payload - Payload containing the visit ID and the new status
+# + return - Array of sql:ParameterizedQuery - First query updates the visit status, second
+isolated function updateVisitStatusQuery(VisitApprovePayload payload) returns sql:ParameterizedQuery[] {
+    sql:ParameterizedQuery updateQuery = sql:queryConcat(
+            `UPDATE visit v `,
+            `SET status = ${payload.status}, `,
+            `pass_number = CASE WHEN ${payload.passNumber} IS NOT NULL THEN ${payload.passNumber} ELSE pass_number END, `,
+            `updated_on = CURRENT_TIMESTAMP `,
+            `WHERE v.visit_id = ${payload.id}`
+    );
+
+    sql:ParameterizedQuery selectQuery = sql:queryConcat(
+            `SELECT vs.email `,
+            `FROM visit v `,
+            `JOIN visitor vs ON v.nic_hash = vs.nic_hash `,
+            `WHERE v.visit_id = ${payload.id}`
+    );
+
+    return [updateQuery, selectQuery];
+}

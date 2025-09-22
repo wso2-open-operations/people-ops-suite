@@ -28,9 +28,9 @@ interface VisitState {
   errorMessage: string | null;
   backgroundProcess: boolean;
   backgroundProcessMessage: string | null;
-  approveState: State;
-  approveMessage: string | null;
-  approveError: string | null;
+  statusUpdateState: State;
+  statusUpdateMessage: string | null;
+  statusUpdateError: string | null;
 }
 
 export interface FloorRoom {
@@ -68,6 +68,7 @@ export interface Visit {
   createdOn: string;
   updatedBy: string;
   updatedOn: string;
+  invitationId: number | null;
 }
 
 export interface FetchVisitsResponse {
@@ -77,7 +78,7 @@ export interface FetchVisitsResponse {
 
 export interface ApproveVisitPayload {
   id: Number;
-  passNumber: Number;
+  passNumber?: Number;
   status: string;
 }
 
@@ -89,9 +90,9 @@ const initialState: VisitState = {
   errorMessage: null,
   backgroundProcess: false,
   backgroundProcessMessage: null,
-  approveState: State.idle,
-  approveMessage: null,
-  approveError: null,
+  statusUpdateState: State.idle,
+  statusUpdateMessage: null,
+  statusUpdateError: null,
 };
 
 export const addVisit = createAsyncThunk(
@@ -171,20 +172,23 @@ export const fetchVisits = createAsyncThunk(
   }
 );
 
-export const approveVisits = createAsyncThunk(
-  "visit/approveVisits",
-  async (payload: ApproveVisitPayload[], { dispatch, rejectWithValue }) => {
+export const visitStatusUpdate = createAsyncThunk(
+  "visit/visitStatusUpdate",
+  async (payload: ApproveVisitPayload, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
+
     return new Promise<{ message: string }>((resolve, reject) => {
       APIService.getInstance()
-        .patch(AppConfig.serviceUrls.approveInvitationWithPassNumber, payload, {
+        .post(`${AppConfig.serviceUrls.visits}-status-update`, payload, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({
-              message: response.data.message || "Visits approved successfully!",
+              message:
+                response.data.message ||
+                `Visit status updated to "${payload.status}" successfully!`,
               type: "success",
             })
           );
@@ -196,7 +200,7 @@ export const approveVisits = createAsyncThunk(
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? error.response?.data?.message
-                  : "An error occurred while approving visits!",
+                  : "An error occurred while updating visit status!",
               type: "error",
             })
           );
@@ -216,10 +220,10 @@ const VisitSlice = createSlice({
     resetState(state) {
       state.state = State.idle;
     },
-    resetApproveState(state) {
-      state.approveState = State.idle;
-      state.approveMessage = null;
-      state.approveError = null;
+    resetStatusUpdateState(state) {
+      state.statusUpdateState = State.idle;
+      state.statusUpdateMessage = null;
+      state.statusUpdateError = null;
     },
   },
   extraReducers: (builder) => {
@@ -256,26 +260,27 @@ const VisitSlice = createSlice({
         state.errorMessage =
           (action.payload as string) || "Failed to fetch visits";
       })
-      .addCase(approveVisits.pending, (state) => {
-        state.approveState = State.loading;
-        state.approveMessage = "Hang tight! We’re approving your visits...";
-        state.approveError = null;
+      .addCase(visitStatusUpdate.pending, (state) => {
+        state.statusUpdateState = State.loading;
+        state.statusUpdateMessage =
+          "Hang tight! We’re updating visit status...";
+        state.statusUpdateError = null;
       })
       .addCase(
-        approveVisits.fulfilled,
+        visitStatusUpdate.fulfilled,
         (state, action: PayloadAction<{ message: string }>) => {
-          state.approveState = State.success;
-          state.approveMessage = action.payload.message;
+          state.statusUpdateState = State.success;
+          state.statusUpdateMessage = action.payload.message;
         }
       )
-      .addCase(approveVisits.rejected, (state, action) => {
-        state.approveState = State.failed;
-        state.approveError =
-          (action.payload as string) || "Failed to approve visits";
+      .addCase(visitStatusUpdate.rejected, (state, action) => {
+        state.statusUpdateState = State.failed;
+        state.statusUpdateError =
+          (action.payload as string) || "Failed to update visit status";
       });
   },
 });
 
-export const { resetSubmitState, resetState, resetApproveState } =
+export const { resetSubmitState, resetState, resetStatusUpdateState } =
   VisitSlice.actions;
 export default VisitSlice.reducer;

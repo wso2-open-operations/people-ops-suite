@@ -21,6 +21,7 @@ import DomainAddIcon from "@mui/icons-material/DomainAdd";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
+import TourIcon from "@mui/icons-material/Tour";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
@@ -52,9 +53,9 @@ export const routes: RouteObjectWithRole[] = [
   },
   {
     path: "/visitmanagement",
-    text: "Visit Management",
-    icon: React.createElement(DomainAddIcon),
-    element: React.createElement(View.adminUi),
+    text: "Visits",
+    icon: React.createElement(TourIcon),
+    element: React.createElement(View.admin),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {

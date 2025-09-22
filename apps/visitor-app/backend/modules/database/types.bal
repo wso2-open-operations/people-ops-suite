@@ -135,7 +135,7 @@ public type VisitRecord record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -172,6 +172,8 @@ public type Visit record {|
     string contactNumber;
     # Email of the visitor
     string? email;
+    # Invitation ID associated with the visit
+    int? invitationId;
 |};
 
 # Response Record for Visits.
@@ -259,6 +261,6 @@ public type InvitationRecord record {|
 
 public type VisitApprovePayload record {|
     int id;
-    int passNumber;
+    int? passNumber = ();
     string status;
 |};

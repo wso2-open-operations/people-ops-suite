@@ -464,7 +464,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     };
 
-    resource function patch approveInvitaionWithPassNumber(database:VisitApprovePayload[] payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+    resource function patch visits\-status\-update\-bulk(database:VisitApprovePayload[] payload) returns http:Ok|http:BadRequest|http:InternalServerError {
 
         if payload.length() == 0 {
             return <http:BadRequest>{
@@ -474,7 +474,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? approveError = database:approveVisits(payload);
+        error? approveError = database:bulkUpdateVisitStatus(payload);
 
         if approveError is error {
             string customError = "Error occurred while approving visits!";
@@ -489,6 +489,56 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Ok>{
             body: {
                 message: "Visits approved successfully!"
+            }
+        };
+
+    }
+
+    # Update visit status.
+    #
+    # + payload - Payload containing the visit ID and the new status
+    # + return - Successfully updated or error
+    resource function post visits\-status\-update(database:VisitApprovePayload payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+
+        string|error encodedVisitorEmail = database:updateVisitStatus(payload);
+
+        if encodedVisitorEmail is error {
+            string customError = "Error occurred while updating visits!";
+            log:printError(customError, encodedVisitorEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        string|error decodedVisitorEmail = database:decrypt(encodedVisitorEmail);
+        if decodedVisitorEmail is error {
+            string customError = "Error occurred while decrypting email!";
+            log:printError(customError, decodedVisitorEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? emailError = email:sendEmail({
+                                                to: [decodedVisitorEmail],
+                                                'from: email:visitorNotificationFrom,
+                                                subject: "Testing visit status update",
+                                                template: "Your visit status has been updated to " + payload.status,
+                                                cc: [email:receptionEmail]
+                                            });
+
+        if emailError is error {
+            string errMsg = "Error occurred while sending the email!";
+            log:printError(errMsg, emailError);
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Visits updated successfully!"
             }
         };
 

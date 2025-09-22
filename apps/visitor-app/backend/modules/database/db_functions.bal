@@ -113,7 +113,7 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 nicHash: visit.nicHash,
                 nicNumber: check decrypt(visit.nicNumber),
                 name: check decrypt(visit.name),
-                email: visit.email is string ? check decrypt(<string>visit.email) : null,
+                email: check decrypt(<string>visit.email),
                 contactNumber: check decrypt(visit.contactNumber),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
@@ -123,13 +123,32 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 createdBy: visit.createdBy,
                 createdOn: visit.createdOn,
                 updatedBy: visit.updatedBy,
-                updatedOn: visit.updatedOn
+                updatedOn: visit.updatedOn,
+                invitationId: visit.invitationId
             });
         };
 
     return {totalCount, visits};
 }
 
-public isolated function approveVisits(VisitApprovePayload[] payloads) returns error? {
-    sql:ExecutionResult _ = check databaseClient->execute(approveVisitsQuery(payloads));
+public isolated function bulkUpdateVisitStatus(VisitApprovePayload[] payloads) returns error? {
+    sql:ParameterizedQuery|error query = bulkUpdateVisitStatusQuery(payloads);
+    if query is error {
+        return query;
+    }
+    sql:ExecutionResult _ = check databaseClient->execute(query);
+}
+
+# Update visit status.
+#
+# + payload - Payload containing the visit ID and the new status
+# + return - Encoded email of the visitor or error
+public isolated function updateVisitStatus(VisitApprovePayload payload) returns string|error {
+    transaction {
+        sql:ParameterizedQuery[] queries = updateVisitStatusQuery(payload);
+        _ = check databaseClient->execute(queries[0]);
+        string email = check databaseClient->queryRow(queries[1]);
+        check commit;
+        return email;
+    }
 }
