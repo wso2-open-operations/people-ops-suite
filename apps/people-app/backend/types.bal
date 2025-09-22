@@ -130,7 +130,7 @@ public type EmployeeInfo record {|
 # Response structure of updating employee_info
 public type UpdateEmployeeInfoPlayload record {|
     # Id of the employee
-    string id;
+    string id?;
     # Last name of the employee
     string lastName?;
     # First name of the employee
