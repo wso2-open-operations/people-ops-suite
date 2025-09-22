@@ -215,18 +215,18 @@ public type UpdatedEmployeeInfo record {|
     time:Date agreementEndDate?;
     # Type of employment (e.g., Full-time, Part-time, Contract)
     string employmentType?;
-    # Name of the company the employee belongs to
-    string company?;
-    # Name of the office where the employee works
-    string office?;
-    # Name of the business unit of the employee
-    string businessUnit?;
-    # Name of the team of the employee
-    string team?;
-    # Name of the sub-team of the employee
-    string subTeam?;
-    # Name of the unit of the employee
-    string unit?;
+    # Id of the company the employee belongs to
+    int companyId?;
+    # Id of the office where the employee works
+    int officeId?;
+    # Id of the business unit of the employee
+    int businessUnitId?;
+    # Id of the team of the employee
+    int teamId?;
+    # Id of the sub-team of the employee
+    int subTeamId?;
+    # Id of the unit of the employee
+    int unitId?;
 |};
 
 # [Database] filter value to filter db actions
