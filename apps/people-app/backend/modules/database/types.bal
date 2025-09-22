@@ -168,7 +168,7 @@ public type EmployeeInfo record {|
 # [Database] Response Structure of updating employee_info
 public type UpdatedEmployeeInfo record {|
     # Id of the employee
-    string id;
+    string id?;
     # Last name of the employee
     string lastName?;
     # First name of the employee
