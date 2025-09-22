@@ -1,14 +1,9 @@
 import TabsPage from "@root/src/layout/pages/TabsPage";
-// import { fetchEmployeeInfo } from "@root/src/slices/employeeSlice/employee";
-import { useAppDispatch } from "@root/src/slices/store";
 import { Files, Landmark, SquareUserRound, UserLock } from "lucide-react";
 
 import EmployeeInfo from "./panel/EmployeeInfo";
 
 function Profile() {
-  const dispatch = useAppDispatch();
-
-  // dispatch(fetchEmployeeInfo());
   return (
     <TabsPage
       title="Profile"
