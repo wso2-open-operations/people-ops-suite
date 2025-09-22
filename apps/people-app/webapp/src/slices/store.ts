@@ -12,18 +12,19 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-
-import { enableMapSet } from "immer";
-import authReducer from "@slices/authSlice/auth";
-import userReducer from "@slices/userSlice/user";
+// under the License.
 import { configureStore } from "@reduxjs/toolkit";
+import { enableMapSet } from "immer";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+
+import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
-import appConfigReducer from "@slices/configSlice/config";
 import contactReducer from "@slices/contactSlice/contact";
 import customerReducer from "@slices/customerSlice/customer";
 import employeeReducer from "@slices/employeeSlice/employee";
-import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+import userReducer from "@slices/userSlice/user";
+
+import { apiSlice } from "./api/apiSlice";
 
 enableMapSet();
 
@@ -35,12 +36,10 @@ export const store = configureStore({
     contact: contactReducer,
     employee: employeeReducer,
     customer: customerReducer,
-    appConfig: appConfigReducer,
+    // appConfig: appConfigReducer,
+    [apiSlice.reducerPath]: apiSlice.reducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      thunk: undefined,
-    }),
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(apiSlice.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
