@@ -354,6 +354,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        EmployeeInfo|error? updatedEmployee = database:fetchEmployeeInfo(email);
+
+        if updatedEmployee is () {
+            log:printError("No employee found for email: " + email + " to update the cache");
+        } else if updatedEmployee is error {
+            log:printError("Error occurred while upadint cache of - employee info.", updatedEmployee);
+        } else {
+            error? cacheResult = employeeInfoCache.put(email, updatedEmployee);
+
+            if cacheResult is error {
+                string customError = string `Failed to cache employee: ${email} employee info`;
+                log:printError(customError, result);
+            }
+        }
+
         return <http:Ok>{
             body: {
                 message: "Successfully updated the employee data"
