@@ -55,3 +55,5 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   element?: React.ReactNode;
   showInSidebar: boolean;
 }
+
+export type ComboOption = { label: string; value: number };
