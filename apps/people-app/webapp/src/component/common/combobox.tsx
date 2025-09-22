@@ -1,10 +1,11 @@
+import { AnyFieldApi } from "@tanstack/react-form";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 import * as React from "react";
 
 import { cn } from "@utils/utils";
 
-import { Button } from "./button";
+import { Button } from "../common/button";
 import {
   Command,
   CommandEmpty,
@@ -12,64 +13,73 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "./command";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+} from "../common/command";
+import { Popover, PopoverContent, PopoverTrigger } from "../common/popover";
 
-type Item = { id: number; name: string; headEmail?: string };
+export type ComboOption = { label: string; value: number };
 
-interface ComboBoxProps {
-  data: Item[];
-  valueId: number | undefined | null;
+type ComboboxProps = {
+  field: AnyFieldApi;
+  options: ComboOption[];
+  placeholder?: string;
+  className?: string;
   disabled?: boolean;
-  placeholder?: string | number;
-  onChange: (id: number | null, item?: Item) => void;
-  onBlur?: () => void;
-}
+};
 
-export default function Combobox(props: ComboBoxProps) {
-  const { data, valueId, disabled, placeholder, onChange, onBlur } = props;
+export function Combobox({
+  field,
+  options,
+  placeholder = "Select…",
+  className,
+  disabled,
+}: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
-  const selected = React.useMemo(() => data.find((x) => x.id === valueId) ?? null, [data, valueId]);
+  const selected = options.find((o) => o.value === field.state.value);
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-      }}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-[240px] justify-between"
+          className={`flex-end items-end ${className}`}
           disabled={disabled}
         >
-          {selected ? selected.name : placeholder}
-          <ChevronsUpDown className="opacity-50" />
+          <span
+            className={`w-full flex flex-row justify-between items-center ${disabled && "justify-end"}`}
+          >
+            <span className={`p-r ${disabled ? "text-st-200" : "text-st-300 "}`}>
+              {selected ? selected.label : placeholder}
+            </span>
+
+            <ChevronsUpDown className={cn("ml-2 size-4 opacity-50", disabled && "hidden")} />
+          </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[240px] p-0">
+
+      <PopoverContent className={cn("p-0", className)}>
         <Command>
           <CommandInput placeholder="Search..." className="h-9" />
           <CommandList>
             <CommandEmpty>No results.</CommandEmpty>
             <CommandGroup>
-              {data.map((item) => (
+              {options.map((opt) => (
                 <CommandItem
-                  key={item.id}
-                  value={item.name}
+                  key={opt.value}
+                  value={opt.label}
                   onSelect={() => {
+                    field.handleChange(opt.value);
                     setOpen(false);
-                    onChange(item.id, item);
                   }}
+                  className="flex items-center"
                 >
-                  {item.name}
+                  {opt.label}
                   <Check
                     className={cn(
-                      "ml-auto",
-                      selected?.id === item.id ? "opacity-100" : "opacity-0",
+                      "ml-auto size-4",
+                      opt.value === field.state.value ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>
