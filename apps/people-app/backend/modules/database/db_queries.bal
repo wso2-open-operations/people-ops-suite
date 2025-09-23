@@ -504,3 +504,93 @@ isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
     return sqlQuery;
 }
 
+# Creates two SQL insert queries to add a new employee.
+#
+# + employee - The employee record with personal and employee info
+# + return - Two queries: first for `personal_info`, second for `employee`
+isolated function createEmployeeQuery(Employee employee) returns [sql:ParameterizedQuery, sql:ParameterizedQuery] {
+
+    PersonalInfo pi = employee.personalInfo;
+    EmployeeInfo ei = employee.employeeInfo;
+
+    string? languageSpokenStr = pi.languageSpoken is json ? pi.languageSpoken.toJsonString() : null;
+    string? nokInfoStr = pi.nokInfo is json ? pi.nokInfo.toJsonString() : null;
+    string? onboardingDocumentsStr = pi.onboardingDocuments is json ? pi.onboardingDocuments.toJsonString() : null;
+    string? educationInfoStr = pi.educationInfo is json ? pi.educationInfo.toJsonString() : null;
+
+    sql:ParameterizedQuery q1 = `
+        INSERT INTO personal_info
+            (nic, full_name, name_with_initials, first_name, last_name, title,
+             dob, age, personal_email, personal_phone, home_phone, address,
+             postal_code, country, nationality,
+             language_spoken, nok_info, onboarding_documents, education_info,
+             created_by, updated_by)
+        VALUES
+            (${pi.nic}, ${pi.fullName}, ${pi.nameWithInitials}, ${pi.firstName}, ${pi.lastName}, ${pi.title},
+             ${pi.dob}, ${pi.age}, ${pi.personalEmail}, ${pi.personalPhone}, ${pi.homePhone}, ${pi.address},
+             ${pi.postalCode}, ${pi.country}, ${pi.nationality},
+             ${languageSpokenStr}, ${nokInfoStr}, ${onboardingDocumentsStr}, ${educationInfoStr},
+             ${pi.createdBy}, ${pi.updatedBy})
+    `;
+
+    sql:ParameterizedQuery q2 = `
+        INSERT INTO employee
+            (id, last_name, first_name, epf, employee_location, work_location, wso2_email,
+             work_phone_number, start_date, job_role,
+             manager_email, report_to_email, additional_manager_email, additional_report_to_email,
+             employee_status, length_of_service, relocation_status, employee_thumbnail, subordinate_count,
+             probation_end_date, agreement_end_date, created_by, updated_by,
+             office_id, employment_type_id, designation_id, team_id, sub_team_id, business_unit_id, unit_id,
+             personal_info_id)
+        VALUES
+            (${ei.id}, ${ei.lastName}, ${ei.firstName}, ${ei.epf}, ${ei.employeeLocation}, ${ei.workLocation}, ${ei.wso2Email},
+             ${ei.workPhoneNumber}, ${ei.startDate}, ${ei.jobRole},
+             ${ei.managerEmail}, ${ei.reportToEmail}, ${ei.additionalManagerEmail}, ${ei.additionalReportToEmail},
+             ${ei.employeeStatus}, ${ei.lengthOfService}, ${()}, ${ei.employeeThumbnail}, ${ei.subordinateCount},
+             ${ei.probationEndDate}, ${ei.agreementEndDate}, ${pi.createdBy}, ${pi.updatedBy},
+             ${ei.officeId}, ${ei.employmentTypeId}, ${ei.designationId}, ${ei.teamId}, ${ei.subTeamId}, ${ei.businessUnitId}, ${ei.unitId},
+             LAST_INSERT_ID())
+    `;
+
+    return [q1, q2];
+}
+
+# Builds a parameterized SQL query to fetch the personal information of an employee by email.
+#
+# + email - The WSO2 email of the employee to look up
+# + return - A `sql:ParameterizedQuery` that selects all fields from the `personal_info`
+isolated function fetchEmployeePersonalInfoQuery(string email) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery q = `
+        SELECT
+            pi.id                                 AS id,
+            pi.nic                                AS nic,
+            pi.full_name                          AS fullName,
+            pi.name_with_initials                 AS nameWithInitials,
+            pi.first_name                         AS firstName,
+            pi.last_name                          AS lastName,
+            pi.title                              AS title,
+            pi.dob                                AS dob,
+            pi.age                                AS age,
+            pi.personal_email                     AS personalEmail,
+            pi.personal_phone                     AS personalPhone,
+            pi.home_phone                         AS homePhone,
+            pi.address                            AS address,
+            pi.postal_code                        AS postalCode,
+            pi.country                            AS country,
+            pi.nationality                        AS nationality,
+            pi.language_spoken                    AS languageSpoken,
+            pi.nok_info                           AS nokInfo,
+            pi.onboarding_documents               AS onboardingDocuments,
+            pi.education_info                     AS educationInfo,
+            pi.created_by                         AS createdBy,
+            pi.created_on                         AS createdOn,
+            pi.updated_by                         AS updatedBy,
+            pi.updated_on                         AS updatedOn
+        FROM employee e
+        JOIN personal_info pi
+          ON pi.id = e.personal_info_id
+        WHERE e.wso2_email = ${email}
+        LIMIT 1
+    `;
+    return q;
+}
