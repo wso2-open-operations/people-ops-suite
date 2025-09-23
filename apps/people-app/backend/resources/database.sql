@@ -226,33 +226,51 @@ CREATE TABLE `recruit` (
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  `business_unit` INT NOT NULL,
-  `unit` INT NULL,
-  `team` INT NOT NULL,
-  `sub_team` INT NOT NULL,
-  `company` INT NOT NULL,
-  `office` INT NOT NULL,
-  `employment_type` INT NOT NULL,
-  `designation_id` INT NOT NULL,
-  `personal_info_id` INT NULL,
+  `personal_info_id`     INT NULL,
+  `company_id`           INT NOT NULL,
+  `office_id`            INT NOT NULL,
+  `business_unit_id`     INT NOT NULL,
+  `team_id`              INT NOT NULL,
+  `sub_team_id`          INT NOT NULL,
+  `unit_id`              INT NULL,
+  `employment_type_id`   INT NOT NULL,
+  `designation_id`       INT NOT NULL       
+
   CONSTRAINT `fk_recruit_personal_info`
-    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`),
+    FOREIGN KEY (`personal_info_id`)
+    REFERENCES `personal_info` (`id`),
+    
   CONSTRAINT `fk_recruit_bu`
-    FOREIGN KEY (`business_unit`) REFERENCES `business_unit` (`id`),
+    FOREIGN KEY (`business_unit_id`)
+    REFERENCES `business_unit` (`id`),
+
   CONSTRAINT `fk_recruit_team`
-    FOREIGN KEY (`team`) REFERENCES `team` (`id`),
+    FOREIGN KEY (`team_id`)
+    REFERENCES `team` (`id`),
+
   CONSTRAINT `fk_recruit_subteam`
-    FOREIGN KEY (`sub_team`) REFERENCES `sub_team` (`id`),
+    FOREIGN KEY (`sub_team_id`)
+    REFERENCES `sub_team` (`id`),
+
   CONSTRAINT `fk_recruit_unit`
-    FOREIGN KEY (`unit`) REFERENCES `unit` (`id`),
+    FOREIGN KEY (`unit_id`)
+    REFERENCES `unit` (`id`),
+
   CONSTRAINT `fk_recruit_company`
-    FOREIGN KEY (`company`) REFERENCES `company` (`id`),
+    FOREIGN KEY (`company_id`)
+    REFERENCES `company` (`id`),
+
   CONSTRAINT `fk_recruit_office`
-    FOREIGN KEY (`office`) REFERENCES `office` (`id`),
+    FOREIGN KEY (`office_id`)
+    REFERENCES `office` (`id`),
+
   CONSTRAINT `fk_recruit_designation`
-    FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
+    FOREIGN KEY (`designation_id`)
+    REFERENCES `designation` (`id`),
+
   CONSTRAINT `fk_recruit_employment_type`
-    FOREIGN KEY (`employment_type`) REFERENCES `employment_type` (`id`)
+    FOREIGN KEY (`employment_type_id`)
+    REFERENCES `employment_type` (`id`)
 );
 
 -- Employee table
@@ -283,9 +301,9 @@ CREATE TABLE `employee` (
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `office_id` INT NULL,
   `employment_type_id` INT NULL,
   `designation_id` INT NULL,
-  `office_id` INT NULL,
   `team_id` INT NULL,
   `sub_team_id` INT NULL,
   `business_unit_id` INT NULL,
