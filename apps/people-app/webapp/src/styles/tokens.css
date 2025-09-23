@@ -54,6 +54,9 @@
 
   /* ====== States : Light and Default ===== */
 
+  --color-st-primary-100: var(--color-primary-default);
+  --color-st-primary-200: var(--color-primary-45);
+
   /* Secondary */
   --color-st-secondary-100: #212a30;
 
@@ -91,6 +94,8 @@
   /* Components */
   --color-st-header-bg: var(--color-neutral-white);
   --color-st-sidebar-border: var(--color-neutral-30);
+  --color-st-card-bg: #f5f8fa;
+  --color-st-card-inner-bg: #ffffffb2;
   --color-st-card-border: #e5e5e5;
   --color-st-card-inner-border: #e5e5e58f;
 }
@@ -131,6 +136,8 @@
   /* Components */
   --color-st-header-bg: var(--color-st-secondary-100);
   --color-st-sidebar-border: var(--color-neutral-20);
+  --color-st-card-bg: #171a1c;
+  --color-st-card-inner-bg: var(--color-neutral-10);
   --color-st-card-border: #212a30;
   --color-st-card-inner-border: #e5e5e50a;
 }
@@ -180,7 +187,7 @@
   .h6 {
     font-family: "Poppins";
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 500;
     line-height: 130%;
     letter-spacing: 0em;
   }
@@ -231,5 +238,33 @@
     font-weight: 500;
     line-height: 135%;
     letter-spacing: -0.03em;
+  }
+
+  .flexColFull {
+    @apply flex flex-col gap-3 w-full;
+  }
+
+  .flexColFit {
+    @apply flex flex-col gap-3 w-fit;
+  }
+
+  .flexColFitStart {
+    @apply flex flex-col justify-start items-start gap-3 w-fit;
+  }
+
+  .flexColFitEnd {
+    @apply flex flex-col justify-end items-end gap-3 w-fit;
+  }
+
+  .flexColFitCenter {
+    @apply flex flex-col justify-center items-center gap-3 w-fit;
+  }
+
+  .flexRowFullCenter {
+    @apply flex flex-row justify-center items-center gap-3 w-full;
+  }
+
+  .primaryChip {
+    @apply bg-[#FFEBDB] px-3 py-1 rounded-[4px];
   }
 }
