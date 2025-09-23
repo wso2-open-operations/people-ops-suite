@@ -26,15 +26,11 @@ import Error from "../layout/pages/404";
 import MaintenancePage from "../layout/pages/Maintenance";
 import { getActiveRoutesV2, routes } from "../route";
 import { useGetCompanyDataQuery } from "../slices/api/apiSlice";
-import { fetchEmployeeInfo } from "../slices/employeeSlice/employee";
 
 const AppHandler = () => {
   const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
     "loading",
   );
-
-  const dispatch = useAppDispatch();
-  dispatch(fetchEmployeeInfo());
 
   const auth = useAppSelector((state: RootState) => state.auth);
 
