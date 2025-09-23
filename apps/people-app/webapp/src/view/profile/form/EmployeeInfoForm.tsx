@@ -8,7 +8,7 @@ import DatePickerField from "../../../component/form/DatePicker";
 import { EmailField } from "../../../component/form/EmailField";
 import { PhoneInput } from "../../../component/form/PhoneInput";
 import { TextField } from "../../../component/form/TextField";
-import { useEmployeeInformProfile } from "../../../hooks/useEmployeeInfoForm";
+import { useEmployeeInfoForm } from "../../../hooks/useEmployeeInfoForm";
 
 interface EmployeeInfoFormProps {
   editing: boolean;
@@ -26,7 +26,7 @@ function EmployeeInfoForm(props: EmployeeInfoFormProps) {
     officeOptions,
     auth,
     handleFormCancelation,
-  } = useEmployeeInformProfile();
+  } = useEmployeeInfoForm();
 
   const hasAdmin = auth.roles.includes("ADMIN");
 
