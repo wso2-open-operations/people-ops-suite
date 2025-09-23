@@ -31,7 +31,7 @@ type NewVehicle record {|
     database:VehicleTypes vehicleType;
 |};
 
-# Response structure of retrieving user
+# Response structure of retrieving user.
 public type UserInfo record {|
     # Id of the employee
     string employeeId;
@@ -47,7 +47,7 @@ public type UserInfo record {|
     string? employeeThumbnail;
 |};
 
-# Response structure of retrieving user response to the webapp
+# Response structure of retrieving user response to the webapp.
 public type UserResponse record {|
     # Id of the employee
     string employeeId;
@@ -65,7 +65,59 @@ public type UserResponse record {|
     int[] privileges;
 |};
 
-# Response structure of retrieving employee_info
+# Personal information record mapped from the `personal_info` table.
+public type PersonalInfo record {|
+    # Unique identifier of the person
+    int id;
+    # National identity card number
+    string nic;
+    # Full legal name
+    string fullName;
+    # Name with initials, if available
+    string? nameWithInitials;
+    # First name or given name
+    string? firstName;
+    # Last name or family name
+    string? lastName;
+    # Honorific title (e.g., Mr., Ms., Dr.)
+    string title;
+    # Date of birth
+    time:Date dob;
+    # Age in years
+    int? age;
+    # Personal email address
+    string personalEmail;
+    # Personal mobile phone number
+    string personalPhone;
+    # Home landline number
+    string homePhone;
+    # Residential address
+    string address;
+    # Postal/ZIP code
+    string? postalCode;
+    # Country of residence
+    string country;
+    # Nationality or citizenship
+    string? nationality;
+    # Languages spoken (as JSON structure)
+    json? languageSpoken;
+    # Next-of-kin information
+    json? nokInfo;
+    # Onboarding-related documents
+    json? onboardingDocuments;
+    # Education background details
+    json? educationInfo;
+    # User who created the record
+    string createdBy;
+    # Record creation timestamp
+    time:Utc createdOn;
+    # User who last updated the record
+    string updatedBy;
+    # Record last update timestamp
+    time:Utc updatedOn;
+|};
+
+# Response structure of retrieving employee_info.
 public type EmployeeInfo record {|
     # Employee ID
     string id;
@@ -127,7 +179,15 @@ public type EmployeeInfo record {|
     int personalInfoId;
 |};
 
-# Response structure of updating employee_info
+# Response strcutre of Employee record.
+public type Employee record {|
+    # Personal Info
+    PersonalInfo personalInfo;
+    # Employee Info
+    EmployeeInfo employeeInfo;
+|};
+
+# Response structure of updating employee_info.
 public type UpdateEmployeeInfoPlayload record {|
     # Id of the employee
     string id?;
@@ -194,7 +254,7 @@ public type UpdateEmployeeInfoPlayload record {|
 # Structure of the org data filter value
 type FilterValue boolean|int|string|int[]|string[]|time:Date;
 
-# [OrgRecord] Structure of organization filter record
+# [OrgRecord] Structure of organization filter record.
 public type OrgDetailsFilter record {|
     # Id of the business unit
     int[]? businessUnitIds = ();
@@ -294,7 +354,7 @@ public type Unit record {
     int isActive;
 };
 
-# Structure of json response
+# Structure of json response.
 public type Row record {|
     # Json execution result
     json result;
