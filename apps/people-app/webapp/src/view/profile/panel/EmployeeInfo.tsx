@@ -1,4 +1,8 @@
-import ProfileCard from "@root/src/component/ui/ProfileCard";
+import { H } from "@root/src/component/common/heading";
+import { P } from "@root/src/component/common/text";
+import { getNameInitials, yearsOfService } from "@root/src/utils/utils";
+import EmployeeInfoForm from "@root/src/view/profile/form/EmployeeInfoForm";
+import ProfileCard from "@root/src/view/profile/form/ProfileCard";
 import { Edit, User } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@component/common/avatar";
@@ -6,62 +10,54 @@ import { RootState, useAppSelector } from "@slices/store";
 
 function EmployeeInfo() {
   const user = useAppSelector((state: RootState) => state.user);
+  const employee = useAppSelector((state: RootState) => state.employee.employeeInfo);
 
   const userName: string | undefined =
     [user.userInfo?.firstName, user.userInfo?.lastName].filter(Boolean).join(" ") || undefined;
 
-  const initials =
-    typeof userName === "string"
-      ? userName
-          .split(" ")
-          .slice(0, 2)
-          .map((word) => word[0])
-          .join("")
-          .toUpperCase()
-      : "name";
+  const initials = getNameInitials(userName);
 
-  const date = new Date();
+  const service = yearsOfService(employee?.startDate);
 
-  const now = new Intl.DateTimeFormat("en-US", {
-    timeStyle: "short",
-  }).format(date);
+  if (!user.userInfo) return <div />;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flexColFull gap-8">
       <div className="flex p-1">
-        <div className="flex justify-start items-start flex-col w-fit gap-3">
-          <Avatar className=" h-30 w-30 outline-[1.6px] outline-offset-[-1px] outline-neutral-100/10 rounded-lg">
-            <AvatarImage className="rounded-lg" src={`${user.userInfo?.employeeThumbnail}`} />
-            <AvatarFallback className="rounded-lg">
-              <p className="h5 text-st-200">{initials}</p>
+        <div className="flexColFitStart gap-2">
+          <Avatar className="h-30 w-30">
+            <AvatarImage src={`${user.userInfo?.employeeThumbnail}`} />
+            <AvatarFallback>
+              <H variant="h5">{initials}</H>
             </AvatarFallback>
           </Avatar>
 
-          <div className="flex flex-col w-fit">
-            <p className="h5 whitespace-nowrap truncate text-st-200">{`${user.userInfo?.firstName} ${user.userInfo?.lastName}`}</p>
-            <p className="p-m text-st-300">{user.userInfo?.workEmail}</p>
+          <div className="flexColFit gap-1">
+            <H variant="h5" className="whitespace-nowrap truncate">
+              {userName}
+            </H>
+            <P variant="mediumThree">{user.userInfo?.workEmail}</P>
           </div>
         </div>
 
         <div className="w-full"></div>
 
-        <div className="flex flex-col items-end gap-3 justify-end text-st-200 whitespace-nowrap p-r">
-          <div className="bg-[#FFEBDB] px-3 py-1 rounded-[4px]">
-            <p className="text-primary-45 p-m">{user.userInfo?.jobRole}</p>
+        <div className="flexColFitEnd whitespace-nowrap">
+          <div className="primaryChip">
+            <P variant="mediumPrimary">{user.userInfo?.jobRole}</P>
           </div>
-          <div className="flex items-center justify-center">
-            <p>Service Time&nbsp;</p> <p className="h6">{`years`}</p>
+          <div className="flexRowFullCenter gap-0">
+            <p>Service Time&nbsp;:&nbsp;</p>
+            <p className="h6">{`${service.value} ${service.label}`}</p>
           </div>
-          {/* <p> {`${employee_info?.employeeLocation} - ${now}`} </p> */}
         </div>
       </div>
 
-      <ProfileCard
-        Icon={User}
-        heading="Employee Info"
-        ActionIcon={Edit}
-        IconColor="FF7300"
-      ></ProfileCard>
+      <ProfileCard Icon={User} heading="Employee Info" ActionIcon={Edit} IconColor="FF7300">
+        {({ editing, toggleEditing }) => (
+          <EmployeeInfoForm editing={editing} toggleEditing={toggleEditing} />
+        )}
+      </ProfileCard>
     </div>
   );
 }
