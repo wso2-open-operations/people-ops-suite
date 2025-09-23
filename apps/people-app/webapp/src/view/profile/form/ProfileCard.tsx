@@ -1,4 +1,4 @@
-import { useEmployeeInformProfile } from "@root/src/hooks/useEmployeeInfoForm";
+import { useEmployeeInfoForm } from "@root/src/hooks/useEmployeeInfoForm";
 import { LucideIcon } from "lucide-react";
 
 import { ReactNode, useCallback, useState } from "react";
@@ -23,10 +23,10 @@ function ProfileCard(props: ProfileCardProps) {
 
   const toggleEditing = useCallback(() => setEditing((v) => !v), []);
 
-  const { handleFormCancelation } = useEmployeeInformProfile();
+  const { handleFormCancelation } = useEmployeeInfoForm();
 
   return (
-    <div className="w-full flex flex-col gap-4 bg-[#F5F8FA] border-1 border-st-card-border p-1 pt-4 rounded-2xl">
+    <div className="w-full flex flex-col gap-4 bg-st-card-bg border-1 border-st-card-border p-1 pt-4 rounded-2xl">
       <div className="flex flex-row gap-2 px-3 justify-center items-center">
         <div style={{ backgroundColor: hexToRgba(color, 0.2) }} className="rounded-[4px] p-1">
           <Icon style={{ color }} className="w-5 h-5" />
@@ -48,14 +48,6 @@ function ProfileCard(props: ProfileCardProps) {
             >
               Cancel
             </Button>
-            {/* <Button
-              variant="outline"
-              className="border bg-st-bg-secondary-light hover:bg-st-secondary-100/25 border-st-border-light"
-              type="submit"
-              form="profile-form"
-            >
-              Save
-            </Button> */}
           </div>
         ) : (
           <button type="button" onClick={toggleEditing} className="p-1 cursor-pointer">
@@ -65,7 +57,7 @@ function ProfileCard(props: ProfileCardProps) {
       </div>
 
       <div
-        className={`flex flex-col gap-3 w-full bg-white/70 border-1 border-st-card-inner-border rounded-lg p-4`}
+        className={`flex flex-col gap-3 w-full bg-st-card-inner-bg border-1 border-st-card-inner-border rounded-lg p-4`}
       >
         {children({ editing, toggleEditing })}
       </div>
