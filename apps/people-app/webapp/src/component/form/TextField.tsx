@@ -2,6 +2,7 @@ import { AnyFieldApi } from "@tanstack/react-form";
 
 import { Input } from "@component/common/input";
 import { Label } from "@component/common/label";
+import { fieldClass } from "@utils/utils";
 
 interface ComboboxFieldProps {
   field: AnyFieldApi;
@@ -14,17 +15,8 @@ interface ComboboxFieldProps {
 
 export function TextField(props: ComboboxFieldProps) {
   const { field, id, name, disabled, placeholder } = props;
-  const fieldStyle = `border-st-border-light text-right w-72 ${
-    disabled
-      ? [
-          "text-st-200",
-          "disabled:opacity-100", // cancel dimming
-          "disabled:border-0 disabled:shadow-none disabled:bg-transparent",
-          "focus-visible:ring-0 focus-visible:border-transparent",
-          "disabled:px-0 disabled:py-0 ",
-        ].join(" ")
-      : "text-st-300 p-m px-3 py-1"
-  }`;
+
+  const fieldStyle = fieldClass(disabled);
 
   return (
     <div className={`flex flex-row justify-between items-center`}>
