@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { HomeIcon } from "lucide-react";
-import { CircleQuestionMark } from "lucide-react";
+import { CircleQuestionMark, HomeIcon, UserPen } from "lucide-react";
 import type { RouteObject } from "react-router-dom";
 
 import React from "react";
@@ -28,11 +27,20 @@ import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
-    text: "Home",
+    text: "Onboarding",
     icon: React.createElement(HomeIcon),
-    element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.TEAM],
     showInSidebar: true,
+    children: [
+      {
+        path: "/profile-creation",
+        text: "Profile Creation",
+        icon: React.createElement(UserPen),
+        element: React.createElement(View.profileCreation),
+        allowRoles: [Role.ADMIN, Role.TEAM],
+        showInSidebar: true,
+      },
+    ],
   },
   {
     path: "/help",
