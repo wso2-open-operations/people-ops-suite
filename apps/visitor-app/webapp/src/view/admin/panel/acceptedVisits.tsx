@@ -14,17 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  Typography,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Alert,
-} from "@mui/material";
+import { Box, Button, Typography, Alert, IconButton } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Done } from "@mui/icons-material";
 import {
@@ -37,16 +27,18 @@ import {
   visitStatusUpdate,
   resetStatusUpdateState,
 } from "@slices/visitSlice/visit";
-import { State, VisitStatus } from "@/types/types";
+import { State, VisitStatus, ConfirmationType } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const toLocalDateTime = (utcString: string) => {
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
   return dayjs
     .utc(utcString)
     .tz(dayjs.tz.guess())
@@ -63,11 +55,10 @@ const AcceptedVisits = () => {
     statusUpdateError,
     stateMessage,
   } = useAppSelector((state: RootState) => state.visit);
+  const dialogContext = useConfirmationModalContext();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [openCompleteDialog, setOpenCompleteDialog] = useState(false);
-  const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -94,39 +85,34 @@ const AcceptedVisits = () => {
     }
   }, [statusUpdateState, dispatch]);
 
-  const handleCompleteVisit = () => {
-    if (!currentVisitId) return;
+  const handleCompleteVisit = (visitId: string) => {
+    dialogContext.showConfirmation(
+      "Complete Visit",
+      `Are you sure you want to mark visit ID ${visitId} as completed?`,
+      ConfirmationType.accept,
+      async () => {
+        const payload = {
+          id: +visitId,
+          status: VisitStatus.completed,
+        };
 
-    setOpenCompleteDialog(false);
-
-    const payload = {
-      id: +currentVisitId,
-      status: VisitStatus.completed,
-    };
-
-    dispatch(visitStatusUpdate(payload)).then(() => {
-      setCurrentVisitId(null);
-      dispatch(
-        fetchVisits({
-          limit: pageSize,
-          offset: page * pageSize,
-          status: VisitStatus.accepted,
-        })
-      );
-    });
+        await dispatch(visitStatusUpdate(payload));
+        dispatch(
+          fetchVisits({
+            limit: pageSize,
+            offset: page * pageSize,
+            status: VisitStatus.accepted,
+          })
+        );
+      },
+      "Confirm",
+      "Cancel"
+    );
   };
 
   const columns: GridColDef[] = [
     { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
     { field: "name", headerName: "Visitor Name", minWidth: 160, flex: 1.2 },
-    // { field: "nicNumber", headerName: "NIC Number", minWidth: 160, flex: 1 },
-    // {
-    //   field: "contactNumber",
-    //   headerName: "Contact Number",
-    //   minWidth: 160,
-    //   flex: 1,
-    // },
-    // { field: "email", headerName: "Email", minWidth: 200, flex: 1.5 },
     {
       field: "companyName",
       headerName: "Company Name",
@@ -153,10 +139,7 @@ const AcceptedVisits = () => {
       renderCell: (params) => (
         <IconButton
           color="success"
-          onClick={() => {
-            setCurrentVisitId(String(params.row.id));
-            setOpenCompleteDialog(true);
-          }}
+          onClick={() => handleCompleteVisit(String(params.row.id))}
           disabled={
             state === State.loading || statusUpdateState === State.loading
           }
@@ -177,17 +160,6 @@ const AcceptedVisits = () => {
             : ""
         }
       />
-
-      {statusUpdateError && (
-        <Alert severity="error" sx={{ m: 2 }}>
-          {statusUpdateError}
-        </Alert>
-      )}
-      {statusUpdateMessage && statusUpdateState === State.success && (
-        <Alert severity="success" sx={{ m: 2 }}>
-          {statusUpdateMessage}
-        </Alert>
-      )}
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
@@ -221,47 +193,11 @@ const AcceptedVisits = () => {
               sx={{
                 border: 0,
                 width: "100%",
-                "& .MuiDataGrid-columnHeader": {
-                  backgroundColor: "#e0e0e0",
-                },
               }}
             />
           </Box>
         )
       ) : null}
-
-      <Dialog
-        open={openCompleteDialog}
-        onClose={() => {
-          setOpenCompleteDialog(false);
-          setCurrentVisitId(null);
-        }}
-      >
-        <DialogTitle>Complete Visit</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to mark visit ID {currentVisitId} as
-            completed?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenCompleteDialog(false);
-              setCurrentVisitId(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCompleteVisit}
-            variant="contained"
-            color="success"
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

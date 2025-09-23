@@ -523,11 +523,49 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string statusMessage;
+        string emailSubject;
+        match payload.status.toUpperAscii() {
+            "ACCEPTED" => {
+                statusMessage = "Your visit has been accepted. Please arrive at the scheduled time.";
+                emailSubject = "Visit Request Accepted";
+            }
+            "REJECTED" => {
+                statusMessage = "Your visit request has been rejected. Please contact us for more information.";
+                emailSubject = "Visit Request Rejected";
+            }
+            "COMPLETED" => {
+                statusMessage = "Your visit has been successfully completed. Thank you for visiting!";
+                emailSubject = "Visit Completed";
+            }
+            _ => {
+                statusMessage = "Visit status updated.";
+                emailSubject = "Visit Status Update";
+            }
+        }
+
+        string|error content = email:bindKeyValues(email:visitorStatusTemplate,
+                {
+                    VISIT_STATUS: payload.status.toUpperAscii(),
+                    STATUS_MESSAGE: statusMessage,
+                    CONTACT_EMAIL: email:contactEmail
+                });
+
+        if content is error {
+            string errMsg = "Error with email template!";
+            log:printError(errMsg, content);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
         error? emailError = email:sendEmail({
                                                 to: [decodedVisitorEmail],
                                                 'from: email:visitorNotificationFrom,
-                                                subject: "Testing visit status update",
-                                                template: "Your visit status has been updated to " + payload.status,
+                                                subject: emailSubject,
+                                                template: content,
                                                 cc: [email:receptionEmail]
                                             });
 

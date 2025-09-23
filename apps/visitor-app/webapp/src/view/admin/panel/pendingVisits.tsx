@@ -14,18 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  Typography,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  IconButton,
-  Alert,
-} from "@mui/material";
+import { Box, IconButton, Alert, Typography, TextField } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { CheckCircle, Cancel } from "@mui/icons-material";
 import {
@@ -38,17 +27,19 @@ import {
   visitStatusUpdate,
   resetStatusUpdateState,
 } from "@slices/visitSlice/visit";
-import { State, VisitStatus } from "@/types/types";
+import { State, VisitStatus, ConfirmationType } from "@/types/types";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import ErrorHandler from "@component/common/ErrorHandler";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const toLocalDateTime = (utcString: string) => {
-  dayjs.extend(utc);
-  dayjs.extend(timezone);
   return dayjs
     .utc(utcString)
     .tz(dayjs.tz.guess())
@@ -65,14 +56,13 @@ const PendingVisits = () => {
     statusUpdateError,
     stateMessage,
   } = useAppSelector((state: RootState) => state.visit);
+  const dialogContext = useConfirmationModalContext();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [blink, setBlink] = useState<string[]>([]);
-  const [openApproveDialog, setOpenApproveDialog] = useState(false);
-  const [openRejectDialog, setOpenRejectDialog] = useState(false);
-  const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
   const [tempPassNumber, setTempPassNumber] = useState("");
+  const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -99,29 +89,44 @@ const PendingVisits = () => {
     }
   }, [statusUpdateState, dispatch]);
 
-  const handleApproveSingleVisit = () => {
-    if (!currentVisitId || !tempPassNumber.trim()) {
+  // Validation function for pass number
+  const validatePassNumber = (passNumber: string): boolean => {
+    // Check if pass number is not empty and contains only digits
+    return passNumber.trim() !== "" && /^\d+$/.test(passNumber.trim());
+  };
+
+  const handleApproveSingleVisit = async (
+    visitId: string,
+    passNumber: string
+  ) => {
+    const trimmedPassNumber = passNumber.trim();
+
+    if (!validatePassNumber(trimmedPassNumber)) {
       dispatch(
         enqueueSnackbarMessage({
-          message: "Please enter a pass number",
+          message: "Please enter a valid pass number (numbers only)",
           type: "error",
         })
       );
-      setBlink([currentVisitId || ""]);
+      setBlink([visitId]);
       setTimeout(() => setBlink([]), 1000);
       return;
     }
 
-    setOpenApproveDialog(false);
+    try {
+      const payload = {
+        id: Number(visitId),
+        passNumber: +trimmedPassNumber,
+        status: VisitStatus.accepted,
+      };
 
-    const payload = {
-      id: +currentVisitId,
-      passNumber: +tempPassNumber,
-      status: VisitStatus.accepted,
-    };
-    dispatch(visitStatusUpdate(payload)).then(() => {
+      await dispatch(visitStatusUpdate(payload));
+
+      // Clear the form state
       setTempPassNumber("");
       setCurrentVisitId(null);
+
+      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
@@ -129,20 +134,23 @@ const PendingVisits = () => {
           status: VisitStatus.pending,
         })
       );
-    });
+    } catch (error) {
+      console.error("Error approving visit:", error);
+    }
   };
 
-  const handleRejectSingleVisit = () => {
-    if (!currentVisitId) return;
+  const handleRejectSingleVisit = async (visitId: string) => {
+    try {
+      const payload = {
+        id: Number(visitId),
+        status: VisitStatus.rejected,
+      };
 
-    setOpenRejectDialog(false);
+      await dispatch(visitStatusUpdate(payload));
 
-    const payload = {
-      id: +currentVisitId,
-      status: VisitStatus.rejected,
-    };
-    dispatch(visitStatusUpdate(payload)).then(() => {
       setCurrentVisitId(null);
+
+      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
@@ -150,34 +158,80 @@ const PendingVisits = () => {
           status: VisitStatus.pending,
         })
       );
-    });
+    } catch (error) {
+      console.error("Error rejecting visit:", error);
+    }
+  };
+
+  // Function to show approval dialog
+  const showApprovalDialog = (visitId: string) => {
+    setCurrentVisitId(visitId);
+    setTempPassNumber("");
+
+    dialogContext.showConfirmation(
+      "Approve Visit",
+      <Box>
+        <Typography sx={{ mb: 2 }}>
+          Enter pass number for visit ID {visitId}
+        </Typography>
+        <TextField
+          autoFocus
+          label="Pass Number"
+          type="text"
+          fullWidth
+          variant="outlined"
+          onChange={(e) => {
+            setTempPassNumber(e.target.value);
+          }}
+          placeholder="Enter pass number"
+          helperText="Numbers only"
+          error={blink.includes(visitId)}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: blink.includes(visitId) ? "#fff3f3" : "inherit",
+              transition: "background-color 0.5s",
+            },
+          }}
+        />
+      </Box>,
+      ConfirmationType.accept,
+      async () => {
+        var tempValue;
+        setTempPassNumber((value) => {
+          tempValue = value;
+          return value;
+        });
+        await handleApproveSingleVisit(visitId, tempValue || "");
+      },
+      "Confirm",
+      "Cancel"
+    );
+  };
+
+  // Function to show rejection dialog
+  const showRejectionDialog = (visitId: string) => {
+    dialogContext.showConfirmation(
+      "Reject Visit",
+      `Are you sure you want to reject visit ID ${visitId}?`,
+      ConfirmationType.accept,
+      async () => {
+        await handleRejectSingleVisit(visitId);
+      },
+      "Confirm",
+      "Cancel"
+    );
   };
 
   const columns: GridColDef[] = [
-    {
-      field: "id",
-      headerName: "Visit ID",
-      minWidth: 100,
-      flex: 1,
-    },
-    {
-      field: "name",
-      headerName: "Visitor Name",
-      minWidth: 180,
-      flex: 1.5,
-    },
+    { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
+    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
     {
       field: "companyName",
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
     },
-    {
-      field: "purposeOfVisit",
-      headerName: "Purpose",
-      minWidth: 150,
-      flex: 1,
-    },
+    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",
       headerName: "Scheduled Date",
@@ -186,12 +240,7 @@ const PendingVisits = () => {
       renderCell: (params) =>
         params.value ? toLocalDateTime(params.value) : "N/A",
     },
-    {
-      field: "status",
-      headerName: "Status",
-      minWidth: 120,
-      flex: 1,
-    },
+    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
     {
       field: "invitationId",
       headerName: "Invitation ID",
@@ -209,26 +258,21 @@ const PendingVisits = () => {
         <>
           <IconButton
             color="primary"
-            onClick={() => {
-              setCurrentVisitId(String(params.row.id));
-              setTempPassNumber("");
-              setOpenApproveDialog(true);
-            }}
+            onClick={() => showApprovalDialog(String(params.row.id))}
             disabled={
               state === State.loading || statusUpdateState === State.loading
             }
+            title="Approve Visit"
           >
             <CheckCircle />
           </IconButton>
           <IconButton
             color="error"
-            onClick={() => {
-              setCurrentVisitId(String(params.row.id));
-              setOpenRejectDialog(true);
-            }}
+            onClick={() => showRejectionDialog(String(params.row.id))}
             disabled={
               state === State.loading || statusUpdateState === State.loading
             }
+            title="Reject Visit"
           >
             <Cancel />
           </IconButton>
@@ -280,99 +324,11 @@ const PendingVisits = () => {
               sx={{
                 border: 0,
                 width: "100%",
-                "& .MuiDataGrid-columnHeader": {
-                  backgroundColor: "#e0e0e0",
-                },
               }}
             />
           </Box>
         )
       ) : null}
-
-      <Dialog
-        open={openApproveDialog}
-        onClose={() => {
-          setOpenApproveDialog(false);
-          setTempPassNumber("");
-          setCurrentVisitId(null);
-        }}
-      >
-        <DialogTitle>Approve Visit</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Enter pass number for visit ID {currentVisitId}
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Pass Number"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={tempPassNumber}
-            onChange={(e) => setTempPassNumber(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                backgroundColor: blink.includes(currentVisitId || "")
-                  ? "#fff3f3"
-                  : "inherit",
-                transition: "background-color 0.5s",
-              },
-            }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenApproveDialog(false);
-              setTempPassNumber("");
-              setCurrentVisitId(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleApproveSingleVisit}
-            variant="contained"
-            color="primary"
-            disabled={!tempPassNumber.trim()}
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={openRejectDialog}
-        onClose={() => {
-          setOpenRejectDialog(false);
-          setCurrentVisitId(null);
-        }}
-      >
-        <DialogTitle>Reject Visit</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to reject visit ID {currentVisitId}?
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenRejectDialog(false);
-              setCurrentVisitId(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleRejectSingleVisit}
-            variant="contained"
-            color="error"
-          >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
