@@ -1,9 +1,30 @@
 import TabsPage from "@root/src/layout/pages/TabsPage";
-import { Files, Landmark, SquareUserRound, UserLock } from "lucide-react";
+import {
+  fetchEmployeeInfo,
+  fetchEmployeePersonalInfo,
+} from "@root/src/slices/employeeSlice/employee";
+import { RootState, useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { SquareUserRound, UserLock } from "lucide-react";
+
+import { useEffect } from "react";
 
 import EmployeeInfo from "./panel/EmployeeInfo";
+import PersonalInfo from "./panel/PersonalInfo";
 
 function Profile() {
+  const user = useAppSelector((state: RootState) => state.user);
+
+  const dispatch = useAppDispatch();
+
+  const workEmail = user.userInfo?.workEmail;
+
+  useEffect(() => {
+    if (!workEmail) return;
+    dispatch(fetchEmployeeInfo(workEmail));
+    dispatch(fetchEmployeePersonalInfo(workEmail));
+
+    console.log("called");
+  }, [dispatch, workEmail]);
   return (
     <TabsPage
       title="Profile"
@@ -18,19 +39,7 @@ function Profile() {
           tabTitle: "Personal Info",
           tabPath: "personal-info",
           icon: <UserLock />,
-          page: <EmployeeInfo />,
-        },
-        {
-          tabTitle: "Documents",
-          tabPath: "documents",
-          icon: <Files />,
-          page: <EmployeeInfo />,
-        },
-        {
-          tabTitle: "Bank Details",
-          tabPath: "bank-details",
-          icon: <Landmark />,
-          page: <EmployeeInfo />,
+          page: <PersonalInfo />,
         },
       ]}
     />
