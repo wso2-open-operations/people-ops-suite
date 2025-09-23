@@ -87,7 +87,7 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
-# Response structure of retrieving user
+# Response structure of retrieving user.
 public type UserInfo record {|
     # Id of the employee
     string employeeId;
@@ -103,7 +103,59 @@ public type UserInfo record {|
     string? employeeThumbnail;
 |};
 
-# [Database] EmployeeInfo type
+# Personal information record mapped from the `personal_info` table.
+public type PersonalInfo record {|
+    # Unique identifier of the person
+    int id;
+    # National identity card number
+    string nic;
+    # Full legal name
+    string fullName;
+    # Name with initials, if available
+    string? nameWithInitials;
+    # First name or given name
+    string? firstName;
+    # Last name or family name
+    string? lastName;
+    # Honorific title (e.g., Mr., Ms., Dr.)
+    string title;
+    # Date of birth
+    time:Date dob;
+    # Age in years
+    int? age;
+    # Personal email address
+    string personalEmail;
+    # Personal mobile phone number
+    string personalPhone;
+    # Home landline number
+    string homePhone;
+    # Residential address
+    string address;
+    # Postal/ZIP code
+    string? postalCode;
+    # Country of residence
+    string country;
+    # Nationality or citizenship
+    string? nationality;
+    # Languages spoken (as JSON structure)
+    json? languageSpoken;
+    # Next-of-kin information
+    json? nokInfo;
+    # Onboarding-related documents
+    json? onboardingDocuments;
+    # Education background details
+    json? educationInfo;
+    # User who created the record
+    string createdBy;
+    # Record creation timestamp
+    time:Utc createdOn;
+    # User who last updated the record
+    string updatedBy;
+    # Record last update timestamp
+    time:Utc updatedOn;
+|};
+
+# [Database] EmployeeInfo type.
 public type EmployeeInfo record {|
     # Employee ID
     string id;
@@ -165,7 +217,15 @@ public type EmployeeInfo record {|
     int personalInfoId;
 |};
 
-# [Database] Response Structure of updating employee_info
+# Response strcutre of Employee record.
+public type Employee record {|
+    # Personal Info
+    PersonalInfo personalInfo;
+    # Employee Info
+    EmployeeInfo employeeInfo;
+|};
+
+# [Database] Response Structure of updating employee_info.
 public type UpdatedEmployeeInfo record {|
     # Id of the employee
     string id?;
@@ -229,10 +289,10 @@ public type UpdatedEmployeeInfo record {|
     int unitId?;
 |};
 
-# [Database] filter value to filter db actions
+# [Database] filter value to filter db actions.
 type FilterValue boolean|int|string|int[]|string[]|time:Date;
 
-# [Database] Structure of rganization filter record
+# [Database] Structure of rganization filter record.
 public type OrgDetailsFilter record {|
     # Id of the business unit
     int[]? businessUnitIds = ();
@@ -252,7 +312,7 @@ public type OrgRecord record {
     string unit;
 };
 
-# [Database] Structure a Business Unit to iterate in a resultstream 
+# [Database] Structure a Business Unit to iterate in a resultstream.
 public type BusinessUnitStr record {
     # Id of the business unit
     int id;
@@ -266,7 +326,7 @@ public type BusinessUnitStr record {
     string teams;
 };
 
-# [Database] Structure of a Team to iterate in a resultstream 
+# [Database] Structure of a Team to iterate in a resultstream.
 public type TeamStr record {
     # Id of the team
     int id;
@@ -280,7 +340,7 @@ public type TeamStr record {
     string? subTeams;
 };
 
-# [Database] Structure Business Unit to iterate in a resultstream 
+# [Database] Structure Business Unit to iterate in a resultstream.
 public type BusinessUnit record {
     # Id of the business unit
     int id;
@@ -292,7 +352,7 @@ public type BusinessUnit record {
     Team[]? teams;
 };
 
-# [Database] Structure a Team to iterate in a resultstream 
+# [Database] Structure a Team to iterate in a resultstream.
 public type Team record {
     # Id of the team
     int id;
@@ -306,7 +366,7 @@ public type Team record {
     SubTeam[]? subTeams;
 };
 
-# [Database] Sub Team to iterate in a resultstream 
+# [Database] Sub Team to iterate in a resultstream.
 public type SubTeam record {
     # Id of the sub team
     int id;
@@ -320,7 +380,7 @@ public type SubTeam record {
     Unit[]? units;
 };
 
-# [Database] Sub Team to iterate in a resultstream 
+# [Database] Sub Team to iterate in a resultstream.
 public type Unit record {
     # Id of the unit
     int id;
@@ -332,7 +392,7 @@ public type Unit record {
     int isActive;
 };
 
-# [Databse] Structure of json type db retrieval 
+# [Databse] Structure of json type db retrieval.
 public type Row record {|
     # Result of a db query
     json result;
