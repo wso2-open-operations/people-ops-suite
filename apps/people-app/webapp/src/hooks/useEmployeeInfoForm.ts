@@ -14,7 +14,7 @@ import { useForm, useStore } from "@tanstack/react-form";
 
 import { useMemo } from "react";
 
-export function useEmployeeInformProfile() {
+export function useEmployeeInfoForm() {
   const dispatch = useAppDispatch();
   const auth = useAppSelector((state: RootState) => state.auth);
   const employee = useAppSelector((state: RootState) => state.employee.employeeInfo);
