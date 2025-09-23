@@ -433,5 +433,52 @@ service http:InterceptableService / on new http:Listener(9090) {
         return result;
 
     }
+
+    resource function get employeePersonalInfo(http:RequestContext ctx) returns PersonalInfo|http:BadRequest|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        if !userInfo.email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${userInfo.email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        PersonalInfo|error? personalInfo = database:fetchEmployeePersonalInfo(userInfo.email);
+
+        if personalInfo is error {
+            string customError = string `Error while retrieving org details`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if personalInfo is () {
+            string customError = string `Couldn\'t retrieve any personal info for employee : ${userInfo.email}`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return personalInfo;
+    }
+
 }
 
