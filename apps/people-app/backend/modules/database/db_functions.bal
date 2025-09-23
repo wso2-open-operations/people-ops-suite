@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import ballerina/log;
 import ballerina/sql;
 
 # Fetch vehicles.
@@ -72,4 +74,266 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
         return true;
     }
     return false;
+}
+
+# Fetch basic user info.
+#
+# + email - Offset of the response
+# + return - UserInfo or an Error
+public isolated function fetchBasicUserInfo(string email) returns UserInfo|error {
+    UserInfo|error result = databaseClient->queryRow(fetchBasicUserInfoQuery(email));
+
+    if result is error {
+        return result;
+    }
+
+    return result;
+}
+
+# Fetch employee info from an user email.
+#
+# + email - User's wso2 email 
+# + return - Employee info or an error
+public isolated function fetchEmployeeInfo(string email) returns EmployeeInfo|error? {
+    EmployeeInfo|sql:Error result = databaseClient->queryRow(fetchEmployeeInfoQuery(email));
+
+    if result is sql:Error && result is sql:NoRowsError {
+        return;
+    }
+
+    if result is error {
+        return result;
+    }
+
+    EmployeeInfo employee = {
+        id: result.id,
+        lastName: result.lastName,
+        firstName: result.firstName,
+        workLocation: result.workLocation,
+        epf: result.epf,
+        employeeLocation: result.employeeLocation,
+        wso2Email: result.wso2Email,
+        workPhoneNumber: result.workPhoneNumber,
+        startDate: result.startDate,
+        jobRole: result.jobRole,
+        managerEmail: result.managerEmail,
+        reportToEmail: result.reportToEmail,
+        additionalManagerEmail: result.additionalManagerEmail,
+        additionalReportToEmail: result.additionalReportToEmail,
+        employeeStatus: result.employeeStatus,
+        lengthOfService: result.lengthOfService,
+        employeeThumbnail: result.employeeThumbnail,
+        subordinateCount: result.subordinateCount,
+        probationEndDate: result.probationEndDate,
+        agreementEndDate: result.agreementEndDate,
+        employmentTypeId: result.employmentTypeId,
+        officeId: result.officeId,
+        companyId: result.companyId,
+        businessUnitId: result.businessUnitId,
+        teamId: result.teamId,
+        subTeamId: result.subTeamId,
+        unitId: result.unitId,
+        personalInfoId: result.personalInfoId,
+        designationId: result.designationId
+    };
+    return employee;
+
+}
+
+# Retrieve Organizational details from HRIS.
+#
+# + filter - Criteria to filter the data  
+# + limit - Number of records to retrieve
+# + offset - Number of records to offset
+# + return - List of business units
+public isolated function fetchOrgDetails(OrgDetailsFilter filter, int 'limit, int offset)
+    returns BusinessUnit[]|error {
+
+    BusinessUnit[] businessUnits = [];
+
+    stream<BusinessUnitStr, sql:Error?> resultStream = databaseClient->query(fetchOrgDataQuery(
+            filter = filter, 'limit = 'limit, offset = offset));
+
+    error? iterateError = from BusinessUnitStr bu in resultStream
+        do {
+
+            Team[]|error teams = bu.teams.fromJsonStringWithType();
+            if teams is error {
+                string errorMsg = string `An error occurred when retrieving departments data of ${
+                    bu.businessUnit
+                } !`;
+
+                log:printError(errorMsg, teams);
+                return error(errorMsg);
+            }
+
+            businessUnits.push({
+                id: bu.id,
+                businessUnit: bu.businessUnit,
+                headEmail: bu.headEmail,
+                teams: teams
+            });
+        };
+
+    if iterateError is sql:Error {
+        string errorMsg = string `An error occurred when retrieving organization details!`;
+        log:printError(errorMsg, iterateError);
+        return error(errorMsg);
+    }
+
+    return businessUnits;
+}
+
+# Update employee info on only changed fields.
+#
+# + email - User's wso2 email 
+# + employee - Employee payload that includes changed user information
+# + return - SQL-execution result or an error
+public isolated function UpdateEmployeeInfo(string email, UpdatedEmployeeInfo employee) returns error? {
+
+    if employee.entries().length() === 0 {
+        return error(string `No data to update to employee : ${employee.firstName.toString()} !`);
+    }
+
+    sql:ExecutionResult|sql:Error executionResult = databaseClient->execute(updateEmployeeQuery(email, employee));
+
+    if executionResult is sql:Error {
+
+        string customError = string `Error occurred while updating the employee data  of ${employee.firstName.toString()}`;
+
+        log:printError(customError, executionResult);
+
+        return error(customError);
+    }
+
+    if (executionResult.affectedRowCount == 0) {
+        return error(string `No employee were to update from id : ${employee.firstName.toString()} !`);
+
+    }
+}
+
+# Fetch essential app related data.
+#
+# + return - AppConfig or an error
+public isolated function fetchAppConfig() returns AppConfig|error? {
+    // Read the one-column row: { result: json }
+    Row|error row = databaseClient->queryRow(fetchAppConfigQuery());
+
+    if row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    json payload = row.result;
+
+    AppConfig appConfig = check payload.cloneWithType(AppConfig);
+
+    return appConfig;
+}
+
+# Retrieves a JSON array of all companies from the database.
+#
+# + return - A JSON array of company objects, an error if the query fails or null
+public isolated function getCompanies() returns json|error? {
+
+    Row|sql:Error row = databaseClient->queryRow(getCompaniesQuery());
+
+    if row is sql:Error && row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    return row.result;
+}
+
+# Retrieves a JSON array of all offices from the database.
+#
+# + return - A JSON array of office objects, an error if the query fails or null
+public isolated function getOffices() returns json|error? {
+    Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
+
+    if row is sql:Error && row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+    return row.result;
+}
+
+# Retrieves a JSON array of active employment types from the database.
+#
+# + return - A JSON array of active employment type objects, an error if the query fails or null
+public isolated function getCareerFunction() returns json|error {
+    Row|sql:Error row = databaseClient->queryRow(getCareerFunctionQuery());
+
+    if row is sql:Error && row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    return row.result;
+}
+
+# Retrieves a JSON array of all designations from the database.
+#
+# + return - A JSON array of designation objects, an error if the query fails or null
+public isolated function getDesignation() returns json|error? {
+    Row|sql:Error row = databaseClient->queryRow(getDesignationQuery());
+
+    if row is sql:Error && row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    return row.result;
+}
+
+# Retrieves a JSON array of active employment types from the database.
+#
+# + return - A JSON array of active employment type objects, an error if the query fails or null
+public isolated function getEmploymentType() returns json|error {
+    Row|sql:Error row = databaseClient->queryRow(getOfficesQuery());
+
+    if row is sql:Error && row is sql:NoRowsError {
+        return;
+    }
+
+    if row is error {
+        return row;
+    }
+
+    return row.result;
+}
+
+# Retrieves personal information of an employee by their email address.
+#
+# + email - The WSO2 email of the employee to look up
+# + return - The `PersonalInfo` record if found, `()` if no record exists, 
+# or an `error` if the query fails
+public isolated function fetchEmployeePersonalInfo(string email) returns PersonalInfo|error? {
+    PersonalInfo|error? result = databaseClient->queryRow(fetchEmployeePersonalInfoQuery(email));
+
+    if result is () {
+        return;
+    }
+
+    if result is error {
+        return result;
+    }
+
+    return result;
 }

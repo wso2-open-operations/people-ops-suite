@@ -25,5 +25,7 @@ public type CustomJwtPayload record {
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string EMPLOYEE_ROLE;
+    string employeeRole;
+    # Role for the head of people operations
+    string headPeopleOperationsRole;
 |};

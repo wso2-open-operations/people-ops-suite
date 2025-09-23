@@ -12,10 +12,11 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License
 import people.authorization;
 import people.database;
 
+import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
 
@@ -23,6 +24,14 @@ import ballerina/log;
     label: "People Service",
     id: "people-ops-suite/people-service"
 }
+
+final cache:Cache userInfoCache = new ({
+    capacity: 2000,
+    defaultMaxAge: 1800.0,
+    cleanupInterval: 900.0
+});
+
+final cache:Cache employeeInfoCache = new (capacity = 100, evictionFactor = 0.2);
 
 service class ErrorInterceptor {
     *http:ResponseErrorInterceptor;
@@ -196,4 +205,280 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    # Endpoint to fetch user information of the logged in users.
+    #
+    # + ctx - Request object
+    # + return - User info object|Error
+    resource function get user\-info(http:RequestContext ctx)
+        returns UserResponse|http:InternalServerError {
+
+        // User information header.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+
+            };
+        }
+
+        // Check cache for logged in user.
+        if userInfo.hasKey(userInfo.email) {
+            UserResponse|error cachedUserInfo = userInfo.get(userInfo.email).ensureType();
+            if cachedUserInfo is UserResponse {
+                return cachedUserInfo;
+            }
+        }
+
+        // Fetch the user information from the entity service.
+        UserInfo|error loggedInUser = database:fetchBasicUserInfo(userInfo.email);
+        if loggedInUser is error {
+            string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
+            log:printError(customError, loggedInUser);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        // Fetch the user's privileges based on the roles.
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.employeeRole], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_ROLE_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            privileges.push(authorization:HEAD_PEOPLE_OPERATIONS_PRIVILEGE);
+        }
+
+        UserResponse userInfoResponse = {...loggedInUser, privileges};
+
+        error? cacheError = userInfoCache.put(userInfo.email, userInfoResponse);
+        if cacheError is error {
+            log:printError("An error occurred while writing user info to the cache", cacheError);
+        }
+        return userInfoResponse;
+
+    }
+
+    # Endpoint to fetch user information of the logged in users.
+    #
+    # + email - user's wso2 email
+    # + return - Employeeinfo object or an Error
+    resource function get employeeInfo/[string email]()
+        returns EmployeeInfo|http:InternalServerError|http:Forbidden|http:BadRequest|http:NotFound {
+
+        log:printInfo("get employeeInfo invoked");
+
+        if !email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if employeeInfoCache.hasKey(email) {
+            EmployeeInfo|error cacheResult = employeeInfoCache.get(email).ensureType();
+
+            if cacheResult is EmployeeInfo {
+                return cacheResult;
+            }
+        }
+
+        EmployeeInfo|error? employeeInfo = database:fetchEmployeeInfo(email);
+
+        if employeeInfo is error {
+            string customError = string `Internal Server Error`;
+            log:printError(customError, employeeInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if employeeInfo is () {
+            string customError = string `User Not Found for email : ${email}`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? employee = employeeInfoCache.put(email, employeeInfo);
+
+        if employee is error {
+            string customError = string `Failed to cache employee : ${email} employee info`;
+            log:printError(customError, employee);
+        }
+
+        return employeeInfo;
+    }
+
+    # Endpoint to handle update employee info on only changed fields.
+    #
+    # + email - User's wso2 email 
+    # + updateEmployee - Employee payload that includes changed user information
+    # + return - SQL-execution result or an error
+    resource function patch employeeInfo/[string email](UpdateEmployeeInfoPlayload updateEmployee)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+
+        log:printInfo(`Update employee info invoked : ${email}`);
+
+        if !email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? result = database:UpdateEmployeeInfo(email, updateEmployee);
+
+        if result is error {
+            string customError = string `Error while updating employee info ${result.message()}`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        EmployeeInfo|error? updatedEmployee = database:fetchEmployeeInfo(email);
+
+        if updatedEmployee is () {
+            log:printError("No employee found for email: " + email + " to update the cache");
+        } else if updatedEmployee is error {
+            log:printError("Error occurred while upadint cache of - employee info.", updatedEmployee);
+        } else {
+            error? cacheResult = employeeInfoCache.put(email, updatedEmployee);
+
+            if cacheResult is error {
+                string customError = string `Failed to cache employee: ${email} employee info`;
+                log:printError(customError, result);
+            }
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the employee data"
+            }
+        };
+
+    }
+
+    # Endpoint to get organization structure for a given filter criteria (graphql query).
+    #
+    # + filter - Filter criteria for organization structure
+    # + limit - Number of records to retrieve
+    # + offset - Number of records to offset
+    # + return - Organization structure or an Error
+    resource function get orgData(OrgDetailsFilter? filter, int? 'limit, int? offset)
+        returns BusinessUnit[]|http:InternalServerError {
+
+        BusinessUnit[]|error orgData = database:fetchOrgDetails(filter ?: {}, 'limit ?: 1000, offset ?: 0);
+
+        if orgData is error {
+            string customError = string `Error while retrieving org details`;
+            log:printError(customError, orgData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return orgData;
+    }
+
+    # Endpoint to fetch essential app related information.
+    #
+    # + return - Comapany Information as app config or an error
+    resource function get appConfig() returns AppConfig|http:InternalServerError|http:NotFound {
+
+        log:printInfo("Fetch App Config Invoked!");
+
+        AppConfig|error? result = database:fetchAppConfig();
+
+        if result is error {
+            string customError = string `Error when retrieving user info ${result.message()}`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if result is () {
+            string customError = string `Couldn\'t retrieve any the AppConfigs from the database`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return result;
+
+    }
+
+    resource function get employeePersonalInfo(http:RequestContext ctx) returns PersonalInfo|http:BadRequest|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        if !userInfo.email.matches(WSO2_EMAIL) {
+            string customError = string `Input email is not a valid WSO2 email address: ${userInfo.email}`;
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        PersonalInfo|error? personalInfo = database:fetchEmployeePersonalInfo(userInfo.email);
+
+        if personalInfo is error {
+            string customError = string `Error while retrieving org details`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if personalInfo is () {
+            string customError = string `Couldn\'t retrieve any personal info for employee : ${userInfo.email}`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return personalInfo;
+    }
+
 }
+

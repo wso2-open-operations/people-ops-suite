@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
+import ballerina/time;
 
 # Build query to fetch vehicles.
 #
@@ -128,3 +129,468 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     return sql:queryConcat(mainQuery, subQuery);
 }
 
+# Build query to fetch basic userinfo
+#
+# + email - User's email to uniquely identify an user 
+# + return - sql:ParameterizedQuery - fetch basic userinfo
+isolated function fetchBasicUserInfoQuery(string email) returns sql:ParameterizedQuery
+=> `
+    SELECT 
+        id as employeeId,
+        wso2_email as workEmail,
+        first_name as firstName,
+        last_name as lastName,
+        job_role as jobRole,
+        employee_thumbnail as employeeThumbnail
+    FROM employee 
+    WHERE wso2_email = ${email}
+`;
+
+# Build query to retrieve an employee.
+#
+# + email - Identification of the user
+# + return - sql:ParameterizedQuery - Select query for to retrieve an employee information
+isolated function fetchEmployeeInfoQuery(string email) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            e.id                       AS id,
+            e.last_name                AS lastName,
+            e.first_name               AS firstName,
+            e.epf                      AS epf,
+            e.employee_location        AS employeeLocation,
+            e.work_location            AS workLocation,
+            e.wso2_email               AS wso2Email,
+            e.work_phone_number        AS workPhoneNumber,
+            e.start_date               AS startDate,
+            e.job_role                 AS jobRole,
+            e.manager_email            AS managerEmail,
+            e.report_to_email          AS reportToEmail,
+            e.additional_manager_email AS additionalManagerEmail,
+            e.additional_report_to_email AS additionalReportToEmail,
+            e.employee_status          AS employeeStatus,
+            e.length_of_service        AS lengthOfService,
+            e.employee_thumbnail       AS employeeThumbnail,
+            e.subordinate_count        AS subordinateCount,
+            e.probation_end_date       AS probationEndDate,
+            e.agreement_end_date       AS agreementEndDate,
+            e.employment_type_id       AS employmentTypeId,
+            e.designation_id           AS designationId,
+            e.office_id                AS officeId,
+            o.company_id               AS companyId,
+            e.team_id                  AS teamId,
+            e.sub_team_id              AS subTeamId,
+            e.business_unit_id         AS businessUnitId,
+            e.unit_id                  AS unitId,
+            e.personal_info_id         AS personalInfoId
+        FROM employee e
+        LEFT JOIN office o ON o.id = e.office_id
+        WHERE e.wso2_email = ${email};
+    `;
+
+    return query;
+}
+
+# Retrieve query to fetch org data from the db.
+#
+# + filter - Criteria to filter the data  
+# + limit - Number of records to retrieve
+# + offset - Number of records to offset
+# + return - List of business units
+isolated function fetchOrgDataQuery(OrgDetailsFilter filter, int 'limit, int offset) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+    SELECT 
+        bu.id AS id,
+        bu.name AS businessUnit,
+        bu.head_email AS headEmail,
+        bu.is_active AS isActive,
+        (
+            SELECT
+                JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', t.id,
+                    'team', t.name,
+                    'headEmail', t.head_email,
+                    'isActive', t.is_active,
+                    'subTeams', (
+                        SELECT 
+                            JSON_ARRAYAGG(JSON_OBJECT(
+                                'id', st.id,
+                                'subTeam', st.name,
+                                'headEmail', st.head_email,
+                                'isActive', st.is_active,
+                                'units', (
+                                    SELECT
+                                        JSON_ARRAYAGG(JSON_OBJECT(
+                                            'id', u.id,
+                                            'unit', u.name,
+                                            'headEmail', u.head_email,
+                                            'isActive', u.is_active
+                                        ))
+                                    FROM
+                                        unit u
+                                        RIGHT JOIN
+                                        (SELECT * FROM business_unit_team_sub_team_unit WHERE is_active = 1) butstu
+                                        ON u.id = butstu.unit_id
+                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                )
+                            ))
+                        FROM 
+                            sub_team st
+                            RIGHT JOIN
+                            (SELECT * FROM business_unit_team_sub_team WHERE is_active = 1) butst
+                            ON st.id = butst.sub_team_id
+                        WHERE butst.business_unit_team_id = but.id
+                    )
+                ))
+            FROM 
+                team t
+                RIGHT JOIN
+                (SELECT * FROM business_unit_team WHERE is_active = 1) but
+                ON t.id = but.team_id
+            WHERE but.business_unit_id = bu.id
+        ) AS teams
+    FROM 
+        business_unit bu
+    WHERE
+        bu.id IN (SELECT distinct(business_unit_id) FROM business_unit_team WHERE is_active = 1)
+    `;
+
+    OrgDetailsFilter {
+        businessUnitIds,
+        businessUnits
+    } = filter;
+
+    sql:ParameterizedQuery[] filterQueries = [];
+
+    if businessUnitIds is int[] && businessUnitIds.length() > 0 {
+        filterQueries.push(sql:queryConcat(
+                `bu.id IN `,
+                `(`,
+                sql:arrayFlattenQuery(businessUnitIds),
+                `)`)
+        );
+    }
+
+    if businessUnits is string[] && businessUnits.length() > 0 {
+        filterQueries.push(sql:queryConcat(
+                `bu.name IN `,
+                `(`,
+                sql:arrayFlattenQuery(businessUnits),
+                `)`)
+        );
+    }
+
+    sqlQuery = buildSqlQuery(sqlQuery, filterQueries);
+
+    sqlQuery = sql:queryConcat(sqlQuery, ` LIMIT ${'limit} OFFSET ${offset}`);
+
+    return sqlQuery;
+}
+
+# Query to update employee info in the database.
+#
+# + email - User's wso2 email 
+# + employee - Employee payload that includes changed user information
+# + return - Update query to update employee info
+isolated function updateEmployeeQuery(string email, UpdatedEmployeeInfo employee) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        UPDATE employee SET
+    `;
+    sql:ParameterizedQuery[] setClauses = [];
+
+    if employee.firstName is string {
+        setClauses.push(`first_name = ${employee.firstName}`);
+    }
+
+    if employee.lastName is string {
+        setClauses.push(`last_name = ${employee.lastName} `);
+    }
+
+    if employee.workPhoneNumber is string {
+        setClauses.push(`work_phone_number = ${employee.workPhoneNumber}`);
+    }
+
+    if employee.employeeLocation is string {
+        setClauses.push(`employee_location = ${employee.employeeLocation}`);
+    }
+
+    if employee.startDate is time:Date {
+        setClauses.push(`start_date = ${employee.startDate}`);
+    }
+
+    if employee.jobRole is string {
+        setClauses.push(`job_role = ${employee.jobRole}`);
+    }
+
+    if employee.jobBand is string {
+        setClauses.push(`job_band = ${employee.jobBand}`);
+    }
+
+    if employee.managerEmail is string {
+        setClauses.push(`manager_email = ${employee.managerEmail}`);
+    }
+
+    if employee.reportToEmail is string {
+        setClauses.push(`report_to_email = ${employee.reportToEmail}`);
+    }
+
+    if employee.additionalManagerEmail is string {
+        setClauses.push(`additional_manager_email = ${employee.additionalManagerEmail}`);
+    }
+    if employee.additionalReportToEmail is string {
+        setClauses.push(`additional_report_to_email = ${employee.additionalReportToEmail}`);
+    }
+    if employee.lengthOfService is int {
+        setClauses.push(`length_of_service = ${employee.lengthOfService}`);
+    }
+    if employee.relocationStatus is string {
+        setClauses.push(`relocation_status = ${employee.relocationStatus}`);
+    }
+    if employee.employeeThumbnail is string {
+        setClauses.push(`employee_thumbnail = ${employee.employeeThumbnail}`);
+    }
+    if employee.subordinateCount is int {
+        setClauses.push(`subordinate_count = ${employee.subordinateCount}`);
+    }
+    if employee.probationEndDate is time:Date {
+        setClauses.push(`probation_end_date = ${employee.probationEndDate}`);
+    }
+
+    if employee.agreementEndDate is time:Date {
+        setClauses.push(`agreement_end_date = ${employee.agreementEndDate}`);
+    }
+
+    if employee.timestamp is time:Utc {
+        setClauses.push(`_timestamp = ${employee.timestamp}`);
+    } else {
+        setClauses.push(`_timestamp = CURRENT_TIMESTAMP`);
+    }
+
+    // Build query
+    if setClauses.length() > 0 {
+        sql:ParameterizedQuery joinedClauses = joinQuery(setClauses, `, `);
+        query = sql:queryConcat(query, joinedClauses);
+    }
+    query = sql:queryConcat(query, ` WHERE wso2_email = ${employee.wso2Email}`);
+
+    return query;
+}
+
+# Retrieves a parameterized SQL query to fetch company information.
+#
+# + return - A parameterized query that returns a json object that contains json object arrays
+isolated function fetchAppConfigQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+    
+        SELECT JSON_OBJECT(
+            'companies',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', name,
+                    'location', location
+                )), JSON_ARRAY()) FROM company WHERE is_active = 1),
+
+            'offices',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'office', name,          
+                    'location', location,
+                    'companyId', company_id
+                )), JSON_ARRAY()) FROM office WHERE is_active = 1),
+
+            'designations',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', designation,         
+                    'jobBand', job_band,         
+                    'careerFunctionId', career_function_id
+                )), JSON_ARRAY()) FROM designation WHERE is_active = 1),
+
+            'careerFunctions',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', career_function
+                )), JSON_ARRAY()) FROM career_function WHERE is_active = 1),
+
+            'employmentTypes',
+                (SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+                    'id', id,
+                    'name', name
+                )), JSON_ARRAY()) FROM employment_type WHERE is_active = 1)
+        ) AS result;
+    `;
+
+    return query;
+}
+
+# Retrieves a parameterized SQL query to fetch all companies as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of company objects
+isolated function getCompaniesQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+                JSON_OBJECT('id', id, 'name', name, 'location', location)
+            ) AS result
+        FROM company
+        WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch all offices as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of office objects
+isolated function getOfficesQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+            'id', id, 'name', name
+            )
+        ) as result
+        FROM office 
+        WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch all career functions as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of career function objects
+isolated function getCareerFunctionQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', career_function
+            )
+        ) as result
+        FROM career_function WHERE id IS NOT NULL;
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch all designations as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of designation objects
+isolated function getDesignationQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', designation, 'job_band', job_band, 'career_function_id', career_function_id
+            )
+        ) as result
+        FROM designation WHERE id IS NOT NULL
+    `;
+
+    return sqlQuery;
+}
+
+# Retrieves a parameterized SQL query to fetch active employment types as a JSON array.
+#
+# + return - A parameterized query that returns a JSON array of active employment type objects
+isolated function getEmploymentTypeQuery() returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery sqlQuery = `
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'id', id, 'name', name
+            )
+        ) as result
+        FROM employment_type
+        WHERE id IS NOT NULL 
+        AND is_active = 1;
+    `;
+
+    return sqlQuery;
+}
+
+# Creates two SQL insert queries to add a new employee.
+#
+# + employee - The employee record with personal and employee info
+# + return - Two queries: first for `personal_info`, second for `employee`
+isolated function createEmployeeQuery(Employee employee) returns [sql:ParameterizedQuery, sql:ParameterizedQuery] {
+
+    PersonalInfo pi = employee.personalInfo;
+    EmployeeInfo ei = employee.employeeInfo;
+
+    string? languageSpokenStr = pi.languageSpoken is json ? pi.languageSpoken.toJsonString() : null;
+    string? nokInfoStr = pi.nokInfo is json ? pi.nokInfo.toJsonString() : null;
+    string? onboardingDocumentsStr = pi.onboardingDocuments is json ? pi.onboardingDocuments.toJsonString() : null;
+    string? educationInfoStr = pi.educationInfo is json ? pi.educationInfo.toJsonString() : null;
+
+    sql:ParameterizedQuery q1 = `
+        INSERT INTO personal_info
+            (nic, full_name, name_with_initials, first_name, last_name, title,
+             dob, age, personal_email, personal_phone, home_phone, address,
+             postal_code, country, nationality,
+             language_spoken, nok_info, onboarding_documents, education_info,
+             created_by, updated_by)
+        VALUES
+            (${pi.nic}, ${pi.fullName}, ${pi.nameWithInitials}, ${pi.firstName}, ${pi.lastName}, ${pi.title},
+             ${pi.dob}, ${pi.age}, ${pi.personalEmail}, ${pi.personalPhone}, ${pi.homePhone}, ${pi.address},
+             ${pi.postalCode}, ${pi.country}, ${pi.nationality},
+             ${languageSpokenStr}, ${nokInfoStr}, ${onboardingDocumentsStr}, ${educationInfoStr},
+             ${pi.createdBy}, ${pi.updatedBy})
+    `;
+
+    sql:ParameterizedQuery q2 = `
+        INSERT INTO employee
+            (id, last_name, first_name, epf, employee_location, work_location, wso2_email,
+             work_phone_number, start_date, job_role,
+             manager_email, report_to_email, additional_manager_email, additional_report_to_email,
+             employee_status, length_of_service, relocation_status, employee_thumbnail, subordinate_count,
+             probation_end_date, agreement_end_date, created_by, updated_by,
+             office_id, employment_type_id, designation_id, team_id, sub_team_id, business_unit_id, unit_id,
+             personal_info_id)
+        VALUES
+            (${ei.id}, ${ei.lastName}, ${ei.firstName}, ${ei.epf}, ${ei.employeeLocation}, ${ei.workLocation}, ${ei.wso2Email},
+             ${ei.workPhoneNumber}, ${ei.startDate}, ${ei.jobRole},
+             ${ei.managerEmail}, ${ei.reportToEmail}, ${ei.additionalManagerEmail}, ${ei.additionalReportToEmail},
+             ${ei.employeeStatus}, ${ei.lengthOfService}, ${()}, ${ei.employeeThumbnail}, ${ei.subordinateCount},
+             ${ei.probationEndDate}, ${ei.agreementEndDate}, ${pi.createdBy}, ${pi.updatedBy},
+             ${ei.officeId}, ${ei.employmentTypeId}, ${ei.designationId}, ${ei.teamId}, ${ei.subTeamId}, ${ei.businessUnitId}, ${ei.unitId},
+             LAST_INSERT_ID())
+    `;
+
+    return [q1, q2];
+}
+
+# Builds a parameterized SQL query to fetch the personal information of an employee by email.
+#
+# + email - The WSO2 email of the employee to look up
+# + return - A `sql:ParameterizedQuery` that selects all fields from the `personal_info`
+isolated function fetchEmployeePersonalInfoQuery(string email) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery q = `
+        SELECT
+            pi.id                                 AS id,
+            pi.nic                                AS nic,
+            pi.full_name                          AS fullName,
+            pi.name_with_initials                 AS nameWithInitials,
+            pi.first_name                         AS firstName,
+            pi.last_name                          AS lastName,
+            pi.title                              AS title,
+            pi.dob                                AS dob,
+            pi.age                                AS age,
+            pi.personal_email                     AS personalEmail,
+            pi.personal_phone                     AS personalPhone,
+            pi.home_phone                         AS homePhone,
+            pi.address                            AS address,
+            pi.postal_code                        AS postalCode,
+            pi.country                            AS country,
+            pi.nationality                        AS nationality,
+            pi.language_spoken                    AS languageSpoken,
+            pi.nok_info                           AS nokInfo,
+            pi.onboarding_documents               AS onboardingDocuments,
+            pi.education_info                     AS educationInfo,
+            pi.created_by                         AS createdBy,
+            pi.created_on                         AS createdOn,
+            pi.updated_by                         AS updatedBy,
+            pi.updated_on                         AS updatedOn
+        FROM employee e
+        JOIN personal_info pi
+          ON pi.id = e.personal_info_id
+        WHERE e.wso2_email = ${email}
+        LIMIT 1
+    `;
+    return q;
+}
