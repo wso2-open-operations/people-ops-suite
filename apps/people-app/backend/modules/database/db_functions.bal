@@ -318,3 +318,22 @@ public isolated function getEmploymentType() returns json|error {
 
     return row.result;
 }
+
+# Retrieves personal information of an employee by their email address.
+#
+# + email - The WSO2 email of the employee to look up
+# + return - The `PersonalInfo` record if found, `()` if no record exists, 
+# or an `error` if the query fails
+public isolated function fetchEmployeePersonalInfo(string email) returns PersonalInfo|error? {
+    PersonalInfo|error? result = databaseClient->queryRow(fetchEmployeePersonalInfoQuery(email));
+
+    if result is () {
+        return;
+    }
+
+    if result is error {
+        return result;
+    }
+
+    return result;
+}
