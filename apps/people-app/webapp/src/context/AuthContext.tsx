@@ -26,7 +26,6 @@ import { APIService } from "@utils/apiService";
 
 import SessionWarningDialog from "../component/common/SessionWarningDialog";
 import LoginScreen from "../component/ui/LoginScreen";
-import { fetchAppConfig } from "../slices/configSlice/config";
 import { State } from "../types/types";
 
 type AuthContextType = {
@@ -103,7 +102,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
     await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
-    await dispatch(fetchAppConfig());
   };
 
   useEffect(() => {
