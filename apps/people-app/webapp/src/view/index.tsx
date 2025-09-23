@@ -19,10 +19,12 @@ const help = lazy(() => import("@view/help/help"));
 const home = lazy(() => import("@view/home/Home"));
 const page = lazy(() => import("@root/src/view/page/Page"));
 const profile = lazy(() => import("@view/profile/Profile"));
+const profileCreation = lazy(() => import("@view/profile-creation/ProfileCreation"));
 
 export const View = {
   home,
   help,
   page,
   profile,
+  profileCreation,
 };
