@@ -13,12 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import ballerina/log;
 
 # Retrieves basic employee details by work email.
 #
 # + workEmail - WSO2 email address
 # + return - Employee | Error
-public isolated function fetchEmployeesBasicInfo(string workEmail) returns Employee|error {
+public isolated function fetchEmployeesBasicInfo(string workEmail) returns error|EmployeesBasicInfo {
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -39,34 +40,97 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
     return response.data.employee;
 }
 
-# Retrieves employees.
+# Retrieve the Probational Employee data
 #
-# + return - Employee Info Array
-public isolated function getEmployees() returns EmployeeBasic[]|error {
+# + workEmail - WSO2 Email
+# + return - Employee Info
+public isolated function getEmployee(string workEmail) returns Employee|error {
 
-    EmployeeFilter filter = {
-        employeeStatus: [Active, Marked\ leaver],
-        employmentType: [PERMANENT, CONSULTANCY, PART\ TIME\ CONSULTANCY]
-    };
-
-    string document = string `query getAllEmployees($filter: EmployeeFilter!, $limit: Int, $offset: Int) {
-        employees(filter: $filter, limit: $limit, offset: $offset) {
-            workEmail
-            firstName
-            lastName
-            employeeThumbnail
+    string document = string `
+        query employeeQuery ($workEmail: String!) {
+            employee(email: $workEmail) {
+                employeeId,
+                firstName,
+                lastName,
+                lead,
+                managerEmail,
+                reportsTo,
+                jobBand,
+                jobRole,
+                lastPromotedDate,
+                startDate,
+                team,
+                employeeStatus,
+                businessUnit,
+                department,
+                team,
+                subTeam,
+                employeeThumbnail
+            }
         }
-    }`;
+    `;
 
-    EmployeeBasic[] employees = [];
-    boolean fetchMore = true;
-    while fetchMore {
-        EmployeesResponse response = check hrClient->execute(
-            document,
-            {filter: filter, 'limit: DEFAULT_LIMIT, offset: employees.length()}
-        );
-        employees.push(...response.data.employees);
-        fetchMore = response.data.employees.length() > 0;
+    EmployeeResults|error employeeData = hrClient->execute(document, {workEmail});
+
+    if employeeData is error {
+        log:printError(employeeData.toString());
+        return error("Employee data retrieving service error!");
     }
-    return employees;
+
+    // Return object.
+    Employee? employee = employeeData.data.employee;
+
+    // Null Check.
+    if employee is null {
+        return error("No matching employee found for " + workEmail);
+    }
+
+    // Verifying user status.
+    if (employee.employeeStatus != Active) && (employee.employeeStatus != Marked\ leaver) {
+        return error("Deactivated account  " + workEmail);
+    }
+
+    return employee;
+}
+
+# Retrieve the Employee name by work email.
+#
+# + workEmail - workEmail
+# + return - Return Value Description
+public isolated function getEmployeeHistory(string workEmail) returns EmployeeHistory|error {
+
+    string document = string `
+        query employeeQuery ($workEmail: String!) {
+            employee(email: $workEmail) {
+            workEmail,
+            managerEmail,
+            startDate,
+            jobBand,
+            joinedJobRole,
+            joinedBusinessUnit,
+            joinedDepartment,
+            joinedTeam,
+            joinedLocation,
+            lastPromotedDate,
+            employeeThumbnail
+            }
+        }
+    `;
+
+    EmployeeHistoryResponse|error employeeData = hrClient->execute(document, {workEmail});
+
+    if employeeData is error {
+        log:printError(employeeData.toString());
+        return error("Employee history retrieving service error!");
+    }
+
+    EmployeeHistory? employeeHistory = employeeData.data.employee;
+
+    // Null Check.
+    if employeeHistory is null {
+        log:printError(employeeData.toString());
+        return error("No matching employee found for " + workEmail);
+    }
+
+    return employeeHistory;
 }

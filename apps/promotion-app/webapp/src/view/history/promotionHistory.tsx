@@ -14,12 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import DuoIcon from "@mui/icons-material/Duo";
+import CommonPage from "../../layout/pages/CommonPage";
+import HistoryIcon from "@mui/icons-material/History";
+import PromotionHistory from "./panel/historyTimeline";
 
-const help = lazy(() => import("@view/help/help"));
-const history = lazy(() => import("@view/history/promotionHistory"));
-
-export const View = {
-  help,
-  history,
-};
+export default function Promotion() {
+  return (
+    <CommonPage
+      title="Promotion"
+      icon={<DuoIcon />}
+      commonPageTabs={[
+        {
+          tabTitle: "Promotion History",
+          tabPath: "promotion-history",
+          icon: <HistoryIcon />,
+          page: <PromotionHistory />,
+        },
+      ]}
+    />
+  );
+}

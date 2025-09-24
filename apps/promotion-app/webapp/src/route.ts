@@ -43,6 +43,14 @@ interface RouteDetail {
 
 export const routes: RouteObjectWithRole[] = [
   {
+    path: "/history",
+    text: "History",
+    icon: React.createElement(HelpOutlineIcon),
+    element: React.createElement(View.history),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+    bottomNav: false,
+  },
+  {
     path: "/help",
     text: "Help",
     icon: React.createElement(HelpOutlineIcon),

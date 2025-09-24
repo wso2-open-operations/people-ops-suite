@@ -36,9 +36,49 @@ public type GraphQlRetryConfig record {|
     decimal maxWaitInterval = RETRY_MAX_INTERVAL;
 |};
 
+// Get employee graphQL service Responses
+# [Employee Entity] Return record for single employee.
+#
+# + employeeId - Id of the employee  
+# + lastPromotedDate - Last Promoted Date  
+# + managerEmail - Manager email  
+# + firstName - First Name  
+# + lead - is employee a lead  
+# + reportsTo - Reporting lead's name  
+# + jobBand - Job Band  
+# + jobRole - Job Role  
+# + lastName - Last Name  
+# + startDate - Start date at WSO2  
+# + employeeStatus - Employee Status  
+# + businessUnit - Business unit of the employee  
+# + department - Employee's department  
+# + team - Employee's Team  
+# + subTeam - Employee's sub team  
+# + employeeThumbnail - Employee Thumbnail URL
+
+public type Employee record {
+    string? employeeId = ();
+    string? lastPromotedDate = ();
+    string? managerEmail = ();
+    string firstName;
+    boolean? lead = false;
+    string? reportsTo = ();
+    int? jobBand = ();
+    string jobRole;
+    string lastName;
+    string startDate;
+    string? employeeStatus = ();
+    string businessUnit;
+    string? department = ();
+    string? team = ();
+    string? subTeam = ();
+    string? employeeThumbnail = ();
+};
+
+
 // Get employee graphQL service Responses.
 # Employee.
-public type Employee record {|
+public type EmployeesBasicInfo record {|
     # Id of the employee
     string employeeId;
     # Email of the employee
@@ -53,16 +93,23 @@ public type Employee record {|
     string? employeeThumbnail;
 |};
 
-# Employee data.
+# [Employee Entity] Inner record for single employee.
+#
+# + employee - Employee Object
 type EmployeeData record {
+    Employee? employee = ();
+};
+
+# Employee data.
+type EmployeeInfo record {
     # Employee
-    Employee employee;
+    EmployeesBasicInfo employee;
 };
 
 # Employee response.
 type EmployeeResponse record {
     # Employee data
-    EmployeeData data;
+    EmployeeInfo data;
 };
 
 # The EmployeeFilter record type represents the filter criteria for the employees.
@@ -95,4 +142,78 @@ type EmployeesData record {
 type EmployeesResponse record {
     # Employees data
     EmployeesData data;
+};
+
+# [Employee Entity] Return record for single employee.
+#
+# + data - Employee Data Object
+type EmployeeResults record {
+    EmployeeData data;
+};
+
+// GraphQL Responses
+// Get employee information response
+# Description
+#
+# + workEmail - WSO2 email  
+# + startDate - Start Date of at WSO2  
+# + jobBand - Job band of the employee  
+# + managerEmail - Manager email  
+# + joinedJobRole - Joined Job role  
+# + joinedBusinessUnit - Joined Business Unit  
+# + joinedDepartment - Joined Department  
+# + joinedTeam - Joined Team  
+# + joinedLocation - Joined Location  
+# + lastPromotedDate - Last Promoted Date  
+# + employeeThumbnail - Employee Thumbnail URL
+public type EmployeeHistory record {
+    string workEmail;
+    string startDate;
+    int? jobBand = ();
+    string? managerEmail = "";
+    string? joinedJobRole = "";
+    string? joinedBusinessUnit = "";
+    string? joinedDepartment = "";
+    string? joinedTeam = "";
+    string? joinedLocation = "";
+    string? lastPromotedDate = "";
+    string? employeeThumbnail = "";
+};
+
+// Get employee history response
+# Employee history response
+#
+# + data - Employee history Data
+type EmployeeHistoryResponse record {
+    EmployeeHistoryData data;
+};
+
+// Get employee history response
+# Employee history data
+#
+# + employee - Employee history record
+type EmployeeHistoryData record {
+    EmployeeHistory employee;
+};
+
+# [Employee Entity] Return record for single employee Name.
+#
+# + data - Employee thumbnail Data Object
+type EmployeeThumbnailResult record {
+    EmployeeThumbnailData data;
+};
+
+# [Employee Entity] Return record for single employee thumbnail.
+#
+# + employee - Employee thumbnail Object 
+type EmployeeThumbnailData record {
+    EmployeeThumbnail? employee = ();
+};
+
+// API response for receiving the employee thumbnail from WSO2 email
+# [Employee Entity] Return record for single employee thumbnail.
+#
+# + employeeThumbnail - Thumbnail of the employee
+public type EmployeeThumbnail record {
+    string? employeeThumbnail = "";
 };
