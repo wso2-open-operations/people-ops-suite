@@ -23,7 +23,7 @@ import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import visitorReducer from "@slices/visitorSlice/visitor";
 import visitReducer from "@slices/visitSlice/visit";
-import invitationReducer from "@slices/invitationSlice/invitationSlice";
+import invitationReducer from "@slices/invitationSlice/invitation";
 enableMapSet();
 
 export const store = configureStore({

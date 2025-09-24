@@ -60,7 +60,7 @@ import {
 import {
   getVisitInvitationAsync,
   submitVisitAsync,
-} from "@slices/invitationSlice/invitationSlice";
+} from "@slices/invitationSlice/invitation";
 import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
@@ -472,7 +472,7 @@ function VisitorRegisterCard() {
                         {
                           icon: <CheckCircleIcon />,
                           label: "Max Visitors",
-                          value: `${externalState.visitInvitation?.noOfInvitations} people`,
+                          value: `${externalState.visitInvitation?.noOfVisitors} people`,
                         },
                       ].map((item, index) => (
                         <Box
@@ -912,7 +912,7 @@ function VisitorRegisterCard() {
                             (visitor: VisitorDetail) =>
                               visitor.status === VisitorStatus.Draft
                           ) &&
-                            externalState.visitInvitation.noOfInvitations >
+                            externalState.visitInvitation.noOfVisitors >
                               formik.values.visitors.length && (
                               <Button
                                 variant="outlined"

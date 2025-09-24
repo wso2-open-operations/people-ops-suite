@@ -38,7 +38,7 @@ export interface VisitDetails {
 export interface Invitation {
   updatedBy: string;
   isActive: number;
-  noOfInvitations: number;
+  noOfVisitors: number;
   visitDetails: VisitDetails;
   inviteeEmail: string;
 }

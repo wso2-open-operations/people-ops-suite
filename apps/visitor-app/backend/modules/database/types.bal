@@ -205,7 +205,7 @@ public type VisitInfo record {|
 # Details of an invitation.
 public type AddInvitationPayload record {|
     # invitations count
-    int noOfInvitations;
+    int noOfVisitors;
     # visit information
     VisitInfo visitDetails;
     # invitation status
@@ -217,12 +217,13 @@ public type AddInvitationPayload record {|
 |};
 
 public type Invitation record {|
+    *AuditFields;
     # Id of the invitation
     int invitationId;
     # Validity of the invitation
     int isActive;
     # No of invitations
-    int noOfInvitations;
+    int noOfVisitors;
     # Visit details in the invitation
     json visitDetails;
     # Who invited the visitor

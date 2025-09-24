@@ -84,8 +84,7 @@ public isolated function addInvitation(AddInvitationPayload payload, string crea
 public isolated function checkInvitation(string encodeValue) returns Invitation|error {
     Invitation|sql:Error invitation = databaseClient->queryRow(checkInvitationQuery(encodeValue));
     if invitation is sql:Error {
-        string errMsg = "Error when checking invitation details";
-        return error(errMsg);
+        return invitation;
     }
     VisitInfo visitInfo = check invitation.visitDetails.cloneWithType();
     invitation.visitDetails = visitInfo;
@@ -123,24 +122,16 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
                 accessibleLocations: check visit.accessibleLocations.cloneWithType(),
+                invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,
                 createdOn: visit.createdOn,
                 updatedBy: visit.updatedBy,
-                updatedOn: visit.updatedOn,
-                invitationId: visit.invitationId
+                updatedOn: visit.updatedOn
             });
         };
 
     return {totalCount, visits};
-}
-
-public isolated function bulkUpdateVisitStatus(VisitApprovePayload[] payloads) returns error? {
-    sql:ParameterizedQuery|error query = bulkUpdateVisitStatusQuery(payloads);
-    if query is error {
-        return query;
-    }
-    sql:ExecutionResult _ = check databaseClient->execute(query);
 }
 
 # Update visit status.

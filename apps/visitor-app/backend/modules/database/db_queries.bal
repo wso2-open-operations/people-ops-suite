@@ -76,9 +76,11 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
 #
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
-# + inviationId - Invitation ID associated with the visit
+# + invitationId - Invitation ID associated with the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? inviationId) returns sql:ParameterizedQuery
+isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? invitationId)
+    returns sql:ParameterizedQuery
+
     => `
         INSERT INTO visit
         (
@@ -105,7 +107,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${payload.accessibleLocations.toJsonString()},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
-            ${inviationId},
+            ${invitationId},
             ${payload.status},
             ${createdBy},
             ${createdBy}
@@ -124,7 +126,7 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         INSERT INTO visit_invitation
         (
             encode_value,
-            no_of_invitations,
+            no_of_visitors,
             visit_info,
             is_active,
             created_by,
@@ -133,7 +135,7 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         VALUES
         (
             ${encodeString},
-            ${payload.noOfInvitations},
+            ${payload.noOfVisitors},
             ${payload.visitDetails.toJsonString()},
             ${payload.isActive},
             ${createdBy},
@@ -148,9 +150,13 @@ isolated function checkInvitationQuery(string encodeValue) returns sql:Parameter
         SELECT
             vi.invitation_id     AS invitationId,
             vi.is_active         AS isActive,
-            vi.no_of_invitations AS noOfInvitations,
+            vi.no_of_visitors AS noOfVisitors,
             vi.visit_info        AS visitDetails,
-            vi.created_by      AS invitedBy
+            vi.created_by      AS invitedBy,
+            vi.created_by     AS createdBy,
+            vi.created_on     AS createdOn,
+            vi.updated_by     AS updatedBy,
+            vi.updated_on     AS updatedOn
         FROM visit_invitation vi
         WHERE vi.encode_value = ${encodeValue}
         AND vi.is_active = 1;
@@ -216,42 +222,6 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
     }
 
     return mainQuery;
-}
-
-isolated function bulkUpdateVisitStatusQuery(VisitApprovePayload[] payloads) returns sql:ParameterizedQuery|error {
-
-    sql:ParameterizedQuery[] statusCases = [];
-    sql:ParameterizedQuery[] passNumberCases = [];
-    int[] inClauseIds = []; // Changed from anydata[] to int[] since visit_id is likely an integer
-
-    // Build CASE conditions and collect IDs for IN clause
-    foreach VisitApprovePayload update in payloads {
-        // Validate that passNumber is not null when status is ACCEPTED
-        if update.status == "ACCEPTED" && update.passNumber is () {
-            return error("passNumber cannot be null when status is ACCEPTED for visit_id: " + update.id.toString());
-        }
-
-        statusCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.status}`));
-        passNumberCases.push(sql:queryConcat(` WHEN visit_id = ${update.id} THEN ${update.passNumber}`));
-        inClauseIds.push(update.id);
-    }
-
-    // Combine CASE conditions into single queries
-    sql:ParameterizedQuery statusCaseQuery = sql:queryConcat(...statusCases);
-    sql:ParameterizedQuery passNumberCaseQuery = sql:queryConcat(...passNumberCases);
-
-    // Construct the final parameterized query
-    sql:ParameterizedQuery updateQuery = sql:queryConcat(
-            `UPDATE visit SET status = CASE `,
-            statusCaseQuery,
-            ` ELSE status END, pass_number = CASE `,
-            passNumberCaseQuery,
-            ` ELSE pass_number END, updated_on = CURRENT_TIMESTAMP WHERE visit_id IN (`,
-            sql:arrayFlattenQuery(inClauseIds),
-            `)`
-);
-
-    return updateQuery;
 }
 
 # Build queries to update visit status and fetch visitor email.

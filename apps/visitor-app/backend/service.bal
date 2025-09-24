@@ -268,6 +268,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Successfully created or error
     resource function post invitations(http:RequestContext ctx, database:AddInvitationPayload payload)
         returns http:Created|http:InternalServerError {
+
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
             log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
@@ -332,11 +333,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function get invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError {
+    resource function post invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError {
         database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
-            string errMsg = invitationDetails.message();
+            string errMsg = "Error when checking invitation details";
+            log:printError(errMsg, invitationDetails);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
@@ -379,7 +381,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
-            string errMsg = invitationDetails.message();
+            string errMsg = "Error when checking invitation details";
+            log:printError(errMsg, invitationDetails);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
@@ -400,7 +403,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int registeredCount = visitsResponse.totalCount;
-        int totalInvitesCount = invitationDetails.noOfInvitations;
+        int totalInvitesCount = invitationDetails.noOfVisitors;
 
         if registeredCount >= totalInvitesCount {
             return <http:BadRequest>{
@@ -469,36 +472,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     };
-
-    resource function patch visits\-status\-update\-bulk(database:VisitApprovePayload[] payload) returns http:Ok|http:BadRequest|http:InternalServerError {
-
-        if payload.length() == 0 {
-            return <http:BadRequest>{
-                body: {
-                    message: "No visits to approve!"
-                }
-            };
-        }
-
-        error? approveError = database:bulkUpdateVisitStatus(payload);
-
-        if approveError is error {
-            string customError = "Error occurred while approving visits!";
-            log:printError(customError, approveError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Visits approved successfully!"
-            }
-        };
-
-    }
 
     # Update visit status.
     #

@@ -67,7 +67,7 @@ import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
-import { sendInvitation } from "@slices/invitationSlice/invitationSlice";
+import { sendInvitation } from "@slices/invitationSlice/invitation";
 
 dayjs.extend(utc);
 
@@ -952,7 +952,7 @@ function CreateVisit() {
               sendInvitation({
                 updatedBy: userState.userInfo?.workEmail ?? "",
                 isActive: 1,
-                noOfInvitations: values.inviteeCount,
+                noOfVisitors: values.inviteeCount,
                 visitDetails: {
                   nameOfCompany: values.companyName,
                   whomTheyMeet: values.whoTheyMeet,
