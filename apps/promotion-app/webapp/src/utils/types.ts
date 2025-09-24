@@ -1,4 +1,3 @@
-import { basename } from "path";
 import { ApplicationState, RecommendationState } from "../types/types";
 import type { BasicUserInfo } from "@asgardeo/auth-spa";
 
