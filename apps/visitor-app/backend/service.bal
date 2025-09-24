@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import visitor.authorization;
 import visitor.database;
 import visitor.email;
@@ -159,7 +160,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? visitorError = database:AddVisitor(payload, invokerInfo.email);
+        error? visitorError = database:addVisitor(payload, invokerInfo.email);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
             log:printError(customError, visitorError);
@@ -212,7 +213,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
-        error? visitError = database:AddVisit({...payload, status: database:ACCEPTED}, invokerInfo.email);
+        error? visitError = database:addVisit({...payload, status: database:ACCEPTED}, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -231,10 +232,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetches visits based on the given filters.
     #
+    # + status - Filter :  status of the visit (Pending, Accepted, Rejected, Completed)
     # + 'limit - Limit number of visits to fetch  
     # + offset - Offset for pagination
     # + return - Array of visits or error
-    resource function get visits(http:RequestContext ctx, int? 'limit, int? offset, string? status)
+    resource function get visits(http:RequestContext ctx, string? status, int? 'limit, int? offset)
         returns database:VisitsResponse|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -404,7 +406,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? visitorError = database:AddVisitor(payload, invitationDetails.invitedBy);
+        error? visitorError = database:addVisitor(payload, invitationDetails.invitedBy);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
             log:printError(customError, visitorError);
@@ -437,7 +439,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         VisitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
 
-        error? visitError = database:AddVisit({
+        error? visitError = database:addVisit({
                                                   nicHash: payload.nicHash,
                                                   companyName: visitInfo.nameOfCompany,
                                                   whomTheyMeet: visitInfo.whomTheyMeet,

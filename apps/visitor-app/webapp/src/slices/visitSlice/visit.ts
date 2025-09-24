@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
@@ -186,9 +187,7 @@ export const visitStatusUpdate = createAsyncThunk(
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({
-              message:
-                response.data.message ||
-                `Visit status updated to "${payload.status}" successfully!`,
+              message: `Visit status updated to "${payload.status}" successfully!`,
               type: "success",
             })
           );

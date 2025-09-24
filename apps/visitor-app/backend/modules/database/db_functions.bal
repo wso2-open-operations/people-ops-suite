@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch Visitor.
@@ -44,7 +45,7 @@ public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
 # + payload - Payload containing the visitor details  
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
-public isolated function AddVisitor(AddVisitorPayload payload, string createdBy) returns error? {
+public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
     // Encrypt sensitive fields.
     payload.name = check encrypt(payload.name);
     payload.nicNumber = check encrypt(payload.nicNumber);
@@ -61,7 +62,7 @@ public isolated function AddVisitor(AddVisitorPayload payload, string createdBy)
 # + createdBy - Person who is creating the visit
 # + inviationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
-public isolated function AddVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
+public isolated function addVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
     _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
 }
 

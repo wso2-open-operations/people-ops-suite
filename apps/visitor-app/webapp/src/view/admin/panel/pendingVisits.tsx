@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useState, useEffect } from "react";
 import { Box, IconButton, Alert, Typography, TextField } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -48,21 +49,16 @@ const toLocalDateTime = (utcString: string) => {
 
 const PendingVisits = () => {
   const dispatch = useAppDispatch();
-  const {
-    visits,
-    state,
-    statusUpdateState,
-    statusUpdateMessage,
-    statusUpdateError,
-    stateMessage,
-  } = useAppSelector((state: RootState) => state.visit);
+  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+    (state: RootState) => state.visit
+  );
   const dialogContext = useConfirmationModalContext();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [blink, setBlink] = useState<string[]>([]);
-  const [tempPassNumber, setTempPassNumber] = useState("");
-  const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
+  const [, setTempPassNumber] = useState("");
+  const [, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useEffect, useState } from "react";
 import {
   Container,
@@ -390,7 +391,7 @@ function VisitorRegisterCard() {
                   mt: 3,
                   width: "80px",
                   height: "4px",
-                  bgcolor: "#FF7300", // accent bar in orange
+                  bgcolor: "#FF7300",
                   borderRadius: "2px",
                   mx: "auto",
                 }}
