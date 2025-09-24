@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { AppConfig } from "@config/config";
 import { APIService } from "@root/src/utils/apiService";
@@ -37,9 +36,7 @@ export interface VisitDetails {
 }
 
 export interface Invitation {
-  createdOn: string;
   updatedBy: string;
-  updatedOn: string;
   isActive: number;
   noOfInvitations: number;
   visitDetails: VisitDetails;
@@ -164,7 +161,7 @@ export const getVisitInvitationAsync = createAsyncThunk<
   async (invitationId, { rejectWithValue }) => {
     try {
       const response = await axios.get(
-        `${AppConfig.serviceUrls.invitations}/${invitationId}/authentication`
+        `${AppConfig.serviceUrls.invitations}/${invitationId}/authorized`
       );
       return { success: true, data: response.data };
     } catch (error: any) {

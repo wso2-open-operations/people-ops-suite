@@ -12,8 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-
+// under the License.
 import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
@@ -151,12 +150,12 @@ public type VisitRecord record {|
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
     string timeOfDeparture;
+    # Invitation ID associated with the visit
+    int? invitationId;
     # Status of the visit
     Status status;
     # Total number of visits
     int totalCount;
-    # Invitation ID associated with the visit
-    int? invitationId;
 |};
 
 # Visit record.
@@ -204,50 +203,22 @@ public type VisitInfo record {|
 |};
 
 # Details of an invitation.
-public type InvitationDetails record {|
-    # invitation creation time
-    string createdOn;
-    # invitation updater
-    string updatedBy;
-    # invitation update time
-    string updatedOn;
-    # invitation status
-    int isActive;
+public type AddInvitationPayload record {|
     # invitations count
     int noOfInvitations;
     # visit information
     VisitInfo visitDetails;
+    # invitation status
+    int isActive;
     # invitee email
     string inviteeEmail;
+    # invitation updater
+    string updatedBy;
 |};
 
-# Invitation details.
 public type Invitation record {|
     # Id of the invitation
     int invitationId;
-    # Who invited the visitor
-    string invitedBy;
-    # Email of the invitee
-    string inviteeEmail;
-    # Encoded uuid value
-    string encodeValue;
-    # No of invitations
-    int noOfInvitations;
-    # When the invitation was sent
-    string createdOn;
-    # When the invitation was updated
-    string updatedOn;
-    # Validity of the invitation
-    int isActive;
-    # Visit details in the invitation
-    json visitDetails;
-|};
-
-public type InvitationRecord record {|
-    # Id of the invitation
-    int invitationId;
-    # When the invitation was sent
-    string createdOn;
     # Validity of the invitation
     int isActive;
     # No of invitations

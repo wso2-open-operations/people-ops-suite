@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 import ballerina/http;
 import ballerina/jwt;
 import ballerina/log;
@@ -29,7 +28,7 @@ public isolated service class JwtInterceptor {
         returns http:NextService|http:Forbidden|http:InternalServerError|error? {
         // For public endpoints that bypass authorization
         if path.length() > 0 && path[0] == INVITATIONS {
-            if req.method == http:GET && path.length() == 3 && path[1].length() > 0 && path[2] == AUTHENTICATION {
+            if req.method == http:GET && path.length() == 3 && path[1].length() > 0 && path[2] == AUTHORIZED {
                 return ctx.next();
             }
             if req.method == http:POST && path.length() == 3 && path[1].length() > 0 && path[2] == FILL {

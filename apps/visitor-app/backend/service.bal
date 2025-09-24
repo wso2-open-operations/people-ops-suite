@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 import visitor.authorization;
 import visitor.database;
 import visitor.email;
@@ -92,7 +91,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             privileges.push(authorization:EMPLOYEE_PRIVILEGE);
         }
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-            privileges.push(authorization:ADMIN_PRIVILEGE);
+            privileges.push(authorization:SECURITY_ADMIN_PRIVILEGE);
         }
 
         UserInfo userInfoResponse = {...employee, privileges};
@@ -267,7 +266,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Payload containing the invitation details
     # + return - Successfully created or error
-    resource function post invitations(http:RequestContext ctx, InvitationDetails payload) returns http:Created|http:InternalServerError {
+    resource function post invitations(http:RequestContext ctx, database:AddInvitationPayload payload)
+        returns http:Created|http:InternalServerError {
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
             log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
@@ -279,7 +279,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string encodeString = array:toBase64((uuid:createType4AsString()).toBytes());
-        error? invitationError = database:createInvitation(payload, invokerInfo.email, encodeString);
+        error? invitationError = database:addInvitation(payload, invokerInfo.email, encodeString);
         if invitationError is error {
             string customError = "Error occurred while creating invitation!";
             log:printError(customError, invitationError);
@@ -290,11 +290,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error content = email:bindKeyValues(email:inviteTemplate,
+        string|error content = email:bindKeyValues(
+                email:inviteTemplate,
                 {
                     LINK: webAppBaseUrl + "/external/" + "?token=" + encodeString,
                     CONTACT_EMAIL: email:contactEmail
-                });
+                }
+        );
 
         if content is error {
             string errMsg = "Error with email template!";
@@ -309,7 +311,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? emailError = email:sendEmail({
                                                 to: [payload.inviteeEmail],
                                                 'from: email:visitorNotificationFrom,
-                                                subject: "Your Visitor Invitation",
+                                                subject: email:VISIT_INVITATION_SUBJECT,
                                                 template: content,
                                                 cc: [email:receptionEmail]
                                             });
@@ -330,8 +332,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function get invitations/[string encodeValue]/authentication() returns database:InvitationRecord|http:InternalServerError {
-        database:InvitationRecord|error invitationDetails = database:checkInvitation(encodeValue);
+    resource function get invitations/[string encodeValue]/authorized() returns database:Invitation|http:InternalServerError {
+        database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
             string errMsg = invitationDetails.message();
@@ -371,8 +373,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + encodeValue - Encoded value from the invitation link
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
-    resource function post invitations/[string encodeValue]/fill(database:AddVisitorPayload payload) returns http:Created|http:BadRequest|http:InternalServerError|error? {
-        database:InvitationRecord|error invitationDetails = database:checkInvitation(encodeValue);
+    resource function post invitations/[string encodeValue]/fill(database:AddVisitorPayload payload)
+        returns http:Created|http:BadRequest|http:InternalServerError|error? {
+
+        database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
             string errMsg = invitationDetails.message();
@@ -437,7 +441,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        VisitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
+        database:VisitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
 
         error? visitError = database:addVisit({
                                                   nicHash: payload.nicHash,

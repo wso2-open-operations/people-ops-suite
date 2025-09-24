@@ -12,8 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-
+// under the License.
 import ballerina/sql;
 
 # Fetch Visitor.
@@ -70,18 +69,20 @@ public isolated function addVisit(AddVisitPayload payload, string createdBy, int
 #
 # + payload - Payload containing the invitation details
 # + createdBy - Person who is creating the invitation
-# + return - Error if the insertion failed
 # + encodeString - Encoded uuid value
-public isolated function createInvitation(InvitationDetails payload, string createdBy, string encodeString) returns error? {
-    _ = check databaseClient->execute(createInvitatonQuery(payload, createdBy, encodeString));
+# + return - Error if the insertion failed
+public isolated function addInvitation(AddInvitationPayload payload, string createdBy, string encodeString)
+    returns error? {
+
+    _ = check databaseClient->execute(addInvitationQuery(payload, createdBy, encodeString));
 }
 
 # Checks whether invitation is valid.
 #
 # + encodeValue - Encoded uuid value
 # + return - Invitation object or error
-public isolated function checkInvitation(string encodeValue) returns InvitationRecord|error {
-    InvitationRecord|sql:Error invitation = databaseClient->queryRow(checkInvitationQuery(encodeValue));
+public isolated function checkInvitation(string encodeValue) returns Invitation|error {
+    Invitation|sql:Error invitation = databaseClient->queryRow(checkInvitationQuery(encodeValue));
     if invitation is sql:Error {
         string errMsg = "Error when checking invitation details";
         return error(errMsg);
@@ -98,7 +99,9 @@ public isolated function checkInvitation(string encodeValue) returns InvitationR
 # + invitation_id - Filter by invitation ID
 # + status - Filter by visit status
 # + return - Array of visits objects or error
-public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ()) returns VisitsResponse|error {
+public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ())
+    returns VisitsResponse|error {
+
     stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset, invitation_id, status));
 
     int totalCount = 0;

@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import React, { useCallback, useState } from "react";
 import {
   Container,
@@ -951,9 +950,7 @@ function CreateVisit() {
           try {
             const resultAction = await dispatch(
               sendInvitation({
-                createdOn: dayjs().utc().format("YYYY-MM-DDTHH:mm:ss"),
                 updatedBy: userState.userInfo?.workEmail ?? "",
-                updatedOn: dayjs().utc().format("YYYY-MM-DDTHH:mm:ss"),
                 isActive: 1,
                 noOfInvitations: values.inviteeCount,
                 visitDetails: {

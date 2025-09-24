@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import ballerina/sql;
 
 # Build query to fetch a visitor by hashed NIC.
@@ -91,10 +90,10 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             accessible_locations,
             time_of_entry,
             time_of_departure,
+            invitation_id,
             status,
             created_by,
-            updated_by,
-            invitation_id
+            updated_by
         )
         VALUES
         (
@@ -106,35 +105,39 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${payload.accessibleLocations.toJsonString()},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
+            ${inviationId},
             ${payload.status},
             ${createdBy},
-            ${createdBy},
-            ${inviationId}
+            ${createdBy}
         );`;
 
-isolated function createInvitatonQuery(InvitationDetails payload, string createdBy, string encodeString) returns sql:ParameterizedQuery
+# Build query to create a new invitation.
+#
+# + payload - Payload containing the invitation details
+# + createdBy - Person who is creating the invitation
+# + encodeString - Encoded uuid value
+# + return - sql:ParameterizedQuery - Insert query for the new invitation
+isolated function addInvitationQuery(AddInvitationPayload payload, string createdBy, string encodeString)
+    returns sql:ParameterizedQuery
+    
     => `
         INSERT INTO visit_invitation
         (
-            created_by,
-            updated_by,
             encode_value,
-            created_on,
-            updated_on,
-            is_active,
             no_of_invitations,
-            visit_info
+            visit_info,
+            is_active,
+            created_by,
+            updated_by
         )
         VALUES
         (
-            ${createdBy},
-            ${payload.updatedBy},
             ${encodeString},
-            ${payload.createdOn},
-            ${payload.updatedOn},
-            ${payload.isActive},
             ${payload.noOfInvitations},
-            ${payload.visitDetails.toJsonString()}
+            ${payload.visitDetails.toJsonString()},
+            ${payload.isActive},
+            ${createdBy},
+            ${payload.updatedBy}
         );`;
 
 # Query to check whether invitation is active or inactive.
@@ -144,7 +147,6 @@ isolated function createInvitatonQuery(InvitationDetails payload, string created
 isolated function checkInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
             vi.invitation_id     AS invitationId,
-            vi.created_on        AS createdOn,
             vi.is_active         AS isActive,
             vi.no_of_invitations AS noOfInvitations,
             vi.visit_info        AS visitDetails,
