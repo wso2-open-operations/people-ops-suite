@@ -134,13 +134,9 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
     return {totalCount, visits};
 }
 
-# Update visit status.
-#
-# + payload - Payload containing the visit ID and the new status
-# + return - Encoded email of the visitor or error
-public isolated function updateVisitStatus(VisitApprovePayload payload) returns string|error {
+public isolated function updateVisit(int visitId, Action action, updateVisitPayload payload) returns string|error {
     transaction {
-        sql:ParameterizedQuery[] queries = updateVisitStatusQuery(payload);
+        sql:ParameterizedQuery[] queries = updateVisitQuery(visitId, action, payload);
         _ = check databaseClient->execute(queries[0]);
         string email = check databaseClient->queryRow(queries[1]);
         check commit;

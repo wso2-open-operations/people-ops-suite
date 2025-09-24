@@ -77,7 +77,7 @@ export interface FetchVisitsResponse {
   visits: Visit[];
 }
 
-export interface ApproveVisitPayload {
+export interface UpdateVisitPayload {
   id: Number;
   passNumber?: Number;
   status: string;
@@ -175,15 +175,19 @@ export const fetchVisits = createAsyncThunk(
 
 export const visitStatusUpdate = createAsyncThunk(
   "visit/visitStatusUpdate",
-  async (payload: ApproveVisitPayload, { dispatch, rejectWithValue }) => {
+  async (payload: UpdateVisitPayload, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
 
     return new Promise<{ message: string }>((resolve, reject) => {
       APIService.getInstance()
-        .post(`${AppConfig.serviceUrls.visits}-status-update`, payload, {
-          cancelToken: newCancelTokenSource.token,
-        })
+        .post(
+          `${AppConfig.serviceUrls.visits}/${payload.id}/${payload.status}`,
+          { passNumber: payload.passNumber || null },
+          {
+            cancelToken: newCancelTokenSource.token,
+          }
+        )
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({

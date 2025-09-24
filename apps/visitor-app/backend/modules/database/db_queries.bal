@@ -224,24 +224,24 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
     return mainQuery;
 }
 
-# Build queries to update visit status and fetch visitor email.
-#
-# + payload - Payload containing the visit ID and the new status
-# + return - Array of sql:ParameterizedQuery - First query updates the visit status, second
-isolated function updateVisitStatusQuery(VisitApprovePayload payload) returns sql:ParameterizedQuery[] {
-    sql:ParameterizedQuery updateQuery = sql:queryConcat(
-            `UPDATE visit v `,
-            `SET status = ${payload.status}, `,
-            `pass_number = CASE WHEN ${payload.passNumber} IS NOT NULL THEN ${payload.passNumber} ELSE pass_number END, `,
-            `updated_on = CURRENT_TIMESTAMP `,
-            `WHERE v.visit_id = ${payload.id}`
-    );
+isolated function updateVisitQuery(int visitId, Action action, updateVisitPayload payload) returns sql:ParameterizedQuery[] {
+
+    sql:ParameterizedQuery updateQuery;
+    if payload.passNumber is int {
+        updateQuery = sql:queryConcat(
+                `UPDATE visit SET status = ${action}, pass_number = ${payload.passNumber}, updated_on = CURRENT_TIMESTAMP WHERE visit_id = ${visitId};`
+        );
+    } else {
+        updateQuery = sql:queryConcat(
+                `UPDATE visit SET status = ${action}, updated_on = CURRENT_TIMESTAMP WHERE visit_id = ${visitId};`
+        );
+    }
 
     sql:ParameterizedQuery selectQuery = sql:queryConcat(
             `SELECT vs.email `,
             `FROM visit v `,
             `JOIN visitor vs ON v.nic_hash = vs.nic_hash `,
-            `WHERE v.visit_id = ${payload.id}`
+            `WHERE v.visit_id = ${visitId}`
     );
 
     return [updateQuery, selectQuery];

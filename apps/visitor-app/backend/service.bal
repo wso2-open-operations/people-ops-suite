@@ -473,13 +473,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     };
 
-    # Update visit status.
-    #
-    # + payload - Payload containing the visit ID and the new status
-    # + return - Successfully updated or error
-    resource function post visits\-status\-update(database:VisitApprovePayload payload) returns http:Ok|http:BadRequest|http:InternalServerError {
-
-        string|error encodedVisitorEmail = database:updateVisitStatus(payload);
+    resource function post visits/[int visitId]/[database:Action action](database:updateVisitPayload payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+        string|error encodedVisitorEmail = database:updateVisit(visitId, action, payload);
 
         if encodedVisitorEmail is error {
             string customError = "Error occurred while updating visits!";
@@ -504,7 +499,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string statusMessage;
         string emailSubject;
-        match payload.status.toUpperAscii() {
+        match action {
             "ACCEPTED" => {
                 statusMessage = "Your visit has been accepted. Please arrive at the scheduled time.";
                 emailSubject = "Visit Request Accepted";
@@ -525,7 +520,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string|error content = email:bindKeyValues(email:visitorStatusTemplate,
                 {
-                    VISIT_STATUS: payload.status.toUpperAscii(),
+                    VISIT_STATUS: action,
                     STATUS_MESSAGE: statusMessage,
                     CONTACT_EMAIL: email:contactEmail
                 });
