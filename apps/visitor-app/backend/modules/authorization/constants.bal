@@ -22,6 +22,6 @@ public const SECURITY_ADMIN_PRIVILEGE = 789;
 public const EMPLOYEE_PRIVILEGE = 987;
 
 # Open endpoints
-public const AUTHORIZED = "authorized";
+public const AUTHORIZE = "authorize";
 public const FILL = "fill";
 public const INVITATIONS = "invitations";

@@ -160,8 +160,8 @@ export const getVisitInvitationAsync = createAsyncThunk<
   "invitation/getVisitInvitation",
   async (invitationId, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `${AppConfig.serviceUrls.invitations}/${invitationId}/authorized`
+      const response = await axios.post(
+        `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`
       );
       return { success: true, data: response.data };
     } catch (error: any) {
