@@ -25,7 +25,7 @@ public type UserInfoResponse record {|
     string firstName;
     # Last name of the employee
     string lastName;
-    # Started Data
+    # Started Date
     JoinedDetails joinedDetails;
     # Job role
     string jobRole;
