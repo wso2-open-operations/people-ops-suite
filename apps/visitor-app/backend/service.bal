@@ -332,7 +332,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function get invitations/[string encodeValue]/authorized() returns database:Invitation|http:InternalServerError {
+    resource function get invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError {
         database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
 
         if invitationDetails is error {
