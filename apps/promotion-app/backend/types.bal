@@ -39,7 +39,7 @@ public type UserInfoResponse record {|
 public type JoinedDetails record {|
     # Started Date
     string startDate;
-    # Stared Job Role
+    # Started Job Role
     string? startedJobRole="";
     # Started Business Unit
     string? startedBusinessUnit="";
