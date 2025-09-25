@@ -74,3 +74,11 @@ public type AddVisitPayload record {|
     }
     string timeOfDeparture;
 |};
+
+# Payload for updating an existing visit.
+public type ActionPaylaod record {|
+    # Reason for rejecting the visit
+    string? rejectionReason = ();
+    # Status of the visit
+    int? passNumber = ();
+|};

@@ -232,13 +232,10 @@ public type Invitation record {|
     string invitedBy;
 |};
 
-public type updateVisitPayload record {|
-    int? passNumber = ();
+# Payload to update visit details.
+public type UpdateVisitPayload record {|
+    # Number in the tag given to visitor
+    int passNumber?;
+    # Status of the visit
+    Status status?;
 |};
-
-# Action to be performed on a visit
-public enum Action {
-    ACCEPTED,
-    REJECTED,
-    COMPLETED
-}

@@ -77,12 +77,12 @@ public isolated function addInvitation(AddInvitationPayload payload, string crea
     _ = check databaseClient->execute(addInvitationQuery(payload, createdBy, encodeString));
 }
 
-# Checks whether invitation is valid.
+# Fetch invitation by encoded value.
 #
 # + encodeValue - Encoded uuid value
 # + return - Invitation object or error
-public isolated function checkInvitation(string encodeValue) returns Invitation|error {
-    Invitation|sql:Error invitation = databaseClient->queryRow(checkInvitationQuery(encodeValue));
+public isolated function fetchInvitation(string encodeValue) returns Invitation|error {
+    Invitation|sql:Error invitation = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
     if invitation is sql:Error {
         return invitation;
     }
@@ -134,18 +134,34 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
     return {totalCount, visits};
 }
 
-# Update visit details of an existing visit.
+# Update visit details.
 #
-# + visitId - ID of the visit to be updated
-# + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
-# + payload - Payload containing the visit details to be updated
-# + return - Encoded email of the visitor or error
-public isolated function updateVisit(int visitId, Action action, updateVisitPayload payload) returns string|error {
-    transaction {
-        sql:ParameterizedQuery[] queries = updateVisitQuery(visitId, action, payload);
-        _ = check databaseClient->execute(queries[0]);
-        string email = check databaseClient->queryRow(queries[1]);
-        check commit;
-        return email;
+# + visitId - ID of the visit to update
+# + payload - Payload containing the fields to update
+# + return - Error if the update failed or no rows were affected
+public isolated function updateVisit(int visitId, UpdateVisitPayload payload) returns error? {
+    sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload));
+
+    if executionResult.affectedRowCount < 1 {
+        return error("No row was updated!");
     }
+}
+
+# Fetch visit by ID.
+#
+# + visitId - ID of the visit to fetch
+# + return - Visit object or error
+public isolated function fetchVisit(int visitId) returns VisitRecord|error {
+    VisitRecord|error visitRecord = databaseClient->queryRow(getVisitsQuery(visitId));
+
+    if visitRecord is error {
+        return visitRecord;
+    }
+
+    visitRecord.name = check decrypt(visitRecord.name);
+    visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
+    visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
+    visitRecord.email = check decrypt(visitRecord.email);
+
+    return visitRecord;
 }

@@ -333,8 +333,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function post invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError {
-        database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
+    resource function post invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError|http:Unauthorized {
+        database:Invitation|error invitationDetails = database:fetchInvitation(encodeValue);
 
         if invitationDetails is error {
             string errMsg = "Error when checking invitation details";
@@ -342,6 +342,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
+                }
+            };
+        }
+
+        if invitationDetails.isActive == 0 {
+            return <http:Unauthorized>{
+                body: {
+                    message: "Invitation is no longer active!"
                 }
             };
         }
@@ -378,7 +386,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function post invitations/[string encodeValue]/fill(database:AddVisitorPayload payload)
         returns http:Created|http:BadRequest|http:InternalServerError|error? {
 
-        database:Invitation|error invitationDetails = database:checkInvitation(encodeValue);
+        database:Invitation|error invitationDetails = database:fetchInvitation(encodeValue);
 
         if invitationDetails is error {
             string errMsg = "Error when checking invitation details";
@@ -479,14 +487,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
     # + payload - Payload containing the visit details to be updated
     # + return - Successfully updated or error
-    resource function post visits/[int visitId]/[database:Action action](database:updateVisitPayload payload)
+    resource function post visits/[int visitId]/[Action action](ActionPaylaod payload)
         returns http:Ok|http:BadRequest|http:InternalServerError {
 
-        string|error encodedVisitorEmail = database:updateVisit(visitId, action, payload);
+        database:VisitRecord|error visit = database:fetchVisit(visitId);
 
-        if encodedVisitorEmail is error {
-            string customError = "Error occurred while updating visits!";
-            log:printError(customError, encodedVisitorEmail);
+        if visit is error {
+            string customError = "Error occurred while fetching visit!";
+            log:printError(customError, visit);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -494,10 +502,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error decodedVisitorEmail = database:decrypt(encodedVisitorEmail);
-        if decodedVisitorEmail is error {
-            string customError = "Error occurred while decrypting email!";
-            log:printError(customError, decodedVisitorEmail);
+        error? response = database:updateVisit(visitId, {status: action, passNumber: payload.passNumber});
+
+        if response is error {
+            string customError = "Error occurred while updating visits!";
+            log:printError(customError, response);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -544,7 +553,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? emailError = email:sendEmail({
-                                                to: [decodedVisitorEmail],
+                                                to: [visit.email],
                                                 'from: email:visitorNotificationFrom,
                                                 subject: emailSubject,
                                                 template: content,

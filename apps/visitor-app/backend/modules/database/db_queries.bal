@@ -142,11 +142,11 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
             ${payload.updatedBy}
         );`;
 
-# Query to check whether invitation is active or inactive.
+# Build query to fetch an invitation.
 #
 # + encodeValue - Encoded uuid value
-# + return - Invitation object
-isolated function checkInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
+# + return - sql:ParameterizedQuery - Select query for the invitation based on the encoded value
+isolated function fetchInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
             vi.invitation_id     AS invitationId,
             vi.is_active         AS isActive,
@@ -162,7 +162,7 @@ isolated function checkInvitationQuery(string encodeValue) returns sql:Parameter
         AND vi.is_active = 1;
     `;
 
-isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, string? status) returns sql:ParameterizedQuery {
+isolated function getVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (), int? visitId = ()) returns sql:ParameterizedQuery {
     // Base query with joins to visitor and visit_invitation tables
     sql:ParameterizedQuery mainQuery = `
         SELECT 
@@ -208,6 +208,10 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
         mainQuery = sql:queryConcat(mainQuery, ` WHERE v.status = ${status}`);
     }
 
+    if visitId is int {
+        mainQuery = sql:queryConcat(mainQuery, ` AND v.visit_id = ${visitId}`);
+    }
+
     // Sorting the result by time_of_entry in descending order
     mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
 
@@ -224,31 +228,21 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
     return mainQuery;
 }
 
-# Update visit details of an existing visit.
+# Build query to update visit details.
 #
 # + visitId - ID of the visit to be updated
-# + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
 # + payload - Payload containing the visit details to be updated
-# + return - sql:ParameterizedQuery[] - Update query for the visit and select query to fetch visitor email
-isolated function updateVisitQuery(int visitId, Action action, updateVisitPayload payload) returns sql:ParameterizedQuery[] {
+# + return - sql:ParameterizedQuery - Update query for the visit
+isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload) returns sql:ParameterizedQuery {
 
-    sql:ParameterizedQuery updateQuery;
-    if payload.passNumber is int {
-        updateQuery = sql:queryConcat(
-                `UPDATE visit SET status = ${action}, pass_number = ${payload.passNumber}, updated_on = CURRENT_TIMESTAMP WHERE visit_id = ${visitId};`
-        );
-    } else {
-        updateQuery = sql:queryConcat(
-                `UPDATE visit SET status = ${action}, updated_on = CURRENT_TIMESTAMP WHERE visit_id = ${visitId};`
-        );
-    }
+    sql:ParameterizedQuery updateQuery =
+    `UPDATE visit
+     SET
+        pass_number = COALESCE(${payload.passNumber}, pass_number),
+        status = COALESCE(${payload.status}, status),
+        updated_by = ${"system"}
+     WHERE visit_id = ${visitId}
+       AND NOT (${payload.status} = 'ACCEPTED' AND ${payload.passNumber} IS NULL);`;
 
-    sql:ParameterizedQuery selectQuery = sql:queryConcat(
-            `SELECT vs.email `,
-            `FROM visit v `,
-            `JOIN visitor vs ON v.nic_hash = vs.nic_hash `,
-            `WHERE v.visit_id = ${visitId}`
-    );
-
-    return [updateQuery, selectQuery];
+    return updateQuery;
 }
