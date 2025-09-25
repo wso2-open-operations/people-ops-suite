@@ -67,10 +67,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get app\-config() returns AppConfig => appConfig;
 
     resource function get user\-info(http:RequestContext ctx) returns UserInfoResponse|http:InternalServerError {
-        // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-
-        // Handle User Info error.
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
