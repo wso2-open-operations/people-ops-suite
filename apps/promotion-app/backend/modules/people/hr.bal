@@ -97,7 +97,7 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
 #
 # + workEmail - workEmail
 # + return - Return Value Description
-public isolated function getEmployeeHistory(string workEmail) returns EmployeeHistory|error {
+public isolated function fetchEmployeeHistory(string workEmail) returns EmployeeHistory|error {
 
     string document = string `
         query employeeQuery ($workEmail: String!) {
