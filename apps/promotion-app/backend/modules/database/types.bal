@@ -150,7 +150,7 @@ public type DbUser record {
 # + status - Promotion Request Status  
 # + reasonForRejection - Reason for rejection  
 # + isNotificationEmailSent - Notification email sent status
-public type FullPromotionRequest record {
+public type FullPromotion record {
     int id;
     string employeeEmail;
     int currentJobBand;
@@ -261,7 +261,7 @@ public type PromotionCycle record {|
 # + status - Promotion Request status  
 # + reasonForRejection - Reason for rejection  
 # + isNotificationEmailSent - Notification email sent or not
-public type PromotionRequest record {|
+public type Promotion record {|
     int id;
     string employeeEmail;
     int currentJobBand;
