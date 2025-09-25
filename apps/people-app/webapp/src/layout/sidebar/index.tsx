@@ -18,10 +18,10 @@ import List from "@mui/material/List";
 import { SIDEBAR_WIDTH } from "@config/ui";
 import { ColorModeContext } from "@src/App";
 import MuiDrawer from "@mui/material/Drawer";
-import { Stack, Typography } from "@mui/material";
+import { colors, Stack, Typography } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
-import { getActiveRouteDetails } from "@src/route";
-import { MUIStyledCommonProps } from "@mui/system";
+import { getActiveRouteDetails, RouteDetail } from "@src/route";
+import { Box, MUIStyledCommonProps } from "@mui/system";
 import ListLinkItem from "@component/layout/LinkItem";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -40,6 +40,7 @@ import {
   alpha,
   useTheme,
 } from "@mui/material/styles";
+import { useState } from "react";
 
 interface SidebarProps {
   open: boolean;
@@ -76,13 +77,29 @@ const Sidebar = (props: SidebarProps) => {
   ]);
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
+  const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
+
+  const isOpen = props.open;
+
+  const handleExpandCollapse = (item: RouteDetail) => {
+    if (item.children && item.children.length > 0) {
+      setExpandedPaths((prev) =>
+        prev.includes(item.path)
+          ? prev.filter((p) => p !== item.path)
+          : [...prev, item.path]
+      );
+    }
+  };
 
   return (
     <ColorModeContext.Consumer>
       {(colorMode) => (
         <Drawer
           variant="permanent"
-          open={props.open}
+          open={isOpen}
+          isChildExpanded={expandedPaths.length > 0}
           sx={{
             "& .MuiDrawer-paper": {
               background: alpha(theme.palette.primary.dark, 1),
@@ -99,16 +116,76 @@ const Sidebar = (props: SidebarProps) => {
             {getActiveRouteDetails(props.roles).map((r, idx) => (
               <div key={idx}>
                 {!r.bottomNav && (
-                  <ListLinkItem
-                    key={idx}
-                    theme={props.theme}
-                    to={r.path}
-                    primary={r.text}
-                    icon={r.icon}
-                    open={props.open}
-                    isActive={currentIndex === idx}
-                  />
+                  <Box
+                    onClick={() => handleExpandCollapse(r)}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mt: 0.3,
+                    }}
+                  >
+                    <ListLinkItem
+                      key={idx}
+                      theme={props.theme}
+                      to={
+                        r.children && r.children.length > 0
+                          ? currentPath
+                          : r.path
+                      }
+                      primary={r.text}
+                      icon={r.icon}
+                      open={isOpen}
+                      isActive={
+                        matchPath({ path: r.path ?? "" }, props.currentPath) !==
+                        null
+                      }
+                      isHighlighted={
+                        (matchPath({ path: r.path ?? "" }, props.currentPath) &&
+                          !r.children) ||
+                        r.children?.some(
+                          (sub) =>
+                            matchPath(
+                              { path: sub.path ?? "" },
+                              props.currentPath
+                            ) !== null
+                        ) ||
+                        expandedPaths.includes(r.path)
+                      }
+                      isExpandable={r.children && r.children.length > 0}
+                      isExpanded={expandedPaths.includes(r.path)}
+                    />
+                  </Box>
                 )}
+                {expandedPaths.includes(r.path) &&
+                  r.children?.map((sub, sidx) => (
+                    <Box key={sidx}>
+                      <ListLinkItem
+                        key={idx + "-" + sidx}
+                        theme={props.theme}
+                        to={sub.path ?? ""}
+                        primary={sub.text}
+                        icon={sub.icon}
+                        open={isOpen}
+                        isActive={
+                          matchPath(
+                            { path: sub.path ?? "" },
+                            props.currentPath
+                          ) !== null
+                        }
+                        isHighlighted={
+                          r.children?.some(
+                            (sub) =>
+                              matchPath(
+                                { path: sub.path ?? "" },
+                                props.currentPath
+                              ) !== null
+                          ) || expandedPaths.includes(r.path)
+                        }
+                        isChild={true}
+                        isLastChild={sidx === (r.children?.length || 0) - 1}
+                      />
+                    </Box>
+                  ))}
               </div>
             ))}
           </List>
@@ -131,7 +208,7 @@ const Sidebar = (props: SidebarProps) => {
                             theme.palette.mode === "light"
                               ? alpha(theme.palette.common.white, 0.35)
                               : alpha(theme.palette.primary.main, 0.35),
-                          ...(!props.open && {
+                          ...(!isOpen && {
                             "& .menu-tooltip": {
                               marginLeft: -3,
                               opacity: 1,
@@ -167,7 +244,7 @@ const Sidebar = (props: SidebarProps) => {
                   color: "white",
                   "&:hover": {
                     background: alpha(props.theme.palette.common.white, 0.05),
-                    ...(!props.open && {
+                    ...(!isOpen && {
                       "& .menu-tooltip": {
                         marginLeft: -3,
                         opacity: 1,
@@ -201,7 +278,7 @@ const Sidebar = (props: SidebarProps) => {
                   color: "white",
                   "&:hover": {
                     background: alpha(props.theme.palette.common.white, 0.05),
-                    ...(!props.open && {
+                    ...(!isOpen && {
                       "& .menu-tooltip": {
                         marginLeft: -3,
                         opacity: 1,
@@ -215,14 +292,14 @@ const Sidebar = (props: SidebarProps) => {
                   },
                 }}
               >
-                {!props.open ? (
+                {!isOpen ? (
                   <ChevronRightIcon sx={{ color: "white" }} />
                 ) : (
                   <ChevronLeftIcon sx={{ color: "white" }} />
                 )}
                 <span className="menu-tooltip">
                   <Typography variant="h6">
-                    {(props.open ? "Collapse" : "Expand") + " Sidebar"}
+                    {(isOpen ? "Collapse" : "Expand") + " Sidebar"}
                   </Typography>
                 </span>
               </IconButton>
@@ -256,9 +333,13 @@ export const DrawerFooter = styled("div")(({ theme }) => ({
   padding: theme.spacing(1.5),
 }));
 
+interface CustomDrawerProps {
+  isChildExpanded?: boolean;
+}
+
 const Drawer = styled(MuiDrawer, {
-  shouldForwardProp: (prop) => prop !== "open",
-})(({ theme, open }) => ({
+  shouldForwardProp: (prop) => prop !== "open" && prop !== "isChildExpanded",
+})<CustomDrawerProps>(({ theme, open, isChildExpanded }) => ({
   width: SIDEBAR_WIDTH,
   flexShrink: 0,
   display: "flex",
@@ -291,7 +372,7 @@ const closedMixin = (theme: Theme): CSSObject => ({
     duration: theme.transitions.duration.leavingScreen,
   }),
   overflowX: "hidden",
-  width: theme.spacing(7),
+  width: theme.spacing(8),
   padding: theme.spacing(0.5),
 });
 

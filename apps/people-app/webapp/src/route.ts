@@ -16,10 +16,12 @@
 
 import React from "react";
 
-import { NonIndexRouteObject, RouteObject } from "react-router-dom";
-
-import DuoIcon from "@mui/icons-material/Duo";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { NonIndexRouteObject } from "react-router-dom";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import BusinessIcon from "@mui/icons-material/Business";
+import HomeIcon from "@mui/icons-material/Home";
+import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -34,13 +36,14 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   bottomNav?: boolean;
 }
 
-interface RouteDetail {
+export interface RouteDetail {
   path: string;
   allowRoles: string[];
   icon:
     | React.ReactElement<any, string | React.JSXElementConstructor<any>>
     | undefined;
   text: string;
+  children?: RouteObjectWithRole[];
   bottomNav?: boolean;
 }
 
@@ -48,18 +51,65 @@ export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
     text: "Home",
-    icon: React.createElement(DuoIcon),
+    icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.TEAM],
   },
   {
-    path: "/help",
-    text: "Help",
-    icon: React.createElement(HelpOutlineIcon),
-    element: React.createElement(View.help),
+    path: "/profile",
+    text: "Profile",
+    icon: React.createElement(PersonIcon),
+    element: React.createElement(View.profile),
     allowRoles: [Role.ADMIN, Role.TEAM],
-    bottomNav: true,
+    children: [
+      {
+        path: "/profile/user",
+        text: "User",
+        icon: React.createElement(AccountCircleIcon),
+        element: React.createElement(View.userProfile),
+        allowRoles: [Role.ADMIN, Role.TEAM],
+      },
+      {
+        path: "/profile/company",
+        text: "Company",
+        icon: React.createElement(BusinessIcon),
+        element: React.createElement(View.companyProfile),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
+  {
+    path: "/settings",
+    text: "Settings",
+    icon: React.createElement(SettingsIcon),
+    element: React.createElement(View.profile),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+    children: [
+      {
+        path: "/settings/user",
+        text: "User",
+        icon: React.createElement(AccountCircleIcon),
+        element: React.createElement(View.userSettings),
+        allowRoles: [Role.ADMIN, Role.TEAM],
+      },
+      {
+        path: "/settings/company",
+        text: "Company",
+        icon: React.createElement(BusinessIcon),
+        element: React.createElement(View.companySettings),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
+  },
+  // Todo: Uncomment when help view is ready
+  // {
+  //   path: "/help",
+  //   text: "Help",
+  //   icon: React.createElement(HelpOutlineIcon),
+  //   element: React.createElement(View.help),
+  //   allowRoles: [Role.ADMIN, Role.TEAM],
+  //   bottomNav: true,
+  // },
 ];
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
@@ -67,20 +117,6 @@ export const getActiveRoutesV2 = (
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
   var routesObj: RouteObjectWithRole[] = [];
-  routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-        children: getActiveRoutesV2(routeObj.children, roles),
-      });
-    }
-  });
-
-  return routesObj;
-};
-
-export const getActiveRoutes = (roles: string[]): RouteObject[] => {
-  var routesObj: RouteObject[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({

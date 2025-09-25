@@ -14,14 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export const isIncludedRole = (a: string[], b: string[]): boolean => {
-  // TODO: Temporarily allow all roles. Remove this after the roles are finalized.
-  return true;
-  return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
-};
+import { Outlet } from "react-router-dom";
 
-function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
-  return a.filter((element) => {
-    return b.includes(element);
-  });
+export default function Profile() {
+  return (
+    <div>
+      <Outlet />
+    </div>
+  );
 }

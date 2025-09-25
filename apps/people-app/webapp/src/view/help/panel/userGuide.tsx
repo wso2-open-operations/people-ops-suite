@@ -33,7 +33,8 @@ function UserGuide() {
   const [markdownContent, setMarkdownContent] = useState("");
 
   useEffect(() => {
-    dispatch(fetchAppConfig());
+    // TODO: Uncomment this after the app config endpoint is functional
+    // dispatch(fetchAppConfig());
     fetch("/README.md")
       .then((response) => response.text())
       .then((text) => setMarkdownContent(text))

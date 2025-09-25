@@ -121,9 +121,9 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUserAuthData({ userInfo: basic, idToken, decodedIdToken: decoded })
         );
         new APIService(idToken, refreshToken);
-
-        await dispatch(getUserInfo()).unwrap();
-        await dispatch(loadPrivileges()).unwrap();
+        // TODO: Uncomment these after the user info endpoint is functional
+        // await dispatch(getUserInfo()).unwrap();
+        // await dispatch(loadPrivileges()).unwrap();
 
         if (!cancelled) setUI("active");
       } catch (err: unknown) {
