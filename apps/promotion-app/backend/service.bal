@@ -31,7 +31,7 @@ final cache:Cache cache = new ({
 
 @display {
     label: "Promotion Backend Service",
-    id: "people-ops/promotion-backend"
+    id: "people-ops-suite/promotion-backend"
 }
 
 
