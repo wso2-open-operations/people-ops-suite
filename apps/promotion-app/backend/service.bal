@@ -84,7 +84,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        // Fetch the user information from the people service.
         people:EmployeesBasicInfo|error loggedInUser = people:fetchEmployeesBasicInfo(userInfo.email);
         if loggedInUser is error {
             string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
@@ -96,7 +95,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        //Get employee History.
         people:EmployeeHistory|error employeeData = people:getEmployeeHistory(userInfo.email);
         if employeeData is error {
             return <http:InternalServerError>{
@@ -106,7 +104,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Fetch the user's privileges based on the roles.
         int[] privileges = [];
         if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE], userInfo.groups) {
             privileges.push(authorization:EMPLOYEE);
