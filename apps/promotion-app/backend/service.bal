@@ -44,7 +44,7 @@ service / on new http:Listener(9090) {
     resource function get user\-info(http:RequestContext ctx) returns UserInfoResponse|http:InternalServerError {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
-            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND,userInfo);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFORMATION_HEADER_NOT_FOUND
