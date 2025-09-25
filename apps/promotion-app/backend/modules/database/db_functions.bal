@@ -102,18 +102,18 @@ public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? sta
 # + 'type - Promotion Request Type  
 # + recommendedBy - Lead who recommended the special promotion 
 # + return - Array of Promotion Requests
-public isolated function getPromotionRequests(string? employeeEmail = (), string[]? statusArray = (), int? cycleID = (),
+public isolated function getPromotions(string? employeeEmail = (), string[]? statusArray = (), int? cycleID = (),
         int? id = (), FunctionalLeadAccessLevels? businessAccessLevels = (), string? 'type = (), string? recommendedBy = ())
-    returns PromotionRequest[]|error {
+    returns Promotion[]|error {
 
-    stream<PromotionRequest, error?> resultStream = databaseClient->query(getUserPromotionRequestsQuery(
+    stream<Promotion, error?> resultStream = databaseClient->query(getUserPromotionRequestsQuery(
             employeeEmail = employeeEmail, statusArray = statusArray, cycleID = cycleID, id = id,
             businessAccessLevels = businessAccessLevels, 'type = 'type, recommendedBy = recommendedBy));
 
-    PromotionRequest[] requests = [];
-    error? queryError = from PromotionRequest promotionRequest in resultStream
+    Promotion[] promotions = [];
+    error? queryError = from Promotion promotionRequest in resultStream
         do {
-            requests.push(promotionRequest);
+            promotions.push(promotionRequest);
         };
 
     if queryError is error {
@@ -122,7 +122,7 @@ public isolated function getPromotionRequests(string? employeeEmail = (), string
         return error("An error occurred while retrieving promotion requests!");
     }
 
-    return requests;
+    return promotions;
 }
 
 # Retrieving promotion recommendations
