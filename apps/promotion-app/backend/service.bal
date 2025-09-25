@@ -34,7 +34,14 @@ final cache:Cache cache = new ({
     id: "people-ops/promotion-backend"
 }
 
-service / on new http:Listener(9090) {
+
+service http:InterceptableService / on new http:Listener(9090) {
+
+    # Request interceptor.
+    #
+    # + return - authorization:JwtInterceptor, ErrorInterceptor
+    public function createInterceptors() returns http:Interceptor[] =>
+        [new authorization:JwtInterceptor()];
 
     # Retrieve application configurations.
     #
@@ -44,7 +51,7 @@ service / on new http:Listener(9090) {
     resource function get user\-info(http:RequestContext ctx) returns UserInfoResponse|http:InternalServerError {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
-            log:printError(USER_INFORMATION_HEADER_NOT_FOUND,userInfo);
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFORMATION_HEADER_NOT_FOUND
