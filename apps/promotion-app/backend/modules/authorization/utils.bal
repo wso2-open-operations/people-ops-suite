@@ -43,12 +43,10 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     // Retrieve corresponding employee data from the People service using the same email
     people:Employee employeeData = check people:getEmployee(workEmail = email);
 
-    // Build the initial UserAppPrivilege object
     UserAppPrivilege userAppPrivileges = {
         // Assign user roles if user exists; otherwise, use an empty list
         roles: applicationUser !is () ? applicationUser.roles : [],
 
-        // Add employee information
         employeeData: employeeData,
 
         // Assign functional lead access levels if user exists; otherwise, use unit value (())
@@ -59,7 +57,6 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     if employeeData.lead == true {
         userAppPrivileges.roles.push(<database:Role>database:LEAD);
     }
-
-    // Return the fully constructed user privilege object
+    
     return userAppPrivileges;
 }
