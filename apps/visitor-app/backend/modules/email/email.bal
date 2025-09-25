@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import ballerina/http;
 import ballerina/log;
 
@@ -38,5 +37,4 @@ public isolated function sendEmail(EmailPayload payload) returns error? {
         log:printError(string `${customError} : ${(check response.getJsonPayload()).toJsonString()}!`);
         return error(customError);
     }
-    log:printInfo(string `Email sent successfully to ${payload.toString()}`);
 }

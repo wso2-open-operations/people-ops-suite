@@ -224,6 +224,12 @@ isolated function getVisitsQuery(int? 'limit, int? offset, int? invitationId, st
     return mainQuery;
 }
 
+# Update visit details of an existing visit.
+#
+# + visitId - ID of the visit to be updated
+# + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
+# + payload - Payload containing the visit details to be updated
+# + return - sql:ParameterizedQuery[] - Update query for the visit and select query to fetch visitor email
 isolated function updateVisitQuery(int visitId, Action action, updateVisitPayload payload) returns sql:ParameterizedQuery[] {
 
     sql:ParameterizedQuery updateQuery;

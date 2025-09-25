@@ -134,6 +134,12 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
     return {totalCount, visits};
 }
 
+# Update visit details of an existing visit.
+#
+# + visitId - ID of the visit to be updated
+# + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
+# + payload - Payload containing the visit details to be updated
+# + return - Encoded email of the visitor or error
 public isolated function updateVisit(int visitId, Action action, updateVisitPayload payload) returns string|error {
     transaction {
         sql:ParameterizedQuery[] queries = updateVisitQuery(visitId, action, payload);

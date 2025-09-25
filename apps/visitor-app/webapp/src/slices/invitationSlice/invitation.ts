@@ -49,35 +49,17 @@ interface VisitData {
 
 export interface InvitationState {
   loading: boolean;
-  success: boolean;
   error: string | null;
-  invitation: Invitation | null;
-
-  // visit submission
   submitState: State;
-  submitMessage: string;
-  submitError: string | null;
-  submittedData: any;
-
-  // fetched invitation
   fetchState: State;
-  fetchMessage: string;
   visitInvitation: any | null;
 }
 
 const initialState: InvitationState = {
   loading: false,
-  success: false,
   error: null,
-  invitation: null,
-
   submitState: State.idle,
-  submitMessage: "",
-  submitError: null,
-  submittedData: null,
-
   fetchState: State.idle,
-  fetchMessage: "",
   visitInvitation: null,
 };
 
@@ -178,19 +160,13 @@ const invitationSlice = createSlice({
   reducers: {
     resetInvitationState: (state) => {
       state.loading = false;
-      state.success = false;
       state.error = null;
-      state.invitation = null;
     },
     resetSubmitState: (state) => {
       state.submitState = State.idle;
-      state.submitError = null;
-      state.submitMessage = "";
-      state.submittedData = null;
     },
     resetFetchState: (state) => {
       state.fetchState = State.idle;
-      state.fetchMessage = "";
       state.visitInvitation = null;
     },
   },
@@ -198,59 +174,45 @@ const invitationSlice = createSlice({
     builder
       .addCase(sendInvitation.pending, (state) => {
         state.loading = true;
-        state.success = false;
         state.error = null;
       })
       .addCase(
         sendInvitation.fulfilled,
         (state, action: PayloadAction<Invitation>) => {
           state.loading = false;
-          state.success = true;
-          state.invitation = action.payload;
         }
       )
       .addCase(sendInvitation.rejected, (state, action) => {
         state.loading = false;
-        state.success = false;
         state.error =
           action.payload || action.error.message || "Something went wrong";
       })
       .addCase(submitVisitAsync.pending, (state) => {
         state.submitState = State.loading;
-        state.submitMessage = "Submitting visit...";
-        state.submitError = null;
       })
       .addCase(
         submitVisitAsync.fulfilled,
         (state, action: PayloadAction<any>) => {
           state.submitState = State.success;
-          state.submitMessage = "Visit submitted successfully";
-          state.submittedData = action.payload.data;
-          state.submitError = null;
         }
       )
       .addCase(submitVisitAsync.rejected, (state, action) => {
         state.submitState = State.failed;
-        state.submitMessage = "Failed to submit visit";
-        state.submitError = action.payload as string;
       })
       .addCase(getVisitInvitationAsync.pending, (state) => {
         state.fetchState = State.loading;
-        state.fetchMessage = "Fetching invitation...";
         state.error = null;
       })
       .addCase(
         getVisitInvitationAsync.fulfilled,
         (state, action: PayloadAction<any>) => {
           state.fetchState = State.success;
-          state.fetchMessage = "Invitation fetched successfully";
           state.visitInvitation = action.payload.data;
           state.error = null;
         }
       )
       .addCase(getVisitInvitationAsync.rejected, (state, action) => {
         state.fetchState = State.failed;
-        state.fetchMessage = "Failed to fetch invitation";
         state.error = action.payload as string;
       });
   },

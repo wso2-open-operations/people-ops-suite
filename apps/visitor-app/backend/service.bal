@@ -473,7 +473,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     };
 
-    resource function post visits/[int visitId]/[database:Action action](database:updateVisitPayload payload) returns http:Ok|http:BadRequest|http:InternalServerError {
+    # Update visit details of exsisting visit.
+    #
+    # + visitId - ID of the visit to be updated
+    # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
+    # + payload - Payload containing the visit details to be updated
+    # + return - Successfully updated or error
+    resource function post visits/[int visitId]/[database:Action action](database:updateVisitPayload payload)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+
         string|error encodedVisitorEmail = database:updateVisit(visitId, action, payload);
 
         if encodedVisitorEmail is error {

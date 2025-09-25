@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
 import PendingVisits from "@view/admin/panel/pendingVisits";
