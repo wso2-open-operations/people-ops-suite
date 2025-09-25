@@ -100,7 +100,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         people:EmployeeHistory|error employeeData = people:getEmployeeHistory(userInfo.email);
         if employeeData is error {
             return <http:InternalServerError>{
-                body: {
+        people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(userInfo.email);
                     message: "User information header not found!"
                 }
             };
