@@ -34,32 +34,7 @@ final cache:Cache cache = new ({
     id: "people-ops/promotion-backend"
 }
 
-service class ErrorInterceptor {
-    *http:ResponseErrorInterceptor;
-
-    remote function interceptResponseError(error err, http:RequestContext ctx) returns http:BadRequest|error {
-
-        // Handle data-binding errors.
-        if err is http:PayloadBindingError {
-            string customError = string `Payload binding failed!`;
-            log:printError(customError, err);
-            return {
-                body: {
-                    message: customError
-                }
-            };
-        }
-        return err;
-    }
-}
-
-service http:InterceptableService / on new http:Listener(9090) {
-
-    # Request interceptor.
-    #
-    # + return - authorization:JwtInterceptor, ErrorInterceptor
-    public function createInterceptors() returns http:Interceptor[] =>
-        [new authorization:JwtInterceptor(), new ErrorInterceptor()];
+service / on new http:Listener(9090) {
 
     # Retrieve application configurations.
     #
@@ -95,11 +70,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        people:EmployeeHistory|error employeeData = people:getEmployeeHistory(userInfo.email);
-        if employeeData is error {
-            return <http:InternalServerError>{
         people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(userInfo.email);
-                    message: "User information header not found!"
+        if employeeData is error {
+            string customError = string `Error occurred while retrieving employee history: ${userInfo.email}!`;
+            log:printError(customError, employeeData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
                 }
             };
         }
@@ -145,166 +122,94 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + 'type - Type of the promotion request  
     # + recommendedBy - Lead who recommended the promotion request
     # + return - Internal Server Error or Promotion request array
-    resource function GET promotion/requests(http:RequestContext ctx, string? employeeEmail,
-            string[]? statusArray, int? cycleId, boolean? enableBuFilter, string? 'type, string? recommendedBy)
-        returns PromotionRequests|http:Forbidden|http:Unauthorized|error {
+    resource function GET promotions/[string email](http:RequestContext ctx, string[]? statusArray)
+        returns database:FullPromotion[]|http:Forbidden|http:Unauthorized|http:InternalServerError {
 
         // if there is a status array.
         if statusArray !is null {
             // Verifying the status of the promotion request.
             foreach string status in statusArray {
                 if status !is database:PromotionRequestStatus {
-                    return error("Invalid promotion request status provided!");
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Invalid promotion request status provided!"
+                        }
+                    };
                 }
             }
         }
 
         // "HEADER_USER_INFO" is the email of the user access this resource.
         // Interceptor set this value after validating the jwt.
-        authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
-
-        // Get all privileges/roles for the user making the request.
-        authorization:UserAppPrivilege userAppPrivileges = check authorization:getUserPrivileges(userInfo.email);
-
-        if userInfo.email != employeeEmail {
-
-            //checks if a user has all the required roles.
-            if !database:checkRoles([database:LEAD], userAppPrivileges.roles) {
-                return <http:Forbidden>{
-                    body: {
-                        message: "Insufficient privileges!"
-                    }
-                };
-            }
-        }
-
-        // Flag to determine if recommendations should be hidden from the response.
-        boolean hideRecommendations = false;
-
-        // Flag to determine if status should be hidden from the response.
-        boolean hideStatus = false;
-
-        // Flag to control whether email-based filtering should be enforced (used to restrict access to user's own data).
-        boolean setEmailConstrain = false;
-
-        // Determines whether Business Unit (BU) filtering should be applied.
-        // If `enableBuFilter` is a boolean, use it; otherwise default to `false`.
-        boolean setBuConstrain = enableBuFilter is boolean ? enableBuFilter : false;
-
-        // If the user is NOT an HR_ADMIN, FUNCTIONAL_LEAD, or PROMOTION_BOARD_MEMBER.
-        if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) ||
-            database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) ||
-            database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) {
-
-            // If an employee email is provided, but it doesn't match the logged-in user's email.
-            if employeeEmail !is () && userInfo.email != employeeEmail {
-                // Block access - user is not authorized to view others' promotion history.
-                return <http:Unauthorized>{
-                    body: {
-                        message: "Insufficient privilege to access promotion application of others."
-                    }
-                };
-            }
-
-            // Since user isn't privileged, hide the recommendation section from them.
-            hideRecommendations = true;
-
-            // Employees and leads cannot see their own promotion request status after the cycle has ended.
-            hideStatus = true;
-
-            // Enforce filtering based on user email (only allow access to their own data).
-            setEmailConstrain = true;
-        }
-
-        // If the user is a FUNCTIONAL_LEAD but NOT an HR_ADMIN or PROMOTION_BOARD_MEMBER.
-        if !(database:checkRoles([database:HR_ADMIN], userAppPrivileges.roles) ||
-            database:checkRoles([database:PROMOTION_BOARD_MEMBER], userAppPrivileges.roles)) &&
-            database:checkRoles([database:FUNCTIONAL_LEAD], userAppPrivileges.roles) {
-
-            // Restrict functional leads from accessing data outside of their BU.
-            setBuConstrain = true;
-        }
-
-        // If BU constraint is set, but the user has no functional lead access levels defined.
-        if setBuConstrain && userAppPrivileges.functionalLeadAccessLevels is () {
-            // Deny access because they cannot be scoped to any BU.
-            return <http:Forbidden>{
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
                 body: {
-                    message: "Insufficient privilege to enable BU filter."
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
 
-        // [End] Custom Resource level authorization.
-
-        // Getting open promotion cycles from the database.
-        database:PromotionCycle[] openedPromotionCycles = check database:getPromotionCyclesByStatus([database:OPEN]);
-
-        // Getting closed promotion cycles from the database.
-        database:PromotionCycle[] closedPromotionCycles = check database:getPromotionCyclesByStatus([database:CLOSED]);
-
-        // Initialize a variable to hold the name of the active promotion cycle.
-        string activePromotionCycle = "";
-
-        // If there are any open promotion cycles, use the first one as the active cycle.
-        if openedPromotionCycles.length() != 0 {
-            activePromotionCycle = openedPromotionCycles[0].name;
-        }
-
-        if openedPromotionCycles.length() == 0{
-            // If there are no open cycles but there are closed ones, fallback to the first closed cycle.
-            if closedPromotionCycles.length() != 0 {
-                activePromotionCycle = closedPromotionCycles[0].name;
-            }
-        }
-
-
-
-        // Check if the current type is a string and is equal to `INDIVIDUAL_CONTRIBUTOR`.
-        if 'type is string && 'type == database:INDIVIDUAL_CONTRIBUTOR {
-            // Adjust filters: allow broader access to promotion data for ICs.
-            setEmailConstrain = false;
-            hideRecommendations = false;
+        if userInfo.email != email {
+            string customError = string `You are not authorized to view promotion details of other employees!`;
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
         }
 
         // Retrieve promotion requests from the database, using various filters and constraints.
-        database:PromotionRequest[] PromotionRequestArray = check database:getPromotionRequests(
-            employeeEmail = setEmailConstrain ? userInfo.email : employeeEmail,  // Constrain by user email if needed.
-            statusArray = statusArray,  // Filter by status.
-            cycleID = cycleId,  // Filter by promotion cycle.
-            businessAccessLevels = setBuConstrain ? userAppPrivileges.functionalLeadAccessLevels : (),  // BU-level access.
-            'type = 'type,  // Type of request (e.g., IC or Manager).
-            recommendedBy = recommendedBy // Filter by recommender if provided.
+        database:Promotion[]|error PromotionArray = database:getPromotions(
+            employeeEmail = email,  // Constrain by user email if needed.
+            statusArray = statusArray // Filter by status.
         );
 
-        // Initialize an array to hold the full promotion request data.
-        database:FullPromotionRequest[] promotionRequests = [];
+        if PromotionArray is error {
+            string customError = string `Error while retrieving promotions!`;
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
 
-        foreach database:PromotionRequest promotionRequest in PromotionRequestArray {
+        // Initialize an array to hold the full promotion request data.
+        database:FullPromotion[] promotions = [];
+
+        foreach database:Promotion promotionRequest in PromotionArray {
 
             // Retrieve promotion recommendations for a specific promotion request.
-            database:FullPromotionRecommendation[] promotionRecommendationsArray = check database:getFullPromotionRecommendations(
+            database:FullPromotionRecommendation[]|error promotionRecommendationsArray = database:getFullPromotionRecommendations(
                     promotionRequestId = promotionRequest.id);
 
-            // Hide recommendations if the user is not a HR admin or a promotion board member.
-            if hideRecommendations {
-                error? updateError = from database:FullPromotionRecommendation recommendation in promotionRecommendationsArray
-                    do {
-                        recommendation.recommendationStatement = "";
-                        recommendation.recommendationAdditionalComment = "";
-                    };
-                if updateError is error {
-                    return error(("Error occurred while data sanitization"));
-                }
+            if promotionRecommendationsArray is error {
+                string customError = string `Error while retrieving Promotion Recommendations!`;
+                log:printError(customError);
+                return <http:Forbidden>{
+                    body: {
+                        message: customError
+                    }
+                };
             }
 
-            // Hide status if the user is not a HR admin or a promotion board member.
-            if hideStatus && !(promotionRequest.status == database:SUBMITTED || promotionRequest.status == database:DRAFT) &&
-                promotionRequest.promotionCycle == activePromotionCycle && promotionRequest.employeeEmail == userInfo.email {
-                promotionRequest.status = database:PROCESSING;
+            error? updateError = from database:FullPromotionRecommendation recommendation in promotionRecommendationsArray
+                do {
+                    recommendation.recommendationStatement = "";
+                    recommendation.recommendationAdditionalComment = "";
+                };
+            if updateError is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error occurred while data sanitization"
+                    }
+                };
             }
 
-            promotionRequests.push({
+            promotions.push({
                 id: promotionRequest.id,
                 employeeEmail: promotionRequest.employeeEmail,
                 currentJobBand: promotionRequest.currentJobBand,
@@ -328,6 +233,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             });
         }
 
-        return {promotionRequests};
+        return promotions;
     }
 }
