@@ -69,14 +69,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get user\-info(http:RequestContext ctx) returns UserInfoResponse|http:InternalServerError {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
 
-        // Check if the employees are already cached.
         if cache.hasKey(userInfo.email) {
             UserInfoResponse|error cachedUserInfo = cache.get(userInfo.email).ensureType();
             if cachedUserInfo is UserInfoResponse {
