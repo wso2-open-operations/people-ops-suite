@@ -15,28 +15,6 @@
 // under the License.
 import ballerina/sql;
 
-# Build query to fetch a visitor by hashed NIC.
-#
-# + hashedNic - Filter : Hashed NIC of the visitor
-# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
-isolated function getVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
-    => `
-        SELECT   
-            nic_hash as nicHash,        
-            name,
-            nic_number as nicNumber,
-            contact_number as contactNumber,
-            email,
-            created_by as createdBy,
-            created_on as createdOn,
-            updated_by as updatedBy,
-            updated_on as updatedOn
-        FROM 
-            visitor
-        WHERE 
-            nic_hash = ${hashedNic};
-        `;
-
 # Build query to persist a visitor.
 #
 # + payload - Payload containing the visitor details
@@ -72,46 +50,27 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
             updated_by = ${createdBy}
         ;`;
 
-# Build query to persist a visit.
+# Build query to fetch a visitor by hashed NIC.
 #
-# + payload - Payload containing the visit details
-# + createdBy - Person who is creating the visit
-# + invitationId - Invitation ID associated with the visit
-# + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? invitationId)
-    returns sql:ParameterizedQuery
-
+# + hashedNic - Filter : Hashed NIC of the visitor
+# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
+isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
     => `
-        INSERT INTO visit
-        (
-            nic_hash,
-            pass_number,
-            company_name,
-            whom_they_meet,
-            purpose_of_visit,
-            accessible_locations,
-            time_of_entry,
-            time_of_departure,
-            invitation_id,
-            status,
-            created_by,
-            updated_by
-        )
-        VALUES
-        (
-            ${payload.nicHash},
-            ${payload.passNumber},
-            ${payload.companyName},
-            ${payload.whomTheyMeet},
-            ${payload.purposeOfVisit},
-            ${payload.accessibleLocations.toJsonString()},
-            ${payload.timeOfEntry},
-            ${payload.timeOfDeparture},
-            ${invitationId},
-            ${payload.status},
-            ${createdBy},
-            ${createdBy}
-        );`;
+        SELECT   
+            nic_hash as nicHash,        
+            name,
+            nic_number as nicNumber,
+            contact_number as contactNumber,
+            email,
+            created_by as createdBy,
+            created_on as createdOn,
+            updated_by as updatedBy,
+            updated_on as updatedOn
+        FROM 
+            visitor
+        WHERE 
+            nic_hash = ${hashedNic};
+        `;
 
 # Build query to create a new invitation.
 #
@@ -162,8 +121,56 @@ isolated function fetchInvitationQuery(string encodeValue) returns sql:Parameter
         AND vi.is_active = 1;
     `;
 
-isolated function getVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (), int? visitId = ()) returns sql:ParameterizedQuery {
-    // Base query with joins to visitor and visit_invitation tables
+# Build query to persist a visit.
+#
+# + payload - Payload containing the visit details
+# + createdBy - Person who is creating the visit
+# + invitationId - Invitation ID associated with the visit
+# + return - sql:ParameterizedQuery - Insert query for the new visit
+isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? invitationId)
+    returns sql:ParameterizedQuery
+
+    => `
+        INSERT INTO visit
+        (
+            nic_hash,
+            pass_number,
+            company_name,
+            whom_they_meet,
+            purpose_of_visit,
+            accessible_locations,
+            time_of_entry,
+            time_of_departure,
+            invitation_id,
+            status,
+            created_by,
+            updated_by
+        )
+        VALUES
+        (
+            ${payload.nicHash},
+            ${payload.passNumber},
+            ${payload.companyName},
+            ${payload.whomTheyMeet},
+            ${payload.purposeOfVisit},
+            ${payload.accessibleLocations.toJsonString()},
+            ${payload.timeOfEntry},
+            ${payload.timeOfDeparture},
+            ${invitationId},
+            ${payload.status},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Build query to fetch visits with optional filters and pagination.
+#
+# + 'limit - Limit number of visits to fetch
+# + offset - Offset for pagination
+# + invitationId - Filter by invitation ID
+# + status - Filter by visit status
+# + visitId - Filter by visit ID
+# + return - sql:ParameterizedQuery - Select query for visits based on the provided filters and pagination
+isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (), int? visitId = ()) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
         SELECT 
             v.visit_id as id,
@@ -208,6 +215,7 @@ isolated function getVisitsQuery(int? 'limit = (), int? offset = (), int? invita
         mainQuery = sql:queryConcat(mainQuery, ` WHERE v.status = ${status}`);
     }
 
+    // Add WHERE clause for visitId if provided
     if visitId is int {
         mainQuery = sql:queryConcat(mainQuery, ` AND v.visit_id = ${visitId}`);
     }

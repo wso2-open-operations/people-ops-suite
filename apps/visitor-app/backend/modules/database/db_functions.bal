@@ -15,30 +15,6 @@
 // under the License.
 import ballerina/sql;
 
-# Fetch Visitor.
-#
-# + hashedNic - Filter :  hashed NIC of the visitor
-# + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(getVisitorByNicQuery(hashedNic));
-    if visitor is sql:NoRowsError {
-        return;
-    }
-    if visitor is error {
-        return visitor;
-    }
-
-    // Decrypt sensitive fields.
-    visitor.name = check decrypt(visitor.name);
-    visitor.nicNumber = check decrypt(visitor.nicNumber);
-    visitor.contactNumber = check decrypt(visitor.contactNumber);
-
-    string? email = visitor.email;
-    visitor.email = email is string ? check decrypt(email) : null;
-
-    return visitor;
-}
-
 # Add new visitor.
 #
 # + payload - Payload containing the visitor details  
@@ -55,14 +31,28 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
 
-# Add new visit.
+# Fetch Visitor.
 #
-# + payload - Payload containing the visit details
-# + createdBy - Person who is creating the visit
-# + inviationId - Invitation ID associated with the visit
-# + return - Error if the insertion failed
-public isolated function addVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
-    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
+# + hashedNic - Filter :  hashed NIC of the visitor
+# + return - Visitor object or error if so
+public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedNic));
+    if visitor is sql:NoRowsError {
+        return;
+    }
+    if visitor is error {
+        return visitor;
+    }
+
+    // Decrypt sensitive fields.
+    visitor.name = check decrypt(visitor.name);
+    visitor.nicNumber = check decrypt(visitor.nicNumber);
+    visitor.contactNumber = check decrypt(visitor.contactNumber);
+
+    string? email = visitor.email;
+    visitor.email = email is string ? check decrypt(email) : null;
+
+    return visitor;
 }
 
 # Create a new invitation.
@@ -91,6 +81,35 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
     return invitation;
 }
 
+# Add new visit.
+#
+# + payload - Payload containing the visit details
+# + createdBy - Person who is creating the visit
+# + inviationId - Invitation ID associated with the visit
+# + return - Error if the insertion failed
+public isolated function addVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
+    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
+}
+
+# Fetch visit by ID.
+#
+# + visitId - ID of the visit to fetch
+# + return - Visit object or error
+public isolated function fetchVisit(int visitId) returns VisitRecord|error {
+    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId));
+
+    if visitRecord is error {
+        return visitRecord;
+    }
+
+    visitRecord.name = check decrypt(visitRecord.name);
+    visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
+    visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
+    visitRecord.email = check decrypt(visitRecord.email);
+
+    return visitRecord;
+}
+
 # Fetch visits with pagination.
 #
 # + 'limit - Limit number of visits to fetch
@@ -101,7 +120,7 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
 public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ())
     returns VisitsResponse|error {
 
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(getVisitsQuery('limit, offset, invitation_id, status));
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery('limit, offset, invitation_id, status));
 
     int totalCount = 0;
     Visit[] visits = [];
@@ -145,23 +164,4 @@ public isolated function updateVisit(int visitId, UpdateVisitPayload payload) re
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");
     }
-}
-
-# Fetch visit by ID.
-#
-# + visitId - ID of the visit to fetch
-# + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns VisitRecord|error {
-    VisitRecord|error visitRecord = databaseClient->queryRow(getVisitsQuery(visitId));
-
-    if visitRecord is error {
-        return visitRecord;
-    }
-
-    visitRecord.name = check decrypt(visitRecord.name);
-    visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
-    visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
-    visitRecord.email = check decrypt(visitRecord.email);
-
-    return visitRecord;
 }
