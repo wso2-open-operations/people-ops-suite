@@ -27,7 +27,7 @@ public type CustomJwtPayload record {
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string EMPLOYEE;
+    string EMPLOYEE_ROLE;
 |};
 
 # [HRIS_Promotion Db] Return record for user privileges.
