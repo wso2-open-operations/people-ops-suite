@@ -17,3 +17,5 @@
 # Cache key of employees.
 const string EMPLOYEES_CACHE_KEY = "employees";
 
+# Error message for header not found.
+const string USER_INFORMATION_HEADER_NOT_FOUND = "user information header not found";
