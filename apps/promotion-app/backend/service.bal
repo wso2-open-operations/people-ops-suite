@@ -122,12 +122,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Retrieve specific users' promotion requests for given criteria.
     #
     # + ctx - Request Context appended from the interceptor  
-    # + employeeEmail - email of the employee  
-    # + statusArray - Status of the promotion request  
-    # + cycleId - Promotion Cycle Id  
-    # + enableBuFilter - filter promotion requests base on logged in user business unit  
-    # + 'type - Type of the promotion request  
-    # + recommendedBy - Lead who recommended the promotion request
+    # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
     resource function GET promotions/[string email](http:RequestContext ctx, string[]? statusArray)
         returns database:FullPromotion[]|http:Forbidden|http:Unauthorized|http:InternalServerError {
