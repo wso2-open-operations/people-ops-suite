@@ -75,7 +75,6 @@ public type Employee record {
     string? employeeThumbnail = ();
 };
 
-
 // Get employee graphQL service Responses.
 # Employee.
 public type EmployeesBasicInfo record {|

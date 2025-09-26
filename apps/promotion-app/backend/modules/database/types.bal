@@ -41,7 +41,6 @@ public type FunctionalLeadAccessLevels record {|
     BusinessUnit[]? businessUnits = [];
 |};
 
-
 # Business Unit Details
 #
 # + id - id of the business unit  

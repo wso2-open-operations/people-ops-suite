@@ -1,3 +1,4 @@
+import ballerina/lang.array as array;
 // Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
@@ -14,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
-import ballerina/lang.array as array;
 
 # Build the database select query with dynamic filter attributes.
 #

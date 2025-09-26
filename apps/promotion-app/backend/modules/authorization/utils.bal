@@ -34,7 +34,6 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
 #
 # + email - User's email address
 # + return - Object containing user's roles, employee data, and access levels
-
 public isolated function getUserPrivileges(string email) returns UserAppPrivilege|error {
 
     // Fetch user record from the database using the provided email
@@ -57,6 +56,6 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     if employeeData.lead == true {
         userAppPrivileges.roles.push(<database:Role>database:LEAD);
     }
-    
+
     return userAppPrivileges;
 }

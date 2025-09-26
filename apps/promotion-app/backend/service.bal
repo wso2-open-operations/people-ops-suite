@@ -124,7 +124,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
     resource function GET promotions/[string email](http:RequestContext ctx, string[]? statusArray)
-        returns database:FullPromotion[]|http:Forbidden|http:Unauthorized|http:InternalServerError {
+        returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
 
         // if there is a status array.
         if statusArray !is null {
@@ -234,6 +234,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             });
         }
 
-        return promotions;
+        Promotions promortionRes = {
+            promotionRequests: promotions
+        };
+        return promortionRes;
     }
 }

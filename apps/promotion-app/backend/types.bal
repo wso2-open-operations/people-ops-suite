@@ -40,17 +40,17 @@ public type JoinedDetails record {|
     # Started Date
     string startDate;
     # Started Job Role
-    string? startedJobRole="";
+    string? startedJobRole = "";
     # Started Business Unit
-    string? startedBusinessUnit="";
+    string? startedBusinessUnit = "";
     # Started Team
-    string? startedTeam="";
+    string? startedTeam = "";
     # Started Sub Team
-    string? startedSubTeam="";
+    string? startedSubTeam = "";
     # Reporting Lead
-    string? startedReportingLead="";
+    string? startedReportingLead = "";
     # Joined Job Band
-    int? jobBand=();
+    int? jobBand = ();
 |};
 
 # Represent the name and email address of a support team.
@@ -107,6 +107,6 @@ public type EmployeeInfoWithLead record {
 # [Return] Result object of the get user promotion requests resource function.
 #
 # + promotionRequests - array of promotion requests
-type PromotionRequests record {
+type Promotions record {
     database:FullPromotion[] promotionRequests;
 };

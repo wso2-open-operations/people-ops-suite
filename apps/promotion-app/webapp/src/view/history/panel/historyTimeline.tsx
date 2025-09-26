@@ -3,7 +3,7 @@ import { AppConfig } from '@root/src/config/config';
 import { APIService } from '@root/src/utils/apiService';
 import { EmployeeInfo, PromotionRequest, TimeLineData } from '@root/src/utils/types';
 import { useAppSelector, RootState } from "@slices/store";
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useEffect } from 'react';
 import StateWithImage from '@component/ui/StateWithImage';
 
@@ -24,82 +24,78 @@ export default function history() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const [requests, setRequests] = React.useState<PromotionRequest[]>([]);
 
-    // Temporary variable to store data for timeline rendering
-    let timelineData: TimeLineData[] = [];
-
     // Extracting employee email from authentication state
     const employeeEmail = auth.userInfo?.email;
 
     // Fetch promotion request history on component mount or when employeeEmail changes
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
+        if (!employeeEmail) return;
+
         setState("loading");
 
-        Promise.all([
-            APIService.getInstance().get<{ promotionRequests: PromotionRequest[] }>(
+        APIService.getInstance()
+            .get<{ promotionRequests: PromotionRequest[] }>(
                 AppConfig.serviceUrls.retrieveAllPromotionRequests +
-                "?statusArray=APPROVED&employeeEmail=" +
-                employeeEmail
-            ),
-        ])
-            .then(([promotionHistory]) => {
-                const requests = promotionHistory.data.promotionRequests;
-                // Update state with fetched data
-                setRequests(requests);
-                // Indicate successful load
+                    "/" + employeeEmail
+            )
+            .then((promotionHistory) => {
+                setRequests(promotionHistory.data.promotionRequests);
                 setState("success");
             })
-            .catch((error: Error) => {
-                // Indicate failure to load
+            .catch(() => {
                 setState("failed");
-            })
-    }, [employeeEmail]); // Dependency array ensures it runs when employeeEmail changes
+            });
+    }, [employeeEmail]);
 
-    // Builds the timeline data from user info and promotion history
-    const handleSuccess = () => {
+    // Memoize timeline data to avoid recalculating on every render
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const timelineData: TimeLineData[] = useMemo(() => {
+        if (state !== "success") return [];
 
-        // First timeline entry for when the user joined the company
-        timelineData.push({
-            Title: "Joined the Company",
-            Date: new Date(user.userInfo?.joinedDetails.startDate || '').toLocaleDateString() || "",
-            BusinessUnit: user.userInfo?.joinedDetails.startedBusinessUnit || "",
-            Team: user.userInfo?.joinedDetails.startedTeam || "",
-            SubTeam: user.userInfo?.joinedDetails.startedSubTeam || "",
-            Lead: user.userInfo?.joinedDetails.startedreportingLead || "",
-        });
+        // Temporary variable to store data for timeline rendering
+        const data: TimeLineData[] = [];
 
-        // Convert promotion requests into timeline entries
-        const promotionEntries: TimeLineData[] = requests.map((request) => {
+        // Add user joined entry
+        if (user.userInfo?.joinedDetails) {
+            const joined = user.userInfo.joinedDetails;
+            // First timeline entry for when the user joined the company
+            data.push({
+                Title: "Joined the Company",
+                Date: new Date(joined.startDate || "").toLocaleDateString() || "",
+                BusinessUnit: joined.startedBusinessUnit || "",
+                Team: joined.startedTeam || "",
+                SubTeam: joined.startedSubTeam || "",
+                Lead: joined.startedreportingLead || "",
+            });
+        }
+
+        // Add promotion entries
+        requests.forEach((request) => {
             const recommendation = request.recommendations?.[0];
-
-            return {
+            data.push({
                 Title: `Promoted to Band ${request.nextJobBand}`,
                 Date: new Date(request.updatedOn).toLocaleDateString(),
                 BusinessUnit: request.businessUnit || "",
                 Team: request.department || "",
                 SubTeam: request.team || "",
                 Lead: recommendation?.leadEmail || "",
-            };
+            });
         });
 
-        // Append promotion entries to timeline
-        timelineData.push(...promotionEntries);
-
-        return true;
-    }
+        return data;
+    }, [state, user.userInfo, requests]);
 
     return (
         <>
             {/* Loading state - show loading image */}
             {state === "loading" && (
-                <StateWithImage message={"Loading Employee History"} imageUrl={"/loading.svg"} />
+                <StateWithImage message="Loading Employee History" imageUrl="/loading.svg" />
             )}
 
             {/* Success state - build and show the timeline */}
-            {state === "success" && handleSuccess() && (
-                <>
-                    <CustomizedTimeline props={timelineData} />
-                </>
+            {state === "success" && timelineData.length > 0 && (
+                <CustomizedTimeline props={timelineData} />
             )}
 
             {/* Failure state - show error message */}
