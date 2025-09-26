@@ -89,7 +89,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
             privileges.push(authorization:EMPLOYEE);
         }
 
