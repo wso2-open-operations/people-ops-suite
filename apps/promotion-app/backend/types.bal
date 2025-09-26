@@ -108,5 +108,5 @@ public type EmployeeInfoWithLead record {
 #
 # + promotionRequests - array of promotion requests
 type PromotionRequests record {
-    database:FullPromotionRequest[] promotionRequests;
+    database:FullPromotion[] promotionRequests;
 };
