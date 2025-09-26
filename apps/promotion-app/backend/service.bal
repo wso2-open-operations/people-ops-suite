@@ -120,8 +120,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Retrieve specific users' promotion requests for given criteria.
-    #
-    # + ctx - Request Context appended from the interceptor  
+    # 
     # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
     resource function GET promotions/[string email](http:RequestContext ctx, string[]? statusArray)
