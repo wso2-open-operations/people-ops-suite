@@ -134,7 +134,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
             ...(open && isChild && { ml: 2 }),
           }}
         >
-          {icon}{" "}
+          {icon}
           {!open &&
             isExpandable &&
             (isExpanded ? (
