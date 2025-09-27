@@ -82,7 +82,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/settings",
     text: "Settings",
     icon: React.createElement(SettingsIcon),
-    element: React.createElement(View.profile),
+    element: React.createElement(View.settings),
     allowRoles: [Role.ADMIN, Role.TEAM],
     children: [
       {
