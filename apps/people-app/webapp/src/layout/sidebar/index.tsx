@@ -18,7 +18,7 @@ import List from "@mui/material/List";
 import { SIDEBAR_WIDTH } from "@config/ui";
 import { ColorModeContext } from "@src/App";
 import MuiDrawer from "@mui/material/Drawer";
-import { colors, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import { getActiveRouteDetails, RouteDetail } from "@src/route";
 import { Box, MUIStyledCommonProps } from "@mui/system";
@@ -80,8 +80,12 @@ const Sidebar = (props: SidebarProps) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
+  const SIDEBAR_OPEN_KEY = "sidebar-open";
 
-  const isOpen = props.open;
+  const [isOpen, setIsOpen] = useState(() => {
+    const stored = localStorage.getItem(SIDEBAR_OPEN_KEY);
+    return stored === "true";
+  });
 
   const handleExpandCollapse = (item: RouteDetail) => {
     if (item.children && item.children.length > 0) {
@@ -91,6 +95,13 @@ const Sidebar = (props: SidebarProps) => {
           : [...prev, item.path]
       );
     }
+  };
+
+  const handleDrawer = () => {
+    setIsOpen((prev) => {
+      localStorage.setItem(SIDEBAR_OPEN_KEY, (!prev).toString());
+      return !prev;
+    });
   };
 
   return (
@@ -272,7 +283,7 @@ const Sidebar = (props: SidebarProps) => {
                 </span>
               </IconButton>
               <IconButton
-                onClick={props.handleDrawer}
+                onClick={handleDrawer}
                 color="inherit"
                 sx={{
                   color: "white",
