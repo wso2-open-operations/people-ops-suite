@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import * as rax from "retry-axios";
+import { attach, RaxConfig } from "retry-axios";
 import axios, { AxiosInstance, CancelTokenSource } from "axios";
 
 export class APIService {
@@ -29,12 +29,12 @@ export class APIService {
 
   constructor(idToken: string, callback: () => Promise<{ idToken: string }>) {
     APIService._instance = axios.create();
-    rax.attach(APIService._instance);
+    attach(APIService._instance);
 
     APIService._idToken = idToken;
     APIService.updateRequestInterceptor();
     APIService.callback = callback;
-    (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
+    (APIService._instance.defaults as unknown as RaxConfig).raxConfig = {
       retry: 3,
       instance: APIService._instance,
       httpMethodsToRetry: [
