@@ -78,7 +78,6 @@ const Sidebar = (props: SidebarProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const currentPath = location.pathname;
   const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
   const SIDEBAR_OPEN_KEY = "sidebar-open";
 
@@ -140,7 +139,7 @@ const Sidebar = (props: SidebarProps) => {
                       theme={props.theme}
                       to={
                         r.children && r.children.length > 0
-                          ? currentPath
+                          ? location.pathname
                           : r.path
                       }
                       primary={r.text}
