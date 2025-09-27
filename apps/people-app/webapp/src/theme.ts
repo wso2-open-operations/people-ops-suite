@@ -99,6 +99,7 @@ export const themeSettings = (mode: PaletteMode) => {
               dark: colors.primary[300],
             },
             secondary: {
+              contrastText: "#ff7300",
               main: colors.grey[200],
               dark: colors.secondary[200],
             },

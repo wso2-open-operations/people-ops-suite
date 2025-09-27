@@ -119,7 +119,8 @@ const ListItemLink = (props: ListItemLinkProps) => {
               : alpha(theme.palette.primary.main, 0.1),
         }),
         ...((isActive || (!isExpanded && !isChild && isHighlighted)) && {
-          borderLeft: "2px solid #ff7300",
+          borderLeft: "3px solid",
+          borderColor: theme.palette.secondary.contrastText,
         }),
         transition: theme.transitions.create(["width", "margin"], {
           easing: theme.transitions.easing.sharp,
