@@ -77,6 +77,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
       component={Link}
       to={to}
       sx={{
+        cursor: "pointer",
         borderRadius: 2,
         borderBottomLeftRadius: 0,
         borderTopLeftRadius: 0,
@@ -160,6 +161,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
             my: 0,
             ml: -2,
             fontSize: 18,
+            cursor: "pointer",
             "& .MuiListItemText-primary": {
               color: (theme) => theme.palette.common.white,
             },
