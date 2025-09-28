@@ -139,3 +139,14 @@ public isolated function fetchRecruits() returns Recruit[]|error? {
 
     return recruits;
 }
+
+# Persist new recruit in DB.
+#
+# + recruit - Recruit payload
+# + createdBy - User who creates the recruit entry
+# + return - Id of the newly created recruit or an error
+public isolated function addRecruit(AddRecruitPayload recruit, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addRecruitQuery(recruit, createdBy));
+
+    return executionResult.lastInsertId.ensureType(int);
+}

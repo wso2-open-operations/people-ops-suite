@@ -304,3 +304,63 @@ isolated function getRecruits() returns sql:ParameterizedQuery => `
         r.personal_info_id AS personalInfoId
     FROM recruit r;
 `;
+
+# Build query to add a recruit.
+#
+# + recruit - Recruit payload that includes recruit information
+# + createdBy - User who creates the recruit record
+# + return - Insert query to add a recruit
+isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) returns sql:ParameterizedQuery => `
+    INSERT INTO recruit
+    (
+        first_name,
+        last_name,
+        wso2_email,
+        date_of_join,
+        probation_end_date,
+        agreement_end_date,
+        employee_location,
+        work_location,
+        designation_id,
+        manager_email,
+        compensation,
+        additional_comments,
+        status,
+        created_by,
+        updated_by,
+        business_unit,
+        unit,
+        team,
+        sub_team,
+        company,
+        office,
+        employment_type,
+        personal_info_id
+    )
+    VALUES
+    (
+        ${recruit.firstName},
+        ${recruit.lastName},
+        ${recruit.wso2Email},
+        ${recruit.dateOfJoin},
+        ${recruit.probationEndDate},
+        ${recruit.agreementEndDate},
+        ${recruit.employeeLocation},
+        ${recruit.workLocation},
+        ${recruit.designationId},
+        ${recruit.managerEmail},
+        ${recruit.compensation.toJsonString()},
+        ${recruit.additionalComments},
+        ${recruit.status},
+        ${createdBy},
+        ${createdBy},
+        ${recruit.businessUnit},
+        ${recruit.unit},
+        ${recruit.team},
+        ${recruit.subTeam},
+        ${recruit.company},
+        ${recruit.office},
+        ${recruit.employmentType},
+        ${recruit.personalInfoId}
+    );
+`;

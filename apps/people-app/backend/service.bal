@@ -501,4 +501,49 @@ service http:InterceptableService / on new http:Listener(9090) {
         return recruits;
     }
 
+    # Endpoint to add a recruit.
+    #
+    # + recruit - Recruit details
+    # + return - Created | Forbidden | InternalServerError
+    resource function post recruits(http:RequestContext ctx, database:AddRecruitPayload recruit)
+        returns http:Created|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
+        }
+        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups:
+            ${userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        // Add recruit to the database
+        int|error recruitId = database:addRecruit(recruit, userInfo.email);
+        if recruitId is error {
+            string customError = "Failed to add recruit!";
+            log:printError(customError, recruitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return http:CREATED;
+    }
+
 }

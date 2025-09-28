@@ -338,3 +338,23 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Compensation table
+
+CREATE TABLE `compensation` (
+    `company_id` INT NOT NULL,
+    `employment_type_id` INT NOT NULL,
+    `compensation_data` JSON NOT NULL,
+
+    `created_on`TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_on` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`employment_type_id`, `company_id`),
+
+    CONSTRAINT `fk_employment_type`
+        FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type`(`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+
+    CONSTRAINT `fk_company`
+        FOREIGN KEY (`company_id`) REFERENCES `company`(`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
