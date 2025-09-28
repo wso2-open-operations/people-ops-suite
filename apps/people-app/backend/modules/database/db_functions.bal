@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import ballerina/log;
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -149,4 +151,27 @@ public isolated function addRecruit(AddRecruitPayload recruit, string createdBy)
     sql:ExecutionResult executionResult = check databaseClient->execute(addRecruitQuery(recruit, createdBy));
 
     return executionResult.lastInsertId.ensureType(int);
+}
+
+# Update recruit info dynamically based on changed fields.
+#
+# + id - Recruit id
+# + recruit - Recruit payload with updated fields
+# + return - error or null
+public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) returns error? {
+    if recruit.entries().length() === 0 {
+        return error(string `No data to update for recruit with id: ${id}`);
+    }
+
+    sql:ExecutionResult|sql:Error executionResult = databaseClient->execute(updateRecruitQuery(id, recruit));
+
+    if executionResult is sql:Error {
+        string customError = string `Error occurred while updating recruit with id ${id}`;
+        log:printError(customError, executionResult);
+        return error(customError);
+    }
+
+    if executionResult.affectedRowCount == 0 {
+        return error(string `No recruit found to update for id: ${id}`);
+    }
 }

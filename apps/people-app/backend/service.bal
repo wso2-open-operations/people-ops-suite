@@ -546,4 +546,33 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:CREATED;
     }
 
+    # Endpoint to update recruit info dynamically.
+    #
+    # + id - Recruit id
+    # + recruit - Payload with changed fields
+    # + return - Ok | BadRequest | InternalServerError
+    resource function patch recruits/[int id](database:UpdateRecruitPayload recruit)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+
+        log:printInfo(string `Update recruit invoked`);
+
+        error? result = database:UpdateRecruit(id, recruit);
+
+        if result is error {
+            string customError = string `Error while updating recruit info`;
+            log:printError(customError, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the recruit data"
+            }
+        };
+    }
+
 }

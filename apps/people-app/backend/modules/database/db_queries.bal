@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
+import ballerina/time;
 
 # Fetch employee basic information.
 #
@@ -364,3 +365,86 @@ isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) r
         ${recruit.personalInfoId}
     );
 `;
+
+# Build query to update recruit info dynamically.
+# + id - ID of the recruit to be updated
+# + recruit - Recruit payload that includes changed recruit information
+# + return - Update query to update recruit info
+isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `UPDATE recruit SET `;
+    sql:ParameterizedQuery[] setClauses = [];
+
+    if recruit.firstName is string {
+        setClauses.push(`first_name = ${recruit.firstName}`);
+    }
+    if recruit.lastName is string {
+        setClauses.push(`last_name = ${recruit.lastName}`);
+    }
+    if recruit.wso2Email is string {
+        setClauses.push(`wso2_email = ${recruit.wso2Email}`);
+    }
+    if recruit.dateOfJoin is time:Date {
+        setClauses.push(`date_of_join = ${recruit.dateOfJoin}`);
+    }
+    if recruit.probationEndDate is time:Date {
+        setClauses.push(`probation_end_date = ${recruit.probationEndDate}`);
+    }
+    if recruit.agreementEndDate is time:Date {
+        setClauses.push(`agreement_end_date = ${recruit.agreementEndDate}`);
+    }
+    if recruit.employeeLocation is string {
+        setClauses.push(`employee_location = ${recruit.employeeLocation}`);
+    }
+    if recruit.workLocation is string {
+        setClauses.push(`work_location = ${recruit.workLocation}`);
+    }
+    if recruit.designationId is int {
+        setClauses.push(`designation_id = ${recruit.designationId}`);
+    }
+    if recruit.managerEmail is string {
+        setClauses.push(`manager_email = ${recruit.managerEmail}`);
+    }
+    if recruit.compensation is Compensation {
+        setClauses.push(`compensation = ${recruit.compensation.toJsonString()}`);
+    }
+    if recruit.status is string {
+        setClauses.push(`status = ${recruit.status}`);
+    }
+    if recruit.businessUnit is int {
+        setClauses.push(`business_unit = ${recruit.businessUnit}`);
+    }
+    if recruit.unit is int {
+        setClauses.push(`unit = ${recruit.unit}`);
+    }
+    if recruit.team is int {
+        setClauses.push(`team = ${recruit.team}`);
+    }
+    if recruit.subTeam is int {
+        setClauses.push(`sub_team = ${recruit.subTeam}`);
+    }
+    if recruit.company is int {
+        setClauses.push(`company = ${recruit.company}`);
+    }
+    if recruit.office is int {
+        setClauses.push(`office = ${recruit.office}`);
+    }
+    if recruit.employmentType is int {
+        setClauses.push(`employment_type = ${recruit.employmentType}`);
+    }
+    if recruit.personalInfoId is int {
+        setClauses.push(`personal_info_id = ${recruit.personalInfoId}`);
+    }
+
+    // Always update metadata
+    setClauses.push(`updated_by = ${recruit.updatedBy}`);
+    setClauses.push(`updated_on = CURRENT_TIMESTAMP(6)`);
+
+    if setClauses.length() > 0 {
+        sql:ParameterizedQuery joinedClauses = joinQuery(setClauses, `, `);
+        query = sql:queryConcat(query, joinedClauses);
+    }
+    query = sql:queryConcat(query, ` WHERE id = ${id}`);
+    return query;
+
+}
+
