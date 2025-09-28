@@ -240,3 +240,36 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+# Retrieves a parameterized SQL query to fetch a recruit by their ID.
+#
+# + recruitId - The ID of the recruit to fetch.
+# + return - A parameterized query that returns the recruit record with the specified ID and their compensation data.
+isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
+    SELECT 
+        r.id AS id,
+        r.first_name AS firstName,
+        r.last_name AS lastName,
+        r.wso2_email AS wso2Email,
+        r.date_of_join AS dateOfJoin,
+        r.probation_end_date AS probationEndDate,
+        r.agreement_end_date AS agreementEndDate,
+        r.employee_location AS employeeLocation,
+        r.work_location AS workLocation,
+        r.reports_to AS reportsTo,
+        r.manager_email AS managerEmail,
+        r.compensation AS compensation,
+        r.additional_comments AS additionalComments,
+        r.status AS status,
+        r.business_unit AS businessUnit,
+        r.unit AS unit,
+        r.team AS team,
+        r.sub_team AS subTeam,
+        r.company AS company,
+        r.office AS office,
+        r.employment_type AS employmentType,
+        r.designation_id AS designationId,
+        r.personal_info_id AS personalInfoId
+    FROM recruit r
+    WHERE r.id = ${recruitId};
+`;

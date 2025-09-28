@@ -395,4 +395,55 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    # Endpoint to fetch a specific recruit.
+    #
+    # + recruitId - ID of the recruit to fetch
+    # + return - Recruit | NotFound | InternalServerError
+    resource function get recruits/[int recruitId](http:RequestContext ctx)
+        returns database:Recruit|http:Forbidden|http:InternalServerError|http:NotFound {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
+        }
+        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups:
+            ${userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+        // Fetch recruit from the database
+        database:Recruit|error? recruit = database:fetchRecruitById(recruitId);
+
+        if recruit is error {
+            string customError = "Internal Server Error";
+            log:printError(customError, recruit);
+            return <http:InternalServerError>{
+                body: {message: customError}
+            };
+        }
+
+        if recruit is () {
+            string customError = "Recruit Not Found";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {message: customError}
+            };
+        }
+
+        return recruit;
+    }
+
 }

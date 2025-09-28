@@ -110,3 +110,17 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     }
     return false;
 }
+
+# Function to fetch a recruit by ID.
+#
+# + recruitId - ID of the recruit to fetch
+# + return - Recruit or an error or null if not found
+public isolated function fetchRecruitById(int recruitId) returns Recruit|error? {
+    Recruit|error result = databaseClient->queryRow(getRecruitByIdQuery(recruitId));
+
+    if result is sql:NoRowsError {
+        return ();
+    }
+
+    return result;
+}
