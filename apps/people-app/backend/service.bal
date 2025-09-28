@@ -575,4 +575,55 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
+    # Endpoint to delete a recruit by ID.
+    #
+    # + recruitId - ID of the recruit to delete
+    # + return - Ok | NotFound | InternalServerError
+    resource function delete recruits/[int recruitId](http:RequestContext ctx)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
+        }
+        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups:
+            ${userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        // Delete recruit from the database
+        boolean|error deleteResult = database:deleteRecruitById(recruitId);
+
+        if deleteResult is error {
+            string customError = "Error occurred while deleting recruit";
+            log:printError(customError, deleteResult);
+            return <http:InternalServerError>{
+                body: {message: customError}
+            };
+        }
+
+        if !deleteResult {
+            string customError = string `No recruit found with ID ${recruitId}`;
+            return <http:NotFound>{
+                body: {message: customError}
+            };
+        }
+
+        return http:OK;
+    }
+
 }

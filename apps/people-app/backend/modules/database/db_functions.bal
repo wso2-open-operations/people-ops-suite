@@ -175,3 +175,16 @@ public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) ret
         return error(string `No recruit found to update for id: ${id}`);
     }
 }
+
+# Function to delete a recruit.
+#
+# + recruitId - ID of the recruit to delete
+# + return - true if deletion was successful, false if no rows were affected, or an error
+public isolated function deleteRecruitById(int recruitId) returns boolean|error {
+    sql:ExecutionResult|error result = databaseClient->execute(getDeleteRecruitByIdQuery(recruitId));
+    if result is error {
+        return result;
+    }
+
+    return result.affectedRowCount > 0;
+}
