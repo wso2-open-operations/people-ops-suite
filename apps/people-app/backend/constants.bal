@@ -1,5 +1,3 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
-//
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
@@ -14,10 +12,5 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# Authorization Constants.
-public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
-public const HEADER_USER_INFO = "user-info";
-
-# Privileges.
-public const EMPLOYEE_PRIVILEGE = 987;
-public const RECRUITMENT_TEAM_ROLE_PRIVILEGE = 782;
+const UNAUTHORIZED_REQUEST = "Insufficient privileges!";
+const ERR_INFORMATION_HEADER_NOT_FOUND = "Information header not found!";
