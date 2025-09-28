@@ -446,4 +446,59 @@ service http:InterceptableService / on new http:Listener(9090) {
         return recruit;
     }
 
+    # Endpoint to fetch all recruits.
+    #
+    # + return - List of recruits | NotFound | InternalServerError
+    resource function get recruits(http:RequestContext ctx)
+        returns database:Recruit[]|http:Forbidden|http:InternalServerError|http:BadRequest|http:NotFound {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
+        }
+        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()
+                    }`);
+
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+        // Fetch recruits from the database
+        database:Recruit[]|error? recruits = database:fetchRecruits();
+
+        if recruits is error {
+            string customError = string `Internal Server Error`;
+            log:printError(customError, recruits);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if recruits is () {
+            string customError = string `Recruits Not Found`;
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return recruits;
+    }
+
 }
