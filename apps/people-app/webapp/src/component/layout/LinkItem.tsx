@@ -15,9 +15,11 @@
 // under the License.
 
 import React from "react";
-import { Typography } from "@mui/material";
+import { colors, Typography } from "@mui/material";
 import ListItem from "@mui/material/ListItem";
 import { Theme, alpha } from "@mui/material/styles";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import {
@@ -32,6 +34,11 @@ interface ListItemLinkProps {
   open: boolean;
   isActive: boolean;
   theme: Theme;
+  isHighlighted?: boolean;
+  isExpandable?: boolean;
+  isExpanded?: boolean;
+  isChild?: boolean;
+  isLastChild?: boolean;
 }
 
 const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
@@ -51,14 +58,39 @@ const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
 });
 
 const ListItemLink = (props: ListItemLinkProps) => {
-  const { icon, primary, to, open, theme, isActive } = props;
+  const {
+    icon,
+    primary,
+    to,
+    open,
+    theme,
+    isActive,
+    isHighlighted = false,
+    isExpandable = false,
+    isExpanded = false,
+    isChild = false,
+    isLastChild = false,
+  } = props;
+
   return (
     <ListItem
       component={Link}
       to={to}
       sx={{
+        cursor: "pointer",
         borderRadius: 2,
-        mb: 1.5,
+        borderBottomLeftRadius: 0,
+        borderTopLeftRadius: 0,
+        borderLeft: `2px solid transparent`,
+        ...(isChild
+          ? !open && {
+              borderTopRightRadius: 0,
+              ...(!isLastChild && { borderBottomRightRadius: 0 }),
+            }
+          : isExpanded && {
+              borderBottomRightRadius: 0,
+            }),
+        py: 1.5,
         "&:hover": {
           background: (theme) =>
             theme.palette.mode === "light"
@@ -78,11 +110,17 @@ const ListItemLink = (props: ListItemLinkProps) => {
             },
           }),
         },
-        ...(isActive && {
+        ...((isActive ||
+          (!open && isHighlighted) ||
+          (open && isHighlighted && isExpanded === isChild)) && {
           background: (theme) =>
             theme.palette.mode === "light"
-              ? alpha(theme.palette.common.white, 0.5)
-              : alpha(theme.palette.primary.main, 0.2),
+              ? alpha(theme.palette.common.white, 0.1)
+              : alpha(theme.palette.primary.main, 0.1),
+        }),
+        ...((isActive || (!isExpanded && !isChild && isHighlighted)) && {
+          borderLeft: "3px solid",
+          borderColor: theme.palette.secondary.contrastText,
         }),
         transition: theme.transitions.create(["width", "margin"], {
           easing: theme.transitions.easing.sharp,
@@ -93,32 +131,59 @@ const ListItemLink = (props: ListItemLinkProps) => {
       {icon && (
         <ListItemIcon
           sx={{
+            py: 0.3,
             color: (theme) => theme.palette.common.white,
-            ...(isActive && {
-              color: (theme) => theme.palette.primary.main,
-            }),
+            ...(open && isChild && { ml: 2 }),
           }}
         >
           {icon}
+          {!open &&
+            isExpandable &&
+            (isExpanded ? (
+              <ExpandLessIcon
+                sx={{
+                  color: colors.grey[500],
+                  fontSize: 18,
+                }}
+              />
+            ) : (
+              <ExpandMoreIcon
+                sx={{
+                  color: colors.grey[500],
+                  fontSize: 18,
+                }}
+              />
+            ))}
         </ListItemIcon>
       )}
-      <ListItemText
-        sx={{
-          ml: -2,
-          fontSize: 18,
-          "& .MuiListItemText-primary": {
-            color: (theme) => theme.palette.common.white,
-            ...(isActive && {
-              color: (theme) => theme.palette.primary.main,
-            }),
-          },
-        }}
-        primary={primary}
-      />
+      {open && (
+        <ListItemText
+          sx={{
+            my: 0,
+            ml: -2,
+            fontSize: 18,
+            cursor: "pointer",
+            "& .MuiListItemText-primary": {
+              color: (theme) => theme.palette.common.white,
+            },
+          }}
+          primary={primary}
+        />
+      )}
 
       <span className="menu-tooltip">
         <Typography variant="body2">{primary}</Typography>
       </span>
+      {isExpandable &&
+        (isExpanded ? (
+          <ExpandLessIcon
+            sx={{ ml: 1, color: colors.grey[500], fontSize: 18 }}
+          />
+        ) : (
+          <ExpandMoreIcon
+            sx={{ ml: 1, color: colors.grey[500], fontSize: 18 }}
+          />
+        ))}
     </ListItem>
   );
 };
