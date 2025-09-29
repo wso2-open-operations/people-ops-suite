@@ -402,6 +402,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Recruit | NotFound | InternalServerError
     resource function get recruits/[int recruitId](http:RequestContext ctx)
         returns database:Recruit|http:Forbidden|http:InternalServerError|http:NotFound {
+
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -554,12 +555,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function patch recruits/[int id](database:UpdateRecruitPayload recruit)
         returns http:Ok|http:BadRequest|http:InternalServerError {
 
-        log:printInfo(string `Update recruit invoked`);
-
         error? result = database:UpdateRecruit(id, recruit);
 
         if result is error {
-            string customError = string `Error while updating recruit info`;
+            string customError ="Error while updating recruit info";
             log:printError(customError, result);
             return <http:InternalServerError>{
                 body: {

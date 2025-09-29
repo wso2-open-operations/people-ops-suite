@@ -292,7 +292,7 @@ public type Recruit record {|
 |};
 
 #[Database] Insert type for recruit
-public type AddRecruitPayload record {
+public type AddRecruitPayload record {|
     # First name of the recruit
     string firstName;
     # Last name of the recruit
@@ -337,7 +337,7 @@ public type AddRecruitPayload record {
     int personalInfoId;
     # Email of the person who created the recruit record
     string createdBy;
-};
+|};
 
 # Payload type for updating a recruit
 public type UpdateRecruitPayload record {|

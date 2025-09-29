@@ -173,10 +173,6 @@ public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) ret
 # + recruitId - ID of the recruit to delete
 # + return - true if deletion was successful, false if no rows were affected, or an error
 public isolated function deleteRecruitById(int recruitId) returns boolean|error {
-    sql:ExecutionResult|error result = databaseClient->execute(getDeleteRecruitByIdQuery(recruitId));
-    if result is error {
-        return result;
-    }
-
+    sql:ExecutionResult result = check databaseClient->execute(getDeleteRecruitByIdQuery(recruitId));
     return result.affectedRowCount > 0;
 }
