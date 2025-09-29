@@ -119,9 +119,8 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
 # + return - Recruit or an error or null if not found
 public isolated function fetchRecruitById(int recruitId) returns Recruit|error? {
     Recruit|error result = databaseClient->queryRow(getRecruitByIdQuery(recruitId));
-
     if result is sql:NoRowsError {
-        return ();
+        return;
     }
 
     return result;
@@ -149,7 +148,6 @@ public isolated function fetchRecruits() returns Recruit[]|error? {
 # + return - Id of the newly created recruit or an error
 public isolated function addRecruit(AddRecruitPayload recruit, string createdBy) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addRecruitQuery(recruit, createdBy));
-
     return executionResult.lastInsertId.ensureType(int);
 }
 

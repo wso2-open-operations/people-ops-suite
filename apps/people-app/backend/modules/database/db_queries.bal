@@ -245,7 +245,7 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 # Retrieves a parameterized SQL query to fetch a recruit by their ID.
 #
 # + recruitId - The ID of the recruit to fetch.
-# + return - A parameterized query that returns the recruit record with the specified ID and their compensation data.
+# + return - A parameterized query that returns the recruit record with the specified ID and their compensation data
 isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
     SELECT 
         r.id AS id,
@@ -277,7 +277,7 @@ isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQu
 
 # Retrieves a parameterized SQL query to fetch all recruits.
 #
-# + return - A parameterized query that returns all recruit records with their compensation data.
+# + return - A parameterized query that returns all recruit records with their compensation data
 isolated function getRecruits() returns sql:ParameterizedQuery => `
     SELECT 
         r.id AS id,
@@ -451,8 +451,8 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
 
 # Retrieves a parameterized SQL query to delete a recruit by their ID.
 #
-# + recruitId - The ID of the recruit to delete.
-# + return - A parameterized query that deletes the recruit record with the specified ID.
+# + recruitId - The ID of the recruit to delete
+# + return - A parameterized query that deletes the recruit record with the specified ID
 isolated function getDeleteRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
     DELETE FROM recruit WHERE id = ${recruitId};
 `;
