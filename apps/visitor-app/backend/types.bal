@@ -81,4 +81,5 @@ public type ActionPaylaod record {|
     string? rejectionReason = ();
     # Status of the visit
     int? passNumber = ();
+    json...;
 |};

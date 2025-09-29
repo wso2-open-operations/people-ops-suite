@@ -57,6 +57,7 @@ const PendingVisits = () => {
   const [pageSize, setPageSize] = useState(10);
   const [blink, setBlink] = useState<string[]>([]);
   const [, setTempPassNumber] = useState("");
+  const [, setTempRejectionReason] = useState("");
   const [, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
@@ -67,7 +68,7 @@ const PendingVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.pending,
+        status: VisitStatus.request,
       })
     );
   }, [dispatch, page, pageSize]);
@@ -110,9 +111,9 @@ const PendingVisits = () => {
 
     try {
       const payload = {
-        id: Number(visitId),
+        visitId: +visitId,
         passNumber: +trimmedPassNumber,
-        status: VisitStatus.accepted,
+        status: VisitStatus.approve,
       };
 
       await dispatch(visitStatusUpdate(payload));
@@ -126,7 +127,7 @@ const PendingVisits = () => {
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.pending,
+          status: VisitStatus.request,
         })
       );
     } catch (error) {
@@ -134,11 +135,15 @@ const PendingVisits = () => {
     }
   };
 
-  const handleRejectSingleVisit = async (visitId: string) => {
+  const handleRejectSingleVisit = async (
+    visitId: string,
+    rejectionReason: string
+  ) => {
     try {
       const payload = {
-        id: Number(visitId),
-        status: VisitStatus.rejected,
+        visitId: +visitId,
+        status: VisitStatus.reject,
+        rejectionReason: rejectionReason.trim(),
       };
 
       await dispatch(visitStatusUpdate(payload));
@@ -150,7 +155,7 @@ const PendingVisits = () => {
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.pending,
+          status: VisitStatus.request,
         })
       );
     } catch (error) {
@@ -205,12 +210,36 @@ const PendingVisits = () => {
 
   // Function to show rejection dialog
   const showRejectionDialog = (visitId: string) => {
+    setCurrentVisitId(visitId);
+    setTempRejectionReason("");
+
     dialogContext.showConfirmation(
       "Reject Visit",
-      `Are you sure you want to reject visit ID ${visitId}?`,
+      <Box>
+        <Typography sx={{ mb: 2 }}>
+          Enter rejection reason for visit ID {visitId}
+        </Typography>
+        <TextField
+          autoFocus
+          label="Rejection Reason"
+          type="text"
+          fullWidth
+          variant="outlined"
+          onChange={(e) => {
+            setTempRejectionReason(e.target.value);
+          }}
+          placeholder="Enter rejection reason"
+          helperText="Provide a reason for rejection"
+        />
+      </Box>,
       ConfirmationType.accept,
       async () => {
-        await handleRejectSingleVisit(visitId);
+        var tempValue;
+        setTempRejectionReason((value) => {
+          tempValue = value;
+          return value;
+        });
+        await handleRejectSingleVisit(visitId, tempValue || "");
       },
       "Confirm",
       "Cancel"

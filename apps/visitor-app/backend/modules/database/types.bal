@@ -171,7 +171,7 @@ public type Visit record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
     # Invitation ID associated with the visit
     int? invitationId;
 |};
@@ -235,7 +235,9 @@ public type Invitation record {|
 # Payload to update visit details.
 public type UpdateVisitPayload record {|
     # Number in the tag given to visitor
-    int passNumber?;
+    int? passNumber;
     # Status of the visit
     Status status?;
+    # Reason for rejecting the visit
+    string rejectionReason?;
 |};

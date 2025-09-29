@@ -14,3 +14,4 @@
 // specific language governing permissions and limitations
 // under the License. 
 public const VISIT_INVITATION_SUBJECT = "[Visitor-Registration] Invitation to Visit the WSO2 Office";
+public const emailSubject = "[Visitor-Registration] Registering new visitor to the building";

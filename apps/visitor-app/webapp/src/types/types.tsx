@@ -28,10 +28,10 @@ export enum ConfirmationType {
 }
 
 export enum VisitStatus {
-  pending = "PENDING",
-  accepted = "ACCEPTED",
-  completed = "COMPLETED",
-  rejected = "REJECTED",
+  request = "REQUEST",
+  approve = "APPROVE",
+  complete = "COMPLETE",
+  reject = "REJECT",
 }
 
 export interface CommonCardProps {

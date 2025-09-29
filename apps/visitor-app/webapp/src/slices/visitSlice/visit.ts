@@ -77,9 +77,10 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  id: Number;
+  visitId: Number;
   passNumber?: Number;
   status: string;
+  rejectionReason?: string;
 }
 
 const initialState: VisitState = {
@@ -181,8 +182,8 @@ export const visitStatusUpdate = createAsyncThunk(
     return new Promise<{ message: string }>((resolve, reject) => {
       APIService.getInstance()
         .post(
-          `${AppConfig.serviceUrls.visits}/${payload.id}/${payload.status}`,
-          { passNumber: payload.passNumber || null },
+          `${AppConfig.serviceUrls.visits}/${payload.visitId}/${payload.status}`,
+          payload || null,
           {
             cancelToken: newCancelTokenSource.token,
           }

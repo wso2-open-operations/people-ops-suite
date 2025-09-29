@@ -68,7 +68,7 @@ const AcceptedVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.accepted,
+        status: VisitStatus.approve,
       })
     );
   }, [dispatch, page, pageSize]);
@@ -92,8 +92,8 @@ const AcceptedVisits = () => {
       ConfirmationType.accept,
       async () => {
         const payload = {
-          id: +visitId,
-          status: VisitStatus.completed,
+          visitId: +visitId,
+          status: VisitStatus.complete,
         };
 
         await dispatch(visitStatusUpdate(payload));
@@ -101,7 +101,7 @@ const AcceptedVisits = () => {
           fetchVisits({
             limit: pageSize,
             offset: page * pageSize,
-            status: VisitStatus.accepted,
+            status: VisitStatus.approve,
           })
         );
       },

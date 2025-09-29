@@ -72,7 +72,7 @@ public type EmailPayload record {|
 # Object to store floor and relevant rooms.
 public type Floor record {|
     # Floor that can be accessed by visitor
-    int floor;
+    string floor;
     # Rooms that can be accessed by visitor
     string[] rooms;
 |};

@@ -22,6 +22,7 @@ import ballerina/cache;
 import ballerina/http;
 import ballerina/lang.array;
 import ballerina/log;
+import ballerina/time;
 import ballerina/uuid;
 
 configurable string webAppBaseUrl = ?;
@@ -212,7 +213,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
-        error? visitError = database:addVisit({...payload, status: database:ACCEPTED}, invokerInfo.email);
+        error? visitError = database:addVisit({...payload, status: database:APPROVE}, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -462,7 +463,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   accessibleLocations: visitInfo.accessibleLocations,
                                                   timeOfEntry: visitInfo.timeOfEntry,
                                                   timeOfDeparture: visitInfo.timeOfDeparture,
-                                                  status: database:PENDING
+                                                  status: database:REQUEST
 
                                               }, invitationDetails.invitedBy, invitationDetails.invitationId);
         if visitError is error {
@@ -487,11 +488,20 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
     # + payload - Payload containing the visit details to be updated
     # + return - Successfully updated or error
-    resource function post visits/[int visitId]/[Action action](ActionPaylaod payload)
+    resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPaylaod payload)
         returns http:Ok|http:BadRequest|http:InternalServerError {
 
-        database:VisitRecord|error visit = database:fetchVisit(visitId);
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
 
+        database:VisitRecord|error visit = database:fetchVisit(visitId);
         if visit is error {
             string customError = "Error occurred while fetching visit!";
             log:printError(customError, visit);
@@ -502,74 +512,241 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? response = database:updateVisit(visitId, {status: action, passNumber: payload.passNumber});
+        if action == APPROVE {
+            if visit.status != database:REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Only pending visits can be approved!"
+                    }
+                };
+            }
 
-        if response is error {
-            string customError = "Error occurred while updating visits!";
-            log:printError(customError, response);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
+            int? passNumber = payload.passNumber;
+            if passNumber is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Pass number is required when approving a visit!"
+                    }
+                };
+            }
+
+            error? response = database:updateVisit(visitId, {status: database:APPROVE, passNumber: payload.passNumber}, invokerInfo.email);
+            if response is error {
+                string customError = "Error occurred while updating visits!";
+                log:printError(customError, response);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
+
+            if accessibleLocations is error {
+                string errMsg = "Error with parsing accessible locations";
+                log:printError(errMsg, accessibleLocations);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+
+            string|error formattedString = email:organizeLocations(accessibleLocations);
+            if formattedString is error {
+                string errMsg = "Error with formatting accessible locations";
+                log:printError(errMsg, formattedString);
+            }
+
+            if formattedString is string {
+                string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visit.email,
+                            "NAME": visit.name,
+                            "SCHEDULED_DATE": visit.timeOfEntry,
+                            "ALLOWED_FLOORS": formattedString,
+                            "START_TIME": visit.timeOfEntry,
+                            "END_TIME": visit.timeOfDeparture,
+                            "PASS_NUMBER": passNumber.toString(),
+                            "CONTACT_EMAIL": email:contactEmail
+                        });
+                if content is error {
+                    string customError = "Error with email template!";
+                    log:printError(customError, content);
                 }
-            };
-        }
-
-        string statusMessage;
-        string emailSubject;
-        match action {
-            "ACCEPTED" => {
-                statusMessage = "Your visit has been accepted. Please arrive at the scheduled time.";
-                emailSubject = "Visit Request Accepted";
-            }
-            "REJECTED" => {
-                statusMessage = "Your visit request has been rejected. Please contact us for more information.";
-                emailSubject = "Visit Request Rejected";
-            }
-            "COMPLETED" => {
-                statusMessage = "Your visit has been successfully completed. Thank you for visiting!";
-                emailSubject = "Visit Completed";
-            }
-            _ => {
-                statusMessage = "Visit status updated.";
-                emailSubject = "Visit Status Update";
-            }
-        }
-
-        string|error content = email:bindKeyValues(email:visitorStatusTemplate,
-                {
-                    VISIT_STATUS: action,
-                    STATUS_MESSAGE: statusMessage,
-                    CONTACT_EMAIL: email:contactEmail
-                });
-
-        if content is error {
-            string errMsg = "Error with email template!";
-            log:printError(errMsg, content);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
+                if content is string {
+                    error? emailError = email:sendEmail(
+                                {
+                                to: [visit.email],
+                                'from: email:visitorNotificationFrom,
+                                subject: email:emailSubject,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string errMsg = "Failed to send the visitor registration email!";
+                        log:printError(errMsg, emailError);
+                    }
                 }
-            };
-        }
-
-        error? emailError = email:sendEmail({
-                                                to: [visit.email],
-                                                'from: email:visitorNotificationFrom,
-                                                subject: emailSubject,
-                                                template: content,
-                                                cc: [email:receptionEmail]
-                                            });
-
-        if emailError is error {
-            string errMsg = "Error occurred while sending the email!";
-            log:printError(errMsg, emailError);
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Visits updated successfully!"
             }
-        };
 
+            return http:OK;
+
+        }
+
+        if action == REJECT {
+            if payload.rejectionReason is () || payload.rejectionReason == "" {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Rejection reason is required when rejecting a visit!"
+                    }
+                };
+            }
+            if visit.status != database:REQUEST {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Only pending visits can be rejected!"
+                    }
+                };
+            }
+            error? response = database:updateVisit(visitId, {status: database:REJECT, passNumber: payload.passNumber, rejectionReason: payload.rejectionReason}, invokerInfo.email);
+            if response is error {
+                string customError = "Error occurred while updating visits!";
+                log:printError(customError, response);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
+
+            if accessibleLocations is error {
+                string errMsg = "Error with parsing accessible locations";
+                log:printError(errMsg, accessibleLocations);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+
+            string|error formattedString = email:organizeLocations(accessibleLocations);
+            if formattedString is error {
+                string errMsg = "Error with formatting accessible locations";
+                log:printError(errMsg, formattedString);
+            }
+
+            if formattedString is string {
+                string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visit.email,
+                            "NAME": visit.name,
+                            "SCHEDULED_DATE": visit.timeOfEntry,
+                            "ALLOWED_FLOORS": formattedString,
+                            "START_TIME": visit.timeOfEntry,
+                            "END_TIME": visit.timeOfDeparture,
+                            "PASS_NUMBER": <string>visit.passNumber,
+                            "CONTACT_EMAIL": email:contactEmail
+                        });
+                if content is error {
+                    string customError = "Error with email template!";
+                    log:printError(customError, content);
+                }
+                if content is string {
+                    error? emailError = email:sendEmail(
+                                {
+                                to: [visit.email],
+                                'from: email:visitorNotificationFrom,
+                                subject: email:emailSubject,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string errMsg = "Failed to send the visitor registration email!";
+                        log:printError(errMsg, emailError);
+                    }
+                }
+            }
+
+            return http:OK;
+        }
+
+        if action == COMPLETE {
+            if visit.status != database:APPROVE {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Only accepted visits can be completed!"
+                    }
+                };
+            }
+            error? response = database:updateVisit(visitId, {status: database:COMPLETE, passNumber: payload.passNumber}, invokerInfo.email);
+            if response is error {
+                string customError = "Error occurred while updating visits!";
+                log:printError(customError, response);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
+
+            if accessibleLocations is error {
+                string errMsg = "Error with parsing accessible locations";
+                log:printError(errMsg, accessibleLocations);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+
+            string|error formattedString = email:organizeLocations(accessibleLocations);
+            if formattedString is error {
+                string errMsg = "Error with formatting accessible locations";
+                log:printError(errMsg, formattedString);
+            }
+
+            if formattedString is string {
+                string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visit.email,
+                            "NAME": visit.name,
+                            "SCHEDULED_DATE": visit.timeOfEntry,
+                            "ALLOWED_FLOORS": formattedString,
+                            "START_TIME": visit.timeOfEntry,
+                            "END_TIME": visit.timeOfDeparture,
+                            "PASS_NUMBER": <string>visit.passNumber,
+                            "CONTACT_EMAIL": email:contactEmail
+                        });
+                if content is error {
+                    string customError = "Error with email template!";
+                    log:printError(customError, content);
+                }
+                if content is string {
+                    error? emailError = email:sendEmail(
+                                {
+                                to: [visit.email],
+                                'from: email:visitorNotificationFrom,
+                                subject: email:emailSubject,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string errMsg = "Failed to send the visitor registration email!";
+                        log:printError(errMsg, emailError);
+                    }
+                }
+            }
+
+            return http:OK;
+        }
     }
 }

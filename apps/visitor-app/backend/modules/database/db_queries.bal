@@ -236,21 +236,41 @@ isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invi
     return mainQuery;
 }
 
-# Build query to update visit details.
+# Build query to update a visit.
 #
-# + visitId - ID of the visit to be updated
-# + payload - Payload containing the visit details to be updated
+# + visitId - ID of the visit to update
+# + payload - Payload containing the visit update details
+# + updatedBy - Person who is updating the visit
 # + return - sql:ParameterizedQuery - Update query for the visit
-isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload) returns sql:ParameterizedQuery {
+isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, string updatedBy) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+        UPDATE visit
+        SET
+    `;
 
-    sql:ParameterizedQuery updateQuery =
-    `UPDATE visit
-     SET
-        pass_number = COALESCE(${payload.passNumber}, pass_number),
-        status = COALESCE(${payload.status}, status),
-        updated_by = ${"system"}
-     WHERE visit_id = ${visitId}
-       AND NOT (${payload.status} = 'ACCEPTED' AND ${payload.passNumber} IS NULL);`;
+    sql:ParameterizedQuery subQuery = `
+        WHERE visit_id = ${visitId}
+    `;
 
-    return updateQuery;
+    // Setting the filters based on the visit status and inputs.
+    sql:ParameterizedQuery[] filters = [];
+
+    filters.push(`status = ${payload.status}`);
+
+    filters.push(`updated_by = ${updatedBy}`);
+
+    if payload.passNumber is int {
+        filters.push(`pass_number = ${payload.passNumber}`);
+    }
+
+    if payload.rejectionReason is string {
+        filters.push(`rejection_reason = ${payload.rejectionReason}`);
+    }
+
+    // Setting the updated_by (redundant in this case, but keeping for consistency).
+    filters.push(`updated_by = ${updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
 }

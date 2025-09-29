@@ -106,6 +106,13 @@ public isolated function fetchVisit(int visitId) returns VisitRecord|error {
     visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
     visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
     visitRecord.email = check decrypt(visitRecord.email);
+    visitRecord.timeOfEntry = visitRecord.timeOfEntry.endsWith(".0")
+        ? visitRecord.timeOfEntry.substring(0, visitRecord.timeOfEntry.length() - 2)
+        : visitRecord.timeOfEntry;
+
+    visitRecord.timeOfDeparture = visitRecord.timeOfDeparture.endsWith(".0")
+        ? visitRecord.timeOfDeparture.substring(0, visitRecord.timeOfDeparture.length() - 2)
+        : visitRecord.timeOfDeparture;
 
     return visitRecord;
 }
@@ -157,9 +164,10 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
 #
 # + visitId - ID of the visit to update
 # + payload - Payload containing the fields to update
+# + updatedBy - Person who is updating the visit
 # + return - Error if the update failed or no rows were affected
-public isolated function updateVisit(int visitId, UpdateVisitPayload payload) returns error? {
-    sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload));
+public isolated function updateVisit(int visitId, UpdateVisitPayload payload, string updatedBy) returns error? {
+    sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
 
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");

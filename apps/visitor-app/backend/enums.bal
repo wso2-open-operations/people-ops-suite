@@ -15,8 +15,7 @@
 // under the License. 
 # Action to be performed on a visit
 public enum Action {
-    PENDING,
-    ACCEPTED,
-    REJECTED,
-    COMPLETED
+    APPROVE,
+    REJECT,
+    COMPLETE
 };
