@@ -405,8 +405,8 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     if recruit.managerEmail is string {
         setClauses.push(`manager_email = ${recruit.managerEmail}`);
     }
-    if recruit.compensation is Compensation {
-        setClauses.push(`compensation = ${recruit.compensation.toJsonString()}`);
+    if recruit?.compensation is json {
+        setClauses.push(`compensation = ${recruit?.compensation.toJsonString()}`);
     }
     if recruit.status is string {
         setClauses.push(`status = ${recruit.status}`);
@@ -436,7 +436,6 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
         setClauses.push(`personal_info_id = ${recruit.personalInfoId}`);
     }
 
-    // Always update metadata
     setClauses.push(`updated_by = ${recruit.updatedBy}`);
     setClauses.push(`updated_on = CURRENT_TIMESTAMP(6)`);
 
