@@ -131,14 +131,8 @@ public isolated function fetchRecruitById(int recruitId) returns Recruit|error? 
 # + return - Array of recruits or an error
 public isolated function fetchRecruits() returns Recruit[]|error? {
     stream<Recruit, error?> recruitsResponse = databaseClient->query(getRecruits());
-
-    Recruit[] recruits = [];
-    check from Recruit recruit in recruitsResponse
-        do {
-            recruits.push(recruit);
-        };
-
-    return recruits;
+    return from Recruit recruit in recruitsResponse
+        select recruit;
 }
 
 # Persist new recruit in DB.
