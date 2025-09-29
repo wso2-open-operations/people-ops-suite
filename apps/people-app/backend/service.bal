@@ -413,7 +413,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
@@ -463,7 +463,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
@@ -519,7 +519,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
@@ -554,7 +554,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Ok | BadRequest | InternalServerError
     resource function patch recruits/[int id](http:RequestContext ctx, database:UpdateRecruitPayload recruit)
         returns http:Ok|http:BadRequest|http:Forbidden|http:InternalServerError {
-              authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
@@ -564,7 +565,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
@@ -613,7 +614,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.recruitmentTeamRole], userInfo.groups) {
+        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {

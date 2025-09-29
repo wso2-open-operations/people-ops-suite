@@ -352,9 +352,7 @@ CREATE TABLE `compensation` (
 
     CONSTRAINT `fk_employment_type`
         FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type`(`id`)
-        ON DELETE CASCADE ON UPDATE CASCADE,
 
     CONSTRAINT `fk_company`
         FOREIGN KEY (`company_id`) REFERENCES `company`(`id`)
-        ON DELETE CASCADE ON UPDATE CASCADE
 );
