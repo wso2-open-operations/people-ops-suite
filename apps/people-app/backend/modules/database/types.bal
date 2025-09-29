@@ -185,7 +185,7 @@ public type AddRecruitPayload record {
     string createdBy;
 };
 
-# Payload type for updating a recruit.
+# Payload type for updating a recruit
 public type UpdateRecruitPayload record {|
     # First name of the recruit
     string firstName?;

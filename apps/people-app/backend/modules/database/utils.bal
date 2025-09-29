@@ -63,7 +63,7 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
-# Join two or few sql queries
+# Join two or few sql queries.
 #
 # + parts - Sql parameteried query array
 # + separator - Seperator to seperate sql queries
@@ -80,4 +80,3 @@ isolated function joinQuery(sql:ParameterizedQuery[] parts, sql:ParameterizedQue
     }
     return result;
 }
-
