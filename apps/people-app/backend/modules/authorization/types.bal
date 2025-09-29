@@ -27,5 +27,5 @@ public type AppRoles record {|
     # Role for the employee
     string EMPLOYEE_ROLE;
     # Role for the recruitment team
-    string recruitmentTeamRole;
+    string RECRUITMENT_TEAM_ROLE;
 |};
