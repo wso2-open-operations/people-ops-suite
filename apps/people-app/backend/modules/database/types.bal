@@ -87,7 +87,7 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
-# [Database] Represents a recruit record
+# [Database] Represents a recruit record.
 public type Recruit record {|
     # The unique identifier for the recruit
     int id;
@@ -137,7 +137,7 @@ public type Recruit record {|
     json compensation;
 |};
 
-#[Database] Insert type for recruit
+#[Database] Insert type for recruit.
 public type AddRecruitPayload record {|
     # First name of the recruit
     string firstName;
@@ -185,7 +185,7 @@ public type AddRecruitPayload record {|
     string createdBy;
 |};
 
-# Payload type for updating a recruit
+# Payload type for updating a recruit.
 public type UpdateRecruitPayload record {|
     # First name of the recruit
     string firstName?;
@@ -233,7 +233,7 @@ public type UpdateRecruitPayload record {|
     string updatedBy;
 |};
 
-# Compensation data type for recruit
+# Compensation data type for recruit.
 public type Compensation record {|
     # Compensation type
     json compensationDetails;
