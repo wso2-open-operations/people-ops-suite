@@ -481,7 +481,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Recruit[]|error? recruits = database:fetchRecruits();
 
         if recruits is error {
-            string customError = string `Internal Server Error`;
+            string customError = "Error occurred while fetching recruits";
             log:printError(customError, recruits);
             return <http:InternalServerError>{
                 body: {
@@ -490,7 +490,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if recruits is () {
-            string customError = string `Recruits Not Found`;
+            string customError = "Recruits Not Found";
             log:printError(customError);
             return <http:NotFound>{
                 body: {
