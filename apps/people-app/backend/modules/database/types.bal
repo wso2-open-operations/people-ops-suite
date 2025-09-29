@@ -208,7 +208,7 @@ public type UpdateRecruitPayload record {|
     # Email address of the recruit’s direct manager
     string managerEmail?;
     # Compensation data of the recruit
-    Compensation compensation?;  
+    json compensation?;  
     # Additional comments about the recruit       
     string additionalComments?;
     # Current status of the recruit
@@ -231,10 +231,4 @@ public type UpdateRecruitPayload record {|
     int personalInfoId?;
     # Person who updated the recruit record
     string updatedBy;
-|};
-
-# Compensation data type for recruit.
-public type Compensation record {|
-    # Compensation type
-    json compensationDetails;
 |};
