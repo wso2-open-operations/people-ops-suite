@@ -15,3 +15,6 @@
 // under the License.
 
 const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found!";
+
+const UNAUTHORIZED_REQUEST = "Insufficient privileges!";
+const ERR_INFORMATION_HEADER_NOT_FOUND = "Information header not found!";

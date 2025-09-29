@@ -367,6 +367,7 @@ isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) r
 `;
 
 # Build query to update recruit info dynamically.
+# 
 # + id - ID of the recruit to be updated
 # + recruit - Recruit payload that includes changed recruit information
 # + return - Update query to update recruit info
