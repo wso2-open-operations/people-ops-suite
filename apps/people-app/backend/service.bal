@@ -417,8 +417,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
         }
         if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
-            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups:
-            ${userInfo.groups.toString()}`);
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${ 
+                userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
