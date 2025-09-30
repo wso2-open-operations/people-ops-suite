@@ -44,7 +44,7 @@ public type AddVisitPayload record {|
             message: "The pass number should be a non-empty string with printable characters."
         }
     }
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     @constraint:String {
         pattern: {
@@ -73,4 +73,13 @@ public type AddVisitPayload record {|
         }
     }
     string timeOfDeparture;
+|};
+
+# Payload for updating an existing visit.
+public type ActionPaylaod record {|
+    # Reason for rejecting the visit
+    string? rejectionReason = ();
+    # Status of the visit
+    int? passNumber = ();
+    json...;
 |};

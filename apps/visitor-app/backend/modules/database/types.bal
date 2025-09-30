@@ -12,7 +12,7 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
@@ -106,7 +106,7 @@ public type AddVisitPayload record {|
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
@@ -135,11 +135,11 @@ public type VisitRecord record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
@@ -150,6 +150,8 @@ public type VisitRecord record {|
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
     string timeOfDeparture;
+    # Invitation ID associated with the visit
+    int? invitationId;
     # Status of the visit
     Status status;
     # Total number of visits
@@ -169,7 +171,9 @@ public type Visit record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
+    # Invitation ID associated with the visit
+    int? invitationId;
 |};
 
 # Response Record for Visits.
@@ -178,4 +182,62 @@ public type VisitsResponse record {|
     int totalCount;
     # Array of visits
     Visit[] visits;
+|};
+
+# Visit Invitations.
+public type VisitInfo record {|
+    # name of company
+    string nameOfCompany;
+    # person they meet
+    string whomTheyMeet;
+    # purpose of visit
+    string purposeOfVisit;
+    # accessible locations
+    Floor[] accessibleLocations;
+    # scheduled date
+    string sheduledDate;
+    # time of entry
+    string timeOfEntry;
+    # time of departure
+    string timeOfDeparture;
+|};
+
+# Details of an invitation.
+public type AddInvitationPayload record {|
+    # invitations count
+    int noOfVisitors;
+    # visit information
+    VisitInfo visitDetails;
+    # invitation status
+    int isActive;
+    # invitee email
+    string inviteeEmail;
+    # invitation updater
+    string updatedBy;
+|};
+
+public type Invitation record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Validity of the invitation
+    int isActive;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    json visitDetails;
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+    # Invited by
+    string invitedBy;
+|};
+
+# Payload to update visit details.
+public type UpdateVisitPayload record {|
+    # Number in the tag given to visitor
+    int? passNumber;
+    # Status of the visit
+    Status status?;
+    # Reason for rejecting the visit
+    string rejectionReason?;
 |};

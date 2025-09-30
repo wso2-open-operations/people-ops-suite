@@ -12,29 +12,6 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
-
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
-
-export enum VisitStatus {
-  request = "REQUEST",
-  approve = "APPROVE",
-  complete = "COMPLETE",
-  reject = "REJECT",
-}
-
-export interface CommonCardProps {
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  dataCardIndex: number;
-}
+// under the License. 
+public const VISIT_INVITATION_SUBJECT = "[Visitor-Registration] Invitation to Visit the WSO2 Office";
+public const emailSubject = "[Visitor-Registration] Registering new visitor to the building";

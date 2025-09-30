@@ -13,28 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
+import ballerina/http;
 
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
+configurable string emailServiceBaseUrl = ?;
+configurable ChoreoApp choreoAppConfig = ?;
 
-export enum VisitStatus {
-  request = "REQUEST",
-  approve = "APPROVE",
-  complete = "COMPLETE",
-  reject = "REJECT",
-}
-
-export interface CommonCardProps {
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  dataCardIndex: number;
-}
+final http:Client emailClient = check new (emailServiceBaseUrl, {
+    auth: {
+        ...choreoAppConfig
+    },
+    timeout: 10.0,
+    retryConfig: {
+        count: 3,
+        interval: 5.0,
+        statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});

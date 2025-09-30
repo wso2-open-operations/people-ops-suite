@@ -12,29 +12,10 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
-
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
-
-export enum VisitStatus {
-  request = "REQUEST",
-  approve = "APPROVE",
-  complete = "COMPLETE",
-  reject = "REJECT",
-}
-
-export interface CommonCardProps {
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  dataCardIndex: number;
-}
+// under the License. 
+# Action to be performed on a visit
+public enum Action {
+    APPROVE,
+    REJECT,
+    COMPLETE
+};

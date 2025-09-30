@@ -13,23 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-
-const initialState: VisitState = {
-  state: State.idle,
-  submitState: State.idle,
-  visits: null,
-  stateMessage: "",
-  errorMessage: "",
-  backgroundProcess: false,
-  backgroundProcessMessage: null,
-};
 
 interface VisitState {
   state: State;
@@ -39,13 +28,14 @@ interface VisitState {
   errorMessage: string | null;
   backgroundProcess: boolean;
   backgroundProcessMessage: string | null;
+  statusUpdateState: State;
+  statusUpdateMessage: string | null;
+  statusUpdateError: string | null;
 }
 
-export interface Visit extends AddVisitPayload {
-  createdBy: string;
-  createdOn: string;
-  updatedBy: string;
-  updatedOn: string;
+export interface FloorRoom {
+  floor: string;
+  rooms: string[];
 }
 
 export interface AddVisitPayload {
@@ -57,11 +47,6 @@ export interface AddVisitPayload {
   accessibleLocations: FloorRoom[];
   timeOfEntry: string;
   timeOfDeparture: string;
-}
-
-export interface FloorRoom {
-  floor: string;
-  rooms: string[];
 }
 
 export interface Visit {
@@ -83,12 +68,33 @@ export interface Visit {
   createdOn: string;
   updatedBy: string;
   updatedOn: string;
+  invitationId: number | null;
 }
 
 export interface FetchVisitsResponse {
   totalCount: number;
   visits: Visit[];
 }
+
+export interface UpdateVisitPayload {
+  visitId: Number;
+  passNumber?: Number;
+  status: string;
+  rejectionReason?: string;
+}
+
+const initialState: VisitState = {
+  state: State.idle,
+  submitState: State.idle,
+  visits: null,
+  stateMessage: null,
+  errorMessage: null,
+  backgroundProcess: false,
+  backgroundProcessMessage: null,
+  statusUpdateState: State.idle,
+  statusUpdateMessage: null,
+  statusUpdateError: null,
+};
 
 export const addVisit = createAsyncThunk(
   "visit/addVisit",
@@ -112,6 +118,15 @@ export const addVisit = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while adding visit!",
+              type: "error",
+            })
+          );
           reject(error);
         });
     });
@@ -121,7 +136,11 @@ export const addVisit = createAsyncThunk(
 export const fetchVisits = createAsyncThunk(
   "visit/fetchVisits",
   async (
-    { limit, offset }: { limit: number; offset: number },
+    {
+      limit,
+      offset,
+      status,
+    }: { limit: number; offset: number; status?: string },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -129,7 +148,7 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset },
+          params: { limit, offset, status },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -154,6 +173,46 @@ export const fetchVisits = createAsyncThunk(
   }
 );
 
+export const visitStatusUpdate = createAsyncThunk(
+  "visit/visitStatusUpdate",
+  async (payload: UpdateVisitPayload, { dispatch, rejectWithValue }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ message: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .post(
+          `${AppConfig.serviceUrls.visits}/${payload.visitId}/${payload.status}`,
+          payload || null,
+          {
+            cancelToken: newCancelTokenSource.token,
+          }
+        )
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: `Visit status updated to "${payload.status}" successfully!`,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while updating visit status!",
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
 const VisitSlice = createSlice({
   name: "visits",
   initialState,
@@ -163,6 +222,11 @@ const VisitSlice = createSlice({
     },
     resetState(state) {
       state.state = State.idle;
+    },
+    resetStatusUpdateState(state) {
+      state.statusUpdateState = State.idle;
+      state.statusUpdateMessage = null;
+      state.statusUpdateError = null;
     },
   },
   extraReducers: (builder) => {
@@ -182,19 +246,44 @@ const VisitSlice = createSlice({
       .addCase(fetchVisits.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Hang tight! We’re fetching your visits...";
+        state.errorMessage = null;
       })
-      .addCase(fetchVisits.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.visits = action.payload;
-        state.stateMessage = "Your visits have been fetched successfully!";
-      })
-      .addCase(fetchVisits.rejected, (state) => {
+      .addCase(
+        fetchVisits.fulfilled,
+        (state, action: PayloadAction<FetchVisitsResponse>) => {
+          state.state = State.success;
+          state.visits = action.payload;
+          state.stateMessage = "Your visits have been fetched successfully!";
+        }
+      )
+      .addCase(fetchVisits.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage =
           "Oops! Something went wrong while fetching visits!";
+        state.errorMessage =
+          (action.payload as string) || "Failed to fetch visits";
+      })
+      .addCase(visitStatusUpdate.pending, (state) => {
+        state.statusUpdateState = State.loading;
+        state.statusUpdateMessage =
+          "Hang tight! We’re updating visit status...";
+        state.statusUpdateError = null;
+      })
+      .addCase(
+        visitStatusUpdate.fulfilled,
+        (state, action: PayloadAction<{ message: string }>) => {
+          state.statusUpdateState = State.success;
+          state.statusUpdateMessage = action.payload.message;
+        }
+      )
+      .addCase(visitStatusUpdate.rejected, (state, action) => {
+        state.statusUpdateState = State.failed;
+        state.statusUpdateError =
+          (action.payload as string) || "Failed to update visit status";
       });
   },
 });
 
-export const { resetSubmitState, resetState } = VisitSlice.actions;
+export const { resetSubmitState, resetState, resetStatusUpdateState } =
+  VisitSlice.actions;
 export default VisitSlice.reducer;

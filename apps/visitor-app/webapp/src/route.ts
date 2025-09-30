@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import React from "react";
 import { View } from "@view/index";
 import { Role } from "@slices/authSlice/auth";
@@ -21,6 +20,7 @@ import DomainAddIcon from "@mui/icons-material/DomainAdd";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
@@ -48,6 +48,13 @@ export const routes: RouteObjectWithRole[] = [
     text: "Visit",
     icon: React.createElement(DomainAddIcon),
     element: React.createElement(View.employee),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+  },
+  {
+    path: "/visitmanagement",
+    text: "Admin Panel",
+    icon: React.createElement(AdminPanelSettingsOutlinedIcon),
+    element: React.createElement(View.admin),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
