@@ -429,7 +429,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Recruit|error? recruit = database:fetchRecruitById(recruitId);
 
         if recruit is error {
-            string customError = "Internal Server Error";
+            string customError = "Error occurred while fetching recruit";
             log:printError(customError, recruit);
             return <http:InternalServerError>{
                 body: {message: customError}
@@ -449,9 +449,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Endpoint to fetch all recruits.
     #
-    # + return - List of recruits | NotFound | InternalServerError
+    #
+    # + return - List of recruits | Forbidden |  NotFound | InternalServerError
     resource function get recruits(http:RequestContext ctx)
-        returns database:Recruit[]|http:Forbidden|http:InternalServerError|http:BadRequest|http:NotFound {
+        returns database:Recruit[]|http:Forbidden|http:NotFound|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -580,7 +581,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? result = database:UpdateRecruit(id, recruit);
+        boolean|error? result = database:UpdateRecruit(id, recruit);
 
         if result is error {
             string customError ="Error while updating recruit info";

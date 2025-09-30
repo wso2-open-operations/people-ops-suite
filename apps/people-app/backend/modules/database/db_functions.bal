@@ -149,16 +149,9 @@ public isolated function addRecruit(AddRecruitPayload recruit, string createdBy)
 # + id - Recruit id
 # + recruit - Recruit payload with updated fields
 # + return - error or null
-public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) returns error? {
-    if recruit.entries().length() == 0 {
-        return error(string `No data to update for recruit with id: ${id}`);
-    }
+public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(updateRecruitQuery(id, recruit));
-
-    if result.affectedRowCount == 0 {
-        return error(string `No recruit found to update for id: ${id}`);
-    }
-    return;
+    return result.affectedRowCount > 0;
 }
 
 # Function to delete a recruit.
