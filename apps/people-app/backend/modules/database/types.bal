@@ -250,7 +250,7 @@ public type Recruit record {|
     # Last name of the recruit
     string lastName;
     # Official WSO2 email address of the recruit
-    string wso2Email;
+    string companyEmail;
     # Date of joining
     time:Date dateOfJoin;
     # End date of the probation period           
@@ -298,7 +298,7 @@ public type AddRecruitPayload record {|
     # Last name of the recruit
     string lastName;
     # Official WSO2 email address of the recruit
-    string wso2Email;
+    string companyEmail;
      # Date of joining
     time:Date dateOfJoin;
     # End date of the probation period           
@@ -346,7 +346,7 @@ public type UpdateRecruitPayload record {|
     # Last name of the recruit
     string lastName?;
     # Official WSO2 email address of the recruit
-    string wso2Email?;
+    string companyEmail?;
     # Date of joining
     time:Date dateOfJoin?;
     # End date of the probation period

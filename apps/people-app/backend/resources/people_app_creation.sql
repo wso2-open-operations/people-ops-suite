@@ -225,7 +225,7 @@ CREATE TABLE `recruit` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `first_name` VARCHAR(255) NOT NULL,
   `last_name` VARCHAR(255) NOT NULL,
-  `work_email` VARCHAR(254) NULL,
+  `company_email` VARCHAR(254) NULL,
   `date_of_join` DATE NOT NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
