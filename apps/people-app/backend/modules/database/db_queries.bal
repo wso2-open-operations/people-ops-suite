@@ -367,12 +367,12 @@ isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) r
 `;
 
 # Build query to update recruit info dynamically.
-# 
+#
 # + id - ID of the recruit to be updated
 # + recruit - Recruit payload that includes changed recruit information
 # + return - Update query to update recruit info
 isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `UPDATE recruit SET `;
+    sql:ParameterizedQuery mainQuery = `UPDATE recruit SET `;
     sql:ParameterizedQuery[] setClauses = [];
 
     if recruit.firstName is string {
@@ -408,6 +408,9 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     if recruit?.compensation is json {
         setClauses.push(`compensation = ${recruit?.compensation.toJsonString()}`);
     }
+    if recruit.additionalComments is string {
+        setClauses.push(`additional_comments = ${recruit.additionalComments}`);
+    }
     if recruit.status is string {
         setClauses.push(`status = ${recruit.status}`);
     }
@@ -439,13 +442,10 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     setClauses.push(`updated_by = ${recruit.updatedBy}`);
     setClauses.push(`updated_on = CURRENT_TIMESTAMP(6)`);
 
-    if setClauses.length() > 0 {
-        sql:ParameterizedQuery joinedClauses = joinQuery(setClauses, `, `);
-        query = sql:queryConcat(query, joinedClauses);
-    }
-    query = sql:queryConcat(query, ` WHERE id = ${id}`);
-    return query;
+    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
 
+    sql:ParameterizedQuery whereClause = ` WHERE id = ${id}`;
+    return sql:queryConcat(mainQuery, whereClause);
 }
 
 # Retrieves a parameterized SQL query to delete a recruit by their ID.
