@@ -91,16 +91,6 @@ export const loadPrivileges = createAsyncThunk(
     if (userPrivileges.includes(762)) {
       roles.push(Role.ADMIN);
     }
-
-    if (roles.length === 0) {
-      dispatch(
-        enqueueSnackbarMessage({
-          message: SnackMessage.error.insufficientPrivileges,
-          type: "error",
-        })
-      );
-      return rejectWithValue("No roles found");
-    }
     return { roles };
   }
 );
