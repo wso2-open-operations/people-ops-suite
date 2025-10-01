@@ -96,3 +96,42 @@ public type AddInvitationPayload record {|
     }
     string inviteeEmail;
 |};
+
+# Payload for filling an existing visit invitation.
+public type FillInvitationPayload record {|
+    *AddVisitPayload;
+    # Nic Hash of the visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The NIC Hash should be a non-empty string with printable characters."
+        }
+    }
+    string nicHash;
+    # Name of the visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The name should be a non-empty string with printable characters."
+        }
+    }
+    string name;
+    # NIC number of visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The NIC number should be a non-empty string with printable characters."
+        }
+    }
+    string nicNumber;
+    # Working phone number of visitor
+    @constraint:String {
+        pattern: {
+            value: database:INTERNATIONAL_CONTACT_NUMBER_REGEX,
+            message: "The contact number should be in valid international format."
+        }
+    }
+    string contactNumber;
+    # Email of the visitor
+    string? email;
+|};

@@ -83,6 +83,7 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
     json? visitInfo = invitationRecord.visitInfo;
     Invitation invitation = {
         invitationId: invitationRecord.invitationId,
+        inviteeEmail: invitationRecord.inviteeEmail,
         noOfVisitors: invitationRecord.noOfVisitors,
         visitInfo: visitInfo is json ? check visitInfo.cloneWithType(VisitInfo) : (),
         active: invitationRecord.active,

@@ -85,6 +85,7 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         INSERT INTO visit_invitation
         (
             encode_value,
+            invitee_email,
             no_of_visitors,
             is_active,
             created_by,
@@ -93,6 +94,7 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         VALUES
         (
             ${encodeString},
+            ${payload.inviteeEmail},
             ${payload.noOfVisitors},
             ${payload.isActive},
             ${createdBy},
@@ -106,6 +108,7 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
 isolated function fetchInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
             invitation_id AS invitationId,
+            invitee_email AS inviteeEmail,
             is_active AS active,
             no_of_visitors AS noOfVisitors,
             visit_info AS visitInfo,

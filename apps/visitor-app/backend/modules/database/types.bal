@@ -112,7 +112,7 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    Floor[] accessibleLocations;
+    Floor[]? accessibleLocations = [];
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -199,6 +199,8 @@ public type InvitationRecord record {|
     *AuditFields;
     # Id of the invitation
     int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
     # Validity of the invitation
     boolean active;
     # No of invitations
@@ -214,6 +216,8 @@ public type Invitation record {|
     *AuditFields;
     # Id of the invitation
     int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
     # Validity of the invitation
     boolean active;
     # No of invitations
@@ -226,19 +230,17 @@ public type Invitation record {|
 
 # Visit Invitations of invitation.
 public type VisitInfo record {|
-    # name of company
-    string nameOfCompany;
-    # person they meet
+    # Name of company
+    string companyName;
+    # Person they meet
     string whomTheyMeet;
-    # purpose of visit
+    # Purpose of visit
     string purposeOfVisit;
-    # accessible locations
+    # Accessible locations
     Floor[] accessibleLocations;
-    # scheduled date
-    string scheduledDate;
-    # time of entry
+    # Time of entry
     string timeOfEntry;
-    # time of departure
+    # Time of departure
     string timeOfDeparture;
 |};
 
