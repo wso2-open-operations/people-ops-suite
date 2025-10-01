@@ -405,7 +405,7 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     if recruit.managerEmail is string {
         setClauses.push(`manager_email = ${recruit.managerEmail}`);
     }
-    if recruit?.compensation is json {
+    if recruit?.compensation != (){
         setClauses.push(`compensation = ${recruit?.compensation.toJsonString()}`);
     }
     if recruit.additionalComments is string {
@@ -452,6 +452,6 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
 #
 # + recruitId - The ID of the recruit to delete
 # + return - A parameterized query that deletes the recruit record with the specified ID
-isolated function getDeleteRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
+isolated function deleteRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
     DELETE FROM recruit WHERE id = ${recruitId};
 `;

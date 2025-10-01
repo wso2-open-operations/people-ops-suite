@@ -339,7 +339,6 @@ CREATE TABLE `resignation` (
 );
 
 -- Compensation table
-
 CREATE TABLE `compensation` (
     `company_id` INT NOT NULL,
     `employment_type_id` INT NOT NULL,
