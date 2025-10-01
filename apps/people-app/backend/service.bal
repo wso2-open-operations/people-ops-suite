@@ -421,7 +421,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-    
+
         database:Recruit|error? recruit = database:fetchRecruitById(id);
 
         if recruit is error {
@@ -591,20 +591,25 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        database:Recruit|error? recruit = database:fetchRecruitById(id);
+
+        if recruit is () {
+            string customError = "Recruit Not Found";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {message: customError}
+            };
+        }
+
         boolean|error deleteResult = database:deleteRecruitById(id);
 
         if deleteResult is error {
             string customError = "Error occurred while deleting recruit";
             log:printError(customError, deleteResult);
             return <http:InternalServerError>{
-                body: {message: customError}
-            };
-        }
-
-        if !deleteResult {
-            string customError = string `No recruit found with ID ${id}`;
-            return <http:NotFound>{
-                body: {message: customError}
+                body: {
+                    message: customError
+                }
             };
         }
 
