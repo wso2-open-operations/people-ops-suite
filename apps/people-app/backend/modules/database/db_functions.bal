@@ -128,7 +128,7 @@ public isolated function fetchRecruitById(int recruitId) returns Recruit|error? 
 # Function to fetch all recruits.
 #
 # + return - Array of recruits or an error
-public isolated function fetchRecruits() returns Recruit[]|error? {
+public isolated function fetchRecruits() returns Recruit[]|error {
     stream<Recruit, error?> recruitsResponse = databaseClient->query(getRecruits());
     return from Recruit recruit in recruitsResponse
         select recruit;
