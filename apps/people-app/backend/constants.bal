@@ -14,18 +14,5 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-};
-
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the recruitment team
-    string RECRUITMENT_TEAM_ROLE;
-|};
+const UNAUTHORIZED_REQUEST = "Insufficient privileges!";
+const ERR_INFORMATION_HEADER_NOT_FOUND = "Information header not found!";
