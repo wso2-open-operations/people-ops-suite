@@ -86,7 +86,6 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         (
             encode_value,
             no_of_visitors,
-            visit_info,
             is_active,
             created_by,
             updated_by
@@ -95,10 +94,9 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         (
             ${encodeString},
             ${payload.noOfVisitors},
-            ${payload.visitDetails.toJsonString()},
             ${payload.isActive},
             ${createdBy},
-            ${payload.updatedBy}
+            ${createdBy}
         );`;
 
 # Build query to fetch an invitation.

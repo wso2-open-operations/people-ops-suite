@@ -13,13 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-# [Configurable] Choreo OAuth2 application configuration.
-type ChoreoApp record {|
-    # OAuth2 token endpoint
+# Auth2 client auth configurations.
+public type ClientAuthConfig record {|
+    # Token URL
     string tokenUrl;
-    # OAuth2 client ID
+    # Client ID
     string clientId;
-    # OAuth2 client secret
+    # Client Secret
     string clientSecret;
 |};
 

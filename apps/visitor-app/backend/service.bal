@@ -25,7 +25,7 @@ import ballerina/log;
 import ballerina/time;
 import ballerina/uuid;
 
-configurable string webAppBaseUrl = ?;
+configurable string webAppUrl = ?;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -267,7 +267,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Payload containing the invitation details
     # + return - Successfully created or error
-    resource function post invitations(http:RequestContext ctx, database:AddInvitationPayload payload)
+    resource function post invitations(http:RequestContext ctx, AddInvitationPayload payload)
         returns http:Created|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -281,7 +281,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string encodeString = array:toBase64((uuid:createType4AsString()).toBytes());
-        error? invitationError = database:addInvitation(payload, invokerInfo.email, encodeString);
+        error? invitationError = database:addInvitation(
+                {
+                    ...payload,
+                    isActive: true
+                }, invokerInfo.email, encodeString);
+
         if invitationError is error {
             string customError = "Error occurred while creating invitation!";
             log:printError(customError, invitationError);
@@ -295,8 +300,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         string|error content = email:bindKeyValues(
                 email:inviteTemplate,
                 {
-                    LINK: webAppBaseUrl + "/external/" + "?token=" + encodeString,
-                    CONTACT_EMAIL: email:contactEmail
+                    LINK: webAppUrl + "/external/" + "?token=" + encodeString,
+                    CONTACT_EMAIL: email:contactUsEmail
                 }
         );
 
@@ -312,7 +317,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         error? emailError = email:sendEmail({
                                                 to: [payload.inviteeEmail],
-                                                'from: email:visitorNotificationFrom,
+                                                'from: email:fromEmailAddress,
                                                 subject: email:VISIT_INVITATION_SUBJECT,
                                                 template: content,
                                                 cc: [email:receptionEmail]
@@ -482,13 +487,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     };
 
-    # Update visit details of exsisting visit.
+    # Update visit details of existing visit.
     #
     # + visitId - ID of the visit to be updated
     # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
     # + payload - Payload containing the visit details to be updated
     # + return - Successfully updated or error
-    resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPaylaod payload)
+    resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPayload payload)
         returns http:Ok|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -570,7 +575,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             "START_TIME": visit.timeOfEntry,
                             "END_TIME": visit.timeOfDeparture,
                             "PASS_NUMBER": passNumber.toString(),
-                            "CONTACT_EMAIL": email:contactEmail
+                            "CONTACT_EMAIL": email:contactUsEmail
                         });
                 if content is error {
                     string customError = "Error with email template!";
@@ -580,7 +585,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visit.email],
-                                'from: email:visitorNotificationFrom,
+                                'from: email:fromEmailAddress,
                                 subject: email:emailSubject,
                                 template: content,
                                 cc: [email:receptionEmail]
@@ -651,7 +656,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             "START_TIME": visit.timeOfEntry,
                             "END_TIME": visit.timeOfDeparture,
                             "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactEmail
+                            "CONTACT_EMAIL": email:contactUsEmail
                         });
                 if content is error {
                     string customError = "Error with email template!";
@@ -661,7 +666,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visit.email],
-                                'from: email:visitorNotificationFrom,
+                                'from: email:fromEmailAddress,
                                 subject: email:emailSubject,
                                 template: content,
                                 cc: [email:receptionEmail]
@@ -724,7 +729,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             "START_TIME": visit.timeOfEntry,
                             "END_TIME": visit.timeOfDeparture,
                             "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactEmail
+                            "CONTACT_EMAIL": email:contactUsEmail
                         });
                 if content is error {
                     string customError = "Error with email template!";
@@ -734,7 +739,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visit.email],
-                                'from: email:visitorNotificationFrom,
+                                'from: email:fromEmailAddress,
                                 subject: email:emailSubject,
                                 template: content,
                                 cc: [email:receptionEmail]

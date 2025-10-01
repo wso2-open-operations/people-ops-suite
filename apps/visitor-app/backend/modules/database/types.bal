@@ -195,25 +195,21 @@ public type VisitInfo record {|
     # accessible locations
     Floor[] accessibleLocations;
     # scheduled date
-    string sheduledDate;
+    string scheduledDate;
     # time of entry
     string timeOfEntry;
     # time of departure
     string timeOfDeparture;
 |};
 
-# Details of an invitation.
+# [Database] Insert record for visit invitation.
 public type AddInvitationPayload record {|
     # invitations count
     int noOfVisitors;
-    # visit information
-    VisitInfo visitDetails;
     # invitation status
-    int isActive;
+    boolean isActive;
     # invitee email
     string inviteeEmail;
-    # invitation updater
-    string updatedBy;
 |};
 
 public type Invitation record {|

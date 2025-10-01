@@ -76,10 +76,23 @@ public type AddVisitPayload record {|
 |};
 
 # Payload for updating an existing visit.
-public type ActionPaylaod record {|
+public type ActionPayload record {|
     # Reason for rejecting the visit
     string? rejectionReason = ();
     # Status of the visit
     int? passNumber = ();
-    json...;
+|};
+
+# Payload for adding a new visit invitation.
+public type AddInvitationPayload record {|
+    # Invitations count
+    int noOfVisitors;
+    # Invitee email
+    @constraint:String {
+        pattern: {
+            value: database:EMAIL_REGEX,
+            message: "The invitee email should be a valid email address."
+        }
+    }
+    string inviteeEmail;
 |};
