@@ -197,7 +197,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
-    # Endpoint to fetch a specific recruit.
+    # Fetch a specific recruit.
     #
     # + recruitId - ID of the recruit to fetch
     # + return - Recruit | NotFound | InternalServerError
@@ -213,13 +213,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
-            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
-        }
-        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
-            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${ 
-                userInfo.groups.toString()}`);
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
@@ -248,7 +244,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return recruit;
     }
 
-    # Endpoint to fetch all recruits.
+    # Fetch all recruits.
     #
     #
     # + return - List of recruits | Forbidden |  NotFound | InternalServerError
@@ -264,14 +260,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
-            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
-        }
-        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
-                userInfo.groups.toString()}`);
-
+                    userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
@@ -303,7 +294,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return recruits;
     }
 
-    # Endpoint to add a recruit.
+    # Add a recruit.
     #
     # + recruit - Recruit details
     # + return - Created | Forbidden | InternalServerError
@@ -319,13 +310,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
-            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
-        }
-        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
-                userInfo.groups.toString()}`);
+                    userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
@@ -333,7 +320,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Add recruit to the database
         int|error recruitId = database:addRecruit(recruit, userInfo.email);
         if recruitId is error {
             string customError = "Failed to add recruit!";
@@ -348,9 +334,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:CREATED;
     }
 
-    # Endpoint to update recruit info dynamically.
+    # Update recruit info.
     #
-    # + id - Recruit id
+    # + id - Recruit ID
     # + recruit - Payload with changed fields
     # + return - Ok | BadRequest | InternalServerError
     resource function patch recruits/[int id](http:RequestContext ctx, database:UpdateRecruitPayload recruit)
@@ -365,13 +351,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
-            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
-        }
-        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
-                userInfo.groups.toString()}`);
+                    userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
@@ -379,10 +361,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error? result = database:UpdateRecruit(id, recruit);
+        boolean|error result = database:UpdateRecruit(id, recruit);
 
         if result is error {
-            string customError ="Error while updating recruit info";
+            string customError = "Error while updating recruit info";
             log:printError(customError, result);
             return <http:InternalServerError>{
                 body: {
@@ -390,19 +372,14 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the recruit data"
-            }
-        };
+        return http:OK;
     }
 
     # Endpoint to delete a recruit by ID.
     #
-    # + recruitId - ID of the recruit to delete
+    # + id - ID of the recruit to delete
     # + return - Ok | NotFound | InternalServerError
-    resource function delete recruits/[int recruitId](http:RequestContext ctx)
+    resource function delete recruits/[int id](http:RequestContext ctx)
         returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -414,13 +391,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
-            privileges.push(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE);
-        }
-        if privileges.indexOf(authorization:RECRUITMENT_TEAM_ROLE_PRIVILEGE) is () {
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
             log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
-                userInfo.groups.toString()}`);
+                    userInfo.groups.toString()}`);
             return <http:Forbidden>{
                 body: {
                     message: UNAUTHORIZED_REQUEST
@@ -428,8 +401,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Delete recruit from the database
-        boolean|error deleteResult = database:deleteRecruitById(recruitId);
+        boolean|error deleteResult = database:deleteRecruitById(id);
 
         if deleteResult is error {
             string customError = "Error occurred while deleting recruit";
@@ -440,7 +412,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if !deleteResult {
-            string customError = string `No recruit found with ID ${recruitId}`;
+            string customError = string `No recruit found with ID ${id}`;
             return <http:NotFound>{
                 body: {message: customError}
             };

@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-import ballerina/sql;
 import ballerinax/mysql;
+import ballerina/sql;
 import ballerina/time;
 
 # [Configurable] Database configs.
@@ -95,7 +95,7 @@ public type Recruit record {|
     string firstName;
     # Last name of the recruit
     string lastName;
-    # Official WSO2 email address of the recruit
+    # Corporate email address of the recruit
     string companyEmail;
     # Date of joining
     time:Date dateOfJoin;
@@ -131,7 +131,7 @@ public type Recruit record {|
     string employmentType;
     # Job role of the recruit
     int designationId;
-    # Id of the personal info
+    # ID of the personal info
     int personalInfoId;
     # Compensation data of the recruit
     json compensation;
@@ -143,7 +143,7 @@ public type AddRecruitPayload record {|
     string firstName;
     # Last name of the recruit
     string lastName;
-    # Official WSO2 email address of the recruit
+    # Corporate email address of the recruit
     string companyEmail;
      # Date of joining
     time:Date dateOfJoin;
@@ -165,21 +165,21 @@ public type AddRecruitPayload record {|
     string? additionalComments;
     # Current status of the recruit 
     string status;
-    # Id of the business unit
+    # ID of the business unit
     int businessUnit;
-    # Id of the unit
+    # ID of the unit
     int? unit;
-    # Id of the team
+    # ID of the team
     int team;
-    # Id of the sub-team
+    # ID of the sub-team
     int subTeam;
-    # Id of the company
+    # ID of the company
     int company;
-    # Id of the office
+    # ID of the office
     int office;
-    # Id of the employment type
+    # ID of the employment type
     int employmentType;
-    # Id of the personal info
+    # ID of the personal info
     int personalInfoId;
     # Email of the person who created the recruit record
     string createdBy;
@@ -191,7 +191,7 @@ public type UpdateRecruitPayload record {|
     string firstName?;
     # Last name of the recruit
     string lastName?;
-    # Official WSO2 email address of the recruit
+    # Corporate email address of the recruit
     string companyEmail?;
     # Date of joining
     time:Date dateOfJoin?;
@@ -213,21 +213,21 @@ public type UpdateRecruitPayload record {|
     string additionalComments?;
     # Current status of the recruit
     string status?;
-    # Id of the business unit
+    # ID of the business unit
     int businessUnit?;
     # Id of the unit
     int unit?;
-    # Id of the team
+    # ID of the team
     int team?;
     # Id of the sub-team
     int subTeam?;
-    # Id of the company
+    # ID of the company
     int company?;
-    # Id of the office
+    # ID of the office
     int office?;
-    # Id of the employment type
+    # ID of the employment type
     int employmentType?;
-    # Id of the personal info
+    # ID of the personal info
     int personalInfoId?;
     # Person who updated the recruit record
     string updatedBy;
