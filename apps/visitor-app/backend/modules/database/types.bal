@@ -204,7 +204,7 @@ public type InvitationRecord record {|
     # No of invitations
     int noOfVisitors;
     # Visit details in the invitation
-    string? visitInfo = ();
+    json? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
 |};
@@ -219,7 +219,7 @@ public type Invitation record {|
     # No of invitations
     int noOfVisitors;
     # Visit details in the invitation
-    json? visitInfo = ();
+    VisitInfo? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
 |};

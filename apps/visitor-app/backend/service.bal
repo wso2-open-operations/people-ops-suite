@@ -351,7 +351,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if invitation is error {
-            string customError = "Error when checking invitation details";
+            string customError = "Error occurred while fetching invitation!";
             log:printError(customError, invitation);
             return <http:InternalServerError>{
                 body: {
@@ -368,9 +368,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitationId = invitation.invitationId);
         if visitsResponse is error {
-            string customError = "Error occurred while fetching visits!";
+            string customError = "Error occurred while fetching visits for this invitation!";
             log:printError(customError, visitsResponse);
             return <http:InternalServerError>{
                 body: {
@@ -418,8 +418,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
-
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitationId = invitation.invitationId);
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
             log:printError(customError, visitsResponse);

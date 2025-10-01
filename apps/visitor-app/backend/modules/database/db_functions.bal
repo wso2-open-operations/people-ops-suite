@@ -80,11 +80,11 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
         return invitationRecord;
     }
 
-    string? visitInfo = invitationRecord.visitInfo;
+    json? visitInfo = invitationRecord.visitInfo;
     Invitation invitation = {
         invitationId: invitationRecord.invitationId,
         noOfVisitors: invitationRecord.noOfVisitors,
-        visitInfo: visitInfo is string ? check visitInfo.cloneWithType() : (),
+        visitInfo: visitInfo is json ? check visitInfo.cloneWithType(VisitInfo) : (),
         active: invitationRecord.active,
         createdBy: invitationRecord.createdBy,
         createdOn: invitationRecord.createdOn,
@@ -98,10 +98,10 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
 #
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
-# + inviationId - Invitation ID associated with the visit
+# + invitationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
-public isolated function addVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
-    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
+public isolated function addVisit(AddVisitPayload payload, string createdBy, int? invitationId = ()) returns error? {
+    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, invitationId));
 }
 
 # Fetch visit by ID.
@@ -134,13 +134,13 @@ public isolated function fetchVisit(int visitId) returns VisitRecord|error {
 #
 # + 'limit - Limit number of visits to fetch
 # + offset - Offset for pagination
-# + invitation_id - Filter by invitation ID
+# + invitationId - Filter by invitation ID
 # + status - Filter by visit status
 # + return - Array of visits objects or error
-public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ())
+public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitationId = ())
     returns VisitsResponse|error {
 
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery('limit, offset, invitation_id, status));
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery('limit, offset, invitationId, status));
 
     int totalCount = 0;
     Visit[] visits = [];

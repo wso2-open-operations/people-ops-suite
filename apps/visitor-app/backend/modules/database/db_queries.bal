@@ -168,7 +168,9 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
 # + status - Filter by visit status
 # + visitId - Filter by visit ID
 # + return - sql:ParameterizedQuery - Select query for visits based on the provided filters and pagination
-isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (), int? visitId = ()) returns sql:ParameterizedQuery {
+isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (),
+        int? visitId = ()) returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
         SELECT 
             v.visit_id as id,
