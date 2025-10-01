@@ -105,18 +105,18 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
 # + return - sql:ParameterizedQuery - Select query for the invitation based on the encoded value
 isolated function fetchInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
-            vi.invitation_id     AS invitationId,
-            vi.is_active         AS isActive,
-            vi.no_of_visitors AS noOfVisitors,
-            vi.visit_info        AS visitDetails,
-            vi.created_by      AS invitedBy,
-            vi.created_by     AS createdBy,
-            vi.created_on     AS createdOn,
-            vi.updated_by     AS updatedBy,
-            vi.updated_on     AS updatedOn
-        FROM visit_invitation vi
-        WHERE vi.encode_value = ${encodeValue}
-        AND vi.is_active = 1;
+            invitation_id AS invitationId,
+            is_active AS active,
+            no_of_visitors AS noOfVisitors,
+            visit_info AS visitInfo,
+            created_by AS createdBy,
+            created_on AS createdOn,
+            updated_by AS updatedBy,
+            updated_on AS updatedOn
+        FROM 
+            visit_invitation
+        WHERE 
+            encode_value = ${encodeValue};
     `;
 
 # Build query to persist a visit.

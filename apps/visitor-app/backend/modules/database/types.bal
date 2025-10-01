@@ -184,7 +184,47 @@ public type VisitsResponse record {|
     Visit[] visits;
 |};
 
-# Visit Invitations.
+# [Database] Insert record for visit invitation.
+public type AddInvitationPayload record {|
+    # invitations count
+    int noOfVisitors;
+    # invitation status
+    boolean isActive;
+    # invitee email
+    string inviteeEmail;
+|};
+
+# [Database] Invitation record.
+public type InvitationRecord record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Validity of the invitation
+    boolean active;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    string? visitInfo = ();
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+|};
+
+# Invitation.
+public type Invitation record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Validity of the invitation
+    boolean active;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    json? visitInfo = ();
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+|};
+
+# Visit Invitations of invitation.
 public type VisitInfo record {|
     # name of company
     string nameOfCompany;
@@ -200,32 +240,6 @@ public type VisitInfo record {|
     string timeOfEntry;
     # time of departure
     string timeOfDeparture;
-|};
-
-# [Database] Insert record for visit invitation.
-public type AddInvitationPayload record {|
-    # invitations count
-    int noOfVisitors;
-    # invitation status
-    boolean isActive;
-    # invitee email
-    string inviteeEmail;
-|};
-
-public type Invitation record {|
-    *AuditFields;
-    # Id of the invitation
-    int invitationId;
-    # Validity of the invitation
-    int isActive;
-    # No of invitations
-    int noOfVisitors;
-    # Visit details in the invitation
-    json visitDetails;
-    # Who invited the visitor
-    AddVisitorPayload[] invitees?;
-    # Invited by
-    string invitedBy;
 |};
 
 # Payload to update visit details.

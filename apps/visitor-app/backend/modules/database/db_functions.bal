@@ -71,13 +71,26 @@ public isolated function addInvitation(AddInvitationPayload payload, string crea
 #
 # + encodeValue - Encoded uuid value
 # + return - Invitation object or error
-public isolated function fetchInvitation(string encodeValue) returns Invitation|error {
-    Invitation|sql:Error invitation = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
-    if invitation is sql:Error {
-        return invitation;
+public isolated function fetchInvitation(string encodeValue) returns Invitation|error? {
+    InvitationRecord|error invitationRecord = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
+    if invitationRecord is error {
+        if invitationRecord is sql:NoRowsError {
+            return;
+        }
+        return invitationRecord;
     }
-    VisitInfo visitInfo = check invitation.visitDetails.cloneWithType();
-    invitation.visitDetails = visitInfo;
+
+    string? visitInfo = invitationRecord.visitInfo;
+    Invitation invitation = {
+        invitationId: invitationRecord.invitationId,
+        noOfVisitors: invitationRecord.noOfVisitors,
+        visitInfo: visitInfo is string ? check visitInfo.cloneWithType() : (),
+        active: invitationRecord.active,
+        createdBy: invitationRecord.createdBy,
+        createdOn: invitationRecord.createdOn,
+        updatedBy: invitationRecord.updatedBy,
+        updatedOn: invitationRecord.updatedOn
+    };
     return invitation;
 }
 

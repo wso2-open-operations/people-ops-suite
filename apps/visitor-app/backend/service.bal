@@ -339,12 +339,20 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + encodeValue - Encoded value from the invitation link
     # + return - Invitation details or error
-    resource function post invitations/[string encodeValue]/authorize() returns database:Invitation|http:InternalServerError|http:Unauthorized {
-        database:Invitation|error invitationDetails = database:fetchInvitation(encodeValue);
+    resource function post invitations/[string encodeValue]/authorize()
+    returns database:Invitation|http:InternalServerError|http:Unauthorized|http:BadRequest {
 
-        if invitationDetails is error {
+        database:Invitation|error? invitation = database:fetchInvitation(encodeValue);
+        if invitation is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid invitation link!"
+                }
+            };
+        }
+        if invitation is error {
             string errMsg = "Error when checking invitation details";
-            log:printError(errMsg, invitationDetails);
+            log:printError(errMsg, invitation);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
@@ -352,7 +360,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if invitationDetails.isActive == 0 {
+        if invitation.active == false {
             return <http:Unauthorized>{
                 body: {
                     message: "Invitation is no longer active!"
@@ -360,7 +368,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitationDetails.invitationId);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
         if visitsResponse is error {
             string errMsg = "Error occurred while fetching visits!";
             log:printError(errMsg, visitsResponse);
@@ -380,8 +388,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 nicNumber: visit.nicNumber
             };
 
-        invitationDetails.invitees = inviteesList;
-        return invitationDetails;
+        invitation.invitees = inviteesList;
+        return invitation;
     };
 
     # Fill an invitation by adding a visitor and a visit.
@@ -390,13 +398,19 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post invitations/[string encodeValue]/fill(database:AddVisitorPayload payload)
-        returns http:Created|http:BadRequest|http:InternalServerError|error? {
+        returns http:Created|http:BadRequest|http:InternalServerError {
 
-        database:Invitation|error invitationDetails = database:fetchInvitation(encodeValue);
-
-        if invitationDetails is error {
+        database:Invitation|error? invitation = database:fetchInvitation(encodeValue);
+        if invitation is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid invitation link!"
+                }
+            };
+        }
+        if invitation is error {
             string errMsg = "Error when checking invitation details";
-            log:printError(errMsg, invitationDetails);
+            log:printError(errMsg, invitation);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
@@ -404,7 +418,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitationDetails.invitationId);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
 
         if visitsResponse is error {
             string errMsg = "Error occurred while fetching visits!";
@@ -417,7 +431,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int registeredCount = visitsResponse.totalCount;
-        int totalInvitesCount = invitationDetails.noOfVisitors;
+        int totalInvitesCount = invitation.noOfVisitors;
 
         if registeredCount >= totalInvitesCount {
             return <http:BadRequest>{
@@ -427,7 +441,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? visitorError = database:addVisitor(payload, invitationDetails.invitedBy);
+        error? visitorError = database:addVisitor(payload, invitation.createdBy);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
             log:printError(customError, visitorError);
@@ -458,28 +472,28 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        database:VisitInfo visitInfo = check invitationDetails.visitDetails.cloneWithType();
+        // database:VisitInfo visitInfo = check invitation.visitDetails.cloneWithType();
 
-        error? visitError = database:addVisit({
-                                                  nicHash: payload.nicHash,
-                                                  companyName: visitInfo.nameOfCompany,
-                                                  whomTheyMeet: visitInfo.whomTheyMeet,
-                                                  purposeOfVisit: visitInfo.purposeOfVisit,
-                                                  accessibleLocations: visitInfo.accessibleLocations,
-                                                  timeOfEntry: visitInfo.timeOfEntry,
-                                                  timeOfDeparture: visitInfo.timeOfDeparture,
-                                                  status: database:REQUEST
+        // error? visitError = database:addVisit({
+        //                                           nicHash: payload.nicHash,
+        //                                           companyName: visitInfo.nameOfCompany,
+        //                                           whomTheyMeet: visitInfo.whomTheyMeet,
+        //                                           purposeOfVisit: visitInfo.purposeOfVisit,
+        //                                           accessibleLocations: visitInfo.accessibleLocations,
+        //                                           timeOfEntry: visitInfo.timeOfEntry,
+        //                                           timeOfDeparture: visitInfo.timeOfDeparture,
+        //                                           status: database:REQUEST
 
-                                              }, invitationDetails.invitedBy, invitationDetails.invitationId);
-        if visitError is error {
-            string customError = "Error occurred while adding visit!";
-            log:printError(customError, visitError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
+        //                                       }, invitation.invitedBy, invitation.invitationId);
+        // if visitError is error {
+        //     string customError = "Error occurred while adding visit!";
+        //     log:printError(customError, visitError);
+        //     return <http:InternalServerError>{
+        //         body: {
+        //             message: customError
+        //         }
+        //     };
+        // }
         return <http:Created>{
             body: {
                 message: "Visit added successfully!"
