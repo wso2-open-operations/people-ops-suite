@@ -283,7 +283,7 @@ public type Recruit record {|
     string office;
     # Type of employment 
     string employmentType;
-    # Job role of the recruit
+    # Designation id of the recruit
     int designationId;
     # ID of the personal info
     int personalInfoId;

@@ -62,21 +62,3 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
-
-# Joins multiple SQL parameterized queries with a specified separator.
-#
-# + parts - SQL parameterized query array
-# + separator - Separator to separate sql queries
-# + return - SQL parameterized query
-isolated function joinQuery(sql:ParameterizedQuery[] parts, sql:ParameterizedQuery separator)
-    returns sql:ParameterizedQuery {
-
-    if parts.length() == 0 {
-        return ``;
-    }
-    sql:ParameterizedQuery result = parts[0];
-    foreach int i in 1 ..< parts.length() {
-        result = sql:queryConcat(result, separator, parts[i]);
-    }
-    return result;
-}
