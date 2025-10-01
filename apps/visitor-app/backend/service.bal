@@ -306,11 +306,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         );
 
         if content is error {
-            string errMsg = "Error with email template!";
-            log:printError(errMsg, content);
+            string customError = "Error with email template!";
+            log:printError(customError, content);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: customError
                 }
             };
         }
@@ -324,8 +324,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                             });
 
         if emailError is error {
-            string errMsg = "Error occurred while sending the email!";
-            log:printError(errMsg, emailError);
+            string customError = "Error occurred while sending the email!";
+            log:printError(customError, emailError);
         }
 
         return <http:Created>{
@@ -351,11 +351,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if invitation is error {
-            string errMsg = "Error when checking invitation details";
-            log:printError(errMsg, invitation);
+            string customError = "Error when checking invitation details";
+            log:printError(customError, invitation);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: customError
                 }
             };
         }
@@ -370,11 +370,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
         if visitsResponse is error {
-            string errMsg = "Error occurred while fetching visits!";
-            log:printError(errMsg, visitsResponse);
+            string customError = "Error occurred while fetching visits!";
+            log:printError(customError, visitsResponse);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: customError
                 }
             };
         }
@@ -409,11 +409,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if invitation is error {
-            string errMsg = "Error when checking invitation details";
-            log:printError(errMsg, invitation);
+            string customError = "Error when checking invitation details";
+            log:printError(customError, invitation);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: customError
                 }
             };
         }
@@ -421,11 +421,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:VisitsResponse|error visitsResponse = database:fetchVisits(invitation_id = invitation.invitationId);
 
         if visitsResponse is error {
-            string errMsg = "Error occurred while fetching visits!";
-            log:printError(errMsg, visitsResponse);
+            string customError = "Error occurred while fetching visits!";
+            log:printError(customError, visitsResponse);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: customError
                 }
             };
         }
@@ -563,19 +563,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
 
             if accessibleLocations is error {
-                string errMsg = "Error with parsing accessible locations";
-                log:printError(errMsg, accessibleLocations);
+                string customError = "Error with parsing accessible locations";
+                log:printError(customError, accessibleLocations);
                 return <http:InternalServerError>{
                     body: {
-                        message: errMsg
+                        message: customError
                     }
                 };
             }
 
             string|error formattedString = email:organizeLocations(accessibleLocations);
             if formattedString is error {
-                string errMsg = "Error with formatting accessible locations";
-                log:printError(errMsg, formattedString);
+                string customError = "Error with formatting accessible locations";
+                log:printError(customError, formattedString);
             }
 
             if formattedString is string {
@@ -605,8 +605,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 cc: [email:receptionEmail]
                             });
                     if emailError is error {
-                        string errMsg = "Failed to send the visitor registration email!";
-                        log:printError(errMsg, emailError);
+                        string customError = "Failed to send the visitor registration email!";
+                        log:printError(customError, emailError);
                     }
                 }
             }
@@ -644,19 +644,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
 
             if accessibleLocations is error {
-                string errMsg = "Error with parsing accessible locations";
-                log:printError(errMsg, accessibleLocations);
+                string customError = "Error with parsing accessible locations";
+                log:printError(customError, accessibleLocations);
                 return <http:InternalServerError>{
                     body: {
-                        message: errMsg
+                        message: customError
                     }
                 };
             }
 
             string|error formattedString = email:organizeLocations(accessibleLocations);
             if formattedString is error {
-                string errMsg = "Error with formatting accessible locations";
-                log:printError(errMsg, formattedString);
+                string customError = "Error with formatting accessible locations";
+                log:printError(customError, formattedString);
             }
 
             if formattedString is string {
@@ -686,8 +686,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 cc: [email:receptionEmail]
                             });
                     if emailError is error {
-                        string errMsg = "Failed to send the visitor registration email!";
-                        log:printError(errMsg, emailError);
+                        string customError = "Failed to send the visitor registration email!";
+                        log:printError(customError, emailError);
                     }
                 }
             }
@@ -717,19 +717,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
 
             if accessibleLocations is error {
-                string errMsg = "Error with parsing accessible locations";
-                log:printError(errMsg, accessibleLocations);
+                string customError = "Error with parsing accessible locations";
+                log:printError(customError, accessibleLocations);
                 return <http:InternalServerError>{
                     body: {
-                        message: errMsg
+                        message: customError
                     }
                 };
             }
 
             string|error formattedString = email:organizeLocations(accessibleLocations);
             if formattedString is error {
-                string errMsg = "Error with formatting accessible locations";
-                log:printError(errMsg, formattedString);
+                string customError = "Error with formatting accessible locations";
+                log:printError(customError, formattedString);
             }
 
             if formattedString is string {
@@ -759,8 +759,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 cc: [email:receptionEmail]
                             });
                     if emailError is error {
-                        string errMsg = "Failed to send the visitor registration email!";
-                        log:printError(errMsg, emailError);
+                        string customError = "Failed to send the visitor registration email!";
+                        log:printError(customError, emailError);
                     }
                 }
             }
