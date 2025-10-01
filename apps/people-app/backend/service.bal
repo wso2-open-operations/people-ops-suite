@@ -199,9 +199,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch a specific recruit.
     #
-    # + recruitId - ID of the recruit to fetch
+    # + id - ID of the recruit to fetch
     # + return - Recruit | NotFound | InternalServerError
-    resource function get recruits/[int recruitId](http:RequestContext ctx)
+    resource function get recruits/[int id](http:RequestContext ctx)
         returns database:Recruit|http:Forbidden|http:InternalServerError|http:NotFound {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -222,8 +222,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // Fetch recruit from the database
-        database:Recruit|error? recruit = database:fetchRecruitById(recruitId);
+    
+        database:Recruit|error? recruit = database:fetchRecruitById(id);
 
         if recruit is error {
             string customError = "Error occurred while fetching recruit";
@@ -269,22 +269,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // Fetch recruits from the database
-        database:Recruit[]|error? recruits = database:fetchRecruits();
+
+        database:Recruit[]|error recruits = database:fetchRecruits();
 
         if recruits is error {
             string customError = "Error occurred while fetching recruits";
             log:printError(customError, recruits);
             return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        if recruits is () {
-            string customError = "Recruits Not Found";
-            log:printError(customError);
-            return <http:NotFound>{
                 body: {
                     message: customError
                 }
