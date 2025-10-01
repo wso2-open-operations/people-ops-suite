@@ -15,6 +15,21 @@
 // under the License. 
 import ballerina/sql;
 
+# Fetch employee basic information.
+#
+# + email - Employee's work email address
+# + return - Query to get employee basic information
+isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
+    ` SELECT 
+            e.id,
+            e.first_name,
+            e.last_name,
+            e.wso2_email,
+            e.employee_thumbnail,
+            e.job_role
+        FROM employee e
+        WHERE e.wso2_email = ${email} LIMIT 1;`;
+
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles
@@ -127,4 +142,3 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 
     return sql:queryConcat(mainQuery, subQuery);
 }
-

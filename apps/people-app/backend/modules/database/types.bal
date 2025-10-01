@@ -34,6 +34,35 @@ type DatabaseConfig record {|
     sql:ConnectionPool connectionPool?;
 |};
 
+# Employee basic information.
+public type EmployeeBasicInfo record {|
+    # Employee ID of the user
+    @sql:Column {name: "id"}
+    string employeeId;
+    # First name of the user
+    @sql:Column {name: "first_name"}
+    string firstName;
+    # Last name of the user
+    @sql:Column {name: "last_name"}
+    string lastName;
+    # Work email of the user
+    @sql:Column {name: "wso2_email"}
+    string workEmail;
+    # Thumbnail URL of the user
+    @sql:Column {name: "employee_thumbnail"}
+    string employeeThumbnail;
+    # Job role of the user
+    @sql:Column {name: "job_role"}
+    string jobRole;
+|};
+
+# User information with privileges.
+public type UserInfo record {|
+    *EmployeeBasicInfo;
+    # Privileges assigned to the user
+    int[] privileges = [];
+|};
+
 # [Database] Insert type for vehicle.
 public type AddVehiclePayload record {|
     # Owner of the vehicle

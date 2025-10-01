@@ -22,8 +22,8 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
-  TEAM = "TEAM",
+  EMPLOYEE = "EMPLOYEE",
+  ADMIN = "ADMIN"
 }
 
 interface AuthState {
@@ -86,13 +86,10 @@ export const loadPrivileges = createAsyncThunk(
       return rejectWithValue(errorMessage);
     }
     const userPrivileges = userInfo?.privileges || [];
-    const roles: Role[] = [];
+    const roles: Role[] = [Role.EMPLOYEE];
 
     if (userPrivileges.includes(762)) {
       roles.push(Role.ADMIN);
-    }
-    if (userPrivileges.includes(987)) {
-      roles.push(Role.TEAM);
     }
 
     if (roles.length === 0) {
