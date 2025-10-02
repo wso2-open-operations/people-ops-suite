@@ -277,3 +277,37 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+# Build query to update a invitation.
+#
+# + invitationId - ID of the invitation to update
+# + payload - Payload containing the invitation update details
+# + updatedBy - Person who is updating the invitation
+# + return - sql:ParameterizedQuery - Update query for the invitation
+isolated function updateInvitationQuery(int invitationId, UpdateInvitationPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+        UPDATE visit_invitation
+        SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+        WHERE invitation_id = ${invitationId}
+    `;
+
+    // Setting the filters based on the visit status and inputs.
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.visitInfo is VisitInfo {
+        filters.push(`visit_info = ${payload.visitInfo.toJsonString()}`);
+    }
+
+    if payload.active is boolean {
+        filters.push(`is_active = ${payload.active}`);
+    }
+
+    filters.push(`updated_by = ${updatedBy}`);
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+    return sql:queryConcat(mainQuery, subQuery);
+}

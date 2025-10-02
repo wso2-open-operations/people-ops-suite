@@ -231,13 +231,13 @@ public type Invitation record {|
 # Visit Invitations of invitation.
 public type VisitInfo record {|
     # Name of company
-    string companyName;
+    string? companyName = ();
     # Person they meet
     string whomTheyMeet;
     # Purpose of visit
     string purposeOfVisit;
     # Accessible locations
-    Floor[] accessibleLocations;
+    Floor[]? accessibleLocations = ();
     # Time of entry
     string timeOfEntry;
     # Time of departure
@@ -258,4 +258,6 @@ public type UpdateVisitPayload record {|
 public type UpdateInvitationPayload record {|
     # Visit details in the invitation
     VisitInfo? visitInfo = ();
+    # Validity of the invitation
+    boolean? active = ();
 |};
