@@ -127,7 +127,7 @@ public isolated function addVisit(AddVisitPayload payload, string createdBy, int
 # + visitId - ID of the visit to fetch
 # + return - Visit object or error
 public isolated function fetchVisit(int visitId) returns VisitRecord|error {
-    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId));
+    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId = visitId));
 
     if visitRecord is error {
         return visitRecord;

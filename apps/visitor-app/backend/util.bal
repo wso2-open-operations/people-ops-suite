@@ -18,8 +18,8 @@ import visitor.database;
 # Converts the json array of accessible locations to a readable string.
 #
 # + accessibleLocations - Json string array containing floors and rooms
-# + return - Formatted string or error
-public isolated function organizeLocations(database:Floor[] accessibleLocations) returns string|error {
+# + return - Formatted string
+public isolated function organizeLocations(database:Floor[] accessibleLocations) returns string {
     string formattedString = "";
     foreach var location in accessibleLocations {
         string floor = location.floor.toJsonString();

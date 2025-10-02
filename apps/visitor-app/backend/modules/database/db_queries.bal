@@ -210,7 +210,6 @@ isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invi
 
     // Setting the filters based on the inputs.
     sql:ParameterizedQuery[] filters = [];
-
     if invitationId is int {
         filters.push(` v.invitation_id = ${invitationId}`);
     }

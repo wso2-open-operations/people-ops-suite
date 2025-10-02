@@ -306,7 +306,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         );
 
         if content is error {
-            string customError = "Error with email template!";
+            string customError = "An error occurred while binding values to the email template!";
             log:printError(customError, content);
             return <http:InternalServerError>{
                 body: {
@@ -612,12 +612,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string|error accessibleLocationString = organizeLocations(accessibleLocations);
-            if accessibleLocationString is error {
-                string customError = "Error with formatting accessible locations";
-                log:printError(customError, accessibleLocationString);
-            }
-
+            string accessibleLocationString = organizeLocations(accessibleLocations);
             if accessibleLocationString is string {
                 string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
                         {
@@ -632,7 +627,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             "CONTACT_EMAIL": email:contactUsEmail
                         });
                 if content is error {
-                    string customError = "Error with email template!";
+                    string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
                 }
                 if content is string {
@@ -645,7 +640,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 cc: [email:receptionEmail]
                             });
                     if emailError is error {
-                        string customError = "Failed to send the visitor registration email!";
+                        string customError = "An error occurred while sending the approval email!";
                         log:printError(customError, emailError);
                     }
                 }
@@ -681,7 +676,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                             }, invokerInfo.email);
 
             if response is error {
-                string customError = "Error occurred while updating visits!";
+                string customError = "Error occurred while rejecting the visits!";
                 log:printError(customError, response);
                 return <http:InternalServerError>{
                     body: {
@@ -701,7 +696,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         "CONTACT_EMAIL": email:contactUsEmail
                     });
             if content is error {
-                string customError = "Error with email template!";
+                string customError = "An error occurred while binding values to the email template!";
                 log:printError(customError, content);
             }
             if content is string {
@@ -714,7 +709,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             cc: [email:receptionEmail]
                         });
                 if emailError is error {
-                    string customError = "Failed to send the visitor registration email!";
+                    string customError = "An error occurred while sending the rejection email!";
                     log:printError(customError, emailError);
                 }
             }
@@ -731,13 +726,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             if visit.status != database:APPROVED {
                 return <http:BadRequest>{
                     body: {
-                        message: "Only accepted visits can be completed!"
+                        message: "The visit is not in the completable state!"
                     }
                 };
             }
-            error? response = database:updateVisit(visitId, {status: database:COMPLETED, passNumber: payload.passNumber}, invokerInfo.email);
+            error? response = database:updateVisit(visitId, {status: database:COMPLETED}, invokerInfo.email);
             if response is error {
-                string customError = "Error occurred while updating visits!";
+                string customError = "Error occurred while completing the visits!";
                 log:printError(customError, response);
                 return <http:InternalServerError>{
                     body: {
@@ -758,46 +753,44 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string|error formattedString = organizeLocations(accessibleLocations);
-            if formattedString is error {
-                string customError = "Error with formatting accessible locations";
-                log:printError(customError, formattedString);
+            string accessibleLocationString = organizeLocations(accessibleLocations);
+            string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
+                    {
+                        "TIME": time:utcToEmailString(time:utcNow()),
+                        "EMAIL": visit.email,
+                        "NAME": visit.name,
+                        "SCHEDULED_DATE": visit.timeOfEntry,
+                        "ALLOWED_FLOORS": accessibleLocationString,
+                        "START_TIME": visit.timeOfEntry,
+                        "END_TIME": visit.timeOfDeparture,
+                        "PASS_NUMBER": <string>visit.passNumber,
+                        "CONTACT_EMAIL": email:contactUsEmail
+                    });
+            if content is error {
+                string customError = "An error occurred while binding values to the email template!";
+                log:printError(customError, content);
             }
-
-            if formattedString is string {
-                string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
+            if content is string {
+                error? emailError = email:sendEmail(
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visit.email,
-                            "NAME": visit.name,
-                            "SCHEDULED_DATE": visit.timeOfEntry,
-                            "ALLOWED_FLOORS": formattedString,
-                            "START_TIME": visit.timeOfEntry,
-                            "END_TIME": visit.timeOfDeparture,
-                            "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactUsEmail
+                            to: [visit.email],
+                            'from: email:fromEmailAddress,
+                            subject: email:emailSubject,
+                            template: content,
+                            cc: [email:receptionEmail]
                         });
-                if content is error {
-                    string customError = "Error with email template!";
-                    log:printError(customError, content);
-                }
-                if content is string {
-                    error? emailError = email:sendEmail(
-                                {
-                                to: [visit.email],
-                                'from: email:fromEmailAddress,
-                                subject: email:emailSubject,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
-                    if emailError is error {
-                        string customError = "Failed to send the visitor registration email!";
-                        log:printError(customError, emailError);
-                    }
+
+                if emailError is error {
+                    string customError = "An error occurred while sending the completion email!";
+                    log:printError(customError, emailError);
                 }
             }
 
-            return http:OK;
+            return <http:Ok>{
+                body: {
+                    message: "Visit completed successfully!"
+                }
+            };
         }
     }
 }
