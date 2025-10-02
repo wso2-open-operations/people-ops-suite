@@ -206,7 +206,7 @@ public type InvitationRecord record {|
     # No of invitations
     int noOfVisitors;
     # Visit details in the invitation
-    json? visitInfo = ();
+    string? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
 |};
@@ -252,4 +252,10 @@ public type UpdateVisitPayload record {|
     Status status?;
     # Reason for rejecting the visit
     string rejectionReason?;
+|};
+
+# Payload to update Invitation details.
+public type UpdateInvitationPayload record {|
+    # Visit details in the invitation
+    VisitInfo? visitInfo = ();
 |};

@@ -80,12 +80,12 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
         return invitationRecord;
     }
 
-    json? visitInfo = invitationRecord.visitInfo;
+    string? visitInfo = invitationRecord.visitInfo;
     Invitation invitation = {
         invitationId: invitationRecord.invitationId,
         inviteeEmail: invitationRecord.inviteeEmail,
         noOfVisitors: invitationRecord.noOfVisitors,
-        visitInfo: visitInfo is json ? check visitInfo.cloneWithType(VisitInfo) : (),
+        visitInfo: visitInfo is string ? check visitInfo.fromJsonStringWithType() : (),
         active: invitationRecord.active,
         createdBy: invitationRecord.createdBy,
         createdOn: invitationRecord.createdOn,
@@ -94,6 +94,19 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
     };
     return invitation;
 }
+
+// # Update invitation details.
+// #
+// # + invitationId - ID of the invitation to update
+// # + payload - Payload containing the fields to update  
+// # + updatedBy - Person who is updating the invitation
+// # + return - Error if the update failed or no rows were affected
+// public isolated function updateInvitation(int invitationId, UpdateInvitationPayload payload, string updatedBy) returns error? {
+//     sql:ExecutionResult executionResult = check databaseClient->execute(updateInvitationQuery(invitationId, payload, updatedBy));
+//     if executionResult.affectedRowCount < 1 {
+//         return error("No row was updated!");
+//     }
+// }
 
 # Add new visit.
 #
