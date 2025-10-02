@@ -15,6 +15,15 @@
 // under the License. 
 import ballerina/sql;
 
+# Fetch employee basic information.
+#
+# + email - Employee's work email address
+# + return - Employee basic information
+public isolated function fetchEmployeeBasicInfo(string email) returns EmployeeBasicInfo|error? {
+    EmployeeBasicInfo|error employee = databaseClient->queryRow(getEmployeeBasicInfoQuery(email));
+    return employee is sql:NoRowsError ? () : employee;
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  

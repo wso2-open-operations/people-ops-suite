@@ -53,21 +53,21 @@ export const routes: RouteObjectWithRole[] = [
     text: "Home",
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.ADMIN],
   },
   {
     path: "/profile",
     text: "Profile",
     icon: React.createElement(PersonIcon),
     element: React.createElement(View.profile),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.ADMIN],
     children: [
       {
         path: "/profile/user",
         text: "User",
         icon: React.createElement(AccountCircleIcon),
         element: React.createElement(View.userProfile),
-        allowRoles: [Role.ADMIN, Role.TEAM],
+        allowRoles: [Role.ADMIN],
       },
       {
         path: "/profile/company",
@@ -83,14 +83,14 @@ export const routes: RouteObjectWithRole[] = [
     text: "Settings",
     icon: React.createElement(SettingsIcon),
     element: React.createElement(View.settings),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.ADMIN],
     children: [
       {
         path: "/settings/user",
         text: "User",
         icon: React.createElement(AccountCircleIcon),
         element: React.createElement(View.userSettings),
-        allowRoles: [Role.ADMIN, Role.TEAM],
+        allowRoles: [Role.ADMIN],
       },
       {
         path: "/settings/company",
