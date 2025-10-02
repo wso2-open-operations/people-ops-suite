@@ -20,15 +20,15 @@ import ballerina/sql;
 # + email - Employee's work email address
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
-    ` SELECT 
-            e.id,
-            e.first_name,
-            e.last_name,
-            e.wso2_email,
-            e.employee_thumbnail,
-            e.job_role
-        FROM employee e
-        WHERE e.wso2_email = ${email} LIMIT 1;`;
+    `SELECT 
+        id,
+        first_name,
+        last_name,
+        wso2_email,
+        employee_thumbnail,
+        job_role
+    FROM employee e
+    WHERE e.wso2_email = ${email};`;
 
 # Build query to fetch vehicles.
 #
