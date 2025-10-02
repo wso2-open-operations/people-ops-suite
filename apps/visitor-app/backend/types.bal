@@ -80,7 +80,9 @@ public type ActionPayload record {|
     # Reason for rejecting the visit
     string? rejectionReason = ();
     # Status of the visit
-    int? passNumber = ();
+    string? passNumber = ();
+    # The floors and rooms that the visitor can access
+    database:Floor[]? accessibleLocations = ();
 |};
 
 # Payload for adding a new visit invitation.

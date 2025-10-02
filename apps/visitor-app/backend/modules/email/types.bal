@@ -68,11 +68,3 @@ public type EmailPayload record {|
     # BCC'd recipient email(s)
     string[] bcc?;
 |};
-
-# Object to store floor and relevant rooms.
-public type Floor record {|
-    # Floor that can be accessed by visitor
-    string floor;
-    # Rooms that can be accessed by visitor
-    string[] rooms;
-|};

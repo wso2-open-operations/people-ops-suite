@@ -213,7 +213,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
-        error? visitError = database:addVisit({...payload, status: database:APPROVE}, invokerInfo.email);
+        error? visitError = database:addVisit({...payload, status: database:APPROVED}, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -505,7 +505,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 {
                     ...newVisitInfo,
                     nicHash: payload.nicHash,
-                    status: database:REQUEST
+                    status: database:REQUESTED
                 }, invitation.inviteeEmail, invitation.invitationId);
 
         if visitError is error {
@@ -569,16 +569,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Approve a visit.
         if action == APPROVE {
-            if visit.status != database:REQUEST {
+            if visit.status != database:REQUESTED {
                 return <http:BadRequest>{
                     body: {
-                        message: "Only pending visits can be approved!"
+                        message: "The visit is not in the approvable state!"
                     }
                 };
             }
 
-            int? passNumber = payload.passNumber;
+            string? passNumber = payload.passNumber;
+            database:Floor[]? accessibleLocations = payload.accessibleLocations;
             if passNumber is () {
                 return <http:BadRequest>{
                     body: {
@@ -586,10 +588,22 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
+                return <http:BadRequest>{
+                    body: {
+                        message: "At least one accessible location is required when approving a visit!"
+                    }
+                };
+            }
 
-            error? response = database:updateVisit(visitId, {status: database:APPROVE, passNumber: payload.passNumber}, invokerInfo.email);
+            error? response = database:updateVisit(visitId, {
+                                                                status: database:APPROVED,
+                                                                passNumber: payload.passNumber,
+                                                                accessibleLocations: accessibleLocations
+                                                            }, invokerInfo.email);
+
             if response is error {
-                string customError = "Error occurred while updating visits!";
+                string customError = "Error occurred while approving the visit!";
                 log:printError(customError, response);
                 return <http:InternalServerError>{
                     body: {
@@ -598,32 +612,20 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
-
-            if accessibleLocations is error {
-                string customError = "Error with parsing accessible locations";
-                log:printError(customError, accessibleLocations);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-
-            string|error formattedString = email:organizeLocations(accessibleLocations);
-            if formattedString is error {
+            string|error accessibleLocationString = organizeLocations(accessibleLocations);
+            if accessibleLocationString is error {
                 string customError = "Error with formatting accessible locations";
-                log:printError(customError, formattedString);
+                log:printError(customError, accessibleLocationString);
             }
 
-            if formattedString is string {
+            if accessibleLocationString is string {
                 string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
                         {
                             "TIME": time:utcToEmailString(time:utcNow()),
                             "EMAIL": visit.email,
                             "NAME": visit.name,
                             "SCHEDULED_DATE": visit.timeOfEntry,
-                            "ALLOWED_FLOORS": formattedString,
+                            "ALLOWED_FLOORS": accessibleLocationString,
                             "START_TIME": visit.timeOfEntry,
                             "END_TIME": visit.timeOfDeparture,
                             "PASS_NUMBER": passNumber.toString(),
@@ -649,10 +651,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
-            return http:OK;
+            return <http:Ok>{
+                body: {
+                    message: "Visit approved successfully!"
+                }
+            };
 
         }
 
+        // Reject a visit.
         if action == REJECT {
             if payload.rejectionReason is () || payload.rejectionReason == "" {
                 return <http:BadRequest>{
@@ -661,14 +668,18 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if visit.status != database:REQUEST {
+            if visit.status != database:REQUESTED {
                 return <http:BadRequest>{
                     body: {
-                        message: "Only pending visits can be rejected!"
+                        message: "The visit is not in the rejectable state!"
                     }
                 };
             }
-            error? response = database:updateVisit(visitId, {status: database:REJECT, passNumber: payload.passNumber, rejectionReason: payload.rejectionReason}, invokerInfo.email);
+            error? response = database:updateVisit(visitId, {
+                                                                status: database:REJECTED,
+                                                                rejectionReason: payload.rejectionReason
+                                                            }, invokerInfo.email);
+
             if response is error {
                 string customError = "Error occurred while updating visits!";
                 log:printError(customError, response);
@@ -679,69 +690,52 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
-
-            if accessibleLocations is error {
-                string customError = "Error with parsing accessible locations";
-                log:printError(customError, accessibleLocations);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
+            string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
+                    {
+                        "TIME": time:utcToEmailString(time:utcNow()),
+                        "EMAIL": visit.email,
+                        "NAME": visit.name,
+                        "SCHEDULED_DATE": visit.timeOfEntry,
+                        "START_TIME": visit.timeOfEntry,
+                        "END_TIME": visit.timeOfDeparture,
+                        "CONTACT_EMAIL": email:contactUsEmail
+                    });
+            if content is error {
+                string customError = "Error with email template!";
+                log:printError(customError, content);
             }
-
-            string|error formattedString = email:organizeLocations(accessibleLocations);
-            if formattedString is error {
-                string customError = "Error with formatting accessible locations";
-                log:printError(customError, formattedString);
-            }
-
-            if formattedString is string {
-                string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
-                        {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visit.email,
-                            "NAME": visit.name,
-                            "SCHEDULED_DATE": visit.timeOfEntry,
-                            "ALLOWED_FLOORS": formattedString,
-                            "START_TIME": visit.timeOfEntry,
-                            "END_TIME": visit.timeOfDeparture,
-                            "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactUsEmail
-                        });
-                if content is error {
-                    string customError = "Error with email template!";
-                    log:printError(customError, content);
-                }
-                if content is string {
-                    error? emailError = email:sendEmail(
+            if content is string {
+                error? emailError = email:sendEmail(
                                 {
-                                to: [visit.email],
-                                'from: email:fromEmailAddress,
-                                subject: email:emailSubject,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
-                    if emailError is error {
-                        string customError = "Failed to send the visitor registration email!";
-                        log:printError(customError, emailError);
-                    }
+                            to: [visit.email],
+                            'from: email:fromEmailAddress,
+                            subject: email:emailSubject,
+                            template: content,
+                            cc: [email:receptionEmail]
+                        });
+                if emailError is error {
+                    string customError = "Failed to send the visitor registration email!";
+                    log:printError(customError, emailError);
                 }
             }
 
-            return http:OK;
+            return <http:Ok>{
+                body: {
+                    message: "Visit rejected successfully!"
+                }
+            };
         }
 
+        // Complete a visit.
         if action == COMPLETE {
-            if visit.status != database:APPROVE {
+            if visit.status != database:APPROVED {
                 return <http:BadRequest>{
                     body: {
                         message: "Only accepted visits can be completed!"
                     }
                 };
             }
-            error? response = database:updateVisit(visitId, {status: database:COMPLETE, passNumber: payload.passNumber}, invokerInfo.email);
+            error? response = database:updateVisit(visitId, {status: database:COMPLETED, passNumber: payload.passNumber}, invokerInfo.email);
             if response is error {
                 string customError = "Error occurred while updating visits!";
                 log:printError(customError, response);
@@ -752,7 +746,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            email:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
+            database:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
 
             if accessibleLocations is error {
                 string customError = "Error with parsing accessible locations";
@@ -764,7 +758,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string|error formattedString = email:organizeLocations(accessibleLocations);
+            string|error formattedString = organizeLocations(accessibleLocations);
             if formattedString is error {
                 string customError = "Error with formatting accessible locations";
                 log:printError(customError, formattedString);

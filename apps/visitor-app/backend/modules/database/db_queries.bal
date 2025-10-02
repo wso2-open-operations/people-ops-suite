@@ -208,25 +208,28 @@ isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invi
             v.invitation_id = vi.invitation_id
     `;
 
-    // Add WHERE clause for invitationId if provided
+    // Setting the filters based on the inputs.
+    sql:ParameterizedQuery[] filters = [];
+
     if invitationId is int {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.invitation_id = ${invitationId}`);
+        filters.push(` v.invitation_id = ${invitationId}`);
     }
 
-    // Add WHERE clause for status if provided
     if status is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.status = ${status}`);
+        filters.push(` v.status = ${status}`);
     }
 
-    // Add WHERE clause for visitId if provided
     if visitId is int {
-        mainQuery = sql:queryConcat(mainQuery, ` AND v.visit_id = ${visitId}`);
+        filters.push(` v.visit_id = ${visitId}`);
     }
 
-    // Sorting the result by time_of_entry in descending order
-    mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
+    // Build main query with the filters.
+    mainQuery = buildSqlSelectQuery(mainQuery, filters);
 
-    // Setting the limit and offset for pagination
+    // Sorting the result by created_on.
+    mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.created_on DESC`);
+
+    // Setting the limit and offset.
     if 'limit is int {
         mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${'limit}`);
         if offset is int {
@@ -258,12 +261,16 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
     // Setting the filters based on the visit status and inputs.
     sql:ParameterizedQuery[] filters = [];
 
-    filters.push(`status = ${payload.status}`);
+    if payload.status is Status {
+        filters.push(`status = ${payload.status}`);
+    }
 
-    filters.push(`updated_by = ${updatedBy}`);
-
-    if payload.passNumber is int {
+    if payload.passNumber is string {
         filters.push(`pass_number = ${payload.passNumber}`);
+    }
+
+    if payload.accessibleLocations is Floor[] {
+        filters.push(`accessible_locations = ${payload.accessibleLocations.toJsonString()}`);
     }
 
     if payload.rejectionReason is string {

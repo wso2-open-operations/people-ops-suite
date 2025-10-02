@@ -15,8 +15,8 @@
 // under the License. 
 # Visitor status.
 public enum Status {
-    REQUEST,
-    APPROVE,
-    REJECT,
-    COMPLETE
+    REQUESTED,
+    APPROVED,
+    REJECTED,
+    COMPLETED
 };

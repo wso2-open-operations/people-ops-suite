@@ -200,7 +200,6 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
 # + return - Error if the update failed or no rows were affected
 public isolated function updateVisit(int visitId, UpdateVisitPayload payload, string updatedBy) returns error? {
     sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
-
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");
     }

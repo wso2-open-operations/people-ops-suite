@@ -247,11 +247,13 @@ public type VisitInfo record {|
 # Payload to update visit details.
 public type UpdateVisitPayload record {|
     # Number in the tag given to visitor
-    int? passNumber;
+    string? passNumber = ();
     # Status of the visit
-    Status status?;
+    Status? status = ();
     # Reason for rejecting the visit
-    string rejectionReason?;
+    string? rejectionReason = ();
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
 |};
 
 # Payload to update Invitation details.
