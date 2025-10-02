@@ -75,17 +75,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customError
                 }
             };
-        } else if employeeBasicInfo is () {
-            log:printWarn("No employee information found for the user: " + userInfo.email);
+        }
+        if employeeBasicInfo is () {
+            log:printWarn(string `No employee information found for the user: ${userInfo.email}`);
             return <http:NotFound>{
                 body: {
                     message: string `No employee information found`
                 }
             };
-        } else {
-            // TODO: Fetch privileges and return along with the basic info
-            return {...employeeBasicInfo, privileges: []};
         }
+        // TODO: Fetch privileges and return along with the basic info
+        return {...employeeBasicInfo, privileges: []};
     }
 
     # Fetch vehicles of a specific employee.
