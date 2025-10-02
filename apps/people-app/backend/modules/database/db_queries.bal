@@ -24,11 +24,11 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         id,
         first_name,
         last_name,
-        wso2_email,
+        work_email,
         employee_thumbnail,
         job_role
     FROM employee
-    WHERE wso2_email = ${email};`;
+    WHERE work_email = ${email};`;
 
 # Build query to fetch vehicles.
 #

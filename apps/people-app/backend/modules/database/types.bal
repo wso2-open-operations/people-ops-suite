@@ -46,11 +46,11 @@ public type EmployeeBasicInfo record {|
     @sql:Column {name: "last_name"}
     string lastName;
     # Work email of the user
-    @sql:Column {name: "wso2_email"}
+    @sql:Column {name: "work_email"}
     string workEmail;
     # Thumbnail URL of the user
     @sql:Column {name: "employee_thumbnail"}
-    string employeeThumbnail;
+    string? employeeThumbnail;
     # Job role of the user
     @sql:Column {name: "job_role"}
     string jobRole;
