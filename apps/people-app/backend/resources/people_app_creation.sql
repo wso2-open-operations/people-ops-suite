@@ -1,3 +1,21 @@
+DROP TABLE IF EXISTS resignation;
+DROP TABLE IF EXISTS vehicle;
+DROP TABLE IF EXISTS employee;
+DROP TABLE IF EXISTS recruit;
+DROP TABLE IF EXISTS business_unit_team_sub_team_unit;
+DROP TABLE IF EXISTS business_unit_team_sub_team;
+DROP TABLE IF EXISTS business_unit_team;
+DROP TABLE IF EXISTS unit;
+DROP TABLE IF EXISTS sub_team;
+DROP TABLE IF EXISTS team;
+DROP TABLE IF EXISTS business_unit;
+DROP TABLE IF EXISTS office;
+DROP TABLE IF EXISTS company;
+DROP TABLE IF EXISTS designation;
+DROP TABLE IF EXISTS career_function;
+DROP TABLE IF EXISTS employment_type;
+DROP TABLE IF EXISTS personal_info;
+
 CREATE TABLE `vehicle` (
   `vehicle_id` int NOT NULL AUTO_INCREMENT,
   `employee_email` varchar(45) NOT NULL,
@@ -9,7 +27,7 @@ CREATE TABLE `vehicle` (
   `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `updated_by` varchar(60) NOT NULL,
   PRIMARY KEY (`vehicle_id`)
-)
+);
 
 CREATE TABLE `business_unit` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -211,7 +229,7 @@ CREATE TABLE `recruit` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `first_name` VARCHAR(255) NOT NULL,
   `last_name` VARCHAR(255) NOT NULL,
-  `wso2_email` VARCHAR(254) NULL,
+  `work_email` VARCHAR(254) NULL,
   `date_of_join` DATE NOT NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
@@ -263,7 +281,7 @@ CREATE TABLE `employee` (
   `epf` VARCHAR(45) NULL,
   `employee_location` VARCHAR(255) NULL,
   `work_location` VARCHAR(100) NULL,
-  `wso2_email` VARCHAR(254) NOT NULL,
+  `work_email` VARCHAR(254) NOT NULL,
   `work_phone_number` VARCHAR(45) NULL,
   `start_date` DATE NULL,
   `job_role` VARCHAR(100) NULL,
