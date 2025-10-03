@@ -79,12 +79,12 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
 # + return - Query to get employee personal information
 isolated function getPersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
+        p.id AS id,
         nic,
         full_name,
         name_with_initials,
-        first_name,
-        last_name,
+        p.first_name AS firstName,
+        p.last_name AS lastName,
         title,
         dob,
         age,
@@ -95,7 +95,9 @@ isolated function getPersonalInfoQuery(string id) returns sql:ParameterizedQuery
         postal_code,
         country,
         nationality
-    FROM personal_info;`;
+    FROM personal_info p
+    INNER JOIN employee e ON p.id = e.personal_info_id
+        WHERE e.id = ${id};`;
 
 # Build query to fetch vehicles.
 #

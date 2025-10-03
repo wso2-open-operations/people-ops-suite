@@ -125,10 +125,8 @@ public type PersonalInfo record {|
     @sql:Column {name: "name_with_initials"}
     string? nameWithInitials;
     # First name
-    @sql:Column {name: "first_name"}
     string? firstName;
     # Last name
-    @sql:Column {name: "last_name"}
     string? lastName;
     # Title (Mr./Ms./Dr./etc.)
     string? title;
