@@ -228,7 +228,7 @@ public type Invitation record {|
     AddVisitorPayload[] invitees?;
 |};
 
-# Visit Invitations of invitation.
+# Visit information of invitation.
 public type VisitInfo record {|
     # Name of company
     string? companyName = ();
