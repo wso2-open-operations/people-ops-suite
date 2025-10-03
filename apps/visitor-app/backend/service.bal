@@ -558,7 +558,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitRecord|error visit = database:fetchVisit(visitId);
+        database:VisitRecord|error? visit = database:fetchVisit(visitId);
+        if visit is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid visit ID!"
+                }
+            };
+        }
         if visit is error {
             string customError = "Error occurred while fetching visit!";
             log:printError(customError, visit);
