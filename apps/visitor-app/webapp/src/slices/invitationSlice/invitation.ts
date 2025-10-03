@@ -14,45 +14,67 @@
 // specific language governing permissions and limitations
 // under the License.
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import axios from "axios";
+
 import { AppConfig } from "@config/config";
 import { APIService } from "@root/src/utils/apiService";
-import axios, { AxiosError, HttpStatusCode } from "axios";
+
 import { enqueueSnackbarMessage } from "../commonSlice/common";
+
 import { State } from "../../types/types";
 
-export interface AccessibleLocation {
+interface Invitee {
+  nicHash: string;
+  name: string;
+  nicNumber: string;
+  contactNumber: string;
+  email: string;
+}
+
+interface InvitationResponse {
+  invitationId: number;
+  inviteeEmail: string;
+  active: boolean;
+  noOfVisitors: number;
+  visitInfo: VisitDetails;
+  invitees: Invitee[];
+  createdBy: string;
+  createdOn: string; // ISO 8601 date-time string
+  updatedBy: string;
+  updatedOn: string; // ISO 8601 date-time string
+}
+
+interface AccessibleLocation {
   floor: string;
   rooms: string[];
 }
 
-export interface VisitDetails {
-  nameOfCompany: string;
-  whomTheyMeet: string;
-  purposeOfVisit: string;
-  accessibleLocations: AccessibleLocation[];
-  sheduledDate: string;
-  timeOfEntry: string;
-  timeOfDeparture: string;
-}
-
-export interface Invitation {
-  updatedBy: string;
-  isActive: number;
-  noOfVisitors: number;
-  visitDetails: VisitDetails;
-  inviteeEmail: string;
-}
-
 interface VisitData {
-  visitors: Array<any>;
+  visitors: Invitee[];
+  visitDetails: VisitDetails;
 }
 
-export interface InvitationState {
+interface InvitationState {
   loading: boolean;
   error: string | null;
   submitState: State;
   fetchState: State;
-  visitInvitation: any | null;
+  visitInvitation: InvitationResponse | null;
+}
+
+interface Invitation {
+  noOfVisitors: number;
+  inviteeEmail: string;
+}
+
+export interface VisitDetails {
+  companyName: string;
+  whomTheyMeet: string;
+  purposeOfVisit: string;
+  accessibleLocations?: AccessibleLocation[] | null;
+  scheduledDate?: string;
+  timeOfEntry: string;
+  timeOfDeparture: string;
 }
 
 const initialState: InvitationState = {
@@ -82,34 +104,34 @@ export const sendInvitation = createAsyncThunk<
         }
       );
 
-      return response.data as Invitation;
-    } catch (err) {
-      const error = err as AxiosError<any>;
-      const errorMessage =
-        error.response?.data?.message ||
-        (error.response?.status === HttpStatusCode.InternalServerError
-          ? error.response?.data?.message
-          : "An error occurred while sending invitation!");
-
       dispatch(
         enqueueSnackbarMessage({
-          message: errorMessage,
+          message: "Invitation sent successfully!",
+          type: "success",
+        })
+      );
+
+      return response.data;
+    } catch (err) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "An error occurred while sending invitation!",
           type: "error",
         })
       );
 
-      return rejectWithValue(errorMessage);
+      return rejectWithValue("An error occurred while sending invitation!");
     }
   }
 );
 
 export const submitVisitAsync = createAsyncThunk<
-  any,
+  VisitData,
   { visitData: VisitData; invitationId: string },
   { rejectValue: string }
 >(
   "invitation/submitVisit",
-  async ({ visitData, invitationId }, { rejectWithValue }) => {
+  async ({ visitData, invitationId }, { dispatch, rejectWithValue }) => {
     try {
       const response = await fetch(
         `${AppConfig.serviceUrls.invitations}/${invitationId}/fill`,
@@ -118,7 +140,10 @@ export const submitVisitAsync = createAsyncThunk<
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(visitData.visitors[0]),
+          body: JSON.stringify({
+            ...visitData.visitors[0],
+            ...visitData.visitDetails,
+          }),
         }
       );
 
@@ -127,15 +152,27 @@ export const submitVisitAsync = createAsyncThunk<
       }
 
       const data = await response.json();
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Visitors submitted successfully",
+          type: "success",
+        })
+      );
       return data;
     } catch (error) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Failed to submit visitors",
+          type: "error",
+        })
+      );
       return rejectWithValue("Failed to submit visit");
     }
   }
 );
 
 export const getVisitInvitationAsync = createAsyncThunk<
-  any,
+  InvitationResponse,
   string,
   { rejectValue: string }
 >(
@@ -145,11 +182,9 @@ export const getVisitInvitationAsync = createAsyncThunk<
       const response = await axios.post(
         `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`
       );
-      return { success: true, data: response.data };
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch visit invitation"
-      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue("Failed to fetch visit invitation");
     }
   }
 );
@@ -192,7 +227,7 @@ const invitationSlice = createSlice({
       })
       .addCase(
         submitVisitAsync.fulfilled,
-        (state, action: PayloadAction<any>) => {
+        (state, action: PayloadAction<VisitData>) => {
           state.submitState = State.success;
         }
       )
@@ -205,9 +240,9 @@ const invitationSlice = createSlice({
       })
       .addCase(
         getVisitInvitationAsync.fulfilled,
-        (state, action: PayloadAction<any>) => {
+        (state, action: PayloadAction<InvitationResponse>) => {
           state.fetchState = State.success;
-          state.visitInvitation = action.payload.data;
+          state.visitInvitation = action.payload;
           state.error = null;
         }
       )
