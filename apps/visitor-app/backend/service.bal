@@ -208,7 +208,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if existingVisitor is () {
             return <http:BadRequest>{
                 body: {
-                    message: "Incorrect NIC hash!"
+                    message: "No visitor found with the provided NIC hash!"
                 }
             };
 

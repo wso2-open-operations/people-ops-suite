@@ -145,7 +145,7 @@ public type VisitRecord record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    string? accessibleLocations;
+    string? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]

@@ -159,6 +159,7 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
     Visit[] visits = [];
     check from VisitRecord visit in resultStream
         do {
+            string? accessibleLocations = visit.accessibleLocations;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
@@ -173,8 +174,8 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
-                accessibleLocations: visit.accessibleLocations is string ?
-                    check visit.accessibleLocations.fromJsonWithType() : null,
+                accessibleLocations: accessibleLocations is string ?
+                    check accessibleLocations.fromJsonStringWithType() : null,
                 invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,
