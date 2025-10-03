@@ -213,11 +213,7 @@ CREATE TABLE `personal_info` (
   `address` VARCHAR(255),
   `postal_code` VARCHAR(20),
   `country` VARCHAR(100),
-  `nationality` VARCHAR(100),
-  `language_spoken` JSON,
-  `nok_info` JSON,
-  `onboarding_documents` JSON,
-  `education_info` JSON,
+  `nationality` VARCHAR(100)
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,

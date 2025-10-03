@@ -66,7 +66,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeeBasicInfo|error? employeeBasicInfo = database:fetchEmployeeBasicInfo(userInfo.email);
+        database:BasicInfo|error? employeeBasicInfo = database:getBasicInfo(userInfo.email);
         if employeeBasicInfo is error {
             string customError = string `Error occurred while fetching employee information`;
             log:printError(customError, employeeBasicInfo, email = userInfo.email);
@@ -86,6 +86,80 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         // TODO: Fetch privileges and return along with the basic info
         return {...employeeBasicInfo, privileges: []};
+    }
+
+    # Fetch employee detailed information.
+    #
+    # + id - Employee ID
+    # + return - Employee detailed information
+    resource function get employees/[string id](http:RequestContext ctx)
+        returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        if employeeInfo is error {
+            string customError = string `Error occurred while fetching employee information for ID: ${id}`;
+            log:printError(customError, employeeInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn(string `No employee information found for the ID: ${id}`);
+            return <http:NotFound>{
+                body: {
+                    message: string `No employee information found`
+                }
+            };
+        }
+        return employeeInfo;
+    }
+
+    # Fetch employee personal information.
+    #
+    # + id - Employee ID
+    # + return - Employee personal information
+    resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
+        returns database:PersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        database:PersonalInfo|error? personalInfo = database:getPersonalInfo(id);
+        if personalInfo is error {
+            string customError = string `Error occurred while fetching employee personal information for ID: ${id}`;
+            log:printError(customError, personalInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if personalInfo is () {
+            log:printWarn(string `No employee personal information found for the ID: ${id}`);
+            return <http:NotFound>{
+                body: {
+                    message: string `No employee personal information found`
+                }
+            };
+        }
+        return personalInfo;
     }
 
     # Fetch vehicles of a specific employee.

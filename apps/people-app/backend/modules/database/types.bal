@@ -35,7 +35,7 @@ type DatabaseConfig record {|
 |};
 
 # Employee basic information.
-public type EmployeeBasicInfo record {|
+public type BasicInfo record {|
     # Employee ID of the user
     @sql:Column {name: "id"}
     string employeeId;
@@ -58,9 +58,102 @@ public type EmployeeBasicInfo record {|
 
 # User information with privileges.
 public type UserInfo record {|
-    *EmployeeBasicInfo;
+    *BasicInfo;
     # Privileges assigned to the user
     int[] privileges = [];
+|};
+
+# Employee information.
+public type Employee record {|
+    *BasicInfo;
+    # Employees' provident fund number
+    string epf;
+    # Employee location
+    string employeeLocation;
+    # Work location
+    string workLocation;
+    # Work phone number
+    string? workPhoneNumber;
+    # Start date
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Report-to email
+    string reportToEmail;
+    # Additional manager email
+    string? additionalManagerEmail;
+    # Additional report-to email
+    string? additionalReportToEmail;
+    # Employee status
+    string employeeStatus;
+    # Length of service
+    int lengthOfService;
+    # Relocation status
+    string? relocationStatus;
+    # Subordinate count
+    int? subordinateCount;
+    # Probation end date
+    string? probationEndDate;
+    # Agreement end date
+    string? agreementEndDate;
+    # Employment type
+    string employmentType;
+    # Designation
+    string designation;
+    # Office
+    string office;
+    # Team
+    string team;
+    # Sub-team
+    string subTeam;
+    # Business unit
+    string businessUnit;
+    # Personal info ID
+    int personal_info_id;
+|};
+
+# Personal information of an employee.
+public type PersonalInfo record {|
+    # Primary key ID
+    int id;
+    # National Identity Card number
+    string? nic;
+    # Full name of the person
+    @sql:Column {name: "full_name"}
+    string fullName;
+    # Name with initials
+    @sql:Column {name: "name_with_initials"}
+    string? nameWithInitials;
+    # First name
+    @sql:Column {name: "first_name"}
+    string? firstName;
+    # Last name
+    @sql:Column {name: "last_name"}
+    string? lastName;
+    # Title (Mr./Ms./Dr./etc.)
+    string? title;
+    # Date of birth
+    string? dob;
+    # Age
+    int? age;
+    # Personal email address
+    @sql:Column {name: "personal_email"}
+    string? personalEmail;
+    # Personal phone number
+    @sql:Column {name: "personal_phone"}
+    string? personalPhone;
+    # Home phone number
+    @sql:Column {name: "home_phone"}
+    string? homePhone;
+    # Home address
+    string? address;
+    # Postal code
+    @sql:Column {name: "postal_code"}
+    string? postalCode;
+    # Country of residence
+    string? country;
+    # Nationality
+    string? nationality;
 |};
 
 # [Database] Insert type for vehicle.
