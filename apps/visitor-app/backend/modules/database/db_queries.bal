@@ -154,7 +154,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${payload.companyName},
             ${payload.whomTheyMeet},
             ${payload.purposeOfVisit},
-            ${payload.accessibleLocations.toJsonString()},
+            ${payload.accessibleLocations is Floor[] ? payload.accessibleLocations.toJsonString() : null},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},

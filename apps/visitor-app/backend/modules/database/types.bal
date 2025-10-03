@@ -112,7 +112,7 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    Floor[]? accessibleLocations = [];
+    Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -145,7 +145,7 @@ public type VisitRecord record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    json accessibleLocations;
+    string? accessibleLocations;
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -236,8 +236,6 @@ public type VisitInfo record {|
     string whomTheyMeet;
     # Purpose of visit
     string purposeOfVisit;
-    # Accessible locations
-    Floor[]? accessibleLocations = ();
     # Time of entry
     string timeOfEntry;
     # Time of departure

@@ -56,7 +56,7 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    database:Floor[] accessibleLocations;
+    database:Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     @constraint:String {
         pattern: {
@@ -101,15 +101,6 @@ public type AddInvitationPayload record {|
 
 # Payload for filling an existing visit invitation.
 public type FillInvitationPayload record {|
-    *AddVisitPayload;
-    # Nic Hash of the visitor
-    @constraint:String {
-        pattern: {
-            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
-        }
-    }
-    string nicHash;
     # Name of the visitor
     @constraint:String {
         pattern: {
@@ -126,6 +117,14 @@ public type FillInvitationPayload record {|
         }
     }
     string nicNumber;
+    # Nic Hash of the visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The NIC Hash should be a non-empty string with printable characters."
+        }
+    }
+    string nicHash;
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -136,4 +135,34 @@ public type FillInvitationPayload record {|
     string contactNumber;
     # Email of the visitor
     string? email;
+    # Company name of visitor
+    string? companyName;
+    # The person the visitor is supposed to meet
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The who they meet should be a non-empty string with printable characters."
+        }
+    }
+    string whomTheyMeet;
+    # Purpose of the visit
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    database:Floor[]? accessibleLocations = ();
+    # Time at which the visitor is supposed to check in [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:UTC_TIMESTAMP_REGEX,
+            message: "The time of entry should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+        }
+    }
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:UTC_TIMESTAMP_REGEX,
+            message: "The time of departure should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+        }
+    }
+    string timeOfDeparture;
 |};

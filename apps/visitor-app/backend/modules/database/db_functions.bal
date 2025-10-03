@@ -179,7 +179,8 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
-                accessibleLocations: check visit.accessibleLocations.cloneWithType(),
+                accessibleLocations: visit.accessibleLocations is string ?
+                    check visit.accessibleLocations.fromJsonWithType() : null,
                 invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,

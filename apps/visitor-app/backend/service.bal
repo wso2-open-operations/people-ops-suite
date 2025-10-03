@@ -613,36 +613,34 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             string accessibleLocationString = organizeLocations(accessibleLocations);
-            if accessibleLocationString is string {
-                string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
+            string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
+                    {
+                        "TIME": time:utcToEmailString(time:utcNow()),
+                        "EMAIL": visit.email,
+                        "NAME": visit.name,
+                        "SCHEDULED_DATE": visit.timeOfEntry,
+                        "ALLOWED_FLOORS": accessibleLocationString,
+                        "START_TIME": visit.timeOfEntry,
+                        "END_TIME": visit.timeOfDeparture,
+                        "PASS_NUMBER": passNumber.toString(),
+                        "CONTACT_EMAIL": email:contactUsEmail
+                    });
+            if content is error {
+                string customError = "An error occurred while binding values to the email template!";
+                log:printError(customError, content);
+            }
+            if content is string {
+                error? emailError = email:sendEmail(
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visit.email,
-                            "NAME": visit.name,
-                            "SCHEDULED_DATE": visit.timeOfEntry,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "START_TIME": visit.timeOfEntry,
-                            "END_TIME": visit.timeOfDeparture,
-                            "PASS_NUMBER": passNumber.toString(),
-                            "CONTACT_EMAIL": email:contactUsEmail
+                            to: [visit.email],
+                            'from: email:fromEmailAddress,
+                            subject: email:emailSubject,
+                            template: content,
+                            cc: [email:receptionEmail]
                         });
-                if content is error {
-                    string customError = "An error occurred while binding values to the email template!";
-                    log:printError(customError, content);
-                }
-                if content is string {
-                    error? emailError = email:sendEmail(
-                                {
-                                to: [visit.email],
-                                'from: email:fromEmailAddress,
-                                subject: email:emailSubject,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
-                    if emailError is error {
-                        string customError = "An error occurred while sending the approval email!";
-                        log:printError(customError, emailError);
-                    }
+                if emailError is error {
+                    string customError = "An error occurred while sending the approval email!";
+                    log:printError(customError, emailError);
                 }
             }
 
