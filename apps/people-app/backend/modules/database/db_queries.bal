@@ -36,6 +36,7 @@ isolated function getBasicInfoQuery(string email) returns sql:ParameterizedQuery
 # + return - Query to get employee detailed information
 isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
     `SELECT 
+        e.id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
         e.work_email AS workEmail,
