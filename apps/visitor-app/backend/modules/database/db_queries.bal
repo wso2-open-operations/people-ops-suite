@@ -165,14 +165,9 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
 
 # Build query to fetch visits with optional filters and pagination.
 #
-# + 'limit - Limit number of visits to fetch
-# + offset - Offset for pagination
-# + invitationId - Filter by invitation ID
-# + status - Filter by visit status
-# + visitId - Filter by visit ID
+# + filters - Filters for fetching visits
 # + return - sql:ParameterizedQuery - Select query for visits based on the provided filters and pagination
-isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (),
-        int? visitId = ()) returns sql:ParameterizedQuery {
+isolated function fetchVisitsQuery(VisitFilters filters) returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `
         SELECT 
@@ -209,30 +204,30 @@ isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invi
     `;
 
     // Setting the filters based on the inputs.
-    sql:ParameterizedQuery[] filters = [];
-    if invitationId is int {
-        filters.push(` v.invitation_id = ${invitationId}`);
+    sql:ParameterizedQuery[] filterQueries = [];
+    if filters.invitationId is int {
+        filterQueries.push(` v.invitation_id = ${filters.invitationId}`);
     }
 
-    if status is string {
-        filters.push(` v.status = ${status}`);
+    if filters.status is string {
+        filterQueries.push(` v.status = ${filters.status}`);
     }
 
-    if visitId is int {
-        filters.push(` v.visit_id = ${visitId}`);
+    if filters.visitId is int {
+        filterQueries.push(` v.visit_id = ${filters.visitId}`);
     }
 
     // Build main query with the filters.
-    mainQuery = buildSqlSelectQuery(mainQuery, filters);
+    mainQuery = buildSqlSelectQuery(mainQuery, filterQueries);
 
     // Sorting the result by created_on.
     mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.created_on DESC`);
 
     // Setting the limit and offset.
-    if 'limit is int {
-        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${'limit}`);
-        if offset is int {
-            mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${offset}`);
+    if filters.'limit is int {
+        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${filters.'limit}`);
+        if filters.offset is int {
+            mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${filters.offset}`);
         }
     } else {
         mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${DEFAULT_LIMIT}`);

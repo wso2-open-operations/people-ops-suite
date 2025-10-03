@@ -261,3 +261,18 @@ public type UpdateInvitationPayload record {|
     # Validity of the invitation
     boolean? active = ();
 |};
+
+// Filter Types.
+# Filters for the visits.
+public type VisitFilters record {|
+    # ID of the visit
+    int? visitId = ();
+    # Invitation ID associated with the visit
+    int? invitationId = ();
+    # Status of the visit
+    Status? status = ();
+    # Limit number of visits to fetch
+    int? 'limit = DEFAULT_LIMIT;
+    # Offset for pagination
+    int? offset = ();
+|};

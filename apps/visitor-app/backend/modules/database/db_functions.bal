@@ -121,7 +121,7 @@ public isolated function addVisit(AddVisitPayload payload, string createdBy, int
 # + visitId - ID of the visit to fetch
 # + return - Visit object or error
 public isolated function fetchVisit(int visitId) returns VisitRecord|error? {
-    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId = visitId));
+    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
 
     if visitRecord is error {
         return visitRecord is sql:NoRowsError ? () : visitRecord;
@@ -144,16 +144,12 @@ public isolated function fetchVisit(int visitId) returns VisitRecord|error? {
 
 # Fetch visits with pagination.
 #
-# + 'limit - Limit number of visits to fetch
-# + offset - Offset for pagination
-# + invitationId - Filter by invitation ID
-# + status - Filter by visit status
+# + filters - Filters for fetching visits
 # + return - Array of visits objects or error
-public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitationId = ())
+public isolated function fetchVisits(VisitFilters filters)
     returns VisitsResponse|error {
 
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery(
-            'limit, offset, invitationId, status));
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery(filters));
 
     int totalCount = 0;
     Visit[] visits = [];

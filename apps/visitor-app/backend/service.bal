@@ -236,7 +236,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + 'limit - Limit number of visits to fetch  
     # + offset - Offset for pagination
     # + return - Array of visits or error
-    resource function get visits(http:RequestContext ctx, string? status, int? 'limit, int? offset)
+    resource function get visits(http:RequestContext ctx, database:Status? status, int? 'limit, int? offset)
         returns database:VisitsResponse|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -249,7 +249,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(status, 'limit, offset);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits(
+                {status: status, 'limit: 'limit, offset: offset});
+
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
             log:printError(customError, visitsResponse);
@@ -368,7 +370,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(invitationId = invitation.invitationId);
+        database:VisitsResponse|error visitsResponse = database:fetchVisits({invitationId: invitation.invitationId});
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits for this invitation!";
             log:printError(customError, visitsResponse);
@@ -429,7 +431,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Retrieve existing visits for the invitation
-        database:VisitsResponse|error existingVisitors = database:fetchVisits(invitationId = invitation.invitationId);
+        database:VisitsResponse|error existingVisitors = database:fetchVisits({invitationId: invitation.invitationId});
         if existingVisitors is error {
             string customError = "Error occurred while fetching visits for this invitation!";
             log:printError(customError, existingVisitors);
