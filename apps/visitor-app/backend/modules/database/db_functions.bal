@@ -37,11 +37,8 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
 # + return - Visitor object or error if so
 public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
     Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedNic));
-    if visitor is sql:NoRowsError {
-        return;
-    }
     if visitor is error {
-        return visitor;
+        return visitor is sql:NoRowsError ? () : visitor;
     }
 
     // Decrypt sensitive fields.
@@ -74,10 +71,7 @@ public isolated function addInvitation(AddInvitationPayload payload, string crea
 public isolated function fetchInvitation(string encodeValue) returns Invitation|error? {
     InvitationRecord|error invitationRecord = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
     if invitationRecord is error {
-        if invitationRecord is sql:NoRowsError {
-            return;
-        }
-        return invitationRecord;
+        return invitationRecord is sql:NoRowsError ? () : invitationRecord;
     }
 
     string? visitInfo = invitationRecord.visitInfo;
@@ -126,11 +120,11 @@ public isolated function addVisit(AddVisitPayload payload, string createdBy, int
 #
 # + visitId - ID of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns VisitRecord|error {
+public isolated function fetchVisit(int visitId) returns VisitRecord|error? {
     VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId = visitId));
 
     if visitRecord is error {
-        return visitRecord;
+        return visitRecord is sql:NoRowsError ? () : visitRecord;
     }
 
     visitRecord.name = check decrypt(visitRecord.name);
