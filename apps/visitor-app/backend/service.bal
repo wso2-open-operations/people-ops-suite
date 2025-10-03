@@ -283,11 +283,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string encodeString = array:toBase64((uuid:createType4AsString()).toBytes());
-        error? invitationError = database:addInvitation(
-                {
-                    ...payload,
-                    isActive: true
-                }, invokerInfo.email, encodeString);
+        error? invitationError = database:addInvitation({...payload, isActive: true}, invokerInfo.email, encodeString);
 
         if invitationError is error {
             string customError = "Error occurred while creating invitation!";
@@ -605,11 +601,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            error? response = database:updateVisit(visitId, {
-                                                                status: database:APPROVED,
-                                                                passNumber: payload.passNumber,
-                                                                accessibleLocations: accessibleLocations
-                                                            }, invokerInfo.email);
+            error? response = database:updateVisit(visitId,
+                    {
+                        status: database:APPROVED,
+                        passNumber: payload.passNumber,
+                        accessibleLocations: accessibleLocations
+                    }, invokerInfo.email);
 
             if response is error {
                 string customError = "Error occurred while approving the visit!";

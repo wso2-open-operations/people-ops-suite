@@ -75,7 +75,7 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
     }
 
     string? visitInfo = invitationRecord.visitInfo;
-    Invitation invitation = {
+    return {
         invitationId: invitationRecord.invitationId,
         inviteeEmail: invitationRecord.inviteeEmail,
         noOfVisitors: invitationRecord.noOfVisitors,
@@ -86,7 +86,6 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
         updatedBy: invitationRecord.updatedBy,
         updatedOn: invitationRecord.updatedOn
     };
-    return invitation;
 }
 
 # Update invitation details.
