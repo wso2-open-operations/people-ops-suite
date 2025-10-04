@@ -19,7 +19,7 @@ import ballerina/sql;
 #
 # + email - Employee's work email address
 # + return - Query to get employee basic information
-isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
+isolated function getBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
         id,
         first_name,
@@ -29,6 +29,76 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         job_role
     FROM employee
     WHERE work_email = ${email};`;
+
+# Fetch employee detailed information.
+#
+# + id - Employee ID
+# + return - Query to get employee detailed information
+isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
+    `SELECT 
+        e.id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_thumbnail AS employeeThumbnail,
+        e.job_role AS jobRole,
+        e.epf AS epf,
+        e.employee_location AS employeeLocation,
+        e.work_location AS workLocation,
+        e.work_phone_number AS workPhoneNumber,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        e.report_to_email AS reportToEmail,
+        e.additional_manager_email AS additionalManagerEmail,
+        e.additional_report_to_email AS additionalReportToEmail,
+        e.employee_status AS employeeStatus,
+        e.length_of_service AS lengthOfService,
+        e.relocation_status AS relocationStatus,
+        e.subordinate_count AS subordinateCount,
+        e.probation_end_date AS probationEndDate,
+        e.agreement_end_date AS agreementEndDate,
+        et.name AS employmentType,
+        d.designation AS designation,
+        o.name AS office,
+        t.name AS team,
+        st.name AS subTeam,
+        bu.name AS businessUnit
+    FROM
+        employee e
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN sub_team st ON e.sub_team_id = st.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+    WHERE
+        e.id = ${id};`;
+
+# Fetch employee personal information.
+#
+# + id - Employee ID
+# + return - Query to get employee personal information
+isolated function getPersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
+    `SELECT 
+        p.id AS id,
+        nic,
+        full_name,
+        name_with_initials,
+        p.first_name AS firstName,
+        p.last_name AS lastName,
+        title,
+        dob,
+        age,
+        personal_email,
+        personal_phone,
+        home_phone,
+        address,
+        postal_code,
+        country,
+        nationality
+    FROM personal_info p
+    INNER JOIN employee e ON p.id = e.personal_info_id
+        WHERE e.id = ${id};`;
 
 # Build query to fetch vehicles.
 #
