@@ -19,7 +19,7 @@ import ballerina/sql;
 #
 # + email - Employee's work email address
 # + return - Query to get employee basic information
-isolated function getBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
+isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
         id,
         first_name,
@@ -78,7 +78,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
 #
 # + id - Employee ID
 # + return - Query to get employee personal information
-isolated function getPersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
+isolated function getEmployeePersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
     `SELECT 
         p.id AS id,
         nic,

@@ -61,14 +61,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
 
-        database:BasicInfo|error? employeeBasicInfo = database:getBasicInfo(userInfo.email);
+        database:EmployeeBasicInfo|error? employeeBasicInfo = database:getEmployeeBasicInfo(userInfo.email);
         if employeeBasicInfo is error {
-            string customError = string `Error occurred while fetching employee information`;
+            string customError = string `Error occurred while fetching employee basic information`;
             log:printError(customError, employeeBasicInfo, email = userInfo.email);
             return <http:InternalServerError>{
                 body: {
@@ -77,10 +77,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeBasicInfo is () {
-            log:printWarn(string `No employee information found for the user: ${userInfo.email}`);
+            string customErr = "Employee basic information not found";
+            log:printWarn(customErr, user = userInfo.email);
             return <http:NotFound>{
                 body: {
-                    message: string `No employee information found`
+                    message: customErr
                 }
             };
         }
@@ -99,7 +100,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -115,10 +116,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn(string `No employee information found for the ID: ${id}`);
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, id = id);
             return <http:NotFound>{
                 body: {
-                    message: string `No employee information found`
+                    message: customErr
                 }
             };
         }
@@ -130,36 +132,37 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + return - Employee personal information
     resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
-        returns database:PersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
 
-        database:PersonalInfo|error? personalInfo = database:getPersonalInfo(id);
-        if personalInfo is error {
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        if employeePersonalInfo is error {
             string customError = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customError, personalInfo, id = id);
+            log:printError(customError, employeePersonalInfo, id = id);
             return <http:InternalServerError>{
                 body: {
                     message: customError
                 }
             };
         }
-        if personalInfo is () {
-            log:printWarn(string `No employee personal information found for the ID: ${id}`);
+        if employeePersonalInfo is () {
+            string customErr = "Employee personal information not found";
+            log:printWarn(customErr, id = id);
             return <http:NotFound>{
                 body: {
-                    message: string `No employee personal information found`
+                    message: customErr
                 }
             };
         }
-        return personalInfo;
+        return employeePersonalInfo;
     }
 
     # Fetch vehicles of a specific employee.
@@ -178,7 +181,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -224,7 +227,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -266,7 +269,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
