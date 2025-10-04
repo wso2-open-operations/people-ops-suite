@@ -19,9 +19,9 @@ import ballerina/sql;
 #
 # + email - Employee's work email address
 # + return - Employee basic information
-public isolated function getBasicInfo(string email) returns BasicInfo|error? {
-    BasicInfo|error employee = databaseClient->queryRow(getBasicInfoQuery(email));
-    return employee is sql:NoRowsError ? () : employee;
+public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasicInfo|error? {
+    EmployeeBasicInfo|error employeeBasicInfo = databaseClient->queryRow(getEmployeeBasicInfoQuery(email));
+    return employeeBasicInfo is sql:NoRowsError ? () : employeeBasicInfo;
 }
 
 # Fetch employee detailed information.
@@ -29,17 +29,17 @@ public isolated function getBasicInfo(string email) returns BasicInfo|error? {
 # + id - Employee ID
 # + return - Get employee detailed information
 public isolated function getEmployeeInfo(string id) returns Employee|error? {
-    Employee|error employee = databaseClient->queryRow(getEmployeeInfoQuery(id));
-    return employee is sql:NoRowsError ? () : employee;
+    Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
+    return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
 # Fetch employee personal information.
 #
 # + id - Employee ID
 # + return - Get employee personal information
-public isolated function getPersonalInfo(string id) returns PersonalInfo|error? {
-    PersonalInfo|error employee = databaseClient->queryRow(getPersonalInfoQuery(id));
-    return employee is sql:NoRowsError ? () : employee;
+public isolated function getEmployeePersonalInfo(string id) returns EmployeePersonalInfo|error? {
+    EmployeePersonalInfo|error employeePersonalInfo = databaseClient->queryRow(getEmployeePersonalInfoQuery(id));
+    return employeePersonalInfo is sql:NoRowsError ? () : employeePersonalInfo;
 }
 
 # Fetch vehicles.

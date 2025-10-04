@@ -35,7 +35,7 @@ type DatabaseConfig record {|
 |};
 
 # Employee basic information.
-public type BasicInfo record {|
+public type EmployeeBasicInfo record {|
     # Employee ID of the user
     @sql:Column {name: "id"}
     string employeeId;
@@ -58,14 +58,14 @@ public type BasicInfo record {|
 
 # User information with privileges.
 public type UserInfo record {|
-    *BasicInfo;
+    *EmployeeBasicInfo;
     # Privileges assigned to the user
     int[] privileges = [];
 |};
 
 # Employee information.
 public type Employee record {|
-    *BasicInfo;
+    *EmployeeBasicInfo;
     # Employees' provident fund number
     string epf;
     # Employee location
@@ -113,7 +113,7 @@ public type Employee record {|
 |};
 
 # Personal information of an employee.
-public type PersonalInfo record {|
+public type EmployeePersonalInfo record {|
     # Primary key ID
     int id;
     # National Identity Card number
