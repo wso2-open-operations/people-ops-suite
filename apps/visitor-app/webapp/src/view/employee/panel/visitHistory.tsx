@@ -145,6 +145,10 @@ function VisitHistory() {
               onClick={() =>
                 handleViewAccessibleFloors(params.row.accessibleLocations)
               }
+              disabled={
+                !params.row.accessibleLocations ||
+                params.row.accessibleLocations.length === 0
+              }
             >
               <Visibility />
             </IconButton>
