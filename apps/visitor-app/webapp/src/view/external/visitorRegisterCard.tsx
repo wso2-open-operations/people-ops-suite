@@ -246,7 +246,7 @@ function VisitorRegisterCard() {
 
   useEffect(() => {
     showSnackbar();
-  }, [common.timestamp, common.message, common.type, enqueueSnackbar]);
+  }, [common.timestamp, common.message, common.type]);
 
   const submitVisit = async (
     values: { visitDetails: VisitDetails; visitors: VisitorDetail[] },
