@@ -251,7 +251,7 @@ isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQu
         r.id AS id,
         r.first_name AS firstName,
         r.last_name AS lastName,
-        r.company_email AS companyEmail,
+        r.work_email AS workEmail,
         r.date_of_join AS dateOfJoin,
         r.probation_end_date AS probationEndDate,
         r.agreement_end_date AS agreementEndDate,
@@ -283,7 +283,7 @@ isolated function getRecruits() returns sql:ParameterizedQuery => `
         r.id AS id,
         r.first_name AS firstName,
         r.last_name AS lastName,
-        r.company_email AS companyEmail,
+        r.work_email AS workEmail,
         r.date_of_join AS dateOfJoin,
         r.probation_end_date AS probationEndDate,
         r.agreement_end_date AS agreementEndDate,
@@ -316,7 +316,7 @@ isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) r
     (
         first_name,
         last_name,
-        company_email,
+        work_email,
         date_of_join,
         probation_end_date,
         agreement_end_date,
@@ -342,7 +342,7 @@ isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) r
     (
         ${recruit.firstName},
         ${recruit.lastName},
-        ${recruit.companyEmail},
+        ${recruit.workEmail},
         ${recruit.dateOfJoin},
         ${recruit.probationEndDate},
         ${recruit.agreementEndDate},
@@ -381,8 +381,8 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     if recruit.lastName is string {
         setClauses.push(`last_name = ${recruit.lastName}`);
     }
-    if recruit.companyEmail is string {
-        setClauses.push(`company_email = ${recruit.companyEmail}`);
+    if recruit.workEmail is string {
+        setClauses.push(`work_email = ${recruit.workEmail}`);
     }
     if recruit.dateOfJoin is time:Date {
         setClauses.push(`date_of_join = ${recruit.dateOfJoin}`);
