@@ -572,7 +572,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:VisitRecord|error? visit = database:fetchVisit(visitId);
+        database:Visit|error? visit = database:fetchVisit(visitId);
         if visit is () {
             return <http:BadRequest>{
                 body: {
@@ -785,7 +785,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             database:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
-
             if accessibleLocations is error {
                 string customError = "Error with parsing accessible locations";
                 log:printError(customError, accessibleLocations);

@@ -119,26 +119,40 @@ public isolated function addVisit(AddVisitPayload payload, string createdBy, int
 #
 # + visitId - ID of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns VisitRecord|error? {
-    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
+public isolated function fetchVisit(int visitId) returns Visit|error? {
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
 
-    if visitRecord is error {
-        return visitRecord is sql:NoRowsError ? () : visitRecord;
+    if visit is error {
+        return visit is sql:NoRowsError ? () : visit;
     }
 
-    visitRecord.name = check decrypt(visitRecord.name);
-    visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
-    visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
-    visitRecord.email = check decrypt(visitRecord.email);
-    visitRecord.timeOfEntry = visitRecord.timeOfEntry.endsWith(".0")
-        ? visitRecord.timeOfEntry.substring(0, visitRecord.timeOfEntry.length() - 2)
-        : visitRecord.timeOfEntry;
-
-    visitRecord.timeOfDeparture = visitRecord.timeOfDeparture.endsWith(".0")
-        ? visitRecord.timeOfDeparture.substring(0, visitRecord.timeOfDeparture.length() - 2)
-        : visitRecord.timeOfDeparture;
-
-    return visitRecord;
+    string? accessibleLocations = visit.accessibleLocations;
+    return {
+        id: visit.id,
+        timeOfEntry: visit.timeOfEntry.endsWith(".0")
+            ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
+            : visit.timeOfEntry,
+        timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
+            ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
+            : visit.timeOfDeparture,
+        passNumber: visit.passNumber,
+        nicHash: visit.nicHash,
+        nicNumber: check decrypt(visit.nicNumber),
+        name: check decrypt(visit.name),
+        email: check decrypt(<string>visit.email),
+        contactNumber: check decrypt(visit.contactNumber),
+        companyName: visit.companyName,
+        whomTheyMeet: visit.whomTheyMeet,
+        purposeOfVisit: visit.purposeOfVisit,
+        accessibleLocations: accessibleLocations is string ?
+            check accessibleLocations.fromJsonStringWithType() : null,
+        invitationId: visit.invitationId,
+        status: visit.status,
+        createdBy: visit.createdBy,
+        createdOn: visit.createdOn,
+        updatedBy: visit.updatedBy,
+        updatedOn: visit.updatedOn
+    };
 }
 
 # Fetch visits with pagination.
@@ -158,8 +172,12 @@ public isolated function fetchVisits(VisitFilters filters)
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
-                timeOfEntry: visit.timeOfEntry,
-                timeOfDeparture: visit.timeOfDeparture,
+                timeOfEntry: visit.timeOfEntry.endsWith(".0")
+                    ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
+                    : visit.timeOfEntry,
+                timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
+                    ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
+                    : visit.timeOfDeparture,
                 passNumber: visit.passNumber,
                 nicHash: visit.nicHash,
                 nicNumber: check decrypt(visit.nicNumber),
