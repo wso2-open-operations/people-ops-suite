@@ -18,7 +18,7 @@ import CommonPage from "@layout/pages/CommonPage";
 import PendingVisits from "@view/admin/panel/pendingVisits";
 import AcceptedVisits from "@view/admin/panel/acceptedVisits";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
-import VerifiedIcon from "@mui/icons-material/Verified";
+import HistoryIcon from "@mui/icons-material/History";
 
 export default function Admin() {
   return (
@@ -33,9 +33,9 @@ export default function Admin() {
           page: <PendingVisits />,
         },
         {
-          tabTitle: "Accepted Visits",
-          tabPath: "accepted-visits",
-          icon: <VerifiedIcon />,
+          tabTitle: "History",
+          tabPath: "history",
+          icon: <HistoryIcon />,
           page: <AcceptedVisits />,
         },
       ]}
