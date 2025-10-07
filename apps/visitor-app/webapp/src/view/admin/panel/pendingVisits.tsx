@@ -14,9 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 import React, { useState, useEffect } from "react";
-import { Box, IconButton, Alert, Typography, TextField } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Typography,
+  TextField,
+  Modal,
+  Button,
+} from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { CheckCircle, Cancel } from "@mui/icons-material";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
 import {
   RootState,
   useAppDispatch,
@@ -27,17 +38,27 @@ import {
   visitStatusUpdate,
   resetStatusUpdateState,
 } from "@slices/visitSlice/visit";
-import { State, VisitStatus, ConfirmationType } from "@/types/types";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { State, VisitStatus, VisitAction } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+const AVAILABLE_FLOORS_AND_ROOMS = [
+  { floor: "1st Floor", rooms: ["Cafeteria"] },
+  { floor: "6th Floor", rooms: ["The Launchpad"] },
+  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
+  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
+  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
+  { floor: "9th and 10th", rooms: ["The Circuit"] },
+  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
+  { floor: "11th Floor", rooms: ["Tinker Room"] },
+  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
+  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
+  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
+];
 
 const toLocalDateTime = (utcString: string) => {
   return dayjs
@@ -51,14 +72,24 @@ const PendingVisits = () => {
   const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
-  const dialogContext = useConfirmationModalContext();
 
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [blink, setBlink] = useState<string[]>([]);
-  const [, setTempPassNumber] = useState("");
-  const [, setTempRejectionReason] = useState("");
-  const [, setCurrentVisitId] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  const [selectedFloorsAndRooms, setSelectedFloorsAndRooms] = useState<
+    { floor: string; rooms: string[] }[]
+  >([]);
+
+  const [isApprovalModalOpen, setIsApprovalModalOpen] =
+    useState<boolean>(false);
+  const [isRejectionModalOpen, setIsRejectionModalOpen] =
+    useState<boolean>(false);
+
+  const [tempPassNumber, setTempPassNumber] = useState<string | null>(null);
+  const [tempRejectionReason, setTempRejectionReason] = useState<string | null>(
+    null
+  );
+  const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -68,7 +99,7 @@ const PendingVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.request,
+        status: VisitStatus.requested,
       })
     );
   }, [dispatch, page, pageSize]);
@@ -85,49 +116,36 @@ const PendingVisits = () => {
     }
   }, [statusUpdateState, dispatch]);
 
-  // Validation function for pass number
-  const validatePassNumber = (passNumber: string): boolean => {
-    // Check if pass number is not empty and contains only digits
-    return passNumber.trim() !== "" && /^\d+$/.test(passNumber.trim());
-  };
-
   const handleApproveSingleVisit = async (
     visitId: string,
-    passNumber: string
+    passNumber: string | null,
+    accessibleLocations: { floor: string; rooms: string[] }[]
   ) => {
-    const trimmedPassNumber = passNumber.trim();
-
-    if (!validatePassNumber(trimmedPassNumber)) {
-      dispatch(
-        enqueueSnackbarMessage({
-          message: "Please enter a valid pass number (numbers only)",
-          type: "error",
-        })
-      );
-      setBlink([visitId]);
-      setTimeout(() => setBlink([]), 1000);
-      return;
-    }
+    const trimmedPassNumber = passNumber ? passNumber.trim() : null;
 
     try {
       const payload = {
         visitId: +visitId,
-        passNumber: +trimmedPassNumber,
-        status: VisitStatus.approve,
+        passNumber: trimmedPassNumber,
+        status: VisitAction.approve,
+        accessibleLocations: accessibleLocations,
+        rejectionReason: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
 
       // Clear the form state
       setTempPassNumber("");
+      setSelectedFloorsAndRooms([]);
       setCurrentVisitId(null);
+      setIsApprovalModalOpen(false);
 
       // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.request,
+          status: VisitStatus.requested,
         })
       );
     } catch (error) {
@@ -137,25 +155,29 @@ const PendingVisits = () => {
 
   const handleRejectSingleVisit = async (
     visitId: string,
-    rejectionReason: string
+    rejectionReason: string | null
   ) => {
     try {
       const payload = {
         visitId: +visitId,
-        status: VisitStatus.reject,
-        rejectionReason: rejectionReason.trim(),
+        status: VisitAction.reject,
+        rejectionReason: rejectionReason ? rejectionReason.trim() : null,
+        passNumber: null,
+        accessibleLocations: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
 
       setCurrentVisitId(null);
+      setTempRejectionReason("");
+      setIsRejectionModalOpen(false);
 
       // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.request,
+          status: VisitStatus.requested,
         })
       );
     } catch (error) {
@@ -163,87 +185,18 @@ const PendingVisits = () => {
     }
   };
 
-  // Function to show approval dialog
-  const showApprovalDialog = (visitId: string) => {
+  // Function to show approval modal
+  const showApprovalModal = (visitId: string) => {
     setCurrentVisitId(visitId);
     setTempPassNumber("");
-
-    dialogContext.showConfirmation(
-      "Approve Visit",
-      <Box>
-        <Typography sx={{ mb: 2 }}>
-          Enter pass number for visit ID {visitId}
-        </Typography>
-        <TextField
-          autoFocus
-          label="Pass Number"
-          type="text"
-          fullWidth
-          variant="outlined"
-          onChange={(e) => {
-            setTempPassNumber(e.target.value);
-          }}
-          placeholder="Enter pass number"
-          helperText="Numbers only"
-          error={blink.includes(visitId)}
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: blink.includes(visitId) ? "#fff3f3" : "inherit",
-              transition: "background-color 0.5s",
-            },
-          }}
-        />
-      </Box>,
-      ConfirmationType.accept,
-      async () => {
-        var tempValue;
-        setTempPassNumber((value) => {
-          tempValue = value;
-          return value;
-        });
-        await handleApproveSingleVisit(visitId, tempValue || "");
-      },
-      "Confirm",
-      "Cancel"
-    );
+    setSelectedFloorsAndRooms([]);
+    setIsApprovalModalOpen(true);
   };
 
-  // Function to show rejection dialog
-  const showRejectionDialog = (visitId: string) => {
+  const showRejectionModal = (visitId: string) => {
     setCurrentVisitId(visitId);
     setTempRejectionReason("");
-
-    dialogContext.showConfirmation(
-      "Reject Visit",
-      <Box>
-        <Typography sx={{ mb: 2 }}>
-          Enter rejection reason for visit ID {visitId}
-        </Typography>
-        <TextField
-          autoFocus
-          label="Rejection Reason"
-          type="text"
-          fullWidth
-          variant="outlined"
-          onChange={(e) => {
-            setTempRejectionReason(e.target.value);
-          }}
-          placeholder="Enter rejection reason"
-          helperText="Provide a reason for rejection"
-        />
-      </Box>,
-      ConfirmationType.accept,
-      async () => {
-        var tempValue;
-        setTempRejectionReason((value) => {
-          tempValue = value;
-          return value;
-        });
-        await handleRejectSingleVisit(visitId, tempValue || "");
-      },
-      "Confirm",
-      "Cancel"
-    );
+    setIsRejectionModalOpen(true);
   };
 
   const columns: GridColDef[] = [
@@ -282,7 +235,7 @@ const PendingVisits = () => {
         <>
           <IconButton
             color="primary"
-            onClick={() => showApprovalDialog(String(params.row.id))}
+            onClick={() => showApprovalModal(String(params.row.id))}
             disabled={
               state === State.loading || statusUpdateState === State.loading
             }
@@ -292,7 +245,7 @@ const PendingVisits = () => {
           </IconButton>
           <IconButton
             color="error"
-            onClick={() => showRejectionDialog(String(params.row.id))}
+            onClick={() => showRejectionModal(String(params.row.id))}
             disabled={
               state === State.loading || statusUpdateState === State.loading
             }
@@ -315,6 +268,166 @@ const PendingVisits = () => {
             : ""
         }
       />
+
+      {/* Approval Modal */}
+      <Modal
+        open={isApprovalModalOpen}
+        onClose={() => setIsApprovalModalOpen(false)}
+        aria-labelledby="approve-visit-modal"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 800,
+            maxHeight: "80vh",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            overflowY: "auto",
+          }}
+        >
+          <Typography
+            id="approve-visit-modal"
+            variant="h6"
+            sx={{ mb: 2, fontWeight: "bold" }}
+          >
+            Approve Visit ID {currentVisitId}
+          </Typography>
+          <Box>
+            <Typography sx={{ mb: 2 }}>
+              Enter pass number and select access floors
+            </Typography>
+            <TextField
+              autoFocus
+              label="Pass Number"
+              type="text"
+              fullWidth
+              variant="outlined"
+              onChange={(e) => {
+                setTempPassNumber(e.target.value);
+              }}
+              placeholder="Enter pass number"
+              helperText="Numbers only"
+            />
+            <FloorRoomSelector
+              availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+              selectedFloorsAndRooms={selectedFloorsAndRooms}
+              onChange={(value) => {
+                setSelectedFloorsAndRooms(value);
+              }}
+            />
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 1,
+              }}
+            >
+              <Button
+                variant="outlined"
+                onClick={() => setIsApprovalModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() =>
+                  handleApproveSingleVisit(
+                    currentVisitId || "",
+                    tempPassNumber,
+                    selectedFloorsAndRooms
+                  )
+                }
+                disabled={
+                  state === State.loading || statusUpdateState === State.loading
+                }
+              >
+                Confirm
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Rejection Modal */}
+      <Modal
+        open={isRejectionModalOpen}
+        onClose={() => setIsRejectionModalOpen(false)}
+        aria-labelledby="reject-visit-modal"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            maxHeight: "80vh",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            overflowY: "auto",
+          }}
+        >
+          <Typography
+            id="reject-visit-modal"
+            variant="h6"
+            sx={{ mb: 2, fontWeight: "bold" }}
+          >
+            Reject Visit ID {currentVisitId}
+          </Typography>
+          <Box>
+            <Typography sx={{ mb: 2 }}>Enter rejection reason</Typography>
+            <TextField
+              autoFocus
+              label="Rejection Reason"
+              type="text"
+              fullWidth
+              variant="outlined"
+              onChange={(e) => {
+                setTempRejectionReason(e.target.value);
+              }}
+              placeholder="Enter rejection reason"
+              helperText="Provide a reason for rejection"
+            />
+            <Box
+              sx={{
+                mt: 2,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 1,
+              }}
+            >
+              <Button
+                variant="outlined"
+                onClick={() => setIsRejectionModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() =>
+                  handleRejectSingleVisit(
+                    currentVisitId || "",
+                    tempRejectionReason
+                  )
+                }
+                disabled={
+                  state === State.loading || statusUpdateState === State.loading
+                }
+              >
+                Confirm
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Modal>
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />

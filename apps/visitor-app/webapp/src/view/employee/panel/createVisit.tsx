@@ -22,7 +22,6 @@ import {
   Stepper,
   Step,
   StepLabel,
-  Divider,
   Grid,
   TextField,
   Card,
@@ -30,11 +29,11 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
-  Radio,
   RadioGroup,
-  FormControlLabel,
   FormControl,
-  FormLabel,
+  useTheme,
+  Theme,
+  Stack,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -49,25 +48,29 @@ import * as Yup from "yup";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+
 import { PhoneNumberUtil } from "google-libphonenumber";
+
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { ConfirmationType, State } from "@root/src/types/types";
+import FloorRoomSelector from "@view/employee/component/floorRoomSelector";
+import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+
 import {
   RootState,
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
-import FloorRoomSelector from "@view/employee/component/floorRoomSelector";
 import {
   addVisitor,
   fetchVisitor,
   resetSubmitState as resetVisitorSubmitState,
 } from "@slices/visitorSlice/visitor";
-import { hash } from "@root/src/utils/utils";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
-import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
 import { sendInvitation } from "@slices/invitationSlice/invitation";
+import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
+
+import { hash } from "@root/src/utils/utils";
 
 dayjs.extend(utc);
 
@@ -77,7 +80,7 @@ enum VisitorStatus {
   Completed = "Completed",
 }
 
-export interface VisitorDetail {
+interface VisitorDetail {
   idPassportNumber: string;
   fullName: string;
   contactNumber: string;
@@ -150,35 +153,60 @@ const COUNTRY_CODES = [
 ];
 
 const visitValidationSchema = Yup.object().shape({
-  whoTheyMeet: Yup.string().required("Who they meet is required"),
-  purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-  accessibleLocations: Yup.array().test(
-    "Accessible floors are required",
-    "At least one accessible floor is required",
-    (value) => Array.isArray(value) && value.length > 0
-  ),
-  scheduledDate: Yup.string().required("Scheduled date is required"),
-  timeOfEntry: Yup.string()
-    .required("Time of entry is required")
-    .test("is-valid-time", "Time of entry cannot be passed", (value) => {
-      if (dayjs(value).isBefore(dayjs())) {
-        return false;
-      }
-      return true;
-    }),
-  timeOfDeparture: Yup.string()
-    .required("Time of departure is required")
-    .test(
-      "is-valid-time",
-      "Time of departure should be after the Time of entry",
-      (value, context) => {
-        const { timeOfEntry } = context.parent;
-        if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
+  whoTheyMeet: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string().required("Who they meet is required"),
+    otherwise: Yup.string(),
+  }),
+  purposeOfVisit: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string().required("Purpose of visit is required"),
+    otherwise: Yup.string(),
+  }),
+  accessibleLocations: Yup.array().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.array().test(
+      "Accessible floors are required",
+      "At least one accessible floor is required",
+      (value) => Array.isArray(value) && value.length > 0
+    ),
+    otherwise: Yup.array(),
+  }),
+  scheduledDate: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string().required("Scheduled date is required"),
+    otherwise: Yup.string(),
+  }),
+  timeOfEntry: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string()
+      .required("Time of entry is required")
+      .test("is-valid-time", "Time of entry cannot be passed", (value) => {
+        if (dayjs(value).isBefore(dayjs())) {
           return false;
         }
         return true;
-      }
-    ),
+      }),
+    otherwise: Yup.string(),
+  }),
+  timeOfDeparture: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string()
+      .required("Time of departure is required")
+      .test(
+        "is-valid-time",
+        "Time of departure should be after the Time of entry",
+        (value, context) => {
+          const { timeOfEntry } = context.parent;
+          if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
+            return false;
+          }
+          return true;
+        }
+      ),
+    otherwise: Yup.string(),
+  }),
+  invitationOption: Yup.string().required("Please select an option"),
 });
 
 const visitorValidationSchema = Yup.object().shape({
@@ -228,225 +256,25 @@ const visitorValidationSchema = Yup.object().shape({
 const renderStepContent = (
   step: number,
   formik: any,
-  fetchVisitorByNic: any
+  fetchVisitorByNic: any,
+  theme: Theme
 ) => {
   switch (step) {
     case 0:
       return (
         <>
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
-            >
-              <BusinessIcon color="primary" />
-              Visit Information
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  name="companyName"
-                  label="Name of the Company"
-                  value={formik.values.companyName}
-                  onChange={formik.handleChange}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  name="whoTheyMeet"
-                  label="Whom They Meet"
-                  value={formik.values.whoTheyMeet}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.whoTheyMeet &&
-                    Boolean(formik.errors.whoTheyMeet)
-                  }
-                  helperText={
-                    formik.touched.whoTheyMeet && formik.errors.whoTheyMeet
-                  }
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  name="purposeOfVisit"
-                  label="Purpose Of Visit / Comment"
-                  value={formik.values.purposeOfVisit}
-                  onChange={formik.handleChange}
-                  error={
-                    formik.touched.purposeOfVisit &&
-                    Boolean(formik.errors.purposeOfVisit)
-                  }
-                  helperText={
-                    formik.touched.purposeOfVisit &&
-                    formik.errors.purposeOfVisit
-                  }
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-          </Box>
-          <Divider sx={{ my: 4 }} />
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1 }}
-            >
-              <BusinessIcon color="primary" />
-              Floors and Rooms *
-            </Typography>
-            <FloorRoomSelector
-              availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-              selectedFloorsAndRooms={formik.values.accessibleLocations}
-              onChange={(value) => {
-                formik.setFieldValue("accessibleLocations", value);
-              }}
-              error={
-                formik.touched.accessibleLocations &&
-                formik.errors.accessibleLocations
-              }
-            />
-          </Box>
-          <Divider sx={{ my: 4 }} />
-          <Box sx={{ mb: 4 }}>
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
-            >
-              <ScheduleIcon color="primary" />
-              Schedule Details
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={4}>
-                <DatePicker
-                  label="Scheduled Date *"
-                  name="scheduledDate"
-                  value={
-                    formik.values.scheduledDate
-                      ? dayjs(formik.values.scheduledDate)
-                      : null
-                  }
-                  onChange={(value) => {
-                    formik.setFieldValue(
-                      "scheduledDate",
-                      dayjs(value).format("YYYY-MM-DD")
-                    );
-                  }}
-                  minDate={dayjs()}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error:
-                        formik.touched.scheduledDate &&
-                        Boolean(formik.errors.scheduledDate),
-                      helperText:
-                        formik.touched.scheduledDate &&
-                        formik.errors.scheduledDate,
-                      onBlur: () =>
-                        formik.setFieldTouched("scheduledDate", true),
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TimePicker
-                  label="Time Of Entry *"
-                  name="timeOfEntry"
-                  value={
-                    formik.values.timeOfEntry
-                      ? dayjs(formik.values.timeOfEntry)
-                      : null
-                  }
-                  onChange={(value) => {
-                    formik.setFieldValue(
-                      "timeOfEntry",
-                      formik.values.scheduledDate +
-                        "T" +
-                        dayjs(value).format(
-                          "HH:mm:ss" + dayjs(value).format("Z")
-                        )
-                    );
-                  }}
-                  disabled={formik.values.scheduledDate === ""}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error:
-                        formik.touched.timeOfEntry &&
-                        Boolean(formik.errors.timeOfEntry),
-                      helperText:
-                        formik.touched.timeOfEntry && formik.errors.timeOfEntry,
-                      onBlur: () => formik.setFieldTouched("timeOfEntry", true),
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TimePicker
-                  label="Time Of Departure *"
-                  name="timeOfDeparture"
-                  value={
-                    formik.values.timeOfDeparture
-                      ? dayjs(formik.values.timeOfDeparture)
-                      : null
-                  }
-                  onChange={(value) => {
-                    formik.setFieldValue(
-                      "timeOfDeparture",
-                      formik.values.scheduledDate +
-                        "T" +
-                        dayjs(value).format(
-                          "HH:mm:ss" + dayjs(value).format("Z")
-                        )
-                    );
-                  }}
-                  disabled={formik.values.timeOfEntry === ""}
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error:
-                        formik.touched.timeOfDeparture &&
-                        Boolean(formik.errors.timeOfDeparture),
-                      helperText:
-                        formik.touched.timeOfDeparture &&
-                        formik.errors.timeOfDeparture,
-                      onBlur: () =>
-                        formik.setFieldTouched("timeOfDeparture", true),
-                    },
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Box>
-          <Divider sx={{ my: 4 }} />
-        </>
-      );
-    case 1:
-      return (
-        <>
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+          <Box
+            sx={{
+              display: "flex",
+              mb: 4,
+              pt: 2,
+              pl: 2,
+              pr: 2,
+              justifyContent: "center",
+            }}
+          >
             <FormControl component="fieldset">
-              <FormLabel
-                component="legend"
-                sx={{
-                  mb: 2,
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
-                  textAlign: "center",
-                  color: "text.primary",
-                }}
-              >
-                Visitor Registration Option
-              </FormLabel>
               <RadioGroup
-                row
                 name="invitationOption"
                 value={formik.values.invitationOption}
                 onChange={(e) => {
@@ -472,38 +300,81 @@ const renderStepContent = (
                   );
                   formik.setTouched({ visitors: [] });
                 }}
-                sx={{ justifyContent: "center", gap: 2 }}
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  gap: 3,
+                  borderRadius: 2,
+                  minWidth: 300,
+                }}
               >
                 {[
-                  { value: "addVisitor", label: "Add Visitors Directly" },
                   { value: "sendInvitation", label: "Send Invitation" },
+                  { value: "addVisitor", label: "Add Visitors" },
                 ].map((option) => {
                   const selected =
                     formik.values.invitationOption === option.value;
                   return (
-                    <FormControlLabel
+                    <Box
                       key={option.value}
-                      value={option.value}
-                      control={<Radio sx={{ display: "none" }} />}
-                      label={option.label}
-                      sx={{
-                        px: 3,
-                        py: 1.2,
-                        borderRadius: 50,
-                        fontWeight: 500,
-                        fontSize: "0.95rem",
-                        bgcolor: selected ? "primary.main" : "grey.100",
-                        color: selected ? "white" : "text.primary",
-                        cursor: "pointer",
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          bgcolor: selected ? "primary.dark" : "grey.200",
-                        },
+                      onClick={() =>
+                        formik.setFieldValue("invitationOption", option.value)
+                      }
+                      role="radio"
+                      aria-checked={selected}
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          formik.setFieldValue(
+                            "invitationOption",
+                            option.value
+                          );
+                        }
                       }}
-                    />
+                      sx={{
+                        flex: 1,
+                        textAlign: "center",
+                        py: 0.8,
+                        cursor: "pointer",
+                        bgcolor: selected
+                          ? theme.palette.primary.main
+                          : theme.palette.mode === "dark"
+                          ? "grey.800"
+                          : "white",
+                        color: selected
+                          ? theme.palette.getContrastText(
+                              theme.palette.primary.main
+                            )
+                          : theme.palette.text.primary,
+                        fontWeight: selected ? 600 : 500,
+                        fontSize: "0.9rem",
+                        borderRadius: 1.5,
+                        border: `1px solid ${
+                          selected
+                            ? theme.palette.primary.main
+                            : theme.palette.divider
+                        }`,
+                        boxShadow: selected
+                          ? "0 2px 6px rgba(0,0,0,0.15)"
+                          : "none",
+                        transition: "all 0.25s ease-in-out",
+                        "&:hover": {
+                          bgcolor: selected
+                            ? theme.palette.primary.dark
+                            : theme.palette.mode === "dark"
+                            ? "grey.700"
+                            : "grey.200",
+                        },
+                        "&:active": { transform: "scale(0.97)" },
+                      }}
+                    >
+                      {option.label}
+                    </Box>
                   );
                 })}
               </RadioGroup>
+
               {formik.touched.invitationOption &&
                 formik.errors.invitationOption && (
                   <Typography
@@ -517,350 +388,588 @@ const renderStepContent = (
             </FormControl>
           </Box>
           {formik.values.invitationOption === "addVisitor" && (
-            <FieldArray name="visitors">
-              {({ remove }) => (
-                <>
-                  {formik.values.visitors.map(
-                    (visitor: VisitorDetail, index: number) => (
-                      <Card variant="outlined" sx={{ mb: 2 }} key={index}>
-                        <CardContent>
-                          <Box
-                            display="flex"
-                            justifyContent="space-between"
-                            alignItems="center"
-                            mb={2}
-                          >
-                            <Typography
-                              variant="h6"
-                              component="h3"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <PersonIcon color="primary" />
-                              Visitor {index + 1}
-                            </Typography>
-                            {formik.values.visitors.length > 1 &&
-                              visitor.status === VisitorStatus.Draft && (
-                                <IconButton
-                                  onClick={() => remove(index)}
-                                  color="error"
-                                  size="small"
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              )}
-                          </Box>
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} md={6}>
-                              <TextField
-                                fullWidth
-                                label="ID/Passport Number"
-                                name={`visitors.${index}.idPassportNumber`}
-                                value={visitor.idPassportNumber}
-                                onChange={(event) => {
-                                  formik.setFieldValue(
-                                    `visitors.${index}.idPassportNumber`,
-                                    event.target.value.toUpperCase()
-                                  );
-                                }}
-                                onBlur={() => {
-                                  formik.setFieldTouched(
-                                    `visitors.${index}.idPassportNumber`,
-                                    true
-                                  );
-                                  fetchVisitorByNic(
-                                    visitor.idPassportNumber,
-                                    index,
-                                    formik
-                                  );
-                                }}
-                                error={
-                                  formik.touched.visitors?.[index]
-                                    ?.idPassportNumber &&
-                                  Boolean(
-                                    formik.errors.visitors?.[index]
-                                      ?.idPassportNumber
-                                  )
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]
-                                    ?.idPassportNumber &&
-                                  formik.errors.visitors?.[index]
-                                    ?.idPassportNumber
-                                }
-                                variant="outlined"
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                              <TextField
-                                fullWidth
-                                label="Full Name"
-                                name={`visitors.${index}.fullName`}
-                                value={visitor.fullName}
-                                onChange={formik.handleChange}
-                                onBlur={() =>
-                                  formik.setFieldTouched(
-                                    `visitors.${index}.fullName`,
-                                    true
-                                  )
-                                }
-                                error={
-                                  formik.touched.visitors?.[index]?.fullName &&
-                                  Boolean(
-                                    formik.errors.visitors?.[index]?.fullName
-                                  )
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]?.fullName &&
-                                  formik.errors.visitors?.[index]?.fullName
-                                }
-                                variant="outlined"
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                              <TextField
-                                fullWidth
-                                label="Contact Number"
-                                name={`visitors.${index}.contactNumber`}
-                                value={visitor.contactNumber}
-                                onChange={formik.handleChange}
-                                onBlur={() =>
-                                  formik.setFieldTouched(
-                                    `visitors.${index}.contactNumber`,
-                                    true
-                                  )
-                                }
-                                error={
-                                  formik.touched.visitors?.[index]
-                                    ?.contactNumber &&
-                                  Boolean(
-                                    formik.errors.visitors?.[index]
-                                      ?.contactNumber
-                                  )
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]
-                                    ?.contactNumber &&
-                                  formik.errors.visitors?.[index]?.contactNumber
-                                }
-                                variant="outlined"
-                                InputProps={{
-                                  startAdornment: (
-                                    <InputAdornment position="start">
-                                      <TextField
-                                        select
-                                        name={`visitors.${index}.countryCode`}
-                                        value={visitor.countryCode}
-                                        onChange={formik.handleChange}
-                                        variant="standard"
-                                        sx={{ minWidth: 80 }}
-                                        InputProps={{ disableUnderline: true }}
-                                        disabled={
-                                          visitor.status ===
-                                          VisitorStatus.Completed
-                                        }
-                                      >
-                                        {COUNTRY_CODES.map((country) => (
-                                          <MenuItem
-                                            key={country.code}
-                                            value={country.code}
-                                          >
-                                            {country.flag} {country.code}
-                                          </MenuItem>
-                                        ))}
-                                      </TextField>
-                                    </InputAdornment>
-                                  ),
-                                }}
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
-                            <Grid item xs={12} md={6}>
-                              <TextField
-                                fullWidth
-                                label="Email Address"
-                                name={`visitors.${index}.emailAddress`}
-                                type="email"
-                                value={visitor.emailAddress}
-                                onChange={formik.handleChange}
-                                onBlur={() =>
-                                  formik.setFieldTouched(
-                                    `visitors.${index}.emailAddress`,
-                                    true
-                                  )
-                                }
-                                error={
-                                  !!formik.errors.visitors?.[index]
-                                    ?.emailAddress
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]
-                                    ?.emailAddress &&
-                                  formik.errors.visitors?.[index]?.emailAddress
-                                }
-                                variant="outlined"
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
-                            <Grid item xs={12}>
-                              <TextField
-                                fullWidth
-                                name={`visitors.${index}.passNumber`}
-                                label="Pass Number"
-                                value={visitor.passNumber}
-                                onChange={formik.handleChange}
-                                onBlur={() =>
-                                  formik.setFieldTouched(
-                                    `visitors.${index}.passNumber`,
-                                    true
-                                  )
-                                }
-                                error={
-                                  formik.touched.visitors?.[index]
-                                    ?.passNumber &&
-                                  Boolean(
-                                    formik.errors.visitors?.[index]?.passNumber
-                                  )
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]
-                                    ?.passNumber &&
-                                  formik.errors.visitors?.[index]?.passNumber
-                                }
-                                variant="outlined"
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
-                            {visitor.status === VisitorStatus.Draft && (
-                              <Grid item xs={12} sx={{ textAlign: "right" }}>
-                                <Button
-                                  variant="contained"
-                                  color="success"
-                                  startIcon={<Check />}
-                                  onClick={async () => {
-                                    const errors = await formik.validateForm();
-                                    formik.setTouched({
-                                      [`visitors.${index}.idPassportNumber`]:
-                                        true,
-                                      [`visitors.${index}.fullName`]: true,
-                                      [`visitors.${index}.contactNumber`]: true,
-                                      [`visitors.${index}.emailAddress`]: true,
-                                      [`visitors.${index}.passNumber`]: true,
-                                    });
-                                    if (Object.keys(errors).length === 0) {
-                                      formik.submitForm();
-                                    }
-                                  }}
-                                >
-                                  Submit
-                                </Button>
-                              </Grid>
-                            )}
-                          </Grid>
-                        </CardContent>
-                      </Card>
-                    )
-                  )}
-                </>
-              )}
-            </FieldArray>
-          )}
-          {formik.values.invitationOption === "sendInvitation" && (
-            <Card variant="outlined" sx={{ mb: 2 }}>
-              <CardContent>
+            <>
+              <Stepper activeStep={step} sx={{ mb: 4 }}>
+                {steps.map((label, index) => (
+                  <Step key={index}>
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+              <Box sx={{ mb: 4 }}>
                 <Typography
-                  variant="h6"
-                  component="h3"
-                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+                  variant="h5"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
                 >
-                  <PersonIcon color="primary" />
-                  Send Invitation
+                  <BusinessIcon color="primary" />
+                  Visit Information
                 </Typography>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
-                      label="Invitation Email"
-                      name="invitationEmail"
-                      type="email"
-                      value={formik.values.invitationEmail}
+                      name="companyName"
+                      label="Name of the Company"
+                      value={formik.values.companyName}
                       onChange={formik.handleChange}
-                      onBlur={() =>
-                        formik.setFieldTouched("invitationEmail", true)
-                      }
-                      error={
-                        formik.touched.invitationEmail &&
-                        Boolean(formik.errors.invitationEmail)
-                      }
-                      helperText={
-                        formik.touched.invitationEmail &&
-                        formik.errors.invitationEmail
-                      }
                       variant="outlined"
                     />
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
-                      label="Number of Invitees"
-                      name="inviteeCount"
-                      type="number"
-                      value={formik.values.inviteeCount}
+                      name="whoTheyMeet"
+                      label="Whom They Meet"
+                      value={formik.values.whoTheyMeet}
                       onChange={formik.handleChange}
-                      onBlur={() =>
-                        formik.setFieldTouched("inviteeCount", true)
-                      }
                       error={
-                        formik.touched.inviteeCount &&
-                        Boolean(formik.errors.inviteeCount)
+                        formik.touched.whoTheyMeet &&
+                        Boolean(formik.errors.whoTheyMeet)
                       }
                       helperText={
-                        formik.touched.inviteeCount &&
-                        formik.errors.inviteeCount
+                        formik.touched.whoTheyMeet && formik.errors.whoTheyMeet
                       }
                       variant="outlined"
-                      inputProps={{ min: 1 }}
                     />
                   </Grid>
-                  <Grid item xs={12} sx={{ textAlign: "right" }}>
-                    <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={<Check />}
-                      onClick={async () => {
-                        const errors = await formik.validateForm();
-                        formik.setTouched({
-                          invitationEmail: true,
-                          inviteeCount: true,
-                          invitationOption: true,
-                        });
-                        if (Object.keys(errors).length === 0) {
-                          formik.submitForm();
-                        }
-                      }}
-                    >
-                      Send Invitation
-                    </Button>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      name="purposeOfVisit"
+                      label="Purpose Of Visit / Comment"
+                      value={formik.values.purposeOfVisit}
+                      onChange={formik.handleChange}
+                      error={
+                        formik.touched.purposeOfVisit &&
+                        Boolean(formik.errors.purposeOfVisit)
+                      }
+                      helperText={
+                        formik.touched.purposeOfVisit &&
+                        formik.errors.purposeOfVisit
+                      }
+                      variant="outlined"
+                    />
                   </Grid>
                 </Grid>
-              </CardContent>
-            </Card>
+              </Box>
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
+                  <BusinessIcon color="primary" />
+                  Floors and Rooms *
+                </Typography>
+                <FloorRoomSelector
+                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+                  selectedFloorsAndRooms={formik.values.accessibleLocations}
+                  onChange={(value) => {
+                    formik.setFieldValue("accessibleLocations", value);
+                  }}
+                  error={
+                    formik.touched.accessibleLocations &&
+                    formik.errors.accessibleLocations
+                  }
+                />
+              </Box>
+              <Box sx={{ mb: 4 }}>
+                <Typography
+                  variant="h5"
+                  gutterBottom
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}
+                >
+                  <ScheduleIcon color="primary" />
+                  Schedule Details
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={4}>
+                    <DatePicker
+                      label="Scheduled Date *"
+                      name="scheduledDate"
+                      value={
+                        formik.values.scheduledDate
+                          ? dayjs(formik.values.scheduledDate)
+                          : null
+                      }
+                      onChange={(value) => {
+                        formik.setFieldValue(
+                          "scheduledDate",
+                          dayjs(value).format("YYYY-MM-DD")
+                        );
+                      }}
+                      minDate={dayjs()}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error:
+                            formik.touched.scheduledDate &&
+                            Boolean(formik.errors.scheduledDate),
+                          helperText:
+                            formik.touched.scheduledDate &&
+                            formik.errors.scheduledDate,
+                          onBlur: () =>
+                            formik.setFieldTouched("scheduledDate", true),
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TimePicker
+                      label="Time Of Entry *"
+                      name="timeOfEntry"
+                      value={
+                        formik.values.timeOfEntry
+                          ? dayjs(formik.values.timeOfEntry)
+                          : null
+                      }
+                      onChange={(value) => {
+                        formik.setFieldValue(
+                          "timeOfEntry",
+                          formik.values.scheduledDate +
+                            "T" +
+                            dayjs(value).format(
+                              "HH:mm:ss" + dayjs(value).format("Z")
+                            )
+                        );
+                      }}
+                      disabled={formik.values.scheduledDate === ""}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error:
+                            formik.touched.timeOfEntry &&
+                            Boolean(formik.errors.timeOfEntry),
+                          helperText:
+                            formik.touched.timeOfEntry &&
+                            formik.errors.timeOfEntry,
+                          onBlur: () =>
+                            formik.setFieldTouched("timeOfEntry", true),
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <TimePicker
+                      label="Time Of Departure *"
+                      name="timeOfDeparture"
+                      value={
+                        formik.values.timeOfDeparture
+                          ? dayjs(formik.values.timeOfDeparture)
+                          : null
+                      }
+                      onChange={(value) => {
+                        formik.setFieldValue(
+                          "timeOfDeparture",
+                          formik.values.scheduledDate +
+                            "T" +
+                            dayjs(value).format(
+                              "HH:mm:ss" + dayjs(value).format("Z")
+                            )
+                        );
+                      }}
+                      disabled={formik.values.timeOfEntry === ""}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error:
+                            formik.touched.timeOfDeparture &&
+                            Boolean(formik.errors.timeOfDeparture),
+                          helperText:
+                            formik.touched.timeOfDeparture &&
+                            formik.errors.timeOfDeparture,
+                          onBlur: () =>
+                            formik.setFieldTouched("timeOfDeparture", true),
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </>
           )}
+          {formik.values.invitationOption === "sendInvitation" && (
+            <Box
+              sx={{
+                mb: 3,
+                p: { xs: 2, sm: 3 },
+                borderRadius: 2,
+                border: (theme) =>
+                  `1px solid ${
+                    theme.palette.mode === "dark"
+                      ? theme.palette.grey[800]
+                      : theme.palette.grey[300]
+                  }`,
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                <PersonIcon color="primary" />
+                <Typography variant="h6" component="h3">
+                  Send Invitation
+                </Typography>
+              </Stack>
+
+              <Typography variant="body2" color="text.secondary" mb={3}>
+                Enter the email address and number of invitees. Invitations will
+                be sent automatically after submission.
+              </Typography>
+
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    label="Invitation Email"
+                    name="invitationEmail"
+                    placeholder="e.g. name@example.com"
+                    type="email"
+                    value={formik.values.invitationEmail}
+                    onChange={formik.handleChange}
+                    onBlur={() =>
+                      formik.setFieldTouched("invitationEmail", true)
+                    }
+                    error={
+                      formik.touched.invitationEmail &&
+                      Boolean(formik.errors.invitationEmail)
+                    }
+                    helperText={
+                      formik.touched.invitationEmail &&
+                      formik.errors.invitationEmail
+                    }
+                    variant="outlined"
+                    size="medium"
+                  />
+                </Grid>
+
+                <Grid
+                  item
+                  xs={12}
+                  md={4}
+                  display="flex"
+                  justifyContent={{ xs: "flex-start", md: "flex-end" }}
+                >
+                  <TextField
+                    label="Number of Invitees"
+                    name="inviteeCount"
+                    type="number"
+                    value={formik.values.inviteeCount}
+                    onChange={formik.handleChange}
+                    onBlur={() => formik.setFieldTouched("inviteeCount", true)}
+                    error={
+                      formik.touched.inviteeCount &&
+                      Boolean(formik.errors.inviteeCount)
+                    }
+                    helperText={
+                      formik.touched.inviteeCount && formik.errors.inviteeCount
+                    }
+                    variant="outlined"
+                    size="medium"
+                    inputProps={{ min: 1 }}
+                    sx={{ width: 1000 }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} display="flex" justifyContent="flex-end">
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<Check />}
+                    onClick={async () => {
+                      const errors = await formik.validateForm();
+                      formik.setTouched({
+                        invitationEmail: true,
+                        inviteeCount: true,
+                        invitationOption: true,
+                      });
+                      if (Object.keys(errors).length === 0) {
+                        await formik.submitForm();
+                      }
+                    }}
+                    sx={{
+                      mt: 1,
+                      px: 2,
+                      py: 1.3,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Send Invitation
+                  </Button>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </>
+      );
+    case 1:
+      return (
+        <>
+          <Stepper activeStep={step} sx={{ mb: 4 }}>
+            {steps.map((label, index) => (
+              <Step key={index}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+          <FieldArray name="visitors">
+            {({ remove }) => (
+              <>
+                {formik.values.visitors.map(
+                  (visitor: VisitorDetail, index: number) => (
+                    <Card variant="outlined" sx={{ mb: 2 }} key={index}>
+                      <CardContent>
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={2}
+                        >
+                          <Typography
+                            variant="h6"
+                            component="h3"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <PersonIcon color="primary" />
+                            Visitor {index + 1}
+                          </Typography>
+                          {formik.values.visitors.length > 1 &&
+                            visitor.status === VisitorStatus.Draft && (
+                              <IconButton
+                                onClick={() => remove(index)}
+                                color="error"
+                                size="small"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            )}
+                        </Box>
+                        <Grid container spacing={3}>
+                          <Grid item xs={12} md={6}>
+                            <TextField
+                              fullWidth
+                              label="ID/Passport Number"
+                              name={`visitors.${index}.idPassportNumber`}
+                              value={visitor.idPassportNumber}
+                              onChange={(event) => {
+                                formik.setFieldValue(
+                                  `visitors.${index}.idPassportNumber`,
+                                  event.target.value.toUpperCase()
+                                );
+                              }}
+                              onBlur={() => {
+                                formik.setFieldTouched(
+                                  `visitors.${index}.idPassportNumber`,
+                                  true
+                                );
+                                fetchVisitorByNic(
+                                  visitor.idPassportNumber,
+                                  index,
+                                  formik
+                                );
+                              }}
+                              error={
+                                formik.touched.visitors?.[index]
+                                  ?.idPassportNumber &&
+                                Boolean(
+                                  formik.errors.visitors?.[index]
+                                    ?.idPassportNumber
+                                )
+                              }
+                              helperText={
+                                formik.touched.visitors?.[index]
+                                  ?.idPassportNumber &&
+                                formik.errors.visitors?.[index]
+                                  ?.idPassportNumber
+                              }
+                              variant="outlined"
+                              disabled={
+                                visitor.status === VisitorStatus.Completed
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <TextField
+                              fullWidth
+                              label="Full Name"
+                              name={`visitors.${index}.fullName`}
+                              value={visitor.fullName}
+                              onChange={formik.handleChange}
+                              onBlur={() =>
+                                formik.setFieldTouched(
+                                  `visitors.${index}.fullName`,
+                                  true
+                                )
+                              }
+                              error={
+                                formik.touched.visitors?.[index]?.fullName &&
+                                Boolean(
+                                  formik.errors.visitors?.[index]?.fullName
+                                )
+                              }
+                              helperText={
+                                formik.touched.visitors?.[index]?.fullName &&
+                                formik.errors.visitors?.[index]?.fullName
+                              }
+                              variant="outlined"
+                              disabled={
+                                visitor.status === VisitorStatus.Completed
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <TextField
+                              fullWidth
+                              label="Contact Number"
+                              name={`visitors.${index}.contactNumber`}
+                              value={visitor.contactNumber}
+                              onChange={formik.handleChange}
+                              onBlur={() =>
+                                formik.setFieldTouched(
+                                  `visitors.${index}.contactNumber`,
+                                  true
+                                )
+                              }
+                              error={
+                                formik.touched.visitors?.[index]
+                                  ?.contactNumber &&
+                                Boolean(
+                                  formik.errors.visitors?.[index]?.contactNumber
+                                )
+                              }
+                              helperText={
+                                formik.touched.visitors?.[index]
+                                  ?.contactNumber &&
+                                formik.errors.visitors?.[index]?.contactNumber
+                              }
+                              variant="outlined"
+                              InputProps={{
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <TextField
+                                      select
+                                      name={`visitors.${index}.countryCode`}
+                                      value={visitor.countryCode}
+                                      onChange={formik.handleChange}
+                                      variant="standard"
+                                      sx={{ minWidth: 80 }}
+                                      InputProps={{ disableUnderline: true }}
+                                      disabled={
+                                        visitor.status ===
+                                        VisitorStatus.Completed
+                                      }
+                                    >
+                                      {COUNTRY_CODES.map((country) => (
+                                        <MenuItem
+                                          key={country.code}
+                                          value={country.code}
+                                        >
+                                          {country.flag} {country.code}
+                                        </MenuItem>
+                                      ))}
+                                    </TextField>
+                                  </InputAdornment>
+                                ),
+                              }}
+                              disabled={
+                                visitor.status === VisitorStatus.Completed
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} md={6}>
+                            <TextField
+                              fullWidth
+                              label="Email Address"
+                              name={`visitors.${index}.emailAddress`}
+                              type="email"
+                              value={visitor.emailAddress}
+                              onChange={formik.handleChange}
+                              onBlur={() =>
+                                formik.setFieldTouched(
+                                  `visitors.${index}.emailAddress`,
+                                  true
+                                )
+                              }
+                              error={
+                                !!formik.errors.visitors?.[index]?.emailAddress
+                              }
+                              helperText={
+                                formik.touched.visitors?.[index]
+                                  ?.emailAddress &&
+                                formik.errors.visitors?.[index]?.emailAddress
+                              }
+                              variant="outlined"
+                              disabled={
+                                visitor.status === VisitorStatus.Completed
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              name={`visitors.${index}.passNumber`}
+                              label="Pass Number"
+                              value={visitor.passNumber}
+                              onChange={formik.handleChange}
+                              onBlur={() =>
+                                formik.setFieldTouched(
+                                  `visitors.${index}.passNumber`,
+                                  true
+                                )
+                              }
+                              error={
+                                formik.touched.visitors?.[index]?.passNumber &&
+                                Boolean(
+                                  formik.errors.visitors?.[index]?.passNumber
+                                )
+                              }
+                              helperText={
+                                formik.touched.visitors?.[index]?.passNumber &&
+                                formik.errors.visitors?.[index]?.passNumber
+                              }
+                              variant="outlined"
+                              disabled={
+                                visitor.status === VisitorStatus.Completed
+                              }
+                            />
+                          </Grid>
+                          {visitor.status === VisitorStatus.Draft && (
+                            <Grid item xs={12} sx={{ textAlign: "right" }}>
+                              <Button
+                                variant="contained"
+                                color="success"
+                                startIcon={<Check />}
+                                onClick={async () => {
+                                  const errors = await formik.validateForm();
+                                  formik.setTouched({
+                                    [`visitors.${index}.idPassportNumber`]:
+                                      true,
+                                    [`visitors.${index}.fullName`]: true,
+                                    [`visitors.${index}.contactNumber`]: true,
+                                    [`visitors.${index}.emailAddress`]: true,
+                                    [`visitors.${index}.passNumber`]: true,
+                                  });
+                                  if (Object.keys(errors).length === 0) {
+                                    formik.submitForm();
+                                  }
+                                }}
+                              >
+                                Submit
+                              </Button>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
+              </>
+            )}
+          </FieldArray>
         </>
       );
     default:
@@ -869,22 +978,28 @@ const renderStepContent = (
 };
 
 function CreateVisit() {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
-  const visitorState = useAppSelector((state: RootState) => state.visitor);
-  const visitState = useAppSelector((state: RootState) => state.visit);
-  const userState = useAppSelector((state: RootState) => state.user);
-  const invitationSendState = useAppSelector(
-    (state: RootState) => state.invitation
-  );
   const dialogContext = useConfirmationModalContext();
+
+  const { visitorState, invitationSendState } = useAppSelector(
+    (state: RootState) => ({
+      visitorState: state.visitor,
+      invitationSendState: state.invitation,
+    })
+  );
+
   const phoneUtil = PhoneNumberUtil.getInstance();
+
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
+
   const isAnySubmittedVisitor = useCallback((formik: any) => {
     return formik.values.visitors.some(
       (v: VisitorDetail) => v.status === VisitorStatus.Completed
     );
   }, []);
+
   const defaultVisitor: VisitorDetail = {
     idPassportNumber: "",
     fullName: "",
@@ -932,6 +1047,30 @@ function CreateVisit() {
 
   const submitVisit = async (values: any, formikHelpers: any) => {
     if (values.invitationOption === "sendInvitation") {
+      try {
+        await visitorValidationSchema.validate(
+          {
+            invitationEmail: values.invitationEmail,
+            inviteeCount: Number(values.inviteeCount),
+            invitationOption: values.invitationOption,
+          },
+          { context: { visitors: values.visitors }, abortEarly: false }
+        );
+      } catch (validationError) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message:
+              "Please provide a valid email address and number of invitees.",
+            type: "error",
+          })
+        );
+        formikHelpers.setTouched({
+          invitationEmail: true,
+          inviteeCount: true,
+        });
+        return;
+      }
+
       if (!dialogContext?.showConfirmation) {
         dispatch(
           enqueueSnackbarMessage({
@@ -947,49 +1086,16 @@ function CreateVisit() {
         `An invitation will be sent to ${values.invitationEmail} for ${values.inviteeCount} invitee(s).`,
         ConfirmationType.accept,
         async () => {
-          try {
-            const resultAction = await dispatch(
-              sendInvitation({
-                updatedBy: userState.userInfo?.workEmail ?? "",
-                isActive: 1,
-                noOfVisitors: values.inviteeCount,
-                visitDetails: {
-                  nameOfCompany: values.companyName,
-                  whomTheyMeet: values.whoTheyMeet,
-                  purposeOfVisit: values.purposeOfVisit,
-                  accessibleLocations: values.accessibleLocations,
-                  sheduledDate: values.scheduledDate,
-                  timeOfEntry: values.timeOfEntry,
-                  timeOfDeparture: values.timeOfDeparture,
-                },
-                inviteeEmail: values.invitationEmail,
-              })
-            );
+          const resultAction = await dispatch(
+            sendInvitation({
+              noOfVisitors: Number(values.inviteeCount),
+              inviteeEmail: values.invitationEmail,
+            })
+          );
 
-            if (sendInvitation.fulfilled.match(resultAction)) {
-              dispatch(
-                enqueueSnackbarMessage({
-                  message: "Invitation sent successfully!",
-                  type: "success",
-                })
-              );
-              formikHelpers.resetForm();
-              setActiveStep(0);
-            } else {
-              dispatch(
-                enqueueSnackbarMessage({
-                  message: "Failed to send invitation.",
-                  type: "error",
-                })
-              );
-            }
-          } catch (error) {
-            dispatch(
-              enqueueSnackbarMessage({
-                message: "An error occurred while sending the invitation.",
-                type: "error",
-              })
-            );
+          if (sendInvitation.fulfilled.match(resultAction)) {
+            formikHelpers.resetForm();
+            setActiveStep(0);
           }
         },
         "Yes",
@@ -1111,20 +1217,6 @@ function CreateVisit() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4, textAlign: "center" }}>
-        <Typography
-          variant="h3"
-          component="h1"
-          gutterBottom
-          color="primary"
-          sx={{ fontWeight: "bold" }}
-        >
-          Visitor Pass Registration
-        </Typography>
-        <Typography variant="subtitle1" color="text.secondary">
-          Complete the form below to register your visit
-        </Typography>
-      </Box>
       <Box>
         <Formik
           initialValues={{
@@ -1136,9 +1228,9 @@ function CreateVisit() {
             timeOfEntry: "",
             timeOfDeparture: "",
             visitors: [defaultVisitor],
-            invitationOption: "",
+            invitationOption: "sendInvitation",
             invitationEmail: "",
-            inviteeCount: "",
+            inviteeCount: "1",
           }}
           validationSchema={
             activeStep === 0 ? visitValidationSchema : visitorValidationSchema
@@ -1163,15 +1255,13 @@ function CreateVisit() {
                 />
               )}
               <Form>
-                <Stepper activeStep={activeStep}>
-                  {steps.map((label, index) => (
-                    <Step key={index}>
-                      <StepLabel>{label}</StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
                 <Box sx={{ mt: 2 }}>
-                  {renderStepContent(activeStep, formik, fetchVisitorByNic)}
+                  {renderStepContent(
+                    activeStep,
+                    formik,
+                    fetchVisitorByNic,
+                    theme
+                  )}
                 </Box>
                 <Box
                   sx={{
@@ -1200,49 +1290,54 @@ function CreateVisit() {
                       {isAnySubmittedVisitor(formik) ? "Close" : "Back"}
                     </Button>
                   )}
-                  {(!isLastStep ||
-                    (isLastStep &&
-                      formik.values.invitationOption === "addVisitor")) && (
-                    <Button
-                      startIcon={isLastStep && <AddIcon />}
-                      color="primary"
-                      sx={{ color: "white" }}
-                      variant="contained"
-                      disabled={
-                        isLastStep &&
-                        formik.values.invitationOption === "addVisitor"
-                          ? !formik.values.visitors.every(
-                              (v) => v.status === VisitorStatus.Completed
-                            )
-                          : false
-                      }
-                      onClick={async () => {
-                        if (
-                          isLastStep &&
-                          formik.values.invitationOption === "addVisitor"
-                        ) {
-                          addNewVisitorBlock(formik);
-                        } else {
-                          const errors = await formik.validateForm();
-                          if (Object.keys(errors).length === 0) {
-                            handleNext();
-                          } else {
-                            formik.setTouched(
-                              Object.keys(errors).reduce((acc: any, key) => {
-                                acc[key] = true;
-                                return acc;
-                              }, {})
-                            );
+                  {formik.values.invitationOption === "sendInvitation"
+                    ? null
+                    : (!isLastStep ||
+                        (isLastStep &&
+                          formik.values.invitationOption === "addVisitor")) && (
+                        <Button
+                          startIcon={isLastStep && <AddIcon />}
+                          color="primary"
+                          sx={{ color: "white" }}
+                          variant="contained"
+                          disabled={
+                            isLastStep &&
+                            formik.values.invitationOption === "addVisitor"
+                              ? !formik.values.visitors.every(
+                                  (v) => v.status === VisitorStatus.Completed
+                                )
+                              : false
                           }
-                        }
-                      }}
-                    >
-                      {isLastStep &&
-                      formik.values.invitationOption === "addVisitor"
-                        ? "Add Visitor"
-                        : "Continue"}
-                    </Button>
-                  )}
+                          onClick={async () => {
+                            if (
+                              isLastStep &&
+                              formik.values.invitationOption === "addVisitor"
+                            ) {
+                              addNewVisitorBlock(formik);
+                            } else {
+                              const errors = await formik.validateForm();
+                              if (Object.keys(errors).length === 0) {
+                                handleNext();
+                              } else {
+                                formik.setTouched(
+                                  Object.keys(errors).reduce(
+                                    (acc: any, key) => {
+                                      acc[key] = true;
+                                      return acc;
+                                    },
+                                    {}
+                                  )
+                                );
+                              }
+                            }
+                          }}
+                        >
+                          {isLastStep &&
+                          formik.values.invitationOption === "addVisitor"
+                            ? "Add Visitor"
+                            : "Continue"}
+                        </Button>
+                      )}
                 </Box>
               </Form>
             </>

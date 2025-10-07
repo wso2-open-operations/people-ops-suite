@@ -13,12 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { State } from "@/types/types";
-import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+
+import { State } from "@/types/types";
+import { APIService } from "@utils/apiService";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+
+import { AppConfig } from "@config/config";
 
 interface VisitState {
   state: State;
@@ -44,7 +47,7 @@ export interface AddVisitPayload {
   passNumber: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
-  accessibleLocations: FloorRoom[];
+  accessibleLocations: FloorRoom[] | null;
   timeOfEntry: string;
   timeOfDeparture: string;
 }
@@ -60,7 +63,7 @@ export interface Visit {
   passNumber: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
-  accessibleLocations: FloorRoom[];
+  accessibleLocations: FloorRoom[] | null;
   timeOfEntry: string;
   timeOfDeparture: string;
   status: string;
@@ -77,10 +80,11 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  visitId: Number;
-  passNumber?: Number;
+  rejectionReason: string | null;
+  passNumber: string | null;
+  accessibleLocations: FloorRoom[] | null;
+  visitId: number;
   status: string;
-  rejectionReason?: string;
 }
 
 const initialState: VisitState = {
@@ -140,7 +144,8 @@ export const fetchVisits = createAsyncThunk(
       limit,
       offset,
       status,
-    }: { limit: number; offset: number; status?: string },
+      inviter,
+    }: { limit: number; offset: number; status?: string; inviter?: string },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -148,7 +153,7 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset, status },
+          params: { limit, offset, status, inviter },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -183,7 +188,11 @@ export const visitStatusUpdate = createAsyncThunk(
       APIService.getInstance()
         .post(
           `${AppConfig.serviceUrls.visits}/${payload.visitId}/${payload.status}`,
-          payload || null,
+          {
+            rejectionReason: payload.rejectionReason,
+            passNumber: payload.passNumber,
+            accessibleLocations: payload.accessibleLocations,
+          },
           {
             cancelToken: newCancelTokenSource.token,
           }
@@ -201,9 +210,8 @@ export const visitStatusUpdate = createAsyncThunk(
           dispatch(
             enqueueSnackbarMessage({
               message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? error.response?.data?.message
-                  : "An error occurred while updating visit status!",
+                error.response?.data?.message ??
+                "An error occurred while updating visit status!",
               type: "error",
             })
           );

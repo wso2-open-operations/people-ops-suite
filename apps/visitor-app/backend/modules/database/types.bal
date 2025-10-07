@@ -112,7 +112,7 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    Floor[] accessibleLocations;
+    Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -145,7 +145,7 @@ public type VisitRecord record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    json accessibleLocations;
+    string? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -184,60 +184,97 @@ public type VisitsResponse record {|
     Visit[] visits;
 |};
 
-# Visit Invitations.
-public type VisitInfo record {|
-    # name of company
-    string nameOfCompany;
-    # person they meet
-    string whomTheyMeet;
-    # purpose of visit
-    string purposeOfVisit;
-    # accessible locations
-    Floor[] accessibleLocations;
-    # scheduled date
-    string sheduledDate;
-    # time of entry
-    string timeOfEntry;
-    # time of departure
-    string timeOfDeparture;
-|};
-
-# Details of an invitation.
+# [Database] Insert record for visit invitation.
 public type AddInvitationPayload record {|
     # invitations count
     int noOfVisitors;
-    # visit information
-    VisitInfo visitDetails;
     # invitation status
-    int isActive;
+    boolean isActive;
     # invitee email
     string inviteeEmail;
-    # invitation updater
-    string updatedBy;
 |};
 
+# [Database] Invitation record.
+public type InvitationRecord record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
+    # Validity of the invitation
+    boolean active;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    string? visitInfo = ();
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+|};
+
+# Invitation.
 public type Invitation record {|
     *AuditFields;
     # Id of the invitation
     int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
     # Validity of the invitation
-    int isActive;
+    boolean active;
     # No of invitations
     int noOfVisitors;
     # Visit details in the invitation
-    json visitDetails;
+    VisitInfo? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
-    # Invited by
-    string invitedBy;
+|};
+
+# Visit information of invitation.
+public type VisitInfo record {|
+    # Name of company
+    string? companyName = ();
+    # Person they meet
+    string whomTheyMeet;
+    # Purpose of visit
+    string purposeOfVisit;
+    # Time of entry
+    string timeOfEntry;
+    # Time of departure
+    string timeOfDeparture;
 |};
 
 # Payload to update visit details.
 public type UpdateVisitPayload record {|
     # Number in the tag given to visitor
-    int? passNumber;
+    string? passNumber = ();
     # Status of the visit
-    Status status?;
+    Status? status = ();
     # Reason for rejecting the visit
-    string rejectionReason?;
+    string? rejectionReason = ();
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
+|};
+
+# Payload to update Invitation details.
+public type UpdateInvitationPayload record {|
+    # Visit details in the invitation
+    VisitInfo? visitInfo = ();
+    # Validity of the invitation
+    boolean? active = ();
+|};
+
+// Filter Types.
+# Filters for the visits.
+public type VisitFilters record {|
+    # Email of the inviter
+    string? inviter = ();
+    # ID of the visit
+    int? visitId = ();
+    # Invitation ID associated with the visit
+    int? invitationId = ();
+    # Status of the visit
+    Status? status = ();
+    # Limit number of visits to fetch
+    int? 'limit = DEFAULT_LIMIT;
+    # Offset for pagination
+    int? offset = ();
 |};

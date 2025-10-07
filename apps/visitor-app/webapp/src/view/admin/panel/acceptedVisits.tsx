@@ -14,26 +14,41 @@
 // specific language governing permissions and limitations
 // under the License.
 import React, { useState, useEffect } from "react";
-import { Box, Button, Typography, Alert, IconButton } from "@mui/material";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+import {
+  Box,
+  IconButton,
+  Switch,
+  FormControlLabel,
+  Typography,
+} from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { Done } from "@mui/icons-material";
+
 import {
   RootState,
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+import ErrorHandler from "@component/common/ErrorHandler";
+import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+
 import {
   fetchVisits,
   visitStatusUpdate,
   resetStatusUpdateState,
 } from "@slices/visitSlice/visit";
-import { State, VisitStatus, ConfirmationType } from "@/types/types";
-import ErrorHandler from "@component/common/ErrorHandler";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+
+import {
+  State,
+  VisitStatus,
+  ConfirmationType,
+  VisitAction,
+} from "@/types/types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -47,18 +62,14 @@ const toLocalDateTime = (utcString: string) => {
 
 const AcceptedVisits = () => {
   const dispatch = useAppDispatch();
-  const {
-    visits,
-    state,
-    statusUpdateState,
-    statusUpdateMessage,
-    statusUpdateError,
-    stateMessage,
-  } = useAppSelector((state: RootState) => state.visit);
+  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+    (state: RootState) => state.visit
+  );
   const dialogContext = useConfirmationModalContext();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+  const [showAllVisits, setShowAllVisits] = useState(false);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -68,10 +79,10 @@ const AcceptedVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.approve,
+        status: showAllVisits ? undefined : VisitStatus.approved,
       })
     );
-  }, [dispatch, page, pageSize]);
+  }, [dispatch, page, pageSize, showAllVisits]);
 
   useEffect(() => {
     if (
@@ -93,7 +104,10 @@ const AcceptedVisits = () => {
       async () => {
         const payload = {
           visitId: +visitId,
-          status: VisitStatus.complete,
+          status: VisitAction.complete,
+          passNumber: null,
+          accessibleLocations: null,
+          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));
@@ -101,13 +115,20 @@ const AcceptedVisits = () => {
           fetchVisits({
             limit: pageSize,
             offset: page * pageSize,
-            status: VisitStatus.approve,
+            status: showAllVisits ? undefined : VisitStatus.approved,
           })
         );
       },
       "Confirm",
       "Cancel"
     );
+  };
+
+  const handleToggleAllVisits = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setShowAllVisits(event.target.checked);
+    setPage(0); // Reset to first page when toggling
   };
 
   const columns: GridColDef[] = [
@@ -141,7 +162,9 @@ const AcceptedVisits = () => {
           color="success"
           onClick={() => handleCompleteVisit(String(params.row.id))}
           disabled={
-            state === State.loading || statusUpdateState === State.loading
+            state === State.loading ||
+            statusUpdateState === State.loading ||
+            params.row.status !== VisitStatus.approved
           }
         >
           <Done />
@@ -161,11 +184,57 @@ const AcceptedVisits = () => {
         }
       />
 
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          p: 1.5,
+          backgroundColor: "transparent",
+        }}
+      >
+        <FormControlLabel
+          control={
+            <>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  fontSize: "0.875rem",
+                  marginRight: 1,
+                }}
+              >
+                Showing All Visits
+              </Typography>
+              <Switch
+                checked={showAllVisits}
+                onChange={handleToggleAllVisits}
+                color="primary"
+                size="small"
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: "primary",
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: "primary",
+                  },
+                }}
+              />
+            </>
+          }
+          label="" // Removing the label here for clarity, since it's handled by the Typography above
+          sx={{
+            marginLeft: "auto",
+          }}
+        />
+      </Box>
+
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
       ) : state === State.success ? (
         visitsList.length === 0 ? (
-          <ErrorHandler message="No accepted visits found." />
+          <ErrorHandler message="No visits found." />
         ) : (
           <Box
             sx={{

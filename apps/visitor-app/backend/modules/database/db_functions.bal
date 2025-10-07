@@ -37,11 +37,8 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
 # + return - Visitor object or error if so
 public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
     Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedNic));
-    if visitor is sql:NoRowsError {
-        return;
-    }
     if visitor is error {
-        return visitor;
+        return visitor is sql:NoRowsError ? () : visitor;
     }
 
     // Decrypt sensitive fields.
@@ -71,73 +68,116 @@ public isolated function addInvitation(AddInvitationPayload payload, string crea
 #
 # + encodeValue - Encoded uuid value
 # + return - Invitation object or error
-public isolated function fetchInvitation(string encodeValue) returns Invitation|error {
-    Invitation|sql:Error invitation = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
-    if invitation is sql:Error {
-        return invitation;
+public isolated function fetchInvitation(string encodeValue) returns Invitation|error? {
+    InvitationRecord|error invitationRecord = databaseClient->queryRow(fetchInvitationQuery(encodeValue));
+    if invitationRecord is error {
+        return invitationRecord is sql:NoRowsError ? () : invitationRecord;
     }
-    VisitInfo visitInfo = check invitation.visitDetails.cloneWithType();
-    invitation.visitDetails = visitInfo;
-    return invitation;
+
+    string? visitInfo = invitationRecord.visitInfo;
+    return {
+        invitationId: invitationRecord.invitationId,
+        inviteeEmail: invitationRecord.inviteeEmail,
+        noOfVisitors: invitationRecord.noOfVisitors,
+        visitInfo: visitInfo is string ? check visitInfo.fromJsonStringWithType() : (),
+        active: invitationRecord.active,
+        createdBy: invitationRecord.createdBy,
+        createdOn: invitationRecord.createdOn,
+        updatedBy: invitationRecord.updatedBy,
+        updatedOn: invitationRecord.updatedOn
+    };
+}
+
+# Update invitation details.
+#
+# + invitationId - ID of the invitation to update
+# + payload - Payload containing the fields to update  
+# + updatedBy - Person who is updating the invitation
+# + return - Error if the update failed or no rows were affected
+public isolated function updateInvitation(int invitationId, UpdateInvitationPayload payload, string updatedBy)
+    returns error? {
+
+    sql:ExecutionResult executionResult = check databaseClient->execute(updateInvitationQuery(
+            invitationId, payload, updatedBy));
+
+    if executionResult.affectedRowCount < 1 {
+        return error("No row was updated!");
+    }
 }
 
 # Add new visit.
 #
 # + payload - Payload containing the visit details
 # + createdBy - Person who is creating the visit
-# + inviationId - Invitation ID associated with the visit
+# + invitationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
-public isolated function addVisit(AddVisitPayload payload, string createdBy, int? inviationId = ()) returns error? {
-    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, inviationId));
+public isolated function addVisit(AddVisitPayload payload, string createdBy, int? invitationId = ()) returns error? {
+    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, invitationId));
 }
 
 # Fetch visit by ID.
 #
 # + visitId - ID of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns VisitRecord|error {
-    VisitRecord|error visitRecord = databaseClient->queryRow(fetchVisitsQuery(visitId));
+public isolated function fetchVisit(int visitId) returns Visit|error? {
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
 
-    if visitRecord is error {
-        return visitRecord;
+    if visit is error {
+        return visit is sql:NoRowsError ? () : visit;
     }
 
-    visitRecord.name = check decrypt(visitRecord.name);
-    visitRecord.nicNumber = check decrypt(visitRecord.nicNumber);
-    visitRecord.contactNumber = check decrypt(visitRecord.contactNumber);
-    visitRecord.email = check decrypt(visitRecord.email);
-    visitRecord.timeOfEntry = visitRecord.timeOfEntry.endsWith(".0")
-        ? visitRecord.timeOfEntry.substring(0, visitRecord.timeOfEntry.length() - 2)
-        : visitRecord.timeOfEntry;
-
-    visitRecord.timeOfDeparture = visitRecord.timeOfDeparture.endsWith(".0")
-        ? visitRecord.timeOfDeparture.substring(0, visitRecord.timeOfDeparture.length() - 2)
-        : visitRecord.timeOfDeparture;
-
-    return visitRecord;
+    string? accessibleLocations = visit.accessibleLocations;
+    return {
+        id: visit.id,
+        timeOfEntry: visit.timeOfEntry.endsWith(".0")
+            ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
+            : visit.timeOfEntry,
+        timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
+            ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
+            : visit.timeOfDeparture,
+        passNumber: visit.passNumber,
+        nicHash: visit.nicHash,
+        nicNumber: check decrypt(visit.nicNumber),
+        name: check decrypt(visit.name),
+        email: check decrypt(<string>visit.email),
+        contactNumber: check decrypt(visit.contactNumber),
+        companyName: visit.companyName,
+        whomTheyMeet: visit.whomTheyMeet,
+        purposeOfVisit: visit.purposeOfVisit,
+        accessibleLocations: accessibleLocations is string ?
+            check accessibleLocations.fromJsonStringWithType() : null,
+        invitationId: visit.invitationId,
+        status: visit.status,
+        createdBy: visit.createdBy,
+        createdOn: visit.createdOn,
+        updatedBy: visit.updatedBy,
+        updatedOn: visit.updatedOn
+    };
 }
 
 # Fetch visits with pagination.
 #
-# + 'limit - Limit number of visits to fetch
-# + offset - Offset for pagination
-# + invitation_id - Filter by invitation ID
-# + status - Filter by visit status
+# + filters - Filters for fetching visits
 # + return - Array of visits objects or error
-public isolated function fetchVisits(string? status = (), int? 'limit = (), int? offset = (), int? invitation_id = ())
+public isolated function fetchVisits(VisitFilters filters)
     returns VisitsResponse|error {
 
-    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery('limit, offset, invitation_id, status));
+    stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery(filters));
 
     int totalCount = 0;
     Visit[] visits = [];
     check from VisitRecord visit in resultStream
         do {
+            string? accessibleLocations = visit.accessibleLocations;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
-                timeOfEntry: visit.timeOfEntry,
-                timeOfDeparture: visit.timeOfDeparture,
+                timeOfEntry: visit.timeOfEntry.endsWith(".0")
+                    ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
+                    : visit.timeOfEntry,
+                timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
+                    ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
+                    : visit.timeOfDeparture,
                 passNumber: visit.passNumber,
                 nicHash: visit.nicHash,
                 nicNumber: check decrypt(visit.nicNumber),
@@ -147,7 +187,8 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
-                accessibleLocations: check visit.accessibleLocations.cloneWithType(),
+                accessibleLocations: accessibleLocations is string ?
+                    check accessibleLocations.fromJsonStringWithType() : null,
                 invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,
@@ -168,7 +209,6 @@ public isolated function fetchVisits(string? status = (), int? 'limit = (), int?
 # + return - Error if the update failed or no rows were affected
 public isolated function updateVisit(int visitId, UpdateVisitPayload payload, string updatedBy) returns error? {
     sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
-
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");
     }
