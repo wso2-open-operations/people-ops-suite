@@ -328,20 +328,11 @@ const renderStepContent = (
                       role="radio"
                       aria-checked={selected}
                       tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          formik.setFieldValue(
-                            "invitationOption",
-                            option.value
-                          );
-                        }
-                      }}
                       sx={(theme) => ({
-                        px: 3,
-                        py: 1.5,
+                        px: 2,
+                        py: 1.2,
                         cursor: "pointer",
-                        fontWeight: selected ? 600 : 500,
+                        fontWeight: selected ? 500 : 400,
                         fontSize: "0.95rem",
                         textAlign: "center",
                         transition: "all 0.25s ease-in-out",
