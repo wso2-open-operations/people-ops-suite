@@ -15,6 +15,9 @@
 // under the License. 
 import visitor.database;
 
+import ballerina/lang.regexp;
+import ballerina/time;
+
 # Converts the json array of accessible locations to a readable string.
 #
 # + accessibleLocations - Json string array containing floors and rooms
@@ -33,3 +36,38 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
 
     return formattedString.trim();
 }
+
+# Helper function to format date-time strings in Ballerina
+#
+# + dateTimeStr - UTC date-time string in "YYYY-MM-DD HH:MM" format  
+# + timeZone - UTC time zone string
+# + return - formatted date-time string in "YYYY-MM-DD HH:MM:SS (Time Zone)" format
+public function formatDateTime(string dateTimeStr, string timeZone) returns string|error {
+    string timeString = dateTimeStr;
+
+    timeString = regexp:replace(re ` `, timeString, "T");
+    timeString = timeString + ".00Z";
+
+    time:Utc utcFromString = check time:utcFromString(timeString);
+    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800);
+    time:Civil utcToCivil = time:utcToCivil(newUtcTime);
+
+    // Format with proper zero-padding for all components
+    string year = utcToCivil.year.toString();
+    string month = padZero(utcToCivil.month);
+    string day = padZero(utcToCivil.day);
+    string hour = padZero(utcToCivil.hour);
+    string minute = padZero(utcToCivil.minute);
+    string second = padZero(<int>(utcToCivil.second ?: 0));
+
+    return string `${year}-${month}-${day} ${hour}:${minute}:${second} (${timeZone})`;
+}
+
+# Helper function to pad numbers with leading zero.
+#
+# + num - Integer number to be padded
+# + return - Padded string representation of the number
+function padZero(int num) returns string {
+    return num < 10 ? string `0${num}` : num.toString();
+}
+

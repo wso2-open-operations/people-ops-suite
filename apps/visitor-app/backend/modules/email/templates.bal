@@ -2681,8 +2681,8 @@ public final string visitorCompletionTemplate = string `
   </body>
 </html>
 `;
-public final string visitorAcceptingTemplate = string `
 
+public final string visitorApproveTemplate = string `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -3159,11 +3159,6 @@ public final string visitorAcceptingTemplate = string `
           text-align: left !important;
         }
       }
-
-      /*          u+.wso2_body .wso2_full_wrap {
-                width: 100% !important;
-                width: 100vw !important;
-            }*/
     </style>
   </head>
 
@@ -3312,7 +3307,6 @@ public final string visitorAcceptingTemplate = string `
                                         width="100"
                                     /></a>
                                   </td>
-                                  <!-- <td align="right" class="wso2_orange preheaderContent" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;color: #949494;font-family: 'Roboto', Helvetica,sans-serif;font-size: 11px;line-height: 12.5px;text-align: right;padding: 20px 10px 30px 0;vertical-align: middle;" valign="top"><a href="{{view_online}}" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #1e1e1e;font-weight: normal;text-decoration: underline;" target="_blank">View online</a></td> -->
                                 </tr>
                               </tbody>
                             </table>
@@ -3450,7 +3444,7 @@ public final string visitorAcceptingTemplate = string `
                                                         font-weight: 500;
                                                       "
                                                     >
-                                                      Visitor Registration Portal
+                                                      WSO2 Visitor Registration
                                                     </p>
 
                                                     <p
@@ -3470,9 +3464,8 @@ public final string visitorAcceptingTemplate = string `
                                                         font-weight: 600;
                                                         margin-bottom: 6px;
                                                       "
-                                                   
-                                                      
-                                                      You have been added!
+                                                    >
+                                                      Visit Approved!
                                                     </p>
                                                   </td>
                                                 </tr>
@@ -3548,27 +3541,6 @@ public final string visitorAcceptingTemplate = string `
                             valign="top"
                           >
                             <p
-                              class="cDottedline"
-                              style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
-                                padding-bottom: 5px;
-                                font-size: 17px;
-                                line-height: 28px;
-                                padding-top: 40px;
-                                padding-left: 0;
-                                padding-right: 0;
-                                padding-right: 0;
-                                color: #465868;
-                                text-align: left;
-                                border-top: 2px dotted #c3c5c9;
-                                margin-top: 0;
-                              "
-                            >
-                              Dear
-                              <!-- [NAME] -->,
-                            </p>
-
-                            <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
                                 padding-bottom: 5px;
@@ -3581,9 +3553,8 @@ public final string visitorAcceptingTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              Your visit request has been approved.
-                              
-                              
+                              We are pleased to inform you that your visit to
+                              WSO2 has been approved.
                             </p>
 
                             <p
@@ -3594,23 +3565,13 @@ public final string visitorAcceptingTemplate = string `
                                 text-align: left;
                               "
                             >
-                            </p>
-
-                            <p
-                              style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
-                                font-size: 17px;
-                                color: #465868;
-                                text-align: left;
-                              "
-                            >
-                              Your user details:
+                              <strong>Visit Details:</strong>
                             </p>
                             <ul
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
                                 font-size: 17px;
-                                line-height: 28px;
+                                line-height: 20px;
                                 padding-left: 30px;
                                 padding-right: 0;
                                 padding-right: 0;
@@ -3627,9 +3588,8 @@ public final string visitorAcceptingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>User Name:</strong>
+                                  <strong>Visitor Name :</strong>
                                   <span><!-- [NAME] --></span>
-                                  
                                 </p>
                               </li>
                               <li>
@@ -3641,9 +3601,8 @@ public final string visitorAcceptingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Date:</strong>
-                                  <span><!-- [SCHEDULED_DATE] --></span>
-                                  
+                                  <strong>Entry :</strong>
+                                  <span><!-- [TIME_OF_ENTRY] --></span>
                                 </p>
                               </li>
                               <li>
@@ -3655,12 +3614,10 @@ public final string visitorAcceptingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Time:</strong>
-                                  <span><!-- [START_TIME] --> <!-- [END_TIME] --></span>
-                                 
+                                  <strong>Exit :</strong>
+                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
                                 </p>
                               </li>
-
                               <li>
                                 <p
                                   style="
@@ -3670,7 +3627,7 @@ public final string visitorAcceptingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Pass Number:</strong>
+                                  <strong>Pass Number :</strong>
                                   <!-- [PASS_NUMBER] -->
                                 </p>
                               </li>
@@ -3684,10 +3641,11 @@ public final string visitorAcceptingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Allowed Floors:</strong>
-                                 
+                                  <strong>Allowed Floors :</strong>
                                 </p>
-                                <ul> <!-- [ALLOWED_FLOORS] --></ul>
+                                <ul>
+                                  <!-- [ALLOWED_FLOORS] -->
+                                </ul>
                               </li>
                             </ul>
 
@@ -3704,9 +3662,9 @@ public final string visitorAcceptingTemplate = string `
                                 text-align: left;
                               "
                             >
-                              If you have any concerns, please contact 
-                              <!-- [CONTACT_EMAIL] -->
-                              .
+                              If you require any further assistance, please do
+                              not hesitate to contact us at
+                              <!-- [CONTACT_EMAIL] -->.
                             </p>
 
                             <p
@@ -3722,7 +3680,7 @@ public final string visitorAcceptingTemplate = string `
                                 text-align: left;
                               "
                             >
-                              Thank you for using our services.
+                              Thank you for your cooperation.
                             </p>
 
                             <p
@@ -3740,7 +3698,7 @@ public final string visitorAcceptingTemplate = string `
                               "
                             >
                               Best regards,<br />
-                              Visitor Registration Portal
+                              Administration Team
                             </p>
                           </td>
                         </tr>
@@ -3925,7 +3883,7 @@ public final string visitorAcceptingTemplate = string `
                                           border-radius: 9px;
                                         " /></a
                                     >&nbsp;&nbsp;&nbsp;<a
-                                      href="http://instagram.com/wso2inc/"
+                                      href="http://instagram.com/officialwso2/"
                                       style="
                                         -webkit-text-size-adjust: 100%;
                                         -ms-text-size-adjust: 100%;
@@ -4058,65 +4016,8 @@ public final string visitorAcceptingTemplate = string `
                                     valign="top"
                                   >
                                     ©
-                                    <?= employee.year ?>
-                                    WSO2, Inc. All Rights Reserved
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica,
-                                        sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 10px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    You are receiving this email because you
-                                    have shown interest in WSO2. You can
-                                    <a
-                                      href="https://wso2.com/selective-unsubscribe/"
-                                      style="
-                                        color: #465868;
-                                        text-decoration: underline;
-                                      "
-                                      >unsubscribe</a
-                                    >
-                                    from all communications at any time.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica,
-                                        sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 20px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
+                                    <!-- [YEAR] -->
+                                    WSO2, LLC. All Rights Reserved
                                   </td>
                                 </tr>
                               </tbody>
@@ -4137,7 +4038,9 @@ public final string visitorAcceptingTemplate = string `
     <!-- // END TEMPLATE -->
   </body>
 </html>
+
 `;
+
 public final string visitorRejectingTemplate = string `
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

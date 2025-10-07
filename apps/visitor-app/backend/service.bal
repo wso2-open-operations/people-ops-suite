@@ -620,17 +620,28 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             string accessibleLocationString = organizeLocations(accessibleLocations);
-            string|error content = email:bindKeyValues(email:visitorAcceptingTemplate,
+            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+            if formattedFromDate is error {
+                string customError = "Error occurred while formatting the visit start time!";
+                log:printError(customError, formattedFromDate);
+            }
+            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+            if formattedToDate is error {
+                string customError = "Error occurred while formatting the visit end time!";
+                log:printError(customError, formattedToDate);
+            }
+            string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                     {
                         "TIME": time:utcToEmailString(time:utcNow()),
                         "EMAIL": visit.email,
                         "NAME": visit.name,
-                        "SCHEDULED_DATE": visit.timeOfEntry,
+                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                        "TIME_OF_DEPARTURE": formattedToDate is error ?
+                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
                         "ALLOWED_FLOORS": accessibleLocationString,
-                        "START_TIME": visit.timeOfEntry,
-                        "END_TIME": visit.timeOfDeparture,
                         "PASS_NUMBER": passNumber.toString(),
-                        "CONTACT_EMAIL": email:contactUsEmail
+                        "CONTACT_EMAIL": email:contactUsEmail,
+                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
                     });
             if content is error {
                 string customError = "An error occurred while binding values to the email template!";
