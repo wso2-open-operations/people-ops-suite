@@ -77,10 +77,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeBasicInfo is () {
-            log:printWarn(string `No employee basic information found for the user: ${userInfo.email}`);
+            string customErr = "Employee basic information not found";
+            log:printWarn(customErr, user = userInfo.email);
             return <http:NotFound>{
                 body: {
-                    message: ERROR_EMPLOYEE_INFORMATION_NOT_FOUND
+                    message: customErr
                 }
             };
         }
@@ -115,10 +116,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn(string `No employee information found for the ID: ${id}`);
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, id = id);
             return <http:NotFound>{
                 body: {
-                    message: ERROR_EMPLOYEE_INFORMATION_NOT_FOUND
+                    message: customErr
                 }
             };
         }
@@ -152,10 +154,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeePersonalInfo is () {
-            log:printWarn(string `No employee personal information found for the ID: ${id}`);
+            string customErr = "Employee personal information not found";
+            log:printWarn(customErr, id = id);
             return <http:NotFound>{
                 body: {
-                    message: ERROR_EMPLOYEE_INFORMATION_NOT_FOUND
+                    message: customErr
                 }
             };
         }

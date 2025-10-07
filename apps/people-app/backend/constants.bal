@@ -15,4 +15,3 @@
 // under the License.
 
 const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found!";
-const ERROR_EMPLOYEE_INFORMATION_NOT_FOUND = "Employee information not found!";
