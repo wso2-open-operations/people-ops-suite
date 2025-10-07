@@ -1,6 +1,6 @@
 [package]
 org = "wso2"
-name = "career_app"
+name = "careers_app"
 version = "1.0.0"
 distribution = "2201.12.0"
 
