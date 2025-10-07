@@ -85,8 +85,10 @@ const PendingVisits = () => {
   const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
 
-  const [tempPassNumber, setTempPassNumber] = useState<string>("");
-  const [tempRejectionReason, setTempRejectionReason] = useState<string>("");
+  const [tempPassNumber, setTempPassNumber] = useState<string | null>(null);
+  const [tempRejectionReason, setTempRejectionReason] = useState<string | null>(
+    null
+  );
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
@@ -116,10 +118,10 @@ const PendingVisits = () => {
 
   const handleApproveSingleVisit = async (
     visitId: string,
-    passNumber: string,
+    passNumber: string | null,
     accessibleLocations: { floor: string; rooms: string[] }[]
   ) => {
-    const trimmedPassNumber = passNumber.trim();
+    const trimmedPassNumber = passNumber ? passNumber.trim() : null;
 
     try {
       const payload = {
@@ -153,13 +155,13 @@ const PendingVisits = () => {
 
   const handleRejectSingleVisit = async (
     visitId: string,
-    rejectionReason: string
+    rejectionReason: string | null
   ) => {
     try {
       const payload = {
         visitId: +visitId,
         status: VisitAction.reject,
-        rejectionReason: rejectionReason.trim(),
+        rejectionReason: rejectionReason ? rejectionReason.trim() : null,
         passNumber: null,
         accessibleLocations: null,
       };
@@ -279,7 +281,7 @@ const PendingVisits = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: 400,
+            width: 800,
             maxHeight: "80vh",
             bgcolor: "background.paper",
             boxShadow: 24,
@@ -288,7 +290,11 @@ const PendingVisits = () => {
             overflowY: "auto",
           }}
         >
-          <Typography id="approve-visit-modal" variant="h6" sx={{ mb: 2 }}>
+          <Typography
+            id="approve-visit-modal"
+            variant="h6"
+            sx={{ mb: 2, fontWeight: "bold" }}
+          >
             Approve Visit ID {currentVisitId}
           </Typography>
           <Box>
@@ -369,7 +375,11 @@ const PendingVisits = () => {
             overflowY: "auto",
           }}
         >
-          <Typography id="reject-visit-modal" variant="h6" sx={{ mb: 2 }}>
+          <Typography
+            id="reject-visit-modal"
+            variant="h6"
+            sx={{ mb: 2, fontWeight: "bold" }}
+          >
             Reject Visit ID {currentVisitId}
           </Typography>
           <Box>

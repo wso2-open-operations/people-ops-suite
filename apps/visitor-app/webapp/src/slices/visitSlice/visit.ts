@@ -144,7 +144,8 @@ export const fetchVisits = createAsyncThunk(
       limit,
       offset,
       status,
-    }: { limit: number; offset: number; status?: string },
+      inviter,
+    }: { limit: number; offset: number; status?: string; inviter?: string },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -152,7 +153,7 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset, status },
+          params: { limit, offset, status, inviter },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -209,9 +210,8 @@ export const visitStatusUpdate = createAsyncThunk(
           dispatch(
             enqueueSnackbarMessage({
               message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? error.response?.data?.message
-                  : "An error occurred while updating visit status!",
+                error.response?.data?.message ??
+                "An error occurred while updating visit status!",
               type: "error",
             })
           );

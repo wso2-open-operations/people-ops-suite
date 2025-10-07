@@ -39,9 +39,9 @@ interface InvitationResponse {
   visitInfo: VisitDetails;
   invitees: Invitee[];
   createdBy: string;
-  createdOn: string; // ISO 8601 date-time string
+  createdOn: string;
   updatedBy: string;
-  updatedOn: string; // ISO 8601 date-time string
+  updatedOn: string;
 }
 
 interface AccessibleLocation {

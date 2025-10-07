@@ -436,7 +436,7 @@ function VisitorRegisterCard() {
                   color: "#231F20",
                 }}
               >
-                Complete the form below to register your visitors.
+                Complete the form below to register visitors.
               </Typography>
 
               <Box
