@@ -232,12 +232,13 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetches visits based on the given filters.
     #
-    # + status - Filter :  status of the visit (Pending, Accepted, Rejected, Completed)
+    # + inviter - The email of the inviter (employee)  
+    # + status - Filter :  status of the visit (Pending, Accepted, Rejected, Completed)  
     # + 'limit - Limit number of visits to fetch  
     # + offset - Offset for pagination
     # + return - Array of visits or error
-    resource function get visits(http:RequestContext ctx, database:Status? status, int? 'limit, int? offset)
-        returns database:VisitsResponse|http:InternalServerError {
+    resource function get visits(http:RequestContext ctx, string? inviter, database:Status? status,
+            int? 'limit, int? offset) returns database:VisitsResponse|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -249,8 +250,22 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        if !authorization:checkPermissions(
+                [authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) &&
+                inviter is string && inviter != invokerInfo.email {
+
+            string customError = "Non-admin users cannot access visits of other employees!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+
+        }
+
         database:VisitsResponse|error visitsResponse = database:fetchVisits(
-                {status: status, 'limit: 'limit, offset: offset});
+                {inviter: inviter, status: status, 'limit: 'limit, offset: offset});
 
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";

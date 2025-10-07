@@ -265,6 +265,8 @@ public type UpdateInvitationPayload record {|
 // Filter Types.
 # Filters for the visits.
 public type VisitFilters record {|
+    # Email of the inviter
+    string? inviter = ();
     # ID of the visit
     int? visitId = ();
     # Invitation ID associated with the visit

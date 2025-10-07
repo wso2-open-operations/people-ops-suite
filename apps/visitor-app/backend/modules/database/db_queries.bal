@@ -205,6 +205,9 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     // Setting the filters based on the inputs.
     sql:ParameterizedQuery[] filterQueries = [];
+    if filters.inviter is string {
+        filterQueries.push(` v.created_by = ${filters.inviter}`);
+    }
     if filters.invitationId is int {
         filterQueries.push(` v.invitation_id = ${filters.invitationId}`);
     }
