@@ -35,6 +35,8 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
     }
 
     return formattedString.trim();
+    // This function is used to format the date-time string from the database to timezone of the WSO2 Building that the visitor is in.
+    // Currently, it only supports the WSO2 Building in Sri Lanka (Asia/Colombo) which is UTC +5:30.
 }
 
 # Helper function to format date-time strings in Ballerina

@@ -885,9 +885,7 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              You have been scheduled for a visit to WSO2. </br>In
-                              order to facilitate your entry and ensure a
-                              seamless check-in process, we kindly request you
+                              To ensure a seamless check-in process, we kindly request you
                               to complete your visitor registration using the
                               link below:
                             </p>

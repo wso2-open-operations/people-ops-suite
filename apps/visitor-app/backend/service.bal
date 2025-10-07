@@ -471,7 +471,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             timeOfDeparture: payload.timeOfDeparture
         };
 
-        //Verify if the visit details are provided previously matched with the newly provided visit details
+        // Verify if the visit details are provided previously matched with the newly provided visit details
         if invitationVisitInfo is database:VisitInfo && invitationVisitInfo != newVisitInfo {
             return <http:BadRequest>{
                 body: {
