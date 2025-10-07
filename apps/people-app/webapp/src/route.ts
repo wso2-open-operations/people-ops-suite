@@ -18,10 +18,6 @@ import React from "react";
 
 import { NonIndexRouteObject } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import BusinessIcon from "@mui/icons-material/Business";
-import HomeIcon from "@mui/icons-material/Home";
-import PersonIcon from "@mui/icons-material/Person";
-import SettingsIcon from "@mui/icons-material/Settings";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -50,56 +46,10 @@ export interface RouteDetail {
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
-    text: "Home",
-    icon: React.createElement(HomeIcon),
-    element: React.createElement(View.home),
+    text: "Me",
+    icon: React.createElement(AccountCircleIcon),
+    element: React.createElement(View.me),
     allowRoles: [Role.ADMIN],
-  },
-  {
-    path: "/profile",
-    text: "Profile",
-    icon: React.createElement(PersonIcon),
-    element: React.createElement(View.profile),
-    allowRoles: [Role.ADMIN],
-    children: [
-      {
-        path: "/profile/user",
-        text: "User",
-        icon: React.createElement(AccountCircleIcon),
-        element: React.createElement(View.userProfile),
-        allowRoles: [Role.ADMIN],
-      },
-      {
-        path: "/profile/company",
-        text: "Company",
-        icon: React.createElement(BusinessIcon),
-        element: React.createElement(View.companyProfile),
-        allowRoles: [Role.ADMIN],
-      },
-    ],
-  },
-  {
-    path: "/settings",
-    text: "Settings",
-    icon: React.createElement(SettingsIcon),
-    element: React.createElement(View.settings),
-    allowRoles: [Role.ADMIN],
-    children: [
-      {
-        path: "/settings/user",
-        text: "User",
-        icon: React.createElement(AccountCircleIcon),
-        element: React.createElement(View.userSettings),
-        allowRoles: [Role.ADMIN],
-      },
-      {
-        path: "/settings/company",
-        text: "Company",
-        icon: React.createElement(BusinessIcon),
-        element: React.createElement(View.companySettings),
-        allowRoles: [Role.ADMIN],
-      },
-    ],
   },
   // Todo: Uncomment when help view is ready
   // {

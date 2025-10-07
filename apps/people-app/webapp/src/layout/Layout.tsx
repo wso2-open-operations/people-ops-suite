@@ -23,7 +23,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
-import { alpha, Box, Typography } from "@mui/material";
+import { alpha, Box, Typography, CircularProgress } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useTheme } from "@mui/material/styles";
 import pJson from "@root/package.json";
@@ -87,7 +87,27 @@ export default function Layout() {
             pb: 4.5,
           }}
         >
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: "calc(100vh - 120px)",
+                  height: "100%",
+                  width: "100%",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  zIndex: 10,
+                  backgroundColor: "background.default",
+                }}
+              >
+                <CircularProgress size={48} thickness={2} />
+              </Box>
+            }
+          >
             <Outlet />
           </Suspense>
           <Box

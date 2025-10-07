@@ -22,6 +22,7 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
+import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
@@ -32,6 +33,7 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     employee: employeeReducer,
+    employeePersonalInfo: employeePersonalInfoReducer,
     appConfig: appConfigReducer,
   },
   middleware: (getDefaultMiddleware) =>

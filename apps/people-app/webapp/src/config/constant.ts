@@ -14,14 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { fetchEmployees } from "../slices/employeeSlice/employee";
-
 export const SnackMessage = {
   success: {
     addEmployee: "Successfully created the employee",
   },
   error: {
-    fetchEmployees: "Error while fetching employees",
+    fetchEmployee: "Error while fetching employee",
     fetchPrivileges: "Error while fetching user privileges",
     insufficientPrivileges: "You don't have sufficient privileges to access this resource",
     fetchAppConfigMessage: "Error while fetching app config",

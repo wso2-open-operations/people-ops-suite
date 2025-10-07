@@ -22,64 +22,53 @@ import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
-interface Employee {
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
-  jobRole: string;
-  epf: string;
-  employeeLocation: string;
-  workLocation: string;
-  workPhoneNumber: string | null;
-  startDate: string;
-  managerEmail: string;
-  reportToEmail: string;
-  additionalManagerEmail: string | null;
-  additionalReportToEmail: string | null;
-  employeeStatus: string;
-  lengthOfService: number;
-  relocationStatus: string | null;
-  subordinateCount: number | null;
-  probationEndDate: string | null;
-  agreementEndDate: string | null;
-  employmentType: string;
-  designation: string;
-  office: string;
-  team: string;
-  subTeam: string;
-  businessUnit: string;
+interface EmployeePersonalInfo {
+  id: number;
+  nic: string | null;
+  fullName: string;
+  nameWithInitials: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  title: string | null;
+  dob: string | null;
+  age: number | null;
+  personalEmail: string | null;
+  personalPhone: string | null;
+  homePhone: string | null;
+  address: string | null;
+  postalCode: string | null;
+  country: string | null;
+  nationality: string | null;
 }
 
-interface EmployeesState {
+interface EmployeePersonalInfoState {
   state: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  employee: Employee | null;
+  personalInfo: EmployeePersonalInfo | null;
 }
 
-const initialState: EmployeesState = {
+const employeePersonalInfoInitialState: EmployeePersonalInfoState = {
   state: State.idle,
   stateMessage: null,
   errorMessage: null,
-  employee: null,
+  personalInfo: null,
 };
 
-export const fetchEmployee = createAsyncThunk(
-  "employees/fetchEmployee",
+export const fetchEmployeePersonalInfo = createAsyncThunk(
+  "employees/fetchEmployeePersonalInfo",
   async (employeeId: string, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employee(employeeId)
+        AppConfig.serviceUrls.employeePersonalInfo(employeeId)
       );
-      return response.data as Employee;
+      return response.data as EmployeePersonalInfo;
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching employee information.";
+            "An unknown error occurred while fetching employee personal information.";
 
       dispatch(
         enqueueSnackbarMessage({
@@ -93,40 +82,40 @@ export const fetchEmployee = createAsyncThunk(
   }
 );
 
-const EmployeeSlice = createSlice({
-  name: "employee",
-  initialState,
+const EmployeePersonalInfoSlice = createSlice({
+  name: "employeePersonalInfo",
+  initialState: employeePersonalInfoInitialState,
   reducers: {
     resetSubmitState(state) {
       state.state = State.idle;
     },
-    resetEmployee(state) {
+    resetPersonalInfo(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
-      state.employee = null;
+      state.personalInfo = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchEmployee.pending, (state) => {
+      .addCase(fetchEmployeePersonalInfo.pending, (state) => {
         state.state = State.loading;
-        state.stateMessage = "Fetching employee data...";
+        state.stateMessage = "Fetching employee personal info...";
       })
-      .addCase(fetchEmployee.fulfilled, (state, action) => {
+      .addCase(fetchEmployeePersonalInfo.fulfilled, (state, action) => {
         state.state = State.success;
-        state.stateMessage = "Successfully fetched employee information!";
-        state.employee = action.payload;
+        state.stateMessage = "Successfully fetched employee personal information!";
+        state.personalInfo = action.payload;
         state.errorMessage = null;
       })
-      .addCase(fetchEmployee.rejected, (state, action) => {
+      .addCase(fetchEmployeePersonalInfo.rejected, (state, action) => {
         state.state = State.failed;
-        state.stateMessage = "Failed to fetch employee information!";
+        state.stateMessage = "Failed to fetch employee personal information!";
         state.errorMessage = action.payload as string;
-        state.employee = null;
+        state.personalInfo = null;
       });
   },
 });
 
-export const { resetSubmitState, resetEmployee } = EmployeeSlice.actions;
-export default EmployeeSlice.reducer;
+export const { resetSubmitState, resetPersonalInfo } = EmployeePersonalInfoSlice.actions;
+export default EmployeePersonalInfoSlice.reducer;
