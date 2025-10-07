@@ -330,7 +330,7 @@ const renderStepContent = (
                       tabIndex={0}
                       sx={(theme) => ({
                         px: 2,
-                        py: 1.2,
+                        py: 1,
                         cursor: "pointer",
                         fontWeight: selected ? 500 : 400,
                         fontSize: "0.95rem",

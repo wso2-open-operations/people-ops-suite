@@ -27,6 +27,8 @@ import { CheckCircle, Cancel } from "@mui/icons-material";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup";
 
 import {
   RootState,
@@ -67,6 +69,17 @@ const toLocalDateTime = (utcString: string) => {
     .format("YYYY-MM-DD HH:mm:ss");
 };
 
+const approvalValidationSchema = Yup.object({
+  passNumber: Yup.string().required("Pass number is required"),
+  selectedFloorsAndRooms: Yup.array()
+    .min(1, "At least one floor and room must be selected")
+    .required("Floor and room selection is required"),
+});
+
+const rejectionValidationSchema = Yup.object({
+  rejectionReason: Yup.string().required("Rejection reason is required"),
+});
+
 const PendingVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
@@ -75,20 +88,10 @@ const PendingVisits = () => {
 
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
-
-  const [selectedFloorsAndRooms, setSelectedFloorsAndRooms] = useState<
-    { floor: string; rooms: string[] }[]
-  >([]);
-
   const [isApprovalModalOpen, setIsApprovalModalOpen] =
     useState<boolean>(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
-
-  const [tempPassNumber, setTempPassNumber] = useState<string | null>(null);
-  const [tempRejectionReason, setTempRejectionReason] = useState<string | null>(
-    null
-  );
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
 
   const visitsList = visits?.visits ?? [];
@@ -118,29 +121,22 @@ const PendingVisits = () => {
 
   const handleApproveSingleVisit = async (
     visitId: string,
-    passNumber: string | null,
+    passNumber: string,
     accessibleLocations: { floor: string; rooms: string[] }[]
   ) => {
-    const trimmedPassNumber = passNumber ? passNumber.trim() : null;
-
     try {
       const payload = {
         visitId: +visitId,
-        passNumber: trimmedPassNumber,
+        passNumber: passNumber.trim(),
         status: VisitAction.approve,
-        accessibleLocations: accessibleLocations,
+        accessibleLocations,
         rejectionReason: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
-
-      // Clear the form state
-      setTempPassNumber("");
-      setSelectedFloorsAndRooms([]);
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
 
-      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
@@ -155,24 +151,21 @@ const PendingVisits = () => {
 
   const handleRejectSingleVisit = async (
     visitId: string,
-    rejectionReason: string | null
+    rejectionReason: string
   ) => {
     try {
       const payload = {
         visitId: +visitId,
         status: VisitAction.reject,
-        rejectionReason: rejectionReason ? rejectionReason.trim() : null,
+        rejectionReason: rejectionReason.trim(),
         passNumber: null,
         accessibleLocations: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
-
       setCurrentVisitId(null);
-      setTempRejectionReason("");
       setIsRejectionModalOpen(false);
 
-      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
@@ -185,23 +178,21 @@ const PendingVisits = () => {
     }
   };
 
-  // Function to show approval modal
   const showApprovalModal = (visitId: string) => {
     setCurrentVisitId(visitId);
-    setTempPassNumber("");
-    setSelectedFloorsAndRooms([]);
     setIsApprovalModalOpen(true);
   };
 
   const showRejectionModal = (visitId: string) => {
     setCurrentVisitId(visitId);
-    setTempRejectionReason("");
     setIsRejectionModalOpen(true);
   };
 
   const columns: GridColDef[] = [
     { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
@@ -297,60 +288,80 @@ const PendingVisits = () => {
           >
             Approve Visit ID {currentVisitId}
           </Typography>
-          <Box>
-            <Typography sx={{ mb: 2 }}>
-              Enter pass number and select access floors
-            </Typography>
-            <TextField
-              autoFocus
-              label="Pass Number"
-              type="text"
-              fullWidth
-              variant="outlined"
-              onChange={(e) => {
-                setTempPassNumber(e.target.value);
-              }}
-              placeholder="Enter pass number"
-              helperText="Numbers only"
-            />
-            <FloorRoomSelector
-              availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-              selectedFloorsAndRooms={selectedFloorsAndRooms}
-              onChange={(value) => {
-                setSelectedFloorsAndRooms(value);
-              }}
-            />
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={() => setIsApprovalModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() =>
-                  handleApproveSingleVisit(
-                    currentVisitId || "",
-                    tempPassNumber,
-                    selectedFloorsAndRooms
-                  )
-                }
-                disabled={
-                  state === State.loading || statusUpdateState === State.loading
-                }
-              >
-                Confirm
-              </Button>
-            </Box>
-          </Box>
+          <Formik
+            initialValues={{
+              passNumber: "",
+              selectedFloorsAndRooms: [],
+            }}
+            validationSchema={approvalValidationSchema}
+            onSubmit={(values) => {
+              handleApproveSingleVisit(
+                currentVisitId || "",
+                values.passNumber,
+                values.selectedFloorsAndRooms
+              );
+            }}
+          >
+            {({ setFieldValue, values, errors, touched }) => (
+              <Form>
+                <Typography sx={{ mb: 2 }}>
+                  Enter pass number and select access floors
+                </Typography>
+                <Field
+                  as={TextField}
+                  name="passNumber"
+                  label="Pass Number"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter pass number"
+                  helperText={
+                    (touched.passNumber && errors.passNumber) ??
+                    errors.passNumber
+                  }
+                  error={touched.passNumber && Boolean(errors.passNumber)}
+                  sx={{ mb: 2 }}
+                />
+                <FloorRoomSelector
+                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+                  selectedFloorsAndRooms={values.selectedFloorsAndRooms}
+                  onChange={(value) =>
+                    setFieldValue("selectedFloorsAndRooms", value)
+                  }
+                />
+                {touched.selectedFloorsAndRooms &&
+                  errors.selectedFloorsAndRooms && (
+                    <Typography color="error" sx={{ mt: 1 }}>
+                      {errors.selectedFloorsAndRooms}
+                    </Typography>
+                  )}
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsApprovalModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={
+                      state === State.loading ||
+                      statusUpdateState === State.loading
+                    }
+                  >
+                    Confirm
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Modal>
 
@@ -382,50 +393,65 @@ const PendingVisits = () => {
           >
             Reject Visit ID {currentVisitId}
           </Typography>
-          <Box>
-            <Typography sx={{ mb: 2 }}>Enter rejection reason</Typography>
-            <TextField
-              autoFocus
-              label="Rejection Reason"
-              type="text"
-              fullWidth
-              variant="outlined"
-              onChange={(e) => {
-                setTempRejectionReason(e.target.value);
-              }}
-              placeholder="Enter rejection reason"
-              helperText="Provide a reason for rejection"
-            />
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={() => setIsRejectionModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() =>
-                  handleRejectSingleVisit(
-                    currentVisitId || "",
-                    tempRejectionReason
-                  )
-                }
-                disabled={
-                  state === State.loading || statusUpdateState === State.loading
-                }
-              >
-                Confirm
-              </Button>
-            </Box>
-          </Box>
+          <Formik
+            initialValues={{
+              rejectionReason: "",
+            }}
+            validationSchema={rejectionValidationSchema}
+            onSubmit={(values) => {
+              handleRejectSingleVisit(
+                currentVisitId || "",
+                values.rejectionReason
+              );
+            }}
+          >
+            {({ errors, touched }) => (
+              <Form>
+                <Typography sx={{ mb: 2 }}>Enter rejection reason</Typography>
+                <Field
+                  as={TextField}
+                  name="rejectionReason"
+                  label="Rejection Reason"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter rejection reason"
+                  helperText={
+                    touched.rejectionReason && errors.rejectionReason
+                      ? errors.rejectionReason
+                      : "Provide a reason for rejection"
+                  }
+                  error={
+                    touched.rejectionReason && Boolean(errors.rejectionReason)
+                  }
+                />
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsRejectionModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={
+                      state === State.loading ||
+                      statusUpdateState === State.loading
+                    }
+                  >
+                    Confirm
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Modal>
 
