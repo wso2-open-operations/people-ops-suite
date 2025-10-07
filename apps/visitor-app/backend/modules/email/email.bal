@@ -16,9 +16,9 @@
 import ballerina/http;
 import ballerina/log;
 
-public configurable string visitorNotificationFrom = "";
-public configurable string contactEmail = "";
-public configurable string receptionEmail = "";
+public configurable string fromEmailAddress = ?;
+public configurable string contactUsEmail = ?;
+public configurable string receptionEmail = ?;
 
 # Send an email alert via the email service.
 #

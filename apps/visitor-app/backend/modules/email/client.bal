@@ -15,12 +15,12 @@
 // under the License.
 import ballerina/http;
 
-configurable string emailServiceBaseUrl = ?;
-configurable ChoreoApp choreoAppConfig = ?;
+configurable string emailServiceEndpoint = ?;
+configurable ClientAuthConfig clientAuthConfig = ?;
 
-final http:Client emailClient = check new (emailServiceBaseUrl, {
+final http:Client emailClient = check new (emailServiceEndpoint, {
     auth: {
-        ...choreoAppConfig
+        ...clientAuthConfig
     },
     timeout: 10.0,
     retryConfig: {

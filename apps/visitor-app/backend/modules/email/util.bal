@@ -29,24 +29,4 @@ public isolated function bindKeyValues(string content, map<string> keyValPairs) 
     },
     content);
     return mime:base64Encode(bindContent).ensureType();
-
-}
-
-# Converts the json array of accessible locations to a readable string.
-#
-# + accessibleLocations - Json string array containing floors and rooms
-# + return - Formatted string or error
-public isolated function organizeLocations(Floor[] accessibleLocations) returns string|error {
-    string formattedString = "";
-    foreach var location in accessibleLocations {
-        string floor = location.floor.toJsonString();
-        string roomList = location.rooms.length() > 0 ? string:'join(" | ", ...location.rooms) : "";
-        if (roomList != "") {
-            formattedString += string `Floor ${floor}: ${roomList}<br>`;
-        } else {
-            formattedString += string `Floor ${floor}<br>`;
-        }
-    }
-
-    return formattedString.trim();
 }

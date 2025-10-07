@@ -85,8 +85,8 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         INSERT INTO visit_invitation
         (
             encode_value,
+            invitee_email,
             no_of_visitors,
-            visit_info,
             is_active,
             created_by,
             updated_by
@@ -94,11 +94,11 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
         VALUES
         (
             ${encodeString},
+            ${payload.inviteeEmail},
             ${payload.noOfVisitors},
-            ${payload.visitDetails.toJsonString()},
             ${payload.isActive},
             ${createdBy},
-            ${payload.updatedBy}
+            ${createdBy}
         );`;
 
 # Build query to fetch an invitation.
@@ -107,18 +107,19 @@ isolated function addInvitationQuery(AddInvitationPayload payload, string create
 # + return - sql:ParameterizedQuery - Select query for the invitation based on the encoded value
 isolated function fetchInvitationQuery(string encodeValue) returns sql:ParameterizedQuery => `
         SELECT
-            vi.invitation_id     AS invitationId,
-            vi.is_active         AS isActive,
-            vi.no_of_visitors AS noOfVisitors,
-            vi.visit_info        AS visitDetails,
-            vi.created_by      AS invitedBy,
-            vi.created_by     AS createdBy,
-            vi.created_on     AS createdOn,
-            vi.updated_by     AS updatedBy,
-            vi.updated_on     AS updatedOn
-        FROM visit_invitation vi
-        WHERE vi.encode_value = ${encodeValue}
-        AND vi.is_active = 1;
+            invitation_id AS invitationId,
+            invitee_email AS inviteeEmail,
+            is_active AS active,
+            no_of_visitors AS noOfVisitors,
+            visit_info AS visitInfo,
+            created_by AS createdBy,
+            created_on AS createdOn,
+            updated_by AS updatedBy,
+            updated_on AS updatedOn
+        FROM 
+            visit_invitation
+        WHERE 
+            encode_value = ${encodeValue};
     `;
 
 # Build query to persist a visit.
@@ -153,7 +154,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${payload.companyName},
             ${payload.whomTheyMeet},
             ${payload.purposeOfVisit},
-            ${payload.accessibleLocations.toJsonString()},
+            ${payload.accessibleLocations is Floor[] ? payload.accessibleLocations.toJsonString() : null},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},
@@ -164,13 +165,10 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
 
 # Build query to fetch visits with optional filters and pagination.
 #
-# + 'limit - Limit number of visits to fetch
-# + offset - Offset for pagination
-# + invitationId - Filter by invitation ID
-# + status - Filter by visit status
-# + visitId - Filter by visit ID
+# + filters - Filters for fetching visits
 # + return - sql:ParameterizedQuery - Select query for visits based on the provided filters and pagination
-isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invitationId = (), string? status = (), int? visitId = ()) returns sql:ParameterizedQuery {
+isolated function fetchVisitsQuery(VisitFilters filters) returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
         SELECT 
             v.visit_id as id,
@@ -205,29 +203,34 @@ isolated function fetchVisitsQuery(int? 'limit = (), int? offset = (), int? invi
             v.invitation_id = vi.invitation_id
     `;
 
-    // Add WHERE clause for invitationId if provided
-    if invitationId is int {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.invitation_id = ${invitationId}`);
+    // Setting the filters based on the inputs.
+    sql:ParameterizedQuery[] filterQueries = [];
+    if filters.inviter is string {
+        filterQueries.push(` v.created_by = ${filters.inviter}`);
+    }
+    if filters.invitationId is int {
+        filterQueries.push(` v.invitation_id = ${filters.invitationId}`);
     }
 
-    // Add WHERE clause for status if provided
-    if status is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE v.status = ${status}`);
+    if filters.status is string {
+        filterQueries.push(` v.status = ${filters.status}`);
     }
 
-    // Add WHERE clause for visitId if provided
-    if visitId is int {
-        mainQuery = sql:queryConcat(mainQuery, ` AND v.visit_id = ${visitId}`);
+    if filters.visitId is int {
+        filterQueries.push(` v.visit_id = ${filters.visitId}`);
     }
 
-    // Sorting the result by time_of_entry in descending order
-    mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.time_of_entry DESC`);
+    // Build main query with the filters.
+    mainQuery = buildSqlSelectQuery(mainQuery, filterQueries);
 
-    // Setting the limit and offset for pagination
-    if 'limit is int {
-        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${'limit}`);
-        if offset is int {
-            mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${offset}`);
+    // Sorting the result by created_on.
+    mainQuery = sql:queryConcat(mainQuery, ` ORDER BY v.created_on DESC`);
+
+    // Setting the limit and offset.
+    if filters.'limit is int {
+        mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${filters.'limit}`);
+        if filters.offset is int {
+            mainQuery = sql:queryConcat(mainQuery, ` OFFSET ${filters.offset}`);
         }
     } else {
         mainQuery = sql:queryConcat(mainQuery, ` LIMIT ${DEFAULT_LIMIT}`);
@@ -255,12 +258,16 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
     // Setting the filters based on the visit status and inputs.
     sql:ParameterizedQuery[] filters = [];
 
-    filters.push(`status = ${payload.status}`);
+    if payload.status is Status {
+        filters.push(`status = ${payload.status}`);
+    }
 
-    filters.push(`updated_by = ${updatedBy}`);
-
-    if payload.passNumber is int {
+    if payload.passNumber is string {
         filters.push(`pass_number = ${payload.passNumber}`);
+    }
+
+    if payload.accessibleLocations is Floor[] {
+        filters.push(`accessible_locations = ${payload.accessibleLocations.toJsonString()}`);
     }
 
     if payload.rejectionReason is string {
@@ -272,5 +279,39 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
 
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);
 
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update a invitation.
+#
+# + invitationId - ID of the invitation to update
+# + payload - Payload containing the invitation update details
+# + updatedBy - Person who is updating the invitation
+# + return - sql:ParameterizedQuery - Update query for the invitation
+isolated function updateInvitationQuery(int invitationId, UpdateInvitationPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+        UPDATE visit_invitation
+        SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+        WHERE invitation_id = ${invitationId}
+    `;
+
+    // Setting the filters based on the visit status and inputs.
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.visitInfo is VisitInfo {
+        filters.push(`visit_info = ${payload.visitInfo.toJsonString()}`);
+    }
+
+    if payload.active is boolean {
+        filters.push(`is_active = ${payload.active}`);
+    }
+
+    filters.push(`updated_by = ${updatedBy}`);
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
     return sql:queryConcat(mainQuery, subQuery);
 }
