@@ -34,6 +34,7 @@ function App() {
   document.title = APP_NAME;
   const isExternal = window.location.pathname.includes("external");
   const processLocalThemeMode = (): ThemeMode => {
+    if (isExternal) return ThemeMode.Light;
     try {
       const savedTheme = localStorage.getItem("internal-app-theme");
       if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
