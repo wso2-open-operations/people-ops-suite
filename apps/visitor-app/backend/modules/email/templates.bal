@@ -967,7 +967,7 @@ public final string inviteTemplate = string `
                               "
                             >
                               Best regards,<br />
-                              Visitor Registration Portal
+                              Administration Team
                             </p>
                           </td>
                         </tr>
@@ -1307,7 +1307,6 @@ public final string inviteTemplate = string `
     <!-- // END TEMPLATE -->
   </body>
 </html>
-
 `;
 
 public final string visitorCompletionTemplate = string `  
