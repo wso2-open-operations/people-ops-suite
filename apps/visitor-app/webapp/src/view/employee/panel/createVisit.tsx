@@ -303,9 +303,14 @@ const renderStepContent = (
                 sx={{
                   display: "flex",
                   flexDirection: "row",
-                  gap: 3,
+                  justifyContent: "center",
+                  alignItems: "center",
                   borderRadius: 2,
-                  minWidth: 300,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === "dark" ? "grey.900" : "grey.100",
+                  gap: 0,
+                  width: "fit-content",
+                  mx: "auto",
                 }}
               >
                 {[
@@ -332,42 +337,40 @@ const renderStepContent = (
                           );
                         }
                       }}
-                      sx={{
-                        flex: 1,
-                        textAlign: "center",
-                        py: 0.8,
+                      sx={(theme) => ({
+                        px: 3,
+                        py: 1.5,
                         cursor: "pointer",
+                        fontWeight: selected ? 600 : 500,
+                        fontSize: "0.95rem",
+                        textAlign: "center",
+                        transition: "all 0.25s ease-in-out",
                         bgcolor: selected
                           ? theme.palette.primary.main
-                          : theme.palette.mode === "dark"
-                          ? "grey.800"
-                          : "white",
+                          : "transparent",
                         color: selected
-                          ? theme.palette.getContrastText(
-                              theme.palette.primary.main
-                            )
+                          ? theme.palette.primary.contrastText
                           : theme.palette.text.primary,
-                        fontWeight: selected ? 600 : 500,
-                        fontSize: "0.9rem",
-                        borderRadius: 1.5,
-                        border: `1px solid ${
-                          selected
-                            ? theme.palette.primary.main
-                            : theme.palette.divider
-                        }`,
-                        boxShadow: selected
-                          ? "0 2px 6px rgba(0,0,0,0.15)"
-                          : "none",
-                        transition: "all 0.25s ease-in-out",
-                        "&:hover": {
-                          bgcolor: selected
-                            ? theme.palette.primary.dark
-                            : theme.palette.mode === "dark"
-                            ? "grey.700"
-                            : "grey.200",
+                        borderTopLeftRadius:
+                          formik.values.invitationOption === "sendInvitation"
+                            ? 8
+                            : 0,
+                        borderBottomLeftRadius:
+                          formik.values.invitationOption === "sendInvitation"
+                            ? 8
+                            : 0,
+                        borderTopRightRadius:
+                          formik.values.invitationOption === "addVisitor"
+                            ? 8
+                            : 0,
+                        borderBottomRightRadius:
+                          formik.values.invitationOption === "addVisitor"
+                            ? 8
+                            : 0,
+                        "&:active": {
+                          transform: "scale(0.97)",
                         },
-                        "&:active": { transform: "scale(0.97)" },
-                      }}
+                      })}
                     >
                       {option.label}
                     </Box>

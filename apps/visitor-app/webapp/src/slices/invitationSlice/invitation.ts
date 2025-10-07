@@ -183,8 +183,10 @@ export const getVisitInvitationAsync = createAsyncThunk<
         `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`
       );
       return response.data;
-    } catch (error) {
-      return rejectWithValue("Failed to fetch visit invitation");
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch invitation"
+      );
     }
   }
 );
