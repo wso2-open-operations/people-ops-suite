@@ -1319,7 +1319,7 @@ public final string visitorCompletionTemplate = string `
     <meta name="color-scheme" content="light dark" />
     <meta name="supported-color-schemes" content="light dark" />
 
-    <title>WSO2 Application Status</title>
+    <title>WSO2 Visitor Status</title>
 
     <style type="text/css">
       @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap");
@@ -1346,7 +1346,7 @@ public final string visitorCompletionTemplate = string `
       }
 
       .cBackimg {
-        background: ur[](https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png);
+        background: url(https://wso2.cachefly.net/wso2/sites/all/2022-optimized/bg-hr-mailer-new.png);
         background-size: auto;
         background-repeat: no-repeat;
         background-position: top;
@@ -1419,7 +1419,7 @@ public final string visitorCompletionTemplate = string `
         border-collapse: collapse;
       }
 
-      /* hide unsubscribe from forwards */
+      /* hide unsubscribe from forwards*/
       blockquote .original-only,
       .WordSection1 .original-only {
         display: none !important;
@@ -1517,16 +1517,20 @@ public final string visitorCompletionTemplate = string `
           padding-bottom: 30px !important;
         }
 
+        /* Prevent Webkit platforms from changing default text sizes */
         body {
           width: 100% !important;
           min-width: 100% !important;
         }
+
+        /* Prevent iOS Mail from adding padding to the body */
 
         #bodyCell {
           padding: 10px !important;
         }
 
         #templateContainer {
+          /*              max-width:650px !important;*/
           width: 100% !important;
         }
 
@@ -1557,6 +1561,8 @@ public final string visitorCompletionTemplate = string `
         #templatePreheader {
           display: none !important;
         }
+
+        /* Hide the template preheader to save space */
 
         .cP1 {
           padding-top: 10px !important;
@@ -1625,6 +1631,8 @@ public final string visitorCompletionTemplate = string `
         .vidurawso2 {
           display: inline;
         }
+
+        /* Place footer social and utility links on their own lines, for easier access */
       }
 
       @media (prefers-color-scheme: dark) {
@@ -1894,7 +1902,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
                                       line-height: 20px;
@@ -1972,12 +1981,14 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #ffffff;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 16px;
                                       line-height: 5px;
                                       text-align: center;
                                       margin: 40px 30px 30px 40px;
-                                      box-shadow: 0px 0px 26px 0 rgb(0 0 0 / 57%);
+                                      box-shadow: 0px 0px 26px 0
+                                        rgb(0 0 0 / 57%);
                                     "
                                     valign="top"
                                   >
@@ -2000,7 +2011,8 @@ public final string visitorCompletionTemplate = string `
                                               mso-table-lspace: 0pt;
                                               mso-table-rspace: 0pt;
                                               color: #ffffff;
-                                              font-family: 'Roboto', Helvetica, sans-serif;
+                                              font-family: 'Roboto', Helvetica,
+                                                sans-serif;
                                               font-size: 16px;
                                               line-height: 5px;
                                               text-align: center;
@@ -2030,7 +2042,8 @@ public final string visitorCompletionTemplate = string `
                                                       mso-table-lspace: 0pt;
                                                       mso-table-rspace: 0pt;
                                                       color: #ff957d;
-                                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                                      font-family: 'Roboto',
+                                                        Helvetica, sans-serif;
                                                       font-size: 16px;
                                                       line-height: 24px;
                                                       text-align: center;
@@ -2042,12 +2055,14 @@ public final string visitorCompletionTemplate = string `
                                                     <p
                                                       class="cTitleDark"
                                                       style="
-                                                        font-family: 'Roboto', Helvetica, sans-serif;
+                                                        font-family: 'Roboto',
+                                                          Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 19px;
                                                         line-height: 23px;
                                                         padding-top: 0;
                                                         padding-left: 0;
+                                                        padding-right: 0;
                                                         padding-right: 0;
                                                         color: #ff7300;
                                                         text-align: center;
@@ -2056,17 +2071,19 @@ public final string visitorCompletionTemplate = string `
                                                         font-weight: 500;
                                                       "
                                                     >
-                                                      Visitor Registration Portal
+                                                      WSO2 Visitor Registration
                                                     </p>
 
                                                     <p
                                                       style="
-                                                        font-family: 'Roboto', Helvetica, sans-serif;
+                                                        font-family: 'Roboto',
+                                                          Helvetica, sans-serif;
                                                         padding-bottom: 0;
                                                         font-size: 24px;
                                                         line-height: 32px;
                                                         padding-top: 0;
                                                         padding-left: 0;
+                                                        padding-right: 0;
                                                         padding-right: 0;
                                                         color: #2f373e;
                                                         text-align: center;
@@ -2075,7 +2092,7 @@ public final string visitorCompletionTemplate = string `
                                                         margin-bottom: 6px;
                                                       "
                                                     >
-                                                      Your visit was successfully completed.
+                                                      Visit Completed!
                                                     </p>
                                                   </td>
                                                 </tr>
@@ -2166,9 +2183,9 @@ public final string visitorCompletionTemplate = string `
                                 margin-top: 0;
                               "
                             >
-                              Dear <!-- [NAME] -->,
+                              Dear
+                              <!-- [NAME] -->,
                             </p>
-
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
@@ -2177,11 +2194,14 @@ public final string visitorCompletionTemplate = string `
                                 line-height: 28px;
                                 padding-left: 0;
                                 padding-right: 0;
+                                padding-right: 0;
                                 color: #465868;
                                 text-align: justify;
                               "
                             >
-                              Your visit to WSO2 has been successfully completed. We hope you had a great experience with us.
+                              Your visit to WSO2 has been successfully
+                              completed. We hope you had a great experience with
+                              us.
                             </p>
 
                             <p
@@ -2192,7 +2212,7 @@ public final string visitorCompletionTemplate = string `
                                 text-align: left;
                               "
                             >
-                              Your visit details:
+                              <strong>Visit Details:</strong>
                             </p>
                             <ul
                               style="
@@ -2200,6 +2220,7 @@ public final string visitorCompletionTemplate = string `
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-left: 30px;
+                                padding-right: 0;
                                 padding-right: 0;
                                 color: #465868;
                                 text-align: left;
@@ -2214,7 +2235,7 @@ public final string visitorCompletionTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>User Name:</strong>
+                                  <strong>Visitor Name:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
@@ -2227,8 +2248,8 @@ public final string visitorCompletionTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Date:</strong>
-                                  <span><!-- [SCHEDULED_DATE] --></span>
+                                  <strong>Entry :</strong>
+                                  <span><!-- [TIME_OF_ENTRY] --></span>
                                 </p>
                               </li>
                               <li>
@@ -2240,26 +2261,57 @@ public final string visitorCompletionTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Time:</strong>
-                                  <span>From <!-- [START_TIME] --> to <!-- [END_TIME] --></span>
+                                  <strong>Exit :</strong>
+                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
                                 </p>
+                              </li>
+
+                              <li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Pass Number:</strong>
+                                  <!-- [PASS_NUMBER] -->
+                                </p>
+                              </li>
+
+                              <li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors:</strong>
+                                </p>
+                                <ul>
+                                  <!-- [ALLOWED_FLOORS] -->
+                                </ul>
                               </li>
                             </ul>
 
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
+                                padding-bottom: 5px;
                                 font-size: 17px;
                                 line-height: 28px;
-                                padding-top: 0;
                                 padding-left: 0;
                                 padding-right: 0;
+                                padding-right: 0;
                                 color: #465868;
-                                text-align: left;
+                                text-align: justify;
                               "
                             >
-                              If you have any feedback or suggestions, please contact
-                              <!-- [CONTACT_EMAIL] -->.
+                              Thank you for visiting WSO2. We appreciate your
+                              time and cooperation throughout the visit process.
                             </p>
 
                             <p
@@ -2270,11 +2322,12 @@ public final string visitorCompletionTemplate = string `
                                 padding-top: 0;
                                 padding-left: 0;
                                 padding-right: 0;
+                                padding-right: 0;
                                 color: #465868;
                                 text-align: left;
                               "
                             >
-                              Thank you for choosing WSO2. We look forward to welcoming you again in the future.
+                              We would love to hear your thoughts about your visit! You can reach us anytime at <!-- [CONTACT_EMAIL] -->.
                             </p>
 
                             <p
@@ -2282,15 +2335,33 @@ public final string visitorCompletionTemplate = string `
                                 font-family: 'Roboto', Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
+                                padding-top: 0;
+                                padding-left: 0;
+                                padding-right: 0;
+                                padding-right: 0;
+                                color: #465868;
+                                text-align: left;
+                              "
+                            >
+                              Thank you for your cooperation.
+                            </p>
+
+                            <p
+                              style="
+                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-size: 17px;
+                                line-height: 28px;
+                                padding-top: 0;
+                                padding-left: 0;
+                                padding-right: 0;
+                                padding-right: 0;
+                                color: #465868;
+                                text-align: left;
                                 padding-top: 20px;
-                                padding-left: 0;
-                                padding-right: 0;
-                                color: #465868;
-                                text-align: left;
                               "
                             >
                               Best regards,<br />
-                              Visitor Registration Portal
+                              Administration Team
                             </p>
                           </td>
                         </tr>
@@ -2307,7 +2378,7 @@ public final string visitorCompletionTemplate = string `
                       -webkit-text-size-adjust: 100%;
                       -ms-text-size-adjust: 100%;
                       mso-table-lspace: 0pt;
-                      mso-table-rspace: 0pt;
+                      mso-table-rspace: 0pt; /* background-color: #ffffff; */
                       padding: 60px 0px;
                     "
                     valign="top"
@@ -2320,7 +2391,7 @@ public final string visitorCompletionTemplate = string `
                       id="templateFooter"
                       style="
                         -ms-text-size-adjust: 100%;
-                        -webkit-text-size-adjust: 100%;
+                        -webkit-text-size-adjust: 100%; /* background-color: #ffffff; */
                         border-collapse: collapse !important;
                         mso-table-lspace: 0pt;
                         mso-table-rspace: 0pt;
@@ -2338,11 +2409,12 @@ public final string visitorCompletionTemplate = string `
                               -webkit-text-size-adjust: 100%;
                               -ms-text-size-adjust: 100%;
                               mso-table-lspace: 0pt;
-                              mso-table-rspace: 0pt;
+                              mso-table-rspace: 0pt; /* background-color: #ffffff; */
                               padding: 0px 50px 0px 50px;
                             "
                             valign="top"
                           >
+                            <!-- BEGIN FOOTER // -->
                             <table
                               border="0"
                               cellpadding="0"
@@ -2350,7 +2422,7 @@ public final string visitorCompletionTemplate = string `
                               id="templateFooter"
                               style="
                                 -ms-text-size-adjust: 100%;
-                                -webkit-text-size-adjust: 100%;
+                                -webkit-text-size-adjust: 100%; /* background-color: #ffffff; */
                                 border-collapse: collapse !important;
                                 mso-table-lspace: 0pt;
                                 mso-table-rspace: 0pt;
@@ -2368,7 +2440,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #606060;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 10px;
                                       line-height: 14px;
                                       text-align: left;
@@ -2473,7 +2546,7 @@ public final string visitorCompletionTemplate = string `
                                           border-radius: 9px;
                                         " /></a
                                     >&nbsp;&nbsp;&nbsp;<a
-                                      href="http://instagram.com/wso2inc/"
+                                      href="http://instagram.com/officialwso2/"
                                       style="
                                         -webkit-text-size-adjust: 100%;
                                         -ms-text-size-adjust: 100%;
@@ -2509,7 +2582,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
                                       text-align: left;
@@ -2553,7 +2627,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #505050;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 20px;
                                       font-weight: bold;
                                       line-height: 20px;
@@ -2593,7 +2668,8 @@ public final string visitorCompletionTemplate = string `
                                       mso-table-lspace: 0pt;
                                       mso-table-rspace: 0pt;
                                       color: #465868;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
+                                      font-family: 'Roboto', Helvetica,
+                                        sans-serif;
                                       font-size: 13px;
                                       line-height: 18px;
                                       text-align: left;
@@ -2603,63 +2679,8 @@ public final string visitorCompletionTemplate = string `
                                     valign="top"
                                   >
                                     ©
-                                    <?= employee.year ?>
-                                    WSO2, Inc. All Rights Reserved
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 10px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    You are receiving this email because you
-                                    have shown interest in WSO2. You can
-                                    <a
-                                      href="https://wso2.com/selective-unsubscribe/"
-                                      style="
-                                        color: #465868;
-                                        text-decoration: underline;
-                                      "
-                                      >unsubscribe</a
-                                    >
-                                    from all communications at any time.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica, sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 20px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
+                                    <!-- [YEAR] -->
+                                    WSO2, LLC. All Rights Reserved
                                   </td>
                                 </tr>
                               </tbody>
@@ -2680,6 +2701,7 @@ public final string visitorCompletionTemplate = string `
     <!-- // END TEMPLATE -->
   </body>
 </html>
+
 `;
 
 public final string visitorApproveTemplate = string `
@@ -3540,6 +3562,25 @@ public final string visitorApproveTemplate = string `
                             "
                             valign="top"
                           >
+                          <p
+                              class="cDottedline"
+                              style="
+                                font-family: 'Roboto', Helvetica, sans-serif;
+                                padding-bottom: 5px;
+                                font-size: 17px;
+                                line-height: 28px;
+                                padding-top: 40px;
+                                padding-left: 0;
+                                padding-right: 0;
+                                color: #465868;
+                                text-align: left;
+                                border-top: 2px dotted #c3c5c9;
+                                margin-top: 0;
+                              "
+                            >
+                              Dear
+                              <!-- [NAME] -->,
+                            </p>
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
@@ -3601,8 +3642,8 @@ public final string visitorApproveTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Date:</strong>
-                                  <span><!-- [SCHEDULED_DATE] --></span>
+                                  <strong>Entry :</strong>
+                                  <span><!-- [TIME_OF_ENTRY] --></span>
                                 </p>
                               </li>
                               <li>
@@ -3614,14 +3655,10 @@ public final string visitorApproveTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Scheduled Time:</strong>
-                                  <span
-                                    ><!-- [START_TIME] -->
-                                    <!-- [END_TIME] --></span
-                                  >
+                                  <strong>Exit :</strong>
+                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
                                 </p>
                               </li>
-
                               <li>
                                 <p
                                   style="
@@ -4902,6 +4939,25 @@ public final string visitorRejectingTemplate = string `
                             "
                             valign="top"
                           >
+                          <p
+                              class="cDottedline"
+                              style="
+                                font-family: 'Roboto', Helvetica, sans-serif;
+                                padding-bottom: 5px;
+                                font-size: 17px;
+                                line-height: 28px;
+                                padding-top: 40px;
+                                padding-left: 0;
+                                padding-right: 0;
+                                color: #465868;
+                                text-align: left;
+                                border-top: 2px dotted #c3c5c9;
+                                margin-top: 0;
+                              "
+                            >
+                              Dear
+                              <!-- [NAME] -->,
+                            </p>
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;

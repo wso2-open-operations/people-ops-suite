@@ -71,3 +71,15 @@ function padZero(int num) returns string {
     return num < 10 ? string `0${num}` : num.toString();
 }
 
+# Generate a salutation for a given name.
+#
+# + name - given name
+# + return - formatted salutation
+function generateSalutation(string name) returns string {
+    string[] names = regexp:split(re `\s+`, name);
+    string firstName = names.length() > 1 ? names[0] : name;
+    firstName = regexp:replace(re `\s+`, firstName, "");
+    string firstChar = firstName.substring(0, 1).toUpperAscii();
+    string rest = firstName.substring(1);
+    return firstChar + rest;
+}

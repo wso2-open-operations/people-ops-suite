@@ -649,7 +649,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         "TIME": time:utcToEmailString(time:utcNow()),
                         "EMAIL": visit.email,
-                        "NAME": visit.name,
+                        "NAME": generateSalutation(visit.name),
                         "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
                         "TIME_OF_DEPARTURE": formattedToDate is error ?
                             visit.timeOfDeparture + "(UTC)" : formattedToDate,
@@ -730,7 +730,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         "TIME": time:utcToEmailString(time:utcNow()),
                         "EMAIL": visit.email,
-                        "NAME": visit.name,
+                        "NAME": generateSalutation(visit.name),
                         "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
                         "TIME_OF_DEPARTURE": formattedToDate is error ?
                             visit.timeOfDeparture + "(UTC)" : formattedToDate,
@@ -784,24 +784,34 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            database:Floor[]|error accessibleLocations = visit.accessibleLocations.cloneWithType();
-            if accessibleLocations is error {
-                string customError = "Error with parsing accessible locations";
-                log:printError(customError, accessibleLocations);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
+            database:Floor[]? accessibleLocations = visit.accessibleLocations;
+            if accessibleLocations is () {
+                string customError = "No accessible locations found for the visit!";
+                log:printError(customError);
+
             }
 
-            string accessibleLocationString = organizeLocations(accessibleLocations);
+            string accessibleLocationString = accessibleLocations is database:Floor[] ?
+                organizeLocations(accessibleLocations) : "N/A";
+
+            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+            if formattedFromDate is error {
+                string customError = "Error occurred while formatting the visit start time!";
+                log:printError(customError, formattedFromDate);
+            }
+            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+            if formattedToDate is error {
+                string customError = "Error occurred while formatting the visit end time!";
+                log:printError(customError, formattedToDate);
+            }
             string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                     {
                         "TIME": time:utcToEmailString(time:utcNow()),
                         "EMAIL": visit.email,
-                        "NAME": visit.name,
-                        "SCHEDULED_DATE": visit.timeOfEntry,
+                        "NAME": generateSalutation(visit.name),
+                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                        "TIME_OF_DEPARTURE": formattedToDate is error ?
+                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
                         "ALLOWED_FLOORS": accessibleLocationString,
                         "START_TIME": visit.timeOfEntry,
                         "END_TIME": visit.timeOfDeparture,
