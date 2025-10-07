@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 public final string inviteTemplate = string `
-  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
@@ -490,11 +490,6 @@ public final string inviteTemplate = string `
           text-align: left !important;
         }
       }
-
-      /*          u+.wso2_body .wso2_full_wrap {
-                width: 100% !important;
-                width: 100vw !important;
-            }*/
     </style>
   </head>
 
@@ -643,7 +638,6 @@ public final string inviteTemplate = string `
                                         width="100"
                                     /></a>
                                   </td>
-                                  <!-- <td align="right" class="wso2_orange preheaderContent" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;color: #949494;font-family: 'Roboto', Helvetica,sans-serif;font-size: 11px;line-height: 12.5px;text-align: right;padding: 20px 10px 30px 0;vertical-align: middle;" valign="top"><a href="{{view_online}}" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #1e1e1e;font-weight: normal;text-decoration: underline;" target="_blank">View online</a></td> -->
                                 </tr>
                               </tbody>
                             </table>
@@ -781,7 +775,8 @@ public final string inviteTemplate = string `
                                                         font-weight: 500;
                                                       "
                                                     >
-                                                      Visitor Registration Portal
+                                                      WSO2 Visitor Registration
+                                                      
                                                     </p>
 
                                                     <p
@@ -802,7 +797,6 @@ public final string inviteTemplate = string `
                                                         margin-bottom: 6px;
                                                       "
                                                     >
-                                                      
                                                       You have been invited!
                                                     </p>
                                                   </td>
@@ -878,7 +872,6 @@ public final string inviteTemplate = string `
                             "
                             valign="top"
                           >
-                           
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
@@ -892,9 +885,11 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              You have been invited to visit WSO2 premises.
-                              
-                              
+                              You have been scheduled for a visit to WSO2. </br>In
+                              order to facilitate your entry and ensure a
+                              seamless check-in process, we kindly request you
+                              to complete your visitor registration using the
+                              link below:
                             </p>
 
                             <p
@@ -904,35 +899,25 @@ public final string inviteTemplate = string `
                                 color: #465868;
                                 text-align: left;
                               "
-                            >
-                            </p>
+                            ></p>
 
-                            <p
-                              style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
-                                font-size: 17px;
-                                color: #465868;
-                                text-align: left;
-                              "
-                            >
-                              Please use the below link to fill the form to request access to the building.
-                            </p>
                             <a
-                                href="<!-- [LINK] -->"
-                                style="
-                                  font-family: 'Roboto', Helvetica, sans-serif;
-                                  font-size: 16px;
-                                  font-weight: normal;
-                                  color: #ffffff;
-                                  text-decoration: none;
-                                  background-color: #ff7300;
-                                  padding: 7px 20px;
-                                  border-radius: 5px;
-                                  display: inline-block;
-                                "
-                              >
-                                Fill Visitor Registration Form
-                              </a>                           
+                              href="<!-- [LINK] -->"
+                              style="
+                                font-family: 'Roboto', Helvetica, sans-serif;
+                                font-size: 16px;
+                                font-weight: normal;
+                                color: #ffffff;
+                                text-decoration: none;
+                                background-color: #ff7300;
+                                padding: 7px 20px;
+                                border-radius: 5px;
+                                display: inline-block;
+                              "
+                            >
+                              Complete Registration
+                            </a>
+
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
@@ -946,10 +931,9 @@ public final string inviteTemplate = string `
                                 text-align: left;
                               "
                             >
-                              If you have any concerns, please contact
-
-                              <!-- [CONTACT_EMAIL] -->
-                              .
+                              If you require any further assistance, please do
+                              not hesitate to contact us at
+                              <!-- [CONTACT_EMAIL] -->.
                             </p>
 
                             <p
@@ -965,7 +949,7 @@ public final string inviteTemplate = string `
                                 text-align: left;
                               "
                             >
-                              Thank you for using our services.
+                              Thank you for your cooperation.
                             </p>
 
                             <p
@@ -1168,7 +1152,7 @@ public final string inviteTemplate = string `
                                           border-radius: 9px;
                                         " /></a
                                     >&nbsp;&nbsp;&nbsp;<a
-                                      href="http://instagram.com/wso2inc/"
+                                      href="http://instagram.com/officialwso2/"
                                       style="
                                         -webkit-text-size-adjust: 100%;
                                         -ms-text-size-adjust: 100%;
@@ -1301,65 +1285,8 @@ public final string inviteTemplate = string `
                                     valign="top"
                                   >
                                     ©
-                                    <?= employee.year ?>
-                                    WSO2, Inc. All Rights Reserved
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica,
-                                        sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 10px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    You are receiving this email because you
-                                    have shown interest in WSO2. You can
-                                    <a
-                                      href="https://wso2.com/selective-unsubscribe/"
-                                      style="
-                                        color: #465868;
-                                        text-decoration: underline;
-                                      "
-                                      >unsubscribe</a
-                                    >
-                                    from all communications at any time.
-                                  </td>
-                                </tr>
-                                <tr>
-                                  <td
-                                    align="left"
-                                    class="wso2_orange3 footerContent leftMarginMobile"
-                                    style="
-                                      -webkit-text-size-adjust: 100%;
-                                      -ms-text-size-adjust: 100%;
-                                      mso-table-lspace: 0pt;
-                                      mso-table-rspace: 0pt;
-                                      color: #465868;
-                                      font-family: 'Roboto', Helvetica,
-                                        sans-serif;
-                                      font-size: 13px;
-                                      line-height: 18px;
-                                      text-align: left;
-                                      padding: 0 0px 20px;
-                                      letter-spacing: 0.1px;
-                                    "
-                                    valign="top"
-                                  >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
+                                    <!-- [YEAR] -->
+                                    WSO2, LLC. All Rights Reserved
                                   </td>
                                 </tr>
                               </tbody>
@@ -1380,7 +1307,6 @@ public final string inviteTemplate = string `
     <!-- // END TEMPLATE -->
   </body>
 </html>
-
 
 `;
 

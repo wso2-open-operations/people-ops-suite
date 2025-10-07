@@ -299,7 +299,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 email:inviteTemplate,
                 {
                     LINK: webAppUrl + "/external/" + "?token=" + encodeString,
-                    CONTACT_EMAIL: email:contactUsEmail
+                    CONTACT_EMAIL: email:contactUsEmail,
+                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
                 }
         );
 
