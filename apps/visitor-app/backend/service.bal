@@ -652,7 +652,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             to: [visit.email],
                             'from: email:fromEmailAddress,
-                            subject: email:emailSubject,
+                            subject: email:VISIT_ACCEPTED_SUBJECT,
                             template: content,
                             cc: [email:receptionEmail]
                         });
@@ -701,15 +701,27 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
+            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+            if formattedFromDate is error {
+                string customError = "Error occurred while formatting the visit start time!";
+                log:printError(customError, formattedFromDate);
+            }
+            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+            if formattedToDate is error {
+                string customError = "Error occurred while formatting the visit end time!";
+                log:printError(customError, formattedToDate);
+            }
             string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                     {
                         "TIME": time:utcToEmailString(time:utcNow()),
                         "EMAIL": visit.email,
                         "NAME": visit.name,
-                        "SCHEDULED_DATE": visit.timeOfEntry,
-                        "START_TIME": visit.timeOfEntry,
-                        "END_TIME": visit.timeOfDeparture,
-                        "CONTACT_EMAIL": email:contactUsEmail
+                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                        "TIME_OF_DEPARTURE": formattedToDate is error ?
+                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
+
+                        "CONTACT_EMAIL": email:contactUsEmail,
+                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
                     });
             if content is error {
                 string customError = "An error occurred while binding values to the email template!";
@@ -720,7 +732,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                 {
                             to: [visit.email],
                             'from: email:fromEmailAddress,
-                            subject: email:emailSubject,
+                            subject: email:VISIT_REJECTED_SUBJECT,
                             template: content,
                             cc: [email:receptionEmail]
                         });
@@ -791,7 +803,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             to: [visit.email],
                             'from: email:fromEmailAddress,
-                            subject: email:emailSubject,
+                            subject: email:VISIT_COMPLETION_SUBJECT,
                             template: content,
                             cc: [email:receptionEmail]
                         });
