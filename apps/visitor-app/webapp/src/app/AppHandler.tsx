@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import Layout from "@layout/Layout";
 import Error from "@layout/pages/404";
 import PreLoader from "@component/common/PreLoader";
@@ -36,10 +35,18 @@ const AppHandler = () => {
 
   return (
     <>
-      {auth.status === "loading" && <PreLoader isLoading={true} message={auth.statusMessage} />}
-      {auth.status === "success" && auth.mode === "active" && <RouterProvider router={router} />}
-      {auth.status === "success" && auth.mode === "maintenance" && <MaintenancePage />}
-      {auth.status === "failed" && <ErrorHandler message={auth.statusMessage} />}
+      {auth.status === "loading" && (
+        <PreLoader isLoading={true} message={auth.statusMessage} />
+      )}
+      {auth.status === "success" && auth.mode === "active" && (
+        <RouterProvider router={router} />
+      )}
+      {auth.status === "success" && auth.mode === "maintenance" && (
+        <MaintenancePage />
+      )}
+      {auth.status === "failed" && (
+        <ErrorHandler message={auth.statusMessage} />
+      )}
     </>
   );
 };

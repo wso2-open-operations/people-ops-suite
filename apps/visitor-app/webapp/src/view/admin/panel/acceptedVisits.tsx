@@ -29,7 +29,7 @@ import {
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
-import { fetchVisits, resetStatusUpdateState } from "@slices/visitSlice/visit";
+import { fetchVisits } from "@slices/visitSlice/visit";
 
 import { State, VisitStatus } from "@/types/types";
 
@@ -45,7 +45,7 @@ const toLocalDateTime = (utcString: string) => {
 
 const AcceptedVisits = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+  const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
 
@@ -72,18 +72,6 @@ const AcceptedVisits = () => {
       })
     );
   }, [dispatch, page, pageSize, showAllVisits]);
-
-  useEffect(() => {
-    if (
-      statusUpdateState === State.success ||
-      statusUpdateState === State.failed
-    ) {
-      const timer = setTimeout(() => {
-        dispatch(resetStatusUpdateState());
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusUpdateState, dispatch]);
 
   const handleToggleAllVisits = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -126,9 +114,9 @@ const AcceptedVisits = () => {
   return (
     <Box>
       <BackgroundLoader
-        open={state === State.loading || statusUpdateState === State.loading}
+        open={state === State.loading || submitState === State.loading}
         message={
-          state === State.loading || statusUpdateState === State.loading
+          state === State.loading || submitState === State.loading
             ? stateMessage || "Loading, please wait..."
             : ""
         }
@@ -142,43 +130,7 @@ const AcceptedVisits = () => {
           p: 1.5,
           backgroundColor: "transparent",
         }}
-      >
-        <FormControlLabel
-          control={
-            <>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 500,
-                  color: "text.secondary",
-                  fontSize: "0.875rem",
-                  marginRight: 1,
-                }}
-              >
-                Showing All Visits
-              </Typography>
-              <Switch
-                checked={showAllVisits}
-                onChange={handleToggleAllVisits}
-                color="primary"
-                size="small"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: "primary",
-                  },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                    backgroundColor: "primary",
-                  },
-                }}
-              />
-            </>
-          }
-          label="" // Removing the label here for clarity, since it's handled by the Typography above
-          sx={{
-            marginLeft: "auto",
-          }}
-        />
-      </Box>
+      ></Box>
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />

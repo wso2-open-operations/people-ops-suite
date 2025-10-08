@@ -40,6 +40,7 @@ import {
   DoneAll,
   Visibility,
 } from "@mui/icons-material";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -98,7 +99,7 @@ const rejectionValidationSchema = Yup.object({
 
 const PendingVisits = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+  const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
 
@@ -129,18 +130,6 @@ const PendingVisits = () => {
       })
     );
   }, [dispatch, page, pageSize]);
-
-  useEffect(() => {
-    if (
-      statusUpdateState === State.success ||
-      statusUpdateState === State.failed
-    ) {
-      const timer = setTimeout(() => {
-        dispatch(resetStatusUpdateState());
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusUpdateState, dispatch]);
 
   const handleApproveSingleVisit = async (
     visitId: string,
@@ -270,15 +259,9 @@ const PendingVisits = () => {
     },
     { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
     {
-      field: "invitationId",
-      headerName: "Invitation ID",
-      minWidth: 120,
-      flex: 1,
-    },
-    {
       field: "accessibleLocations",
       headerName: "Accessible Locations",
-      minWidth: 200,
+      minWidth: 100,
       flex: 1,
       headerAlign: "center",
       align: "center",
@@ -318,8 +301,7 @@ const PendingVisits = () => {
                   color="primary"
                   onClick={() => showApprovalModal(String(visit.id))}
                   disabled={
-                    state === State.loading ||
-                    statusUpdateState === State.loading
+                    state === State.loading || submitState === State.loading
                   }
                   title="Approve Visit"
                 >
@@ -329,8 +311,7 @@ const PendingVisits = () => {
                   color="error"
                   onClick={() => showRejectionModal(String(visit.id))}
                   disabled={
-                    state === State.loading ||
-                    statusUpdateState === State.loading
+                    state === State.loading || submitState === State.loading
                   }
                   title="Reject Visit"
                 >
@@ -340,14 +321,14 @@ const PendingVisits = () => {
             )}
             {isApproved && (
               <IconButton
-                color="success"
+                color="secondary"
                 onClick={() => showCompleteModal(String(visit.id))}
                 disabled={
-                  state === State.loading || statusUpdateState === State.loading
+                  state === State.loading || submitState === State.loading
                 }
                 title="Complete Visit"
               >
-                <DoneAll />
+                <AssignmentTurnedInIcon />
               </IconButton>
             )}
           </>
@@ -359,9 +340,9 @@ const PendingVisits = () => {
   return (
     <Box>
       <BackgroundLoader
-        open={state === State.loading || statusUpdateState === State.loading}
+        open={state === State.loading || submitState === State.loading}
         message={
-          state === State.loading || statusUpdateState === State.loading
+          state === State.loading || submitState === State.loading
             ? stateMessage || "Loading, please wait..."
             : ""
         }
@@ -453,17 +434,16 @@ const PendingVisits = () => {
                     variant="outlined"
                     onClick={() => setIsApprovalModalOpen(false)}
                   >
-                    Cancel
+                    No
                   </Button>
                   <Button
                     variant="contained"
                     type="submit"
                     disabled={
-                      state === State.loading ||
-                      statusUpdateState === State.loading
+                      state === State.loading || submitState === State.loading
                     }
                   >
-                    Confirm
+                    Yes
                   </Button>
                 </Box>
               </Form>
@@ -498,7 +478,7 @@ const PendingVisits = () => {
             variant="h6"
             sx={{ mb: 2, fontWeight: "bold" }}
           >
-            Reject Visit ID {currentVisitId}
+            Do you want to reject this visit?
           </Typography>
           <Formik
             initialValues={{
@@ -514,7 +494,9 @@ const PendingVisits = () => {
           >
             {({ errors, touched }) => (
               <Form>
-                <Typography sx={{ mb: 2 }}>Enter rejection reason</Typography>
+                <Typography sx={{ mb: 2 }}>
+                  Please provide a reason for the rejection.
+                </Typography>
                 <Field
                   as={TextField}
                   name="rejectionReason"
@@ -522,11 +504,6 @@ const PendingVisits = () => {
                   fullWidth
                   variant="outlined"
                   placeholder="Enter rejection reason"
-                  helperText={
-                    touched.rejectionReason && errors.rejectionReason
-                      ? errors.rejectionReason
-                      : "Provide a reason for rejection"
-                  }
                   error={
                     touched.rejectionReason && Boolean(errors.rejectionReason)
                   }
@@ -543,17 +520,16 @@ const PendingVisits = () => {
                     variant="outlined"
                     onClick={() => setIsRejectionModalOpen(false)}
                   >
-                    Cancel
+                    No
                   </Button>
                   <Button
                     variant="contained"
                     type="submit"
                     disabled={
-                      state === State.loading ||
-                      statusUpdateState === State.loading
+                      state === State.loading || submitState === State.loading
                     }
                   >
-                    Confirm
+                    Yes
                   </Button>
                 </Box>
               </Form>
@@ -588,10 +564,10 @@ const PendingVisits = () => {
             variant="h6"
             sx={{ mb: 2, fontWeight: "bold" }}
           >
-            Complete Visit ID {currentVisitId}
+            Do you want to complete this visit?
           </Typography>
           <Typography sx={{ mb: 2 }}>
-            Are you sure you want to mark this visit as completed?
+            This action will mark the visit as completed.
           </Typography>
           <Box
             sx={{
@@ -605,17 +581,17 @@ const PendingVisits = () => {
               variant="outlined"
               onClick={() => setIsCompleteModalOpen(false)}
             >
-              Cancel
+              No
             </Button>
             <Button
               variant="contained"
               color="success"
               onClick={() => handleCompleteSingleVisit(currentVisitId || "")}
               disabled={
-                state === State.loading || statusUpdateState === State.loading
+                state === State.loading || submitState === State.loading
               }
             >
-              Confirm
+              Yes
             </Button>
           </Box>
         </Box>
@@ -677,7 +653,7 @@ const PendingVisits = () => {
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
       ) : state === State.success ? (
         visitsList.length === 0 ? (
-          <ErrorHandler message="Oops! Looks like there are no pending visits." />
+          <ErrorHandler message="Oops! Looks like there are no active visits." />
         ) : (
           <Box
             sx={{

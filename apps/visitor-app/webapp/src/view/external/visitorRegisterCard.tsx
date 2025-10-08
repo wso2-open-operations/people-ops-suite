@@ -66,6 +66,7 @@ import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
 import { ConfirmationType, State } from "@root/src/types/types";
 import { VisitDetails } from "@slices/invitationSlice/invitation";
+import ErrorHandler from "@root/src/component/common/ErrorHandler";
 
 enum VisitorStatus {
   Draft = "Draft",
@@ -180,9 +181,7 @@ const validationSchema = Yup.object().shape({
       contactNumber: Yup.string()
         .required("Contact number is required")
         .matches(/^\d{6,12}$/, "Invalid contact number"),
-      emailAddress: Yup.string()
-        .required("Email is required.")
-        .email("Invalid email address"),
+      emailAddress: Yup.string().email("Invalid email address").optional(),
     })
   ),
 });
@@ -308,8 +307,8 @@ function VisitorRegisterCard() {
       }
 
       dialogContext.showConfirmation(
-        "Confirm Submission",
-        "Are you sure you want to save the visitor details?",
+        "Do you want to submit this visitor?",
+        "Please note, this will add the visitor's information to the system.",
         ConfirmationType.accept,
         async () => {
           try {
@@ -1177,23 +1176,7 @@ function VisitorRegisterCard() {
           }}
         >
           <Grid item xs={12} sm={10} md={8} lg={6}>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 3,
-                p: { xs: 4, md: 6 },
-                bgcolor: "background.paper",
-                borderRadius: 2,
-                boxShadow: 3,
-              }}
-            >
-              <StateWithImage
-                message={externalState.error}
-                imageUrl={require("@assets/images/error.svg").default}
-              />
-            </Box>
+            <ErrorHandler message={`Oops! ${externalState.error}`} />
           </Grid>
         </Grid>
       ) : null}

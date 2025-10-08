@@ -27,7 +27,7 @@ export default function Admin() {
       icon={<BadgeIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Pending Visits",
+          tabTitle: "Active Visits",
           tabPath: "pending-visits",
           icon: <PendingActionsIcon />,
           page: <PendingVisits />,
