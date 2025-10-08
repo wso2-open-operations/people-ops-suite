@@ -88,7 +88,7 @@ public type AddVisitorPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string? email = ();
 |};
 
 # [Database] Floor record.
