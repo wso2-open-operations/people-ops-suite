@@ -318,7 +318,8 @@ function VisitorRegisterCard() {
                 name: visitor.fullName,
                 nicNumber: visitor.idPassportNumber,
                 contactNumber: visitor.countryCode + visitor.contactNumber,
-                email: visitor.emailAddress,
+                email:
+                  visitor.emailAddress === "" ? null : visitor.emailAddress,
               }))
             );
 

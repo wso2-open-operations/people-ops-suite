@@ -37,7 +37,6 @@ import {
   CheckCircle,
   Cancel,
   CorporateFare,
-  DoneAll,
   Visibility,
 } from "@mui/icons-material";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
@@ -52,15 +51,17 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
+import { fetchVisits, visitStatusUpdate } from "@slices/visitSlice/visit";
 import {
-  fetchVisits,
-  visitStatusUpdate,
-  resetStatusUpdateState,
-} from "@slices/visitSlice/visit";
-import { State, VisitStatus, VisitAction } from "@/types/types";
+  State,
+  VisitStatus,
+  VisitAction,
+  ConfirmationType,
+} from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -109,14 +110,13 @@ const PendingVisits = () => {
     useState<boolean>(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
-  const [isCompleteModalOpen, setIsCompleteModalOpen] =
-    useState<boolean>(false);
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
   const [viewAccessibleFloors, setViewAccessibleFloors] =
     useState<boolean>(false);
   const [accessibleFloors, setAccessibleFloors] = useState<
     { floor: string; rooms: string[] }[]
   >([]);
+  const dialogContext = useConfirmationModalContext();
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -190,30 +190,32 @@ const PendingVisits = () => {
     }
   };
 
-  const handleCompleteSingleVisit = async (visitId: string) => {
-    try {
-      const payload = {
-        visitId: +visitId,
-        status: VisitAction.complete,
-        rejectionReason: null,
-        passNumber: null,
-        accessibleLocations: null,
-      };
+  const handleCompleteSingleVisit = (visitId: string) => {
+    dialogContext.showConfirmation(
+      "Do you want to complete this?",
+      `This action will mark the visit as completed.`,
+      ConfirmationType.accept,
+      async () => {
+        const payload = {
+          visitId: +visitId,
+          status: VisitAction.complete,
+          passNumber: null,
+          accessibleLocations: null,
+          rejectionReason: null,
+        };
 
-      await dispatch(visitStatusUpdate(payload));
-      setCurrentVisitId(null);
-      setIsCompleteModalOpen(false);
-
-      dispatch(
-        fetchVisits({
-          limit: pageSize,
-          offset: page * pageSize,
-          statusArray: [VisitStatus.requested, VisitStatus.approved],
-        })
-      );
-    } catch (error) {
-      console.error("Error completing visit:", error);
-    }
+        await dispatch(visitStatusUpdate(payload));
+        dispatch(
+          fetchVisits({
+            limit: pageSize,
+            offset: page * pageSize,
+            statusArray: [VisitStatus.requested, VisitStatus.approved],
+          })
+        );
+      },
+      "Confirm",
+      "Cancel"
+    );
   };
 
   const showApprovalModal = (visitId: string) => {
@@ -224,11 +226,6 @@ const PendingVisits = () => {
   const showRejectionModal = (visitId: string) => {
     setCurrentVisitId(visitId);
     setIsRejectionModalOpen(true);
-  };
-
-  const showCompleteModal = (visitId: string) => {
-    setCurrentVisitId(visitId);
-    setIsCompleteModalOpen(true);
   };
 
   const showViewAccessibleFloors = (
@@ -322,7 +319,7 @@ const PendingVisits = () => {
             {isApproved && (
               <IconButton
                 color="secondary"
-                onClick={() => showCompleteModal(String(visit.id))}
+                onClick={() => handleCompleteSingleVisit(visit.id)}
                 disabled={
                   state === State.loading || submitState === State.loading
                 }
@@ -535,65 +532,6 @@ const PendingVisits = () => {
               </Form>
             )}
           </Formik>
-        </Box>
-      </Modal>
-
-      {/* Complete Confirmation Modal */}
-      <Modal
-        open={isCompleteModalOpen}
-        onClose={() => setIsCompleteModalOpen(false)}
-        aria-labelledby="complete-visit-modal"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            maxHeight: "80vh",
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            overflowY: "auto",
-          }}
-        >
-          <Typography
-            id="complete-visit-modal"
-            variant="h6"
-            sx={{ mb: 2, fontWeight: "bold" }}
-          >
-            Do you want to complete this visit?
-          </Typography>
-          <Typography sx={{ mb: 2 }}>
-            This action will mark the visit as completed.
-          </Typography>
-          <Box
-            sx={{
-              mt: 2,
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 1,
-            }}
-          >
-            <Button
-              variant="outlined"
-              onClick={() => setIsCompleteModalOpen(false)}
-            >
-              No
-            </Button>
-            <Button
-              variant="contained"
-              color="success"
-              onClick={() => handleCompleteSingleVisit(currentVisitId || "")}
-              disabled={
-                state === State.loading || submitState === State.loading
-              }
-            >
-              Yes
-            </Button>
-          </Box>
         </Box>
       </Modal>
 

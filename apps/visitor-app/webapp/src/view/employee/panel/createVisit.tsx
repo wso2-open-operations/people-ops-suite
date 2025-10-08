@@ -324,7 +324,7 @@ function CreateVisit() {
                 nicNumber: visitor.idPassportNumber,
                 name: visitor.fullName,
                 contactNumber: visitor.countryCode + visitor.contactNumber,
-                email: visitor.emailAddress,
+                email: visitor.emailAddress == "" ? null : visitor.emailAddress,
               })
             ).then(async (action) => {
               // Because of the visitor.submitState change slowness, checking the redux thunk action. this will smooth the UI flow

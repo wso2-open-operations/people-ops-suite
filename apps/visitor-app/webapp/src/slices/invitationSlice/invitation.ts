@@ -28,7 +28,7 @@ interface Invitee {
   name: string;
   nicNumber: string;
   contactNumber: string;
-  email: string;
+  email: string | null;
 }
 
 interface InvitationResponse {
