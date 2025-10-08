@@ -127,6 +127,7 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
     }
 
     string? accessibleLocations = visit.accessibleLocations;
+    string? email = visit.email;
     return {
         id: visit.id,
         timeOfEntry: visit.timeOfEntry.endsWith(".0")
@@ -139,7 +140,7 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
         nicHash: visit.nicHash,
         nicNumber: check decrypt(visit.nicNumber),
         name: check decrypt(visit.name),
-        email: check decrypt(<string>visit.email),
+        email: email == () ? null : check decrypt(email),
         contactNumber: check decrypt(visit.contactNumber),
         companyName: visit.companyName,
         whomTheyMeet: visit.whomTheyMeet,
