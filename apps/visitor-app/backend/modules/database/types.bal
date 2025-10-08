@@ -271,8 +271,8 @@ public type VisitFilters record {|
     int? visitId = ();
     # Invitation ID associated with the visit
     int? invitationId = ();
-    # Status of the visit
-    Status? status = ();
+    # Status array of the visits
+    Status[]? statusArray = ();
     # Limit number of visits to fetch
     int? 'limit = DEFAULT_LIMIT;
     # Offset for pagination

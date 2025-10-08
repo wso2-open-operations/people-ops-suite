@@ -232,12 +232,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetches visits based on the given filters.
     #
-    # + inviter - The email of the inviter (employee)  
-    # + status - Filter :  status of the visit (Pending, Accepted, Rejected, Completed)  
-    # + 'limit - Limit number of visits to fetch  
+    # + inviter - The email of the inviter (employee)
+    # + statusArray - Filter :  status array of the visits (Pending, Accepted, Rejected, Completed)
+    # + 'limit - Limit number of visits to fetch
     # + offset - Offset for pagination
     # + return - Array of visits or error
-    resource function get visits(http:RequestContext ctx, string? inviter, database:Status? status,
+    resource function get visits(http:RequestContext ctx, string? inviter, database:Status[]? statusArray,
             int? 'limit, int? offset) returns database:VisitsResponse|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -265,7 +265,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:VisitsResponse|error visitsResponse = database:fetchVisits(
-                {inviter: inviter, status: status, 'limit: 'limit, offset: offset});
+                {inviter: inviter, statusArray: statusArray, 'limit: 'limit, offset: offset});
 
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";
