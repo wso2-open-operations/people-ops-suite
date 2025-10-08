@@ -146,6 +146,12 @@ public type FillInvitationPayload record {|
     }
     string whomTheyMeet;
     # Purpose of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The purpose of the visit should be a non-empty string with printable characters."
+        }
+    }
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
     database:Floor[]? accessibleLocations = ();
