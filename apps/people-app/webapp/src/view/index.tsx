@@ -16,22 +16,8 @@
 
 import { lazy } from "react";
 
-const home = lazy(() => import("@view/home/home"));
-const profile = lazy(() => import("@view/profile/index"));
-const userProfile = lazy(() => import("@view/profile/user"));
-const companyProfile = lazy(() => import("@view/profile/company"));
-const settings = lazy(() => import("@view/settings/index"));
-const userSettings = lazy(() => import("@view/settings/user"));
-const companySettings = lazy(() => import("@view/settings/company"));
-const help = lazy(() => import("@view/help/help"));
+const me = lazy(() => import("@view/me"));
 
 export const View = {
-  home,
-  profile,
-  userProfile,
-  companyProfile,
-  settings,
-  userSettings,
-  companySettings,
-  help,
+  me,
 };

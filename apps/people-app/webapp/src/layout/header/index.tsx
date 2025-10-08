@@ -19,7 +19,7 @@ import { APP_NAME } from "@config/config";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useAppAuthContext } from "@context/AuthContext";
-import { RootState, useAppSelector } from "@slices/store";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import {
   AppBar,
   Avatar,
@@ -29,9 +29,12 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import { resetEmployee } from "@root/src/slices/employeeSlice/employee";
+import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
 const Header = () => {
   const authContext = useAppAuthContext();
+  const dispatch = useAppDispatch();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
     null
   );
@@ -43,6 +46,13 @@ const Header = () => {
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
+  };
+
+  const handleLogout = () => {
+    dispatch(resetEmployee());
+    dispatch(resetPersonalInfo());
+    setAnchorElUser(null);
+    authContext.appSignOut();
   };
 
   return (
@@ -76,6 +86,7 @@ const Header = () => {
           style={{
             height: "40px",
             maxWidth: "100px",
+            cursor: "pointer",
           }}
           onClick={() => (window.location.href = "/")}
           src={require("@assets/images/wso2-logo.svg").default}
@@ -86,7 +97,9 @@ const Header = () => {
             ml: 1,
             flexGrow: 1,
             fontWeight: 600,
+            cursor: "pointer",
           }}
+          onClick={() => (window.location.href = "/")}
         >
           {APP_NAME}
         </Typography>
@@ -106,7 +119,11 @@ const Header = () => {
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}
-                    sx={{ border: 1, borderColor: "primary.main" }}
+                    sx={{
+                      border: 1,
+                      borderColor: "primary.main",
+                      cursor: "pointer",
+                    }}
                     src={user.userInfo?.employeeThumbnail || ""}
                     alt={user.userInfo?.firstName || "Avatar"}
                   >
@@ -131,12 +148,7 @@ const Header = () => {
                 open={Boolean(anchorElUser)}
                 onClose={handleCloseUserMenu}
               >
-                <MenuItem
-                  key={"logout"}
-                  onClick={() => {
-                    authContext.appSignOut();
-                  }}
-                >
+                <MenuItem key={"logout"} onClick={handleLogout}>
                   <Typography textAlign="center">Logout</Typography>
                 </MenuItem>
               </Menu>
