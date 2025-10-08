@@ -472,7 +472,7 @@ export default function Me() {
               </Grid>
             </Box>
           ) : (
-            <Typography color="text.secondary"></Typography>
+            <Typography color="text.secondary">General information not found.</Typography>
           )}
         </AccordionDetails>
       </Accordion>
@@ -716,7 +716,7 @@ export default function Me() {
               </Grid>
             </Grid>
           ) : (
-            <Typography color="text.secondary"></Typography>
+            <Typography color="text.secondary">Personal Information not found.</Typography>
           )}
         </AccordionDetails>
       </Accordion>
