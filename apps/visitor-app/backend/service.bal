@@ -591,7 +591,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Get visitor email for sending notifications
-        string? visitorEmail = visit.email == "" ? () : visit.email;
+        string? visitorEmail = visit.email;
 
         // Approve a visit.
         if action == APPROVE {
