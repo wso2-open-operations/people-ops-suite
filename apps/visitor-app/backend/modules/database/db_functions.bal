@@ -169,6 +169,7 @@ public isolated function fetchVisits(VisitFilters filters)
     check from VisitRecord visit in resultStream
         do {
             string? accessibleLocations = visit.accessibleLocations;
+            string? email = visit.email;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
@@ -182,7 +183,7 @@ public isolated function fetchVisits(VisitFilters filters)
                 nicHash: visit.nicHash,
                 nicNumber: check decrypt(visit.nicNumber),
                 name: check decrypt(visit.name),
-                email: check decrypt(<string>visit.email),
+                email: email == () ? null : check decrypt(email),
                 contactNumber: check decrypt(visit.contactNumber),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
