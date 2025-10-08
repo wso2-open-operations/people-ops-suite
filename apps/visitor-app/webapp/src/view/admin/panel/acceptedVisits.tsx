@@ -18,37 +18,20 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
-import {
-  Box,
-  IconButton,
-  Switch,
-  FormControlLabel,
-  Typography,
-} from "@mui/material";
+import { Box, Switch, FormControlLabel, Typography } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { Done } from "@mui/icons-material";
 
 import {
   RootState,
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
-import {
-  fetchVisits,
-  visitStatusUpdate,
-  resetStatusUpdateState,
-} from "@slices/visitSlice/visit";
+import { fetchVisits } from "@slices/visitSlice/visit";
 
-import {
-  State,
-  VisitStatus,
-  ConfirmationType,
-  VisitAction,
-} from "@/types/types";
+import { State, VisitStatus } from "@/types/types";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -62,10 +45,9 @@ const toLocalDateTime = (utcString: string) => {
 
 const AcceptedVisits = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+  const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
-  const dialogContext = useConfirmationModalContext();
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -79,66 +61,43 @@ const AcceptedVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: showAllVisits ? undefined : VisitStatus.approved,
+        statusArray: showAllVisits
+          ? [
+              VisitStatus.completed,
+              VisitStatus.rejected,
+              VisitStatus.approved,
+              VisitStatus.requested,
+            ]
+          : [VisitStatus.completed, VisitStatus.rejected],
       })
     );
   }, [dispatch, page, pageSize, showAllVisits]);
-
-  useEffect(() => {
-    if (
-      statusUpdateState === State.success ||
-      statusUpdateState === State.failed
-    ) {
-      const timer = setTimeout(() => {
-        dispatch(resetStatusUpdateState());
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusUpdateState, dispatch]);
-
-  const handleCompleteVisit = (visitId: string) => {
-    dialogContext.showConfirmation(
-      "Complete Visit",
-      `Are you sure you want to mark visit ID ${visitId} as completed?`,
-      ConfirmationType.accept,
-      async () => {
-        const payload = {
-          visitId: +visitId,
-          status: VisitAction.complete,
-          passNumber: null,
-          accessibleLocations: null,
-          rejectionReason: null,
-        };
-
-        await dispatch(visitStatusUpdate(payload));
-        dispatch(
-          fetchVisits({
-            limit: pageSize,
-            offset: page * pageSize,
-            status: showAllVisits ? undefined : VisitStatus.approved,
-          })
-        );
-      },
-      "Confirm",
-      "Cancel"
-    );
-  };
 
   const handleToggleAllVisits = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     setShowAllVisits(event.target.checked);
-    setPage(0); // Reset to first page when toggling
+    setPage(0);
   };
 
   const columns: GridColDef[] = [
-    { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
-    { field: "name", headerName: "Visitor Name", minWidth: 160, flex: 1.2 },
+    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
+    },
+    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "timeOfEntry",
+      headerName: "Scheduled Date",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
     },
     { field: "passNumber", headerName: "Pass Number", minWidth: 140, flex: 1 },
     {
@@ -150,35 +109,14 @@ const AcceptedVisits = () => {
         params.value ? toLocalDateTime(params.value) : "N/A",
     },
     { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
-    {
-      field: "action",
-      headerName: "Action",
-      minWidth: 120,
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => (
-        <IconButton
-          color="success"
-          onClick={() => handleCompleteVisit(String(params.row.id))}
-          disabled={
-            state === State.loading ||
-            statusUpdateState === State.loading ||
-            params.row.status !== VisitStatus.approved
-          }
-        >
-          <Done />
-        </IconButton>
-      ),
-    },
   ];
 
   return (
     <Box>
       <BackgroundLoader
-        open={state === State.loading || statusUpdateState === State.loading}
+        open={state === State.loading || submitState === State.loading}
         message={
-          state === State.loading || statusUpdateState === State.loading
+          state === State.loading || submitState === State.loading
             ? stateMessage || "Loading, please wait..."
             : ""
         }
@@ -192,43 +130,7 @@ const AcceptedVisits = () => {
           p: 1.5,
           backgroundColor: "transparent",
         }}
-      >
-        <FormControlLabel
-          control={
-            <>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 500,
-                  color: "text.secondary",
-                  fontSize: "0.875rem",
-                  marginRight: 1,
-                }}
-              >
-                Showing All Visits
-              </Typography>
-              <Switch
-                checked={showAllVisits}
-                onChange={handleToggleAllVisits}
-                color="primary"
-                size="small"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: "primary",
-                  },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                    backgroundColor: "primary",
-                  },
-                }}
-              />
-            </>
-          }
-          label="" // Removing the label here for clarity, since it's handled by the Typography above
-          sx={{
-            marginLeft: "auto",
-          }}
-        />
-      </Box>
+      ></Box>
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />

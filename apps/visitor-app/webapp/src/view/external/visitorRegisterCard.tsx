@@ -66,6 +66,7 @@ import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
 import { ConfirmationType, State } from "@root/src/types/types";
 import { VisitDetails } from "@slices/invitationSlice/invitation";
+import ErrorHandler from "@root/src/component/common/ErrorHandler";
 
 enum VisitorStatus {
   Draft = "Draft",
@@ -132,12 +133,35 @@ const COUNTRY_CODES = [
 
 const validationSchema = Yup.object().shape({
   visitDetails: Yup.object().shape({
-    companyName: Yup.string().required("Company name is required"),
     whomTheyMeet: Yup.string().required("Meeting person is required"),
     purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-    scheduledDate: Yup.string().required("Visit date is required"),
-    timeOfEntry: Yup.string().required("Entry time is required"),
-    timeOfDeparture: Yup.string().required("Departure time is required"),
+    scheduledDate: Yup.string()
+      .required("Scheduled date is required")
+      .test(
+        "is-future-date",
+        "Scheduled date cannot be in the past",
+        (value) => {
+          if (!value) return false;
+          return dayjs(value).isAfter(dayjs().subtract(1, "day"));
+        }
+      ),
+    timeOfEntry: Yup.string()
+      .required("Time of entry is required")
+      .test("is-valid-time", "Time of entry cannot be in the past", (value) => {
+        if (!value) return false;
+        return dayjs.utc(value).isAfter(dayjs.utc());
+      }),
+    timeOfDeparture: Yup.string()
+      .required("Time of departure is required")
+      .test(
+        "is-after-entry",
+        "Time of departure must be after time of entry",
+        (value, context) => {
+          const { timeOfEntry } = context.parent;
+          if (!value || !timeOfEntry) return false;
+          return dayjs.utc(value).isAfter(dayjs.utc(timeOfEntry));
+        }
+      ),
   }),
   visitors: Yup.array().of(
     Yup.object().shape({
@@ -157,7 +181,7 @@ const validationSchema = Yup.object().shape({
       contactNumber: Yup.string()
         .required("Contact number is required")
         .matches(/^\d{6,12}$/, "Invalid contact number"),
-      emailAddress: Yup.string().email("Invalid email address"),
+      emailAddress: Yup.string().email("Invalid email address").optional(),
     })
   ),
 });
@@ -283,8 +307,8 @@ function VisitorRegisterCard() {
       }
 
       dialogContext.showConfirmation(
-        "Confirm Submission",
-        "Are you sure you want to save the visitor details?",
+        "Do you want to submit this visitor?",
+        "Please note, this will add the visitor's information to the system.",
         ConfirmationType.accept,
         async () => {
           try {
@@ -294,7 +318,8 @@ function VisitorRegisterCard() {
                 name: visitor.fullName,
                 nicNumber: visitor.idPassportNumber,
                 contactNumber: visitor.countryCode + visitor.contactNumber,
-                email: visitor.emailAddress,
+                email:
+                  visitor.emailAddress === "" ? null : visitor.emailAddress,
               }))
             );
 
@@ -377,9 +402,6 @@ function VisitorRegisterCard() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: `url(${
-            require("@assets/images/wso2-logo.svg").default
-          })`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -423,7 +445,7 @@ function VisitorRegisterCard() {
                   color: "#FF7300",
                 }}
               >
-                Visitor Registration
+                WSO2 Visitor Registration
               </Typography>
 
               <Typography
@@ -482,7 +504,9 @@ function VisitorRegisterCard() {
                       },
                     }}
                   >
-                    <CardContent sx={{ p: 3 }}>
+                    <CardContent
+                      sx={{ p: 3, backgroundColor: "background.paper" }}
+                    >
                       <Typography
                         variant="h6"
                         gutterBottom
@@ -590,7 +614,7 @@ function VisitorRegisterCard() {
                         </Grid>
                         <Grid item xs={12} md={4}>
                           <DatePicker
-                            label="Visit Date"
+                            label="Scheduled Date"
                             value={
                               formik.values.visitDetails.scheduledDate
                                 ? dayjs(
@@ -767,7 +791,7 @@ function VisitorRegisterCard() {
 
                   <FieldArray name="visitors">
                     {({ remove, push }) => (
-                      <Box sx={{ mt: 2 }}>
+                      <Box sx={{ mt: 2, backgroundColor: "background.paper" }}>
                         {formik.values.visitors.map(
                           (visitor: VisitorDetail, index: number) => {
                             const isLocked =
@@ -1149,15 +1173,11 @@ function VisitorRegisterCard() {
             mt: { xs: 6, md: 10 },
             mb: { xs: 3, md: 5 },
             textAlign: "center",
+            px: { xs: 2, md: 0 },
           }}
         >
           <Grid item xs={12} sm={10} md={8} lg={6}>
-            <Box>
-              <StateWithImage
-                message="Something went wrong!"
-                imageUrl={require("@assets/images/error.svg").default}
-              />
-            </Box>
+            <ErrorHandler message={`Oops! ${externalState.error}`} />
           </Grid>
         </Grid>
       ) : null}

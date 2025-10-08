@@ -28,7 +28,7 @@ interface Invitee {
   name: string;
   nicNumber: string;
   contactNumber: string;
-  email: string;
+  email: string | null;
 }
 
 interface InvitationResponse {
@@ -183,8 +183,10 @@ export const getVisitInvitationAsync = createAsyncThunk<
         `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`
       );
       return response.data;
-    } catch (error) {
-      return rejectWithValue("Failed to fetch visit invitation");
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch invitation"
+      );
     }
   }
 );

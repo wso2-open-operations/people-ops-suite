@@ -21,27 +21,47 @@ import {
   TextField,
   Modal,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { CheckCircle, Cancel } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Cancel,
+  CorporateFare,
+  Visibility,
+} from "@mui/icons-material";
+import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { Formik, Form, Field } from "formik";
+import * as Yup from "yup";
 
 import {
   RootState,
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
+import { fetchVisits, visitStatusUpdate } from "@slices/visitSlice/visit";
 import {
-  fetchVisits,
-  visitStatusUpdate,
-  resetStatusUpdateState,
-} from "@slices/visitSlice/visit";
-import { State, VisitStatus, VisitAction } from "@/types/types";
+  State,
+  VisitStatus,
+  VisitAction,
+  ConfirmationType,
+} from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -67,29 +87,36 @@ const toLocalDateTime = (utcString: string) => {
     .format("YYYY-MM-DD HH:mm:ss");
 };
 
+const approvalValidationSchema = Yup.object({
+  passNumber: Yup.string().required("Pass number is required"),
+  selectedFloorsAndRooms: Yup.array()
+    .min(1, "At least one floor and room must be selected")
+    .required("Floor and room selection is required"),
+});
+
+const rejectionValidationSchema = Yup.object({
+  rejectionReason: Yup.string().required("Rejection reason is required"),
+});
+
 const PendingVisits = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, statusUpdateState, stateMessage } = useAppSelector(
+  const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
 
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
-
-  const [selectedFloorsAndRooms, setSelectedFloorsAndRooms] = useState<
-    { floor: string; rooms: string[] }[]
-  >([]);
-
   const [isApprovalModalOpen, setIsApprovalModalOpen] =
     useState<boolean>(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
-
-  const [tempPassNumber, setTempPassNumber] = useState<string | null>(null);
-  const [tempRejectionReason, setTempRejectionReason] = useState<string | null>(
-    null
-  );
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
+  const [viewAccessibleFloors, setViewAccessibleFloors] =
+    useState<boolean>(false);
+  const [accessibleFloors, setAccessibleFloors] = useState<
+    { floor: string; rooms: string[] }[]
+  >([]);
+  const dialogContext = useConfirmationModalContext();
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -99,53 +126,34 @@ const PendingVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.requested,
+        statusArray: [VisitStatus.requested, VisitStatus.approved],
       })
     );
   }, [dispatch, page, pageSize]);
 
-  useEffect(() => {
-    if (
-      statusUpdateState === State.success ||
-      statusUpdateState === State.failed
-    ) {
-      const timer = setTimeout(() => {
-        dispatch(resetStatusUpdateState());
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [statusUpdateState, dispatch]);
-
   const handleApproveSingleVisit = async (
     visitId: string,
-    passNumber: string | null,
+    passNumber: string,
     accessibleLocations: { floor: string; rooms: string[] }[]
   ) => {
-    const trimmedPassNumber = passNumber ? passNumber.trim() : null;
-
     try {
       const payload = {
         visitId: +visitId,
-        passNumber: trimmedPassNumber,
+        passNumber: passNumber.trim(),
         status: VisitAction.approve,
-        accessibleLocations: accessibleLocations,
+        accessibleLocations,
         rejectionReason: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
-
-      // Clear the form state
-      setTempPassNumber("");
-      setSelectedFloorsAndRooms([]);
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
 
-      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.requested,
+          statusArray: [VisitStatus.requested, VisitStatus.approved],
         })
       );
     } catch (error) {
@@ -155,29 +163,26 @@ const PendingVisits = () => {
 
   const handleRejectSingleVisit = async (
     visitId: string,
-    rejectionReason: string | null
+    rejectionReason: string
   ) => {
     try {
       const payload = {
         visitId: +visitId,
         status: VisitAction.reject,
-        rejectionReason: rejectionReason ? rejectionReason.trim() : null,
+        rejectionReason: rejectionReason.trim(),
         passNumber: null,
         accessibleLocations: null,
       };
 
       await dispatch(visitStatusUpdate(payload));
-
       setCurrentVisitId(null);
-      setTempRejectionReason("");
       setIsRejectionModalOpen(false);
 
-      // Refresh the visits list
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.requested,
+          statusArray: [VisitStatus.requested, VisitStatus.approved],
         })
       );
     } catch (error) {
@@ -185,23 +190,55 @@ const PendingVisits = () => {
     }
   };
 
-  // Function to show approval modal
+  const handleCompleteSingleVisit = (visitId: string) => {
+    dialogContext.showConfirmation(
+      "Do you want to complete this?",
+      `This action will mark the visit as completed.`,
+      ConfirmationType.accept,
+      async () => {
+        const payload = {
+          visitId: +visitId,
+          status: VisitAction.complete,
+          passNumber: null,
+          accessibleLocations: null,
+          rejectionReason: null,
+        };
+
+        await dispatch(visitStatusUpdate(payload));
+        dispatch(
+          fetchVisits({
+            limit: pageSize,
+            offset: page * pageSize,
+            statusArray: [VisitStatus.requested, VisitStatus.approved],
+          })
+        );
+      },
+      "Confirm",
+      "Cancel"
+    );
+  };
+
   const showApprovalModal = (visitId: string) => {
     setCurrentVisitId(visitId);
-    setTempPassNumber("");
-    setSelectedFloorsAndRooms([]);
     setIsApprovalModalOpen(true);
   };
 
   const showRejectionModal = (visitId: string) => {
     setCurrentVisitId(visitId);
-    setTempRejectionReason("");
     setIsRejectionModalOpen(true);
   };
 
+  const showViewAccessibleFloors = (
+    locations: { floor: string; rooms: string[] }[]
+  ) => {
+    setAccessibleFloors(locations || []);
+    setViewAccessibleFloors(true);
+  };
+
   const columns: GridColDef[] = [
-    { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
@@ -219,51 +256,90 @@ const PendingVisits = () => {
     },
     { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
     {
-      field: "invitationId",
-      headerName: "Invitation ID",
-      minWidth: 120,
+      field: "accessibleLocations",
+      headerName: "Accessible Locations",
+      minWidth: 100,
       flex: 1,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => {
+        const locations = params.value || [];
+        return (
+          <Tooltip title="View Attachments" arrow>
+            <IconButton
+              color="info"
+              onClick={() => showViewAccessibleFloors(locations)}
+              title="View Accessible Floors"
+              disabled={locations.length === 0}
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+        );
+      },
     },
     {
       field: "action",
       headerName: "Action",
-      minWidth: 120,
+      minWidth: 150,
       flex: 1,
       headerAlign: "center",
       align: "center",
-      renderCell: (params) => (
-        <>
-          <IconButton
-            color="primary"
-            onClick={() => showApprovalModal(String(params.row.id))}
-            disabled={
-              state === State.loading || statusUpdateState === State.loading
-            }
-            title="Approve Visit"
-          >
-            <CheckCircle />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => showRejectionModal(String(params.row.id))}
-            disabled={
-              state === State.loading || statusUpdateState === State.loading
-            }
-            title="Reject Visit"
-          >
-            <Cancel />
-          </IconButton>
-        </>
-      ),
+      renderCell: (params) => {
+        const visit = params.row;
+        const isRequested = visit.status === VisitStatus.requested;
+        const isApproved = visit.status === VisitStatus.approved;
+
+        return (
+          <>
+            {isRequested && (
+              <>
+                <IconButton
+                  color="primary"
+                  onClick={() => showApprovalModal(String(visit.id))}
+                  disabled={
+                    state === State.loading || submitState === State.loading
+                  }
+                  title="Approve Visit"
+                >
+                  <CheckCircle />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => showRejectionModal(String(visit.id))}
+                  disabled={
+                    state === State.loading || submitState === State.loading
+                  }
+                  title="Reject Visit"
+                >
+                  <Cancel />
+                </IconButton>
+              </>
+            )}
+            {isApproved && (
+              <IconButton
+                color="secondary"
+                onClick={() => handleCompleteSingleVisit(visit.id)}
+                disabled={
+                  state === State.loading || submitState === State.loading
+                }
+                title="Complete Visit"
+              >
+                <AssignmentTurnedInIcon />
+              </IconButton>
+            )}
+          </>
+        );
+      },
     },
   ];
 
   return (
     <Box>
       <BackgroundLoader
-        open={state === State.loading || statusUpdateState === State.loading}
+        open={state === State.loading || submitState === State.loading}
         message={
-          state === State.loading || statusUpdateState === State.loading
+          state === State.loading || submitState === State.loading
             ? stateMessage || "Loading, please wait..."
             : ""
         }
@@ -297,60 +373,79 @@ const PendingVisits = () => {
           >
             Approve Visit ID {currentVisitId}
           </Typography>
-          <Box>
-            <Typography sx={{ mb: 2 }}>
-              Enter pass number and select access floors
-            </Typography>
-            <TextField
-              autoFocus
-              label="Pass Number"
-              type="text"
-              fullWidth
-              variant="outlined"
-              onChange={(e) => {
-                setTempPassNumber(e.target.value);
-              }}
-              placeholder="Enter pass number"
-              helperText="Numbers only"
-            />
-            <FloorRoomSelector
-              availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-              selectedFloorsAndRooms={selectedFloorsAndRooms}
-              onChange={(value) => {
-                setSelectedFloorsAndRooms(value);
-              }}
-            />
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={() => setIsApprovalModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() =>
-                  handleApproveSingleVisit(
-                    currentVisitId || "",
-                    tempPassNumber,
-                    selectedFloorsAndRooms
-                  )
-                }
-                disabled={
-                  state === State.loading || statusUpdateState === State.loading
-                }
-              >
-                Confirm
-              </Button>
-            </Box>
-          </Box>
+          <Formik
+            initialValues={{
+              passNumber: "",
+              selectedFloorsAndRooms: [],
+            }}
+            validationSchema={approvalValidationSchema}
+            onSubmit={(values) => {
+              handleApproveSingleVisit(
+                currentVisitId || "",
+                values.passNumber,
+                values.selectedFloorsAndRooms
+              );
+            }}
+          >
+            {({ setFieldValue, values, errors, touched }) => (
+              <Form>
+                <Typography sx={{ mb: 2 }}>
+                  Enter pass number and select access floors
+                </Typography>
+                <Field
+                  as={TextField}
+                  name="passNumber"
+                  label="Pass Number"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter pass number"
+                  helperText={
+                    (touched.passNumber && errors.passNumber) ??
+                    errors.passNumber
+                  }
+                  error={touched.passNumber && Boolean(errors.passNumber)}
+                  sx={{ mb: 2 }}
+                />
+                <FloorRoomSelector
+                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+                  selectedFloorsAndRooms={values.selectedFloorsAndRooms}
+                  onChange={(value) =>
+                    setFieldValue("selectedFloorsAndRooms", value)
+                  }
+                />
+                {touched.selectedFloorsAndRooms &&
+                  errors.selectedFloorsAndRooms && (
+                    <Typography color="error" sx={{ mt: 1 }}>
+                      {errors.selectedFloorsAndRooms}
+                    </Typography>
+                  )}
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsApprovalModalOpen(false)}
+                  >
+                    No
+                  </Button>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={
+                      state === State.loading || submitState === State.loading
+                    }
+                  >
+                    Yes
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Modal>
 
@@ -380,60 +475,123 @@ const PendingVisits = () => {
             variant="h6"
             sx={{ mb: 2, fontWeight: "bold" }}
           >
-            Reject Visit ID {currentVisitId}
+            Do you want to reject this visit?
           </Typography>
-          <Box>
-            <Typography sx={{ mb: 2 }}>Enter rejection reason</Typography>
-            <TextField
-              autoFocus
-              label="Rejection Reason"
-              type="text"
-              fullWidth
-              variant="outlined"
-              onChange={(e) => {
-                setTempRejectionReason(e.target.value);
-              }}
-              placeholder="Enter rejection reason"
-              helperText="Provide a reason for rejection"
-            />
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={() => setIsRejectionModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() =>
-                  handleRejectSingleVisit(
-                    currentVisitId || "",
-                    tempRejectionReason
-                  )
-                }
-                disabled={
-                  state === State.loading || statusUpdateState === State.loading
-                }
-              >
-                Confirm
-              </Button>
-            </Box>
-          </Box>
+          <Formik
+            initialValues={{
+              rejectionReason: "",
+            }}
+            validationSchema={rejectionValidationSchema}
+            onSubmit={(values) => {
+              handleRejectSingleVisit(
+                currentVisitId || "",
+                values.rejectionReason
+              );
+            }}
+          >
+            {({ errors, touched }) => (
+              <Form>
+                <Typography sx={{ mb: 2 }}>
+                  Please provide a reason for the rejection.
+                </Typography>
+                <Field
+                  as={TextField}
+                  name="rejectionReason"
+                  label="Rejection Reason"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter rejection reason"
+                  error={
+                    touched.rejectionReason && Boolean(errors.rejectionReason)
+                  }
+                />
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => setIsRejectionModalOpen(false)}
+                  >
+                    No
+                  </Button>
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    disabled={
+                      state === State.loading || submitState === State.loading
+                    }
+                  >
+                    Yes
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Modal>
 
+      {/* Accessible Floors Dialog */}
+      <Dialog
+        open={viewAccessibleFloors}
+        onClose={() => setViewAccessibleFloors(false)}
+      >
+        <DialogTitle>Accessible Floors</DialogTitle>
+        <DialogContent>
+          {accessibleFloors.length === 0 ? (
+            <Typography>
+              Oops! Looks like there are no accessible floors.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+              <List
+                sx={{
+                  width: "100%",
+                  maxWidth: 360,
+                  bgcolor: "background.paper",
+                }}
+              >
+                {accessibleFloors.map((floorRoom, index) => (
+                  <ListItem key={index}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <CorporateFare />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={floorRoom.floor}
+                      secondary={
+                        floorRoom.rooms.length > 0
+                          ? floorRoom.rooms.join(", ")
+                          : "All rooms"
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setViewAccessibleFloors(false)}
+            color="primary"
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Data Table */}
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
       ) : state === State.success ? (
         visitsList.length === 0 ? (
-          <ErrorHandler message="Oops! Looks like there are no pending visits." />
+          <ErrorHandler message="Oops! Looks like there are no active visits." />
         ) : (
           <Box
             sx={{

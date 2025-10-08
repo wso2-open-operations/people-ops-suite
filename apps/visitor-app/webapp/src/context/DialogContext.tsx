@@ -97,6 +97,16 @@ const ConfirmationDialogContextProvider: React.FC<
     action: () => {},
   });
 
+  React.useEffect(() => {
+    if (!show) {
+      const timer = setTimeout(() => {
+        Reset();
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(timer); // cleanup in case show changes again quickly
+    }
+  }, [show]);
+
   const handleShow = (
     title: string,
     message: string | JSX.Element,
@@ -128,7 +138,6 @@ const ConfirmationDialogContextProvider: React.FC<
   };
 
   const handleCancel = () => {
-    Reset();
     onHide();
   };
 
