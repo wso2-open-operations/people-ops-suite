@@ -143,9 +143,14 @@ export const fetchVisits = createAsyncThunk(
     {
       limit,
       offset,
-      status,
       inviter,
-    }: { limit: number; offset: number; status?: string; inviter?: string },
+      statusArray,
+    }: {
+      limit: number;
+      offset: number;
+      inviter?: string;
+      statusArray?: string[];
+    },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -153,7 +158,12 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset, status, inviter },
+          params: {
+            limit,
+            offset,
+            inviter,
+            statusArray: statusArray?.join(","),
+          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

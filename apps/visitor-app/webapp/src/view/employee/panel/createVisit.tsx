@@ -152,7 +152,32 @@ const COUNTRY_CODES = [
   { code: "+94", country: "LK", flag: "🇱🇰" },
 ];
 
-const visitValidationSchema = Yup.object().shape({
+const validationSchema = Yup.object().shape({
+  invitationOption: Yup.string()
+    .required("Please select an option")
+    .oneOf(["sendInvitation", "addVisitor"], "Invalid option"),
+  // Send Invitation Fields
+  invitationEmail: Yup.string().when("invitationOption", {
+    is: "sendInvitation",
+    then: Yup.string()
+      .email("Invalid email address")
+      .required("Invitation email is required"),
+    otherwise: Yup.string(),
+  }),
+  inviteeCount: Yup.number().when("invitationOption", {
+    is: "sendInvitation",
+    then: Yup.number()
+      .min(1, "At least one invitee is required")
+      .required("Invitee count is required")
+      .integer("Invitee count must be an integer"),
+    otherwise: Yup.number(),
+  }),
+  // Visit Details Fields
+  companyName: Yup.string().when("invitationOption", {
+    is: "addVisitor",
+    then: Yup.string().optional(),
+    otherwise: Yup.string(),
+  }),
   whoTheyMeet: Yup.string().when("invitationOption", {
     is: "addVisitor",
     then: Yup.string().required("Who they meet is required"),
@@ -165,27 +190,32 @@ const visitValidationSchema = Yup.object().shape({
   }),
   accessibleLocations: Yup.array().when("invitationOption", {
     is: "addVisitor",
-    then: Yup.array().test(
-      "Accessible floors are required",
-      "At least one accessible floor is required",
-      (value) => Array.isArray(value) && value.length > 0
-    ),
+    then: Yup.array()
+      .min(1, "At least one floor and room must be selected")
+      .required("Floor and room selection is required"),
     otherwise: Yup.array(),
   }),
   scheduledDate: Yup.string().when("invitationOption", {
     is: "addVisitor",
-    then: Yup.string().required("Scheduled date is required"),
+    then: Yup.string()
+      .required("Scheduled date is required")
+      .test(
+        "is-future-date",
+        "Scheduled date cannot be in the past",
+        (value) => {
+          if (!value) return false;
+          return dayjs(value).isAfter(dayjs().subtract(1, "day"));
+        }
+      ),
     otherwise: Yup.string(),
   }),
   timeOfEntry: Yup.string().when("invitationOption", {
     is: "addVisitor",
     then: Yup.string()
       .required("Time of entry is required")
-      .test("is-valid-time", "Time of entry cannot be passed", (value) => {
-        if (dayjs(value).isBefore(dayjs())) {
-          return false;
-        }
-        return true;
+      .test("is-valid-time", "Time of entry cannot be in the past", (value) => {
+        if (!value) return false;
+        return dayjs(value).isAfter(dayjs());
       }),
     otherwise: Yup.string(),
   }),
@@ -194,62 +224,72 @@ const visitValidationSchema = Yup.object().shape({
     then: Yup.string()
       .required("Time of departure is required")
       .test(
-        "is-valid-time",
-        "Time of departure should be after the Time of entry",
+        "is-after-entry",
+        "Time of departure must be after time of entry",
         (value, context) => {
           const { timeOfEntry } = context.parent;
-          if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
-            return false;
-          }
-          return true;
+          if (!value || !timeOfEntry) return false;
+          return dayjs(value).isAfter(dayjs(timeOfEntry));
         }
       ),
     otherwise: Yup.string(),
   }),
-  invitationOption: Yup.string().required("Please select an option"),
-});
-
-const visitorValidationSchema = Yup.object().shape({
+  // Visitor Details Fields
   visitors: Yup.array().when("invitationOption", {
     is: "addVisitor",
-    then: Yup.array().of(
-      Yup.object().shape({
-        idPassportNumber: Yup.string()
-          .required("ID/Passport number is required")
-          .test("duplicate", "Visitor already registered", function (value) {
-            const { path, parent, options } = this;
-            const visitors = options.context?.visitors || [];
-            if (!value) return true;
-            const firstIndex = visitors.findIndex(
-              (v: any) => v.idPassportNumber === value
-            );
-            const currentIndex = visitors.indexOf(parent);
-            return currentIndex === firstIndex;
-          }),
-        fullName: Yup.string().required("Full name is required"),
-        contactNumber: Yup.string()
-          .required("Contact number is required")
-          .matches(/^\d{6,12}$/, "Invalid contact number"),
-        emailAddress: Yup.string().email("Invalid email address"),
-        passNumber: Yup.string().required("Pass number is required"),
-      })
-    ),
-    otherwise: Yup.array().notRequired(),
-  }),
-  invitationOption: Yup.string().required("Please select an option"),
-  invitationEmail: Yup.string().when("invitationOption", {
-    is: "sendInvitation",
-    then: Yup.string()
-      .email("Invalid email address")
-      .required("Invitation email is required"),
-    otherwise: Yup.string(),
-  }),
-  inviteeCount: Yup.number().when("invitationOption", {
-    is: "sendInvitation",
-    then: Yup.number()
-      .min(1, "At least one invitee is required")
-      .required("Invitee count is required"),
-    otherwise: Yup.number(),
+    then: Yup.array()
+      .of(
+        Yup.object().shape({
+          idPassportNumber: Yup.string()
+            .required("ID/Passport number is required")
+            .matches(/^[A-Z0-9]+$/, "ID/Passport number must be alphanumeric")
+            .test(
+              "unique-id",
+              "ID/Passport number already registered",
+              function (value) {
+                const visitors = this.options.context?.visitors || [];
+                const firstIndex = visitors.findIndex(
+                  (v: any) => v.idPassportNumber === value
+                );
+                const currentIndex = visitors.indexOf(this.parent);
+                return currentIndex === firstIndex || firstIndex === -1;
+              }
+            ),
+          fullName: Yup.string()
+            .required("Full name is required")
+            .min(2, "Full name must be at least 2 characters"),
+          contactNumber: Yup.string()
+            .required("Contact number is required")
+            .matches(/^\d{6,12}$/, "Contact number must be 6-12 digits")
+            .test(
+              "valid-phone",
+              "Invalid phone number for selected country",
+              function (value) {
+                const { countryCode } = this.parent;
+                try {
+                  const phoneNumber = PhoneNumberUtil.getInstance().parse(
+                    `${countryCode}${value}`
+                  );
+                  return PhoneNumberUtil.getInstance().isValidNumber(
+                    phoneNumber
+                  );
+                } catch (e) {
+                  return false;
+                }
+              }
+            ),
+          countryCode: Yup.string().required("Country code is required"),
+          emailAddress: Yup.string()
+            .email("Invalid email address")
+            .required("Email address is required"),
+          passNumber: Yup.string()
+            .required("Pass number is required")
+            .matches(/^[A-Z0-9]+$/, "Pass number must be alphanumeric"),
+          status: Yup.string().oneOf(Object.values(VisitorStatus)),
+        })
+      )
+      .min(1, "At least one visitor is required"),
+    otherwise: Yup.array(),
   }),
 });
 
@@ -343,21 +383,13 @@ const renderStepContent = (
                           ? theme.palette.primary.contrastText
                           : theme.palette.text.primary,
                         borderTopLeftRadius:
-                          formik.values.invitationOption === "sendInvitation"
-                            ? 8
-                            : 0,
+                          option.value === "sendInvitation" ? 8 : 0,
                         borderBottomLeftRadius:
-                          formik.values.invitationOption === "sendInvitation"
-                            ? 8
-                            : 0,
+                          option.value === "sendInvitation" ? 8 : 0,
                         borderTopRightRadius:
-                          formik.values.invitationOption === "addVisitor"
-                            ? 8
-                            : 0,
+                          option.value === "addVisitor" ? 8 : 0,
                         borderBottomRightRadius:
-                          formik.values.invitationOption === "addVisitor"
-                            ? 8
-                            : 0,
+                          option.value === "addVisitor" ? 8 : 0,
                         "&:active": {
                           transform: "scale(0.97)",
                         },
@@ -368,7 +400,6 @@ const renderStepContent = (
                   );
                 })}
               </RadioGroup>
-
               {formik.touched.invitationOption &&
                 formik.errors.invitationOption && (
                   <Typography
@@ -407,6 +438,14 @@ const renderStepContent = (
                       label="Name of the Company"
                       value={formik.values.companyName}
                       onChange={formik.handleChange}
+                      onBlur={() => formik.setFieldTouched("companyName", true)}
+                      error={
+                        formik.touched.companyName &&
+                        Boolean(formik.errors.companyName)
+                      }
+                      helperText={
+                        formik.touched.companyName && formik.errors.companyName
+                      }
                       variant="outlined"
                     />
                   </Grid>
@@ -417,6 +456,7 @@ const renderStepContent = (
                       label="Whom They Meet"
                       value={formik.values.whoTheyMeet}
                       onChange={formik.handleChange}
+                      onBlur={() => formik.setFieldTouched("whoTheyMeet", true)}
                       error={
                         formik.touched.whoTheyMeet &&
                         Boolean(formik.errors.whoTheyMeet)
@@ -434,6 +474,9 @@ const renderStepContent = (
                       label="Purpose Of Visit / Comment"
                       value={formik.values.purposeOfVisit}
                       onChange={formik.handleChange}
+                      onBlur={() =>
+                        formik.setFieldTouched("purposeOfVisit", true)
+                      }
                       error={
                         formik.touched.purposeOfVisit &&
                         Boolean(formik.errors.purposeOfVisit)
@@ -454,13 +497,15 @@ const renderStepContent = (
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                   <BusinessIcon color="primary" />
-                  Floors and Rooms *
+                  Accessible Floors *
                 </Typography>
                 <FloorRoomSelector
                   availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
                   selectedFloorsAndRooms={formik.values.accessibleLocations}
                   onChange={(value) => {
                     formik.setFieldValue("accessibleLocations", value);
+                    formik.setFieldTouched("accessibleLocations", true);
+                    formik.validateField("accessibleLocations");
                   }}
                   error={
                     formik.touched.accessibleLocations &&
@@ -490,8 +535,11 @@ const renderStepContent = (
                       onChange={(value) => {
                         formik.setFieldValue(
                           "scheduledDate",
-                          dayjs(value).format("YYYY-MM-DD")
+                          value ? dayjs(value).format("YYYY-MM-DD") : ""
                         );
+                        formik.setFieldValue("timeOfEntry", "");
+                        formik.setFieldValue("timeOfDeparture", "");
+                        formik.validateField("scheduledDate");
                       }}
                       minDate={dayjs()}
                       slotProps={{
@@ -521,14 +569,17 @@ const renderStepContent = (
                       onChange={(value) => {
                         formik.setFieldValue(
                           "timeOfEntry",
-                          formik.values.scheduledDate +
-                            "T" +
-                            dayjs(value).format(
-                              "HH:mm:ss" + dayjs(value).format("Z")
-                            )
+                          value
+                            ? formik.values.scheduledDate +
+                                "T" +
+                                dayjs(value).format(
+                                  "HH:mm:ss" + dayjs(value).format("Z")
+                                )
+                            : ""
                         );
+                        formik.validateField("timeOfEntry");
                       }}
-                      disabled={formik.values.scheduledDate === ""}
+                      disabled={!formik.values.scheduledDate}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -556,14 +607,17 @@ const renderStepContent = (
                       onChange={(value) => {
                         formik.setFieldValue(
                           "timeOfDeparture",
-                          formik.values.scheduledDate +
-                            "T" +
-                            dayjs(value).format(
-                              "HH:mm:ss" + dayjs(value).format("Z")
-                            )
+                          value
+                            ? formik.values.scheduledDate +
+                                "T" +
+                                dayjs(value).format(
+                                  "HH:mm:ss" + dayjs(value).format("Z")
+                                )
+                            : ""
                         );
+                        formik.validateField("timeOfDeparture");
                       }}
-                      disabled={formik.values.timeOfEntry === ""}
+                      disabled={!formik.values.timeOfEntry}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -603,12 +657,10 @@ const renderStepContent = (
                   Send Invitation
                 </Typography>
               </Stack>
-
               <Typography variant="body2" color="text.secondary" mb={3}>
                 Enter the email address and number of invitees. Invitations will
                 be sent automatically after submission.
               </Typography>
-
               <Grid container spacing={2} alignItems="center">
                 <Grid item xs={12} md={8}>
                   <TextField
@@ -634,7 +686,6 @@ const renderStepContent = (
                     size="medium"
                   />
                 </Grid>
-
                 <Grid
                   item
                   xs={12}
@@ -662,19 +713,18 @@ const renderStepContent = (
                     sx={{ width: 1000 }}
                   />
                 </Grid>
-
                 <Grid item xs={12} display="flex" justifyContent="flex-end">
                   <Button
                     variant="contained"
                     color="success"
                     startIcon={<Check />}
                     onClick={async () => {
-                      const errors = await formik.validateForm();
                       formik.setTouched({
                         invitationEmail: true,
                         inviteeCount: true,
                         invitationOption: true,
                       });
+                      const errors = await formik.validateForm();
                       if (Object.keys(errors).length === 0) {
                         await formik.submitForm();
                       }
@@ -754,17 +804,22 @@ const renderStepContent = (
                                   `visitors.${index}.idPassportNumber`,
                                   event.target.value.toUpperCase()
                                 );
+                                formik.validateField(
+                                  `visitors.${index}.idPassportNumber`
+                                );
                               }}
                               onBlur={() => {
                                 formik.setFieldTouched(
                                   `visitors.${index}.idPassportNumber`,
                                   true
                                 );
-                                fetchVisitorByNic(
-                                  visitor.idPassportNumber,
-                                  index,
-                                  formik
-                                );
+                                if (visitor.idPassportNumber) {
+                                  fetchVisitorByNic(
+                                    visitor.idPassportNumber,
+                                    index,
+                                    formik
+                                  );
+                                }
                               }}
                               error={
                                 formik.touched.visitors?.[index]
@@ -848,7 +903,18 @@ const renderStepContent = (
                                       select
                                       name={`visitors.${index}.countryCode`}
                                       value={visitor.countryCode}
-                                      onChange={formik.handleChange}
+                                      onChange={(e) => {
+                                        formik.handleChange(e);
+                                        formik.validateField(
+                                          `visitors.${index}.countryCode`
+                                        );
+                                      }}
+                                      onBlur={() =>
+                                        formik.setFieldTouched(
+                                          `visitors.${index}.countryCode`,
+                                          true
+                                        )
+                                      }
                                       variant="standard"
                                       sx={{ minWidth: 80 }}
                                       InputProps={{ disableUnderline: true }}
@@ -889,7 +955,11 @@ const renderStepContent = (
                                 )
                               }
                               error={
-                                !!formik.errors.visitors?.[index]?.emailAddress
+                                formik.touched.visitors?.[index]
+                                  ?.emailAddress &&
+                                Boolean(
+                                  formik.errors.visitors?.[index]?.emailAddress
+                                )
                               }
                               helperText={
                                 formik.touched.visitors?.[index]
@@ -938,16 +1008,20 @@ const renderStepContent = (
                                 color="success"
                                 startIcon={<Check />}
                                 onClick={async () => {
-                                  const errors = await formik.validateForm();
                                   formik.setTouched({
                                     [`visitors.${index}.idPassportNumber`]:
                                       true,
                                     [`visitors.${index}.fullName`]: true,
                                     [`visitors.${index}.contactNumber`]: true,
+                                    [`visitors.${index}.countryCode`]: true,
                                     [`visitors.${index}.emailAddress`]: true,
                                     [`visitors.${index}.passNumber`]: true,
                                   });
-                                  if (Object.keys(errors).length === 0) {
+                                  const errors = await formik.validateForm();
+                                  if (
+                                    !errors.visitors ||
+                                    !errors.visitors[index]
+                                  ) {
                                     formik.submitForm();
                                   }
                                 }}
@@ -975,6 +1049,7 @@ function CreateVisit() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const dialogContext = useConfirmationModalContext();
+  const phoneUtil = PhoneNumberUtil.getInstance();
 
   const { visitorState, invitationSendState } = useAppSelector(
     (state: RootState) => ({
@@ -982,8 +1057,6 @@ function CreateVisit() {
       invitationSendState: state.invitation,
     })
   );
-
-  const phoneUtil = PhoneNumberUtil.getInstance();
 
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
@@ -1012,11 +1085,36 @@ function CreateVisit() {
     [defaultVisitor]
   );
 
-  const handleNext = useCallback(() => {
-    if (!isLastStep) {
-      setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    }
-  }, [isLastStep]);
+  const handleNext = useCallback(
+    async (formik: any) => {
+      if (!isLastStep) {
+        const fieldsToValidate = [
+          "invitationOption",
+          "companyName",
+          "whoTheyMeet",
+          "purposeOfVisit",
+          "accessibleLocations",
+          "scheduledDate",
+          "timeOfEntry",
+          "timeOfDeparture",
+        ];
+        formik.setTouched(
+          fieldsToValidate.reduce((acc: any, key) => {
+            acc[key] = true;
+            return acc;
+          }, {})
+        );
+        const errors = await formik.validateForm();
+        const hasErrors = fieldsToValidate.some(
+          (field) => errors[field] !== undefined
+        );
+        if (!hasErrors && formik.values.invitationOption === "addVisitor") {
+          setActiveStep((prevActiveStep) => prevActiveStep + 1);
+        }
+      }
+    },
+    [isLastStep, dispatch]
+  );
 
   const handleBack = useCallback(() => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
@@ -1042,7 +1140,7 @@ function CreateVisit() {
   const submitVisit = async (values: any, formikHelpers: any) => {
     if (values.invitationOption === "sendInvitation") {
       try {
-        await visitorValidationSchema.validate(
+        await validationSchema.validate(
           {
             invitationEmail: values.invitationEmail,
             inviteeCount: Number(values.inviteeCount),
@@ -1064,7 +1162,6 @@ function CreateVisit() {
         });
         return;
       }
-
       if (!dialogContext?.showConfirmation) {
         dispatch(
           enqueueSnackbarMessage({
@@ -1113,6 +1210,26 @@ function CreateVisit() {
         (v: VisitorDetail) => v === visitor
       );
 
+      try {
+        await validationSchema.validate(
+          {
+            ...values,
+            visitors: [visitor],
+          },
+          { context: { visitors: values.visitors }, abortEarly: false }
+        );
+      } catch (validationError) {
+        formikHelpers.setTouched({
+          [`visitors.${visitorIndex}.idPassportNumber`]: true,
+          [`visitors.${visitorIndex}.fullName`]: true,
+          [`visitors.${visitorIndex}.contactNumber`]: true,
+          [`visitors.${visitorIndex}.countryCode`]: true,
+          [`visitors.${visitorIndex}.emailAddress`]: true,
+          [`visitors.${visitorIndex}.passNumber`]: true,
+        });
+        return;
+      }
+
       dialogContext.showConfirmation(
         "Do you want to submit this visitor?",
         "Please note, this will add the visitor's information to the system.",
@@ -1130,11 +1247,6 @@ function CreateVisit() {
             );
 
             if (addVisitor.fulfilled.match(addVisitorAction)) {
-              formikHelpers.setFieldValue(
-                `visitors.${visitorIndex}.status`,
-                VisitorStatus.Completed
-              );
-
               const addVisitAction = await dispatch(
                 addVisit({
                   nicHash: await hash(visitor.idPassportNumber),
@@ -1152,26 +1264,18 @@ function CreateVisit() {
                 })
               );
 
-              if (addVisit.rejected.match(addVisitAction)) {
-                dispatch(
-                  enqueueSnackbarMessage({
-                    message: "An error occurred during visit creation.",
-                    type: "error",
-                  })
+              if (addVisit.fulfilled.match(addVisitAction)) {
+                formikHelpers.setFieldValue(
+                  `visitors.${visitorIndex}.status`,
+                  VisitorStatus.Completed
                 );
+              } else {
                 formikHelpers.setFieldValue(
                   `visitors.${visitorIndex}.status`,
                   VisitorStatus.Draft
                 );
               }
             }
-          } catch (error) {
-            dispatch(
-              enqueueSnackbarMessage({
-                message: "An unexpected error occurred.",
-                type: "error",
-              })
-            );
           } finally {
             dispatch(resetVisitorSubmitState());
           }
@@ -1187,6 +1291,7 @@ function CreateVisit() {
     index: number,
     formik: any
   ) => {
+    if (!idPassportNumber) return;
     await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
       (action) => {
         if (fetchVisitor.fulfilled.match(action)) {
@@ -1226,9 +1331,9 @@ function CreateVisit() {
             invitationEmail: "",
             inviteeCount: "1",
           }}
-          validationSchema={
-            activeStep === 0 ? visitValidationSchema : visitorValidationSchema
-          }
+          validationSchema={validationSchema}
+          validateOnChange={true}
+          validateOnBlur={true}
           onSubmit={(values, formikHelpers) => {
             submitVisit(values, formikHelpers);
           }}
@@ -1244,7 +1349,7 @@ function CreateVisit() {
                     visitorState.state === State.loading ||
                     visitorState.submitState === State.loading
                       ? visitorState.stateMessage
-                      : ""
+                      : "Processing..."
                   }
                 />
               )}
@@ -1302,27 +1407,14 @@ function CreateVisit() {
                                 )
                               : false
                           }
-                          onClick={async () => {
+                          onClick={() => {
                             if (
                               isLastStep &&
                               formik.values.invitationOption === "addVisitor"
                             ) {
                               addNewVisitorBlock(formik);
                             } else {
-                              const errors = await formik.validateForm();
-                              if (Object.keys(errors).length === 0) {
-                                handleNext();
-                              } else {
-                                formik.setTouched(
-                                  Object.keys(errors).reduce(
-                                    (acc: any, key) => {
-                                      acc[key] = true;
-                                      return acc;
-                                    },
-                                    {}
-                                  )
-                                );
-                              }
+                              handleNext(formik);
                             }
                           }}
                         >

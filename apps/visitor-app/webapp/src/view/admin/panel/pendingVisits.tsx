@@ -21,13 +21,29 @@ import {
   TextField,
   Modal,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Avatar,
+  Tooltip,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { CheckCircle, Cancel } from "@mui/icons-material";
+import {
+  CheckCircle,
+  Cancel,
+  CorporateFare,
+  DoneAll,
+  Visibility,
+} from "@mui/icons-material";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 
 import {
@@ -92,7 +108,14 @@ const PendingVisits = () => {
     useState<boolean>(false);
   const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] =
+    useState<boolean>(false);
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
+  const [viewAccessibleFloors, setViewAccessibleFloors] =
+    useState<boolean>(false);
+  const [accessibleFloors, setAccessibleFloors] = useState<
+    { floor: string; rooms: string[] }[]
+  >([]);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -102,7 +125,7 @@ const PendingVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        status: VisitStatus.requested,
+        statusArray: [VisitStatus.requested, VisitStatus.approved],
       })
     );
   }, [dispatch, page, pageSize]);
@@ -141,7 +164,7 @@ const PendingVisits = () => {
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.requested,
+          statusArray: [VisitStatus.requested, VisitStatus.approved],
         })
       );
     } catch (error) {
@@ -170,11 +193,37 @@ const PendingVisits = () => {
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
-          status: VisitStatus.requested,
+          statusArray: [VisitStatus.requested, VisitStatus.approved],
         })
       );
     } catch (error) {
       console.error("Error rejecting visit:", error);
+    }
+  };
+
+  const handleCompleteSingleVisit = async (visitId: string) => {
+    try {
+      const payload = {
+        visitId: +visitId,
+        status: VisitAction.complete,
+        rejectionReason: null,
+        passNumber: null,
+        accessibleLocations: null,
+      };
+
+      await dispatch(visitStatusUpdate(payload));
+      setCurrentVisitId(null);
+      setIsCompleteModalOpen(false);
+
+      dispatch(
+        fetchVisits({
+          limit: pageSize,
+          offset: page * pageSize,
+          statusArray: [VisitStatus.requested, VisitStatus.approved],
+        })
+      );
+    } catch (error) {
+      console.error("Error completing visit:", error);
     }
   };
 
@@ -188,8 +237,19 @@ const PendingVisits = () => {
     setIsRejectionModalOpen(true);
   };
 
+  const showCompleteModal = (visitId: string) => {
+    setCurrentVisitId(visitId);
+    setIsCompleteModalOpen(true);
+  };
+
+  const showViewAccessibleFloors = (
+    locations: { floor: string; rooms: string[] }[]
+  ) => {
+    setAccessibleFloors(locations || []);
+    setViewAccessibleFloors(true);
+  };
+
   const columns: GridColDef[] = [
-    { field: "id", headerName: "Visit ID", minWidth: 100, flex: 1 },
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
     { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
@@ -216,36 +276,83 @@ const PendingVisits = () => {
       flex: 1,
     },
     {
-      field: "action",
-      headerName: "Action",
-      minWidth: 120,
+      field: "accessibleLocations",
+      headerName: "Accessible Locations",
+      minWidth: 200,
       flex: 1,
       headerAlign: "center",
       align: "center",
-      renderCell: (params) => (
-        <>
-          <IconButton
-            color="primary"
-            onClick={() => showApprovalModal(String(params.row.id))}
-            disabled={
-              state === State.loading || statusUpdateState === State.loading
-            }
-            title="Approve Visit"
-          >
-            <CheckCircle />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => showRejectionModal(String(params.row.id))}
-            disabled={
-              state === State.loading || statusUpdateState === State.loading
-            }
-            title="Reject Visit"
-          >
-            <Cancel />
-          </IconButton>
-        </>
-      ),
+      renderCell: (params) => {
+        const locations = params.value || [];
+        return (
+          <Tooltip title="View Attachments" arrow>
+            <IconButton
+              color="info"
+              onClick={() => showViewAccessibleFloors(locations)}
+              title="View Accessible Floors"
+              disabled={locations.length === 0}
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      minWidth: 150,
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => {
+        const visit = params.row;
+        const isRequested = visit.status === VisitStatus.requested;
+        const isApproved = visit.status === VisitStatus.approved;
+
+        return (
+          <>
+            {isRequested && (
+              <>
+                <IconButton
+                  color="primary"
+                  onClick={() => showApprovalModal(String(visit.id))}
+                  disabled={
+                    state === State.loading ||
+                    statusUpdateState === State.loading
+                  }
+                  title="Approve Visit"
+                >
+                  <CheckCircle />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => showRejectionModal(String(visit.id))}
+                  disabled={
+                    state === State.loading ||
+                    statusUpdateState === State.loading
+                  }
+                  title="Reject Visit"
+                >
+                  <Cancel />
+                </IconButton>
+              </>
+            )}
+            {isApproved && (
+              <IconButton
+                color="success"
+                onClick={() => showCompleteModal(String(visit.id))}
+                disabled={
+                  state === State.loading || statusUpdateState === State.loading
+                }
+                title="Complete Visit"
+              >
+                <DoneAll />
+              </IconButton>
+            )}
+          </>
+        );
+      },
     },
   ];
 
@@ -455,6 +562,117 @@ const PendingVisits = () => {
         </Box>
       </Modal>
 
+      {/* Complete Confirmation Modal */}
+      <Modal
+        open={isCompleteModalOpen}
+        onClose={() => setIsCompleteModalOpen(false)}
+        aria-labelledby="complete-visit-modal"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 400,
+            maxHeight: "80vh",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            overflowY: "auto",
+          }}
+        >
+          <Typography
+            id="complete-visit-modal"
+            variant="h6"
+            sx={{ mb: 2, fontWeight: "bold" }}
+          >
+            Complete Visit ID {currentVisitId}
+          </Typography>
+          <Typography sx={{ mb: 2 }}>
+            Are you sure you want to mark this visit as completed?
+          </Typography>
+          <Box
+            sx={{
+              mt: 2,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 1,
+            }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => setIsCompleteModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => handleCompleteSingleVisit(currentVisitId || "")}
+              disabled={
+                state === State.loading || statusUpdateState === State.loading
+              }
+            >
+              Confirm
+            </Button>
+          </Box>
+        </Box>
+      </Modal>
+
+      {/* Accessible Floors Dialog */}
+      <Dialog
+        open={viewAccessibleFloors}
+        onClose={() => setViewAccessibleFloors(false)}
+      >
+        <DialogTitle>Accessible Floors</DialogTitle>
+        <DialogContent>
+          {accessibleFloors.length === 0 ? (
+            <Typography>
+              Oops! Looks like there are no accessible floors.
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "row", gap: 0.5 }}>
+              <List
+                sx={{
+                  width: "100%",
+                  maxWidth: 360,
+                  bgcolor: "background.paper",
+                }}
+              >
+                {accessibleFloors.map((floorRoom, index) => (
+                  <ListItem key={index}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <CorporateFare />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={floorRoom.floor}
+                      secondary={
+                        floorRoom.rooms.length > 0
+                          ? floorRoom.rooms.join(", ")
+                          : "All rooms"
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setViewAccessibleFloors(false)}
+            color="primary"
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Data Table */}
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
       ) : state === State.success ? (

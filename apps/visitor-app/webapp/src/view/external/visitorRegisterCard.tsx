@@ -134,26 +134,31 @@ const validationSchema = Yup.object().shape({
   visitDetails: Yup.object().shape({
     whomTheyMeet: Yup.string().required("Meeting person is required"),
     purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-    scheduledDate: Yup.string().required("Scheduled Date is required"),
+    scheduledDate: Yup.string()
+      .required("Scheduled date is required")
+      .test(
+        "is-future-date",
+        "Scheduled date cannot be in the past",
+        (value) => {
+          if (!value) return false;
+          return dayjs(value).isAfter(dayjs().subtract(1, "day"));
+        }
+      ),
     timeOfEntry: Yup.string()
       .required("Time of entry is required")
-      .test("is-valid-time", "Time of entry cannot be passed", (value) => {
-        if (dayjs(value).isBefore(dayjs())) {
-          return false;
-        }
-        return true;
+      .test("is-valid-time", "Time of entry cannot be in the past", (value) => {
+        if (!value) return false;
+        return dayjs.utc(value).isAfter(dayjs.utc());
       }),
     timeOfDeparture: Yup.string()
       .required("Time of departure is required")
       .test(
-        "is-valid-time",
-        "Time of departure should be after the Time of entry",
+        "is-after-entry",
+        "Time of departure must be after time of entry",
         (value, context) => {
           const { timeOfEntry } = context.parent;
-          if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
-            return false;
-          }
-          return true;
+          if (!value || !timeOfEntry) return false;
+          return dayjs.utc(value).isAfter(dayjs.utc(timeOfEntry));
         }
       ),
   }),
