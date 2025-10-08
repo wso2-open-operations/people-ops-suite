@@ -214,7 +214,6 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     Status[]? statusArray = filters.statusArray;
     if statusArray is Status[] {
-
         sql:ParameterizedQuery arrayFlattenQuery = sql:arrayFlattenQuery(from Status status in statusArray
                     select status.toString());
 
