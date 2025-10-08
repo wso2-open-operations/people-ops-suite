@@ -590,6 +590,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Get visitor email for sending notifications
+        string? visitorEmail = visit.email == "" ? () : visit.email;
+
         // Approve a visit.
         if action == APPROVE {
             if visit.status != database:REQUESTED {
@@ -634,46 +637,48 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string accessibleLocationString = organizeLocations(accessibleLocations);
-            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-            if formattedFromDate is error {
-                string customError = "Error occurred while formatting the visit start time!";
-                log:printError(customError, formattedFromDate);
-            }
-            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-            if formattedToDate is error {
-                string customError = "Error occurred while formatting the visit end time!";
-                log:printError(customError, formattedToDate);
-            }
-            string|error content = email:bindKeyValues(email:visitorApproveTemplate,
-                    {
-                        "TIME": time:utcToEmailString(time:utcNow()),
-                        "EMAIL": visit.email,
-                        "NAME": generateSalutation(visit.name),
-                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                        "TIME_OF_DEPARTURE": formattedToDate is error ?
-                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                        "ALLOWED_FLOORS": accessibleLocationString,
-                        "PASS_NUMBER": passNumber.toString(),
-                        "CONTACT_EMAIL": email:contactUsEmail,
-                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                    });
-            if content is error {
-                string customError = "An error occurred while binding values to the email template!";
-                log:printError(customError, content);
-            }
-            if content is string {
-                error? emailError = email:sendEmail(
+            if visitorEmail is string {
+                string accessibleLocationString = organizeLocations(accessibleLocations);
+                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+                if formattedFromDate is error {
+                    string customError = "Error occurred while formatting the visit start time!";
+                    log:printError(customError, formattedFromDate);
+                }
+                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+                if formattedToDate is error {
+                    string customError = "Error occurred while formatting the visit end time!";
+                    log:printError(customError, formattedToDate);
+                }
+                string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
-                            to: [visit.email],
-                            'from: email:fromEmailAddress,
-                            subject: email:VISIT_ACCEPTED_SUBJECT,
-                            template: content,
-                            cc: [email:receptionEmail]
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visitorEmail,
+                            "NAME": generateSalutation(visit.name),
+                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                            "TIME_OF_DEPARTURE": formattedToDate is error ?
+                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
+                            "ALLOWED_FLOORS": accessibleLocationString,
+                            "PASS_NUMBER": passNumber.toString(),
+                            "CONTACT_EMAIL": email:contactUsEmail,
+                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
                         });
-                if emailError is error {
-                    string customError = "An error occurred while sending the approval email!";
-                    log:printError(customError, emailError);
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                }
+                if content is string {
+                    error? emailError = email:sendEmail(
+                            {
+                                to: [visitorEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:VISIT_ACCEPTED_SUBJECT,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string customError = "An error occurred while sending the approval email!";
+                        log:printError(customError, emailError);
+                    }
                 }
             }
 
@@ -716,47 +721,48 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-            if formattedFromDate is error {
-                string customError = "Error occurred while formatting the visit start time!";
-                log:printError(customError, formattedFromDate);
-            }
-            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-            if formattedToDate is error {
-                string customError = "Error occurred while formatting the visit end time!";
-                log:printError(customError, formattedToDate);
-            }
-            string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
-                    {
-                        "TIME": time:utcToEmailString(time:utcNow()),
-                        "EMAIL": visit.email,
-                        "NAME": generateSalutation(visit.name),
-                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                        "TIME_OF_DEPARTURE": formattedToDate is error ?
-                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
+            if visitorEmail is string {
+                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+                if formattedFromDate is error {
+                    string customError = "Error occurred while formatting the visit start time!";
+                    log:printError(customError, formattedFromDate);
+                }
+                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+                if formattedToDate is error {
+                    string customError = "Error occurred while formatting the visit end time!";
+                    log:printError(customError, formattedToDate);
+                }
+                string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visitorEmail,
+                            "NAME": generateSalutation(visit.name),
+                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                            "TIME_OF_DEPARTURE": formattedToDate is error ?
+                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
 
-                        "CONTACT_EMAIL": email:contactUsEmail,
-                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                    });
-            if content is error {
-                string customError = "An error occurred while binding values to the email template!";
-                log:printError(customError, content);
-            }
-            if content is string {
-                error? emailError = email:sendEmail(
-                                {
-                            to: [visit.email],
-                            'from: email:fromEmailAddress,
-                            subject: email:VISIT_REJECTED_SUBJECT,
-                            template: content,
-                            cc: [email:receptionEmail]
+                            "CONTACT_EMAIL": email:contactUsEmail,
+                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
                         });
-                if emailError is error {
-                    string customError = "An error occurred while sending the rejection email!";
-                    log:printError(customError, emailError);
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                }
+                if content is string {
+                    error? emailError = email:sendEmail(
+                                {
+                                to: [visitorEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:VISIT_REJECTED_SUBJECT,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string customError = "An error occurred while sending the rejection email!";
+                        log:printError(customError, emailError);
+                    }
                 }
             }
-
             return <http:Ok>{
                 body: {
                     message: "Visit rejected successfully!"
@@ -784,60 +790,61 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            database:Floor[]? accessibleLocations = visit.accessibleLocations;
-            if accessibleLocations is () {
-                string customError = "No accessible locations found for the visit!";
-                log:printError(customError);
+            if visitorEmail is string {
+                database:Floor[]? accessibleLocations = visit.accessibleLocations;
+                if accessibleLocations is () {
+                    string customError = "No accessible locations found for the visit!";
+                    log:printError(customError);
 
-            }
+                }
 
-            string accessibleLocationString = accessibleLocations is database:Floor[] ?
-                organizeLocations(accessibleLocations) : "N/A";
+                string accessibleLocationString = accessibleLocations is database:Floor[] ?
+                    organizeLocations(accessibleLocations) : "N/A";
 
-            string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-            if formattedFromDate is error {
-                string customError = "Error occurred while formatting the visit start time!";
-                log:printError(customError, formattedFromDate);
-            }
-            string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-            if formattedToDate is error {
-                string customError = "Error occurred while formatting the visit end time!";
-                log:printError(customError, formattedToDate);
-            }
-            string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
-                    {
-                        "TIME": time:utcToEmailString(time:utcNow()),
-                        "EMAIL": visit.email,
-                        "NAME": generateSalutation(visit.name),
-                        "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                        "TIME_OF_DEPARTURE": formattedToDate is error ?
-                            visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                        "ALLOWED_FLOORS": accessibleLocationString,
-                        "START_TIME": visit.timeOfEntry,
-                        "END_TIME": visit.timeOfDeparture,
-                        "PASS_NUMBER": <string>visit.passNumber,
-                        "CONTACT_EMAIL": email:contactUsEmail
-                    });
-            if content is error {
-                string customError = "An error occurred while binding values to the email template!";
-                log:printError(customError, content);
-            }
-            if content is string {
-                error? emailError = email:sendEmail(
+                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+                if formattedFromDate is error {
+                    string customError = "Error occurred while formatting the visit start time!";
+                    log:printError(customError, formattedFromDate);
+                }
+                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+                if formattedToDate is error {
+                    string customError = "Error occurred while formatting the visit end time!";
+                    log:printError(customError, formattedToDate);
+                }
+                string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
-                            to: [visit.email],
-                            'from: email:fromEmailAddress,
-                            subject: email:VISIT_COMPLETION_SUBJECT,
-                            template: content,
-                            cc: [email:receptionEmail]
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visitorEmail,
+                            "NAME": generateSalutation(visit.name),
+                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+                            "TIME_OF_DEPARTURE": formattedToDate is error ?
+                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
+                            "ALLOWED_FLOORS": accessibleLocationString,
+                            "START_TIME": visit.timeOfEntry,
+                            "END_TIME": visit.timeOfDeparture,
+                            "PASS_NUMBER": <string>visit.passNumber,
+                            "CONTACT_EMAIL": email:contactUsEmail
                         });
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                }
+                if content is string {
+                    error? emailError = email:sendEmail(
+                            {
+                                to: [visitorEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:VISIT_COMPLETION_SUBJECT,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
 
-                if emailError is error {
-                    string customError = "An error occurred while sending the completion email!";
-                    log:printError(customError, emailError);
+                    if emailError is error {
+                        string customError = "An error occurred while sending the completion email!";
+                        log:printError(customError, emailError);
+                    }
                 }
             }
-
             return <http:Ok>{
                 body: {
                     message: "Visit completed successfully!"
@@ -846,3 +853,4 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 }
+
