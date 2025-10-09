@@ -100,6 +100,34 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
 
+# Update employee personal information query.
+#
+# + id - Personal info ID
+# + payload - Personal info update payload
+# + return - Personal info update query
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload)
+    returns sql:ParameterizedQuery =>
+    `UPDATE
+        personal_info
+     SET
+        nic = ${payload.nic},
+        full_name = ${payload.fullName},
+        name_with_initials = ${payload.nameWithInitials},
+        first_name = ${payload.firstName},
+        last_name = ${payload.lastName},
+        title = ${payload.title},
+        dob = ${payload.dob},
+        age = ${payload.age},
+        personal_email = ${payload.personalEmail},
+        personal_phone = ${payload.personalPhone},
+        home_phone = ${payload.homePhone},
+        address = ${payload.address},
+        postal_code = ${payload.postalCode},
+        country = ${payload.country},
+        nationality = ${payload.nationality}
+     WHERE
+        id = ${id};`;
+
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles

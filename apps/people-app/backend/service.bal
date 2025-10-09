@@ -45,6 +45,11 @@ service class ErrorInterceptor {
 
 service http:InterceptableService / on new http:Listener(9090) {
 
+    # Service initialization.
+    function init() {
+        log:printInfo("People App backend started...");
+    }
+
     # Request interceptor.
     #
     # + return - authorization:JwtInterceptor, ErrorInterceptor
@@ -79,7 +84,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if employeeBasicInfo is () {
             string customErr = "Employee basic information not found";
             log:printWarn(customErr, user = userInfo.email);
-            return <http:NotFound>{
+            return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
@@ -163,6 +168,57 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Update employee personal information.
+    #
+    # + id - Employee ID
+    # + payload - Employee personal information update payload
+    # + return - return value description
+    resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
+            database:UpdateEmployeePersonalInfoPayload payload)
+        returns http:Ok|http:NotFound|http:InternalServerError|http:BadRequest {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        if employeePersonalInfo is error {
+            string customError = string `Error occurred while fetching employee personal information for ID: ${id}`;
+            log:printError(customError, employeePersonalInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeePersonalInfo is () {
+            string customErr = "Employee personal information not found";
+            log:printWarn(customErr, id = id);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        if updateResult is error {
+            string customError = string `Error occurred while updating employee personal information for ID: ${id}`;
+            log:printError(customError, updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        return http:OK;
     }
 
     # Fetch vehicles of a specific employee.

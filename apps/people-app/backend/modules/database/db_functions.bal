@@ -42,6 +42,17 @@ public isolated function getEmployeePersonalInfo(string id) returns EmployeePers
     return employeePersonalInfo is sql:NoRowsError ? () : employeePersonalInfo;
 }
 
+# Update employee personal information.
+#
+# + id - Personal information ID
+# + payload - Personal info update payload
+# + return - True if the update was successful or error
+public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePersonalInfoPayload payload)
+        returns error? {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload));
+    return executionResults.affectedRowCount > 0 ? () : error(ERROR_NO_ROWS_UPDATED);
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  
