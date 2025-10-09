@@ -37,7 +37,7 @@ function UserGuide() {
       .then((response) => response.text())
       .then((text) => setMarkdownContent(text))
       .catch((error) => console.error("Error fetching README.md file:", error));
-  }, [dispatch]);
+  }, []);
 
   const supportTeamEmails =
     useAppSelector((state) => state.appConfig.config?.supportTeamEmails) || [];
