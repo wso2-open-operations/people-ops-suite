@@ -19,7 +19,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
-import { Box } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import {
@@ -28,7 +28,6 @@ import {
   useAppSelector,
 } from "@root/src/slices/store";
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
 import { fetchVisits } from "@slices/visitSlice/visit";
 
@@ -114,24 +113,26 @@ const AcceptedVisits = () => {
 
   return (
     <Box>
-      <BackgroundLoader
-        open={state === State.loading || submitState === State.loading}
-        message={
-          state === State.loading || submitState === State.loading
-            ? stateMessage || "Loading, please wait..."
-            : ""
-        }
-      />
-
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          p: 1.5,
-          backgroundColor: "transparent",
-        }}
-      ></Box>
+      {(state === State.loading || submitState === State.loading) && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "80vh",
+            width: "100vw",
+            py: 4,
+          }}
+        >
+          <CircularProgress />
+          <Typography mt={2} color="textSecondary">
+            {State.loading || submitState === State.loading
+              ? stateMessage || "Loading, please wait..."
+              : ""}
+          </Typography>
+        </Box>
+      )}
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />

@@ -78,7 +78,7 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  rejectionReason: string | null;
+  rejectionReason: string | null | undefined;
   passNumber: string | null;
   accessibleLocations: FloorRoom[] | null;
   visitId: number;
