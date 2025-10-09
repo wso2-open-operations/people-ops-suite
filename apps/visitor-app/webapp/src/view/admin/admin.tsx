@@ -16,8 +16,8 @@
 
 import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
-import PendingVisits from "@view/admin/panel/activeVisits";
-import AcceptedVisits from "@view/admin/panel/visitHistory";
+import ActiveVisits from "@view/admin/panel/activeVisits";
+import VisitHistory from "@view/admin/panel/visitHistory";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import HistoryIcon from "@mui/icons-material/History";
 
@@ -31,13 +31,13 @@ export default function Admin() {
           tabTitle: "Active Visits",
           tabPath: "pending-visits",
           icon: <PendingActionsIcon />,
-          page: <PendingVisits />,
+          page: <ActiveVisits />,
         },
         {
           tabTitle: "History",
           tabPath: "history",
           icon: <HistoryIcon />,
-          page: <AcceptedVisits />,
+          page: <VisitHistory />,
         },
       ]}
     />

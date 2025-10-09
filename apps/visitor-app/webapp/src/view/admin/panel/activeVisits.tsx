@@ -96,7 +96,7 @@ const approvalValidationSchema = Yup.object({
     .required("Floor and room selection is required"),
 });
 
-const PendingVisits = () => {
+const ActiveVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
@@ -352,7 +352,7 @@ const PendingVisits = () => {
         >
           <CircularProgress />
           <Typography mt={2} color="textSecondary">
-            {State.loading || submitState === State.loading
+            {state === State.loading
               ? stateMessage || "Loading, please wait..."
               : ""}
           </Typography>
@@ -565,4 +565,4 @@ const PendingVisits = () => {
   );
 };
 
-export default PendingVisits;
+export default ActiveVisits;

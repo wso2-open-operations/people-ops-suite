@@ -43,9 +43,9 @@ const toLocalDateTime = (utcString: string) => {
     .format("YYYY-MM-DD HH:mm:ss");
 };
 
-const AcceptedVisits = () => {
+const VisitHistory = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, submitState, stateMessage } = useAppSelector(
+  const { visits, state, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
 
@@ -98,7 +98,7 @@ const AcceptedVisits = () => {
 
   return (
     <Box>
-      {(state === State.loading || submitState === State.loading) && (
+      {state === State.loading && (
         <Box
           sx={{
             display: "flex",
@@ -112,7 +112,7 @@ const AcceptedVisits = () => {
         >
           <CircularProgress />
           <Typography mt={2} color="textSecondary">
-            {State.loading || submitState === State.loading
+            {state === State.loading
               ? stateMessage || "Loading, please wait..."
               : ""}
           </Typography>
@@ -160,4 +160,4 @@ const AcceptedVisits = () => {
   );
 };
 
-export default AcceptedVisits;
+export default VisitHistory;
