@@ -638,6 +638,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             if visitorEmail is string {
                 string accessibleLocationString = organizeLocations(accessibleLocations);
+
+                // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
                 if formattedFromDate is error {
                     string customError = "Error occurred while formatting the visit start time!";
@@ -664,8 +666,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
-                }
-                if content is string {
+                } else {
                     error? emailError = email:sendEmail(
                             {
                                 to: [visitorEmail],
@@ -746,8 +747,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
-                }
-                if content is string {
+                } else {
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visitorEmail],
@@ -827,8 +827,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
-                }
-                if content is string {
+                } else {
                     error? emailError = email:sendEmail(
                             {
                                 to: [visitorEmail],
