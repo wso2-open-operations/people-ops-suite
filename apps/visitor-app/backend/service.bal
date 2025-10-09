@@ -264,8 +264,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        database:VisitsResponse|error visitsResponse = database:fetchVisits(
-                {inviter: inviter, statusArray: statusArray, 'limit: 'limit, offset: offset});
+        database:VisitsResponse|error visitsResponse = database:fetchVisits({inviter, statusArray, 'limit, offset});
 
         if visitsResponse is error {
             string customError = "Error occurred while fetching visits!";

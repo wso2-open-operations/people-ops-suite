@@ -160,9 +160,7 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
 #
 # + filters - Filters for fetching visits
 # + return - Array of visits objects or error
-public isolated function fetchVisits(VisitFilters filters)
-    returns VisitsResponse|error {
-
+public isolated function fetchVisits(VisitFilters filters) returns VisitsResponse|error {
     stream<VisitRecord, sql:Error?> resultStream = databaseClient->query(fetchVisitsQuery(filters));
 
     int totalCount = 0;
