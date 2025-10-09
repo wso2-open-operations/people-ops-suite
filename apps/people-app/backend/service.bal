@@ -174,7 +174,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + id - Employee ID
     # + payload - Employee personal information update payload
-    # + return - return value description
+    # + return - HTTP OK or HTTP errors
     resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
         returns http:Ok|http:NotFound|http:InternalServerError|http:BadRequest {
