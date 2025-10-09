@@ -88,7 +88,7 @@ public type AddVisitorPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string? email = ();
 |};
 
 # [Database] Floor record.
@@ -135,7 +135,7 @@ public type VisitRecord record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string email;
+    string? email = ();
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -171,7 +171,7 @@ public type Visit record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string email;
+    string? email = ();
     # Invitation ID associated with the visit
     int? invitationId;
 |};
@@ -271,8 +271,8 @@ public type VisitFilters record {|
     int? visitId = ();
     # Invitation ID associated with the visit
     int? invitationId = ();
-    # Status of the visit
-    Status? status = ();
+    # Status array of the visits
+    Status[]? statusArray = ();
     # Limit number of visits to fetch
     int? 'limit = DEFAULT_LIMIT;
     # Offset for pagination
