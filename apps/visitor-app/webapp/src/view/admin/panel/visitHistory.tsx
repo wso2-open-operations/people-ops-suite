@@ -51,7 +51,6 @@ const AcceptedVisits = () => {
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [showAllVisits, setShowAllVisits] = useState(false);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -61,24 +60,10 @@ const AcceptedVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        statusArray: showAllVisits
-          ? [
-              VisitStatus.completed,
-              VisitStatus.rejected,
-              VisitStatus.approved,
-              VisitStatus.requested,
-            ]
-          : [VisitStatus.completed, VisitStatus.rejected],
+        statusArray: [VisitStatus.completed, VisitStatus.rejected],
       })
     );
-  }, [dispatch, page, pageSize, showAllVisits]);
-
-  const handleToggleAllVisits = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setShowAllVisits(event.target.checked);
-    setPage(0);
-  };
+  }, [dispatch, page, pageSize]);
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
