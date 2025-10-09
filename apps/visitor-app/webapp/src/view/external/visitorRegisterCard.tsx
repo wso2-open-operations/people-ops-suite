@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useEffect, useState } from "react";
 import { useSnackbar } from "notistack";
 import * as Yup from "yup";
@@ -48,7 +49,6 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
-import StateWithImage from "@root/src/component/ui/StateWithImage";
 
 import {
   RootState,
@@ -476,7 +476,19 @@ function VisitorRegisterCard() {
             <Formik
               initialValues={{
                 visitDetails: defaultVisitDetails,
-                visitors: defaultVisitors,
+                visitors:
+                  defaultVisitors.length > 0
+                    ? defaultVisitors
+                    : [
+                        {
+                          idPassportNumber: "",
+                          fullName: "",
+                          contactNumber: "",
+                          countryCode: "+94",
+                          emailAddress: "",
+                          status: VisitorStatus.Draft,
+                        },
+                      ],
               }}
               onSubmit={(values, formikHelpers) =>
                 submitVisit(values, formikHelpers)
