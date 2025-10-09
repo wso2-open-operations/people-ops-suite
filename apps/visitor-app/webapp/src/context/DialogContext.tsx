@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DoneIcon from "@mui/icons-material/Done";
@@ -97,6 +98,16 @@ const ConfirmationDialogContextProvider: React.FC<
     action: () => {},
   });
 
+  React.useEffect(() => {
+    if (!show) {
+      const timer = setTimeout(() => {
+        Reset();
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(timer); // cleanup in case show changes again quickly
+    }
+  }, [show]);
+
   const handleShow = (
     title: string,
     message: string | JSX.Element,
@@ -128,7 +139,6 @@ const ConfirmationDialogContextProvider: React.FC<
   };
 
   const handleCancel = () => {
-    Reset();
     onHide();
   };
 

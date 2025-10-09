@@ -13,30 +13,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
-import PendingVisits from "@view/admin/panel/pendingVisits";
-import AcceptedVisits from "@view/admin/panel/acceptedVisits";
+import ActiveVisits from "@view/admin/panel/activeVisits";
+import VisitHistory from "@view/admin/panel/visitHistory";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import HistoryIcon from "@mui/icons-material/History";
 
 export default function Admin() {
   return (
     <CommonPage
-      title="Visit"
+      title="Admin Panel"
       icon={<BadgeIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Pending Visits",
-          tabPath: "pending-visits",
+          tabTitle: "Active Visits",
+          tabPath: "active-visits",
           icon: <PendingActionsIcon />,
-          page: <PendingVisits />,
+          page: <ActiveVisits />,
         },
         {
           tabTitle: "History",
           tabPath: "history",
           icon: <HistoryIcon />,
-          page: <AcceptedVisits />,
+          page: <VisitHistory />,
         },
       ]}
     />

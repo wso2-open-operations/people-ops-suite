@@ -212,8 +212,12 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         filterQueries.push(` v.invitation_id = ${filters.invitationId}`);
     }
 
-    if filters.status is string {
-        filterQueries.push(` v.status = ${filters.status}`);
+    Status[]? statusArray = filters.statusArray;
+    if statusArray is Status[] {
+        sql:ParameterizedQuery arrayFlattenQuery = sql:arrayFlattenQuery(from Status status in statusArray
+                    select status.toString());
+
+        filterQueries.push(sql:queryConcat(` v.status IN (`, arrayFlattenQuery, `) `));
     }
 
     if filters.visitId is int {

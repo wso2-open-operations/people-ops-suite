@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import axios, { HttpStatusCode } from "axios";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 
@@ -31,9 +32,6 @@ interface VisitState {
   errorMessage: string | null;
   backgroundProcess: boolean;
   backgroundProcessMessage: string | null;
-  statusUpdateState: State;
-  statusUpdateMessage: string | null;
-  statusUpdateError: string | null;
 }
 
 export interface FloorRoom {
@@ -80,7 +78,7 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  rejectionReason: string | null;
+  rejectionReason: string | null | undefined;
   passNumber: string | null;
   accessibleLocations: FloorRoom[] | null;
   visitId: number;
@@ -95,9 +93,6 @@ const initialState: VisitState = {
   errorMessage: null,
   backgroundProcess: false,
   backgroundProcessMessage: null,
-  statusUpdateState: State.idle,
-  statusUpdateMessage: null,
-  statusUpdateError: null,
 };
 
 export const addVisit = createAsyncThunk(
@@ -143,9 +138,14 @@ export const fetchVisits = createAsyncThunk(
     {
       limit,
       offset,
-      status,
       inviter,
-    }: { limit: number; offset: number; status?: string; inviter?: string },
+      statusArray,
+    }: {
+      limit: number;
+      offset: number;
+      inviter?: string;
+      statusArray?: string[];
+    },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -153,7 +153,12 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset, status, inviter },
+          params: {
+            limit,
+            offset,
+            inviter,
+            statusArray: statusArray?.join(","),
+          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -232,9 +237,7 @@ const VisitSlice = createSlice({
       state.state = State.idle;
     },
     resetStatusUpdateState(state) {
-      state.statusUpdateState = State.idle;
-      state.statusUpdateMessage = null;
-      state.statusUpdateError = null;
+      state.submitState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -272,21 +275,19 @@ const VisitSlice = createSlice({
           (action.payload as string) || "Failed to fetch visits";
       })
       .addCase(visitStatusUpdate.pending, (state) => {
-        state.statusUpdateState = State.loading;
-        state.statusUpdateMessage =
-          "Hang tight! We’re updating visit status...";
-        state.statusUpdateError = null;
+        state.submitState = State.loading;
+        state.stateMessage = "Hang tight! We’re updating visit status...";
       })
       .addCase(
         visitStatusUpdate.fulfilled,
         (state, action: PayloadAction<{ message: string }>) => {
-          state.statusUpdateState = State.success;
-          state.statusUpdateMessage = action.payload.message;
+          state.submitState = State.success;
+          state.stateMessage = action.payload.message;
         }
       )
       .addCase(visitStatusUpdate.rejected, (state, action) => {
-        state.statusUpdateState = State.failed;
-        state.statusUpdateError =
+        state.submitState = State.failed;
+        state.stateMessage =
           (action.payload as string) || "Failed to update visit status";
       });
   },
