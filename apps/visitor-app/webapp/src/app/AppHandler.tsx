@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import Layout from "@layout/Layout";
 import Error from "@layout/pages/404";
 import PreLoader from "@component/common/PreLoader";

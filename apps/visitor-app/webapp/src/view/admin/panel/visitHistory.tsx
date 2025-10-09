@@ -13,12 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
-import { Box, Switch, FormControlLabel, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import {
@@ -27,7 +28,6 @@ import {
   useAppSelector,
 } from "@root/src/slices/store";
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
 import { fetchVisits } from "@slices/visitSlice/visit";
 
@@ -43,15 +43,14 @@ const toLocalDateTime = (utcString: string) => {
     .format("YYYY-MM-DD HH:mm:ss");
 };
 
-const AcceptedVisits = () => {
+const VisitHistory = () => {
   const dispatch = useAppDispatch();
-  const { visits, state, submitState, stateMessage } = useAppSelector(
+  const { visits, state, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
   );
 
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [showAllVisits, setShowAllVisits] = useState(false);
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
@@ -61,24 +60,10 @@ const AcceptedVisits = () => {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
-        statusArray: showAllVisits
-          ? [
-              VisitStatus.completed,
-              VisitStatus.rejected,
-              VisitStatus.approved,
-              VisitStatus.requested,
-            ]
-          : [VisitStatus.completed, VisitStatus.rejected],
+        statusArray: [VisitStatus.completed, VisitStatus.rejected],
       })
     );
-  }, [dispatch, page, pageSize, showAllVisits]);
-
-  const handleToggleAllVisits = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setShowAllVisits(event.target.checked);
-    setPage(0);
-  };
+  }, [dispatch, page, pageSize]);
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
@@ -113,24 +98,26 @@ const AcceptedVisits = () => {
 
   return (
     <Box>
-      <BackgroundLoader
-        open={state === State.loading || submitState === State.loading}
-        message={
-          state === State.loading || submitState === State.loading
-            ? stateMessage || "Loading, please wait..."
-            : ""
-        }
-      />
-
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          p: 1.5,
-          backgroundColor: "transparent",
-        }}
-      ></Box>
+      {state === State.loading && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "80vh",
+            width: "100%",
+            py: 4,
+          }}
+        >
+          <CircularProgress />
+          <Typography mt={2} color="textSecondary">
+            {state === State.loading
+              ? stateMessage || "Loading, please wait..."
+              : ""}
+          </Typography>
+        </Box>
+      )}
 
       {state === State.failed ? (
         <ErrorHandler message={stateMessage || "Failed to load visits."} />
@@ -173,4 +160,4 @@ const AcceptedVisits = () => {
   );
 };
 
-export default AcceptedVisits;
+export default VisitHistory;

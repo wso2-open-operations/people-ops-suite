@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -31,6 +32,7 @@ import {
   ListItemText,
   Avatar,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import {
@@ -59,9 +61,9 @@ import {
   ConfirmationType,
 } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -94,11 +96,7 @@ const approvalValidationSchema = Yup.object({
     .required("Floor and room selection is required"),
 });
 
-const rejectionValidationSchema = Yup.object({
-  rejectionReason: Yup.string().required("Rejection reason is required"),
-});
-
-const PendingVisits = () => {
+const ActiveVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, submitState, stateMessage } = useAppSelector(
     (state: RootState) => state.visit
@@ -107,8 +105,6 @@ const PendingVisits = () => {
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [isApprovalModalOpen, setIsApprovalModalOpen] =
-    useState<boolean>(false);
-  const [isRejectionModalOpen, setIsRejectionModalOpen] =
     useState<boolean>(false);
   const [currentVisitId, setCurrentVisitId] = useState<string | null>(null);
   const [viewAccessibleFloors, setViewAccessibleFloors] =
@@ -161,33 +157,42 @@ const PendingVisits = () => {
     }
   };
 
-  const handleRejectSingleVisit = async (
-    visitId: string,
-    rejectionReason: string
-  ) => {
-    try {
-      const payload = {
-        visitId: +visitId,
-        status: VisitAction.reject,
-        rejectionReason: rejectionReason.trim(),
-        passNumber: null,
-        accessibleLocations: null,
-      };
+  const handleRejectSingleVisit = (visitId: string) => {
+    dialogContext.showConfirmation(
+      "Do you want to reject this visit request?",
+      "Please share the reason for declining this request.",
+      ConfirmationType.accept, // You can change icon type to "update", "send", etc. if desired
+      async (reason?: string) => {
+        try {
+          const payload = {
+            visitId: +visitId,
+            status: VisitAction.reject,
+            rejectionReason: reason?.trim(),
+            passNumber: null,
+            accessibleLocations: null,
+          };
 
-      await dispatch(visitStatusUpdate(payload));
-      setCurrentVisitId(null);
-      setIsRejectionModalOpen(false);
+          await dispatch(visitStatusUpdate(payload));
 
-      dispatch(
-        fetchVisits({
-          limit: pageSize,
-          offset: page * pageSize,
-          statusArray: [VisitStatus.requested, VisitStatus.approved],
-        })
-      );
-    } catch (error) {
-      console.error("Error rejecting visit:", error);
-    }
+          dispatch(
+            fetchVisits({
+              limit: pageSize,
+              offset: page * pageSize,
+              statusArray: [VisitStatus.requested, VisitStatus.approved],
+            })
+          );
+        } catch (error) {
+          console.error("Error rejecting visit:", error);
+        }
+      },
+      "Reject",
+      "Cancel",
+      {
+        label: "Rejection Reason",
+        mandatory: true,
+        type: "textarea",
+      }
+    );
   };
 
   const handleCompleteSingleVisit = (visitId: string) => {
@@ -221,11 +226,6 @@ const PendingVisits = () => {
   const showApprovalModal = (visitId: string) => {
     setCurrentVisitId(visitId);
     setIsApprovalModalOpen(true);
-  };
-
-  const showRejectionModal = (visitId: string) => {
-    setCurrentVisitId(visitId);
-    setIsRejectionModalOpen(true);
   };
 
   const showViewAccessibleFloors = (
@@ -306,7 +306,9 @@ const PendingVisits = () => {
                 </IconButton>
                 <IconButton
                   color="error"
-                  onClick={() => showRejectionModal(String(visit.id))}
+                  onClick={() => {
+                    handleRejectSingleVisit(visit.id);
+                  }}
                   disabled={
                     state === State.loading || submitState === State.loading
                   }
@@ -336,10 +338,31 @@ const PendingVisits = () => {
 
   return (
     <Box>
+      {state === State.loading && (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "80vh",
+            width: "100%",
+            py: 4,
+          }}
+        >
+          <CircularProgress />
+          <Typography mt={2} color="textSecondary">
+            {state === State.loading
+              ? stateMessage || "Loading, please wait..."
+              : ""}
+          </Typography>
+        </Box>
+      )}
+
       <BackgroundLoader
-        open={state === State.loading || submitState === State.loading}
+        open={submitState === State.loading}
         message={
-          state === State.loading || submitState === State.loading
+          submitState === State.loading
             ? stateMessage || "Loading, please wait..."
             : ""
         }
@@ -430,92 +453,6 @@ const PendingVisits = () => {
                   <Button
                     variant="outlined"
                     onClick={() => setIsApprovalModalOpen(false)}
-                  >
-                    No
-                  </Button>
-                  <Button
-                    variant="contained"
-                    type="submit"
-                    disabled={
-                      state === State.loading || submitState === State.loading
-                    }
-                  >
-                    Yes
-                  </Button>
-                </Box>
-              </Form>
-            )}
-          </Formik>
-        </Box>
-      </Modal>
-
-      {/* Rejection Modal */}
-      <Modal
-        open={isRejectionModalOpen}
-        onClose={() => setIsRejectionModalOpen(false)}
-        aria-labelledby="reject-visit-modal"
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: 400,
-            maxHeight: "80vh",
-            bgcolor: "background.paper",
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            overflowY: "auto",
-          }}
-        >
-          <Typography
-            id="reject-visit-modal"
-            variant="h6"
-            sx={{ mb: 2, fontWeight: "bold" }}
-          >
-            Do you want to reject this visit?
-          </Typography>
-          <Formik
-            initialValues={{
-              rejectionReason: "",
-            }}
-            validationSchema={rejectionValidationSchema}
-            onSubmit={(values) => {
-              handleRejectSingleVisit(
-                currentVisitId || "",
-                values.rejectionReason
-              );
-            }}
-          >
-            {({ errors, touched }) => (
-              <Form>
-                <Typography sx={{ mb: 2 }}>
-                  Please provide a reason for the rejection.
-                </Typography>
-                <Field
-                  as={TextField}
-                  name="rejectionReason"
-                  label="Rejection Reason"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Enter rejection reason"
-                  error={
-                    touched.rejectionReason && Boolean(errors.rejectionReason)
-                  }
-                />
-                <Box
-                  sx={{
-                    mt: 2,
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  <Button
-                    variant="outlined"
-                    onClick={() => setIsRejectionModalOpen(false)}
                   >
                     No
                   </Button>
@@ -628,4 +565,4 @@ const PendingVisits = () => {
   );
 };
 
-export default PendingVisits;
+export default ActiveVisits;

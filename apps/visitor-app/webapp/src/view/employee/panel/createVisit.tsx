@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React, { useCallback, useState } from "react";
 import {
   Container,
@@ -30,9 +31,9 @@ import {
   IconButton,
   InputAdornment,
   MenuItem,
-  FormControl,
-  RadioGroup,
   Stack,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -484,7 +485,7 @@ function CreateVisit() {
                   <TextField
                     fullWidth
                     name="whoTheyMeet"
-                    label="Whom They Meet"
+                    label="Whom They Meet *"
                     value={formik.values.whoTheyMeet}
                     onChange={formik.handleChange}
                     error={
@@ -503,7 +504,7 @@ function CreateVisit() {
                   <TextField
                     fullWidth
                     name="purposeOfVisit"
-                    label="Purpose Of Visit / Comment"
+                    label="Purpose Of Visit / Comment *"
                     value={formik.values.purposeOfVisit}
                     onChange={formik.handleChange}
                     error={
@@ -719,7 +720,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="ID/Passport Number"
+                                label="ID/Passport Number *"
                                 name={`visitors.${index}.idPassportNumber`}
                                 value={visitor.idPassportNumber}
                                 onChange={(event) => {
@@ -760,7 +761,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="Full Name"
+                                label="Full Name *"
                                 name={`visitors.${index}.fullName`}
                                 value={visitor.fullName}
                                 onChange={formik.handleChange}
@@ -785,7 +786,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="Contact Number"
+                                label="Contact Number *"
                                 name={`visitors.${index}.contactNumber`}
                                 value={visitor.contactNumber}
                                 onChange={formik.handleChange}
@@ -867,7 +868,7 @@ function CreateVisit() {
                               <TextField
                                 fullWidth
                                 name={`visitors.${index}.passNumber`}
-                                label="Pass Number"
+                                label="Pass Number *"
                                 value={visitor.passNumber}
                                 onChange={formik.handleChange}
                                 error={
@@ -921,82 +922,62 @@ function CreateVisit() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Radio button code block */}
       <Box
         sx={{
           display: "flex",
-          mb: 4,
-          pt: 2,
-          pl: 2,
-          pr: 2,
           justifyContent: "center",
+          mb: 4,
         }}
       >
-        <FormControl component="fieldset">
-          <RadioGroup
-            name="invitationOption"
-            value={registrationMode}
-            onChange={(e) => {
-              setRegistrationMode(e.target.value as "email" | "direct");
-            }}
+        <ToggleButtonGroup
+          value={registrationMode}
+          exclusive
+          onChange={(_, value) => value && setRegistrationMode(value)}
+          sx={{
+            borderRadius: 50,
+            backgroundColor: (theme) =>
+              theme.palette.mode === "dark" ? "grey.800" : "grey.200",
+            p: 0.5,
+            width: "fit-content",
+          }}
+        >
+          <ToggleButton
+            value="email"
             sx={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: 2,
-              backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "grey.900" : "grey.100",
-              gap: 0,
-              width: "fit-content",
-              mx: "auto",
+              textTransform: "none",
+              border: "none",
+              px: 3,
+              py: 1,
+              fontWeight: 500,
+              borderRadius: 50,
+              "&.Mui-selected": {
+                backgroundColor: "primary.main",
+                color: "primary.contrastText",
+                "&:hover": { backgroundColor: "primary.dark" },
+              },
             }}
           >
-            {[
-              { value: "email", label: "Send Invitation" },
-              { value: "direct", label: "Add Visitors" },
-            ].map((option) => {
-              const selected = registrationMode === option.value;
-              return (
-                <Box
-                  key={option.value}
-                  onClick={() =>
-                    setRegistrationMode(option.value as "email" | "direct")
-                  }
-                  role="radio"
-                  aria-checked={selected}
-                  tabIndex={0}
-                  sx={(theme) => ({
-                    px: 2,
-                    py: 1,
-                    cursor: "pointer",
-                    fontWeight: selected ? 500 : 400,
-                    fontSize: "0.95rem",
-                    textAlign: "center",
-                    transition: "all 0.25s ease-in-out",
-                    bgcolor: selected
-                      ? theme.palette.primary.main
-                      : "transparent",
-                    color: selected
-                      ? theme.palette.primary.contrastText
-                      : theme.palette.text.primary,
-                    borderTopLeftRadius: registrationMode === "email" ? 8 : 0,
-                    borderBottomLeftRadius:
-                      registrationMode === "email" ? 8 : 0,
-                    borderTopRightRadius: option.value === "direct" ? 8 : 0,
-                    borderBottomRightRadius:
-                      registrationMode === "direct" ? 8 : 0,
-                    "&:active": {
-                      transform: "scale(0.97)",
-                    },
-                  })}
-                >
-                  {option.label}
-                </Box>
-              );
-            })}
-          </RadioGroup>
-        </FormControl>
+            Send Invitation
+          </ToggleButton>
+          <ToggleButton
+            value="direct"
+            sx={{
+              textTransform: "none",
+              border: "none",
+              px: 3,
+              py: 1,
+              fontWeight: 500,
+              borderRadius: 50,
+              "&.Mui-selected": {
+                backgroundColor: "primary.main",
+                color: "primary.contrastText",
+                "&:hover": { backgroundColor: "primary.dark" },
+              },
+            }}
+          >
+            Add Visitors
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       {/* Invitation email code block */}
@@ -1070,7 +1051,7 @@ function CreateVisit() {
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
-                        label="Invitation Email"
+                        label="Invitation Email *"
                         name="invitationEmail"
                         value={formik.values.invitationEmail}
                         onChange={formik.handleChange}
@@ -1098,7 +1079,7 @@ function CreateVisit() {
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
-                        label="Number of Invitees"
+                        label="Number of Invitees *"
                         name="inviteeCount"
                         type="number"
                         inputProps={{ min: 1 }}
