@@ -485,7 +485,7 @@ function CreateVisit() {
                   <TextField
                     fullWidth
                     name="whoTheyMeet"
-                    label="Whom They Meet"
+                    label="Whom They Meet *"
                     value={formik.values.whoTheyMeet}
                     onChange={formik.handleChange}
                     error={
@@ -504,7 +504,7 @@ function CreateVisit() {
                   <TextField
                     fullWidth
                     name="purposeOfVisit"
-                    label="Purpose Of Visit / Comment"
+                    label="Purpose Of Visit / Comment *"
                     value={formik.values.purposeOfVisit}
                     onChange={formik.handleChange}
                     error={
@@ -720,7 +720,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="ID/Passport Number"
+                                label="ID/Passport Number *"
                                 name={`visitors.${index}.idPassportNumber`}
                                 value={visitor.idPassportNumber}
                                 onChange={(event) => {
@@ -761,7 +761,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="Full Name"
+                                label="Full Name *"
                                 name={`visitors.${index}.fullName`}
                                 value={visitor.fullName}
                                 onChange={formik.handleChange}
@@ -786,7 +786,7 @@ function CreateVisit() {
                             <Grid item xs={12} md={6}>
                               <TextField
                                 fullWidth
-                                label="Contact Number"
+                                label="Contact Number *"
                                 name={`visitors.${index}.contactNumber`}
                                 value={visitor.contactNumber}
                                 onChange={formik.handleChange}
@@ -868,7 +868,7 @@ function CreateVisit() {
                               <TextField
                                 fullWidth
                                 name={`visitors.${index}.passNumber`}
-                                label="Pass Number"
+                                label="Pass Number *"
                                 value={visitor.passNumber}
                                 onChange={formik.handleChange}
                                 error={
@@ -1051,7 +1051,7 @@ function CreateVisit() {
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
-                        label="Invitation Email"
+                        label="Invitation Email *"
                         name="invitationEmail"
                         value={formik.values.invitationEmail}
                         onChange={formik.handleChange}
@@ -1079,7 +1079,7 @@ function CreateVisit() {
                     <Grid item xs={12} md={6}>
                       <TextField
                         fullWidth
-                        label="Number of Invitees"
+                        label="Number of Invitees *"
                         name="inviteeCount"
                         type="number"
                         inputProps={{ min: 1 }}

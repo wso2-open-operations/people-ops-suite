@@ -24,12 +24,12 @@ import HistoryIcon from "@mui/icons-material/History";
 export default function Admin() {
   return (
     <CommonPage
-      title="Visit"
+      title="Admin Panel"
       icon={<BadgeIcon />}
       commonPageTabs={[
         {
           tabTitle: "Active Visits",
-          tabPath: "pending-visits",
+          tabPath: "active-visits",
           icon: <PendingActionsIcon />,
           page: <ActiveVisits />,
         },

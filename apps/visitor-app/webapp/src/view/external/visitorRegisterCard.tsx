@@ -583,7 +583,7 @@ function VisitorRegisterCard() {
                         <Grid item xs={12} md={6}>
                           <TextField
                             fullWidth
-                            label="Meeting With"
+                            label="Meeting With *"
                             name="visitDetails.whomTheyMeet"
                             value={formik.values.visitDetails.whomTheyMeet}
                             onChange={formik.handleChange}
@@ -603,7 +603,7 @@ function VisitorRegisterCard() {
                         <Grid item xs={12}>
                           <TextField
                             fullWidth
-                            label="Purpose of Visit"
+                            label="Purpose of Visit *"
                             name="visitDetails.purposeOfVisit"
                             value={formik.values.visitDetails.purposeOfVisit}
                             onChange={formik.handleChange}
@@ -626,7 +626,7 @@ function VisitorRegisterCard() {
                         </Grid>
                         <Grid item xs={12} md={4}>
                           <DatePicker
-                            label="Scheduled Date"
+                            label="Scheduled Date *"
                             value={
                               formik.values.visitDetails.scheduledDate
                                 ? dayjs(
@@ -703,7 +703,7 @@ function VisitorRegisterCard() {
                         </Grid>
                         <Grid item xs={12} md={4}>
                           <TimePicker
-                            label="Time of Entry"
+                            label="Time of Entry *"
                             value={
                               formik.values.visitDetails.timeOfEntry
                                 ? dayjs
@@ -749,7 +749,7 @@ function VisitorRegisterCard() {
                         </Grid>
                         <Grid item xs={12} md={4}>
                           <TimePicker
-                            label="Time of Departure"
+                            label="Time of Departure *"
                             value={
                               formik.values.visitDetails.timeOfDeparture
                                 ? dayjs
@@ -883,7 +883,7 @@ function VisitorRegisterCard() {
                                     <Grid item xs={12} md={6}>
                                       <TextField
                                         fullWidth
-                                        label="ID/Passport Number"
+                                        label="ID/Passport Number *"
                                         name={`visitors.${index}.idPassportNumber`}
                                         value={visitor.idPassportNumber}
                                         onChange={(event) =>
@@ -937,7 +937,7 @@ function VisitorRegisterCard() {
                                     <Grid item xs={12} md={6}>
                                       <TextField
                                         fullWidth
-                                        label="Full Name"
+                                        label="Full Name *"
                                         name={`visitors.${index}.fullName`}
                                         value={visitor.fullName}
                                         onChange={formik.handleChange}
@@ -986,7 +986,7 @@ function VisitorRegisterCard() {
                                     <Grid item xs={12} md={6}>
                                       <TextField
                                         fullWidth
-                                        label="Contact Number"
+                                        label="Contact Number *"
                                         name={`visitors.${index}.contactNumber`}
                                         value={visitor.contactNumber}
                                         onChange={formik.handleChange}

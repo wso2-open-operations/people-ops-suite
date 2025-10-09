@@ -106,7 +106,7 @@ const VisitHistory = () => {
             alignItems: "center",
             justifyContent: "center",
             height: "80vh",
-            width: "100vw",
+            width: "100%",
             py: 4,
           }}
         >
