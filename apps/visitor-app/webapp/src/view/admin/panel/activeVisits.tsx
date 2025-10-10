@@ -80,6 +80,8 @@ const AVAILABLE_FLOORS_AND_ROOMS = [
   { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
   { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
   { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
+  { floor: "15th Floor", rooms: ["Common Area"] },
+  { floor: "Rooftop", rooms: ["Basketball Court"] },
 ];
 
 const toLocalDateTime = (utcString: string) => {
