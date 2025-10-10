@@ -31,6 +31,23 @@ export default function history() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         if (!employeeEmail) return;
+        setState("loading");
+      
+        (async () => {
+          try {
+            const promotionHistory = await APIService.getInstance().get<{ promotionRequests: PromotionRequest[] }>(
+              `${AppConfig.serviceUrls.retrieveAllPromotionRequests}/${employeeEmail}`
+            );
+            
+            setRequests(promotionHistory.data.promotionRequests);
+            setState("success");
+          } catch (error) {
+            console.error("Failed to fetch promotion requests:", error);
+            setState("failed");
+          }
+        })();
+      }, [employeeEmail]);
+        if (!employeeEmail) return;
 
         setState("loading");
 
