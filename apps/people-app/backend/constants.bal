@@ -14,5 +14,5 @@
 // specific language governing permissions and limitations
 // under the License.
 
-const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found!";
-const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information!";
+const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found";
+const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information";
