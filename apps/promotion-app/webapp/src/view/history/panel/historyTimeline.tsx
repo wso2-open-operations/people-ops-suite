@@ -112,7 +112,7 @@ export default function history() {
 
             {/* Success state - build and show the timeline */}
             {state === "success" && timelineData.length > 0 && (
-                <CustomizedTimeline props={timelineData} />
+                <CustomizedTimeline timelineDate={timelineData} />
             )}
 
             {/* Failure state - show error message */}
