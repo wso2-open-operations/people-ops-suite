@@ -194,6 +194,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Determine visit status based on user role.
+        database:Status visitStatus = database:REJECTED;
+        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            visitStatus = database:APPROVED;
+        }
+
         // Verify existing visitor.
         database:Visitor|error? existingVisitor = database:fetchVisitor(payload.nicHash);
         if existingVisitor is error {
@@ -213,7 +219,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
-        error? visitError = database:addVisit({...payload, status: database:APPROVED}, invokerInfo.email);
+
+        error? visitError = database:addVisit({...payload, status: visitStatus}, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
