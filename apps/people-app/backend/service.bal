@@ -177,7 +177,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns http:Ok|http:NotFound|http:InternalServerError|http:BadRequest {
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -187,6 +187,35 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        if employeeInfo is error {
+            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
+                    employeeInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn("Employee information not found", id = id);
+            return <http:NotFound>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo.workEmail != userInfo.email {
+            log:printWarn("User is trying to update personal info of another employee", id = id,
+                    email = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not allowed to update personal information of other employees"
+                }
+            };
+        }
+
         database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
         if employeePersonalInfo is error {
             string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
