@@ -559,7 +559,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details to be updated
     # + return - Successfully updated or error
     resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPayload payload)
-        returns http:Ok|http:BadRequest|http:InternalServerError {
+        returns http:Ok|http:BadRequest|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -569,6 +569,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            string customError = string `Non-admin users cannot ${action} visits!`;
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+
         }
 
         database:Visit|error? visit = database:fetchVisit(visitId);
