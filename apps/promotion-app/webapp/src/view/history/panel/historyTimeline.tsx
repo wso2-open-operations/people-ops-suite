@@ -31,6 +31,7 @@ export default function history() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         if (!employeeEmail) return;
+
         setState("loading");
       
         (async () => {
@@ -47,24 +48,6 @@ export default function history() {
           }
         })();
       }, [employeeEmail]);
-        if (!employeeEmail) return;
-
-        setState("loading");
-
-        APIService.getInstance()
-            .get<{ promotionRequests: PromotionRequest[] }>(
-                AppConfig.serviceUrls.retrieveAllPromotionRequests +
-                    "/" + employeeEmail
-            )
-            .then((promotionHistory) => {
-                setRequests(promotionHistory.data.promotionRequests);
-                setState("success");
-            })
-            .catch(() => {
-                setState("failed");
-            });
-    }, [employeeEmail]);
-
     // Memoize timeline data to avoid recalculating on every render
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const timelineData: TimeLineData[] = useMemo(() => {
@@ -112,7 +95,7 @@ export default function history() {
 
             {/* Success state - build and show the timeline */}
             {state === "success" && timelineData.length > 0 && (
-                <CustomizedTimeline timelineDate={timelineData} />
+                <CustomizedTimeline timelineData={timelineData} />
             )}
 
             {/* Failure state - show error message */}
