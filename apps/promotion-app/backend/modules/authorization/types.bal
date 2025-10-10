@@ -17,7 +17,13 @@ import promotion_app.database;
 import promotion_app.people;
 
 # User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
+public type CustomJwtPayload record {|
+    # User email 
+    string email;
+    # User groups
+    string[] groups;
+    json...;
+|};
     # User email 
     string email;
     # User groups
