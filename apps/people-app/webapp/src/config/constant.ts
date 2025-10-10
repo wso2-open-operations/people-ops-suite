@@ -23,6 +23,7 @@ export const SnackMessage = {
     fetchPrivileges: "Error while fetching user privileges",
     insufficientPrivileges: "You don't have sufficient privileges to access this resource",
     fetchAppConfigMessage: "Error while fetching app config",
+    updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
   },
   warning: {},
