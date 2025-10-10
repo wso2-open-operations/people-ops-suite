@@ -198,7 +198,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Status visitStatus = database:REQUESTED;
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
             visitStatus = database:APPROVED;
-            //TODO admins user has to provide pass number and accessible locations when creating a visit.
+            if payload.passNumber is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Pass number is required when creating an approved visit!"
+                    }
+                };
+            }
+            if payload.accessibleLocations is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "At least one accessible location is required when creating an approved visit!"
+                    }
+                };
+            }
         }
 
         // Verify existing visitor.
