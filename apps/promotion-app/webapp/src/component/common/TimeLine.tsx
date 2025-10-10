@@ -3,6 +3,8 @@ import { Box } from '@mui/material';
 import BadgeIcon from '@mui/icons-material/Badge';
 import StarsIcon from '@mui/icons-material/Stars';
 import { TimeLineData } from '@root/src/utils/types';
+
+
 type CustomizedTimelineProps = {
   timelineData: TimeLineData[];
 };
@@ -52,7 +54,7 @@ export default function CustomizedTimeline( {timelineData}: CustomizedTimelinePr
                             // Start line from center of first dot                                        
                             left: 'calc(232px / 2)',
                             // Width spans across all items minus 1                         
-                            width: `calc(${(props.props.length - 1)} * 232px)`,
+                            width: `calc(${(timelineData.length - 1)} * 232px)`,
                             // Thin horizontal line 
                             height: "1px",
                             // Line color (grey)                                    
@@ -65,7 +67,7 @@ export default function CustomizedTimeline( {timelineData}: CustomizedTimelinePr
                     />
 
                     {/* Loop through timeline items */}
-                    {props.props.map((item, index) => (
+                    {timelineData.map((item, index) => (
                         <Box
                             key={index}
                             sx={{
