@@ -104,7 +104,7 @@ public type EmployeeInfoWithLead record {
     string reportingLeadThumbnail;
 };
 
-// Response type for GET promotion/requests
+// Response type for GET promotion/requests.
 # [Return] Result object of the get user promotion requests resource function.
 #
 # + promotionRequests - array of promotion requests
