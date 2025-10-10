@@ -122,6 +122,7 @@ export const themeSettings = (mode: PaletteMode) => {
               dark: colors.primary[300],
             },
             secondary: {
+              contrastText: "#ff7300",
               main: colors.secondary[200],
               dark: colors.secondary[300],
             },
@@ -166,14 +167,23 @@ export const themeSettings = (mode: PaletteMode) => {
       },
       MuiButton: {
         styleOverrides: {
-          contained: {
+          root: {
+            fontSize: 14,
+          },
+          containedSecondary: {
             backgroundColor: "#ff7300",
-            "&:hover": { backgroundColor: "#e76000" },
-            fontWeight: "bold",
-            letterSpacing: "2px",
-            padding: "9px 12px",
-            borderRadius: "8px",
             color: "white",
+            "&:hover": {
+              backgroundColor: "#e76000",
+            },
+          },
+          outlinedSecondary: {
+            color: "#ff7300",
+            borderColor: "#ff7300",
+            "&:hover": {
+              color: "#e76000",
+              borderColor: "#e76000",
+            },
           },
         },
       },
