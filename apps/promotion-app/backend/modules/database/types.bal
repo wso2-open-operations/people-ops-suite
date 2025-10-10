@@ -41,7 +41,7 @@ public type FunctionalLeadAccessLevels record {|
     BusinessUnit[]? businessUnits = [];
 |};
 
-# Business Unit Details
+# Business Unit Details.
 #
 # + id - id of the business unit  
 # + name - name of the BU  
@@ -52,7 +52,7 @@ public type BusinessUnit record {|
     Department[]? departments = [];
 |};
 
-# Description
+# Description.
 #
 # + id - id of the department  
 # + name - Department name  
@@ -63,7 +63,7 @@ public type Department record {|
     Team[]? teams = [];
 |};
 
-# Description
+# Description.
 #
 # + id - id of the team  
 # + name - Team name  
@@ -74,7 +74,7 @@ public type Team record {|
     SubTeam[]? subTeams = [];
 |};
 
-# Description
+# Description.
 #
 # + id - id of the sub
 # + name - Name of the sub team
@@ -84,7 +84,7 @@ public type SubTeam record {|
 
 |};
 
-# [User] User 
+# [User] User.
 #
 # + id - User id
 # + firstName - first name of the employee  
@@ -105,7 +105,7 @@ public type User record {
     boolean active;
 };
 
-# [User] DbUser 
+# [User] DbUser. 
 #
 # + id - User id  
 # + firstName - first name of the employee  
@@ -126,7 +126,7 @@ public type DbUser record {
     int active;
 };
 
-//Custom Records
+//Custom Records.
 # [function specific] Custom record type for promotion request with recommendations
 #
 # + id - Promotion Request ID  
@@ -172,7 +172,6 @@ public type FullPromotion record {
     boolean isNotificationEmailSent;
 };
 
-//new
 # [HRIS_Promotion Db] Return record for single promotion recommendation.
 public type FullPromotionRecommendation record {|
     # Promotion request id
