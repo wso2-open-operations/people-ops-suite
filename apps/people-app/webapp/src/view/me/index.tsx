@@ -801,7 +801,7 @@ export default function Me() {
                     type="number"
                     value={editableInfo?.age ?? ""}
                     onChange={(e) =>
-                      handleFieldChange("age", parseInt(e.target.value, 10))
+                      handleFieldChange("age", parseInt(e.target.value, 10) || 0)
                     }
                     InputProps={{ style: { fontSize: 15 } }}
                     InputLabelProps={{ style: { fontSize: 15 } }}
