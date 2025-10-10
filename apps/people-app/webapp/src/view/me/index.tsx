@@ -14,11 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
-import { fetchEmployeePersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
-
+import {
+  EmployeePersonalInfo,
+  fetchEmployeePersonalInfo,
+  updateEmployeePersonalInfo,
+} from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import {
   Accordion,
   AccordionSummary,
@@ -27,8 +30,12 @@ import {
   Box,
   Grid,
   Skeleton,
+  Button,
+  TextField,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import EditIcon from "@mui/icons-material/Edit";
+import SaveIcon from "@mui/icons-material/Save";
 
 export default function Me() {
   const dispatch = useAppDispatch();
@@ -39,6 +46,9 @@ export default function Me() {
   const { personalInfo, state: personalInfoState } = useAppSelector(
     (state) => state.employeePersonalInfo
   );
+  const [isEditMode, setEditMode] = useState(false);
+  const [isSavingChanges, setSavingChanges] = useState(false);
+  const [editableInfo, setEditableInfo] = useState<EmployeePersonalInfo>();
 
   useEffect(() => {
     if (userInfo?.employeeId) {
@@ -46,6 +56,48 @@ export default function Me() {
       dispatch(fetchEmployeePersonalInfo(userInfo.employeeId));
     }
   }, [userInfo?.employeeId, dispatch]);
+
+  const handleToggleEditMode = () => {
+    const nextEditing = !isEditMode;
+    setEditMode(nextEditing);
+    if (personalInfo && !isEditMode) {
+      const { id, ...rest } = personalInfo;
+      setEditableInfo({ ...rest } as EmployeePersonalInfo);
+    }
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth",
+      });
+    }, 100);
+  };
+
+  const handleFieldChange = (
+    field: keyof EmployeePersonalInfo,
+    value: string | number
+  ) => {
+    if (editableInfo) {
+      setEditableInfo({
+        ...editableInfo,
+        [field]: value,
+      });
+    }
+  };
+
+  const handleSave = () => {
+    if (employee?.employeeId && editableInfo) {
+      setSavingChanges(true);
+      dispatch(
+        updateEmployeePersonalInfo({
+          employeeId: employee.employeeId,
+          data: editableInfo,
+        })
+      ).finally(() => {
+        setSavingChanges(false);
+        setEditMode(false);
+      });
+    }
+  };
 
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
@@ -73,7 +125,7 @@ export default function Me() {
         <AccordionDetails>
           {employeeState === "loading" ? (
             <Box>
-              <Grid container spacing={2}>
+              <Grid container spacing={1.5}>
                 {[...Array(20)].map((_, i) => (
                   <Grid item xs={4} key={i}>
                     <Skeleton width={120} height={32} />
@@ -84,14 +136,13 @@ export default function Me() {
             </Box>
           ) : employee ? (
             <Box>
-              <Grid container spacing={2}>
+              <Grid container rowSpacing={1.5} columnSpacing={3}>
                 {/* Identity Section */}
                 <Grid item xs={12}>
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -149,7 +200,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -215,7 +265,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -265,7 +314,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -341,7 +389,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -399,7 +446,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -441,7 +487,6 @@ export default function Me() {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      mb: 1,
                       width: "100%",
                     }}
                   >
@@ -472,7 +517,9 @@ export default function Me() {
               </Grid>
             </Box>
           ) : (
-            <Typography color="text.secondary">General information not found.</Typography>
+            <Typography color="text.secondary">
+              General information not found.
+            </Typography>
           )}
         </AccordionDetails>
       </Accordion>
@@ -494,8 +541,8 @@ export default function Me() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {personalInfoState === "loading" ? (
-            <Grid container spacing={1}>
+          {personalInfoState === "loading" && !isSavingChanges ? (
+            <Grid container spacing={1.5}>
               {/* Skeletons for all values */}
               {[...Array(15)].map((_, i) => (
                 <Grid item xs={4} key={i}>
@@ -505,14 +552,32 @@ export default function Me() {
               ))}
             </Grid>
           ) : personalInfo ? (
-            <Grid container spacing={1}>
+            <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  startIcon={!isEditMode && <EditIcon />}
+                  sx={{
+                    textTransform: "none",
+                  }}
+                  variant={isEditMode ? "outlined" : "contained"}
+                  color={isEditMode ? "primary" : "secondary"}
+                  onClick={() => handleToggleEditMode()}
+                >
+                  {isEditMode ? "Cancel" : "Edit"}
+                </Button>
+              </Box>
               {/* Identity Section */}
               <Grid item xs={12}>
                 <Box
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    mb: 1,
                     width: "100%",
                   }}
                 >
@@ -533,36 +598,150 @@ export default function Me() {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Title
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.title || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Title"
+                    fullWidth
+                    value={editableInfo?.title || ""}
+                    onChange={(e) => handleFieldChange("title", e.target.value)}
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Title
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.title || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  First Name
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.firstName || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="First Name"
+                    fullWidth
+                    value={editableInfo?.firstName || ""}
+                    onChange={(e) =>
+                      handleFieldChange("firstName", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      First Name
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.firstName || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Last Name
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.lastName || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Last Name"
+                    fullWidth
+                    value={editableInfo?.lastName || ""}
+                    onChange={(e) =>
+                      handleFieldChange("lastName", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Last Name
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.lastName || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  NIC
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.nic || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="NIC"
+                    fullWidth
+                    value={editableInfo?.nic || ""}
+                    onChange={(e) => handleFieldChange("nic", e.target.value)}
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      NIC
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.nic || "-"}
+                    </Typography>
+                  </>
+                )}
+              </Grid>
+              <Grid item xs={4}>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Name with Initials"
+                    fullWidth
+                    value={editableInfo?.nameWithInitials || ""}
+                    onChange={(e) =>
+                      handleFieldChange("nameWithInitials", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Name with Initials
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.nameWithInitials || "-"}
+                    </Typography>
+                  </>
+                )}
+              </Grid>
+              <Grid item xs={4}>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Full Name"
+                    fullWidth
+                    value={editableInfo?.fullName || ""}
+                    onChange={(e) =>
+                      handleFieldChange("fullName", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Full Name
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.fullName || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               {/* Demographics Section */}
               <Grid item xs={12} sx={{ mt: 2 }}>
@@ -570,7 +749,6 @@ export default function Me() {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    mb: 1,
                     width: "100%",
                   }}
                 >
@@ -591,28 +769,78 @@ export default function Me() {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Date of Birth
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.dob || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Date of Birth"
+                    fullWidth
+                    value={editableInfo?.dob || ""}
+                    onChange={(e) => handleFieldChange("dob", e.target.value)}
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Date of Birth
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.dob || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Age
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.age ?? "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Age"
+                    fullWidth
+                    type="number"
+                    value={editableInfo?.age ?? ""}
+                    onChange={(e) =>
+                      handleFieldChange("age", parseInt(e.target.value, 10))
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Age
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.age ?? "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Nationality
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.nationality || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Nationality"
+                    fullWidth
+                    value={editableInfo?.nationality || ""}
+                    onChange={(e) =>
+                      handleFieldChange("nationality", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Nationality
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.nationality || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               {/* Contact Section */}
               <Grid item xs={12} sx={{ mt: 2 }}>
@@ -620,7 +848,6 @@ export default function Me() {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    mb: 1,
                     width: "100%",
                   }}
                 >
@@ -641,28 +868,79 @@ export default function Me() {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Personal Email
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.personalEmail || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Personal Email"
+                    fullWidth
+                    value={editableInfo?.personalEmail || ""}
+                    onChange={(e) =>
+                      handleFieldChange("personalEmail", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Personal Email
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.personalEmail || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Personal Phone
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.personalPhone || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Personal Phone"
+                    fullWidth
+                    value={editableInfo?.personalPhone || ""}
+                    onChange={(e) =>
+                      handleFieldChange("personalPhone", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Personal Phone
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.personalPhone || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Home Phone
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.homePhone || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Home Phone"
+                    fullWidth
+                    value={editableInfo?.homePhone || ""}
+                    onChange={(e) =>
+                      handleFieldChange("homePhone", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Home Phone
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.homePhone || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               {/* Address Section */}
               <Grid item xs={12} sx={{ mt: 2 }}>
@@ -670,7 +948,6 @@ export default function Me() {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    mb: 1,
                     width: "100%",
                   }}
                 >
@@ -691,32 +968,108 @@ export default function Me() {
                 </Box>
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Address
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.address || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Address"
+                    fullWidth
+                    value={editableInfo?.address || ""}
+                    onChange={(e) =>
+                      handleFieldChange("address", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Address
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.address || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Postal Code
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.postalCode || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Postal Code"
+                    fullWidth
+                    value={editableInfo?.postalCode || ""}
+                    onChange={(e) =>
+                      handleFieldChange("postalCode", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Postal Code
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.postalCode || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
               <Grid item xs={4}>
-                <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                  Country
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {personalInfo.country || "-"}
-                </Typography>
+                {isEditMode ? (
+                  <TextField
+                    disabled={isSavingChanges}
+                    sx={{ mt: 1 }}
+                    label="Country"
+                    fullWidth
+                    value={editableInfo?.country || ""}
+                    onChange={(e) =>
+                      handleFieldChange("country", e.target.value)
+                    }
+                    InputProps={{ style: { fontSize: 15 } }}
+                    InputLabelProps={{ style: { fontSize: 15 } }}
+                  />
+                ) : (
+                  <>
+                    <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                      Country
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {personalInfo.country || "-"}
+                    </Typography>
+                  </>
+                )}
               </Grid>
+              {isEditMode && (
+                <Box
+                  sx={{
+                    mt: 3,
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <Button
+                    startIcon={<SaveIcon />}
+                    sx={{
+                      textTransform: "none",
+                    }}
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => handleSave()}
+                    disabled={isSavingChanges}
+                  >
+                    {isSavingChanges ? "Saving..." : "Save Changes"}
+                  </Button>
+                </Box>
+              )}
             </Grid>
           ) : (
-            <Typography color="text.secondary">Personal Information not found.</Typography>
+            <Typography color="text.secondary">
+              Personal Information not found.
+            </Typography>
           )}
         </AccordionDetails>
       </Accordion>
