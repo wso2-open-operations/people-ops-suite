@@ -154,6 +154,40 @@ public type EmployeePersonalInfo record {|
     string? nationality;
 |};
 
+# Employee personal information update payload.
+public type UpdateEmployeePersonalInfoPayload record {|
+    # National Identity Card number
+    string? nic;
+    # Full name of the person
+    string fullName;
+    # Name with initials
+    string? nameWithInitials;
+    # First name
+    string? firstName;
+    # Last name
+    string? lastName;
+    # Title (Mr./Ms./Dr./etc.)
+    string? title;
+    # Date of birth
+    string? dob;
+    # Age
+    int? age;
+    # Personal email address
+    string? personalEmail;
+    # Personal phone number
+    string? personalPhone;
+    # Home phone number
+    string? homePhone;
+    # Home address
+    string? address;
+    # Postal code
+    string? postalCode;
+    # Country of residence
+    string? country;
+    # Nationality
+    string? nationality;
+|};
+
 # [Database] Insert type for vehicle.
 public type AddVehiclePayload record {|
     # Owner of the vehicle
