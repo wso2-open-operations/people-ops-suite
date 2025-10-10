@@ -13,9 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import promotion_app.database;
+import promotion_app.people;
 
 # User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
+public type CustomJwtPayload record {|
+    # User email 
+    string email;
+    # User groups
+    string[] groups;
+    json...;
+|};
     # User email 
     string email;
     # User groups
@@ -25,5 +33,16 @@ public type CustomJwtPayload record {
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string EMPLOYEE;
+    string EMPLOYEE_ROLE;
+|};
+
+# [HRIS_Promotion Db] Return record for user privileges.
+#
+# + roles - Application role list  
+# + functionalLeadAccessLevels - functional lead permission  
+# + employeeData - Employee Data
+public type UserAppPrivilege record {|
+    database:Role[] roles;
+    database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    people:Employee employeeData;
 |};
