@@ -208,7 +208,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeeInfo.workEmail != userInfo.email {
             log:printWarn("User is trying to update personal info of another employee", id = id,
-                    email = userInfo.email);
+                    invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {
                     message: "You are not allowed to update personal information of other employees"
