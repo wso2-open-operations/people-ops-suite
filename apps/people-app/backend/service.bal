@@ -177,7 +177,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns database:EmployeePersonalInfo|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -247,7 +247,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return http:OK;
+        return {...payload, id: employeePersonalInfo.id};
     }
 
     # Fetch vehicles of a specific employee.

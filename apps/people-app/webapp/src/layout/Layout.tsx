@@ -31,7 +31,7 @@ import { selectRoles } from "@slices/authSlice/auth";
 import { RootState, useAppSelector } from "@slices/store";
 
 export default function Layout() {
-  const { enqueueSnackbar } = useSnackbar();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,10 +45,34 @@ export default function Layout() {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
-        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+        anchorOrigin: { horizontal: "center", vertical: "bottom" },
+        action: (key) => (
+          <button
+            onClick={() => closeSnackbar(key)}
+            style={{
+              background: "none",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              fontSize: 16,
+              marginLeft: 8,
+              marginRight: 8,
+              padding: 0,
+            }}
+            aria-label="close"
+          >
+            ✕
+          </button>
+        ),
       });
     }
-  }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
+  }, [
+    common.message,
+    common.type,
+    common.timestamp,
+    enqueueSnackbar,
+    closeSnackbar,
+  ]);
 
   // Show Snackbar Notifications
   useEffect(() => {
