@@ -42,10 +42,10 @@ export interface FloorRoom {
 export interface AddVisitPayload {
   nicHash: string;
   companyName: string | null;
-  passNumber: string;
+  passNumber?: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
-  accessibleLocations: FloorRoom[] | null;
+  accessibleLocations?: FloorRoom[] | null;
   timeOfEntry: string;
   timeOfDeparture: string;
 }
@@ -100,6 +100,9 @@ export const addVisit = createAsyncThunk(
   async (payload: AddVisitPayload, { dispatch }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
+    if (payload.passNumber === "") delete payload.passNumber;
+    if (payload.accessibleLocations?.length === 0)
+      delete payload.accessibleLocations;
     return new Promise<AddVisitPayload>((resolve, reject) => {
       APIService.getInstance()
         .post(AppConfig.serviceUrls.visits, payload, {

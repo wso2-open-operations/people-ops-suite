@@ -67,6 +67,7 @@ import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import { addVisit } from "@root/src/slices/visitSlice/visit";
 import { sendInvitation } from "@slices/invitationSlice/invitation";
+import { Role } from "@root/src/slices/authSlice/auth";
 
 dayjs.extend(utc);
 
@@ -100,6 +101,8 @@ const AVAILABLE_FLOORS_AND_ROOMS = [
   { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
   { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
   { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
+  { floor: "15th Floor", rooms: ["Common Area"] },
+  { floor: "Rooftop", rooms: ["Basketball Court"] },
 ];
 
 const COUNTRY_CODES = [
@@ -148,88 +151,10 @@ const COUNTRY_CODES = [
   { code: "+94", country: "LK", flag: "🇱🇰" },
 ];
 
-// Validation schema for invitation information[Step 2]
-const invitationValidationSchema = Yup.object().shape({
-  invitationEmail: Yup.string()
-    .email("Invalid email")
-    .required("Email is required"),
-  inviteeCount: Yup.number()
-    .min(1, "At least one invitee is required")
-    .required("Invitee count is required"),
-});
-
-// Validation schema for visit information[Step 0]
-const visitValidationSchema = Yup.object().shape({
-  whoTheyMeet: Yup.string().required("Who they meet is required"),
-  purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-  accessibleLocations: Yup.array().test(
-    "Accessible floors are required",
-    "At least one accessible floor is required",
-    (value) => {
-      return Array.isArray(value) && value.length > 0;
-    }
-  ),
-  scheduledDate: Yup.string().required("Scheduled date is required"),
-  timeOfEntry: Yup.string()
-    .required("Time of entry is required")
-    .test("is-valid-time", "Time of entry cannot be passed", (value) => {
-      if (dayjs(value).isBefore(dayjs())) {
-        return false;
-      }
-      return true;
-    }),
-  timeOfDeparture: Yup.string()
-    .required("Time of departure is required")
-    .test(
-      "is-valid-time",
-      "Time of departure should be after the Time of entry",
-      (value, context) => {
-        const { timeOfEntry } = context.parent;
-        if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
-          return false;
-        }
-        return true;
-      }
-    ),
-});
-// Validation schema for visitor information[Step 1]
-const visitorValidationSchema = Yup.object().shape({
-  visitors: Yup.array().of(
-    Yup.object().shape({
-      idPassportNumber: Yup.string()
-        .required("ID/Passport number is required")
-        .test("duplicate", "Visitor already registered", function (value) {
-          const { path, parent, options } = this;
-          const visitors = options.context?.visitors || [];
-
-          if (!value) return true;
-
-          // find index of the first visitor with this value
-          const firstIndex = visitors.findIndex(
-            (v: any) => v.idPassportNumber === value
-          );
-
-          // find current index (by comparing object reference)
-          const currentIndex = visitors.indexOf(parent);
-
-          // Only allow if currentIndex === firstIndex
-          return currentIndex === firstIndex;
-        }),
-
-      fullName: Yup.string().required("Full name is required"),
-      contactNumber: Yup.string()
-        .required("Contact number is required")
-        .matches(/^\d{6,12}$/, "Invalid contact number"),
-
-      emailAddress: Yup.string().email("Invalid email address"),
-      passNumber: Yup.string().required("Pass number is required"),
-    })
-  ),
-});
-
 function CreateVisit() {
   const dispatch = useAppDispatch();
   // const visitorState = useAppSelector((state: RootState) => state.visitor);
+  const authState = useAppSelector((state: RootState) => state.auth);
   const visitState = useAppSelector((state: RootState) => state.visit);
   const { visitorState, invitationSendState } = useAppSelector(
     (state: RootState) => ({
@@ -258,6 +183,89 @@ function CreateVisit() {
   const [registrationMode, setRegistrationMode] = useState<"email" | "direct">(
     "email"
   );
+
+  // Validation schema for invitation information[Step 2]
+  const invitationValidationSchema = Yup.object().shape({
+    invitationEmail: Yup.string()
+      .email("Invalid email")
+      .required("Email is required"),
+    inviteeCount: Yup.number()
+      .min(1, "At least one invitee is required")
+      .required("Invitee count is required"),
+  });
+
+  // Validation schema for visit information[Step 0]
+  const visitValidationSchema = Yup.object().shape({
+    whoTheyMeet: Yup.string().required("Who they meet is required"),
+    purposeOfVisit: Yup.string().required("Purpose of visit is required"),
+    accessibleLocations: Yup.array().test(
+      "Accessible floors are required",
+      "At least one accessible floor is required",
+      (value) => {
+        return authState.roles.includes(Role.ADMIN)
+          ? Array.isArray(value) && value.length > 0
+          : true;
+      }
+    ),
+    scheduledDate: Yup.string().required("Scheduled date is required"),
+    timeOfEntry: Yup.string()
+      .required("Time of entry is required")
+      .test("is-valid-time", "Time of entry cannot be passed", (value) => {
+        if (dayjs(value).isBefore(dayjs())) {
+          return false;
+        }
+        return true;
+      }),
+    timeOfDeparture: Yup.string()
+      .required("Time of departure is required")
+      .test(
+        "is-valid-time",
+        "Time of departure should be after the Time of entry",
+        (value, context) => {
+          const { timeOfEntry } = context.parent;
+          if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
+            return false;
+          }
+          return true;
+        }
+      ),
+  });
+  // Validation schema for visitor information[Step 1]
+  const visitorValidationSchema = Yup.object().shape({
+    visitors: Yup.array().of(
+      Yup.object().shape({
+        idPassportNumber: Yup.string()
+          .required("ID/Passport number is required")
+          .test("duplicate", "Visitor already registered", function (value) {
+            const { path, parent, options } = this;
+            const visitors = options.context?.visitors || [];
+
+            if (!value) return true;
+
+            // find index of the first visitor with this value
+            const firstIndex = visitors.findIndex(
+              (v: any) => v.idPassportNumber === value
+            );
+
+            // find current index (by comparing object reference)
+            const currentIndex = visitors.indexOf(parent);
+
+            // Only allow if currentIndex === firstIndex
+            return currentIndex === firstIndex;
+          }),
+
+        fullName: Yup.string().required("Full name is required"),
+        contactNumber: Yup.string()
+          .required("Contact number is required")
+          .matches(/^\d{6,12}$/, "Invalid contact number"),
+
+        emailAddress: Yup.string().email("Invalid email address"),
+        passNumber: authState.roles.includes(Role.ADMIN)
+          ? Yup.string().required("Pass number is required")
+          : Yup.string(),
+      })
+    ),
+  });
 
   // Add a new visitor block to the form
   const addNewVisitorBlock = useCallback(
@@ -524,30 +532,33 @@ function CreateVisit() {
             <Divider sx={{ my: 4 }} />
 
             {/* Floor and Room Selection */}
-            <Box sx={{ mb: 4 }}>
-              <Typography
-                variant="h5"
-                gutterBottom
-                sx={{ display: "flex", alignItems: "center", gap: 1 }}
-              >
-                <BusinessIcon color="primary" />
-                Floors and Rooms *
-              </Typography>
+            {authState.roles.includes(Role.ADMIN) && (
+              <>
+                <Box sx={{ mb: 4 }}>
+                  <Typography
+                    variant="h5"
+                    gutterBottom
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <BusinessIcon color="primary" />
+                    Floors and Rooms *
+                  </Typography>
 
-              <FloorRoomSelector
-                availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-                selectedFloorsAndRooms={formik.values.accessibleLocations}
-                onChange={(value) => {
-                  formik.setFieldValue("accessibleLocations", value);
-                }}
-                error={
-                  formik.touched.accessibleLocations &&
-                  formik.errors.accessibleLocations
-                }
-              />
-            </Box>
-
-            <Divider sx={{ my: 4 }} />
+                  <FloorRoomSelector
+                    availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+                    selectedFloorsAndRooms={formik.values.accessibleLocations}
+                    onChange={(value) => {
+                      formik.setFieldValue("accessibleLocations", value);
+                    }}
+                    error={
+                      formik.touched.accessibleLocations &&
+                      formik.errors.accessibleLocations
+                    }
+                  />
+                </Box>
+                <Divider sx={{ my: 4 }} />
+              </>
+            )}
 
             {/* Schedule Information */}
             <Box sx={{ mb: 4 }}>
@@ -864,31 +875,34 @@ function CreateVisit() {
                             </Grid>
 
                             {/* Pass Number */}
-                            <Grid item xs={12}>
-                              <TextField
-                                fullWidth
-                                name={`visitors.${index}.passNumber`}
-                                label="Pass Number *"
-                                value={visitor.passNumber}
-                                onChange={formik.handleChange}
-                                error={
-                                  formik.touched.visitors?.[index]
-                                    ?.passNumber &&
-                                  Boolean(
+                            {authState.roles.includes(Role.ADMIN) && (
+                              <Grid item xs={12}>
+                                <TextField
+                                  fullWidth
+                                  name={`visitors.${index}.passNumber`}
+                                  label="Pass Number *"
+                                  value={visitor.passNumber}
+                                  onChange={formik.handleChange}
+                                  error={
+                                    formik.touched.visitors?.[index]
+                                      ?.passNumber &&
+                                    Boolean(
+                                      formik.errors.visitors?.[index]
+                                        ?.passNumber
+                                    )
+                                  }
+                                  helperText={
+                                    formik.touched.visitors?.[index]
+                                      ?.passNumber &&
                                     formik.errors.visitors?.[index]?.passNumber
-                                  )
-                                }
-                                helperText={
-                                  formik.touched.visitors?.[index]
-                                    ?.passNumber &&
-                                  formik.errors.visitors?.[index]?.passNumber
-                                }
-                                variant="outlined"
-                                disabled={
-                                  visitor.status === VisitorStatus.Completed
-                                }
-                              />
-                            </Grid>
+                                  }
+                                  variant="outlined"
+                                  disabled={
+                                    visitor.status === VisitorStatus.Completed
+                                  }
+                                />
+                              </Grid>
+                            )}
 
                             {/* Submit Button */}
                             {visitor.status === VisitorStatus.Draft && (
