@@ -70,9 +70,10 @@ public type AppConfig record {|
 # Response type for GET employee-info.
 #
 # + employeeInfo - Employee Info record
-public type EmployeeInfo record {
+public type EmployeeInfo record {|
     EmployeeInfoWithLead employeeInfo;
-};
+    json...;
+|};
 
 # Employee information with reporting lead.
 #
