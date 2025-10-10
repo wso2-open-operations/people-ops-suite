@@ -1,10 +1,10 @@
 // Promotion Application User Roles
 public enum Role {
-    HR_ADMIN = "HR_ADMIN",
-    PROMOTION_BOARD_MEMBER = "PROMOTION_BOARD_MEMBER",
-    FUNCTIONAL_LEAD = "FUNCTIONAL_LEAD",
-    EMPLOYEE = "EMPLOYEE",
-    LEAD = "LEAD"
+    HR_ADMIN,
+    PROMOTION_BOARD_MEMBER,
+    FUNCTIONAL_LEAD,
+    EMPLOYEE,
+    LEAD
 }
 
 // Promotion Request Lifecycle Status.
