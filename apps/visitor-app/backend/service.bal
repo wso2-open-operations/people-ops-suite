@@ -198,20 +198,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Status visitStatus = database:REQUESTED;
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
             visitStatus = database:APPROVED;
-            if payload.passNumber is () {
+            if payload.passNumber !is string {
                 return <http:BadRequest>{
                     body: {
                         message: "Pass number is required when creating an approved visit!"
                     }
                 };
             }
-            if payload.accessibleLocations is () {
+            if payload.accessibleLocations !is database:Floor[] {
                 return <http:BadRequest>{
                     body: {
                         message: "At least one accessible location is required when creating an approved visit!"
                     }
                 };
             }
+        } else {
+            // Sanitize fields not required for non-admin users.
+            payload.passNumber = ();
+            payload.accessibleLocations = ();
         }
 
         // Verify existing visitor.
@@ -244,6 +248,58 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        string? visitorEmail = existingVisitor.email;
+        string? passNumber = payload.passNumber;
+        database:Floor[]? accessibleLocations = payload.accessibleLocations;
+        if visitorEmail is string && visitStatus == database:APPROVED && passNumber is string &&
+                accessibleLocations is database:Floor[] {
+
+            string accessibleLocationString = organizeLocations(accessibleLocations);
+
+            // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
+            string|error formattedFromDate = formatDateTime(payload.timeOfEntry, "Asia/Colombo");
+            if formattedFromDate is error {
+                string customError = "Error occurred while formatting the visit start time!";
+                log:printError(customError, formattedFromDate);
+            }
+            string|error formattedToDate = formatDateTime(payload.timeOfDeparture, "Asia/Colombo");
+            if formattedToDate is error {
+                string customError = "Error occurred while formatting the visit end time!";
+                log:printError(customError, formattedToDate);
+            }
+            string|error content = email:bindKeyValues(email:visitorApproveTemplate,
+                    {
+                        "TIME": time:utcToEmailString(time:utcNow()),
+                        "EMAIL": visitorEmail,
+                        "NAME": generateSalutation(existingVisitor.name),
+                        "TIME_OF_ENTRY": formattedFromDate is error ? payload.timeOfEntry + "(UTC)" : formattedFromDate,
+                        "TIME_OF_DEPARTURE": formattedToDate is error ?
+                            payload.timeOfDeparture + "(UTC)" : formattedToDate,
+                        "ALLOWED_FLOORS": accessibleLocationString,
+                        "PASS_NUMBER": passNumber.toString(),
+                        "CONTACT_EMAIL": email:contactUsEmail,
+                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                    });
+            if content is error {
+                string customError = "An error occurred while binding values to the email template!";
+                log:printError(customError, content);
+            } else {
+                error? emailError = email:sendEmail(
+                            {
+                            to: [visitorEmail],
+                            'from: email:fromEmailAddress,
+                            subject: email:VISIT_ACCEPTED_SUBJECT,
+                            template: content,
+                            cc: [email:receptionEmail]
+                        });
+                if emailError is error {
+                    string customError = "An error occurred while sending the approval email!";
+                    log:printError(customError, emailError);
+                }
+            }
+        }
+
         return <http:Created>{
             body: {
                 message: "Visit added successfully!"
