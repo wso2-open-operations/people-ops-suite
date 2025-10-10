@@ -22,3 +22,4 @@ public final string:RegExp PRINTABLE_NUMERIC_STRING_REGEX = re `^[0-9 ]+$`;
 public final string:RegExp EMAIL_REGEX = re `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`;
 public final string:RegExp UTC_TIMESTAMP_REGEX =
     re `^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d$`;
+public final string:RegExp NONE_EMPTY_ACCESSIBLE_LOCATION_REGEX = re `^\s*\[\s*\{\s*"floor"\s*:\s*"\d+"\s*,\s*"rooms"\s*:\s*\[\s*(?:"\d+"\s*(?:,\s*"\d+"\s*)*)?\]\s*\}(?:\s*,\s*\{\s*"floor"\s*:\s*"\d+"\s*,\s*"rooms"\s*:\s*\[\s*(?:"\d+"\s*(?:,\s*"\d+"\s*)*)?\]\s*\})*\s*\]\s*$`;
