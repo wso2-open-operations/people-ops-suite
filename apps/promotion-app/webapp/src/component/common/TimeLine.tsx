@@ -33,7 +33,7 @@ export default function CustomizedTimeline( {timelineData}: CustomizedTimelinePr
                         // Position relative to allow absolute positioning of line
                         position: 'relative',
                         // Minimum width based on number of items
-                        minWidth: props.props.length * 250,
+                        minWidth: timelineData.length * 250,
                         // Flex layout
                         display: 'flex',
                         // Flex layout
