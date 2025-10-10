@@ -3,7 +3,9 @@ import { Box } from '@mui/material';
 import BadgeIcon from '@mui/icons-material/Badge';
 import StarsIcon from '@mui/icons-material/Stars';
 import { TimeLineData } from '@root/src/utils/types';
-
+type CustomizedTimelineProps = {
+  timelineData: TimeLineData[];
+};
 
 export default function CustomizedTimeline(props: { props: TimeLineData[] }) {
 
