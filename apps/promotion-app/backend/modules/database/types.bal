@@ -34,7 +34,7 @@ type DatabaseConfig record {|
     sql:ConnectionPool connectionPool?;
 |};
 
-# Functional lead permission
+# Functional lead permission.
 #
 # + businessUnits - Business unit array
 public type FunctionalLeadAccessLevels record {|
