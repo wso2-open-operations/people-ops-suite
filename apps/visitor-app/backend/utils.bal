@@ -44,7 +44,7 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
 # + dateTimeStr - UTC date-time string in "YYYY-MM-DD HH:MM" format  
 # + timeZone - UTC time zone string
 # + return - formatted date-time string in "YYYY-MM-DD HH:MM:SS (Time Zone)" format
-public function formatDateTime(string dateTimeStr, string timeZone) returns string|error {
+public isolated function formatDateTime(string dateTimeStr, string timeZone) returns string|error {
     string timeString = dateTimeStr;
 
     timeString = regexp:replace(re ` `, timeString, "T");
@@ -69,7 +69,7 @@ public function formatDateTime(string dateTimeStr, string timeZone) returns stri
 #
 # + num - Integer number to be padded
 # + return - Padded string representation of the number
-function padZero(int num) returns string {
+isolated function padZero(int num) returns string {
     return num < 10 ? string `0${num}` : num.toString();
 }
 
@@ -77,7 +77,7 @@ function padZero(int num) returns string {
 #
 # + name - given name
 # + return - formatted salutation
-function generateSalutation(string name) returns string {
+isolated function generateSalutation(string name) returns string {
     string[] names = regexp:split(re `\s+`, name);
     string firstName = names.length() > 1 ? names[0] : name;
     firstName = regexp:replace(re `\s+`, firstName, "");

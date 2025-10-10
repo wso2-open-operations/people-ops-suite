@@ -56,7 +56,13 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    database:Floor[]? accessibleLocations = ();
+    @constraint:Array {
+        minLength: {
+            value: 1,
+            message: "At least one accessible location should be provided."
+        }
+    }
+    database:Floor[] accessibleLocations?;
     # Time at which the visitor is supposed to check in [in UTC]
     @constraint:String {
         pattern: {
