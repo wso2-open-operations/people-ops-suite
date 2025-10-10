@@ -7,7 +7,7 @@ type CustomizedTimelineProps = {
   timelineData: TimeLineData[];
 };
 
-export default function CustomizedTimeline(props: { props: TimeLineData[] }) {
+export default function CustomizedTimeline( {timelineData}: CustomizedTimelineProps ) {
 
     return (
         // Outer container for the timeline
