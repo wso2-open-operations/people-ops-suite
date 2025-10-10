@@ -195,9 +195,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Determine visit status based on user role.
-        database:Status visitStatus = database:REJECTED;
+        database:Status visitStatus = database:REQUESTED;
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
             visitStatus = database:APPROVED;
+            //TODO admins user has to provide pass number and accessible locations when creating a visit.
         }
 
         // Verify existing visitor.
