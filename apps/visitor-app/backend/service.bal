@@ -656,7 +656,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customError
                 }
             };
-
         }
 
         database:Visit|error? visit = database:fetchVisit(visitId);
