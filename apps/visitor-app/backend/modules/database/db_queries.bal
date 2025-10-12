@@ -125,10 +125,11 @@ isolated function fetchInvitationQuery(string encodeValue) returns sql:Parameter
 # Build query to persist a visit.
 #
 # + payload - Payload containing the visit details
+# + invitedBy - Person who is inviting the visitor
 # + createdBy - Person who is creating the visit
 # + invitationId - Invitation ID associated with the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? invitationId)
+isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId)
     returns sql:ParameterizedQuery
 
     => `
@@ -143,6 +144,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             time_of_entry,
             time_of_departure,
             invitation_id,
+            invited_by,
             status,
             created_by,
             updated_by
@@ -158,6 +160,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? 
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},
+            ${invitedBy},
             ${payload.status},
             ${createdBy},
             ${createdBy}
@@ -278,7 +281,11 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
         filters.push(`rejection_reason = ${payload.rejectionReason}`);
     }
 
-    // Setting the updated_by (redundant in this case, but keeping for consistency).
+    if payload.actionedBy is string {
+        filters.push(`actioned_by = ${payload.actionedBy}`);
+    }
+
+    // Setting the updated_by.
     filters.push(`updated_by = ${updatedBy}`);
 
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);

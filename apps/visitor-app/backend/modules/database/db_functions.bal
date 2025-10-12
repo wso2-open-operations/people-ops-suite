@@ -107,12 +107,15 @@ public isolated function updateInvitation(int invitationId, UpdateInvitationPayl
 
 # Add new visit.
 #
-# + payload - Payload containing the visit details
-# + createdBy - Person who is creating the visit
+# + payload - Payload containing the visit details  
+# + invitedBy - The person who invited the visitor  
+# + createdBy - Person who is creating the visit  
 # + invitationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
-public isolated function addVisit(AddVisitPayload payload, string createdBy, int? invitationId = ()) returns error? {
-    _ = check databaseClient->execute(addVisitQuery(payload, createdBy, invitationId));
+public isolated function addVisit(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId = ())
+    returns error? {
+
+    _ = check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
 }
 
 # Fetch visit by ID.
