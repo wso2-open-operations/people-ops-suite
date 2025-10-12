@@ -285,7 +285,7 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
         filters.push(`actioned_by = ${payload.actionedBy}`);
     }
 
-    // Setting the updated_by.
+    // Setting the updated_by field to record who performed the update, for audit purposes.
     filters.push(`updated_by = ${updatedBy}`);
 
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);

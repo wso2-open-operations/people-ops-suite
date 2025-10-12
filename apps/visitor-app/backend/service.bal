@@ -869,7 +869,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             error? response = database:updateVisit(
-                    visitId, {status: database:COMPLETED, actionedBy: invokerInfo.email}, invokerInfo.email);
+                    visitId, {
+                                 status: database:COMPLETED,
+                                 actionedBy: invokerInfo.email
+                             }, invokerInfo.email);
 
             if response is error {
                 string customError = "Error occurred while completing the visits!";
