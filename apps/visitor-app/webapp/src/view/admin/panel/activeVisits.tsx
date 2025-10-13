@@ -239,6 +239,12 @@ const ActiveVisits = () => {
 
   const columns: GridColDef[] = [
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
+      minWidth: 150,
+      flex: 1,
+    },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
     { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
@@ -247,6 +253,7 @@ const ActiveVisits = () => {
       minWidth: 150,
       flex: 1,
     },
+    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
     { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",
