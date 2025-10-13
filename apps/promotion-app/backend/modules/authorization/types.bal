@@ -24,11 +24,6 @@ public type CustomJwtPayload record {|
     string[] groups;
     json...;
 |};
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-};
 
 # Application specific role mapping.
 public type AppRoles record {|
