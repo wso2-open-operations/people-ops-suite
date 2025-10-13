@@ -238,7 +238,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        error? visitError = database:addVisit({...payload, status: visitStatus}, invokerInfo.email);
+        error? visitError = database:addVisit({...payload, status: visitStatus}, invokerInfo.email, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -596,7 +596,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     ...newVisitInfo,
                     nicHash: payload.nicHash,
                     status: database:REQUESTED
-                }, invitation.inviteeEmail, invitation.invitationId);
+                }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
 
         if visitError is error {
             string customError = "Error occurred while adding visit!";
@@ -656,7 +656,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customError
                 }
             };
-
         }
 
         database:Visit|error? visit = database:fetchVisit(visitId);
@@ -711,7 +710,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         status: database:APPROVED,
                         passNumber: payload.passNumber,
-                        accessibleLocations: accessibleLocations
+                        accessibleLocations: accessibleLocations,
+                        actionedBy: invokerInfo.email
                     }, invokerInfo.email);
 
             if response is error {
@@ -794,10 +794,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            error? response = database:updateVisit(visitId, {
-                                                                status: database:REJECTED,
-                                                                rejectionReason: payload.rejectionReason
-                                                            }, invokerInfo.email);
+            error? response = database:updateVisit(
+                    visitId,
+                    {
+                        status: database:REJECTED,
+                        rejectionReason: payload.rejectionReason,
+                        actionedBy: invokerInfo.email
+                    }, invokerInfo.email);
 
             if response is error {
                 string customError = "Error occurred while rejecting the visits!";
@@ -866,7 +869,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            error? response = database:updateVisit(visitId, {status: database:COMPLETED}, invokerInfo.email);
+            error? response = database:updateVisit(visitId,
+                    {status: database:COMPLETED, actionedBy: invokerInfo.email}, invokerInfo.email);
+
             if response is error {
                 string customError = "Error occurred while completing the visits!";
                 log:printError(customError, response);

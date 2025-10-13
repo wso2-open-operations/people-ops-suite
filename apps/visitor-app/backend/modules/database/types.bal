@@ -252,6 +252,8 @@ public type UpdateVisitPayload record {|
     string? rejectionReason = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
+    # Who actioned the visit
+    string? actionedBy = ();
 |};
 
 # Payload to update Invitation details.
