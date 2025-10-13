@@ -225,13 +225,13 @@ export default function Me() {
   const handleSave = async (values: EmployeePersonalInfo) => {
     try {
       const { id, ...rest } = values;
-      values = { ...rest } as EmployeePersonalInfo;
+      const dataToSave = { ...rest } as EmployeePersonalInfo;
       if (employee?.employeeId) {
         setSavingChanges(true);
         dispatch(
           updateEmployeePersonalInfo({
             employeeId: employee.employeeId,
-            data: values,
+            data: dataToSave,
           })
         ).finally(() => {
           setSavingChanges(false);
