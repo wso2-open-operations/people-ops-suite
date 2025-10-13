@@ -22,7 +22,13 @@ import {
   fetchEmployeePersonalInfo,
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
-import { Formik, Form } from "formik";
+import {
+  Formik,
+  Form,
+  FormikHandlers,
+  FormikValues,
+  FormikErrors,
+} from "formik";
 import { object, string, number, date } from "yup";
 import {
   Accordion,
@@ -86,11 +92,11 @@ const FieldInput = ({
   label: string;
   type?: string;
   isEditMode: boolean;
-  values: any;
-  handleChange: any;
-  handleBlur: any;
-  errors: any;
-  touched: any;
+  values: FormikValues;
+  handleChange: FormikHandlers["handleChange"];
+  handleBlur: FormikHandlers["handleBlur"];
+  errors: FormikErrors<any>;
+  touched: { [field: string]: boolean };
   isSavingChanges: boolean;
   isRequired?: boolean;
 }) => {
@@ -117,7 +123,9 @@ const FieldInput = ({
       onBlur={handleBlur}
       disabled={isSavingChanges}
       error={touched[name] && Boolean(errors[name])}
-      helperText={touched[name] && errors[name]}
+      helperText={
+        touched[name] && errors[name] ? String(errors[name]) : undefined
+      }
       variant="outlined"
       InputProps={{ style: { fontSize: 15 } }}
       InputLabelProps={{ style: { fontSize: 15 } }}
