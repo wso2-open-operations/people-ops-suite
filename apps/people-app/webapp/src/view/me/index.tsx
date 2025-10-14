@@ -116,12 +116,10 @@ const FieldInput = ({
         sx={{ mt: 1, width: "100%" }}
         value={values[name] ? dayjs(values[name]) : null}
         onChange={(newValue) => {
-          if (setFieldValue) {
-            const formattedDate = newValue
-              ? dayjs(newValue).format("YYYY-MM-DD")
-              : null;
-            setFieldValue(name, formattedDate);
-          }
+          const formattedDate = newValue
+            ? dayjs(newValue).format("YYYY-MM-DD")
+            : null;
+          setFieldValue?.(name, formattedDate);
         }}
         label={labelWithAsterisk}
         disabled={isSavingChanges}
