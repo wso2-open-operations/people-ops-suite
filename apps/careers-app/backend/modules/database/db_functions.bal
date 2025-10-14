@@ -147,5 +147,142 @@ public isolated function updateProfile(int id, UpdateApplicantProfile updateData
     return check getapplicantProfileById(id);
 }
 
+# Retrieves all applicant profiles.
+#
+# + return - Array of ApplicantProfile | error
+public isolated function getAllApplicants() returns ApplicantProfile[]|error {
+    stream<ApplicantProfileDB, sql:Error?> resultStream = dbClient->query(getAllApplicantsQuery());
 
+    // Initialize an array to store the profiles
+    ApplicantProfile[] profiles = [];
 
+    // Process each record in the stream to handle null values properly
+    record {|ApplicantProfileDB value;|}? result = check resultStream.next();
+    while result is record {|ApplicantProfileDB value;|} {
+        ApplicantProfileDB dbResult = result.value;
+
+        // Initialize default empty values for potential null fields
+        ProfessionalLinks[] professionalLinks = [];
+        Educations[] educations = [];
+        Experiences[] experiences = [];
+        Skills skills = [];
+        Certifications[] certifications = [];
+        Projects[] projects = [];
+        Languages[] languages = [];
+        Interests interests = [];
+
+        // Parse professional_links if not null or "null"
+        if dbResult.professional_links != "" && dbResult.professional_links != "null" {
+            ProfessionalLinks[]|error plResult = dbResult.professional_links.fromJsonStringWithType();
+            if plResult is error {
+                log:printError(string `Error parsing professional_links for applicant ${dbResult.id}`, plResult);
+            } else {
+                professionalLinks = plResult;
+            }
+        }
+
+        // Parse educations if not null or "null"
+        if dbResult.educations != "" && dbResult.educations != "null" {
+            Educations[]|error eduResult = dbResult.educations.fromJsonStringWithType();
+            if eduResult is error {
+                log:printError(string `Error parsing educations for applicant ${dbResult.id}`, eduResult);
+            } else {
+                educations = eduResult;
+            }
+        }
+
+        // Parse experiences if not null or "null"
+        if dbResult.experiences != "" && dbResult.experiences != "null" {
+            Experiences[]|error expResult = dbResult.experiences.fromJsonStringWithType();
+            if expResult is error {
+                log:printError(string `Error parsing experiences for applicant ${dbResult.id}`, expResult);
+            } else {
+                experiences = expResult;
+            }
+        }
+
+        // Parse skills if not null or "null"
+        if dbResult.skills != "" && dbResult.skills != "null" {
+            Skills|error skillsResult = dbResult.skills.fromJsonStringWithType();
+            if skillsResult is error {
+                log:printError(string `Error parsing skills for applicant ${dbResult.id}`, skillsResult);
+            } else {
+                skills = skillsResult;
+            }
+        }
+
+        // Parse certifications if not null or "null"
+        if dbResult.certifications != "" && dbResult.certifications != "null" {
+            Certifications[]|error certResult = dbResult.certifications.fromJsonStringWithType();
+            if certResult is error {
+                log:printError(string `Error parsing certifications for applicant ${dbResult.id}`, certResult);
+            } else {
+                certifications = certResult;
+            }
+        }
+
+        // Parse projects if not null or "null"
+        if dbResult.projects != "" && dbResult.projects != "null" {
+            Projects[]|error projResult = dbResult.projects.fromJsonStringWithType();
+            if projResult is error {
+                log:printError(string `Error parsing projects for applicant ${dbResult.id}`, projResult);
+            } else {
+                projects = projResult;
+            }
+        }
+
+        // Parse languages if not null or "null"
+        if dbResult.languages != "" && dbResult.languages != "null" {
+            Languages[]|error langResult = dbResult.languages.fromJsonStringWithType();
+            if langResult is error {
+                log:printError(string `Error parsing languages for applicant ${dbResult.id}`, langResult);
+            } else {
+                languages = langResult;
+            }
+        }
+
+        // Parse interests if not null or "null"
+        if dbResult.interests != "" && dbResult.interests != "null" {
+            Interests|error intResult = dbResult.interests.fromJsonStringWithType();
+            if intResult is error {
+                log:printError(string `Error parsing interests for applicant ${dbResult.id}`, intResult);
+            } else {
+                interests = intResult;
+            }
+        }
+
+        // Create and add the transformed profile to the array
+        profiles.push({
+            id: dbResult.id,
+            first_name: dbResult.first_name,
+            last_name: dbResult.last_name,
+            email: dbResult.email,
+            phone: dbResult.phone,
+            address: dbResult.address,
+            country: dbResult.country,
+            status: dbResult.status,
+            professional_links: professionalLinks,
+            educations: educations,
+            experiences: experiences,
+            skills: skills,
+            certifications: certifications,
+            projects: projects,
+            languages: languages,
+            interests: interests,
+            user_thumbnail: dbResult.user_thumbnail,
+            resume_link: dbResult.resume_link,
+            created_by: dbResult.created_by,
+            updated_by: dbResult.updated_by,
+            created_at: dbResult.created_at,
+            updated_at: dbResult.updated_at
+        });
+
+        // Get next record
+        result = check resultStream.next();
+    }
+
+    // Close the stream
+    check resultStream.close();
+
+    return profiles;
+}

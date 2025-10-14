@@ -217,4 +217,31 @@ isolated function updateapplicantProfileQuery(int id, UpdateApplicantProfile app
     return sql:queryConcat(mainQuery, subQuery);
 }
 
-
+# Builds query to retrieve all applicant profiles.
+#
+# + return - sql:ParameterizedQuery - Select all applicants query
+isolated function getAllApplicantsQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        id AS 'id',
+        first_name AS 'first_name',
+        last_name AS 'last_name',
+        email AS 'email',
+        phone AS 'phone',
+        address AS 'address',
+        country AS 'country',
+        status AS 'status',
+        professional_links AS 'professional_links',
+        educations AS 'educations',
+        experiences AS 'experiences',
+        skills AS 'skills',
+        certifications AS 'certifications',
+        projects AS 'projects',
+        languages AS 'languages',
+        interests AS 'interests',
+        user_thumbnail AS 'user_thumbnail',
+        resume_link AS 'resume_link',
+        created_by AS 'created_by',
+        DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS 'created_at',
+        updated_by AS 'updated_by',
+        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS 'updated_at'
+     FROM applicants`;
