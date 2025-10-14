@@ -15,6 +15,8 @@
 // under the License.
 
 import { useEffect, useState } from "react";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import { ConfirmationType } from "@/types/types";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
 import {
@@ -136,6 +138,7 @@ const FieldInput = ({
 
 export default function Me() {
   const dispatch = useAppDispatch();
+  const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee
@@ -223,26 +226,35 @@ export default function Me() {
   };
 
   const handleSave = async (values: EmployeePersonalInfo) => {
-    try {
-      const { id, ...rest } = values;
-      const dataToSave = { ...rest } as EmployeePersonalInfo;
-      if (employee?.employeeId) {
-        setSavingChanges(true);
-        dispatch(
-          updateEmployeePersonalInfo({
-            employeeId: employee.employeeId,
-            data: dataToSave,
-          })
-        ).finally(() => {
+    showConfirmation(
+      "Confirm Save",
+      "Are you sure you want to save these changes?",
+      ConfirmationType.update,
+      () => {
+        try {
+          const { id, ...rest } = values;
+          const dataToSave = { ...rest } as EmployeePersonalInfo;
+          if (employee?.employeeId) {
+            setSavingChanges(true);
+            dispatch(
+              updateEmployeePersonalInfo({
+                employeeId: employee.employeeId,
+                data: dataToSave,
+              })
+            ).finally(() => {
+              setSavingChanges(false);
+              setEditMode(false);
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
           setSavingChanges(false);
-          setEditMode(false);
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSavingChanges(false);
-    }
+        }
+      },
+      "Save",
+      "Cancel"
+    );
   };
 
   return (
