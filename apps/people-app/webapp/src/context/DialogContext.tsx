@@ -129,11 +129,11 @@ const ConfirmationDialogContextProvider: React.FC<
   };
 
   const handleCancel = () => {
-    Reset();
     onHide();
+    resetDialog();
   };
 
-  const Reset = () => {
+  const resetDialog = () => {
     setContent({
       title: "",
       message: "",
@@ -161,8 +161,8 @@ const ConfirmationDialogContextProvider: React.FC<
             open={show}
             sx={{
               ".MuiDialog-paper": {
-                maxWidth: 350,
-                borderRadius: 3,
+                minWidth: 450,
+                borderRadius: 2,
               },
               backdropFilter: "blur(10px)",
             }}
@@ -170,6 +170,7 @@ const ConfirmationDialogContextProvider: React.FC<
             <DialogTitle
               variant="h5"
               sx={{
+                pl: 2,
                 fontWeight: "bold",
                 borderBottom: 1,
                 borderColor: "divider",
@@ -186,15 +187,12 @@ const ConfirmationDialogContextProvider: React.FC<
                 position: "absolute",
                 right: 8,
                 top: 8,
-                color: (theme) => theme.palette.grey[500],
               }}
             >
               <CloseIcon />
             </IconButton>
-            <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
-              <DialogContentText variant="body2">
-                {content?.message}
-              </DialogContentText>
+            <DialogContent sx={{ m: 0, px: 2, py: 2 }}>
+              <DialogContentText>{content?.message}</DialogContentText>
             </DialogContent>
             {content.inputObj && (
               <TextField
@@ -215,7 +213,7 @@ const ConfirmationDialogContextProvider: React.FC<
                 {/* Cancel button */}
                 <Button
                   sx={{
-                    borderRadius: 2,
+                    textTransform: "none",
                   }}
                   onClick={handleCancel}
                   variant="outlined"
@@ -228,11 +226,12 @@ const ConfirmationDialogContextProvider: React.FC<
                 <LoadingButton
                   type="submit"
                   sx={{
-                    borderRadius: 2,
                     boxShadow: "none",
                     border: 0.5,
                     borderColor: "divider",
+                    textTransform: "none",
                   }}
+                  color="secondary"
                   variant="contained"
                   size="small"
                   disabled={content?.inputObj?.mandatory && comment === ""}

@@ -15,6 +15,8 @@
 // under the License.
 
 import { useEffect, useState } from "react";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import { ConfirmationType } from "@/types/types";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
 import {
@@ -136,6 +138,7 @@ const FieldInput = ({
 
 export default function Me() {
   const dispatch = useAppDispatch();
+  const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee
@@ -223,6 +226,17 @@ export default function Me() {
   };
 
   const handleSave = async (values: EmployeePersonalInfo) => {
+    showConfirmation(
+      "Confirm Save",
+      "Are you sure you want to save these changes?",
+      ConfirmationType.update,
+      () => savePersonalInfo(values),
+      "Save",
+      "Cancel"
+    );
+  };
+
+  const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
       const { id, ...rest } = values;
       const dataToSave = { ...rest } as EmployeePersonalInfo;
