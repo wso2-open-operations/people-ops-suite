@@ -711,7 +711,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         status: database:APPROVED,
                         passNumber: payload.passNumber,
                         accessibleLocations: accessibleLocations,
-                        actionedBy: invokerInfo.email
+                        actionedBy: invokerInfo.email,
+                        timeOfEntry: time:utcNow()
                     }, invokerInfo.email);
 
             if response is error {
@@ -870,7 +871,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             error? response = database:updateVisit(visitId,
-                    {status: database:COMPLETED, actionedBy: invokerInfo.email}, invokerInfo.email);
+                    {status: database:COMPLETED, actionedBy: invokerInfo.email, timeOfDeparture: time:utcNow()}, invokerInfo.email);
 
             if response is error {
                 string customError = "Error occurred while completing the visits!";

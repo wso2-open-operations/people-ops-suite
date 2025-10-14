@@ -15,6 +15,7 @@
 // under the License.
 import ballerina/constraint;
 import ballerina/sql;
+import ballerina/time;
 import ballerinax/mysql;
 
 # [Configurable] Database configs.
@@ -254,6 +255,10 @@ public type UpdateVisitPayload record {|
     Floor[]? accessibleLocations = ();
     # Who actioned the visit
     string? actionedBy = ();
+    # Time of entry
+    time:Utc? timeOfEntry = ();
+    # Time of departure
+    time:Utc? timeOfDeparture = ();
 |};
 
 # Payload to update Invitation details.
