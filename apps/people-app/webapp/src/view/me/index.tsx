@@ -43,9 +43,11 @@ import {
   Button,
   TextField,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
+import dayjs from "dayjs";
 
 const SectionHeader = ({ title }: { title: string }) => (
   <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
@@ -89,6 +91,7 @@ const FieldInput = ({
   touched,
   isSavingChanges,
   isRequired = false,
+  setFieldValue,
 }: {
   name: string;
   label: string;
@@ -101,10 +104,45 @@ const FieldInput = ({
   touched: { [field: string]: boolean };
   isSavingChanges: boolean;
   isRequired?: boolean;
+  setFieldValue?: (field: string, value: any, shouldValidate?: boolean) => void;
 }) => {
   const labelWithAsterisk = isRequired ? `${label} *` : label;
   if (!isEditMode) {
     return <ReadOnly label={labelWithAsterisk} value={values[name]} />;
+  }
+  if (type === "date") {
+    return (
+      <DatePicker
+        sx={{ mt: 1, width: "100%" }}
+        value={values[name] ? dayjs(values[name]) : null}
+        onChange={(newValue) => {
+          const formattedDate = newValue
+            ? dayjs(newValue).format("YYYY-MM-DD")
+            : null;
+          setFieldValue?.(name, formattedDate);
+        }}
+        label={labelWithAsterisk}
+        disabled={isSavingChanges}
+        format="YYYY-MM-DD"
+        slotProps={{
+          textField: {
+            variant: "outlined",
+            fullWidth: true,
+            InputProps: {
+              sx: {
+                fontSize: 15,
+                height: 54,
+                "& .MuiInputBase-input": {
+                  py: 1.5,
+                },
+              },
+            },
+            InputLabelProps: { style: { fontSize: 15 } },
+            FormHelperTextProps: { sx: { fontSize: 14 } },
+          },
+        }}
+      />
+    );
   }
   return (
     <TextField
@@ -112,9 +150,6 @@ const FieldInput = ({
         mt: 1,
         "& .MuiFormHelperText-root": {
           fontSize: 14,
-        },
-        '& input[type="date"]::-webkit-calendar-picker-indicator': {
-          filter: "invert(0.8)",
         },
       }}
       label={labelWithAsterisk}
@@ -154,7 +189,7 @@ export default function Me() {
       .nullable()
       .max(20, "NIC must be at most 20 characters")
       .matches(
-        /^[A-Za-z0-9\-\/]+$/,
+        /^[A-Za-z0-9\-/]+$/,
         "Invalid NIC format — only letters, numbers, / and - are allowed"
       ),
     fullName: string()
@@ -287,7 +322,7 @@ export default function Me() {
             <Box>
               <Grid container spacing={1.5}>
                 {[...Array(20)].map((_, i) => (
-                  <Grid item xs={4} key={i}>
+                  <Grid item xs={12} sm={6} md={4} key={i}>
                     <Skeleton width={120} height={32} />
                     <Skeleton width={80} height={28} />
                   </Grid>
@@ -322,7 +357,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Name
                   </Typography>
@@ -330,7 +365,7 @@ export default function Me() {
                     {employee.firstName} {employee.lastName}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Email
                   </Typography>
@@ -338,7 +373,7 @@ export default function Me() {
                     {employee.workEmail}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee ID
                   </Typography>
@@ -346,7 +381,7 @@ export default function Me() {
                     {employee.employeeId || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     EPF
                   </Typography>
@@ -379,7 +414,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Job Role
                   </Typography>
@@ -395,7 +430,7 @@ export default function Me() {
                     {employee.designation}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Team
                   </Typography>
@@ -403,7 +438,7 @@ export default function Me() {
                     {employee.team}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Sub Team
                   </Typography>
@@ -411,7 +446,7 @@ export default function Me() {
                     {employee.subTeam || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Business Unit
                   </Typography>
@@ -444,7 +479,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Location
                   </Typography>
@@ -452,7 +487,7 @@ export default function Me() {
                     {employee.employeeLocation || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Work Location
                   </Typography>
@@ -460,7 +495,7 @@ export default function Me() {
                     {employee.workLocation || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Office
                   </Typography>
@@ -493,7 +528,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Start Date
                   </Typography>
@@ -501,7 +536,7 @@ export default function Me() {
                     {employee.startDate || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employment Type
                   </Typography>
@@ -509,7 +544,7 @@ export default function Me() {
                     {employee.employmentType || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Status
                   </Typography>
@@ -517,7 +552,7 @@ export default function Me() {
                     {employee.employeeStatus || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Length of Service
                   </Typography>
@@ -527,7 +562,7 @@ export default function Me() {
                       : "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Probation End Date
                   </Typography>
@@ -535,7 +570,7 @@ export default function Me() {
                     {employee.probationEndDate || "N/A"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Agreement End Date
                   </Typography>
@@ -568,7 +603,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Manager Email
                   </Typography>
@@ -584,7 +619,7 @@ export default function Me() {
                     {employee.reportToEmail || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Additional Manager Email
                   </Typography>
@@ -592,7 +627,7 @@ export default function Me() {
                     {employee.additionalManagerEmail || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Additional Report To Email
                   </Typography>
@@ -625,7 +660,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Work Phone Number
                   </Typography>
@@ -633,7 +668,7 @@ export default function Me() {
                     {employee.workPhoneNumber || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Relocation Status
                   </Typography>
@@ -666,7 +701,7 @@ export default function Me() {
                     />
                   </Box>
                 </Grid>
-                <Grid item xs={4}>
+                <Grid item xs={12} sm={6} md={4}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Subordinate Count
                   </Typography>
@@ -704,7 +739,7 @@ export default function Me() {
           {personalInfoState === "loading" && !isSavingChanges ? (
             <Grid container spacing={1.5}>
               {[...Array(15)].map((_, i) => (
-                <Grid item xs={4} key={i}>
+                <Grid item xs={12} sm={6} md={4} key={i}>
                   <Skeleton width={120} height={32} />
                   <Skeleton width={80} height={28} />
                 </Grid>
@@ -726,6 +761,7 @@ export default function Me() {
                 errors,
                 touched,
                 resetForm,
+                setFieldValue,
               }) => (
                 <Form>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
@@ -752,7 +788,7 @@ export default function Me() {
                       <SectionHeader title="Identity" />
                     </Grid>
 
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="title"
                         label="Title"
@@ -767,7 +803,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="firstName"
                         label="First Name"
@@ -782,7 +818,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="lastName"
                         label="Last Name"
@@ -797,7 +833,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="nic"
                         label="NIC"
@@ -812,7 +848,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="nameWithInitials"
                         label="Name with Initials"
@@ -827,7 +863,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="fullName"
                         label="Full Name"
@@ -848,7 +884,7 @@ export default function Me() {
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Birth & Nationality" />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="dob"
                         label="Date of Birth"
@@ -861,10 +897,11 @@ export default function Me() {
                           errors,
                           touched,
                           isSavingChanges,
+                          setFieldValue,
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="age"
                         label="Age"
@@ -880,7 +917,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="nationality"
                         label="Nationality"
@@ -900,7 +937,7 @@ export default function Me() {
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Contact" />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="personalEmail"
                         label="Personal Email"
@@ -916,7 +953,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="personalPhone"
                         label="Personal Phone"
@@ -932,7 +969,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="homePhone"
                         label="Home Phone"
@@ -953,7 +990,7 @@ export default function Me() {
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Address" />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="address"
                         label="Address"
@@ -968,7 +1005,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="postalCode"
                         label="Postal Code"
@@ -983,7 +1020,7 @@ export default function Me() {
                         }}
                       />
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="country"
                         label="Country"
