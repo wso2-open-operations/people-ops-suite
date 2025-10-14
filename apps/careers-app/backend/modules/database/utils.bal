@@ -75,5 +75,3 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
-
-

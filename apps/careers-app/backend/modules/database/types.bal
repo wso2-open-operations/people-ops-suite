@@ -298,4 +298,3 @@ public type UpdateApplicantProfile record {|
     # user who last updated the profile
     string updated_by?;
 |};
-
