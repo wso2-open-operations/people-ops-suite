@@ -43,9 +43,11 @@ import {
   Button,
   TextField,
 } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
+import dayjs from "dayjs";
 
 const SectionHeader = ({ title }: { title: string }) => (
   <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
@@ -89,6 +91,7 @@ const FieldInput = ({
   touched,
   isSavingChanges,
   isRequired = false,
+  setFieldValue,
 }: {
   name: string;
   label: string;
@@ -101,10 +104,46 @@ const FieldInput = ({
   touched: { [field: string]: boolean };
   isSavingChanges: boolean;
   isRequired?: boolean;
+  setFieldValue?: (field: string, value: any, shouldValidate?: boolean) => void;
 }) => {
   const labelWithAsterisk = isRequired ? `${label} *` : label;
   if (!isEditMode) {
     return <ReadOnly label={labelWithAsterisk} value={values[name]} />;
+  }
+  if (type === "date") {
+    return (
+      <DatePicker
+        sx={{ mt: 1, width: "100%" }}
+        value={values[name] ? dayjs(values[name]) : null}
+        onChange={(newValue) => {
+          if (setFieldValue) {
+            const formattedDate = newValue
+              ? dayjs(newValue).format("YYYY-MM-DD")
+              : null;
+            setFieldValue(name, formattedDate);
+          }
+        }}
+        label={labelWithAsterisk}
+        disabled={isSavingChanges}
+        slotProps={{
+          textField: {
+            variant: "outlined",
+            fullWidth: true,
+            InputProps: {
+              sx: {
+                fontSize: 15,
+                height: 54,
+                "& .MuiInputBase-input": {
+                  py: 1.5,
+                },
+              },
+            },
+            InputLabelProps: { style: { fontSize: 15 } },
+            FormHelperTextProps: { sx: { fontSize: 14 } },
+          },
+        }}
+      />
+    );
   }
   return (
     <TextField
@@ -112,9 +151,6 @@ const FieldInput = ({
         mt: 1,
         "& .MuiFormHelperText-root": {
           fontSize: 14,
-        },
-        '& input[type="date"]::-webkit-calendar-picker-indicator': {
-          filter: "invert(0.8)",
         },
       }}
       label={labelWithAsterisk}
@@ -726,6 +762,7 @@ export default function Me() {
                 errors,
                 touched,
                 resetForm,
+                setFieldValue,
               }) => (
                 <Form>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
@@ -861,6 +898,7 @@ export default function Me() {
                           errors,
                           touched,
                           isSavingChanges,
+                          setFieldValue,
                         }}
                       />
                     </Grid>
