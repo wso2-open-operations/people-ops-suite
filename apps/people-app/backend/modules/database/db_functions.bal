@@ -121,7 +121,6 @@ public isolated function fetchRecruitById(int recruitId) returns Recruit|error? 
     if result is sql:NoRowsError {
         return;
     }
-
     return result;
 }
 
@@ -129,7 +128,7 @@ public isolated function fetchRecruitById(int recruitId) returns Recruit|error? 
 #
 # + return - Array of recruits or an error
 public isolated function fetchRecruits() returns Recruit[]|error {
-    stream<Recruit, error?> recruitsResponse = databaseClient->query(getRecruits());
+    stream<Recruit, error?> recruitsResponse = databaseClient->query(getRecruitsQuery());
     return from Recruit recruit in recruitsResponse
         select recruit;
 }
@@ -138,7 +137,7 @@ public isolated function fetchRecruits() returns Recruit[]|error {
 #
 # + recruit - Recruit payload
 # + createdBy - User who creates the recruit entry
-# + return - Id of the newly created recruit or an error
+# + return - ID of the newly created recruit or an error
 public isolated function addRecruit(AddRecruitPayload recruit, string createdBy) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addRecruitQuery(recruit, createdBy));
     return executionResult.lastInsertId.ensureType(int);
@@ -146,10 +145,10 @@ public isolated function addRecruit(AddRecruitPayload recruit, string createdBy)
 
 # Update recruit info dynamically based on changed fields.
 #
-# + id - Recruit id
+# + id - Recruit ID
 # + recruit - Recruit payload with updated fields
 # + return - error or null
-public isolated function UpdateRecruit(int id, UpdateRecruitPayload recruit) returns boolean|error {
+public isolated function updateRecruit(int id, UpdateRecruitPayload recruit) returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(updateRecruitQuery(id, recruit));
     return result.affectedRowCount > 0;
 }

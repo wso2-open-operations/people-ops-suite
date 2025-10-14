@@ -262,23 +262,31 @@ isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQu
         r.compensation AS compensation,
         r.additional_comments AS additionalComments,
         r.status AS status,
-        r.business_unit AS businessUnit,
-        r.unit AS unit,
-        r.team AS team,
-        r.sub_team AS subTeam,
-        r.company AS company,
-        r.office AS office,
-        r.employment_type AS employmentType,
-        r.designation_id AS designationId,
+        bu.name AS businessUnit,
+        u.name AS unit,
+        t.name AS team,
+        st.name AS subTeam,
+        c.name AS company,
+        o.name AS office,
+        et.name AS employmentType,
+        d.designation AS designation,
         r.personal_info_id AS personalInfoId
     FROM recruit r
+        JOIN business_unit bu ON r.business_unit = bu.id
+        LEFT JOIN unit u ON r.unit = u.id
+        JOIN team t ON r.team = t.id
+        JOIN sub_team st ON r.sub_team = st.id
+        JOIN company c ON r.company = c.id
+        JOIN office o ON r.office = o.id
+        JOIN employment_type et ON r.employment_type = et.id
+        JOIN designation d ON r.designation_id = d.id
     WHERE r.id = ${recruitId};
 `;
 
 # Retrieves a parameterized SQL query to fetch all recruits.
 #
 # + return - A parameterized query that returns all recruit records with their compensation data
-isolated function getRecruits() returns sql:ParameterizedQuery => `
+isolated function getRecruitsQuery() returns sql:ParameterizedQuery => `
     SELECT 
         r.id AS id,
         r.first_name AS firstName,
@@ -294,16 +302,25 @@ isolated function getRecruits() returns sql:ParameterizedQuery => `
         r.compensation AS compensation,
         r.additional_comments AS additionalComments,
         r.status AS status,
-        r.business_unit AS businessUnit,
-        r.unit AS unit,
-        r.team AS team,
-        r.sub_team AS subTeam,
-        r.company AS company,
-        r.office AS office,
-        r.employment_type AS employmentType,
-        r.designation_id AS designationId,
+        bu.name AS businessUnit,
+        u.name AS unit,
+        t.name AS team,
+        st.name AS subTeam,
+        c.name AS company,
+        o.name AS office,
+        et.name AS employmentType,
+        d.designation AS designation,
         r.personal_info_id AS personalInfoId
-    FROM recruit r;
+    FROM recruit r
+        JOIN business_unit bu ON r.business_unit = bu.id
+        LEFT JOIN unit u ON r.unit = u.id
+        JOIN team t ON r.team = t.id
+        JOIN sub_team st ON r.sub_team = st.id
+        JOIN company c ON r.company = c.id
+        JOIN office o ON r.office = o.id
+        JOIN employment_type et ON r.employment_type = et.id
+        JOIN designation d ON r.designation_id = d.id
+    ORDER BY r.id DESC;
 `;
 
 # Build query to add a recruit.
@@ -405,7 +422,7 @@ isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) retur
     if recruit.managerEmail is string {
         setClauses.push(`manager_email = ${recruit.managerEmail}`);
     }
-    if recruit?.compensation != (){
+    if recruit?.compensation != () {
         setClauses.push(`compensation = ${recruit?.compensation.toJsonString()}`);
     }
     if recruit.additionalComments is string {

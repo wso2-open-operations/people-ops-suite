@@ -284,7 +284,7 @@ public type Recruit record {|
     # Type of employment 
     string employmentType;
     # Designation id of the recruit
-    int designationId;
+    string designation;
     # ID of the personal info
     int personalInfoId;
     # Compensation data of the recruit

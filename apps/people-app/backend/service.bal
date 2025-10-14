@@ -407,7 +407,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -454,7 +454,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -495,7 +495,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -536,7 +536,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -551,7 +551,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error result = database:UpdateRecruit(id, recruit);
+        boolean|error result = database:updateRecruit(id, recruit);
 
         if result is error {
             string customError = "Error while updating recruit info";
@@ -576,7 +576,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: ERR_INFORMATION_HEADER_NOT_FOUND
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
