@@ -230,31 +230,33 @@ export default function Me() {
       "Confirm Save",
       "Are you sure you want to save these changes?",
       ConfirmationType.update,
-      () => {
-        try {
-          const { id, ...rest } = values;
-          const dataToSave = { ...rest } as EmployeePersonalInfo;
-          if (employee?.employeeId) {
-            setSavingChanges(true);
-            dispatch(
-              updateEmployeePersonalInfo({
-                employeeId: employee.employeeId,
-                data: dataToSave,
-              })
-            ).finally(() => {
-              setSavingChanges(false);
-              setEditMode(false);
-            });
-          }
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setSavingChanges(false);
-        }
-      },
+      () => savePersonalInfo(values),
       "Save",
       "Cancel"
     );
+  };
+
+  const savePersonalInfo = (values: EmployeePersonalInfo) => {
+    try {
+      const { id, ...rest } = values;
+      const dataToSave = { ...rest } as EmployeePersonalInfo;
+      if (employee?.employeeId) {
+        setSavingChanges(true);
+        dispatch(
+          updateEmployeePersonalInfo({
+            employeeId: employee.employeeId,
+            data: dataToSave,
+          })
+        ).finally(() => {
+          setSavingChanges(false);
+          setEditMode(false);
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingChanges(false);
+    }
   };
 
   return (
