@@ -35,140 +35,131 @@ type DatabaseConfig record {|
 |};
 
 # Functional lead permission.
-#
-# + businessUnits - Business unit array
 public type FunctionalLeadAccessLevels record {|
+    # Business unit array
     BusinessUnit[]? businessUnits = [];
 |};
 
 # Business Unit Details.
-#
-# + id - id of the business unit  
-# + name - name of the BU  
-# + departments - department list 
 public type BusinessUnit record {|
+    # id of the business unit
     int id;
+    # name of the BU  
     string name;
+    # department list
     Department[]? departments = [];
 |};
 
 # Description.
-#
-# + id - id of the department  
-# + name - Department name  
-# + teams - Teams list
 public type Department record {|
+    # id of the department 
     int id;
+    # Department name
     string name;
+    # Teams list
     Team[]? teams = [];
 |};
 
 # Description.
-#
-# + id - id of the team  
-# + name - Team name  
-# + subTeams - sub team list
 public type Team record {|
+    # id of the team
     int id;
+    # Team name 
     string name;
+    # sub team list
     SubTeam[]? subTeams = [];
 |};
 
 # Description.
-#
-# + id - id of the sub
-# + name - Name of the sub team
 public type SubTeam record {|
+    # id of the sub
     int id;
+    # Name of the sub team
     string name;
 
 |};
 
-# [User] User.
-#
-# + id - User id
-# + firstName - first name of the employee  
-# + lastName - last name of the employee 
-# + jobBand - Job band   
-# + email - Lead Email  
-# + roles - Reporting lead or not  
-# + functionalLeadAccessLevels - functional lead permission 
-# + active - User active state
+# User.
 public type User record {
+    # User id
     int id;
+    # first name of the employee
     string firstName;
+    # last name of the employee
     string lastName;
+    # Job band
     int? jobBand;
+    # Lead Email
     string email;
+    # Reporting lead or not
     Role[] roles = [];
+    # functional lead permission 
     FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    # User active state
     boolean active;
 };
 
-# [User] DbUser. 
-#
-# + id - User id  
-# + firstName - first name of the employee  
-# + lastName - last name of the employee 
-# + jobBand - Job band   
-# + email - Lead Email  
-# + roles - Reporting lead or not  
-# + functionalLeadAccessLevels - functional lead permission
-# + active - User active state
+# DbUser.
 public type DbUser record {
+    # User id
     int id;
+    # first name of the employee 
     string firstName;
+    # last name of the employee 
     string lastName;
+    # Job band
     int? jobBand;
+    # Lead Email
     string email;
+    # Reporting lead or not
     string? roles;
+    # functional lead permission
     string? functionalLeadAccessLevels = ();
+    # User active state
     int active;
 };
 
-//Custom Records.
-# [function specific] Custom record type for promotion request with recommendations
-#
-# + id - Promotion Request ID  
-# + employeeEmail - Employee email  
-# + currentJobBand - Current Job Band  
-# + currentJobRole - Current Job Role  
-# + nextJobBand - Promotion Job Band  
-# + promotionCycle - Promotion Cycle  
-# + promotionStatement - Promotion Statement  
-# + businessUnit - Business unit of the employee  
-# + department - Department of the employee  
-# + team - Team of the employee  
-# + subTeam - Sub Team of the employee  
-# + recommendations - Promotion Recommendations Array  
-# + createdBy - Person who created the record  
-# + createdOn - Time when the record was created  
-# + updatedBy - Person who updated the record  
-# + updatedOn - Time when the record was updated  
-# + promotionType - NORMAL | SPECIAL  
-# + status - Promotion Request Status  
-# + reasonForRejection - Reason for rejection  
-# + isNotificationEmailSent - Notification email sent status
+# Custom record type for promotion request with recommendations
 public type FullPromotion record {
+    # Promotion Request ID 
     int id;
+    # Employee email
     string employeeEmail;
+    # Current Job Band
     int currentJobBand;
+    # Current Job Role
     string currentJobRole;
+    # Promotion Job Band
     int nextJobBand;
+    # Promotion Cycle
     string promotionCycle;
+    # Promotion Statement
     string? promotionStatement;
+    # Business unit of the employee
     string businessUnit;
+    # Department of the employee
     string department;
+    # Team of the employee
     string team;
+    # Sub Team of the employee
     string? subTeam;
+    # Promotion Recommendations Array
     FullPromotionRecommendation[] recommendations;
+    # Person who created the record 
     string createdBy;
+    # Time when the record was created
     string createdOn;
+    # Person who updated the record 
     string updatedBy;
+    # Time when the record was updated
     string updatedOn;
+    # NORMAL | SPECIAL
     string promotionType;
+    # Promotion Request Status
     string status;
+    # Reason for rejection
     string? reasonForRejection;
+    # Notification email sent status
     boolean isNotificationEmailSent;
 };
 
@@ -214,69 +205,67 @@ public type FullPromotionRecommendation record {|
     string updatedOn;
 |};
 
-# [HRIS_Promotion Db] Return record for single promotion cycle.
-#
-# + id - Promotion Cycle ID  
-# + name - Promotion Cycle Name  
-# + startDate - Promotion Cycle Start Date  
-# + endDate - Promotion Cycle End Date  
-# + status - Promotion Cycle status  
-# + createdBy - Person who creates the  record 
-# + createdOn - Time when creates the  record   
-# + updatedBy - Person who updated the  record  
-# + updatedOn - Time when updated the  record
+# Return record for single promotion cycle.
 public type PromotionCycle record {|
+    # Promotion Cycle ID 
     int id;
+    # Promotion Cycle Name
     string name;
+    # Promotion Cycle Start Date
     string startDate;
+    # Promotion Cycle End Date
     string endDate;
+    # Promotion Cycle status
     string status;
+    # Person who creates the  record
     string createdBy;
+    # Time when creates the  record
     string createdOn;
+    # Person who updated the  record
     string updatedBy;
+    # Time when updated the  record
     string updatedOn;
 
 |};
 
-# [HRIS_Promotion Db] Return record for single promotion request.
-#
-# + id - Promotion Request ID  
-# + employeeEmail - Employee email  
-# + currentJobBand - Employee's Current Job Band  
-# + currentJobRole - Employee's Current Job Role  
-# + nextJobBand - Promoting Job Band  
-# + promotionStatement - Promotion Statement  
-# + promotionCycle - Promotion Cycle Name  
-# + businessUnit - Business Unit of the employee  
-# + department - Department of the employee  
-# + team - Team of the employee  
-# + subTeam - Sub Team of the employee  
-# + createdBy - Person who creates the  record  
-# + createdOn - Time when creates the  record  
-# + updatedBy - Person who updated the  record  
-# + updatedOn - Time when updated the  record  
-# + promotionType - SPECIAL | NORMAL  
-# + status - Promotion Request status  
-# + reasonForRejection - Reason for rejection  
-# + isNotificationEmailSent - Notification email sent or not
+# Return record for single promotion request.
 public type Promotion record {|
+    # Promotion Request ID 
     int id;
+    # Employee email
     string employeeEmail;
+    # Employee's Current Job Band
     int currentJobBand;
+    # Employee's Current Job Role
     string currentJobRole;
+    # Promoting Job Band
     int nextJobBand;
+    # Promotion Statement
     string? promotionStatement = ();
+    # Promotion Cycle Name
     string promotionCycle;
+    # Business Unit of the employee
     string businessUnit;
+    # Department of the employee
     string department;
+    # Team of the employee
     string team;
+    # Sub Team of the employee
     string? subTeam;
+    # Person who creates the  record
     string createdBy;
+    # Time when creates the  record 
     string createdOn;
+    # Person who updated the  record
     string updatedBy;
+    # Time when updated the  record
     string updatedOn;
+    # SPECIAL | NORMAL
     string promotionType;
+    # Promotion Request status
     string status;
+    # Reason for rejection
     string? reasonForRejection;
+    # Notification email sent or not
     boolean isNotificationEmailSent;
 |};
