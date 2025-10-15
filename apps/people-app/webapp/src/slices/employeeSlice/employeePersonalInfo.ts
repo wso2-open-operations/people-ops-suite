@@ -47,7 +47,7 @@ export interface EmployeePersonalInfoUpdate {
   homePhone: string | null;
   address: string | null;
   postalCode: string | null;
-  country: string | null
+  country: string | null;
 }
 
 interface EmployeePersonalInfoState {
