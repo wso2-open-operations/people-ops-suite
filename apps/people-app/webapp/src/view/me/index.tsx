@@ -31,7 +31,7 @@ import {
   FormikValues,
   FormikErrors,
 } from "formik";
-import { object, string, number, date } from "yup";
+import { object, string } from "yup";
 import {
   Accordion,
   AccordionSummary,
@@ -43,11 +43,9 @@ import {
   Button,
   TextField,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-import dayjs from "dayjs";
 
 const SectionHeader = ({ title }: { title: string }) => (
   <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
@@ -91,7 +89,6 @@ const FieldInput = ({
   touched,
   isSavingChanges,
   isRequired = false,
-  setFieldValue,
 }: {
   name: string;
   label: string;
@@ -104,45 +101,10 @@ const FieldInput = ({
   touched: { [field: string]: boolean };
   isSavingChanges: boolean;
   isRequired?: boolean;
-  setFieldValue?: (field: string, value: any, shouldValidate?: boolean) => void;
 }) => {
   const labelWithAsterisk = isRequired ? `${label} *` : label;
   if (!isEditMode) {
     return <ReadOnly label={labelWithAsterisk} value={values[name]} />;
-  }
-  if (type === "date") {
-    return (
-      <DatePicker
-        sx={{ mt: 1, width: "100%" }}
-        value={values[name] ? dayjs(values[name]) : null}
-        onChange={(newValue) => {
-          const formattedDate = newValue
-            ? dayjs(newValue).format("YYYY-MM-DD")
-            : null;
-          setFieldValue?.(name, formattedDate);
-        }}
-        label={labelWithAsterisk}
-        disabled={isSavingChanges}
-        format="YYYY-MM-DD"
-        slotProps={{
-          textField: {
-            variant: "outlined",
-            fullWidth: true,
-            InputProps: {
-              sx: {
-                fontSize: 15,
-                height: 54,
-                "& .MuiInputBase-input": {
-                  py: 1.5,
-                },
-              },
-            },
-            InputLabelProps: { style: { fontSize: 15 } },
-            FormHelperTextProps: { sx: { fontSize: 14 } },
-          },
-        }}
-      />
-    );
   }
   return (
     <TextField
@@ -185,29 +147,6 @@ export default function Me() {
   const [isSavingChanges, setSavingChanges] = useState(false);
 
   const personalInfoSchema = object().shape({
-    nic: string()
-      .nullable()
-      .max(20, "NIC must be at most 20 characters")
-      .matches(
-        /^[A-Za-z0-9\-/]+$/,
-        "Invalid NIC format — only letters, numbers, / and - are allowed"
-      ),
-    fullName: string()
-      .required("Full name is required")
-      .max(150, "Full name must be at most 150 characters"),
-    nameWithInitials: string()
-      .nullable()
-      .max(100, "Too long (max 100 characters)"),
-    firstName: string().nullable().max(100, "Too long (max 100 characters)"),
-    lastName: string().nullable().max(100, "Too long (max 100 characters)"),
-    title: string().nullable().max(100, "Too long (max 100 characters)"),
-    dob: date()
-      .nullable()
-      .max(new Date(), "Date of birth cannot be in the future"),
-    age: number()
-      .nullable()
-      .min(0, "Age cannot be negative")
-      .max(120, "Please enter a valid age"),
     personalEmail: string()
       .nullable()
       .email("Invalid email format")
@@ -226,10 +165,7 @@ export default function Me() {
       .max(20, "Postal code must be at most 20 characters"),
     country: string()
       .nullable()
-      .max(100, "Country must be at most 100 characters"),
-    nationality: string()
-      .nullable()
-      .max(100, "Nationality must be at most 100 characters"),
+      .max(100, "Country must be at most 100 characters")
   });
 
   useEffect(() => {
@@ -273,8 +209,14 @@ export default function Me() {
 
   const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
-      const { id, ...rest } = values;
-      const dataToSave = { ...rest } as EmployeePersonalInfo;
+      const dataToSave = {
+        personalEmail: values.personalEmail,
+        personalPhone: values.personalPhone,
+        homePhone: values.homePhone,
+        address: values.address,
+        postalCode: values.postalCode,
+        country: values.country,
+      };
       if (employee?.employeeId) {
         setSavingChanges(true);
         dispatch(
@@ -761,7 +703,6 @@ export default function Me() {
                 errors,
                 touched,
                 resetForm,
-                setFieldValue,
               }) => (
                 <Form>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
@@ -783,157 +724,50 @@ export default function Me() {
                       </Button>
                     </Box>
 
-                    {/* --- Identity Section --- */}
+                    {/* --- Identity Section (Read-only) --- */}
                     <Grid item xs={12}>
                       <SectionHeader title="Identity" />
                     </Grid>
-
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="title"
-                        label="Title"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="Title" value={values.title} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="firstName"
-                        label="First Name"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="First Name" value={values.firstName} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="lastName"
-                        label="Last Name"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="Last Name" value={values.lastName} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="nic"
-                        label="NIC"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="NIC" value={values.nic} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="nameWithInitials"
+                      <ReadOnly
                         label="Name with Initials"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        value={values.nameWithInitials}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="fullName"
-                        label="Full Name"
-                        isRequired={true}
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="Full Name" value={values.fullName} />
                     </Grid>
 
-                    {/* --- Birth & Nationality --- */}
+                    {/* --- Birth & Nationality (Read-only) --- */}
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Birth & Nationality" />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="dob"
-                        label="Date of Birth"
-                        type="date"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                          setFieldValue,
-                        }}
-                      />
+                      <ReadOnly label="Date of Birth" value={values.dob} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="age"
-                        label="Age"
-                        type="number"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
-                      />
+                      <ReadOnly label="Age" value={values.age} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="nationality"
+                      <ReadOnly
                         label="Nationality"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        value={values.nationality}
                       />
                     </Grid>
 
-                    {/* --- Contact --- */}
+                    {/* --- Contact (Editable) --- */}
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Contact" />
                     </Grid>
@@ -942,15 +776,13 @@ export default function Me() {
                         name="personalEmail"
                         label="Personal Email"
                         type="email"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
@@ -958,15 +790,13 @@ export default function Me() {
                         name="personalPhone"
                         label="Personal Phone"
                         type="tel"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
@@ -974,19 +804,17 @@ export default function Me() {
                         name="homePhone"
                         label="Home Phone"
                         type="tel"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
 
-                    {/* --- Address --- */}
+                    {/* --- Address (Editable) --- */}
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <SectionHeader title="Address" />
                     </Grid>
@@ -994,45 +822,39 @@ export default function Me() {
                       <FieldInput
                         name="address"
                         label="Address"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="postalCode"
                         label="Postal Code"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6} md={4}>
                       <FieldInput
                         name="country"
                         label="Country"
-                        {...{
-                          isEditMode,
-                          values,
-                          handleChange,
-                          handleBlur,
-                          errors,
-                          touched,
-                          isSavingChanges,
-                        }}
+                        isEditMode={isEditMode}
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
                       />
                     </Grid>
 

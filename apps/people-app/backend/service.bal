@@ -247,7 +247,24 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {...payload, id: employeePersonalInfo.id};
+        return {
+            id: employeePersonalInfo.id,
+            nic: employeePersonalInfo.nic,
+            fullName: employeePersonalInfo.fullName,
+            nameWithInitials: employeePersonalInfo.nameWithInitials,
+            firstName: employeePersonalInfo.firstName,
+            lastName: employeePersonalInfo.lastName,
+            title: employeePersonalInfo.title,
+            dob: employeePersonalInfo.dob,
+            age: employeePersonalInfo.age,
+            nationality: employeePersonalInfo.nationality,
+            personalEmail: payload.personalEmail,
+            personalPhone: payload.personalPhone,
+            homePhone: payload.homePhone,
+            address: payload.address,
+            postalCode: payload.postalCode,
+            country: payload.country
+        };
     }
 
     # Fetch vehicles of a specific employee.

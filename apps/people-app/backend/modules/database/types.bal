@@ -156,22 +156,6 @@ public type EmployeePersonalInfo record {|
 
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
-    # National Identity Card number
-    string? nic;
-    # Full name of the person
-    string fullName;
-    # Name with initials
-    string? nameWithInitials;
-    # First name
-    string? firstName;
-    # Last name
-    string? lastName;
-    # Title (Mr./Ms./Dr./etc.)
-    string? title;
-    # Date of birth
-    string? dob;
-    # Age
-    int? age;
     # Personal email address
     string? personalEmail;
     # Personal phone number
@@ -184,8 +168,6 @@ public type UpdateEmployeePersonalInfoPayload record {|
     string? postalCode;
     # Country of residence
     string? country;
-    # Nationality
-    string? nationality;
 |};
 
 # [Database] Insert type for vehicle.
