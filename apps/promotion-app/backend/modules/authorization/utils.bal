@@ -37,7 +37,7 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
 public isolated function getUserPrivileges(string email) returns UserAppPrivilege|error {
 
     // Fetch user record from the database using the provided email
-    database:User? applicationUser = check database:getUserBy(email = email);
+    database:User? applicationUser = check database:getUser(email = email);
 
     // Retrieve corresponding employee data from the People service using the same email
     people:Employee employeeData = check people:getEmployee(workEmail = email);
