@@ -41,6 +41,15 @@ export interface EmployeePersonalInfo {
   nationality: string | null;
 }
 
+export interface EmployeePersonalInfoUpdate {
+  personalEmail: string | null;
+  personalPhone: string | null;
+  homePhone: string | null;
+  address: string | null;
+  postalCode: string | null;
+  country: string | null;
+}
+
 interface EmployeePersonalInfoState {
   state: State;
   stateMessage: string | null;
@@ -85,7 +94,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
 export const updateEmployeePersonalInfo = createAsyncThunk(
   "employees/updateEmployeePersonalInfo",
   async (
-    { employeeId, data }: { employeeId: string; data: EmployeePersonalInfo },
+    { employeeId, data }: { employeeId: string; data: EmployeePersonalInfoUpdate },
     { dispatch, rejectWithValue }
   ) => {
     try {
