@@ -22,7 +22,6 @@ public type CustomJwtPayload record {|
     string email;
     # User groups
     string[] groups;
-    json...;
 |};
 
 # Application specific role mapping.
@@ -31,13 +30,12 @@ public type AppRoles record {|
     string EMPLOYEE_ROLE;
 |};
 
-# [HRIS_Promotion Db] Return record for user privileges.
-#
-# + roles - Application role list  
-# + functionalLeadAccessLevels - functional lead permission  
-# + employeeData - Employee Data
+# Return record for user privileges.
 public type UserAppPrivilege record {|
+    #Application role list 
     database:Role[] roles;
+    #functional lead permission
     database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    #functional lead permission
     people:Employee employeeData;
 |};
