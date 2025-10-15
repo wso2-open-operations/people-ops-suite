@@ -16,7 +16,7 @@
 import ballerina/sql;
 import ballerinax/mysql;
 
-# [Configurable] Database configs.
+# Database configs
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
     string user;
@@ -34,13 +34,13 @@ type DatabaseConfig record {|
     sql:ConnectionPool connectionPool?;
 |};
 
-# Functional lead permission.
+# Functional lead permission
 public type FunctionalLeadAccessLevels record {|
     # Business unit array
     BusinessUnit[]? businessUnits = [];
 |};
 
-# Business Unit Details.
+# Business Unit Details
 public type BusinessUnit record {|
     # id of the business unit
     int id;
@@ -50,7 +50,7 @@ public type BusinessUnit record {|
     Department[]? departments = [];
 |};
 
-# Description.
+# Description
 public type Department record {|
     # id of the department 
     int id;
@@ -60,7 +60,7 @@ public type Department record {|
     Team[]? teams = [];
 |};
 
-# Description.
+# Description
 public type Team record {|
     # id of the team
     int id;
@@ -70,7 +70,7 @@ public type Team record {|
     SubTeam[]? subTeams = [];
 |};
 
-# Description.
+# Description
 public type SubTeam record {|
     # id of the sub
     int id;
@@ -79,7 +79,7 @@ public type SubTeam record {|
 
 |};
 
-# User.
+# User
 public type User record {
     # User id
     int id;
@@ -99,7 +99,7 @@ public type User record {
     boolean active;
 };
 
-# DbUser.
+# DbUser
 public type DbUser record {
     # User id
     int id;
@@ -163,7 +163,7 @@ public type FullPromotion record {
     boolean isNotificationEmailSent;
 };
 
-# [HRIS_Promotion Db] Return record for single promotion recommendation.
+# Return record for single promotion recommendation
 public type FullPromotionRecommendation record {|
     # Promotion request id
     int requestId;
