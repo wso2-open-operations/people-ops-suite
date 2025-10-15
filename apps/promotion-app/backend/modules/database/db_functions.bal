@@ -15,6 +15,8 @@ import ballerina/log;
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import ballerina/lang.regexp as regex;
+import ballerina/log;
 import ballerina/sql;
 
 # Retrieving user by id
@@ -22,20 +24,18 @@ import ballerina/sql;
 # + id - User id 
 # + email - User email 
 # + return - User  or Error
-public isolated function getUserBy(int? id = (), string? email = ()) returns User|error? {
+public isolated function getUser(int? id = (), string? email = ()) returns User|error? {
 
     // Get the user by id and email.
     DbUser|error user = databaseClient->queryRow(getUsersQuery(id, email));
 
-    // Handle sql errors.
-    if user is sql:NoRowsError {
-        return;
-    }
-
     // Handle error.
     if user is error {
-        log:printError(user.toString());
-        return error("An error occurred while retrieving user " + user.toString());
+        // Handle sql errors.
+        if user is sql:NoRowsError {
+            return;
+        }
+        return user;
     }
 
     // Initialize an empty array to store roles assigned to the user.
@@ -72,7 +72,7 @@ public isolated function getUserBy(int? id = (), string? email = ()) returns Use
 #
 # + statusArray - Array of the promotion cycle Status
 # + return - Array of Promotion Cycles
-public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? statusArray)
+public isolated function getPromotionCycles(PromotionCyclesStatus[]? statusArray)
     returns PromotionCycle[]|error {
 
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
