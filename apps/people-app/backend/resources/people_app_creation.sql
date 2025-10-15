@@ -225,7 +225,7 @@ CREATE TABLE `recruit` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `first_name` VARCHAR(255) NOT NULL,
   `last_name` VARCHAR(255) NOT NULL,
-  `work_email` VARCHAR(254) NULL,
+  `company_email` VARCHAR(254) NULL,
   `date_of_join` DATE NOT NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
@@ -338,3 +338,20 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Compensation table
+CREATE TABLE `compensation` (
+    `company_id` INT NOT NULL,
+    `employment_type_id` INT NOT NULL,
+    `compensation_data` JSON NOT NULL,
+
+    `created_on`TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_on` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (`employment_type_id`, `company_id`),
+
+    CONSTRAINT `fk_employment_type`
+        FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type`(`id`)
+
+    CONSTRAINT `fk_company`
+        FOREIGN KEY (`company_id`) REFERENCES `company`(`id`)
+);
