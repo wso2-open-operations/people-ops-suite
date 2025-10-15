@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# [Configurable] OAuth2 entity application configuration.
+# OAuth2 entity application configuration.
 type Oauth2Config record {|
     # OAuth2 token endpoint
     string tokenUrl;
@@ -37,41 +37,39 @@ public type GraphQlRetryConfig record {|
 |};
 
 // Get employee graphQL service Responses
-# [Employee Entity] Return record for single employee.
-#
-# + employeeId - Id of the employee  
-# + lastPromotedDate - Last Promoted Date  
-# + managerEmail - Manager email  
-# + firstName - First Name  
-# + lead - is employee a lead  
-# + reportsTo - Reporting lead's name  
-# + jobBand - Job Band  
-# + jobRole - Job Role  
-# + lastName - Last Name  
-# + startDate - Start date at WSO2  
-# + employeeStatus - Employee Status  
-# + businessUnit - Business unit of the employee  
-# + department - Employee's department  
-# + team - Employee's Team  
-# + subTeam - Employee's sub team  
-# + employeeThumbnail - Employee Thumbnail URL
-
+# Return record for single employee.
 public type Employee record {
+    # Id of the employee 
     string? employeeId = ();
+    # Last Promoted Date
     string? lastPromotedDate = ();
+    # Manager email
     string? managerEmail = ();
+    # First Name
     string firstName;
+    # is employee a lead
     boolean? lead = false;
+    # Reporting lead's name
     string? reportsTo = ();
+    # Job Band
     int? jobBand = ();
+    # Job Role
     string jobRole;
+    # Last Name
     string lastName;
+    # Start date at WSO2
     string startDate;
+    # Employee Status
     string? employeeStatus = ();
+    # Business unit of the employee
     string businessUnit;
+    # Employee's department
     string? department = ();
+    # Employee's Team
     string? team = ();
+    # Employee's sub team
     string? subTeam = ();
+    # Employee Thumbnail URL
     string? employeeThumbnail = ();
 };
 
@@ -92,10 +90,9 @@ public type EmployeesBasicInfo record {|
     string? employeeThumbnail;
 |};
 
-# [Employee Entity] Inner record for single employee.
-#
-# + employee - Employee Object
+# Inner record for single employee.
 type EmployeeData record {
+    # Employee Object
     Employee? employee = ();
 };
 
@@ -143,76 +140,64 @@ type EmployeesResponse record {
     EmployeesData data;
 };
 
-# [Employee Entity] Return record for single employee.
-#
-# + data - Employee Data Object
+# Return record for single employee.
 type EmployeeResults record {
+    # Employee Data Object
     EmployeeData data;
 };
 
-// GraphQL Responses
-// Get employee information response
-# Description
-#
-# + workEmail - WSO2 email  
-# + startDate - Start Date of at WSO2  
-# + jobBand - Job band of the employee  
-# + managerEmail - Manager email  
-# + joinedJobRole - Joined Job role  
-# + joinedBusinessUnit - Joined Business Unit  
-# + joinedDepartment - Joined Department  
-# + joinedTeam - Joined Team  
-# + joinedLocation - Joined Location  
-# + lastPromotedDate - Last Promoted Date  
-# + employeeThumbnail - Employee Thumbnail URL
+# Get employee information response
 public type EmployeeHistory record {
+    # WSO2 email 
     string workEmail;
+    # Start Date of at WSO2
     string startDate;
+    # Job band of the employee
     int? jobBand = ();
+    # Manager email
     string? managerEmail = "";
+    # Joined Job role
     string? joinedJobRole = "";
+    # Joined Business Unit
     string? joinedBusinessUnit = "";
+    # Joined Department 
     string? joinedDepartment = "";
+    # Joined Team
     string? joinedTeam = "";
+    # Joined Location
     string? joinedLocation = "";
+    # Last Promoted Date
     string? lastPromotedDate = "";
+    # Employee Thumbnail URL
     string? employeeThumbnail = "";
 };
 
-// Get employee history response
 # Employee history response
-#
-# + data - Employee history Data
 type EmployeeHistoryResponse record {
+    # Employee history Data
     EmployeeHistoryData data;
 };
 
-// Get employee history response
 # Employee history data
-#
-# + employee - Employee history record
 type EmployeeHistoryData record {
+    # Employee history record
     EmployeeHistory employee;
 };
 
-# [Employee Entity] Return record for single employee Name.
-#
-# + data - Employee thumbnail Data Object
+# Return record for single employee Name.
 type EmployeeThumbnailResult record {
+    # Employee thumbnail Data Object
     EmployeeThumbnailData data;
 };
 
-# [Employee Entity] Return record for single employee thumbnail.
-#
-# + employee - Employee thumbnail Object 
+# Return record for single employee thumbnail.
 type EmployeeThumbnailData record {
+    # Employee thumbnail Object
     EmployeeThumbnail? employee = ();
 };
 
-// API response for receiving the employee thumbnail from WSO2 email
-# [Employee Entity] Return record for single employee thumbnail.
-#
-# + employeeThumbnail - Thumbnail of the employee
+# eturn record for single employee thumbnail.
 public type EmployeeThumbnail record {
+    # Thumbnail of the employee
     string? employeeThumbnail = "";
 };
