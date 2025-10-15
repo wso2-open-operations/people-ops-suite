@@ -68,46 +68,42 @@ public type AppConfig record {|
 |};
 
 # Response type for GET employee-info.
-#
-# + employeeInfo - Employee Info record
 public type EmployeeInfo record {|
+    # Employee Info record
     EmployeeInfoWithLead employeeInfo;
     json...;
 |};
 
 # Employee information with reporting lead.
-#
-# + workEmail - WSO2 email  
-# + startDate - Start Date of at WSO2  
-# + jobBand - Job band of the employee  
-# + joinedJobRole - Joined Job role  
-# + joinedBusinessUnit - Joined Business Unit  
-# + joinedDepartment - Joined Department  
-# + joinedTeam - Joined Team  
-# + joinedLocation - Joined Location  
-# + lastPromotedDate - Last Promoted Date  
-# + employeeThumbnail - Employee Thumbnail URL
-# + reportingLead - Email of the reporting lead  
-# + reportingLeadThumbnail - Thumbnail of the reporting lead
 public type EmployeeInfoWithLead record {
+    # WSO2 email
     string workEmail;
+    # Start Date of at WSO2
     string startDate;
+    # Job band of the employee
     int? jobBand = ();
+    # Joined Job role
     string? joinedJobRole = "";
+    # Joined Business Unit
     string? joinedBusinessUnit = "";
+    # Joined Department
     string? joinedDepartment = "";
+    # Joined Team
     string? joinedTeam = "";
+    # Joined Location
     string? joinedLocation = "";
+    # Last Promoted Date
     string? lastPromotedDate = "";
+    # Employee Thumbnail URL
     string? employeeThumbnail = "";
+    # Email of the reporting lead
     string reportingLead;
+    # Thumbnail of the reporting lead
     string reportingLeadThumbnail;
 };
 
-// Response type for GET promotion/requests.
-# [Return] Result object of the get user promotion requests resource function.
-#
-# + promotionRequests - array of promotion requests
+# Result object of the get user promotion requests resource function.
 type Promotions record {
+    # array of promotion requests
     database:FullPromotion[] promotionRequests;
 };
