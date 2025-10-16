@@ -40,7 +40,7 @@ isolated function buildSqlSelectQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
-# use for process user permissions
+# use for process user permissions.
 #
 # + permissions - user permission string
 # + return - Return Value Description
@@ -58,7 +58,7 @@ public isolated function processPermissions(string? permissions) returns Functio
     return check permissionJSON.cloneWithType(FunctionalLeadAccessLevels);
 };
 
-# Helper function to user has roles
+# Helper function to user has roles.
 #
 # + requiredRole - Required Role list  
 # + userRoles - Roles list, the user has 

@@ -40,7 +40,7 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns error
     return response.data.employee;
 }
 
-# Retrieve the Probational Employee data
+# Retrieve the Probational Employee data.
 #
 # + workEmail - WSO2 Email
 # + return - Employee Info

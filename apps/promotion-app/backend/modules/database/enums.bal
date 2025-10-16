@@ -1,4 +1,4 @@
-// Promotion Application User Roles
+// Promotion Application User Roles.
 public enum Role {
     HR_ADMIN,
     PROMOTION_BOARD_MEMBER,

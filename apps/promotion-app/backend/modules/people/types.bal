@@ -36,7 +36,7 @@ public type GraphQlRetryConfig record {|
     decimal maxWaitInterval = RETRY_MAX_INTERVAL;
 |};
 
-// Get employee graphQL service Responses
+// Get employee graphQL service Responses.
 # Return record for single employee.
 public type Employee record {
     # Id of the employee 
@@ -146,7 +146,7 @@ type EmployeeResults record {
     EmployeeData data;
 };
 
-# Get employee information response
+# Get employee information response.
 public type EmployeeHistory record {
     # WSO2 email 
     string workEmail;
@@ -172,13 +172,13 @@ public type EmployeeHistory record {
     string? employeeThumbnail = "";
 };
 
-# Employee history response
+# Employee history response.
 type EmployeeHistoryResponse record {
     # Employee history Data
     EmployeeHistoryData data;
 };
 
-# Employee history data
+# Employee history data.
 type EmployeeHistoryData record {
     # Employee history record
     EmployeeHistory employee;

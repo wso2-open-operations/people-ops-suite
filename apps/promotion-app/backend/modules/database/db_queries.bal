@@ -15,7 +15,7 @@
 // under the License. 
 import ballerina/sql;
 
-# Retrieving users data query
+# Retrieving users data query.
 #
 # + id - User id 
 # + email - User email
@@ -44,7 +44,7 @@ isolated function getUsersQuery(int? id = (), string? email = ()) returns sql:Pa
         filters.push(<sql:ParameterizedQuery>` user_email = ${email}`);
     }
 
-    // TODO : move this functionality to separate function
+    // TODO : move this functionality to separate function.
     if filters.length() > 0 {
         boolean firstCondition = true;
         foreach sql:ParameterizedQuery condition in filters {
@@ -60,7 +60,7 @@ isolated function getUsersQuery(int? id = (), string? email = ()) returns sql:Pa
     return sqlQuery;
 }
 
-# Get Promotion cycle by status
+# Get Promotion cycle by status.
 #
 # + statusArray - Array of the promotion cycle status
 # + return - sql:ParameterizedQuery - Get promotion cycles by given status 
@@ -88,7 +88,7 @@ isolated function getPromotionCyclesByStatusQuery(PromotionCyclesStatus[]? statu
     return sqlQuery;
 }
 
-# Get User Promotion Request Query
+# Get User Promotion Request Query.
 #
 # + employeeEmail - Work Email  
 # + statusArray - Array of promotion Request Status  
@@ -228,12 +228,12 @@ isolated function getUserPromotionRequestsQuery(string? employeeEmail, string[]?
         sqlQuery = sql:queryConcat(sqlQuery, ` AND promotion_request_employee_email = ${employeeEmail} `);
     }
 
-    //Order By promotion cycle (desc)
+    //Order By promotion cycle (desc).
     sqlQuery = sql:queryConcat(sqlQuery, ` ORDER BY pr.promotion_cycle_id desc `);
     return sqlQuery;
 }
 
-# Get Promotion Recommendation Query
+# Get Promotion Recommendation Query.
 #
 # + id - Recommendation ID  
 # + employeeEmail - Recommendation requestor email  
@@ -299,7 +299,7 @@ isolated function getFullPromotionRecommendationsQuery(int? id, string? employee
         sqlQuery = sql:queryConcat(sqlQuery, ` AND pr.promotion_request_id = ${promotionRequestId} `);
     }
 
-    //Order By promotion cycle (desc)
+    //Order By promotion cycle (desc).
     sqlQuery = sql:queryConcat(sqlQuery, ` ORDER BY pr.promotion_cycle_id desc `);
 
     return sqlQuery;

@@ -17,7 +17,7 @@ import ballerina/lang.regexp as regex;
 import ballerina/log;
 import ballerina/sql;
 
-# Retrieving user by id
+# Retrieving user by id.
 #
 # + id - User id 
 # + email - User email 
@@ -66,7 +66,7 @@ public isolated function getUser(int? id = (), string? email = ()) returns User|
     return userRes;
 }
 
-# Get Promotion Cycles By Status
+# Get Promotion Cycles By Status.
 #
 # + statusArray - Array of the promotion cycle Status
 # + return - Array of Promotion Cycles
@@ -123,7 +123,7 @@ public isolated function getPromotions(string? employeeEmail = (), string[]? sta
     return promotions;
 }
 
-# Retrieving promotion recommendations
+# Retrieving promotion recommendations.
 #
 # + id - Recommendation ID  
 # + promotionRequestId - Promotion Request Id  

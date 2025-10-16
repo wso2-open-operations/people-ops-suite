@@ -30,29 +30,29 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
     return requiredRoles.every(role => userRolesReadOnly.indexOf(role) !is ());
 }
 
-# Split Lead Email
+# Split Lead Email.
 #
 # + email - User's email address
 # + return - Object containing user's roles, employee data, and access levels
 public isolated function getUserPrivileges(string email) returns UserAppPrivilege|error {
 
-    // Fetch user record from the database using the provided email
+    // Fetch user record from the database using the provided email.
     database:User? applicationUser = check database:getUser(email = email);
 
-    // Retrieve corresponding employee data from the People service using the same email
+    // Retrieve corresponding employee data from the People service using the same email.
     people:Employee employeeData = check people:getEmployee(workEmail = email);
 
     UserAppPrivilege userAppPrivileges = {
-        // Assign user roles if user exists; otherwise, use an empty list
+        // Assign user roles if user exists; otherwise, use an empty list.
         roles: applicationUser !is () ? applicationUser.roles : [],
 
         employeeData: employeeData,
 
-        // Assign functional lead access levels if user exists; otherwise, use unit value (())
+        // Assign functional lead access levels if user exists; otherwise, use unit value (()).
         functionalLeadAccessLevels: applicationUser !is () ? applicationUser.functionalLeadAccessLevels : ()
     };
 
-    // If the employee is marked as a lead, append the LEAD role to their roles list
+    // If the employee is marked as a lead, append the LEAD role to their roles list.
     if employeeData.lead == true {
         userAppPrivileges.roles.push(<database:Role>database:LEAD);
     }
