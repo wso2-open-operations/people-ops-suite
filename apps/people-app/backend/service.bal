@@ -170,6 +170,70 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
+    # Get Business Units.
+    # + return - Business Units
+    resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
+        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
+        if businessUnits is error {
+            string customErr = "Error while fetching Business Units";
+            log:printError(customErr, businessUnits);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return businessUnits;
+    }
+
+    # Get Teams.
+    # + return - Teams
+    resource function get teams() returns database:Team[]|http:InternalServerError {
+        database:Team[]|error teams = database:getTeams();
+        if teams is error {
+            string customErr = "Error while fetching Teams";
+            log:printError(customErr, teams);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return teams;
+    }
+
+    # Get Sub teams.
+    # + return - Sub teams
+    resource function get sub\-teams() returns database:SubTeam[]|http:InternalServerError {
+        database:SubTeam[]|error subTeams = database:getSubTeams();
+        if subTeams is error {
+            string customErr = "Error while fetching Sub Teams";
+            log:printError(customErr, subTeams);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return subTeams;
+    }
+
+    # Get Units.
+    # + return - Units
+    resource function get units() returns database:Unit[]|http:InternalServerError {
+        database:Unit[]|error units = database:getUnits();
+        if units is error {
+            string customErr = "Error while fetching Units";
+            log:printError(customErr, units);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return units;
+    }
+
     # Update employee personal information.
     #
     # + id - Employee ID
