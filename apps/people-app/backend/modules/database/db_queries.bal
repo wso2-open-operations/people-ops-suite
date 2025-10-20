@@ -112,24 +112,24 @@ isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
 # + return - Teams query
 isolated function getTeamsQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-         id,
-         name
+        id,
+        name
      FROM team;`;
 
 # Get sub teams query.
 # + return - sub teams query
 isolated function getSubTeamsQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-         id,
-         name
+        id,
+        name
      FROM sub_team;`;
 
 # Get units query.
 # + return - Units query
 isolated function getUnitsQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-         id,
-         name
+        id,
+        name
      FROM unit;`;
 
 # Update employee personal information query.
