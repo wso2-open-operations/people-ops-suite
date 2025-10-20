@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/sql;
+import ballerina/time;
 
 # Build query to persist a visitor.
 #
@@ -283,6 +284,14 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
 
     if payload.actionedBy is string {
         filters.push(`actioned_by = ${payload.actionedBy}`);
+    }
+
+    if payload.timeOfEntry is time:Utc {
+        filters.push(`time_of_entry = ${payload.timeOfEntry}`);
+    }
+
+    if payload.timeOfDeparture is time:Utc {
+        filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
     }
 
     // Setting the updated_by field to record who performed the update, for audit purposes.
