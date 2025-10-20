@@ -170,8 +170,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
-    # Get Business Units.
-    # + return - Business Units
+    # Get business units.
+    # + return - Business units
     resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
         database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
         if businessUnits is error {
@@ -186,7 +186,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return businessUnits;
     }
 
-    # Get Teams.
+    # Get teams.
     # + return - Teams
     resource function get teams() returns database:Team[]|http:InternalServerError {
         database:Team[]|error teams = database:getTeams();
@@ -202,7 +202,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return teams;
     }
 
-    # Get Sub teams.
+    # Get sub teams.
     # + return - Sub teams
     resource function get sub\-teams() returns database:SubTeam[]|http:InternalServerError {
         database:SubTeam[]|error subTeams = database:getSubTeams();
@@ -218,7 +218,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return subTeams;
     }
 
-    # Get Units.
+    # Get units.
     # + return - Units
     resource function get units() returns database:Unit[]|http:InternalServerError {
         database:Unit[]|error units = database:getUnits();
