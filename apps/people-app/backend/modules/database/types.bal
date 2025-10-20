@@ -178,7 +178,7 @@ public type SubTeam record {|
     string name;
 |};
 
-# Unit record type
+# Unit.
 public type Unit record {|
     # Unit ID
     int id;
