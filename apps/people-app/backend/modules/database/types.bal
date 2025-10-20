@@ -154,6 +154,38 @@ public type EmployeePersonalInfo record {|
     string? nationality;
 |};
 
+# Business unit.
+public type BusinessUnit record {|
+    # Business unit ID
+    int id;
+    # Business unit name
+    string name;
+|};
+
+# Team.
+public type Team record {|
+    # Team ID
+    int id;
+    # Team name
+    string name;
+|};
+
+# Sub team.
+public type SubTeam record {|
+    # Sub team ID
+    int id;
+    # Sub team name
+    string name;
+|};
+
+# Unit.
+public type Unit record {|
+    # Unit ID
+    int id;
+    # Unit name
+    string name;
+|};
+
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
     # Personal email address

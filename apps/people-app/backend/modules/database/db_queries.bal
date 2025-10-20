@@ -100,6 +100,38 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
 
+# Get business units query.
+# + return - Business units query
+isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+    FROM business_unit;`;
+
+# Get teams query.
+# + return - Teams query
+isolated function getTeamsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+     FROM team;`;
+
+# Get sub teams query.
+# + return - sub teams query
+isolated function getSubTeamsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+     FROM sub_team;`;
+
+# Get units query.
+# + return - Units query
+isolated function getUnitsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+     FROM unit;`;
+
 # Update employee personal information query.
 #
 # + id - Personal info ID

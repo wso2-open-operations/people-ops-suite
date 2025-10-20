@@ -27,7 +27,7 @@ public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasi
 # Fetch employee detailed information.
 #
 # + id - Employee ID
-# + return - Get employee detailed information
+# + return - Employee detailed information
 public isolated function getEmployeeInfo(string id) returns Employee|error? {
     Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
@@ -36,10 +36,43 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
 # Fetch employee personal information.
 #
 # + id - Employee ID
-# + return - Get employee personal information
+# + return - Employee personal information
 public isolated function getEmployeePersonalInfo(string id) returns EmployeePersonalInfo|error? {
     EmployeePersonalInfo|error employeePersonalInfo = databaseClient->queryRow(getEmployeePersonalInfoQuery(id));
     return employeePersonalInfo is sql:NoRowsError ? () : employeePersonalInfo;
+}
+
+# Get business units.
+#
+# + return - Business units
+public isolated function getBusinessUnits() returns BusinessUnit[]|error {
+    stream<BusinessUnit, error?> businessUnitsStream = databaseClient->query(getBusinessUnitsQuery());
+    return from BusinessUnit businessUnit in businessUnitsStream
+        select businessUnit;
+}
+
+# Get teams.
+# + return - Teams
+public isolated function getTeams() returns Team[]|error {
+    stream<Team, error?> teamsStream = databaseClient->query(getTeamsQuery());
+    return from Team team in teamsStream
+        select team;
+}
+
+# Get sub teams.
+# + return - Sub teams
+public isolated function getSubTeams() returns SubTeam[]|error {
+    stream<SubTeam, error?> subTeamsStream = databaseClient->query(getSubTeamsQuery());
+    return from SubTeam subTeam in subTeamsStream
+        select subTeam;
+}
+
+# Get units.
+# + return - Units
+public isolated function getUnits() returns Unit[]|error {
+    stream<Unit, error?> unitsStream = databaseClient->query(getUnitsQuery());
+    return from Unit unit in unitsStream
+        select unit;
 }
 
 # Update employee personal information.
