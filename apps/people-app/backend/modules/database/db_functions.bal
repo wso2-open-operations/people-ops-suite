@@ -62,7 +62,7 @@ public isolated function getTeams(int? buId = ()) returns Team[]|error {
 }
 
 # Get sub teams.
-#-
+#
 # + teamId - Team ID (optional)
 # + return - Sub teams
 public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
@@ -72,7 +72,7 @@ public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
 }
 
 # Get units.
-#-
+#
 # + subTeamId - Sub team ID (optional)
 # + return - Units
 public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
