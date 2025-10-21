@@ -52,25 +52,31 @@ public isolated function getBusinessUnits() returns BusinessUnit[]|error {
 }
 
 # Get teams.
+#
+# + buId - Business unit ID (optional)
 # + return - Teams
-public isolated function getTeams() returns Team[]|error {
-    stream<Team, error?> teamsStream = databaseClient->query(getTeamsQuery());
+public isolated function getTeams(int? buId = ()) returns Team[]|error {
+    stream<Team, error?> teamsStream = databaseClient->query(getTeamsQuery(buId));
     return from Team team in teamsStream
         select team;
 }
 
 # Get sub teams.
+#
+# + teamId - Team ID (optional)
 # + return - Sub teams
-public isolated function getSubTeams() returns SubTeam[]|error {
-    stream<SubTeam, error?> subTeamsStream = databaseClient->query(getSubTeamsQuery());
+public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
+    stream<SubTeam, error?> subTeamsStream = databaseClient->query(getSubTeamsQuery(teamId));
     return from SubTeam subTeam in subTeamsStream
         select subTeam;
 }
 
 # Get units.
+#
+# + subTeamId - Sub team ID (optional)
 # + return - Units
-public isolated function getUnits() returns Unit[]|error {
-    stream<Unit, error?> unitsStream = databaseClient->query(getUnitsQuery());
+public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
+    stream<Unit, error?> unitsStream = databaseClient->query(getUnitsQuery(subTeamId));
     return from Unit unit in unitsStream
         select unit;
 }

@@ -109,28 +109,57 @@ isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
     FROM business_unit;`;
 
 # Get teams query.
+#
+# + buId - Business unit ID (optional)
 # + return - Teams query
-isolated function getTeamsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        name
-     FROM team;`;
+isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            t.id, t.name
+        FROM
+            team t
+        LEFT JOIN 
+            business_unit_team but ON but.team_id = t.id`;
+
+    if buId is int {
+        query = sql:queryConcat(query, ` WHERE but.business_unit_id = ${buId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 
 # Get sub teams query.
-# + return - sub teams query
-isolated function getSubTeamsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        name
-     FROM sub_team;`;
+#
+# + teamId - Team ID (optional)
+# + return - Sub teams query
+isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            st.id, st.name
+        FROM
+            sub_team st
+        LEFT JOIN business_unit_team_sub_team butst ON butst.sub_team_id = st.id`;
+    if teamId is int {
+        query = sql:queryConcat(query, ` WHERE butst.business_unit_team_id = ${teamId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 
 # Get units query.
+#
+# + subTeamId - Sub team ID (optional)
 # + return - Units query
-isolated function getUnitsQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
-        id,
-        name
-     FROM unit;`;
+isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            u.id, u.name
+        FROM
+            unit u
+        LEFT JOIN business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id`;
+    if subTeamId is int {
+        query = sql:queryConcat(query, ` WHERE butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 
 # Update employee personal information query.
 #

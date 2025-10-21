@@ -187,9 +187,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get teams.
+    # 
+    # + buId - Business unit ID (optional)
     # + return - Teams
-    resource function get teams() returns database:Team[]|http:InternalServerError {
-        database:Team[]|error teams = database:getTeams();
+    resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
+        database:Team[]|error teams = database:getTeams(buId);
         if teams is error {
             string customErr = "Error while fetching Teams";
             log:printError(customErr, teams);
@@ -203,9 +205,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get sub teams.
+    # 
+    # + teamId - Team ID (optional)
     # + return - Sub teams
-    resource function get sub\-teams() returns database:SubTeam[]|http:InternalServerError {
-        database:SubTeam[]|error subTeams = database:getSubTeams();
+    resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
+        database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
         if subTeams is error {
             string customErr = "Error while fetching Sub Teams";
             log:printError(customErr, subTeams);
@@ -219,9 +223,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get units.
+    # 
+    # + subTeamId - Sub team ID (optional)
     # + return - Units
-    resource function get units() returns database:Unit[]|http:InternalServerError {
-        database:Unit[]|error units = database:getUnits();
+    resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
+        database:Unit[]|error units = database:getUnits(subTeamId);
         if units is error {
             string customErr = "Error while fetching Units";
             log:printError(customErr, units);
