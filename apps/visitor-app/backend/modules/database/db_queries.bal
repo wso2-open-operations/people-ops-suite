@@ -113,6 +113,7 @@ isolated function fetchInvitationQuery(string encodeValue) returns sql:Parameter
             is_active AS active,
             no_of_visitors AS noOfVisitors,
             visit_info AS visitInfo,
+            type,
             created_by AS createdBy,
             created_on AS createdOn,
             updated_by AS updatedBy,

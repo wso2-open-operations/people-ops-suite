@@ -210,6 +210,8 @@ public type InvitationRecord record {|
     string? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Invitation.
@@ -227,6 +229,8 @@ public type Invitation record {|
     VisitInfo? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Visit information of invitation.

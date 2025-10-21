@@ -478,7 +478,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 nicNumber: visit.nicNumber
             };
 
-        invitation.invitees = inviteesList;
+        if invitation.'type == "LK-QR" {
+            invitation.invitees = [];
+        } else {
+            invitation.invitees = inviteesList;
+        }
+
         return <http:Ok>{
             body: invitation
         };
@@ -510,10 +515,68 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
         if invitation.active == false {
             return <http:BadRequest>{
                 body: {
                     message: "Invitation is no longer active!"
+                }
+            };
+        }
+
+        database:VisitInfo? invitationVisitInfo = invitation.visitInfo;
+        database:VisitInfo newVisitInfo = {
+            companyName: payload.companyName,
+            whomTheyMeet: payload.whomTheyMeet,
+            purposeOfVisit: payload.purposeOfVisit,
+            timeOfEntry: payload.timeOfEntry,
+            timeOfDeparture: payload.timeOfDeparture
+        };
+
+        // Handle LK-QR invitation.
+        if invitation.'type == "LK-QR" {
+            // Persist new visitor.
+            error? visitorError = database:addVisitor(
+                    {
+                        nicHash: payload.nicHash,
+                        name: payload.name,
+                        nicNumber: payload.nicNumber,
+                        contactNumber: payload.contactNumber,
+                        email: payload.email
+                    }, invitation.createdBy);
+
+            if visitorError is error {
+                string customError = "Error occurred while adding visitor!";
+                log:printError(customError, visitorError);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            // Persist new visit.
+            error? visitError = database:addVisit(
+                    {
+                        ...newVisitInfo,
+                        nicHash: payload.nicHash,
+                        status: database:REQUESTED
+                    }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
+
+            if visitError is error {
+                string customError = "Error occurred while adding visit!";
+                log:printError(customError, visitError);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            // TODO : Send LK-QR specific email notification.
+            return <http:Created>{
+                body: {
+                    message: "Visit added successfully!"
                 }
             };
         }
@@ -529,7 +592,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
         if existingVisitors.totalCount >= invitation.noOfVisitors {
             return <http:BadRequest>{
                 body: {
@@ -537,15 +599,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
-        database:VisitInfo? invitationVisitInfo = invitation.visitInfo;
-        database:VisitInfo newVisitInfo = {
-            companyName: payload.companyName,
-            whomTheyMeet: payload.whomTheyMeet,
-            purposeOfVisit: payload.purposeOfVisit,
-            timeOfEntry: payload.timeOfEntry,
-            timeOfDeparture: payload.timeOfDeparture
-        };
 
         // Verify if the visit details are provided previously matched with the newly provided visit details
         if invitationVisitInfo is database:VisitInfo && invitationVisitInfo != newVisitInfo {
@@ -872,8 +925,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
             error? response = database:updateVisit(visitId,
                     {
-                        status: database:COMPLETED, 
-                        actionedBy: invokerInfo.email, 
+                        status: database:COMPLETED,
+                        actionedBy: invokerInfo.email,
                         timeOfDeparture: time:utcNow()
                     }, invokerInfo.email);
 
