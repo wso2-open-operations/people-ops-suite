@@ -75,19 +75,9 @@ public isolated function getPromotionCycles(PromotionCyclesStatus[]? statusArray
 
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
-    PromotionCycle[] cycles = [];
-    error? queryError = from PromotionCycle promotionCycle in resultStream
-        do {
-            cycles.push(promotionCycle);
-        };
-
-    if queryError is error {
-        _ = check resultStream.close();
-        log:printError(queryError.toString());
-        return error("An error occurred while retrieving promotion cycles");
-    }
-
-    return cycles;
+    //PromotionCycle[] cycles = [];
+       return from PromotionCycle promotionCycle in resultStream
+       select promotionCycle;
 }
 
 # Retrieving full promotion.  
@@ -132,7 +122,7 @@ public isolated function getPromotions(string? employeeEmail = (), string[]? sta
 # + statusArray - Array of Promotion Recommendation Status  
 # + cycleID - Cycle ID
 # + return - Array of Promotion Requests
-public isolated function getFullPromotionRecommendations(int? id = (), int? promotionRequestId = (),
+public isolated function getRecommendations(int? id = (), int? promotionRequestId = (),
         string? employeeEmail = (), string? leadEmail = (), string[]? statusArray = (), int? cycleID = ())
     returns FullPromotionRecommendation[]|error {
 
