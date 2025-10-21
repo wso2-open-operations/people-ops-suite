@@ -43,21 +43,10 @@ isolated function getUsersQuery(int? id = (), string? email = ()) returns sql:Pa
     if email is string {
         filters.push(<sql:ParameterizedQuery>` user_email = ${email}`);
     }
+    
+    sql:ParameterizedQuery updatedQuery = buildSqlSelectQuery(sqlQuery,filters);
 
-    // TODO : move this functionality to separate function.
-    if filters.length() > 0 {
-        boolean firstCondition = true;
-        foreach sql:ParameterizedQuery condition in filters {
-            if firstCondition {
-                sqlQuery = sql:queryConcat(sqlQuery, ` WHERE `, condition);
-                firstCondition = false;
-            } else {
-                sqlQuery = sql:queryConcat(sqlQuery, ` AND `, condition);
-            }
-        }
-    }
-
-    return sqlQuery;
+    return updatedQuery;
 }
 
 # Get Promotion cycle by status.
