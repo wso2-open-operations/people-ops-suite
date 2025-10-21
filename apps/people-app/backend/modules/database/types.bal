@@ -13,6 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
 
@@ -87,7 +89,7 @@ public type Employee record {|
     # Employee status
     string employeeStatus;
     # Length of service
-    int lengthOfService;
+    int? lengthOfService;
     # Relocation status
     string? relocationStatus;
     # Subordinate count
@@ -189,17 +191,23 @@ public type Unit record {|
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
     # Personal email address
-    string? personalEmail;
+    @constraint:String {maxLength: 254, pattern: re `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`}
+    string? personalEmail = ();
     # Personal phone number
-    string? personalPhone;
+    @constraint:String {pattern: re `^[0-9+\-() \s]{6,20}$`}
+    string? personalPhone = ();
     # Home phone number
-    string? homePhone;
+    @constraint:String {pattern: re `^[0-9+\-() \s]{6,20}$`}
+    string? homePhone = ();
     # Home address
-    string? address;
+    @constraint:String {maxLength: 255}
+    string? address = ();
     # Postal code
-    string? postalCode;
+    @constraint:String {maxLength: 20}
+    string? postalCode = ();
     # Country of residence
-    string? country;
+    @constraint:String {maxLength: 100}
+    string? country = ();
 |};
 
 # [Database] Insert type for vehicle.
