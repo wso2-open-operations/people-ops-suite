@@ -75,9 +75,8 @@ public isolated function getPromotionCycles(PromotionCyclesStatus[]? statusArray
 
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
-    //PromotionCycle[] cycles = [];
-       return from PromotionCycle promotionCycle in resultStream
-       select promotionCycle;
+    return from PromotionCycle promotionCycle in resultStream
+    select promotionCycle;
 }
 
 # Retrieving full promotion.  
