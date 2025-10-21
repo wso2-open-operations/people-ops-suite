@@ -184,7 +184,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         foreach database:Promotion promotionRequest in PromotionArray {
 
             // Retrieve promotion recommendations for a specific promotion request.
-            database:FullPromotionRecommendation[]|error promotionRecommendationsArray = database:getFullPromotionRecommendations(
+            database:FullPromotionRecommendation[]|error promotionRecommendationsArray = database:getRecommendations(
                     promotionRequestId = promotionRequest.id);
 
             if promotionRecommendationsArray is error {
