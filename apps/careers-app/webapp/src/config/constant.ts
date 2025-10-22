@@ -15,9 +15,13 @@
 // under the License. 
 
 export const SnackMessage = {
-  success: {
+    success: {
+    applicantCreate: "Applicant profile created successfully!",
   },
   error: {
+    applicantCreate: "Failed to create applicant.",
+    applicantUnknown: "An unknown error occurred.",
+    formValidation: "Please fill all required fields before saving.",
     fetchPrivileges: "Failed to fetch Privileges",
     insufficientPrivileges: "Insufficient Privileges",
     fetchAppConfigMessage: "Unable to retrieve app configurations",

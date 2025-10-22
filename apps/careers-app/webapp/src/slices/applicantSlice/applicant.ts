@@ -20,6 +20,7 @@ import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { SnackMessage } from "@config/constant";
 
 export interface ApplicantPayload {
   first_name: string;
@@ -91,7 +92,7 @@ export const createApplicant = createAsyncThunk(
       );
       dispatch(
         enqueueSnackbarMessage({
-          message: "Applicant profile created successfully!",
+          message: SnackMessage.success.applicantCreate,
           type: "success",
         })
       );
@@ -102,8 +103,8 @@ export const createApplicant = createAsyncThunk(
           enqueueSnackbarMessage({
             message:
               error.response?.status === HttpStatusCode.InternalServerError
-                ? "Failed to create applicant."
-                : error.response?.data?.message || "An unknown error occurred.",
+                ? SnackMessage.error.applicantCreate
+                : error.response?.data?.message || SnackMessage.error.applicantUnknown,
             type: "error",
           })
         );
