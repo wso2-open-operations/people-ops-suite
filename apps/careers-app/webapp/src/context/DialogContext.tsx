@@ -83,7 +83,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
   const [content, setContent] = useState<{
     title: string;
     message: string | JSX.Element;
-    type: "update" | "send" | "upload" | "accept";
+    type: ConfirmationType;
     action: (value?: string) => void;
     okText?: string;
     cancelText?: string;
@@ -91,14 +91,14 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
   }>({
     title: "",
     message: "",
-    type: "send",
+    type: ConfirmationType.send,
     action: () => {},
   });
 
   const handleShow = (
     title: string,
     message: string | JSX.Element,
-    type: "update" | "send" | "upload" | "accept",
+    type: ConfirmationType,
     action: (value?: string) => void,
     okText?: string,
     cancelText?: string,
@@ -134,7 +134,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
     setContent({
       title: "",
       message: "",
-      type: "accept",
+      type: ConfirmationType.accept,
       action: () => {},
       okText: undefined,
       cancelText: undefined,
