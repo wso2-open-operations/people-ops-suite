@@ -37,6 +37,9 @@
       ],
       "@/types/*": [
         "./src/types/*"
+      ],
+      "@modals/*": [
+        "./src/view/applicants/components/modals/*"
       ]
     }
   }

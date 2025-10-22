@@ -15,6 +15,7 @@ module.exports = function override(config) {
     "@view": path.resolve(__dirname, "src/view"),
     "@utils": path.resolve(__dirname, "src/utils"),
     "@/types": path.resolve(__dirname, "src/types"),
+    "@modals": path.resolve(__dirname, "src/view/applicants/components/modals"),
   };
   return config;
 };
