@@ -482,4 +482,225 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    # Fetch a specific recruit.
+    #
+    # + id - ID of the recruit to fetch
+    # + return - Recruit | NotFound | InternalServerError
+    resource function get recruits/[int id](http:RequestContext ctx)
+        returns database:Recruit|http:Forbidden|http:InternalServerError|http:NotFound {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        database:Recruit|error? recruit = database:fetchRecruitById(id);
+
+        if recruit is error {
+            string customError = "Error occurred while fetching recruit";
+            log:printError(customError, recruit);
+            return <http:InternalServerError>{
+                body: {message: customError}
+            };
+        }
+
+        if recruit is () {
+            string customError = "Recruit Not Found";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {message: customError}
+            };
+        }
+
+        return recruit;
+    }
+
+    # Fetch all recruits.
+    #
+    #
+    # + return - List of recruits | Forbidden |  NotFound | InternalServerError
+    resource function get recruits(http:RequestContext ctx)
+        returns database:Recruit[]|http:Forbidden|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        database:Recruit[]|error recruits = database:fetchRecruits();
+
+        if recruits is error {
+            string customError = "Error occurred while fetching recruits";
+            log:printError(customError, recruits);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return recruits;
+    }
+
+    # Add a recruit.
+    #
+    # + recruit - Recruit details
+    # + return - Created | Forbidden | InternalServerError
+    resource function post recruits(http:RequestContext ctx, database:AddRecruitPayload recruit)
+        returns http:Created|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        int|error recruitId = database:addRecruit(recruit, userInfo.email);
+        if recruitId is error {
+            string customError = "Failed to add recruit!";
+            log:printError(customError, recruitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return http:CREATED;
+    }
+
+    # Update recruit info.
+    #
+    # + id - Recruit ID
+    # + recruit - Payload with changed fields
+    # + return - Ok | BadRequest | InternalServerError
+    resource function patch recruits/[int id](http:RequestContext ctx, database:UpdateRecruitPayload recruit)
+        returns http:Ok|http:BadRequest|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        boolean|error result = database:updateRecruit(id, recruit);
+
+        if result is error {
+            string customError = "Error while updating recruit info";
+            log:printError(customError, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        return http:OK;
+    }
+
+    # Endpoint to delete a recruit by ID.
+    #
+    # + id - ID of the recruit to delete
+    # + return - Ok | NotFound | InternalServerError
+    resource function delete recruits/[int id](http:RequestContext ctx)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.RECRUITMENT_TEAM_ROLE], userInfo.groups) {
+            log:printWarn(string `${UNAUTHORIZED_REQUEST} email: ${userInfo.email} groups: ${
+                    userInfo.groups.toString()}`);
+            return <http:Forbidden>{
+                body: {
+                    message: UNAUTHORIZED_REQUEST
+                }
+            };
+        }
+
+        database:Recruit|error? recruit = database:fetchRecruitById(id);
+
+        if recruit is () {
+            string customError = "Recruit Not Found";
+            log:printError(customError);
+            return <http:NotFound>{
+                body: {message: customError}
+            };
+        }
+
+        boolean|error deleteResult = database:deleteRecruitById(id);
+
+        if deleteResult is error {
+            string customError = "Error occurred while deleting recruit";
+            log:printError(customError, deleteResult);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return http:OK;
+    }
+
 }

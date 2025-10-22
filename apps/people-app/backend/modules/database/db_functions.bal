@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -148,4 +149,54 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
         return true;
     }
     return false;
+}
+
+# Function to fetch a recruit by ID.
+#
+# + recruitId - ID of the recruit to fetch
+# + return - Recruit or an error or null if not found
+public isolated function fetchRecruitById(int recruitId) returns Recruit|error? {
+    Recruit|error result = databaseClient->queryRow(getRecruitByIdQuery(recruitId));
+    if result is sql:NoRowsError {
+        return;
+    }
+    return result;
+}
+
+# Function to fetch all recruits.
+#
+# + return - Array of recruits or an error
+public isolated function fetchRecruits() returns Recruit[]|error {
+    stream<Recruit, error?> recruitsResponse = databaseClient->query(getRecruitsQuery());
+    return from Recruit recruit in recruitsResponse
+        select recruit;
+}
+
+# Persist new recruit in DB.
+#
+# + recruit - Recruit payload
+# + createdBy - User who creates the recruit entry
+# + return - ID of the newly created recruit or an error
+public isolated function addRecruit(AddRecruitPayload recruit, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addRecruitQuery(recruit, createdBy));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Update recruit info dynamically based on changed fields.
+#
+# + id - Recruit ID
+# + recruit - Recruit payload with updated fields
+# + return - error or null
+public isolated function updateRecruit(int id, UpdateRecruitPayload recruit) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(updateRecruitQuery(id, recruit));
+    return result.affectedRowCount > 0;
+}
+
+# Function to delete a recruit.
+#
+# + recruitId - ID of the recruit to delete
+# + return - true if deletion was successful, false if no rows were affected, or an error
+public isolated function deleteRecruitById(int recruitId) returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(deleteRecruitByIdQuery(recruitId));
+    return result.affectedRowCount > 0;
 }

@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
+import ballerina/time;
 
 # Fetch employee basic information.
 #
@@ -292,3 +293,234 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+# Retrieves a parameterized SQL query to fetch a recruit by their ID.
+#
+# + recruitId - The ID of the recruit to fetch.
+# + return - A parameterized query that returns the recruit record with the specified ID and their compensation data
+isolated function getRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
+    SELECT 
+        r.id AS id,
+        r.first_name AS firstName,
+        r.last_name AS lastName,
+        r.work_email AS workEmail,
+        r.date_of_join AS dateOfJoin,
+        r.probation_end_date AS probationEndDate,
+        r.agreement_end_date AS agreementEndDate,
+        r.employee_location AS employeeLocation,
+        r.work_location AS workLocation,
+        r.reports_to AS reportsTo,
+        r.manager_email AS managerEmail,
+        r.compensation AS compensation,
+        r.additional_comments AS additionalComments,
+        r.status AS status,
+        bu.name AS businessUnit,
+        u.name AS unit,
+        t.name AS team,
+        st.name AS subTeam,
+        c.name AS company,
+        o.name AS office,
+        et.name AS employmentType,
+        d.designation AS designation,
+        r.personal_info_id AS personalInfoId
+    FROM recruit r
+        JOIN business_unit bu ON r.business_unit = bu.id
+        LEFT JOIN unit u ON r.unit = u.id
+        JOIN team t ON r.team = t.id
+        JOIN sub_team st ON r.sub_team = st.id
+        JOIN company c ON r.company = c.id
+        JOIN office o ON r.office = o.id
+        JOIN employment_type et ON r.employment_type = et.id
+        JOIN designation d ON r.designation_id = d.id
+    WHERE r.id = ${recruitId};
+`;
+
+# Retrieves a parameterized SQL query to fetch all recruits.
+#
+# + return - A parameterized query that returns all recruit records with their compensation data
+isolated function getRecruitsQuery() returns sql:ParameterizedQuery => `
+    SELECT 
+        r.id AS id,
+        r.first_name AS firstName,
+        r.last_name AS lastName,
+        r.work_email AS workEmail,
+        r.date_of_join AS dateOfJoin,
+        r.probation_end_date AS probationEndDate,
+        r.agreement_end_date AS agreementEndDate,
+        r.employee_location AS employeeLocation,
+        r.work_location AS workLocation,
+        r.reports_to AS reportsTo,
+        r.manager_email AS managerEmail,
+        r.compensation AS compensation,
+        r.additional_comments AS additionalComments,
+        r.status AS status,
+        bu.name AS businessUnit,
+        u.name AS unit,
+        t.name AS team,
+        st.name AS subTeam,
+        c.name AS company,
+        o.name AS office,
+        et.name AS employmentType,
+        d.designation AS designation,
+        r.personal_info_id AS personalInfoId
+    FROM recruit r
+        JOIN business_unit bu ON r.business_unit = bu.id
+        LEFT JOIN unit u ON r.unit = u.id
+        JOIN team t ON r.team = t.id
+        JOIN sub_team st ON r.sub_team = st.id
+        JOIN company c ON r.company = c.id
+        JOIN office o ON r.office = o.id
+        JOIN employment_type et ON r.employment_type = et.id
+        JOIN designation d ON r.designation_id = d.id
+    ORDER BY r.id DESC;
+`;
+
+# Build query to add a recruit.
+#
+# + recruit - Recruit payload that includes recruit information
+# + createdBy - User who creates the recruit record
+# + return - Insert query to add a recruit
+isolated function addRecruitQuery(AddRecruitPayload recruit, string createdBy) returns sql:ParameterizedQuery => `
+    INSERT INTO recruit
+    (
+        first_name,
+        last_name,
+        work_email,
+        date_of_join,
+        probation_end_date,
+        agreement_end_date,
+        employee_location,
+        work_location,
+        designation_id,
+        manager_email,
+        compensation,
+        additional_comments,
+        status,
+        created_by,
+        updated_by,
+        business_unit,
+        unit,
+        team,
+        sub_team,
+        company,
+        office,
+        employment_type,
+        personal_info_id
+    )
+    VALUES
+    (
+        ${recruit.firstName},
+        ${recruit.lastName},
+        ${recruit.workEmail},
+        ${recruit.dateOfJoin},
+        ${recruit.probationEndDate},
+        ${recruit.agreementEndDate},
+        ${recruit.employeeLocation},
+        ${recruit.workLocation},
+        ${recruit.designationId},
+        ${recruit.managerEmail},
+        ${recruit.compensation.toJsonString()},
+        ${recruit.additionalComments},
+        ${recruit.status},
+        ${createdBy},
+        ${createdBy},
+        ${recruit.businessUnit},
+        ${recruit.unit},
+        ${recruit.team},
+        ${recruit.subTeam},
+        ${recruit.company},
+        ${recruit.office},
+        ${recruit.employmentType},
+        ${recruit.personalInfoId}
+    );
+`;
+
+# Build query to update recruit info dynamically.
+#
+# + id - ID of the recruit to be updated
+# + recruit - Recruit payload that includes changed recruit information
+# + return - Update query to update recruit info
+isolated function updateRecruitQuery(int id, UpdateRecruitPayload recruit) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `UPDATE recruit SET `;
+    sql:ParameterizedQuery[] setClauses = [];
+
+    if recruit.firstName is string {
+        setClauses.push(`first_name = ${recruit.firstName}`);
+    }
+    if recruit.lastName is string {
+        setClauses.push(`last_name = ${recruit.lastName}`);
+    }
+    if recruit.workEmail is string {
+        setClauses.push(`work_email = ${recruit.workEmail}`);
+    }
+    if recruit.dateOfJoin is time:Date {
+        setClauses.push(`date_of_join = ${recruit.dateOfJoin}`);
+    }
+    if recruit.probationEndDate is time:Date {
+        setClauses.push(`probation_end_date = ${recruit.probationEndDate}`);
+    }
+    if recruit.agreementEndDate is time:Date {
+        setClauses.push(`agreement_end_date = ${recruit.agreementEndDate}`);
+    }
+    if recruit.employeeLocation is string {
+        setClauses.push(`employee_location = ${recruit.employeeLocation}`);
+    }
+    if recruit.workLocation is string {
+        setClauses.push(`work_location = ${recruit.workLocation}`);
+    }
+    if recruit.designationId is int {
+        setClauses.push(`designation_id = ${recruit.designationId}`);
+    }
+    if recruit.managerEmail is string {
+        setClauses.push(`manager_email = ${recruit.managerEmail}`);
+    }
+    if recruit?.compensation != () {
+        setClauses.push(`compensation = ${recruit?.compensation.toJsonString()}`);
+    }
+    if recruit.additionalComments is string {
+        setClauses.push(`additional_comments = ${recruit.additionalComments}`);
+    }
+    if recruit.status is string {
+        setClauses.push(`status = ${recruit.status}`);
+    }
+    if recruit.businessUnit is int {
+        setClauses.push(`business_unit = ${recruit.businessUnit}`);
+    }
+    if recruit.unit is int {
+        setClauses.push(`unit = ${recruit.unit}`);
+    }
+    if recruit.team is int {
+        setClauses.push(`team = ${recruit.team}`);
+    }
+    if recruit.subTeam is int {
+        setClauses.push(`sub_team = ${recruit.subTeam}`);
+    }
+    if recruit.company is int {
+        setClauses.push(`company = ${recruit.company}`);
+    }
+    if recruit.office is int {
+        setClauses.push(`office = ${recruit.office}`);
+    }
+    if recruit.employmentType is int {
+        setClauses.push(`employment_type = ${recruit.employmentType}`);
+    }
+    if recruit.personalInfoId is int {
+        setClauses.push(`personal_info_id = ${recruit.personalInfoId}`);
+    }
+
+    setClauses.push(`updated_by = ${recruit.updatedBy}`);
+    setClauses.push(`updated_on = CURRENT_TIMESTAMP(6)`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
+
+    sql:ParameterizedQuery whereClause = ` WHERE id = ${id}`;
+    return sql:queryConcat(mainQuery, whereClause);
+}
+
+# Retrieves a parameterized SQL query to delete a recruit by their ID.
+#
+# + recruitId - The ID of the recruit to delete
+# + return - A parameterized query that deletes the recruit record with the specified ID
+isolated function deleteRecruitByIdQuery(int recruitId) returns sql:ParameterizedQuery => `
+    DELETE FROM recruit WHERE id = ${recruitId};
+`;

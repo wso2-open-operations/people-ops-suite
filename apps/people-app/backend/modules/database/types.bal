@@ -13,8 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-import ballerina/sql;
 import ballerinax/mysql;
+import ballerina/sql;
+import ballerina/time;
 
 # [Configurable] Database configs.
 type DatabaseConfig record {|
@@ -251,5 +252,151 @@ public type UpdateVehiclePayload record {|
     # Status of the vehicle
     VehicleStatus? vehicleStatus;
     # User who created the vehicle record
+    string updatedBy;
+|};
+
+# [Database] Represents a recruit record.
+public type Recruit record {|
+    # The unique identifier for the recruit
+    int id;
+    # First name of the recruit
+    string firstName;
+    # Last name of the recruit
+    string lastName;
+    # Corporate email address of the recruit
+    string workEmail;
+    # Date of joining
+    time:Date dateOfJoin;
+    # End date of the probation period           
+    time:Date? probationEndDate;
+    # End date of the employment agreement     
+    time:Date? agreementEndDate;
+    # Location where the recruit is based    
+    string employeeLocation;
+    # Work location of the recruit
+    string workLocation;
+    # Email address of the reporting manager
+    string? reportsTo;
+    # Email address of the recruit’s direct manager
+    string managerEmail;
+    # Additional comments about the recruit
+    string? additionalComments;
+    # Current status of the recruit 
+    string status;
+    # Name of the business unit of the recruit          
+    string businessUnit;
+    # Name of the unit of the recruit
+    string unit;
+    # Name of the team of the recruit
+    string team;
+    # Name of the sub-team of the recruit
+    string subTeam;
+    # Name of the company the recruit belongs to
+    string company;
+    # Name of the office where the recruit works
+    string office;
+    # Type of employment 
+    string employmentType;
+    # Designation id of the recruit
+    string designation;
+    # ID of the personal info
+    int personalInfoId;
+    # Compensation data of the recruit
+    json compensation;
+|};
+
+#[Database] Insert type for recruit.
+public type AddRecruitPayload record {|
+    # First name of the recruit
+    string firstName;
+    # Last name of the recruit
+    string lastName;
+    # Corporate email address of the recruit
+    string workEmail;
+     # Date of joining
+    time:Date dateOfJoin;
+    # End date of the probation period           
+    time:Date? probationEndDate;
+    # End date of the employment agreement     
+    time:Date? agreementEndDate;
+    # Location where the recruit is based
+    string? employeeLocation;
+    # Work location of the recruit
+    string? workLocation;
+    # Designation id of the recruit
+    int designationId;
+    # Email address of the recruit’s direct manager
+    string? managerEmail;
+    # Compensation data of the recruit
+    json compensation;
+    # Additional comments about the recruit
+    string? additionalComments;
+    # Current status of the recruit 
+    string status;
+    # ID of the business unit
+    int businessUnit;
+    # ID of the unit
+    int? unit;
+    # ID of the team
+    int team;
+    # ID of the sub-team
+    int subTeam;
+    # ID of the company
+    int company;
+    # ID of the office
+    int office;
+    # ID of the employment type
+    int employmentType;
+    # ID of the personal info
+    int personalInfoId;
+    # Email of the person who created the recruit record
+    string createdBy;
+|};
+
+# Payload type for updating a recruit.
+public type UpdateRecruitPayload record {|
+    # First name of the recruit
+    string firstName?;
+    # Last name of the recruit
+    string lastName?;
+    # Corporate email address of the recruit
+    string workEmail?;
+    # Date of joining
+    time:Date dateOfJoin?;
+    # End date of the probation period
+    time:Date probationEndDate?;
+    # End date of the employment agreement
+    time:Date agreementEndDate?;
+    # Location where the recruit is based
+    string employeeLocation?;
+    # Work location of the recruit
+    string workLocation?;
+    # Designation id of the recruit
+    int designationId?;
+    # Email address of the recruit’s direct manager
+    string managerEmail?;
+    # Compensation data of the recruit
+    json compensation?;  
+    # Additional comments about the recruit       
+    string additionalComments?;
+    # Current status of the recruit
+    string status?;
+    # ID of the business unit
+    int businessUnit?;
+    # Id of the unit
+    int unit?;
+    # ID of the team
+    int team?;
+    # Id of the sub-team
+    int subTeam?;
+    # ID of the company
+    int company?;
+    # ID of the office
+    int office?;
+    # ID of the employment type
+    int employmentType?;
+    # ID of the personal info
+    int personalInfoId?;
+    # Person who updated the recruit record
     string updatedBy;
 |};
