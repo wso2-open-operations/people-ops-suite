@@ -21,7 +21,6 @@ import { APIService } from "@utils/apiService";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { SnackMessage } from "@config/constant";
-
 export interface ApplicantPayload {
   first_name: string;
   last_name: string;
