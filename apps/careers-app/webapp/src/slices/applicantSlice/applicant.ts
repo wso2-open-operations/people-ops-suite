@@ -34,29 +34,29 @@ export interface ApplicantPayload {
     degree: string;
     institution: string;
     location: string;
-    gpa_zscore?: number;
+    gpa_zscore: number;
     start_year: number;
-    end_year?: number | null;
+    end_year: number | null;
   }[];
   experiences: {
     job_title: string;
     company: string;
     location: string;
     start_date: string;
-    end_date?: string | null;
+    end_date: string | null;
   }[];
   skills: string[];
   certifications: {
     name: string;
     issued_by: string;
     year: number;
-    link?: string;
+    link: string;
   }[];
   projects: {
     name: string;
     description: string;
     technologies: string[];
-    github?: string;
+    github: string;
   }[];
   languages: {
     language: string;
