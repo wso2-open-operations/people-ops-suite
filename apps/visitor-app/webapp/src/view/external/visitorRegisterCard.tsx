@@ -44,7 +44,7 @@ import {
   CheckCircle as CheckCircleIcon,
 } from "@mui/icons-material";
 
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
@@ -135,16 +135,6 @@ const validationSchema = Yup.object().shape({
   visitDetails: Yup.object().shape({
     whomTheyMeet: Yup.string().required("Meeting person is required"),
     purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-    scheduledDate: Yup.string()
-      .required("Scheduled date is required")
-      .test(
-        "is-future-date",
-        "Scheduled date cannot be in the past",
-        (value) => {
-          if (!value) return false;
-          return dayjs(value).isAfter(dayjs().subtract(1, "day"));
-        }
-      ),
     timeOfEntry: Yup.string()
       .required("Time of entry is required")
       .test("is-valid-time", "Time of entry cannot be in the past", (value) => {
@@ -247,12 +237,6 @@ function VisitorRegisterCard() {
     whomTheyMeet: externalState.visitInvitation?.visitInfo?.whomTheyMeet || "",
     purposeOfVisit:
       externalState.visitInvitation?.visitInfo?.purposeOfVisit || "",
-    scheduledDate: externalState.visitInvitation?.visitInfo?.timeOfEntry
-      ? dayjs
-          .utc(externalState.visitInvitation.visitInfo.timeOfEntry)
-          .local()
-          .format("YYYY-MM-DD")
-      : "",
     timeOfEntry: externalState.visitInvitation?.visitInfo?.timeOfEntry || "",
     timeOfDeparture:
       externalState.visitInvitation?.visitInfo?.timeOfDeparture || "",
@@ -624,86 +608,10 @@ function VisitorRegisterCard() {
                             disabled={isVisitDetailsLocked}
                           />
                         </Grid>
-                        <Grid item xs={12} md={4}>
-                          <DatePicker
-                            label="Scheduled Date *"
-                            value={
-                              formik.values.visitDetails.scheduledDate
-                                ? dayjs(
-                                    formik.values.visitDetails.scheduledDate
-                                  )
-                                : null
-                            }
-                            onChange={(value) => {
-                              if (value) {
-                                const newDate = value.format("YYYY-MM-DD");
-                                formik.setFieldValue(
-                                  "visitDetails.scheduledDate",
-                                  newDate
-                                );
-
-                                // Update timeOfEntry with new date, keeping time
-                                if (formik.values.visitDetails.timeOfEntry) {
-                                  const currentLocalTime = dayjs
-                                    .utc(formik.values.visitDetails.timeOfEntry)
-                                    .local()
-                                    .format("HH:mm:ss");
-                                  const newLocalDatetime = dayjs(
-                                    `${newDate}T${currentLocalTime}`
-                                  );
-                                  formik.setFieldValue(
-                                    "visitDetails.timeOfEntry",
-                                    newLocalDatetime
-                                      .utc()
-                                      .format("YYYY-MM-DDTHH:mm:ss")
-                                  );
-                                }
-
-                                // Update timeOfDeparture with new date, keeping time
-                                if (
-                                  formik.values.visitDetails.timeOfDeparture
-                                ) {
-                                  const currentLocalTime = dayjs
-                                    .utc(
-                                      formik.values.visitDetails.timeOfDeparture
-                                    )
-                                    .local()
-                                    .format("HH:mm:ss");
-                                  const newLocalDatetime = dayjs(
-                                    `${newDate}T${currentLocalTime}`
-                                  );
-                                  formik.setFieldValue(
-                                    "visitDetails.timeOfDeparture",
-                                    newLocalDatetime
-                                      .utc()
-                                      .format("YYYY-MM-DDTHH:mm:ss")
-                                  );
-                                }
-                              }
-                            }}
-                            minDate={dayjs()}
-                            slotProps={{
-                              textField: {
-                                fullWidth: true,
-                                disabled: isVisitDetailsLocked,
-                                error:
-                                  formik.touched.visitDetails?.scheduledDate &&
-                                  Boolean(
-                                    formik.errors.visitDetails?.scheduledDate
-                                  ),
-                                helperText:
-                                  formik.touched.visitDetails?.scheduledDate &&
-                                  formik.errors.visitDetails?.scheduledDate,
-                              },
-                              openPickerButton: {
-                                disabled: isVisitDetailsLocked,
-                              },
-                            }}
-                          />
-                        </Grid>
-                        <Grid item xs={12} md={4}>
-                          <TimePicker
+                        <Grid item xs={12} md={6}>
+                          <DateTimePicker
                             label="Time of Entry *"
+                            minDateTime={dayjs()}
                             value={
                               formik.values.visitDetails.timeOfEntry
                                 ? dayjs
@@ -712,21 +620,10 @@ function VisitorRegisterCard() {
                                 : null
                             }
                             onChange={(value) => {
-                              if (
-                                value &&
-                                formik.values.visitDetails.scheduledDate
-                              ) {
-                                const time = value.format("HH:mm:ss");
-                                const localDatetime = dayjs(
-                                  `${formik.values.visitDetails.scheduledDate}T${time}`
-                                );
-                                formik.setFieldValue(
-                                  "visitDetails.timeOfEntry",
-                                  localDatetime
-                                    .utc()
-                                    .format("YYYY-MM-DDTHH:mm:ss")
-                                );
-                              }
+                              formik.setFieldValue(
+                                "visitDetails.timeOfEntry",
+                                dayjs(value).utc().format()
+                              );
                             }}
                             slotProps={{
                               textField: {
@@ -747,9 +644,16 @@ function VisitorRegisterCard() {
                             }}
                           />
                         </Grid>
-                        <Grid item xs={12} md={4}>
-                          <TimePicker
+                        <Grid item xs={12} md={6}>
+                          <DateTimePicker
                             label="Time of Departure *"
+                            minDateTime={
+                              formik.values.visitDetails.timeOfEntry
+                                ? dayjs(
+                                    formik.values.visitDetails.timeOfEntry
+                                  ).local()
+                                : dayjs()
+                            }
                             value={
                               formik.values.visitDetails.timeOfDeparture
                                 ? dayjs
@@ -760,36 +664,23 @@ function VisitorRegisterCard() {
                                 : null
                             }
                             onChange={(value) => {
-                              if (
-                                value &&
-                                formik.values.visitDetails.scheduledDate
-                              ) {
-                                const time = value.format("HH:mm:ss");
-                                const localDatetime = dayjs(
-                                  `${formik.values.visitDetails.scheduledDate}T${time}`
-                                );
-                                formik.setFieldValue(
-                                  "visitDetails.timeOfDeparture",
-                                  localDatetime
-                                    .utc()
-                                    .format("YYYY-MM-DDTHH:mm:ss")
-                                );
-                              }
+                              formik.setFieldValue(
+                                "visitDetails.timeOfDeparture",
+                                dayjs(value).utc().format()
+                              );
                             }}
                             slotProps={{
                               textField: {
                                 fullWidth: true,
                                 disabled: isVisitDetailsLocked,
                                 error:
-                                  formik.touched.visitDetails
-                                    ?.timeOfDeparture &&
+                                  formik.touched.visitDetails?.timeOfEntry &&
                                   Boolean(
-                                    formik.errors.visitDetails?.timeOfDeparture
+                                    formik.errors.visitDetails?.timeOfEntry
                                   ),
                                 helperText:
-                                  formik.touched.visitDetails
-                                    ?.timeOfDeparture &&
-                                  formik.errors.visitDetails?.timeOfDeparture,
+                                  formik.touched.visitDetails?.timeOfEntry &&
+                                  formik.errors.visitDetails?.timeOfEntry,
                               },
                               openPickerButton: {
                                 disabled: isVisitDetailsLocked,
