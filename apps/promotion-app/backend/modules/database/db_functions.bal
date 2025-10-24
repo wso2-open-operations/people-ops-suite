@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/lang.regexp as regex;
-import ballerina/log;
 import ballerina/sql;
 
 # Retrieving user by id.
@@ -97,19 +96,8 @@ public isolated function getPromotions(string? employeeEmail = (), string[]? sta
             employeeEmail = employeeEmail, statusArray = statusArray, cycleID = cycleID, id = id,
             businessAccessLevels = businessAccessLevels, 'type = 'type, recommendedBy = recommendedBy));
 
-    Promotion[] promotions = [];
-    error? queryError = from Promotion promotionRequest in resultStream
-        do {
-            promotions.push(promotionRequest);
-        };
-
-    if queryError is error {
-        _ = check resultStream.close();
-        log:printError(queryError.toString());
-        return error("An error occurred while retrieving promotion requests!");
-    }
-
-    return promotions;
+    return from Promotion promotionRequest in resultStream
+    select promotionRequest;
 }
 
 # Retrieving promotion recommendations.
@@ -134,18 +122,6 @@ public isolated function getRecommendations(int? id = (), int? promotionRequestI
             promotionRequestId = promotionRequestId
             )
         );
-
-    FullPromotionRecommendation[] requests = [];
-    error? queryError = from FullPromotionRecommendation promotionRequest in resultStream
-        do {
-            requests.push(promotionRequest);
-        };
-
-    if queryError is error {
-        _ = check resultStream.close();
-        log:printError(queryError.toString());
-        return error("An error occurred while retrieving promotion recommendations ");
-    }
-
-    return requests;
+    return from FullPromotionRecommendation promotionRequest in resultStream
+    select promotionRequest;
 }
