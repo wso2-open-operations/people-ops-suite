@@ -26,18 +26,26 @@ import { useTheme } from "@mui/material/styles";
 import { Formik, Form } from "formik";
 import * as yup from "yup";
 
+export interface Certification {
+  name: string;
+  issued_by: string;
+  year: number;
+  link: string;
+}
 interface Props {
   open: boolean;
   onClose: () => void;
-  push: (cert: any) => void;
-  replace: (index: number, value: any) => void;
-  editItem?: any;
+  push: (cert: Certification) => void;
+  replace: (index: number, value: Certification) => void;
+  editItem?: Certification;
   editIndex?: number | null;
 }
 
 const certSchema = yup.object({
   name: yup.string().required("Certification name is required"),
   year: yup.string().required("Year is required"),
+  issued_by: yup.string().required("Issued By is required"),
+  link: yup.string().url("Must be a valid URL").required("Link is required"),
 });
 
 const EMPTY_VALUES = {
@@ -108,6 +116,9 @@ export default function CertificationModal({
                 name="issued_by"
                 value={values.issued_by}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.issued_by && Boolean(errors.issued_by)}
+                helperText={touched.issued_by && errors.issued_by}
               />
               <TextField
                 label="Year"
@@ -129,6 +140,9 @@ export default function CertificationModal({
                 name="link"
                 value={values.link}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.link && Boolean(errors.link)}
+                helperText={touched.link && errors.link}
               />
             </DialogContent>
             <DialogActions>
