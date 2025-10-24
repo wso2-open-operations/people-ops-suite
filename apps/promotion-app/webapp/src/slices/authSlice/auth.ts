@@ -54,9 +54,19 @@ export interface UserInfoInterface {
   firstName: string;
   lastName: string;
   workEmail: string;
+  joinedDetails: JoinedDetails;
   employeeThumbnail: string | null;
   jobRole: string;
   privileges: number[];
+}
+
+export interface JoinedDetails {
+  startDate: string;
+  startedJobRole: string;
+  startedBusinessUnit: string;
+  startedTeam: string;
+  startedSubTeam: string;
+  startedreportingLead: string;
 }
 
 const initialState: AuthState = {
