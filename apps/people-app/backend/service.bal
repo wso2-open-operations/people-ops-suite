@@ -187,7 +187,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get teams.
-    # 
+    #
     # + buId - Business unit ID (optional)
     # + return - Teams
     resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
@@ -205,7 +205,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get sub teams.
-    # 
+    #
     # + teamId - Team ID (optional)
     # + return - Sub teams
     resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
@@ -223,7 +223,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get units.
-    # 
+    #
     # + subTeamId - Sub team ID (optional)
     # + return - Units
     resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
@@ -238,6 +238,38 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return units;
+    }
+
+    # Get career functions.
+    # + return - Career functions
+    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
+        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
+        if careerFunctions is error {
+            string customErr = "Error while fetching Career Functions";
+            log:printError(customErr, careerFunctions);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return careerFunctions;
+    }
+
+    # Get offices.
+    # + return - Offices
+    resource function get offices() returns database:Office[]|http:InternalServerError {
+        database:Office[]|error offices = database:getOffices();
+        if offices is error {
+            string customErr = "Error while fetching Offices";
+            log:printError(customErr, offices);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return offices;
     }
 
     # Update employee personal information.

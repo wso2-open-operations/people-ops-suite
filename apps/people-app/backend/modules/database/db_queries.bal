@@ -161,6 +161,22 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
     return sql:queryConcat(query, `;`);
 }
 
+# Get career functions.
+# + return - Career functions query
+isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        career_function
+    FROM career_function;`;
+
+# Get offices query.
+# + return - Offices query
+isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+    FROM office;`;
+
 # Update employee personal information query.
 #
 # + id - Personal info ID
