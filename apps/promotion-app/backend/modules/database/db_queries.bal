@@ -257,39 +257,44 @@ isolated function getFullPromotionRecommendationsQuery(int? id, string? employee
             prc.promotion_recommendation_updated_on as updatedOn
         FROM 
             hris_promotion_request  pr, hris_promotion_recommendation prc, hris_promotion_cycle pc
-        WHERE
-			pr.promotion_request_id = prc.promotion_request_id
-		AND
-			pr.promotion_cycle_id = pc.promotion_cycle_id
+
         `;
 
+    sql:ParameterizedQuery[] filters = [];
+
+    filters.push(<sql:ParameterizedQuery>` pr.promotion_request_id = prc.promotion_request_id `);
+
+    filters.push(<sql:ParameterizedQuery>` pr.promotion_cycle_id = pc.promotion_cycle_id`);
+
     if id is int {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND prc.promotion_recommendation_id = ${id} `);
+        filters.push(<sql:ParameterizedQuery>` prc.promotion_recommendation_id = ${id} `);
     }
 
     if employeeEmail is string {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND pr.promotion_request_employee_email = ${employeeEmail} `);
+        filters.push(<sql:ParameterizedQuery>` pr.promotion_request_employee_email = ${employeeEmail} `);
     }
 
     if leadEmail is string {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND prc.promotion_recommendation_lead_email = ${leadEmail} `);
+        filters.push(<sql:ParameterizedQuery>` prc.promotion_recommendation_lead_email = ${leadEmail} `);
     }
 
     if statusArray is string[] {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND prc.promotion_recommendation_status IN (`,
+        filters.push(<sql:ParameterizedQuery>` prc.promotion_recommendation_status IN (`,
                 sql:arrayFlattenQuery(statusArray), `)  `);
     }
 
     if cycleID is int {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND pr.promotion_cycle_id = ${cycleID} `);
+        filters.push(<sql:ParameterizedQuery>` pr.promotion_cycle_id = ${cycleID} `);
     }
 
     if promotionRequestId is int {
-        sqlQuery = sql:queryConcat(sqlQuery, ` AND pr.promotion_request_id = ${promotionRequestId} `);
+        filters.push(<sql:ParameterizedQuery>` pr.promotion_request_id = ${promotionRequestId} `);
     }
 
-    //Order By promotion cycle (desc).
-    sqlQuery = sql:queryConcat(sqlQuery, ` ORDER BY pr.promotion_cycle_id desc `);
+    sql:ParameterizedQuery updatedQuery = buildSqlSelectQuery(sqlQuery,filters);
 
-    return sqlQuery;
+    //Order By promotion cycle (desc).
+    updatedQuery = sql:queryConcat(updatedQuery, ` ORDER BY pr.promotion_cycle_id desc `);
+
+    return updatedQuery;
 }
