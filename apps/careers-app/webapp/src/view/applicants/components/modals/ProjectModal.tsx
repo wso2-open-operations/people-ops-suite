@@ -26,18 +26,27 @@ import { useTheme } from "@mui/material/styles";
 import { Formik, Form } from "formik";
 import * as yup from "yup";
 
+export interface Project {
+  name: string;
+  description: string;
+  technologies: string;
+  github: string;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
-  push: (proj: any) => void;
-  replace: (index: number, value: any) => void;
-  editItem?: any;
+  push: (proj: Project) => void;
+  replace: (index: number, value: Project) => void;
+  editItem?: Project;
   editIndex?: number | null;
 }
 
 const projSchema = yup.object({
   name: yup.string().required("Project name is required"),
   description: yup.string().required("Description is required"),
+  technologies: yup.string().required("Technologies are required"),
+  github: yup.string().url("Must be a valid URL").required("GitHub link is required"),
 });
 
 const EMPTY_VALUES = {
@@ -118,12 +127,30 @@ export default function ProjectModal({
                 name="technologies"
                 value={values.technologies}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.technologies && Boolean(errors.technologies)}
+                helperText={
+                  touched.technologies
+                    ? typeof errors.technologies === "string"
+                      ? errors.technologies
+                      : undefined
+                    : undefined
+                }
               />
               <TextField
                 label="GitHub Link"
                 name="github"
                 value={values.github}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={touched.github && Boolean(errors.github)}
+                helperText={
+                  touched.github
+                    ? typeof errors.github === "string"
+                      ? errors.github
+                      : undefined
+                    : undefined
+                }
               />
             </DialogContent>
             <DialogActions>

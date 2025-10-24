@@ -27,12 +27,17 @@ import { Formik, Form } from "formik";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 
+export interface Language {
+  language: string;
+  proficiency: string;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
-  push: (lang: any) => void;
-  replace: (index: number, value: any) => void;
-  editItem?: any;
+  push: (lang: Language) => void;
+  replace: (index: number, value: Language) => void;
+  editItem?: Language;
   editIndex?: number | null;
 }
 
