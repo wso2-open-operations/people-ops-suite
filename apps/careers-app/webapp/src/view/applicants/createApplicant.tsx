@@ -46,54 +46,16 @@ import { createApplicant } from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToBase64 } from "@utils/utils";
-import { useTheme } from "@mui/material/styles";  
+import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
-
-import ExperienceModal from "@modals/ExperienceModal";
-import EducationModal from "@modals/EducationModal";
-import CertificationModal from "@modals/CertificationModal";
-import ProjectModal from "@modals/ProjectModal";
-import LanguageModal from "@modals/LanguageModal";
 import { SnackMessage } from "@root/src/config/constant";
 
-interface Experience {
-  job_title: string;
-  company: string;
-  location: string;
-  start_date: string;
-  end_date: string | null;
-  current: boolean;
-}
-
-interface Education {
-  degree: string;
-  institution: string;
-  location: string;
-  gpa_zscore: number;
-  start_year: number;
-  end_year: number | null;
-}
-
-interface Certification {
-  name: string;
-  issued_by: string;
-  year: number;
-  link?: string;
-}
-
-interface Project {
-  name: string;
-  description: string;
-  technologies: string;
-  github: string;
-}
-
-interface Language {
-  language: string;
-  proficiency: string;
-}
-
+import ExperienceModal, { Experience } from "@modals/ExperienceModal";
+import EducationModal, { Education } from "@modals/EducationModal";
+import CertificationModal, { Certification } from "@modals/CertificationModal";
+import ProjectModal, { Project } from "@modals/ProjectModal";
+import LanguageModal, { Language } from "@modals/LanguageModal";
 interface ApplicantFormValues {
   firstName: string;
   lastName: string;
@@ -147,6 +109,27 @@ const initialValues: ApplicantFormValues = {
   consentEmails: false,
 };
 
+type SectionKey =
+  | "experience"
+  | "education"
+  | "certification"
+  | "project"
+  | "language";
+
+type SectionItem = Experience | Education | Certification | Project | Language;
+
+type SectionArray<T> = T extends "experience"
+  ? Experience[]
+  : T extends "education"
+  ? Education[]
+  : T extends "certification"
+  ? Certification[]
+  : T extends "project"
+  ? Project[]
+  : T extends "language"
+  ? Language[]
+  : never;
+
 const mainValidationSchema = yup.object({
   firstName: yup.string().required("First name is required"),
   lastName: yup.string().required("Last name is required"),
@@ -169,11 +152,11 @@ export default function CreateApplicant() {
     "experience" | "education" | "certification" | "project" | "language" | null
   >(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<SectionItem | null>(null);
 
-  const handleOpenForEdit = (
-    sectionKey: typeof editingSection,
-    item: any,
+  const handleOpenForEdit = <K extends SectionKey>(
+    sectionKey: K,
+    item: SectionArray<K>[number],
     idx: number
   ) => {
     setEditingSection(sectionKey);
@@ -320,10 +303,18 @@ export default function CreateApplicant() {
             <Box display="flex" justifyContent="center" mb={5}>
               <Box position="relative" display="inline-block">
                 <Avatar
-                  src={profilePhoto ? URL.createObjectURL(profilePhoto) : values.firstName
-                    ? values.firstName[0].toUpperCase()
-                    : ""}
-                  alt={values.firstName ? values.firstName.toUpperCase() : "Profile Photo"}
+                  src={
+                    profilePhoto
+                      ? URL.createObjectURL(profilePhoto)
+                      : values.firstName
+                      ? values.firstName[0].toUpperCase()
+                      : ""
+                  }
+                  alt={
+                    values.firstName
+                      ? values.firstName.toUpperCase()
+                      : "Profile Photo"
+                  }
                   sx={{
                     width: 120,
                     height: 120,
@@ -366,14 +357,19 @@ export default function CreateApplicant() {
                 mb: 5,
               }}
             >
-              <CloudUploadIcon sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }} />
+              <CloudUploadIcon
+                sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }}
+              />
               <Typography color="text.secondary" mb={2}>
                 Supported formats: PDF, Word
               </Typography>
               <Button
                 variant="text"
                 component="label"
-                sx={{ color: theme.palette.brand.orangeDark, fontWeight: "bold" }}
+                sx={{
+                  color: theme.palette.brand.orangeDark,
+                  fontWeight: "bold",
+                }}
               >
                 Drag & drop files or Browse
                 <input
@@ -505,36 +501,55 @@ export default function CreateApplicant() {
                 { key: "certification", label: "Certifications" },
                 { key: "project", label: "Projects" },
                 { key: "language", label: "Languages" },
-              ].map((sec) => (
-                <Box key={sec.key} sx={{ py: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Typography fontWeight="bold">{sec.label}</Typography>
-                    <Button
-                      variant="text"
-                      sx={{
-                        color: theme.palette.brand.orange,
-                        fontWeight: "bold",
-                        border: `1px solid ${theme.palette.brand.orange}`,
-                        borderRadius: 1,
-                      }}
-                      onClick={() => setOpenModal(sec.key as any)}
-                    >
-                      + Add
-                    </Button>
-                  </Box>
+              ].map((sec) => {
+                const sectionKey = sec.key as SectionKey;
+                const items = values[
+                  `${sectionKey}s` as keyof ApplicantFormValues
+                ] as SectionArray<SectionKey>;
 
-                  {/* Preview list */}
-                  {values[`${sec.key}s` as keyof ApplicantFormValues] &&
-                    (values as any)[`${sec.key}s`].length > 0 && (
+                return (
+                  <Box key={sectionKey} sx={{ py: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography fontWeight="bold">{sec.label}</Typography>
+                      <Button
+                        variant="text"
+                        sx={{
+                          color: theme.palette.brand.orange,
+                          fontWeight: "bold",
+                          border: `1px solid ${theme.palette.brand.orange}`,
+                          borderRadius: 1,
+                        }}
+                        onClick={() => setOpenModal(sectionKey)}
+                      >
+                        + Add
+                      </Button>
+                    </Box>
+
+                    {/* Preview list */}
+                    {items && items.length > 0 && (
                       <Box mt={2} display="grid" gap={2}>
-                        {(values as any)[`${sec.key}s`].map(
-                          (item: any, idx: number) => (
+                        {items.map((item, idx) => {
+                          // Determine the title field for the preview header
+                          const title =
+                            "job_title" in item
+                              ? item.job_title
+                              : "degree" in item
+                              ? item.degree
+                              : "name" in item
+                              ? item.name
+                              : "name" in item
+                              ? item.name
+                              : "language" in item
+                              ? item.language
+                              : "Entry";
+
+                          return (
                             <Paper key={idx} className="preview-card">
                               {/* Header with Icon */}
                               <Box
@@ -544,45 +559,41 @@ export default function CreateApplicant() {
                                 mb={1}
                               >
                                 <Box display="flex" alignItems="center">
-                                  {sectionIcons[sec.key]}
+                                  {sectionIcons[sectionKey]}
                                   <Typography
                                     variant="subtitle1"
                                     fontWeight="bold"
                                     color="primary"
                                   >
-                                    {item.job_title ||
-                                      item.name ||
-                                      item.name ||
-                                      item.language ||
-                                      "Entry"}
+                                    {String(title)}
                                   </Typography>
                                 </Box>
                               </Box>
 
                               {/* Details in Grid */}
                               <Grid container spacing={1}>
-                                {
-                                  Object.entries(item).map(([field, value]) =>
-                                    value ? (
-                                      <Grid item xs={12} sm={6} key={field}>
-                                        <Typography
-                                          variant="body2"
-                                          sx={{ color: "text.secondary" }}
+                                {Object.entries(item).map(([field, value]) =>
+                                  value ? (
+                                    <Grid item xs={12} sm={6} key={field}>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{ color: "text.secondary" }}
+                                      >
+                                        <strong
+                                          style={{
+                                            textTransform: "capitalize",
+                                          }}
                                         >
-                                          <strong
-                                            style={{
-                                              textTransform: "capitalize",
-                                            }}
-                                          >
-                                            {field.replace(/_/g, " ")}:
-                                          </strong>{" "}
-                                          {String(value)}
-                                        </Typography>
-                                      </Grid>
-                                    ) : null
-                                  ) as React.ReactNode[]
-                                }
+                                          {field.replace(/_/g, " ")}:
+                                        </strong>{" "}
+                                        {String(value)}
+                                      </Typography>
+                                    </Grid>
+                                  ) : null
+                                )}
                               </Grid>
+
+                              {/* Edit / Delete */}
                               <Box
                                 display="flex"
                                 justifyContent="flex-end"
@@ -595,11 +606,7 @@ export default function CreateApplicant() {
                                       color="primary"
                                       size="small"
                                       onClick={() =>
-                                        handleOpenForEdit(
-                                          sec.key as any,
-                                          item,
-                                          idx
-                                        )
+                                        handleOpenForEdit(sectionKey, item, idx)
                                       }
                                     >
                                       <EditIcon />
@@ -612,9 +619,9 @@ export default function CreateApplicant() {
                                       size="small"
                                       onClick={() =>
                                         setFieldValue(
-                                          `${sec.key}s`,
-                                          (values as any)[`${sec.key}s`].filter(
-                                            (_: any, i: number) => i !== idx
+                                          `${sectionKey}s`,
+                                          (items as SectionItem[]).filter(
+                                            (_, i) => i !== idx
                                           )
                                         )
                                       }
@@ -625,12 +632,13 @@ export default function CreateApplicant() {
                                 </Box>
                               </Box>
                             </Paper>
-                          )
-                        )}
+                          );
+                        })}
                       </Box>
                     )}
-                </Box>
-              ))}
+                  </Box>
+                );
+              })}
 
               <Divider sx={{ my: 3 }} />
 
@@ -737,7 +745,9 @@ export default function CreateApplicant() {
                   push={push}
                   replace={replace}
                   editItem={
-                    editingSection === "experience" ? editingItem : null
+                    editingSection === "experience"
+                      ? (editingItem as Experience)
+                      : undefined
                   }
                   editIndex={
                     editingSection === "experience" ? editingIndex : null
@@ -752,7 +762,11 @@ export default function CreateApplicant() {
                   onClose={handleCloseModal}
                   push={push}
                   replace={replace}
-                  editItem={editingSection === "education" ? editingItem : null}
+                  editItem={
+                    editingSection === "education"
+                      ? (editingItem as Education)
+                      : undefined
+                  }
                   editIndex={
                     editingSection === "education" ? editingIndex : null
                   }
@@ -767,7 +781,9 @@ export default function CreateApplicant() {
                   push={push}
                   replace={replace}
                   editItem={
-                    editingSection === "certification" ? editingItem : null
+                    editingSection === "certification"
+                      ? (editingItem as Certification)
+                      : undefined
                   }
                   editIndex={
                     editingSection === "certification" ? editingIndex : null
@@ -782,7 +798,29 @@ export default function CreateApplicant() {
                   onClose={handleCloseModal}
                   push={push}
                   replace={replace}
-                  editItem={editingSection === "project" ? editingItem : null}
+                  editItem={
+                    editingSection === "project"
+                      ? (editingItem as Project)
+                      : undefined
+                  }
+                  editIndex={
+                    editingSection === "certification" ? editingIndex : null
+                  }
+                />
+              )}
+            </FieldArray>
+            <FieldArray name="projects">
+              {({ push, replace }) => (
+                <ProjectModal
+                  open={openModal === "project"}
+                  onClose={handleCloseModal}
+                  push={push}
+                  replace={replace}
+                  editItem={
+                    editingSection === "project"
+                      ? (editingItem as Project)
+                      : undefined
+                  }
                   editIndex={editingSection === "project" ? editingIndex : null}
                 />
               )}
@@ -794,7 +832,11 @@ export default function CreateApplicant() {
                   onClose={handleCloseModal}
                   push={push}
                   replace={replace}
-                  editItem={editingSection === "language" ? editingItem : null}
+                  editItem={
+                    editingSection === "language"
+                      ? (editingItem as Language)
+                      : undefined
+                  }
                   editIndex={
                     editingSection === "language" ? editingIndex : null
                   }
