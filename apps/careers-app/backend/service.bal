@@ -133,10 +133,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
-            log:printError("User information header not found!", invokerInfo);
+            string errorMessage = "User information header not found!";
+            log:printError(errorMessage, invokerInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: errorMessage
                 }
             };
         }
@@ -146,20 +147,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Validate file sizes
         error? photoSizeErr = validateFileSize(applicant.base64_profile_photo);
         if photoSizeErr is error {
-            log:printError("Profile photo size validation failed", photoSizeErr);
+            string errorMessage = "Profile photo exceeds 10 MB limit";
+            log:printError(errorMessage, photoSizeErr);
             return <http:BadRequest>{
                 body: {
-                    message: "Profile photo exceeds 10 MB limit"
+                    message: errorMessage
                 }
             };
         }
 
         error? cvSizeErr = validateFileSize(applicant.base64_cv);
         if cvSizeErr is error {
-            log:printError("CV size validation failed", cvSizeErr);
+            string errorMessage = "CV exceeds 10 MB limit";
+            log:printError(errorMessage, cvSizeErr);
             return <http:BadRequest>{
                 body: {
-                    message: "CV exceeds 10 MB limit"
+                    message: errorMessage
                 }
             };
         }
@@ -179,18 +182,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Upload profile photo
         string|error photoLink = gdrive:uploadApplicantPhoto(applicant.base64_profile_photo, photoFileName, applicantEmail);
         if photoLink is gdrive:InvalidFileTypeError {
-            log:printError("Invalid profile photo type", photoLink);
+            string errorMessage = "Invalid profile photo type. Must be an image.";
+            log:printError(errorMessage, photoLink);
             return <http:BadRequest>{
                 body: {
-                    message: "Invalid profile photo type. Must be an image."
+                    message: errorMessage
                 }
             };
         }
         if photoLink is error {
-            log:printError("Failed to upload profile photo", photoLink);
+            string errorMessage = "Failed to upload profile photo.";
+            log:printError(errorMessage, photoLink);
             return <http:InternalServerError>{
                 body: {
-                    message: "Failed to upload profile photo."
+                    message: errorMessage
                 }
             };
         }
@@ -198,18 +203,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Upload CV
         string|error cvLink = gdrive:uploadApplicantCv(applicant.base64_cv, cvFileName, applicantEmail);
         if cvLink is gdrive:InvalidFileTypeError {
-            log:printError("Invalid CV type", cvLink);
+            string errorMessage = "Invalid CV type. Must be PDF.";
+            log:printError(errorMessage, cvLink);
             return <http:BadRequest>{
                 body: {
-                    message: "Invalid CV type. Must be PDF."
+                    message: errorMessage
                 }
             };
         }
         if cvLink is error {
-            log:printError("Failed to upload CV", cvLink);
+            string errorMessage = "Failed to upload CV.";
+            log:printError(errorMessage, cvLink);
             return <http:InternalServerError>{
                 body: {
-                    message: "Failed to upload CV."
+                    message: errorMessage
                 }
             };
         }
@@ -271,7 +278,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if applicant is error {
             // Check if the error is due to a non-existent applicant
             if applicant.message().startsWith("No applicant found with ID:") {
-                string customError = string `Applicant profile not found!`;
+                string customError = "Applicant profile not found!";
                 log:printError(customError, applicant);
                 return <http:NotFound>{
                     body: {
@@ -281,7 +288,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             // For other types of errors, return internal server error
-            string customError = string `Error occurred while retrieving the applicant profile!`;
+            string customError = "Error occurred while retrieving the applicant profile!";
             log:printError(customError, applicant);
             return <http:InternalServerError>{
                 body: {
@@ -289,7 +296,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
         return applicant;
     }
 
@@ -321,7 +327,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
         return updatedProfile;
     }
 
@@ -341,8 +346,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
         return applicants;
     }
-
 }
