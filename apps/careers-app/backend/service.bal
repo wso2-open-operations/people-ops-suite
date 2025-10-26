@@ -22,6 +22,7 @@ import careers_app.people;
 import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
+import ballerina/time;
 
 public configurable AppConfig appConfig = ?;
 
@@ -56,7 +57,7 @@ service class ErrorInterceptor {
 
 }
 
-service http:InterceptableService / on new http:Listener(9093) {
+service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
@@ -142,36 +143,75 @@ service http:InterceptableService / on new http:Listener(9093) {
 
         string actor = invokerInfo.email;
 
-        // Upload (if provided)
-        string? photoLink = ();
-        string? cvLink = ();
-
-        if applicant.base64_profile_photo is string {
-            [string, string]|error up1 = gdrive:uploadToApplicantFolder(
-                    applicant.base64_profile_photo, applicant.email, "profile", applicant.profile_photo_file_name
-            );
-            if up1 is error {
-                return <http:InternalServerError>{
-                    body: {
-                        message: "Failed to upload profile photo."
-                    }
-                };
-            }
-            photoLink = up1[1];
+        // Validate file sizes
+        error? photoSizeErr = validateFileSize(applicant.base64_profile_photo);
+        if photoSizeErr is error {
+            log:printError("Profile photo size validation failed", photoSizeErr);
+            return <http:BadRequest>{
+                body: {
+                    message: "Profile photo exceeds 10 MB limit"
+                }
+            };
         }
 
-        if applicant.base64_cv is string {
-            [string, string]|error up2 = gdrive:uploadToApplicantFolder(
-                    applicant.base64_cv, applicant.email, "resume", applicant.cv_file_name
-            );
-            if up2 is error {
-                return <http:InternalServerError>{
-                    body: {
-                        message: "Failed to upload CV."
-                    }
-                };
-            }
-            cvLink = up2[1];
+        error? cvSizeErr = validateFileSize(applicant.base64_cv);
+        if cvSizeErr is error {
+            log:printError("CV size validation failed", cvSizeErr);
+            return <http:BadRequest>{
+                body: {
+                    message: "CV exceeds 10 MB limit"
+                }
+            };
+        }
+
+        string applicantFolderName = string `${applicant.first_name}_${applicant.last_name}`;
+        string applicantEmail      = applicant.email;
+
+        // Construct unique file names
+        string ts = time:utcToString(time:utcNow());
+
+        string photoExt = getFileExtension(applicant.profile_photo_file_name);
+        string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
+
+        string cvExt = getFileExtension(applicant.cv_file_name);
+        string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
+
+        // Upload profile photo
+        string|error photoLink = gdrive:uploadApplicantPhoto(applicant.base64_profile_photo, photoFileName, applicantEmail);
+        if photoLink is gdrive:InvalidFileTypeError {
+            log:printError("Invalid profile photo type", photoLink);
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid profile photo type. Must be an image."
+                }
+            };
+        }
+        if photoLink is error {
+            log:printError("Failed to upload profile photo", photoLink);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Failed to upload profile photo."
+                }
+            };
+        }
+
+        // Upload CV
+        string|error cvLink = gdrive:uploadApplicantCv(applicant.base64_cv, cvFileName, applicantEmail);
+        if cvLink is gdrive:InvalidFileTypeError {
+            log:printError("Invalid CV type", cvLink);
+            return <http:BadRequest>{
+                body: {
+                    message: "Invalid CV type. Must be PDF."
+                }
+            };
+        }
+        if cvLink is error {
+            log:printError("Failed to upload CV", cvLink);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Failed to upload CV."
+                }
+            };
         }
 
         // Build DB payload with final links + audit
@@ -192,8 +232,8 @@ service http:InterceptableService / on new http:Listener(9093) {
             languages: applicant.languages,
             interests: applicant.interests,
 
-            user_thumbnail: photoLink ?: "",
-            resume_link: cvLink ?: "",
+            user_thumbnail: photoLink,
+            resume_link: cvLink,
             created_by: actor,
             updated_by: actor
         };
