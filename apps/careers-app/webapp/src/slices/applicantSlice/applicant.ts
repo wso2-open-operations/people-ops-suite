@@ -25,9 +25,9 @@ export interface ApplicantPayload {
   first_name: string;
   last_name: string;
   email: string;
-  phone?: string;
-  address?: string;
-  country?: string;
+  phone: string;
+  address: string;
+  country: string;
   status: string;
   professional_links: { title: string; link: string }[];
   educations: {
