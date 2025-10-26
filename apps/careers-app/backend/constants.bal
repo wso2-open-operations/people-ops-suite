@@ -14,12 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# Cache key of employees.
-const string EMPLOYEES_CACHE_KEY = "employees";
-
-# Cache key of customers.
-const string CUSTOMERS_CACHE_KEY = "customers";
-
 # Regex for non-empty printable string (at least one visible char)
 public const NONE_EMPTY_PRINTABLE_STRING_REGEX = "^(?:.*\\S)[ -~]+$";
 
