@@ -14,19 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/log;
 import ballerina/sql;
-
-# Logs and returns a formatted error message
-#
-# + message - Error message
-# + err - Original error (optional)
-# + return - Formatted error
-public isolated function formatError(string message, error? err = ()) returns error {
-    string formattedMessage = err is error ? message + ": " + err.message() : message;
-    log:printError(formattedMessage);
-    return error(formattedMessage, err);
-}
 
 # Build the database select query with dynamic filter attributes.
 #
