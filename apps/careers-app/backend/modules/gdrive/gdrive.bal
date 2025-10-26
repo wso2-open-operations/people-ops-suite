@@ -22,7 +22,7 @@ import ballerinax/googleapis.drive;
 public configurable string googleDriveParentDirName = ?; 
 final drive:Client gDriveClient = check initializeGoogleDriveClient();
 
-# Retrieves (or creates) the **root parent folder** that will contain all vacancy folders.
+# Retrieves (or creates) the **root parent folder**.
 #
 # + return - Folder ID as a string, or an error if the operation fails
 public isolated function getGDriveParentFolder() returns string|error {
