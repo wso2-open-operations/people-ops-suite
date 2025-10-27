@@ -162,6 +162,7 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
 }
 
 # Get career functions.
+#
 # + return - Career functions query
 isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
     `SELECT 
