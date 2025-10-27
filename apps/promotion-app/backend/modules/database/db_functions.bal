@@ -38,11 +38,11 @@ public isolated function getUser(int? id = (), string? email = ()) returns User|
     // Initialize an empty array to store roles assigned to the user.
     Role[] roles = [];
     // Retrieve the user's roles, which are stored in a string (user.roles).
-    string? user_roles = user.roles;
-    // Check if user_roles is a string (to ensure that it contains role data).
-    if user_roles is string {
+    string? userRoles = user.roles;
+    // Check if userRoles is a string (to ensure that it contains role data).
+    if userRoles is string {
         // Split the string by commas to create an array of role strings.
-        string[] rolesList = regex:split(re `,`, user_roles);
+        string[] rolesList = regex:split(re `,`, userRoles);
         foreach string role in rolesList {
             // If the current role is valid and of type Role, push it to the roles array.
             if role is Role {
@@ -75,7 +75,7 @@ public isolated function getPromotionCycles(PromotionCyclesStatus[]? statusArray
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
     return from PromotionCycle promotionCycle in resultStream
-    select promotionCycle;
+        select promotionCycle;
 }
 
 # Retrieving full promotion.  
@@ -97,7 +97,7 @@ public isolated function getPromotions(string? employeeEmail = (), string[]? sta
             businessAccessLevels = businessAccessLevels, 'type = 'type, recommendedBy = recommendedBy));
 
     return from Promotion promotionRequest in resultStream
-    select promotionRequest;
+        select promotionRequest;
 }
 
 # Retrieving promotion recommendations.
@@ -123,5 +123,5 @@ public isolated function getRecommendations(int? id = (), int? promotionRequestI
             )
         );
     return from FullPromotionRecommendation promotionRequest in resultStream
-    select promotionRequest;
+        select promotionRequest;
 }
