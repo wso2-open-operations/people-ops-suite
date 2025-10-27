@@ -70,8 +70,6 @@ public isolated function checkRoles(Role[] requiredRole, Role[] userRoles) retur
         return false;
     }
 
-    // Initialize a flag `allow` to true, assuming by default the user is allowed.
-    boolean allow = true;
 
     // Initialize an index variable `idx` to loop through the `requiredRole` array.
     int idx = 0;
