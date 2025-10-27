@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# Google OAuth2 configuration record type
+# Google OAuth2 configuration record type.
 public type GoogleOAuth2Config record {|
     # OAuth2 Client ID
     string clientId;

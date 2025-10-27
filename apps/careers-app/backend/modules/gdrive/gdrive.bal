@@ -68,7 +68,7 @@ public isolated function getApplicantFolder(string email) returns string|error {
 # + base64Photo - Base64 encoded content of the profile photo
 # + fileName - The file name for the photo (with extension)
 # + email - The email of the applicant
-# + return - The web view link of the uploaded photo or an error if upload/validation fails.
+# + return - The web view link of the uploaded photo or an error if upload/validation fails
 public isolated function uploadApplicantPhoto(string base64Photo, string fileName, string email)
     returns string|error {
     if base64Photo == "" {
@@ -97,7 +97,7 @@ public isolated function uploadApplicantPhoto(string base64Photo, string fileNam
 # + base64Cv - Base64 encoded content of the CV
 # + fileName - The file name for the CV (with extension)
 # + applicantFolderName - The name of the applicant folder
-# + return - The web view link of the uploaded CV or an error if upload/validation fails.
+# + return - The web view link of the uploaded CV or an error if upload/validation fails
 public isolated function uploadApplicantCv(string base64Cv, string fileName, string applicantFolderName)
     returns string|error {
     if base64Cv == "" {

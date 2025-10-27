@@ -21,7 +21,7 @@ public configurable GoogleOAuth2Config googleDriveConfigs = ?;
 
 # Initializes the Google Drive client with OAuth2 configuration.
 #
-# + return - The initialized Drive client or an error if initialization fails.
+# + return - The initialized Drive client or an error if initialization fails
 public isolated function initializeGoogleDriveClient() returns drive:Client|error {
     drive:ConnectionConfig gDriveConfig = {
         auth: {
@@ -36,4 +36,3 @@ public isolated function initializeGoogleDriveClient() returns drive:Client|erro
     };
     return new (gDriveConfig);
 }
-

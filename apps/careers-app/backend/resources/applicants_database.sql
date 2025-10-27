@@ -11,6 +11,8 @@ CREATE TABLE applicants (
     phone VARCHAR(50),
     address TEXT,
     country VARCHAR(100),
+    user_thumbnail TEXT,
+    resume_link TEXT,
     status VARCHAR(50),
     
     -- JSON Arrays
@@ -31,12 +33,12 @@ CREATE TABLE applicants (
 
 
 INSERT INTO applicants (
-    first_name, last_name, email, phone, address, country, status,
+    first_name, last_name, email, phone, address, country, user_thumbnail, resume_link, status,
     professional_links, educations, experiences, skills, certifications, projects, languages, interests
 )
 VALUES (
     'Jane', 'Smith', 'janesmith@example.com', '+1 555 123 4567', '45 Maple Street, Springfield', 'United States',
-    'active',
+    'https://example.com/jane_thumbnail.jpg', 'https://example.com/jane_resume.pdf', 'active',
 
     -- Convert each JSON array to valid JSON string
     '[

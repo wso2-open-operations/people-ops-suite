@@ -36,8 +36,7 @@ public type GraphQlRetryConfig record {|
     decimal maxWaitInterval = RETRY_MAX_INTERVAL;
 |};
 
-// Get employee graphQL service Responses.
-# Employee.
+# Basic employee information.
 public type Employee record {|
     # Id of the employee
     string employeeId;
