@@ -43,14 +43,13 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     people:Employee employeeData = check people:getEmployee(workEmail = email);
 
     UserAppPrivilege userAppPrivileges = {
-        // Assign user roles if user exists; otherwise, use an empty list.
-        roles: applicationUser !is () ? applicationUser.roles : [],
-
-        employeeData: employeeData,
-
-        // Assign functional lead access levels if user exists; otherwise, use unit value (()).
-        functionalLeadAccessLevels: applicationUser !is () ? applicationUser.functionalLeadAccessLevels : ()
+        employeeData
     };
+    
+    if applicationUser !is () {
+        userAppPrivileges.roles = applicationUser.roles;
+        userAppPrivileges.functionalLeadAccessLevels = applicationUser.functionalLeadAccessLevels;
+    }
 
     // If the employee is marked as a lead, append the LEAD role to their roles list.
     if employeeData.lead == true {
