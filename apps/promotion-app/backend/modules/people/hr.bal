@@ -81,7 +81,7 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
     Employee? employee = employeeData.data.employee;
 
     // Null Check.
-    if employee is null {
+    if employee is () {
         return error("No matching employee found for " + workEmail);
     }
 
