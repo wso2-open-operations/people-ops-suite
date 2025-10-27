@@ -182,7 +182,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:Created|http:BadRequest|http:InternalServerError {
+        returns http:InternalServerError|http:BadRequest|http:Created {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -194,10 +194,33 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        time:Utc|error idealEntryTime = time:utcFromString(payload.timeOfEntry + ".000Z");
+        if idealEntryTime is error {
+            string customError = "Error occurred while parsing the visit entry time!";
+            log:printError(customError, idealEntryTime);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        time:Utc|error idealDepartureTime = time:utcFromString(payload.timeOfDeparture + ".000Z");
+        if idealDepartureTime is error {
+            string customError = "Error occurred while parsing the visit departure time!";
+            log:printError(customError, idealDepartureTime);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        time:Utc exactEntryTime = idealEntryTime;
         // Determine visit status based on user role.
         database:Status visitStatus = database:REQUESTED;
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
-            visitStatus = database:APPROVED;
+            visitStatus = database:APPROVED; // Set status to APPROVED for admin users.
+            exactEntryTime = time:utcNow(); // Override entry time to current time for approved visits.
             if payload.passNumber !is string {
                 return <http:BadRequest>{
                     body: {
@@ -238,7 +261,18 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        error? visitError = database:addVisit({...payload, status: visitStatus}, invokerInfo.email, invokerInfo.email);
+        error? visitError = database:addVisit(
+                {
+                    nicHash: payload.nicHash,
+                    companyName: payload.companyName,
+                    passNumber: payload.passNumber,
+                    whomTheyMeet: payload.whomTheyMeet,
+                    purposeOfVisit: payload.purposeOfVisit,
+                    accessibleLocations: payload.accessibleLocations,
+                    timeOfEntry: exactEntryTime,
+                    timeOfDeparture: idealDepartureTime,
+                    status: visitStatus
+                }, invokerInfo.email, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -533,6 +567,27 @@ service http:InterceptableService / on new http:Listener(9090) {
             timeOfDeparture: payload.timeOfDeparture
         };
 
+        time:Utc|error idealEntryTime = time:utcFromString(payload.timeOfEntry + ".000Z");
+        if idealEntryTime is error {
+            string customError = "Error occurred while parsing the visit entry time!";
+            log:printError(customError, idealEntryTime);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        time:Utc|error idealDepartureTime = time:utcFromString(payload.timeOfDeparture + ".000Z");
+        if idealDepartureTime is error {
+            string customError = "Error occurred while parsing the visit departure time!";
+            log:printError(customError, idealDepartureTime);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
         // Handle LK-QR invitation.
         if invitation.'type == "LK-QR" {
             // Persist new visitor.
@@ -558,7 +613,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             // Persist new visit.
             error? visitError = database:addVisit(
                     {
-                        ...newVisitInfo,
+                        companyName: payload.companyName,
+                        whomTheyMeet: payload.whomTheyMeet,
+                        timeOfEntry: time:utcNow(),
+                        timeOfDeparture: idealDepartureTime,
+                        purposeOfVisit: payload.purposeOfVisit,
                         nicHash: payload.nicHash,
                         status: database:REQUESTED
                     }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
@@ -646,7 +705,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Persist new visit.
         error? visitError = database:addVisit(
                 {
-                    ...newVisitInfo,
+                    companyName: payload.companyName,
+                    whomTheyMeet: payload.whomTheyMeet,
+                    purposeOfVisit: payload.purposeOfVisit,
+                    timeOfEntry: idealEntryTime,
+                    timeOfDeparture: idealDepartureTime,
                     nicHash: payload.nicHash,
                     status: database:REQUESTED
                 }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
@@ -1002,3 +1065,4 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 }
+
