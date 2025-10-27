@@ -257,7 +257,7 @@ const ActiveVisits = () => {
     { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      headerName: "Time Of Entry",
       minWidth: 150,
       flex: 1,
       renderCell: (params) =>

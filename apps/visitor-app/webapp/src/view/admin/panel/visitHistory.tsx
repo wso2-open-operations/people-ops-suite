@@ -85,16 +85,15 @@ const VisitHistory = () => {
     { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      headerName: "Time Of Entry",
       minWidth: 150,
       flex: 1,
       renderCell: (params) =>
         params.value ? toLocalDateTime(params.value) : "N/A",
     },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 140, flex: 1 },
     {
-      field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
       minWidth: 160,
       flex: 1.2,
       renderCell: (params) =>
