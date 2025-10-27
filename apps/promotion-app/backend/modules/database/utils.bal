@@ -80,7 +80,7 @@ public isolated function checkRoles(Role[] requiredRole, Role[] userRoles) retur
         // Check if the current role in `requiredRole` exists in the `userRoles` array.
         // `array:indexOf` searches for the index of `requiredRole[idx]` in the `userRoles` array.
         // If the role is not found, `indexOf` returns `()`, which we check to return `false` immediately.
-        if array:indexOf(userRoles, requiredRole[idx]) is () {
+        if userRoles.indexOf(requiredRole[idx]) is () {
             // If the role is not found, return false as the user doesn't have all the required roles.
             return false;
         }
