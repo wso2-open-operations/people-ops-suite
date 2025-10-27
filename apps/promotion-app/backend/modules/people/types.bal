@@ -48,7 +48,7 @@ public type Employee record {
     # First Name
     string firstName;
     # is employee a lead
-    boolean? lead = false;
+    boolean lead = false;
     # Reporting lead's name
     string? reportsTo = ();
     # Job Band
