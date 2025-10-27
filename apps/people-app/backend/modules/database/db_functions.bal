@@ -82,6 +82,7 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
 }
 
 # Get career functions.
+#
 # + return - Career functions
 public isolated function getCareerFunctions() returns CareerFunction[]|error {
     stream<CareerFunction, error?> careerFunctionsStream = databaseClient->query(getCareerFunctionsQuery());
