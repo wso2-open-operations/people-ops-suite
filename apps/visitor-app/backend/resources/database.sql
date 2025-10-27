@@ -1,31 +1,3 @@
-CREATE TABLE `visit_invitation` (
-  `invitation_id` int NOT NULL AUTO_INCREMENT,
-  `invitee_email` varchar(45) NOT NULL,
-  `encode_value` varchar(255) NOT NULL,
-  `no_of_visitors` int NOT NULL DEFAULT '1',
-  `visit_info` json DEFAULT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT '0',
-  `created_by` varchar(255) NOT NULL,
-  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `updated_by` varchar(255) NOT NULL,
-  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  PRIMARY KEY (`invitation_id`),
-  UNIQUE KEY `unique_encode_value` (`encode_value`)
-);
-
-CREATE TABLE `visitor` (
-  `nic_hash` varchar(64) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `nic_number` varchar(255) NOT NULL,
-  `contact_number` varchar(255) NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `created_by` varchar(60) NOT NULL,
-  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `updated_by` varchar(60) DEFAULT NULL,
-  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  PRIMARY KEY (`nic_hash`)
-);
-
 CREATE TABLE `visit` (
   `visit_id` int NOT NULL AUTO_INCREMENT,
   `nic_hash` varchar(64) NOT NULL,
@@ -50,4 +22,33 @@ CREATE TABLE `visit` (
   KEY `fk_invitation_id` (`invitation_id`),
   CONSTRAINT `fk_invitation_id` FOREIGN KEY (`invitation_id`) REFERENCES `visit_invitation` (`invitation_id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `fk_nic_hash` FOREIGN KEY (`nic_hash`) REFERENCES `visitor` (`nic_hash`)
+);
+
+CREATE TABLE `visit_invitation` (
+  `invitation_id` int NOT NULL AUTO_INCREMENT,
+  `invitee_email` varchar(45) NOT NULL,
+  `encode_value` varchar(255) NOT NULL,
+  `no_of_visitors` int NOT NULL DEFAULT '1',
+  `visit_info` json DEFAULT NULL,
+  `type` varchar(45) NOT NULL DEFAULT 'GENERAL',
+  `is_active` tinyint(1) NOT NULL DEFAULT '0',
+  `created_by` varchar(255) NOT NULL,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(255) NOT NULL,
+  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`invitation_id`),
+  UNIQUE KEY `unique_encode_value` (`encode_value`)
+);
+
+CREATE TABLE `visitor` (
+  `nic_hash` varchar(64) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `nic_number` varchar(255) NOT NULL,
+  `contact_number` varchar(255) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `created_by` varchar(60) NOT NULL,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(60) DEFAULT NULL,
+  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`nic_hash`)
 );
