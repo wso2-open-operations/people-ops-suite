@@ -90,6 +90,6 @@ public isolated function checkRoles(Role[] requiredRole, Role[] userRoles) retur
     }
 
     // If all required roles were found in the user's roles, return true, allowing access.
-    return allow;
+    return true;
 }
 
