@@ -624,6 +624,12 @@ function VisitorRegisterCard() {
                                 "visitDetails.timeOfEntry",
                                 dayjs(value).utc().format()
                               );
+
+                              formik.setFieldTouched(
+                                "visitDetails.timeOfEntry",
+                                true,
+                                false
+                              );
                             }}
                             slotProps={{
                               textField: {
@@ -668,19 +674,27 @@ function VisitorRegisterCard() {
                                 "visitDetails.timeOfDeparture",
                                 dayjs(value).utc().format()
                               );
+
+                              formik.setFieldTouched(
+                                "visitDetails.timeOfDeparture",
+                                true,
+                                false
+                              );
                             }}
                             slotProps={{
                               textField: {
                                 fullWidth: true,
                                 disabled: isVisitDetailsLocked,
                                 error:
-                                  formik.touched.visitDetails?.timeOfEntry &&
+                                  formik.touched.visitDetails
+                                    ?.timeOfDeparture &&
                                   Boolean(
-                                    formik.errors.visitDetails?.timeOfEntry
+                                    formik.errors.visitDetails?.timeOfDeparture
                                   ),
                                 helperText:
-                                  formik.touched.visitDetails?.timeOfEntry &&
-                                  formik.errors.visitDetails?.timeOfEntry,
+                                  formik.touched.visitDetails
+                                    ?.timeOfDeparture &&
+                                  formik.errors.visitDetails?.timeOfDeparture,
                               },
                               openPickerButton: {
                                 disabled: isVisitDetailsLocked,
