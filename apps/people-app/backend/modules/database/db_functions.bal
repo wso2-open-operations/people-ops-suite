@@ -91,6 +91,7 @@ public isolated function getCareerFunctions() returns CareerFunction[]|error {
 }
 
 # Get offices.
+#
 # + return - Offices
 public isolated function getOffices() returns Office[]|error {
     stream<Office, error?> officesStream = databaseClient->query(getOfficesQuery());
