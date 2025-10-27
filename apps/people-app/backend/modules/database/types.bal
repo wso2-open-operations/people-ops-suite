@@ -188,6 +188,23 @@ public type Unit record {|
     string name;
 |};
 
+# Career function.
+public type CareerFunction record {|
+    # Career function ID
+    int id;
+    # Career function name
+    @sql:Column {name: "career_function"}
+    string careerFunction;
+|};
+
+# Office.
+public type Office record {|
+    # Office ID
+    int id;
+    # Office name
+    string name;
+|};
+
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
     # Personal email address

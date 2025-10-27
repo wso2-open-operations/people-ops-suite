@@ -81,6 +81,24 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
         select unit;
 }
 
+# Get career functions.
+#
+# + return - Career functions
+public isolated function getCareerFunctions() returns CareerFunction[]|error {
+    stream<CareerFunction, error?> careerFunctionsStream = databaseClient->query(getCareerFunctionsQuery());
+    return from CareerFunction careerFunction in careerFunctionsStream
+        select careerFunction;
+}
+
+# Get offices.
+#
+# + return - Offices
+public isolated function getOffices() returns Office[]|error {
+    stream<Office, error?> officesStream = databaseClient->query(getOfficesQuery());
+    return from Office office in officesStream
+        select office;
+}
+
 # Update employee personal information.
 #
 # + id - Personal information ID
