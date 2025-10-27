@@ -86,7 +86,7 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
     }
 
     // Verifying user status.
-    if (employee.employeeStatus != Active) && (employee.employeeStatus != Marked\ leaver) {
+    if employee.employeeStatus != Active && employee.employeeStatus != Marked\ leaver {
         return error("Deactivated account  " + workEmail);
     }
 
