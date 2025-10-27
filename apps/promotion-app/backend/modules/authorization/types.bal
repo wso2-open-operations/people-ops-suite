@@ -33,7 +33,7 @@ public type AppRoles record {|
 # Return record for user privileges.
 public type UserAppPrivilege record {|
     #Application role list 
-    database:Role[] roles;
+    database:Role[] roles = [];
     #functional lead permission
     database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
     #functional lead permission
