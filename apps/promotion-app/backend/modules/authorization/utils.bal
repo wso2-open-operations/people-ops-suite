@@ -52,7 +52,7 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     }
 
     // If the employee is marked as a lead, append the LEAD role to their roles list.
-    if employeeData.lead == true {
+    if employeeData.lead {
         userAppPrivileges.roles.push(<database:Role>database:LEAD);
     }
 
