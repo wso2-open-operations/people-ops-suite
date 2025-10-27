@@ -171,6 +171,7 @@ isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
     FROM career_function;`;
 
 # Get offices query.
+#
 # + return - Offices query
 isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
