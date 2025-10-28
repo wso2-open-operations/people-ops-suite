@@ -115,9 +115,9 @@ public type AddVisitPayload record {|
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    time:Utc timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    time:Utc timeOfDeparture;
     # Status of the visit
     Status status;
 |};
@@ -161,10 +161,27 @@ public type VisitRecord record {|
 
 # Visit record.
 public type Visit record {|
-    *AddVisitPayload;
     *AuditFields;
     # Unique identifier for the visit
     int id;
+    # Nic Hash of the visitor
+    string nicHash;
+    # Company name of visitor
+    string? companyName;
+    # Number in the tag given to visitor
+    string passNumber?;
+    # The person the visitor is supposed to meet
+    string whomTheyMeet;
+    # Purpose of the visit
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
+    # Time at which the visitor is supposed to check in [in UTC]
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    string timeOfDeparture;
+    # Status of the visit
+    Status status;
     # Name of the visitor
     string name;
     # NIC number of visitor
@@ -210,6 +227,8 @@ public type InvitationRecord record {|
     string? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Invitation.
@@ -227,6 +246,8 @@ public type Invitation record {|
     VisitInfo? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Visit information of invitation.

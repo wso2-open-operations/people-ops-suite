@@ -81,6 +81,7 @@ public isolated function fetchInvitation(string encodeValue) returns Invitation|
         noOfVisitors: invitationRecord.noOfVisitors,
         visitInfo: visitInfo is string ? check visitInfo.fromJsonStringWithType() : (),
         active: invitationRecord.active,
+        'type: invitationRecord.'type,
         createdBy: invitationRecord.createdBy,
         createdOn: invitationRecord.createdOn,
         updatedBy: invitationRecord.updatedBy,

@@ -45,7 +45,7 @@ import {
 } from "@mui/icons-material";
 import { FieldArray, Form, Formik } from "formik";
 import * as Yup from "yup";
-import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DatePicker, DateTimePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { PhoneNumberUtil } from "google-libphonenumber";
@@ -207,7 +207,6 @@ function CreateVisit() {
           : true;
       }
     ),
-    scheduledDate: Yup.string().required("Scheduled date is required"),
     timeOfEntry: Yup.string()
       .required("Time of entry is required")
       .test("is-valid-time", "Time of entry cannot be passed", (value) => {
@@ -219,14 +218,12 @@ function CreateVisit() {
     timeOfDeparture: Yup.string()
       .required("Time of departure is required")
       .test(
-        "is-valid-time",
-        "Time of departure should be after the Time of entry",
+        "is-after-entry",
+        "Time of departure must be after time of entry",
         (value, context) => {
           const { timeOfEntry } = context.parent;
-          if (dayjs(value).isBefore(dayjs(timeOfEntry))) {
-            return false;
-          }
-          return true;
+          if (!value || !timeOfEntry) return false;
+          return dayjs.utc(value).isAfter(dayjs.utc(timeOfEntry));
         }
       ),
   });
@@ -572,60 +569,24 @@ function CreateVisit() {
               </Typography>
 
               <Grid container spacing={3}>
-                {/* Scheduled Date */}
-                <Grid item xs={12} md={4}>
-                  <DatePicker
-                    label="Scheduled Date *"
-                    name="scheduledDate"
-                    value={
-                      formik.values.scheduledDate
-                        ? dayjs(formik.values.scheduledDate)
-                        : null
-                    }
-                    onChange={(value) => {
-                      formik.setFieldValue(
-                        "scheduledDate",
-                        dayjs(value).format("YYYY-MM-DD")
-                      );
-                    }}
-                    minDate={dayjs()}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error:
-                          formik.touched.scheduledDate &&
-                          Boolean(formik.errors.scheduledDate),
-                        helperText:
-                          formik.touched.scheduledDate &&
-                          formik.errors.scheduledDate,
-                        onBlur: () =>
-                          formik.setFieldTouched("scheduledDate", true),
-                      },
-                    }}
-                  />
-                </Grid>
-
                 {/* Time Of Entry */}
-                <Grid item xs={12} md={4}>
-                  <TimePicker
-                    label="Time Of Entry *"
-                    name="timeOfEntry"
+                <Grid item xs={12} md={6}>
+                  <DateTimePicker
+                    label="Time of Entry *"
+                    minDateTime={dayjs()}
                     value={
                       formik.values.timeOfEntry
-                        ? dayjs(formik.values.timeOfEntry)
+                        ? dayjs.utc(formik.values.timeOfEntry).local()
                         : null
                     }
                     onChange={(value) => {
                       formik.setFieldValue(
                         "timeOfEntry",
-                        formik.values.scheduledDate +
-                          "T" +
-                          dayjs(value).format(
-                            "HH:mm:ss" + dayjs(value).format("Z")
-                          )
+                        dayjs(value).utc().format()
                       );
+
+                      formik.setFieldTouched("timeOfEntry", true, false);
                     }}
-                    disabled={formik.values.scheduledDate === ""}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -641,28 +602,28 @@ function CreateVisit() {
                     }}
                   />
                 </Grid>
-
                 {/* Time Of Departure */}
-                <Grid item xs={12} md={4}>
-                  <TimePicker
-                    label="Time Of Departure *"
-                    name="timeOfDeparture"
+                <Grid item xs={12} md={6}>
+                  <DateTimePicker
+                    label="Time of Departure *"
+                    minDateTime={
+                      formik.values.timeOfEntry
+                        ? dayjs(formik.values.timeOfEntry).local()
+                        : dayjs()
+                    }
                     value={
                       formik.values.timeOfDeparture
-                        ? dayjs(formik.values.timeOfDeparture)
+                        ? dayjs.utc(formik.values.timeOfDeparture).local()
                         : null
                     }
                     onChange={(value) => {
                       formik.setFieldValue(
                         "timeOfDeparture",
-                        formik.values.scheduledDate +
-                          "T" +
-                          dayjs(value).format(
-                            "HH:mm:ss" + dayjs(value).format("Z")
-                          )
+                        dayjs(value).utc().format()
                       );
+
+                      formik.setFieldTouched("timeOfDeparture", true, false);
                     }}
-                    disabled={formik.values.timeOfEntry === ""}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -672,8 +633,6 @@ function CreateVisit() {
                         helperText:
                           formik.touched.timeOfDeparture &&
                           formik.errors.timeOfDeparture,
-                        onBlur: () =>
-                          formik.setFieldTouched("timeOfDeparture", true),
                       },
                     }}
                   />
