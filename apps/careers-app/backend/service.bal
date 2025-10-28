@@ -299,6 +299,40 @@ service http:InterceptableService / on new http:Listener(9090) {
         return applicant;
     }
 
+    # Retrieve an applicant profile by email.
+    #
+    # + email - Email of the applicant (passed as query param)
+    # + return - ApplicantProfile if found, else 404 if not
+    resource function get applicants/email(http:RequestContext ctx, string email)
+        returns database:ApplicantProfile|http:NotFound|http:InternalServerError {
+
+        log:printInfo(string `Checking applicant profile for email: ${email}`);
+
+        database:ApplicantProfile|error applicant = database:getApplicantProfileByEmail(email);
+
+        if applicant is error {
+            if applicant.message().startsWith("No applicant found with email:") {
+                string notFoundMsg = "Applicant profile not found for email: " + email;
+                log:printInfo(notFoundMsg);
+                return <http:NotFound>{
+                    body: {
+                        message: notFoundMsg
+                    }
+                };
+            }
+
+            string errMsg = "Error occurred while retrieving applicant profile for email: " + email;
+            log:printError(errMsg, applicant);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
+        return applicant;
+    }
+
     # Update a applicant profile.
     #
     # + id - ID of the applicant
