@@ -14,5 +14,4 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export { default as FallbackUserAvatar } from "@/assets/icons/others/avatar.svg?react";
 export { default as VehicleServiceIcon } from "@/assets/icons/services/vehicle.svg?react";

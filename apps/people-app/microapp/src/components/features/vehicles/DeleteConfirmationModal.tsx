@@ -15,8 +15,6 @@
 // under the License.
 
 import { motion } from "motion/react";
-import { useMutation } from "@tanstack/react-query";
-// import { deleteVehicle } from "@/services/api";
 import { CircularProgress } from "@mui/material";
 import { executeWithTokenHandling } from "@/utils/utils";
 import { serviceUrls } from "@/config/config";
