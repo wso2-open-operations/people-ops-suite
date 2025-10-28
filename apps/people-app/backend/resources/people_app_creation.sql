@@ -132,6 +132,7 @@ CREATE TABLE `business_unit_team_sub_team_unit` (
 CREATE TABLE `company` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(255) NOT NULL,
+  `prefix` VARCHAR(20) NOT NULL,
   `location` VARCHAR(255) NOT NULL,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_by` VARCHAR(254) NOT NULL,
@@ -271,7 +272,8 @@ CREATE TABLE `recruit` (
 
 -- Employee table
 CREATE TABLE `employee` (
-  `id` VARCHAR(99) PRIMARY KEY,
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
+  `employee_id` VARCHAR(99) UNIQUE,
   `last_name` VARCHAR(50) NOT NULL,
   `first_name` VARCHAR(150) NOT NULL,
   `epf` VARCHAR(45) NULL,
@@ -325,7 +327,7 @@ CREATE TABLE `employee` (
 
 -- Resignation table
 CREATE TABLE `resignation` (
-  `employee_id` VARCHAR(99) PRIMARY KEY,
+  `employee_id` INT PRIMARY KEY,
   `final_day_in_office` DATE NULL,
   `final_day_of_employment` DATE NULL,
   `reason` VARCHAR(300) NULL,
@@ -338,3 +340,35 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
+-- Trigger to set employee.employee_id before insertion
+DELIMITER //
+CREATE TRIGGER trg_employee_set_employee_id
+BEFORE INSERT ON employee
+FOR EACH ROW
+BEGIN
+  DECLARE v_prefix VARCHAR(20);
+  -- Find the company prefix from the employee's office
+  SELECT c.prefix
+    INTO v_prefix
+    FROM office o
+    JOIN company c ON c.id = o.company_id
+   WHERE o.id = NEW.office_id
+   LIMIT 1;
+  IF v_prefix IS NULL THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+  END IF;
+  SET NEW.employee_id = CONCAT(
+    v_prefix, 
+    (
+      SELECT 
+        AUTO_INCREMENT 
+      FROM 
+        information_schema.TABLES 
+      WHERE 
+        TABLE_SCHEMA = DATABASE() 
+        AND TABLE_NAME = 'employee'
+    )
+  );
+END//
+DELIMITER ;
