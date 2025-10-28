@@ -32,6 +32,8 @@ function EmptyState() {
       <h1 className="text-lg font-semibold text-[#717171]">
         No vehicles added yet.
       </h1>
+
+      {/* NOTE: &nbsp; is used here to add a forced space so the text and icon don’t stick together */}
       <p className="text-base font-medium text-[#808080]">
         To get started, click the&nbsp;
         <AddSharp className="text-primary" style={{ fontSize: 23 }} />
