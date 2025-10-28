@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { AddSharp, KeyboardBackspaceSharp } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
@@ -172,8 +172,11 @@ function AddButton({ onClick }: AddButtonProps) {
 }
 
 export function BackButton() {
+  let navigate = useNavigate();
+  const handleBackButtonClick = () => navigate(-1);
+
   return (
-    <IconButton component={Link} to="/">
+    <IconButton onClick={handleBackButtonClick}>
       <KeyboardBackspaceSharp className="text-black" style={{ fontSize: 27 }} />
     </IconButton>
   );
