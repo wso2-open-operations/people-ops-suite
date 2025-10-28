@@ -33,10 +33,8 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
         }
     `;
 
-    EmployeeResponse|error response = hrClient->execute(document, {workEmail});
-    if response is error {
-        return response;
-    }
+    EmployeeResponse response = check hrClient->execute(document, {workEmail});
+
     return response.data.employee;
 }
 
@@ -70,18 +68,14 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
         }
     `;
 
-    EmployeeResults|error employeeData = hrClient->execute(document, {workEmail});
-
-    if employeeData is error {
-        log:printError(employeeData.toString());
-        return error("Employee data retrieving service error!");
-    }
+    EmployeeResults employeeData = check hrClient->execute(document, {workEmail});
 
     // Return object.
     Employee? employee = employeeData.data.employee;
 
     // Null Check.
     if employee is () {
+        log:printError("No matching employee found for " + workEmail);
         return error("No matching employee found for " + workEmail);
     }
 
@@ -117,18 +111,13 @@ public isolated function fetchEmployeeHistory(string workEmail) returns Employee
         }
     `;
 
-    EmployeeHistoryResponse|error employeeData = hrClient->execute(document, {workEmail});
-
-    if employeeData is error {
-        log:printError(employeeData.toString());
-        return error("Employee history retrieving service error!");
-    }
+    EmployeeHistoryResponse employeeData = check hrClient->execute(document, {workEmail});
 
     EmployeeHistory? employeeHistory = employeeData.data.employee;
 
     // Null Check.
-    if employeeHistory is null {
-        log:printError(employeeData.toString());
+    if employeeHistory is () {
+        log:printError(`No matching employee found for ${workEmail}`);
         return error("No matching employee found for " + workEmail);
     }
 
