@@ -347,28 +347,39 @@ BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
   DECLARE v_prefix VARCHAR(20);
-  -- Find the company prefix from the employee's office
+  -- Look up the company prefix once for this office
   SELECT c.prefix
     INTO v_prefix
     FROM office o
     JOIN company c ON c.id = o.company_id
    WHERE o.id = NEW.office_id
    LIMIT 1;
-  IF v_prefix IS NULL THEN
-    SIGNAL SQLSTATE '45000'
-      SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+
+  IF NEW.employee_id IS NOT NULL AND TRIM(NEW.employee_id) <> '' THEN
+    -- Keep caller-provided value if provided
+    IF v_prefix IS NOT NULL AND v_prefix <> ''
+       AND NOT REGEXP_LIKE(TRIM(NEW.employee_id), CONCAT('^', v_prefix, '[0-9]+$'))
+    THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'employee_id does not match company prefix';
+    END IF;
+
+    SET NEW.employee_id = TRIM(NEW.employee_id);
+  ELSE
+    -- No employee_id supplied: require a prefix and auto-generate
+    IF v_prefix IS NULL OR v_prefix = '' THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+    END IF;
+
+    SET NEW.employee_id = CONCAT(
+      v_prefix,
+      (SELECT AUTO_INCREMENT
+         FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'employee')
+    );
   END IF;
-  SET NEW.employee_id = CONCAT(
-    v_prefix, 
-    (
-      SELECT 
-        AUTO_INCREMENT 
-      FROM 
-        information_schema.TABLES 
-      WHERE 
-        TABLE_SCHEMA = DATABASE() 
-        AND TABLE_NAME = 'employee'
-    )
-  );
 END//
+//
 DELIMITER ;
