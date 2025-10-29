@@ -291,6 +291,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         return offices;
     }
 
+    # Create a new employee.
+    # 
+    # + return - HTTP Created or HTTP errors
     resource function post employees() returns http:Created|http:InternalServerError {
         // TODO: Implementation for creating a new employee
         return http:CREATED;
