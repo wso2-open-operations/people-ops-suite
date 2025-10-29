@@ -241,6 +241,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get career functions.
+    # 
     # + return - Career functions
     resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
         database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
@@ -257,6 +258,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get offices.
+    # 
     # + return - Offices
     resource function get offices() returns database:Office[]|http:InternalServerError {
         database:Office[]|error offices = database:getOffices();
