@@ -30,6 +30,19 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
     FROM employee
     WHERE work_email = ${email};`;
 
+# Fetch all employees' basic information.
+#
+# + return - Query to get all employees basic information
+isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        first_name,
+        last_name,
+        work_email,
+        employee_thumbnail,
+        job_role
+    FROM employee;`;
+
 # Fetch employee detailed information.
 #
 # + id - Employee ID
@@ -48,9 +61,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.work_phone_number AS workPhoneNumber,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.report_to_email AS reportToEmail,
         e.additional_manager_email AS additionalManagerEmail,
-        e.additional_report_to_email AS additionalReportToEmail,
         e.employee_status AS employeeStatus,
         e.length_of_service AS lengthOfService,
         e.relocation_status AS relocationStatus,
@@ -176,7 +187,8 @@ isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
 isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
-        name
+        name,
+        working_locations
     FROM office;`;
 
 # Update employee personal information query.

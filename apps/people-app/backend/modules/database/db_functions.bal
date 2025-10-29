@@ -24,6 +24,15 @@ public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasi
     return employeeBasicInfo is sql:NoRowsError ? () : employeeBasicInfo;
 }
 
+# Fetch all employees' basic information.
+#
+# + return - All employees' basic information
+public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|error {
+    stream<EmployeeBasicInfo, error?> employeesBasicInfoStream = databaseClient->query(getAllEmployeesBasicInfoQuery());
+    return from EmployeeBasicInfo employeesBasicInfo in employeesBasicInfoStream
+        select employeesBasicInfo;
+}
+
 # Fetch employee detailed information.
 #
 # + id - Employee ID

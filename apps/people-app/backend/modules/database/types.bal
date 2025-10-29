@@ -69,7 +69,7 @@ public type UserInfo record {|
 public type Employee record {|
     *EmployeeBasicInfo;
     # Employees' provident fund number
-    string epf;
+    string? epf;
     # Employee location
     string employeeLocation;
     # Work location
@@ -80,12 +80,8 @@ public type Employee record {|
     string startDate;
     # Manager email
     string managerEmail;
-    # Report-to email
-    string reportToEmail;
     # Additional manager email
     string? additionalManagerEmail;
-    # Additional report-to email
-    string? additionalReportToEmail;
     # Employee status
     string employeeStatus;
     # Length of service
@@ -203,6 +199,9 @@ public type Office record {|
     int id;
     # Office name
     string name;
+    # Working locations
+    @sql:Column {name: "working_locations"}
+    json workingLocations;
 |};
 
 # Employee personal information update payload.

@@ -170,6 +170,23 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
+    # Fetch all employees' basic information.
+    #
+    # + return - All employees' basic information
+    resource function get employees/basic\-info() returns database:EmployeeBasicInfo[]|http:InternalServerError {
+        database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
+        if employeesBasicInfos is error {
+            string customErr = "Error occurred while fetching employees' basic information";
+            log:printError(customErr, employeesBasicInfos);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeesBasicInfos;
+    }
+
     # Get business units.
     # + return - Business units
     resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
@@ -241,7 +258,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get career functions.
-    # 
+    #
     # + return - Career functions
     resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
         database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
@@ -258,7 +275,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get offices.
-    # 
+    #
     # + return - Offices
     resource function get offices() returns database:Office[]|http:InternalServerError {
         database:Office[]|error offices = database:getOffices();
@@ -272,6 +289,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return offices;
+    }
+
+    resource function post employees() returns http:Created|http:InternalServerError {
+        // TODO: Implementation for creating a new employee
+        return http:CREATED;
     }
 
     # Update employee personal information.
