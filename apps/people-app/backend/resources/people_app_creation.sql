@@ -148,7 +148,7 @@ CREATE TABLE `office` (
   `company_id` INT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `location` VARCHAR(255) NOT NULL,
-  `working_locations` JSON NULL,
+  `working_locations` JSON NOT NULL,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
