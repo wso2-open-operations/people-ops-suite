@@ -23,7 +23,7 @@ import { TwoWheelerSharp, DirectionsCarSharp } from "@mui/icons-material";
 import { BottomSheet } from "@/components/shared";
 import { OptionGroup, IconOption } from "@/components/features/vehicles";
 import { validation } from "@/constants";
-import type { Validity } from "@/types";
+import type { Validity, VehicleType } from "@/types";
 import { TextInput } from "@/components/ui";
 import {
   validate,
@@ -63,7 +63,7 @@ interface AddVehicleSheetProps {
  */
 function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
   const [number, setNumber] = useState<string>("");
-  const [type, setType] = useState<"MOTORCYCLE" | "CAR" | undefined>("CAR"); // TODO: Replace current type with `Vehicle` type
+  const [type, setType] = useState<VehicleType | undefined>("CAR");
   const [isValidPlate, setIsValidPlate] = useState<Validity>(
     validation.UNCERTAIN
   );
@@ -116,7 +116,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
           className="flex justify-center gap-[1.35rem] mt-3 mb-5"
           value={type}
           onChange={(value) => {
-            setType(value as "CAR" | "MOTORCYCLE" | undefined);
+            setType(value as VehicleType | undefined);
           }}
         >
           <IconOption name="CAR" selected={true}>
