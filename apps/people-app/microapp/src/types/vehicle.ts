@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import type { validation } from "@/constants";
+
 export type VehicleType = "CAR" | "MOTORCYCLE";
 
 /**
@@ -30,7 +32,7 @@ export interface Vehicle {
   number: string;
 }
 
-export type Validity = "valid" | "invalid" | "uncertain";
+export type Validity = (typeof validation)[keyof typeof validation];
 
 export interface Response {
   vehicles: VehicleResponse[];
