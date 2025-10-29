@@ -68,10 +68,8 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
     validation.UNCERTAIN
   );
 
-  const [isPending, setIsPending] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
-
-  const busy = isPending || isError;
+  // for disabling button while request is pending. re-enabling on error for retry.
+  const [busy, setBusy] = useState<boolean>(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNumber(e.target.value);
@@ -81,7 +79,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const handleVehicleRegistration = async () => {
-    setIsPending(true);
+    setBusy(true);
     if (type && isValidPlate === validation.VALID) {
       executeWithTokenHandling(
         handleRequest,
@@ -98,9 +96,9 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
         },
         (error) => {
           console.error("Error registering vehicle", error);
-          setIsError(true);
+          setBusy(false);
         },
-        (pending) => setIsPending(pending)
+        (pending) => setBusy(pending)
       );
     }
   };
