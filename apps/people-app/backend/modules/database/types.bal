@@ -18,6 +18,18 @@ import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
 
+# Email validation regex pattern
+const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+
+# Phone number validation regex pattern
+const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
+
+# Date validation regex pattern (YYYY-MM-DD format)
+const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
+
+# URL validation regex pattern
+const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -106,8 +118,6 @@ public type Employee record {|
     string subTeam;
     # Business unit
     string businessUnit;
-    # Personal info ID
-    int personal_info_id;
 |};
 
 # Personal information of an employee.
@@ -204,16 +214,131 @@ public type Office record {|
     json workingLocations;
 |};
 
+# Create personal info payload.
+public type CreatePersonalInfoPayload record {|
+    # National Identity Card number
+    string nic;
+    # Full name of the person
+    @constraint:String {maxLength: 255}
+    string fullName;
+    # Name with initials
+    @constraint:String {maxLength: 150}
+    string? nameWithInitials = ();
+    # First name
+    @constraint:String {maxLength: 100}
+    string? firstName = ();
+    # Last name
+    @constraint:String {maxLength: 100}
+    string? lastName = ();
+    # Title (Mr./Ms./Dr./etc.)
+    @constraint:String {maxLength: 20}
+    string? title = ();
+    # Date of birth
+    @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
+    string? dob = ();
+    # Age
+    @constraint:Int {minValue: 0}
+    int? age = ();
+    # Personal email address
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? personalEmail = ();
+    # Personal phone number
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    string? personalPhone = ();
+    # Home phone number
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    string? homePhone = ();
+    # Home address
+    @constraint:String {maxLength: 255}
+    string? address = ();
+    # Postal code
+    @constraint:String {maxLength: 20}
+    string? postalCode = ();
+    # Country of residence
+    @constraint:String {maxLength: 100}
+    string? country = ();
+    # Nationality
+    @constraint:String {maxLength: 100}
+    string? nationality = ();
+|};
+
+# Create employee payload.
+public type CreateEmployeePayload record {|
+    # First name of the user
+    @constraint:String {maxLength: 150}
+    string firstName;
+    # Last name of the user
+    @constraint:String {maxLength: 150}
+    string lastName;
+    # Employee's Provident Fund number
+    @constraint:String {maxLength: 45}
+    string? epf = ();
+    # Employee location
+    @constraint:String {maxLength: 255}
+    string employeeLocation;
+    # Work location
+    @constraint:String {maxLength: 100}
+    string workLocation;
+    # Work email of the user
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string workEmail;
+    # Work phone number
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    string? workPhoneNumber = ();
+    # Start date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string startDate;
+    # Job role of the user
+    @constraint:String {maxLength: 100}
+    string jobRole;
+    # Manager email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string managerEmail;
+    # Additional manager email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? additionalManagerEmail = ();
+    # Employee status
+    @constraint:String {maxLength: 50}
+    string employeeStatus;
+    # Employee thumbnail URL
+    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
+    string? employeeThumbnail = ();
+    # Subordinate count
+    int? subordinateCount = ();
+    # Probation end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? probationEndDate = ();
+    # Agreement end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? agreementEndDate = ();
+    # Employment type ID
+    int? employmentTypeId = ();
+    # Designation ID
+    int designationId;
+    # Office ID
+    int officeId;
+    # Team ID
+    int teamId;
+    # Sub-team ID
+    int? subTeamId = ();
+    # Business unit ID
+    int businessUnitId;
+    # Unit ID
+    int? unitId = ();
+    # Employee personal information
+    CreatePersonalInfoPayload personalInfo;
+|};
+
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
     # Personal email address
-    @constraint:String {maxLength: 254, pattern: re `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`}
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {pattern: re `^[0-9+\-() \s]{6,20}$`}
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Home phone number
-    @constraint:String {pattern: re `^[0-9+\-() \s]{6,20}$`}
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? homePhone = ();
     # Home address
     @constraint:String {maxLength: 255}

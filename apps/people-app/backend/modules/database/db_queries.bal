@@ -191,6 +191,121 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
         working_locations
     FROM office;`;
 
+# Add employee personal information query.
+#
+# + payload - Create personal info payload
+# + createdBy - Creator of the personal info record
+# + return - Personal info insert query
+isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info
+        (
+            nic,
+            full_name,
+            name_with_initials,
+            first_name,
+            last_name,
+            title,
+            dob,
+            age,
+            personal_email,
+            personal_phone,
+            home_phone,
+            address,
+            postal_code,
+            country,
+            nationality,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            ${payload.nic},
+            ${payload.fullName},
+            ${payload.nameWithInitials},
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.title},
+            ${payload.dob},
+            ${payload.age},
+            ${payload.personalEmail},
+            ${payload.personalPhone},
+            ${payload.homePhone},
+            ${payload.address},
+            ${payload.postalCode},
+            ${payload.country},
+            ${payload.nationality},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Add employee query.
+#
+# + payload - Add employee payload
+# + createdBy - Creator of the employee record
+# + personalInfoId - Personal info ID
+# + return - Employee insert query
+isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee
+        (
+            first_name,
+            last_name,
+            epf,
+            employee_location,
+            work_location,
+            work_email,
+            work_phone_number,
+            start_date,
+            job_role,
+            manager_email,
+            additional_manager_email,
+            employee_status,
+            employee_thumbnail,
+            subordinate_count,
+            probation_end_date,
+            agreement_end_date,
+            personal_info_id,
+            employment_type_id,
+            designation_id,
+            office_id,
+            team_id,
+            sub_team_id,
+            business_unit_id,
+            unit_id,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.epf},
+            ${payload.employeeLocation},
+            ${payload.workLocation},
+            ${payload.workEmail},
+            ${payload.workPhoneNumber},
+            ${payload.startDate},
+            ${payload.jobRole},
+            ${payload.managerEmail},
+            ${payload.additionalManagerEmail},
+            ${payload.employeeStatus},
+            ${payload.employeeThumbnail},
+            ${payload.subordinateCount},
+            ${payload.probationEndDate},
+            ${payload.agreementEndDate},
+            ${personalInfoId},
+            ${payload.employmentTypeId},
+            ${payload.designationId},
+            ${payload.officeId},
+            ${payload.teamId},
+            ${payload.subTeamId},
+            ${payload.businessUnitId},
+            ${payload.unitId},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
 # Update employee personal information query.
 #
 # + id - Personal info ID
