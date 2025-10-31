@@ -202,8 +202,8 @@ CREATE TABLE `employment_type` (
 CREATE TABLE `personal_info` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `nic` VARCHAR(20) UNIQUE,
-  `full_name` VARCHAR(150) NOT NULL,
-  `name_with_initials` VARCHAR(100),
+  `full_name` VARCHAR(255) NOT NULL,
+  `name_with_initials` VARCHAR(150),
   `first_name` VARCHAR(100),
   `last_name` VARCHAR(100),
   `title` VARCHAR(100) NULL,
@@ -275,8 +275,8 @@ CREATE TABLE `recruit` (
 CREATE TABLE `employee` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `employee_id` VARCHAR(99) UNIQUE,
-  `last_name` VARCHAR(50) NOT NULL,
   `first_name` VARCHAR(150) NOT NULL,
+  `last_name` VARCHAR(150) NOT NULL,
   `epf` VARCHAR(45) NULL,
   `employee_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
@@ -291,7 +291,6 @@ CREATE TABLE `employee` (
   `relocation_status` VARCHAR(50) NULL,
   `employee_thumbnail` VARCHAR(512) NULL,
   `subordinate_count` INT NULL,
-  `_timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
   `created_by` VARCHAR(254) NOT NULL,

@@ -292,11 +292,31 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Create a new employee.
-    # 
+    #
     # + return - HTTP Created or HTTP errors
-    resource function post employees() returns http:Created|http:InternalServerError {
-        // TODO: Implementation for creating a new employee
-        return http:CREATED;
+    resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
+        returns int|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        int|error employeeId = database:addEmployee(payload, userInfo.email);
+        if employeeId is error {
+            string customErr = "Error occurred while adding a new employee";
+            log:printError(customErr, employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeeId;
     }
 
     # Update employee personal information.

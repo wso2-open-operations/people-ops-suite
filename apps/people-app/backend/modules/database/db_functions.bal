@@ -108,6 +108,26 @@ public isolated function getOffices() returns Office[]|error {
         select office;
 }
 
+# Add new employee.
+#
+# + payload - Add employee payload
+# + createdBy - Creator of the employee record
+# + return - Created employee ID or error
+public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
+    transaction {
+        sql:ExecutionResult personalInfoResult = check databaseClient->execute(addEmployeePersonalInfoQuery(
+                payload.personalInfo, createdBy));
+        int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
+
+        sql:ExecutionResult employeeResult = check databaseClient->execute(addEmployeeQuery(payload, createdBy,
+                personalInfoId));
+        int employeeId = check employeeResult.lastInsertId.ensureType(int);
+
+        check commit;
+        return employeeId;
+    }
+}
+
 # Update employee personal information.
 #
 # + id - Personal information ID
