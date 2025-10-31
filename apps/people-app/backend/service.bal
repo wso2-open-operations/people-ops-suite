@@ -293,7 +293,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Create a new employee.
     #
-    # + return - HTTP Created or HTTP errors
+    # + return - The created employee ID as an integer, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
         returns int|http:InternalServerError {
 
