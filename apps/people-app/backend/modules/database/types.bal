@@ -301,7 +301,7 @@ public type CreateEmployeePayload record {|
     @constraint:String {maxLength: 50}
     string employeeStatus;
     # Employee thumbnail URL
-    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
     # Subordinate count
     int? subordinateCount = ();
