@@ -28,7 +28,7 @@ const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
 const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
 
 # URL validation regex pattern
-const URL_PATTERN_STRING = "^(https?|ftp):\\/\\/[^\\s/$.?#][^\\s]*$";
+const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 
 # [Configurable] Database configs.
 type DatabaseConfig record {|

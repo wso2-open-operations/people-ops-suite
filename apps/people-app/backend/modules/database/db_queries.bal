@@ -272,6 +272,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             team_id,
             sub_team_id,
             business_unit_id,
+            unit_id,
             created_by,
             updated_by
         )
@@ -300,6 +301,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.teamId},
             ${payload.subTeamId},
             ${payload.businessUnitId},
+            ${payload.unitId},
             ${createdBy},
             ${createdBy}
         );`;
