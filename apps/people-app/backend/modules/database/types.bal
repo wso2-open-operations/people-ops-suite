@@ -21,7 +21,7 @@ import ballerinax/mysql;
 # Email validation regex pattern
 const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
-# Phone number validation regex pattern  
+# Phone number validation regex pattern
 const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
 
 # Date validation regex pattern (YYYY-MM-DD format)
