@@ -28,7 +28,8 @@ import {
   Tooltip,
   Avatar,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import WorkIcon from "@mui/icons-material/Work";
 import SchoolIcon from "@mui/icons-material/School";
@@ -42,7 +43,10 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { Formik, Form, FieldArray } from "formik";
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { createApplicant } from "@slices/applicantSlice/applicant";
+import {
+  createApplicant,
+  fetchApplicantByEmail,
+} from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToBase64 } from "@utils/utils";
@@ -50,6 +54,8 @@ import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
 import { SnackMessage } from "@root/src/config/constant";
+import PreLoader from "@component/common/PreLoader";
+import ApplicantProfile from "./applicantProfile";
 
 import ExperienceModal, { Experience } from "@modals/ExperienceModal";
 import EducationModal, { Education } from "@modals/EducationModal";
@@ -143,14 +149,17 @@ const mainValidationSchema = yup.object({
 
 export default function CreateApplicant() {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { showConfirmation } = useConfirmationModalContext();
+
+  const { state, applicantProfile } = useAppSelector((s) => s.applicant);
+  const userEmail = useAppSelector((s) => s.user?.userInfo?.workEmail);
+
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-  const [openModal, setOpenModal] = useState<
-    "experience" | "education" | "certification" | "project" | "language" | null
-  >(null);
-  const [editingSection, setEditingSection] = useState<
-    "experience" | "education" | "certification" | "project" | "language" | null
-  >(null);
+  const [openModal, setOpenModal] = useState<SectionKey | null>(null);
+  const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<SectionItem | null>(null);
 
@@ -172,9 +181,30 @@ export default function CreateApplicant() {
     setEditingItem(null);
   };
 
-  const dispatch = useAppDispatch();
-  const { state } = useAppSelector((s) => s.applicant);
-  const { showConfirmation } = useConfirmationModalContext();
+  useEffect(() => {
+    if (userEmail) {
+      dispatch(fetchApplicantByEmail(userEmail));
+    }
+  }, [dispatch, userEmail]);
+
+  // Display loader while checking applicant email
+  if (state === State.loading) {
+    return (
+      <PreLoader
+        message={
+          applicantProfile
+            ? "Loading your applicant details..."
+            : "Creating your applicant profile..."
+        }
+        isLoading
+      />
+    );
+  }
+
+  // If existing applicant found → show profile page
+  if (applicantProfile) {
+    return <ApplicantProfile />;
+  }
 
   const sectionIcons: Record<string, JSX.Element> = {
     experience: <WorkIcon sx={{ color: theme.palette.brand.orange, mr: 1 }} />,
@@ -213,7 +243,11 @@ export default function CreateApplicant() {
 
       {/* Main Formik Form */}
       <Formik
-        initialValues={initialValues}
+        initialValues={{
+          ...initialValues,
+          email: userEmail || "", // Set email from userEmail if available
+        }}
+        enableReinitialize={true}
         validationSchema={mainValidationSchema}
         onSubmit={async (values, { resetForm }) => {
           const base64Profile = profilePhoto
@@ -261,6 +295,9 @@ export default function CreateApplicant() {
           };
 
           await dispatch(createApplicant(payload)).unwrap();
+          if (values.email) {
+            await dispatch(fetchApplicantByEmail(values.email));
+          }
           resetForm();
           setResumeFile(null);
           setProfilePhoto(null);
@@ -425,6 +462,7 @@ export default function CreateApplicant() {
                     fullWidth
                     label="Phone Number"
                     name="phone"
+                    placeholder="+1234567890"
                     value={values.phone}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -440,7 +478,9 @@ export default function CreateApplicant() {
                     value={values.email}
                     onChange={handleChange}
                     onBlur={handleBlur}
-                    error={touched.email && Boolean(errors.email)}
+                    InputProps={{
+                      readOnly: true,
+                    }}
                     helperText={touched.email && errors.email}
                   />
                 </Grid>
@@ -725,13 +765,13 @@ export default function CreateApplicant() {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={state === State.loading || isSubmitting}
+                  disabled={isSubmitting}
                   sx={{
                     bgcolor: theme.palette.brand.orange,
                     "&:hover": { bgcolor: theme.palette.brand.orangeDark },
                   }}
                 >
-                  {state === State.loading ? "Saving..." : "Save"}
+                  {isSubmitting ? "Submitting..." : "Save"}
                 </Button>
               </Box>
             </Paper>
