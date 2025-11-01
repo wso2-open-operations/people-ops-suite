@@ -21,7 +21,7 @@ public const NONE_EMPTY_PRINTABLE_STRING_REGEX = "^(?:.*\\S)[ -~]+$";
 public const REGEX_EMAIL = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 # Regex for phone number (9–15 digits only)
-public const REGEX_PHONE_NUMBER = "^\\+?[0-9]{1,4}(\\s?[0-9]{2,4}){1,4}$";
+public const REGEX_PHONE_NUMBER = "^\\+[1-9]\\d{1,14}$";
 
 # URL validation for professional links
 public const REGEX_URL = "https?://[^\\s]+";
