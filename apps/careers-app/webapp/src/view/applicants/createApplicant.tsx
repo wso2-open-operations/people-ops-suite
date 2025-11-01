@@ -218,7 +218,7 @@ export default function CreateApplicant() {
   };
 
   return (
-    <Box sx={{ mt: "-24px" }}>
+    <Box sx={{ mt: "-24px", overflow: "hidden", mx: "-24px" }}>
       {/* Hero Banner Section */}
       <Box
         sx={{
@@ -229,12 +229,8 @@ export default function CreateApplicant() {
           backgroundColor: theme.palette.background.banner,
           boxShadow: "0 2px 7px rgba(0,0,0,0.05)",
           py: { xs: 4, md: 6 },
-          width: "100vw",
+          width: "100%",
           position: "relative",
-          left: "50%",
-          right: "50%",
-          marginLeft: "-50vw",
-          marginRight: "-50vw",
         }}
       >
         {/* Inner Content Wrapper */}
@@ -286,27 +282,7 @@ export default function CreateApplicant() {
       </Box>
 
       {/* Form Content Container */}
-      <Box sx={{ p: 4, maxWidth: 900, mx: "auto", mt: 6 }}>
-        {/* Header */}
-        <Typography
-        variant="h3"
-        fontWeight="bold"
-        color={theme.palette.brand.orangeDark}
-        gutterBottom
-        align="center"
-        fontStyle="italic"
-      >
-        Share your CV with us...
-      </Typography>
-      <Typography
-        variant="h5"
-        color="text.secondary"
-        maxWidth="80%"
-        align="center"
-        sx={{ mx: "auto", mb: 6 }}
-      >
-        Help us get to know you better by sharing your resume.
-      </Typography>
+      <Box sx={{ p: { xs: 2, md: 3 }, px: { xs: 2, md: 3 }, maxWidth: 1400, mx: "auto", mt: 6 }}>
 
       {/* Main Formik Form */}
       <Formik
@@ -403,6 +379,79 @@ export default function CreateApplicant() {
               );
             }}
           >
+            {/* CV Upload */}
+            <Paper
+              variant="outlined"
+              sx={{
+                border: `2px dashed ${theme.palette.brand.orange}`,
+                borderRadius: 2,
+                p: 4,
+                textAlign: "center",
+                mb: 5,
+                maxWidth: 500,
+                mx: "auto",
+              }}
+            >
+              <CloudUploadIcon
+                sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }}
+              />
+              
+              <Typography 
+                variant="h6" 
+                fontWeight="600" 
+                color={theme.palette.brand.orangeDark}
+                mb={1}
+              >
+                Upload Your CV
+              </Typography>
+
+              <Typography 
+                variant="body2" 
+                color="text.secondary" 
+                mb={3}
+                sx={{ fontSize: 14 }}
+              >
+                Supported format: PDF only
+              </Typography>
+
+              <Button
+                variant="contained"
+                component="label"
+                sx={{
+                  bgcolor: theme.palette.brand.orange,
+                  color: "white",
+                  fontWeight: "600",
+                  fontSize: 16,
+                  px: 4,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  "&:hover": { 
+                    bgcolor: theme.palette.brand.orangeDark,
+                  },
+                }}
+              >
+                Choose File
+                <input
+                  type="file"
+                  hidden
+                  accept=".pdf"
+                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                />
+              </Button>
+
+              {resumeFile && (
+                <Typography 
+                  mt={2.5}
+                  fontSize={15} 
+                  fontWeight={500}
+                  color={theme.palette.brand.orangeDark}
+                >
+                  {resumeFile.name}
+                </Typography>
+              )}
+            </Paper>
+
             {/* Profile Photo Upload */}
             <Box display="flex" justifyContent="center" mb={5}>
               <Box position="relative" display="inline-block">
@@ -450,56 +499,19 @@ export default function CreateApplicant() {
                 </IconButton>
               </Box>
             </Box>
-
-            {/* CV Upload */}
-            <Paper
-              variant="outlined"
-              sx={{
-                border: `2px dashed ${theme.palette.brand.orange}`,
-                p: 5,
-                textAlign: "center",
-                mb: 5,
-              }}
-            >
-              <CloudUploadIcon
-                sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }}
-              />
-              <Typography color="text.secondary" mb={2}>
-                Supported formats: PDF, Word
-              </Typography>
-              <Button
-                variant="text"
-                component="label"
-                sx={{
-                  color: theme.palette.brand.orangeDark,
-                  fontWeight: "bold",
-                }}
-              >
-                Drag & drop files or Browse
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf,.doc,.docx"
-                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                />
-              </Button>
-              {resumeFile && (
-                <Typography mt={2} fontSize={14}>
-                  {resumeFile.name}
-                </Typography>
-              )}
-            </Paper>
             <Paper
               sx={{
-                p: 4,
+                p: { xs: 3, md: 5 },
                 borderRadius: 3,
-                boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
-              <Typography variant="h6" fontWeight="bold" mb={2}>
+              <Typography variant="h4" fontWeight="bold" mb={3}>
                 Personal Info
               </Typography>
-              <Grid container spacing={2} mb={3}>
+              <Grid container spacing={3} mb={3}>
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
@@ -510,6 +522,12 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     error={touched.firstName && Boolean(errors.firstName)}
                     helperText={touched.firstName && errors.firstName}
+                    InputProps={{
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -522,6 +540,12 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     error={touched.lastName && Boolean(errors.lastName)}
                     helperText={touched.lastName && errors.lastName}
+                    InputProps={{
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -535,6 +559,12 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     error={touched.phone && Boolean(errors.phone)}
                     helperText={touched.phone && errors.phone}
+                    InputProps={{
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
+                    }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -547,6 +577,10 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     InputProps={{
                       readOnly: true,
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
                     }}
                     helperText={touched.email && errors.email}
                   />
@@ -561,6 +595,12 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     error={touched.country && Boolean(errors.country)}
                     helperText={touched.country && errors.country}
+                    InputProps={{
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
+                    }}
                   />
                 </Grid>
 
@@ -575,17 +615,23 @@ export default function CreateApplicant() {
                     onBlur={handleBlur}
                     error={touched.address && Boolean(errors.address)}
                     helperText={touched.address && errors.address}
+                    InputProps={{
+                      style: { fontSize: 17 }
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: 17 }
+                    }}
                   />
                 </Grid>
               </Grid>
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 4 }} />
 
               {/* Professional Links */}
-              <Typography variant="h6" fontWeight="bold" mb={2}>
+              <Typography variant="h4" fontWeight="bold" mb={3}>
                 Professional Links
               </Typography>
-              <Grid container spacing={2} mb={3}>
+              <Grid container spacing={3} mb={3}>
                 {Object.keys(values.professionalLinks).map((platform) => (
                   <Grid item xs={12} sm={4} key={platform}>
                     <TextField
@@ -594,12 +640,18 @@ export default function CreateApplicant() {
                       name={`professionalLinks.${platform}`}
                       value={values.professionalLinks[platform]}
                       onChange={handleChange}
+                      InputProps={{
+                        style: { fontSize: 17 }
+                      }}
+                      InputLabelProps={{
+                        style: { fontSize: 17 }
+                      }}
                     />
                   </Grid>
                 ))}
               </Grid>
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 4 }} />
 
               {/* Sections with Add buttons */}
               {[
@@ -623,7 +675,7 @@ export default function CreateApplicant() {
                         alignItems: "center",
                       }}
                     >
-                      <Typography fontWeight="bold">{sec.label}</Typography>
+                      <Typography variant="h5" fontWeight="bold">{sec.label}</Typography>
                       <Button
                         variant="text"
                         sx={{
@@ -631,6 +683,7 @@ export default function CreateApplicant() {
                           fontWeight: "bold",
                           border: `1px solid ${theme.palette.brand.orange}`,
                           borderRadius: 1,
+                          fontSize: 17,
                         }}
                         onClick={() => setOpenModal(sectionKey)}
                       >
@@ -668,7 +721,7 @@ export default function CreateApplicant() {
                                 <Box display="flex" alignItems="center">
                                   {sectionIcons[sectionKey]}
                                   <Typography
-                                    variant="subtitle1"
+                                    variant="h6"
                                     fontWeight="bold"
                                     color="primary"
                                   >
@@ -683,8 +736,8 @@ export default function CreateApplicant() {
                                   value ? (
                                     <Grid item xs={12} sm={6} key={field}>
                                       <Typography
-                                        variant="body2"
-                                        sx={{ color: "text.secondary" }}
+                                        variant="body1"
+                                        sx={{ color: "text.secondary", fontSize: 16 }}
                                       >
                                         <strong
                                           style={{
@@ -747,11 +800,11 @@ export default function CreateApplicant() {
                 );
               })}
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 4 }} />
 
               {/* Skills */}
               <Box mt={3}>
-                <Typography fontWeight="bold" mb={1}>
+                <Typography variant="h5" fontWeight="bold" mb={2}>
                   Skills
                 </Typography>
                 <TextField
@@ -762,6 +815,9 @@ export default function CreateApplicant() {
                   name="skillsText"
                   value={values.skillsText}
                   onChange={handleChange}
+                  InputProps={{
+                    style: { fontSize: 17 }
+                  }}
                 />
                 {touched.skillsText && errors.skillsText && (
                   <Typography variant="caption" color="error">
@@ -770,11 +826,11 @@ export default function CreateApplicant() {
                 )}
               </Box>
 
-              <Divider sx={{ my: 3 }} />
+              <Divider sx={{ my: 4 }} />
 
               {/* Interests */}
               <Box mt={3}>
-                <Typography fontWeight="bold" mb={1}>
+                <Typography variant="h5" fontWeight="bold" mb={2}>
                   Interests
                 </Typography>
                 <TextField
@@ -785,6 +841,9 @@ export default function CreateApplicant() {
                   name="interestsText"
                   value={values.interestsText}
                   onChange={handleChange}
+                  InputProps={{
+                    style: { fontSize: 17 }
+                  }}
                 />
                 {touched.interestsText && errors.interestsText && (
                   <Typography variant="caption" color="error">
@@ -794,7 +853,7 @@ export default function CreateApplicant() {
               </Box>
 
               {/* Resume consent */}
-              <Box mt={3}>
+              <Box mt={6}>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -803,7 +862,11 @@ export default function CreateApplicant() {
                       onChange={handleChange}
                     />
                   }
-                  label="Yes, I give WSO2 permission to use my personal data for recruitment purposes only."
+                  label={
+                    <Typography sx={{ fontSize: 18 }}>
+                      Yes, I give WSO2 permission to use my personal data for recruitment purposes only.
+                    </Typography>
+                  }
                 />
                 {touched.consentData && errors.consentData && (
                   <Typography variant="caption" color="error">
@@ -818,7 +881,11 @@ export default function CreateApplicant() {
                       onChange={handleChange}
                     />
                   }
-                  label="I would like to receive emails from WSO2 about updates."
+                  label={
+                    <Typography sx={{ fontSize: 18 }}>
+                      I would like to receive emails from WSO2 about updates.
+                    </Typography>
+                  }
                 />
                 {touched.consentEmails && errors.consentEmails && (
                   <Typography variant="caption" color="error">
@@ -836,6 +903,9 @@ export default function CreateApplicant() {
                   sx={{
                     bgcolor: theme.palette.brand.orange,
                     "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                    fontSize: 18,
+                    px: 5,
+                    py: 1.5,
                   }}
                 >
                   {isSubmitting ? "Submitting..." : "Save"}
