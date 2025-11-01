@@ -89,6 +89,7 @@ declare module "@mui/material/styles" {
     dataGrid?: string;
     layout?: string;
     gradient?: string;
+    banner?: string;
   }
   interface Palette {
     brand: {
@@ -132,7 +133,7 @@ export const themeSettings = (mode: PaletteMode) => {
             background: {
               default: colors.grey[700],
               form: colors.grey[600],
-              banner: colors.primary[200],
+              banner: colors.grey[600],
               autocomplete: colors.grey[400],
               dataGrid: colors.grey[500],
               layout: colors.grey[100],
@@ -154,7 +155,7 @@ export const themeSettings = (mode: PaletteMode) => {
             background: {
               default: colors.grey[100],
               form: colors.grey[100],
-              banner: colors.primary[200],
+              banner: "#F7F8FB",
               autocomplete: colors.grey[400],
               dataGrid: colors.grey[300],
               layout: colors.grey[100],
