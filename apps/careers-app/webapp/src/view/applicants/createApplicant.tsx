@@ -29,7 +29,6 @@ import {
   Avatar,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import WorkIcon from "@mui/icons-material/Work";
 import SchoolIcon from "@mui/icons-material/School";
@@ -62,6 +61,7 @@ import EducationModal, { Education } from "@modals/EducationModal";
 import CertificationModal, { Certification } from "@modals/CertificationModal";
 import ProjectModal, { Project } from "@modals/ProjectModal";
 import LanguageModal, { Language } from "@modals/LanguageModal";
+import ProfileBannerImage from "@assets/images/profile-banner-1.svg";
 interface ApplicantFormValues {
   firstName: string;
   lastName: string;
@@ -150,7 +150,6 @@ const mainValidationSchema = yup.object({
 export default function CreateApplicant() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { showConfirmation } = useConfirmationModalContext();
 
   const { state, applicantProfile } = useAppSelector((s) => s.applicant);
@@ -219,9 +218,77 @@ export default function CreateApplicant() {
   };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 900, mx: "auto" }}>
-      {/* Header */}
-      <Typography
+    <Box sx={{ mt: "-24px" }}>
+      {/* Hero Banner Section */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: theme.palette.background.banner,
+          boxShadow: "0 2px 7px rgba(0,0,0,0.05)",
+          py: { xs: 4, md: 6 },
+          width: "100vw",
+          position: "relative",
+          left: "50%",
+          right: "50%",
+          marginLeft: "-50vw",
+          marginRight: "-50vw",
+        }}
+      >
+        {/* Inner Content Wrapper */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 4,
+            px: { xs: 3, md: 8, lg: 12 },
+            maxWidth: "1500px",
+            width: "100%",
+          }}
+        >
+        {/* Left Content */}
+        <Box sx={{ flex: 1, maxWidth: { md: "50%" } }}>
+          <Typography
+            variant="h1"
+            fontWeight="bold"
+            gutterBottom
+          >
+            Showcase Your Talent with a WSO2 Profile
+          </Typography>
+          <Typography
+            variant="h5"
+            color="text.secondary"
+            fontStyle="italic"
+            sx={{ maxWidth: 900 }}
+          >
+            Upload your CV, highlight your expertise, and manage your
+            professional profile—all in one place. Let WSO2 discover the real
+            you and match you with opportunities that fit your passion and
+            potential.
+          </Typography>
+        </Box>
+
+        {/* Right Image */}
+        <Box
+          component="img"
+          src={ProfileBannerImage}
+          alt="WSO2 Profile Banner"
+          sx={{
+            width: { xs: "100%", md: "45%" },
+            height: "auto",
+          }}
+        />
+        </Box>
+      </Box>
+
+      {/* Form Content Container */}
+      <Box sx={{ p: 4, maxWidth: 900, mx: "auto", mt: 6 }}>
+        {/* Header */}
+        <Typography
         variant="h3"
         fontWeight="bold"
         color={theme.palette.brand.orangeDark}
@@ -886,6 +953,7 @@ export default function CreateApplicant() {
           </Form>
         )}
       </Formik>
+      </Box>
     </Box>
   );
 }
