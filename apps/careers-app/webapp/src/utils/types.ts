@@ -16,7 +16,6 @@
 
 export type stateType = "failed" | "success" | "loading" | "idle";
 
-
 export interface Header {
   title: string;
   size: number;
