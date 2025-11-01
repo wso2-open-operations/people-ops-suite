@@ -379,79 +379,6 @@ export default function CreateApplicant() {
               );
             }}
           >
-            {/* CV Upload */}
-            <Paper
-              variant="outlined"
-              sx={{
-                border: `2px dashed ${theme.palette.brand.orange}`,
-                borderRadius: 2,
-                p: 4,
-                textAlign: "center",
-                mb: 5,
-                maxWidth: 500,
-                mx: "auto",
-              }}
-            >
-              <CloudUploadIcon
-                sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }}
-              />
-              
-              <Typography 
-                variant="h6" 
-                fontWeight="600" 
-                color={theme.palette.brand.orangeDark}
-                mb={1}
-              >
-                Upload Your CV
-              </Typography>
-
-              <Typography 
-                variant="body2" 
-                color="text.secondary" 
-                mb={3}
-                sx={{ fontSize: 14 }}
-              >
-                Supported format: PDF only
-              </Typography>
-
-              <Button
-                variant="contained"
-                component="label"
-                sx={{
-                  bgcolor: theme.palette.brand.orange,
-                  color: "white",
-                  fontWeight: "600",
-                  fontSize: 16,
-                  px: 4,
-                  py: 1,
-                  borderRadius: 2,
-                  textTransform: "none",
-                  "&:hover": { 
-                    bgcolor: theme.palette.brand.orangeDark,
-                  },
-                }}
-              >
-                Choose File
-                <input
-                  type="file"
-                  hidden
-                  accept=".pdf"
-                  onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                />
-              </Button>
-
-              {resumeFile && (
-                <Typography 
-                  mt={2.5}
-                  fontSize={15} 
-                  fontWeight={500}
-                  color={theme.palette.brand.orangeDark}
-                >
-                  {resumeFile.name}
-                </Typography>
-              )}
-            </Paper>
-
             <Paper
               sx={{
                 p: { xs: 3, md: 5 },
@@ -482,7 +409,7 @@ export default function CreateApplicant() {
               </Typography>
 
               {/* Profile Photo Upload Section */}
-              <Box display="flex" justifyContent="center" mb={4}>
+              <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
                 <Box position="relative" display="inline-block">
                   <Avatar
                     src={
@@ -498,10 +425,18 @@ export default function CreateApplicant() {
                         : "Profile Photo"
                     }
                     sx={{
-                      width: 120,
-                      height: 120,
-                      bgcolor: theme.palette.brand.orange + "20",
-                      fontSize: 40,
+                      width: 140,
+                      height: 140,
+                      bgcolor: `linear-gradient(135deg, ${theme.palette.brand.orange}30 0%, ${theme.palette.brand.orange}10 100%)`,
+                      fontSize: 48,
+                      fontWeight: 600,
+                      border: `4px solid ${theme.palette.brand.orange}40`,
+                      boxShadow: `0 8px 24px ${theme.palette.brand.orange}20`,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "scale(1.05)",
+                        boxShadow: `0 12px 32px ${theme.palette.brand.orange}30`,
+                      },
                     }}
                   />
 
@@ -509,14 +444,21 @@ export default function CreateApplicant() {
                     component="label"
                     sx={{
                       position: "absolute",
-                      bottom: 0,
-                      right: 0,
-                      bgcolor: theme.palette.background.default,
-                      boxShadow: 2,
-                      "&:hover": { bgcolor: theme.palette.grey[200] },
+                      bottom: 5,
+                      right: 5,
+                      bgcolor: theme.palette.brand.orange,
+                      color: "white",
+                      width: 40,
+                      height: 40,
+                      boxShadow: `0 4px 12px ${theme.palette.brand.orange}50`,
+                      "&:hover": { 
+                        bgcolor: theme.palette.brand.orangeDark,
+                        transform: "scale(1.1)",
+                      },
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    <PhotoCameraIcon sx={{ color: theme.palette.brand.orange }} />
+                    <PhotoCameraIcon sx={{ fontSize: 20 }} />
                     <input
                       type="file"
                       hidden
@@ -526,6 +468,76 @@ export default function CreateApplicant() {
                       }
                     />
                   </IconButton>
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 4 }} />
+
+              {/* CV Upload Section */}
+              <Box sx={{ mb: 4 }}>
+                <Box
+                  sx={{
+                    border: `2px dashed ${theme.palette.brand.orange}`,
+                    borderRadius: 2,
+                    p: 4,
+                    textAlign: "center",
+                    maxWidth: 500,
+                    mx: "auto",
+                  }}
+                >
+                  <Typography variant="h5" fontWeight="bold" mb={2} color={theme.palette.brand.orangeDark}>
+                    Upload Your CV
+                  </Typography>
+                  
+                  <CloudUploadIcon
+                    sx={{ fontSize: 50, color: theme.palette.brand.orange, mb: 2 }}
+                  />
+                  
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    mb={3}
+                    sx={{ fontSize: 14 }}
+                  >
+                    Supported format: PDF only
+                  </Typography>
+
+                  <Button
+                    variant="contained"
+                    component="label"
+                    sx={{
+                      bgcolor: theme.palette.brand.orange,
+                      color: "white",
+                      fontWeight: "600",
+                      fontSize: 16,
+                      px: 4,
+                      py: 1,
+                      borderRadius: 2,
+                      textTransform: "none",
+                      "&:hover": { 
+                        bgcolor: theme.palette.brand.orangeDark,
+                      },
+                    }}
+                  >
+                    Choose File
+                    <input
+                      type="file"
+                      hidden
+                      accept=".pdf"
+                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    />
+                  </Button>
+
+                  {resumeFile && (
+                    <Typography 
+                      mt={2.5}
+                      fontSize={15} 
+                      fontWeight={500}
+                      color={theme.palette.brand.orangeDark}
+                    >
+                      {resumeFile.name}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
 
