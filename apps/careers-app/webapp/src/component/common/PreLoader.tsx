@@ -85,7 +85,7 @@ const PreLoader = (props: PreLoaderProps) => {
           </Grid>
           <Grid item xs={12}>
             <StateWithImage
-              message={"Loading " + APP_NAME + " Data..."}
+              message={props.message || "Loading " + APP_NAME + " Data..."}
               imageUrl={require("@assets/images/loading.svg").default}
             />
           </Grid>
