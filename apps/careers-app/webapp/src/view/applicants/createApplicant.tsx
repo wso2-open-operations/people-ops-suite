@@ -274,7 +274,7 @@ export default function CreateApplicant() {
           src={ProfileBannerImage}
           alt="WSO2 Profile Banner"
           sx={{
-            width: { xs: "100%", md: "45%" },
+            width: { xs: "100%", md: "40%" },
             height: "auto",
           }}
         />
@@ -452,53 +452,6 @@ export default function CreateApplicant() {
               )}
             </Paper>
 
-            {/* Profile Photo Upload */}
-            <Box display="flex" justifyContent="center" mb={5}>
-              <Box position="relative" display="inline-block">
-                <Avatar
-                  src={
-                    profilePhoto
-                      ? URL.createObjectURL(profilePhoto)
-                      : values.firstName
-                      ? values.firstName[0].toUpperCase()
-                      : ""
-                  }
-                  alt={
-                    values.firstName
-                      ? values.firstName.toUpperCase()
-                      : "Profile Photo"
-                  }
-                  sx={{
-                    width: 120,
-                    height: 120,
-                    bgcolor: theme.palette.brand.orange + "20",
-                    fontSize: 40,
-                  }}
-                />
-
-                <IconButton
-                  component="label"
-                  sx={{
-                    position: "absolute",
-                    bottom: 0,
-                    right: 0,
-                    bgcolor: theme.palette.background.default,
-                    boxShadow: 2,
-                    "&:hover": { bgcolor: theme.palette.grey[200] },
-                  }}
-                >
-                  <PhotoCameraIcon sx={{ color: theme.palette.brand.orange }} />
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={(e) =>
-                      setProfilePhoto(e.target.files?.[0] || null)
-                    }
-                  />
-                </IconButton>
-              </Box>
-            </Box>
             <Paper
               sx={{
                 p: { xs: 3, md: 5 },
@@ -508,6 +461,76 @@ export default function CreateApplicant() {
                 borderColor: "divider",
               }}
             >
+              {/* Form Title */}
+              <Typography
+                variant="h2"
+                fontWeight="bold"
+                color={theme.palette.brand.orangeDark}
+                gutterBottom
+                align="center"
+                sx={{ mb: 2 }}
+              >
+                Create Your Profile
+              </Typography>
+              <Typography
+                variant="h5"
+                color="text.secondary"
+                align="center"
+                sx={{ mb: 5 }}
+              >
+                Share your information and let us know more about you
+              </Typography>
+
+              {/* Profile Photo Upload Section */}
+              <Box display="flex" justifyContent="center" mb={4}>
+                <Box position="relative" display="inline-block">
+                  <Avatar
+                    src={
+                      profilePhoto
+                        ? URL.createObjectURL(profilePhoto)
+                        : values.firstName
+                        ? values.firstName[0].toUpperCase()
+                        : ""
+                    }
+                    alt={
+                      values.firstName
+                        ? values.firstName.toUpperCase()
+                        : "Profile Photo"
+                    }
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      bgcolor: theme.palette.brand.orange + "20",
+                      fontSize: 40,
+                    }}
+                  />
+
+                  <IconButton
+                    component="label"
+                    sx={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      bgcolor: theme.palette.background.default,
+                      boxShadow: 2,
+                      "&:hover": { bgcolor: theme.palette.grey[200] },
+                    }}
+                  >
+                    <PhotoCameraIcon sx={{ color: theme.palette.brand.orange }} />
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={(e) =>
+                        setProfilePhoto(e.target.files?.[0] || null)
+                      }
+                    />
+                  </IconButton>
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 4 }} />
+
               <Typography variant="h4" fontWeight="bold" mb={3}>
                 Personal Info
               </Typography>
