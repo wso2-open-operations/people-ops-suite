@@ -710,7 +710,7 @@ export default function CreateApplicant() {
                         alignItems: "center",
                       }}
                     >
-                      <Typography variant="h5" fontWeight="bold">{sec.label}</Typography>
+                      <Typography variant="h4" fontWeight="bold">{sec.label}</Typography>
                       <Button
                         variant="text"
                         sx={{
@@ -745,20 +745,28 @@ export default function CreateApplicant() {
                               : "Entry";
 
                           return (
-                            <Paper key={idx} className="preview-card">
+                            <Paper 
+                              key={idx} 
+                              className="preview-card"
+                              sx={{
+                                border: `2px solid ${theme.palette.brand.orange}30`,
+                                borderRadius: 2,
+                              }}
+                            >
                               {/* Header with Icon */}
                               <Box
                                 display="flex"
                                 justifyContent="space-between"
                                 alignItems="center"
-                                mb={1}
+                                mb={2}
                               >
                                 <Box display="flex" alignItems="center">
                                   {sectionIcons[sectionKey]}
                                   <Typography
-                                    variant="h6"
+                                    variant="h5"
                                     fontWeight="bold"
-                                    color="primary"
+                                    color={theme.palette.brand.orangeDark}
+                                    sx={{ fontSize: 18 }}
                                   >
                                     {String(title)}
                                   </Typography>
@@ -766,17 +774,19 @@ export default function CreateApplicant() {
                               </Box>
 
                               {/* Details in Grid */}
-                              <Grid container spacing={1}>
+                              <Grid container spacing={2}>
                                 {Object.entries(item).map(([field, value]) =>
                                   value ? (
                                     <Grid item xs={12} sm={6} key={field}>
                                       <Typography
                                         variant="body1"
-                                        sx={{ color: "text.secondary", fontSize: 16 }}
+                                        sx={{ color: "text.secondary", fontSize: 15 }}
                                       >
                                         <strong
                                           style={{
                                             textTransform: "capitalize",
+                                            color: theme.palette.text.primary,
+                                            fontWeight: 600,
                                           }}
                                         >
                                           {field.replace(/_/g, " ")}:
@@ -793,25 +803,29 @@ export default function CreateApplicant() {
                                 display="flex"
                                 justifyContent="flex-end"
                                 alignItems="center"
-                                mt={1}
+                                mt={2}
                               >
                                 <Box display="flex" gap={1}>
                                   <Tooltip title="Edit">
                                     <IconButton
-                                      color="primary"
-                                      size="small"
+                                      size="medium"
                                       onClick={() =>
                                         handleOpenForEdit(sectionKey, item, idx)
                                       }
+                                      sx={{
+                                        color: theme.palette.brand.orange,
+                                        "&:hover": {
+                                          bgcolor: `${theme.palette.brand.orange}10`,
+                                        },
+                                      }}
                                     >
-                                      <EditIcon />
+                                      <EditIcon sx={{ fontSize: 20 }} />
                                     </IconButton>
                                   </Tooltip>
 
                                   <Tooltip title="Remove">
                                     <IconButton
-                                      color="error"
-                                      size="small"
+                                      size="medium"
                                       onClick={() =>
                                         setFieldValue(
                                           `${sectionKey}s`,
@@ -820,8 +834,14 @@ export default function CreateApplicant() {
                                           )
                                         )
                                       }
+                                      sx={{
+                                        color: theme.palette.error.main,
+                                        "&:hover": {
+                                          bgcolor: `${theme.palette.error.main}10`,
+                                        },
+                                      }}
                                     >
-                                      <DeleteIcon />
+                                      <DeleteIcon sx={{ fontSize: 20 }} />
                                     </IconButton>
                                   </Tooltip>
                                 </Box>
@@ -839,7 +859,7 @@ export default function CreateApplicant() {
 
               {/* Skills */}
               <Box mt={3}>
-                <Typography variant="h5" fontWeight="bold" mb={2}>
+                <Typography variant="h4" fontWeight="bold" mb={2}>
                   Skills
                 </Typography>
                 <TextField
@@ -865,7 +885,7 @@ export default function CreateApplicant() {
 
               {/* Interests */}
               <Box mt={3}>
-                <Typography variant="h5" fontWeight="bold" mb={2}>
+                <Typography variant="h4" fontWeight="bold" mb={2}>
                   Interests
                 </Typography>
                 <TextField
