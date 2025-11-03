@@ -110,8 +110,10 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
             country,
             nationality
         FROM personal_info p`;
-    if payload?.nic is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic = ${payload.nic}`);
+
+    string? nic = payload?.nic;
+    if nic is string {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic = ${nic}`);
     }
     return sql:queryConcat(mainQuery, `;`);
 }
