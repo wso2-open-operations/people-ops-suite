@@ -42,6 +42,19 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
+# Search employee personal information.
+#
+# + payload - Search employee personal information payload
+# + return - Employee personal information search results
+public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPayload payload)
+    returns EmployeePersonalInfo[]|error {
+
+    stream<EmployeePersonalInfo, error?> employeesPersonalInfoStream = databaseClient->query(
+            searchEmployeePersonalInfoQuery(payload));
+    return from EmployeePersonalInfo employeePersonalInfo in employeesPersonalInfoStream
+        select employeePersonalInfo;
+}
+
 # Fetch employee personal information.
 #
 # + id - Employee ID

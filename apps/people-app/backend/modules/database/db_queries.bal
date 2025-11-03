@@ -85,6 +85,37 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
     WHERE
         e.id = ${id};`;
 
+# Search employee personal information.
+#
+# + payload - Search employee personal information payload
+# + return - Query to search employee personal information
+isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayload payload)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+        SELECT 
+            p.id AS id,
+            nic,
+            full_name,
+            name_with_initials,
+            p.first_name AS firstName,
+            p.last_name AS lastName,
+            title,
+            dob,
+            age,
+            personal_email,
+            personal_phone,
+            home_phone,
+            address,
+            postal_code,
+            country,
+            nationality
+        FROM personal_info p`;
+    if payload?.nic is string {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic = ${payload.nic}`);
+    }
+    return sql:queryConcat(mainQuery, `;`);
+}
+
 # Fetch employee personal information.
 #
 # + id - Employee ID
