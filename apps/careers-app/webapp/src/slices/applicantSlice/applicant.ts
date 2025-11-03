@@ -83,7 +83,7 @@ export interface ApplicantProfile {
   address: string;
   country: string;
   status: string;
-  profile_photo?: string;
+  user_thumbnail?: string;
   resume_link?: string;
   professional_links?: { title: string; link: string }[];
   educations?: Educations[];
@@ -146,9 +146,7 @@ export const fetchApplicantByEmail = createAsyncThunk(
   async (email: string, { rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.applicants}/email?email=${encodeURIComponent(
-          email
-        )}`
+        `${AppConfig.serviceUrls.applicants}/${encodeURIComponent(email)}`
       );
       return response.data as ApplicantProfile;
     } catch (error: any) {
