@@ -31,105 +31,6 @@ public isolated function createProfile(CreateApplicantProfile ApplicantProfile) 
     return <int>result.lastInsertId;
 }
 
-# Retrieves a applicant profile by ID.
-#
-# + id - ID of the applicant profile
-# + return - ApplicantProfile | error 
-public isolated function getapplicantProfileById(int id) returns ApplicantProfile|error {
-    ApplicantProfileDB|sql:Error dbResult = dbClient->queryRow(getapplicantProfileByIdQuery(id));
-
-    if dbResult is sql:NoRowsError {
-        return error("No applicant found with ID: " + id.toString());
-    }
-    if dbResult is sql:Error {
-        string errorMsg = string `An error occurred when retrieving applicant profile with ID ${id}!`;
-        log:printError(errorMsg, dbResult);
-        return error(errorMsg);
-    }
-
-    // Transform database record to API type with JSON deserialization
-    ProfessionalLinks[]|error professionalLinks = dbResult.professional_links.fromJsonStringWithType();
-    if professionalLinks is error {
-        string errorMsg = string `An error occurred when parsing professional_links for applicant ${id}!`;
-        log:printError(errorMsg, professionalLinks);
-        return error(errorMsg);
-    }
-
-    Educations[]|error educations = dbResult.educations.fromJsonStringWithType();
-    if educations is error {
-        string errorMsg = string `An error occurred when parsing educations for applicant ${id}!`;
-        log:printError(errorMsg, educations);
-        return error(errorMsg);
-    }
-
-    Experiences[]|error experiences = dbResult.experiences.fromJsonStringWithType();
-    if experiences is error {
-        string errorMsg = string `An error occurred when parsing experiences for applicant ${id}!`;
-        log:printError(errorMsg, experiences);
-        return error(errorMsg);
-    }
-
-    Skills|error skills = dbResult.skills.fromJsonStringWithType();
-    if skills is error {
-        string errorMsg = string `An error occurred when parsing skills for applicant ${id}!`;
-        log:printError(errorMsg, skills);
-        return error(errorMsg);
-    }
-
-    Certifications[]|error certifications = dbResult.certifications.fromJsonStringWithType();
-    if certifications is error {
-        string errorMsg = string `An error occurred when parsing certifications for applicant ${id}!`;
-        log:printError(errorMsg, certifications);
-        return error(errorMsg);
-    }
-
-    Projects[]|error projects = dbResult.projects.fromJsonStringWithType();
-    if projects is error {
-        string errorMsg = string `An error occurred when parsing projects for applicant ${id}!`;
-        log:printError(errorMsg, projects);
-        return error(errorMsg);
-    }
-
-    Languages[]|error languages = dbResult.languages.fromJsonStringWithType();
-    if languages is error {
-        string errorMsg = string `An error occurred when parsing languages for applicant ${id}!`;
-        log:printError(errorMsg, languages);
-        return error(errorMsg);
-    }
-
-    Interests|error interests = dbResult.interests.fromJsonStringWithType();
-    if interests is error {
-        string errorMsg = string `An error occurred when parsing interests for applicant ${id}!`;
-        log:printError(errorMsg, interests);
-        return error(errorMsg);
-    }
-
-    return {
-        id: dbResult.id,
-        first_name: dbResult.first_name,
-        last_name: dbResult.last_name,
-        email: dbResult.email,
-        phone: dbResult.phone,
-        address: dbResult.address,
-        country: dbResult.country,
-        status: dbResult.status,
-        professional_links: professionalLinks,
-        educations: educations,
-        experiences: experiences,
-        skills: skills,
-        certifications: certifications,
-        projects: projects,
-        languages: languages,
-        interests: interests,
-        user_thumbnail: dbResult.user_thumbnail,
-        resume_link: dbResult.resume_link,
-        created_by: dbResult.created_by,
-        created_at: dbResult.created_at,
-        updated_by: dbResult.updated_by,
-        updated_at: dbResult.updated_at
-    };
-}
-
 # Retrieves an applicant profile by email.
 #
 # + email - Email of the applicant
@@ -229,21 +130,26 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
     };
 }
 
-# Updates a applicant profile.
+# Updates an applicant profile by email.
 #
-# + id - ID of the applicant profile
+# + email - Email of the applicant profile
 # + updateData - Partial applicant profile details to update
-# + return - Updated applicantProfile | error
-public isolated function updateProfile(int id, UpdateApplicantProfile updateData) returns ApplicantProfile|error {
+# + return - Updated ApplicantProfile | error
+public isolated function updateProfileByEmail(string email, UpdateApplicantProfile updateData) returns ApplicantProfile|error {
     sql:ExecutionResult|error result = check dbClient->execute(
-        updateapplicantProfileQuery(id, updateData));
+        updateApplicantProfileByEmailQuery(email, updateData));
 
     if result is error {
         return result;
     }
 
+    // Check if any rows were updated
+    if result.affectedRowCount == 0 {
+        return error("No applicant found with email: " + email);
+    }
+
     // Fetch and return the updated profile
-    return check getapplicantProfileById(id);
+    return check getApplicantProfileByEmail(email);
 }
 
 # Retrieves all applicant profiles.
