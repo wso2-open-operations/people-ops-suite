@@ -57,7 +57,7 @@ service class ErrorInterceptor {
 
 }
 
-service http:InterceptableService / on new http:Listener(9090) {
+service http:InterceptableService / on new http:Listener(9093) {
 
     # Request interceptor.
     #
@@ -168,7 +168,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string applicantFolderName = string `${applicant.first_name}_${applicant.last_name}`;
-        string applicantEmail      = applicant.email;
+        string applicantEmail = applicant.email;
 
         // Construct unique file names
         string ts = time:utcToString(time:utcNow());
@@ -265,45 +265,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Get a applicant profile by ID.
-    #
-    # + id - ID of the applicant
-    # + return - ApplicantProfile|Error
-    resource function get applicants/[int id](http:RequestContext ctx)
-        returns database:ApplicantProfile|http:InternalServerError|http:NotFound {
-
-        // Fetch the applicant profile from the database.
-        database:ApplicantProfile|error applicant = database:getapplicantProfileById(id);
-
-        if applicant is error {
-            // Check if the error is due to a non-existent applicant
-            if applicant.message().startsWith("No applicant found with ID:") {
-                string customError = "Applicant profile not found!";
-                log:printError(customError, applicant);
-                return <http:NotFound>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-
-            // For other types of errors, return internal server error
-            string customError = "Error occurred while retrieving the applicant profile!";
-            log:printError(customError, applicant);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        return applicant;
-    }
-
     # Retrieve an applicant profile by email.
     #
-    # + email - Email of the applicant (passed as query param)
+    # + email - Email of the applicant (passed as path param)
     # + return - ApplicantProfile if found, else 404 if not
-    resource function get applicants/email(http:RequestContext ctx, string email)
+    resource function get applicants/[string email](http:RequestContext ctx)
         returns database:ApplicantProfile|http:NotFound|http:InternalServerError {
 
         log:printInfo(string `Checking applicant profile for email: ${email}`);
@@ -335,14 +301,16 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update a applicant profile.
     #
-    # + id - ID of the applicant
+    # + email - Email of the applicant
     # + applicant - Partial applicant profile details to update
     # + return - Updated applicantProfile|Errors
-    resource function patch applicants/[int id](http:RequestContext ctx, UpdateApplicantProfile applicant)
+    resource function patch applicants/[string email](http:RequestContext ctx, UpdateApplicantProfile applicant)
         returns database:ApplicantProfile|http:BadRequest|http:InternalServerError|http:NotFound {
 
+        log:printInfo(string `Updating applicant profile for email: ${email}`);
+
         // Update profile in database
-        database:ApplicantProfile|error? updatedProfile = database:updateProfile(id, applicant);
+        database:ApplicantProfile|error? updatedProfile = database:updateProfileByEmail(email, applicant);
         if updatedProfile is error {
             string errorMessage = "Failed to update applicant profile.";
             log:printError(errorMessage, updatedProfile);
