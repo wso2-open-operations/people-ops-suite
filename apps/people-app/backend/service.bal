@@ -293,7 +293,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Create a new employee.
     #
-    # + return - HTTP Created or HTTP errors
+    # + return - The created employee ID as an integer, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
         returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -306,8 +306,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean isAdmin = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !isAdmin {
+        boolean hadAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hadAdminAccess {
             log:printWarn("User is not authorized to create new employees", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {
