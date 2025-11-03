@@ -214,6 +214,12 @@ public type Office record {|
     json workingLocations;
 |};
 
+# Search employee personal information payload.
+public type SearchEmployeePersonalInfoPayload record {|
+    # National Identity Card number
+    string nic?;
+|};
+
 # Create personal info payload.
 public type CreatePersonalInfoPayload record {|
     # National Identity Card number

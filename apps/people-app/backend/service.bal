@@ -295,7 +295,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - The created employee ID as an integer, or HTTP errors
     resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
-        returns int|http:InternalServerError {
+        returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -306,13 +306,43 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error employeeId = database:addEmployee(payload, userInfo.email);
-        if employeeId is error {
-            string customErr = "Error occurred while adding a new employee";
-            log:printError(customErr, employeeId);
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to create new employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to create new employees"
+                }
+            };
+        }
+
+        database:EmployeePersonalInfo[]|error employeePersonalInfoList = database:searchEmployeePersonalInfo(
+                {nic: payload.personalInfo.nic});
+        if employeePersonalInfoList is error {
+            string customErr = "Error occurred while checking existing employee personal information";
+            log:printError(customErr, employeePersonalInfoList, nic = payload.personalInfo.nic);
             return <http:InternalServerError>{
                 body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        if employeePersonalInfoList.length() > 0 {
+            string customErr = "Employee with the given NIC already exists";
+            log:printWarn(customErr, nic = payload.personalInfo.nic);
+            return <http:BadRequest>{
+                body: {
                     message: customErr
+                }
+            };
+        }
+
+        int|error employeeId = database:addEmployee(payload, userInfo.email);
+        if employeeId is error {
+            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }

@@ -28,8 +28,8 @@ public isolated function getEmployeeBasicInfo(string email) returns EmployeeBasi
 #
 # + return - All employees' basic information
 public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|error {
-    stream<EmployeeBasicInfo, error?> employeesBasicInfoStream = databaseClient->query(getAllEmployeesBasicInfoQuery());
-    return from EmployeeBasicInfo employeesBasicInfo in employeesBasicInfoStream
+    stream<EmployeeBasicInfo, error?> employeeBasicInfoStream = databaseClient->query(getAllEmployeesBasicInfoQuery());
+    return from EmployeeBasicInfo employeesBasicInfo in employeeBasicInfoStream
         select employeesBasicInfo;
 }
 
@@ -40,6 +40,19 @@ public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|
 public isolated function getEmployeeInfo(string id) returns Employee|error? {
     Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
+}
+
+# Search employee personal information.
+#
+# + payload - Search employee personal information payload
+# + return - Employee personal information search results
+public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPayload payload)
+    returns EmployeePersonalInfo[]|error {
+
+    stream<EmployeePersonalInfo, error?> employeePersonalInfoStream = databaseClient->query(
+            searchEmployeePersonalInfoQuery(payload));
+    return from EmployeePersonalInfo employeePersonalInfo in employeePersonalInfoStream
+        select employeePersonalInfo;
 }
 
 # Fetch employee personal information.
@@ -55,8 +68,8 @@ public isolated function getEmployeePersonalInfo(string id) returns EmployeePers
 #
 # + return - Business units
 public isolated function getBusinessUnits() returns BusinessUnit[]|error {
-    stream<BusinessUnit, error?> businessUnitsStream = databaseClient->query(getBusinessUnitsQuery());
-    return from BusinessUnit businessUnit in businessUnitsStream
+    stream<BusinessUnit, error?> businessUnitStream = databaseClient->query(getBusinessUnitsQuery());
+    return from BusinessUnit businessUnit in businessUnitStream
         select businessUnit;
 }
 
@@ -65,8 +78,8 @@ public isolated function getBusinessUnits() returns BusinessUnit[]|error {
 # + buId - Business unit ID (optional)
 # + return - Teams
 public isolated function getTeams(int? buId = ()) returns Team[]|error {
-    stream<Team, error?> teamsStream = databaseClient->query(getTeamsQuery(buId));
-    return from Team team in teamsStream
+    stream<Team, error?> teamStream = databaseClient->query(getTeamsQuery(buId));
+    return from Team team in teamStream
         select team;
 }
 
@@ -75,8 +88,8 @@ public isolated function getTeams(int? buId = ()) returns Team[]|error {
 # + teamId - Team ID (optional)
 # + return - Sub teams
 public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
-    stream<SubTeam, error?> subTeamsStream = databaseClient->query(getSubTeamsQuery(teamId));
-    return from SubTeam subTeam in subTeamsStream
+    stream<SubTeam, error?> subTeamStream = databaseClient->query(getSubTeamsQuery(teamId));
+    return from SubTeam subTeam in subTeamStream
         select subTeam;
 }
 
@@ -85,8 +98,8 @@ public isolated function getSubTeams(int? teamId = ()) returns SubTeam[]|error {
 # + subTeamId - Sub team ID (optional)
 # + return - Units
 public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
-    stream<Unit, error?> unitsStream = databaseClient->query(getUnitsQuery(subTeamId));
-    return from Unit unit in unitsStream
+    stream<Unit, error?> unitStream = databaseClient->query(getUnitsQuery(subTeamId));
+    return from Unit unit in unitStream
         select unit;
 }
 
@@ -94,8 +107,8 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
 #
 # + return - Career functions
 public isolated function getCareerFunctions() returns CareerFunction[]|error {
-    stream<CareerFunction, error?> careerFunctionsStream = databaseClient->query(getCareerFunctionsQuery());
-    return from CareerFunction careerFunction in careerFunctionsStream
+    stream<CareerFunction, error?> careerFunctionStream = databaseClient->query(getCareerFunctionsQuery());
+    return from CareerFunction careerFunction in careerFunctionStream
         select careerFunction;
 }
 
@@ -103,8 +116,8 @@ public isolated function getCareerFunctions() returns CareerFunction[]|error {
 #
 # + return - Offices
 public isolated function getOffices() returns Office[]|error {
-    stream<Office, error?> officesStream = databaseClient->query(getOfficesQuery());
-    return from Office office in officesStream
+    stream<Office, error?> officeStream = databaseClient->query(getOfficesQuery());
+    return from Office office in officeStream
         select office;
 }
 
