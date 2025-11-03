@@ -288,7 +288,7 @@ export default function CreateApplicant() {
       <Formik
         initialValues={{
           ...initialValues,
-          email: userEmail || "", // Set email from userEmail if available
+          email: userEmail || "",
         }}
         enableReinitialize={true}
         validationSchema={mainValidationSchema}
