@@ -306,8 +306,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hadAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hadAdminAccess {
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
             log:printWarn("User is not authorized to create new employees", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {
