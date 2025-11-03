@@ -99,51 +99,16 @@ isolated function getApplicantByEmailQuery(string email) returns sql:Parameteriz
     LIMIT 1
 `;
 
-# Builds query to retrieve a specific applicants profile by ID.
+# Builds query to update an applicants profile by email.
 #
-# + applicantId - ID of the applicants to retrieve
-# + return - sql:ParameterizedQuery - Select query for the applicantss table
-isolated function getapplicantProfileByIdQuery(int applicantId) returns sql:ParameterizedQuery =>
-`
-    SELECT
-        id AS 'id',
-        first_name AS 'first_name',
-        last_name AS 'last_name',
-        email AS 'email',
-        phone AS 'phone',
-        address AS 'address',
-        country AS 'country',
-        status AS 'status',
-        professional_links AS 'professional_links',
-        educations AS 'educations',
-        experiences AS 'experiences',
-        skills AS 'skills',
-        certifications AS 'certifications',
-        projects AS 'projects',
-        languages AS 'languages',
-        interests AS 'interests',
-        user_thumbnail AS 'user_thumbnail',
-        resume_link AS 'resume_link',
-        created_by AS 'created_by',
-        DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS 'created_at',
-        updated_by AS 'updated_by',
-        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS 'updated_at'
-    FROM
-        applicants
-    WHERE
-        id = ${applicantId}
-`;
-
-# Builds query to update a applicants profile.
-#
-# + id - ID of the applicants profile
+# + email - Email of the applicants profile
 # + applicant - Partial applicant profile to update
-# + return - sql:ParameterizedQuery - Update query for the applicantsapplicantss table
-isolated function updateapplicantProfileQuery(int id, UpdateApplicantProfile applicant)
+# + return - sql:ParameterizedQuery - Update query for the applicants table
+isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplicantProfile applicant)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE applicants SET `;
-    sql:ParameterizedQuery subQuery = ` WHERE id = ${id}`;
+    sql:ParameterizedQuery subQuery = ` WHERE email = ${email}`;
     sql:ParameterizedQuery[] filters = [];
 
     if applicant.first_name is string {
