@@ -28,6 +28,7 @@ import {
   Tooltip,
   Container,
   alpha,
+  Divider,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useAppSelector } from "@slices/store";
@@ -150,94 +151,92 @@ export default function ApplicantProfile() {
         </Box>
       </Paper>
 
-      <Grid container spacing={3}>
-        {/* Contact Information Card */}
-        <Grid item xs={12} md={4}>
-          <Card
-            elevation={1}
-            sx={{
-              borderRadius: 2,
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            }}
-          >
-            <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+      {/* Single Consolidated Card for All Information */}
+      <Card
+        elevation={2}
+        sx={{
+          borderRadius: 3,
+          transition: "transform 0.2s, box-shadow 0.2s",
+        }}
+      >
+        <CardContent sx={{ p: 4 }}>
+          <Grid container spacing={4}>
+            {/* Contact Information Section */}
+            <Grid item xs={12}>
               <Typography
-                variant="subtitle1"
+                variant="h6"
                 fontWeight="bold"
-                mb={2}
-                color="text.primary"
+                mb={3}
+                color="primary"
                 sx={{ display: "flex", alignItems: "center", gap: 1 }}
               >
-                <LocationOnOutlined fontSize="small" />
+                <LocationOnOutlined />
                 Contact Details
               </Typography>
-              <Stack spacing={1.5}>
+              <Grid container spacing={3}>
                 {applicant.phone && (
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                    <PhoneOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Phone
-                      </Typography>
-                      <Typography variant="body2" fontWeight={500}>
-                        {applicant.phone}
-                      </Typography>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                      <PhoneOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Phone
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {applicant.phone}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
+                  </Grid>
                 )}
                 {applicant.country && (
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                    <PublicOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Country
-                      </Typography>
-                      <Typography variant="body2" fontWeight={500}>
-                        {applicant.country}
-                      </Typography>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                      <PublicOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Country
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {applicant.country}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
+                  </Grid>
                 )}
                 {applicant.address && (
-                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                    <LocationOnOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" display="block">
-                        Address
-                      </Typography>
-                      <Typography variant="body2" fontWeight={500}>
-                        {applicant.address}
-                      </Typography>
+                  <Grid item xs={12} md={4}>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                      <LocationOnOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Address
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500}>
+                          {applicant.address}
+                        </Typography>
+                      </Box>
                     </Box>
-                  </Box>
+                  </Grid>
                 )}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+              </Grid>
+              <Divider sx={{ mt: 3 }} />
+            </Grid>
 
-        {/* Professional Links Card */}
-        {applicant.professional_links && applicant.professional_links.length > 0 && (
-          <Grid item xs={12} md={8}>
-            <Card
-              elevation={1}
-              sx={{
-                borderRadius: 2,
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              }}
-            >
-              <CardContent sx={{ p: 2.5, "&:last-child": { pb: 2.5 } }}>
+            {/* Professional Links Section */}
+            {applicant.professional_links && applicant.professional_links.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
-                  variant="subtitle1"
+                  variant="h6"
                   fontWeight="bold"
-                  mb={2}
-                  color="text.primary"
+                  mb={3}
+                  color="primary"
                   sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
-                  <LinkOutlined fontSize="small" />
+                  <LinkOutlined />
                   Professional Links
                 </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
+                <Stack direction="row" flexWrap="wrap" gap={1.5}>
                   {applicant.professional_links.map((link, idx) => (
                     <Button
                       key={idx}
@@ -264,22 +263,13 @@ export default function ApplicantProfile() {
                     </Button>
                   ))}
                 </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Education Section */}
-        {applicant.educations && applicant.educations.length > 0 && (
-          <Grid item xs={12}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Education Section */}
+            {applicant.educations && applicant.educations.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -353,22 +343,13 @@ export default function ApplicantProfile() {
                     </Grid>
                   ))}
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Experience Section */}
-        {applicant.experiences && applicant.experiences.length > 0 && (
-          <Grid item xs={12}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Experience Section */}
+            {applicant.experiences && applicant.experiences.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -435,22 +416,13 @@ export default function ApplicantProfile() {
                     </Grid>
                   ))}
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Certifications */}
-        {applicant.certifications && applicant.certifications.length > 0 && (
-          <Grid item xs={12}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Certifications Section */}
+            {applicant.certifications && applicant.certifications.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -515,22 +487,13 @@ export default function ApplicantProfile() {
                     </Grid>
                   ))}
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Projects */}
-        {applicant.projects && applicant.projects.length > 0 && (
-          <Grid item xs={12}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Projects Section */}
+            {applicant.projects && applicant.projects.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -618,24 +581,13 @@ export default function ApplicantProfile() {
                     </Grid>
                   ))}
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Skills & Languages Row */}
-        <Grid item xs={12} md={6}>
-          {/* Skills */}
-          {applicant.skills && applicant.skills.length > 0 && (
-            <Card
-              elevation={2}
-              sx={{
-                height: "100%",
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Skills Section */}
+            {applicant.skills && applicant.skills.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -663,23 +615,13 @@ export default function ApplicantProfile() {
                     />
                   ))}
                 </Stack>
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        <Grid item xs={12} md={6}>
-          {/* Languages */}
-          {applicant.languages && applicant.languages.length > 0 && (
-            <Card
-              elevation={2}
-              sx={{
-                height: "100%",
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Languages Section */}
+            {applicant.languages && applicant.languages.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -690,44 +632,39 @@ export default function ApplicantProfile() {
                   <LanguageOutlined />
                   Languages
                 </Typography>
-                <Stack spacing={2}>
+                <Grid container spacing={2}>
                   {applicant.languages.map((lang, idx) => (
-                    <Box
-                      key={idx}
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Typography variant="body1" fontWeight={600}>
-                        {lang.language}
-                      </Typography>
-                      <Chip
-                        label={lang.proficiency}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Box>
+                    <Grid item xs={12} sm={6} md={4} key={idx}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          p: 1.5,
+                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                          borderRadius: 1,
+                        }}
+                      >
+                        <Typography variant="body1" fontWeight={600}>
+                          {lang.language}
+                        </Typography>
+                        <Chip
+                          label={lang.proficiency}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </Box>
+                    </Grid>
                   ))}
-                </Stack>
-              </CardContent>
-            </Card>
-          )}
-        </Grid>
+                </Grid>
+                <Divider sx={{ mt: 3 }} />
+              </Grid>
+            )}
 
-        {/* Interests */}
-        {applicant.interests && applicant.interests.length > 0 && (
-          <Grid item xs={12}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 2,
-                transition: "transform 0.2s, box-shadow 0.2s"
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
+            {/* Interests Section */}
+            {applicant.interests && applicant.interests.length > 0 && (
+              <Grid item xs={12}>
                 <Typography
                   variant="h6"
                   fontWeight="bold"
@@ -755,11 +692,11 @@ export default function ApplicantProfile() {
                     />
                   ))}
                 </Stack>
-              </CardContent>
-            </Card>
+              </Grid>
+            )}
           </Grid>
-        )}
-      </Grid>
+        </CardContent>
+      </Card>
     </Container>
   );
 }
