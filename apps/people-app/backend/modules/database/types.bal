@@ -266,14 +266,20 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Resident number
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    string? residentNumber = ();
     # Address line 1
-    string? addressLine1;
+    @constraint:String {maxLength: 255}
+    string? addressLine1 = ();
     # Address line 2
-    string? addressLine2;
+    @constraint:String {maxLength: 255}
+    string? addressLine2 = ();
     # City
-    string? city;
+    @constraint:String {maxLength: 100}
+    string? city = ();
     # State or province
-    string? stateOrProvince;
+    @constraint:String {maxLength: 100}
+    string? stateOrProvince = ();
     # Postal code
     @constraint:String {maxLength: 20}
     string? postalCode = ();
@@ -358,15 +364,20 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Resident number
-    string? residentNumber;
+    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    string? residentNumber = ();
     # Address line 1
-    string? addressLine1;
+    @constraint:String {maxLength: 255}
+    string? addressLine1 = ();
     # Address line 2
-    string? addressLine2;
+    @constraint:String {maxLength: 255}
+    string? addressLine2 = ();
     # City
-    string? city;
+    @constraint:String {maxLength: 100}
+    string? city = ();
     # State or province
-    string? stateOrProvince;
+    @constraint:String {maxLength: 100}
+    string? stateOrProvince = ();
     # Postal code
     @constraint:String {maxLength: 20}
     string? postalCode = ();
