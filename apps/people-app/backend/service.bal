@@ -274,6 +274,26 @@ service http:InterceptableService / on new http:Listener(9090) {
         return careerFunctions;
     }
 
+    # Get designations.
+    #
+    # + careerFunctionId - Career function ID (optional)
+    # + return - Designations
+    resource function get designations(int? careerFunctionId = ())
+        returns database:Designation[]|http:InternalServerError {
+
+        database:Designation[]|error designations = database:getDesignations(careerFunctionId);
+        if designations is error {
+            string customErr = "Error while fetching Designations";
+            log:printError(customErr, designations);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return designations;
+    }
+
     # Get offices.
     #
     # + return - Offices
@@ -317,10 +337,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         database:EmployeePersonalInfo[]|error employeePersonalInfoList = database:searchEmployeePersonalInfo(
-                {nic: payload.personalInfo.nic});
+                {nicOrPassport: payload.personalInfo.nicOrPassport});
         if employeePersonalInfoList is error {
             string customErr = "Error occurred while checking existing employee personal information";
-            log:printError(customErr, employeePersonalInfoList, nic = payload.personalInfo.nic);
+            log:printError(customErr, employeePersonalInfoList, nicOrPassport = payload.personalInfo.nicOrPassport);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
@@ -328,8 +348,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeePersonalInfoList.length() > 0 {
-            string customErr = "Employee with the given NIC already exists";
-            log:printWarn(customErr, nic = payload.personalInfo.nic);
+            string customErr = "Employee with the given NIC/Passport already exists";
+            log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
             return <http:BadRequest>{
                 body: {
                     message: customErr
@@ -428,19 +448,21 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return {
             id: employeePersonalInfo.id,
-            nic: employeePersonalInfo.nic,
+            nicOrPassport: employeePersonalInfo.nicOrPassport,
             fullName: employeePersonalInfo.fullName,
             nameWithInitials: employeePersonalInfo.nameWithInitials,
             firstName: employeePersonalInfo.firstName,
             lastName: employeePersonalInfo.lastName,
             title: employeePersonalInfo.title,
             dob: employeePersonalInfo.dob,
-            age: employeePersonalInfo.age,
             nationality: employeePersonalInfo.nationality,
             personalEmail: payload.personalEmail,
             personalPhone: payload.personalPhone,
-            homePhone: payload.homePhone,
-            address: payload.address,
+            residentNumber: payload.residentNumber,
+            addressLine1: payload.addressLine1,
+            addressLine2: payload.addressLine2,
+            city: payload.city,
+            stateOrProvince: payload.stateOrProvince,
             postalCode: payload.postalCode,
             country: payload.country
         };

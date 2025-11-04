@@ -26,7 +26,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         last_name,
         work_email,
         employee_thumbnail,
-        job_role
+        secondary_job_title
     FROM employee
     WHERE work_email = ${email};`;
 
@@ -40,7 +40,7 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
         last_name,
         work_email,
         employee_thumbnail,
-        job_role
+        secondary_job_title
     FROM employee;`;
 
 # Fetch employee detailed information.
@@ -54,18 +54,16 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.last_name AS lastName,
         e.work_email AS workEmail,
         e.employee_thumbnail AS employeeThumbnail,
-        e.job_role AS jobRole,
+        e.secondary_job_title AS secondaryJobTitle,
         e.epf AS epf,
-        e.employee_location AS employeeLocation,
+        e.employment_location AS employmentLocation,
         e.work_location AS workLocation,
         e.work_phone_number AS workPhoneNumber,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.additional_manager_email AS additionalManagerEmail,
+        e.additional_manager_emails AS additionalManagerEmails,
         e.employee_status AS employeeStatus,
-        e.length_of_service AS lengthOfService,
-        e.relocation_status AS relocationStatus,
-        e.subordinate_count AS subordinateCount,
+        e.continuous_service_record AS continuousServiceRecord,
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         et.name AS employmentType,
@@ -94,26 +92,28 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
     sql:ParameterizedQuery mainQuery = `
         SELECT 
             p.id AS id,
-            nic,
+            nic_or_passport,
             full_name,
             name_with_initials,
             p.first_name AS firstName,
             p.last_name AS lastName,
             title,
             dob,
-            age,
             personal_email,
             personal_phone,
-            home_phone,
-            address,
+            resident_number,
+            address_line_1,
+            address_line_2,
+            city,
+            state_or_province,
             postal_code,
             country,
             nationality
         FROM personal_info p`;
 
-    string? nic = payload?.nic;
-    if nic is string {
-        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic = ${nic}`);
+    string? nicOrPassport = payload?.nicOrPassport;
+    if nicOrPassport is string {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic_or_passport = ${nicOrPassport}`);
     }
     return sql:queryConcat(mainQuery, `;`);
 }
@@ -125,18 +125,20 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
 isolated function getEmployeePersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
     `SELECT 
         p.id AS id,
-        nic,
+        nic_or_passport,
         full_name,
         name_with_initials,
         p.first_name AS firstName,
         p.last_name AS lastName,
         title,
         dob,
-        age,
         personal_email,
         personal_phone,
-        home_phone,
-        address,
+        resident_number,
+        address_line_1,
+        address_line_2,
+        city,
+        state_or_province,
         postal_code,
         country,
         nationality
@@ -205,7 +207,7 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
     return sql:queryConcat(query, `;`);
 }
 
-# Get career functions.
+# Get career functions query.
 #
 # + return - Career functions query
 isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
@@ -213,6 +215,23 @@ isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
         id,
         career_function
     FROM career_function;`;
+
+# Get designations query.
+#
+# + careerFunctionId - Career function ID (optional)
+# + return - Designations query
+isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            id,
+            designation,
+            job_band
+        FROM designation`;
+    if careerFunctionId is int {
+        query = sql:queryConcat(query, ` WHERE career_function_id = ${careerFunctionId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 
 # Get offices query.
 #
@@ -233,18 +252,20 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
     returns sql:ParameterizedQuery =>
     `INSERT INTO personal_info
         (
-            nic,
+            nic_or_passport,
             full_name,
             name_with_initials,
             first_name,
             last_name,
             title,
             dob,
-            age,
             personal_email,
             personal_phone,
-            home_phone,
-            address,
+            resident_number,
+            address_line_1,
+            address_line_2,
+            city,
+            state_or_province,
             postal_code,
             country,
             nationality,
@@ -253,18 +274,20 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
         )
     VALUES
         (
-            ${payload.nic},
+            ${payload.nicOrPassport},
             ${payload.fullName},
             ${payload.nameWithInitials},
             ${payload.firstName},
             ${payload.lastName},
             ${payload.title},
             ${payload.dob},
-            ${payload.age},
             ${payload.personalEmail},
             ${payload.personalPhone},
-            ${payload.homePhone},
-            ${payload.address},
+            ${payload.residentNumber},
+            ${payload.addressLine1},
+            ${payload.addressLine2},
+            ${payload.city},
+            ${payload.stateOrProvince},
             ${payload.postalCode},
             ${payload.country},
             ${payload.nationality},
@@ -285,17 +308,16 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             first_name,
             last_name,
             epf,
-            employee_location,
+            employment_location,
             work_location,
             work_email,
             work_phone_number,
             start_date,
-            job_role,
+            secondary_job_title,
             manager_email,
-            additional_manager_email,
+            additional_manager_emails,
             employee_status,
             employee_thumbnail,
-            subordinate_count,
             probation_end_date,
             agreement_end_date,
             personal_info_id,
@@ -314,17 +336,16 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.firstName},
             ${payload.lastName},
             ${payload.epf},
-            ${payload.employeeLocation},
+            ${payload.employmentLocation},
             ${payload.workLocation},
             ${payload.workEmail},
             ${payload.workPhoneNumber},
             ${payload.startDate},
-            ${payload.jobRole},
+            ${payload.secondaryJobTitle},
             ${payload.managerEmail},
-            ${payload.additionalManagerEmail},
+            ${string:'join(", ", ...payload.additionalManagerEmails)},
             ${payload.employeeStatus},
             ${payload.employeeThumbnail},
-            ${payload.subordinateCount},
             ${payload.probationEndDate},
             ${payload.agreementEndDate},
             ${personalInfoId},
@@ -351,8 +372,11 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
      SET
         personal_email = ${payload.personalEmail},
         personal_phone = ${payload.personalPhone},
-        home_phone = ${payload.homePhone},
-        address = ${payload.address},
+        resident_number = ${payload.residentNumber},
+        address_line_1 = ${payload.addressLine1},
+        address_line_2 = ${payload.addressLine2},
+        city = ${payload.city},
+        state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
         country = ${payload.country}
      WHERE
