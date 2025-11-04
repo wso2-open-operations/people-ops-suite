@@ -266,18 +266,13 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Resident number
-    @sql:Column {name: "resident_number"}
-    string? residentNumber;
     # Address line 1
-    @sql:Column {name: "address_line_1"}
     string? addressLine1;
     # Address line 2
-    @sql:Column {name: "address_line_2"}
     string? addressLine2;
     # City
     string? city;
     # State or province
-    @sql:Column {name: "state_or_province"}
     string? stateOrProvince;
     # Postal code
     @constraint:String {maxLength: 20}
