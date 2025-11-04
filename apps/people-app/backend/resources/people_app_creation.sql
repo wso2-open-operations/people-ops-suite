@@ -201,18 +201,20 @@ CREATE TABLE `employment_type` (
 -- Personal_info table
 CREATE TABLE `personal_info` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `nic` VARCHAR(20) UNIQUE,
+  `nic_or_passport` VARCHAR(20) UNIQUE,
   `full_name` VARCHAR(255) NOT NULL,
   `name_with_initials` VARCHAR(150),
   `first_name` VARCHAR(100),
   `last_name` VARCHAR(100),
   `title` VARCHAR(100) NULL,
   `dob` DATE,
-  `age` INT,
   `personal_email` VARCHAR(254),
   `personal_phone` VARCHAR(20),
-  `home_phone` VARCHAR(20),
-  `address` VARCHAR(255),
+  `resident_number` VARCHAR(20),
+  `address_line_1` VARCHAR(255),
+  `address_line_2` VARCHAR(255),
+  `city` VARCHAR(100),
+  `state_or_province` VARCHAR(100),
   `postal_code` VARCHAR(20),
   `country` VARCHAR(100),
   `nationality` VARCHAR(100),
@@ -231,7 +233,7 @@ CREATE TABLE `recruit` (
   `date_of_join` DATE NOT NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
-  `employee_location` VARCHAR(255) NULL,
+  `employment_location` VARCHAR(255) NULL,
   `work_location` VARCHAR(100) NULL,
   `reports_to` VARCHAR(254) NULL,
   `manager_email` VARCHAR(254) NULL,
@@ -278,19 +280,17 @@ CREATE TABLE `employee` (
   `first_name` VARCHAR(150) NOT NULL,
   `last_name` VARCHAR(150) NOT NULL,
   `epf` VARCHAR(45) NULL,
-  `employee_location` VARCHAR(255) NOT NULL,
+  `employment_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
   `work_email` VARCHAR(254) NOT NULL,
   `work_phone_number` VARCHAR(45) NULL,
   `start_date` DATE NULL,
-  `job_role` VARCHAR(100) NOT NULL,
+  `secondary_job_title` VARCHAR(100) NOT NULL,
   `manager_email` VARCHAR(254) NOT NULL,
-  `additional_manager_email` VARCHAR(254) NULL,
+  `additional_manager_emails` VARCHAR(254) NULL,
   `employee_status` VARCHAR(50) NOT NULL,
-  `length_of_service` INT NULL,
-  `relocation_status` VARCHAR(50) NULL,
+  `continuous_service_record` VARCHAR(99) NULL,
   `employee_thumbnail` VARCHAR(512) NULL,
-  `subordinate_count` INT NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
   `created_by` VARCHAR(254) NOT NULL,
@@ -320,7 +320,9 @@ CREATE TABLE `employee` (
   CONSTRAINT `fk_emp_bu`
     FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`),
   CONSTRAINT `fk_emp_unit`
-    FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`)
+    FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`),
+  CONSTRAINT `fk_emp_continuous_service_record`
+    FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`employee_id`)
 );
 
 -- Resignation table

@@ -66,8 +66,8 @@ public type EmployeeBasicInfo record {|
     @sql:Column {name: "employee_thumbnail"}
     string? employeeThumbnail;
     # Job role of the user
-    @sql:Column {name: "job_role"}
-    string jobRole;
+    @sql:Column {name: "secondary_job_title"}
+    string secondaryJobTitle;
 |};
 
 # User information with privileges.
@@ -82,8 +82,8 @@ public type Employee record {|
     *EmployeeBasicInfo;
     # Employees' provident fund number
     string? epf;
-    # Employee location
-    string employeeLocation;
+    # Employment location
+    string employmentLocation;
     # Work location
     string workLocation;
     # Work phone number
@@ -93,15 +93,13 @@ public type Employee record {|
     # Manager email
     string managerEmail;
     # Additional manager email
-    string? additionalManagerEmail;
+    string? additionalManagerEmails;
     # Employee status
     string employeeStatus;
     # Length of service
     int? lengthOfService;
-    # Relocation status
-    string? relocationStatus;
-    # Subordinate count
-    int? subordinateCount;
+    # Continuous service record reference (Employee ID)
+    string? continuousServiceRecord;
     # Probation end date
     string? probationEndDate;
     # Agreement end date
@@ -125,7 +123,8 @@ public type EmployeePersonalInfo record {|
     # Primary key ID
     int id;
     # National Identity Card number
-    string? nic;
+    @sql:Column {name: "nic_or_passport"}
+    string? nicOrPassport;
     # Full name of the person
     @sql:Column {name: "full_name"}
     string fullName;
@@ -140,19 +139,26 @@ public type EmployeePersonalInfo record {|
     string? title;
     # Date of birth
     string? dob;
-    # Age
-    int? age;
     # Personal email address
     @sql:Column {name: "personal_email"}
     string? personalEmail;
     # Personal phone number
     @sql:Column {name: "personal_phone"}
     string? personalPhone;
-    # Home phone number
-    @sql:Column {name: "home_phone"}
-    string? homePhone;
-    # Home address
-    string? address;
+    # Resident number
+    @sql:Column {name: "resident_number"}
+    string? residentNumber;
+    # Address line 1
+    @sql:Column {name: "address_line_1"}
+    string? addressLine1;
+    # Address line 2
+    @sql:Column {name: "address_line_2"}
+    string? addressLine2;
+    # City
+    string? city;
+    # State or province
+    @sql:Column {name: "state_or_province"}
+    string? stateOrProvince;
     # Postal code
     @sql:Column {name: "postal_code"}
     string? postalCode;
@@ -203,6 +209,17 @@ public type CareerFunction record {|
     string careerFunction;
 |};
 
+# Designation.
+public type Designation record {|
+    # Designation ID
+    int id;
+    # Designation name
+    string designation;
+    # Job band
+    @sql:Column {name: "job_band"}
+    int jobBand;
+|};
+
 # Office.
 public type Office record {|
     # Office ID
@@ -216,14 +233,14 @@ public type Office record {|
 
 # Search employee personal information payload.
 public type SearchEmployeePersonalInfoPayload record {|
-    # National Identity Card number
-    string nic?;
+    # National Identity Card number or Passport
+    string nicOrPassport?;
 |};
 
 # Create personal info payload.
 public type CreatePersonalInfoPayload record {|
-    # National Identity Card number
-    string nic;
+    # National Identity Card number or Passport
+    string nicOrPassport;
     # Full name of the person
     @constraint:String {maxLength: 255}
     string fullName;
@@ -242,21 +259,27 @@ public type CreatePersonalInfoPayload record {|
     # Date of birth
     @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
     string? dob = ();
-    # Age
-    @constraint:Int {minValue: 0}
-    int? age = ();
     # Personal email address
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
     # Personal phone number
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
-    # Home phone number
+    # Resident number
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
-    string? homePhone = ();
-    # Home address
+    string? residentNumber = ();
+    # Address line 1
     @constraint:String {maxLength: 255}
-    string? address = ();
+    string? addressLine1 = ();
+    # Address line 2
+    @constraint:String {maxLength: 255}
+    string? addressLine2 = ();
+    # City
+    @constraint:String {maxLength: 100}
+    string? city = ();
+    # State or province
+    @constraint:String {maxLength: 100}
+    string? stateOrProvince = ();
     # Postal code
     @constraint:String {maxLength: 20}
     string? postalCode = ();
@@ -281,7 +304,7 @@ public type CreateEmployeePayload record {|
     string? epf = ();
     # Employee location
     @constraint:String {maxLength: 255}
-    string employeeLocation;
+    string employmentLocation;
     # Work location
     @constraint:String {maxLength: 100}
     string workLocation;
@@ -294,23 +317,20 @@ public type CreateEmployeePayload record {|
     # Start date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string startDate;
-    # Job role of the user
+    # Secondary job title
     @constraint:String {maxLength: 100}
-    string jobRole;
+    string secondaryJobTitle;
     # Manager email
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string managerEmail;
-    # Additional manager email
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
-    string? additionalManagerEmail = ();
+    # Additional manager emails
+    string[] additionalManagerEmails = [];
     # Employee status
     @constraint:String {maxLength: 50}
     string employeeStatus;
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
-    # Subordinate count
-    int? subordinateCount = ();
     # Probation end date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? probationEndDate = ();
@@ -343,12 +363,21 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # Personal phone number
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
-    # Home phone number
+    # Resident number
     @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
-    string? homePhone = ();
-    # Home address
+    string? residentNumber = ();
+    # Address line 1
     @constraint:String {maxLength: 255}
-    string? address = ();
+    string? addressLine1 = ();
+    # Address line 2
+    @constraint:String {maxLength: 255}
+    string? addressLine2 = ();
+    # City
+    @constraint:String {maxLength: 100}
+    string? city = ();
+    # State or province
+    @constraint:String {maxLength: 100}
+    string? stateOrProvince = ();
     # Postal code
     @constraint:String {maxLength: 20}
     string? postalCode = ();

@@ -112,6 +112,16 @@ public isolated function getCareerFunctions() returns CareerFunction[]|error {
         select careerFunction;
 }
 
+# Get designations.
+#
+# + careerFunctionId - Career function ID (optional)
+# + return - Designations
+public isolated function getDesignations(int? careerFunctionId = ()) returns Designation[]|error {
+    stream<Designation, error?> designationStream = databaseClient->query(getDesignationsQuery(careerFunctionId));
+    return from Designation designation in designationStream
+        select designation;
+}
+
 # Get offices.
 #
 # + return - Offices
