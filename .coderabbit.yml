@@ -1,0 +1,12 @@
+auto_review:
+  enabled: true
+  branches:
+    - main
+    - dev-*
+    - release*
+
+rules:
+  - name: "Code quality"
+    enabled: true
+  - name: "Security checks"
+    enabled: true
