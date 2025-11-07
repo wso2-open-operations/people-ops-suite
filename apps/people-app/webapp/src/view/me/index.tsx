@@ -140,19 +140,19 @@ export default function Me() {
       .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
     addressLine1: string()
       .nullable()
-      .max(255, "Address must be at most 255 characters"),
+      .max(255, "Address Line 1 must be at most 255 characters"),
     addressLine2: string()
       .nullable()
-      .max(255, "Address must be at most 255 characters"),
+      .max(255, "Address Line 2 must be at most 255 characters"),
     city: string()
       .nullable()
-      .max(255, "Address must be at most 255 characters"),
+      .max(100, "City must be at most 100 characters"),
     country: string()
       .nullable()
-      .max(255, "Address must be at most 255 characters"),
+      .max(100, "Country must be at most 100 characters"),
     stateOrProvince: string()
       .nullable()
-      .max(255, "Address must be at most 255 characters"),
+      .max(100, "State/Province must be at most 100 characters"),
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
