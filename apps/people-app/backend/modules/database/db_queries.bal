@@ -25,8 +25,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
         first_name,
         last_name,
         work_email,
-        employee_thumbnail,
-        secondary_job_title
+        employee_thumbnail
     FROM employee
     WHERE work_email = ${email};`;
 
@@ -54,9 +53,8 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.last_name AS lastName,
         e.work_email AS workEmail,
         e.employee_thumbnail AS employeeThumbnail,
-        e.secondary_job_title AS secondaryJobTitle,
         e.epf AS epf,
-        e.employment_location AS employmentLocation,
+        c.location AS employmentLocation,
         e.work_location AS workLocation,
         e.work_phone_number AS workPhoneNumber,
         e.start_date AS startDate,
@@ -68,18 +66,22 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.agreement_end_date AS agreementEndDate,
         et.name AS employmentType,
         d.designation AS designation,
+        e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
+        bu.name AS businessUnit,
         t.name AS team,
         st.name AS subTeam,
-        bu.name AS businessUnit
+        u.name AS unit
     FROM
         employee e
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = o.company_id
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        INNER JOIN unit u ON e.unit_id = u.id
     WHERE
         e.id = ${id};`;
 

@@ -65,9 +65,6 @@ public type EmployeeBasicInfo record {|
     # Thumbnail URL of the user
     @sql:Column {name: "employee_thumbnail"}
     string? employeeThumbnail;
-    # Job role of the user
-    @sql:Column {name: "secondary_job_title"}
-    string secondaryJobTitle;
 |};
 
 # User information with privileges.
@@ -96,8 +93,6 @@ public type Employee record {|
     string? additionalManagerEmails;
     # Employee status
     string employeeStatus;
-    # Length of service
-    int? lengthOfService;
     # Continuous service record reference (Employee ID)
     string? continuousServiceRecord;
     # Probation end date
@@ -108,14 +103,18 @@ public type Employee record {|
     string employmentType;
     # Designation
     string designation;
+    # Job role of the user
+    string secondaryJobTitle;
     # Office
     string office;
+    # Business unit
+    string businessUnit;
     # Team
     string team;
     # Sub-team
     string subTeam;
-    # Business unit
-    string businessUnit;
+    # Unit
+    string? unit;
 |};
 
 # Personal information of an employee.

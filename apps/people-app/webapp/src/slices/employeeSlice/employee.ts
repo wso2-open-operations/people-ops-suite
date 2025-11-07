@@ -28,28 +28,24 @@ interface Employee {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  jobRole: string;
+  secondaryJobTitle: string;
   epf: string;
-  employeeLocation: string;
+  employmentLocation: string;
   workLocation: string;
   workPhoneNumber: string | null;
   startDate: string;
   managerEmail: string;
-  reportToEmail: string;
-  additionalManagerEmail: string | null;
-  additionalReportToEmail: string | null;
+  additionalManagerEmails: string | null;
   employeeStatus: string;
-  lengthOfService: number;
-  relocationStatus: string | null;
-  subordinateCount: number | null;
   probationEndDate: string | null;
   agreementEndDate: string | null;
   employmentType: string;
   designation: string;
   office: string;
+  businessUnit: string;
   team: string;
   subTeam: string;
-  businessUnit: string;
+  unit: string | null;  
 }
 
 interface EmployeesState {
