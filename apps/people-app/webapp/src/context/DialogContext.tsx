@@ -18,12 +18,13 @@ import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DoneIcon from "@mui/icons-material/Done";
 import SendIcon from "@mui/icons-material/Send";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { ConfirmationType } from "@/types/types";
 import CloseIcon from "@mui/icons-material/Close";
 import LoadingButton from "@mui/lab/LoadingButton";
 import DialogTitle from "@mui/material/DialogTitle";
 import React, { useContext, useState } from "react";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import SaveIcon from "@mui/icons-material/Save";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import { IconButton, Stack, TextField } from "@mui/material";
@@ -86,7 +87,7 @@ const ConfirmationDialogContextProvider: React.FC<
   const [content, setContent] = useState<{
     title: string;
     message: string | JSX.Element;
-    type: "update" | "send" | "upload" | "accept";
+    type: "update" | "send" | "upload" | "accept" | "discard";
     action: (value?: string) => void;
     okText?: string;
     cancelText?: string;
@@ -101,7 +102,7 @@ const ConfirmationDialogContextProvider: React.FC<
   const handleShow = (
     title: string,
     message: string | JSX.Element,
-    type: "update" | "send" | "upload" | "accept",
+    type: "update" | "send" | "upload" | "accept" | "discard",
     action: (value?: string) => void,
     okText?: string,
     cancelText?: string,
@@ -231,7 +232,7 @@ const ConfirmationDialogContextProvider: React.FC<
                     borderColor: "divider",
                     textTransform: "none",
                   }}
-                  color="secondary"
+                  color={content.type === "discard" ? "error" : "secondary"}
                   variant="contained"
                   size="small"
                   disabled={content?.inputObj?.mandatory && comment === ""}
@@ -241,9 +242,11 @@ const ConfirmationDialogContextProvider: React.FC<
                   loadingPosition="start"
                   startIcon={
                     content.type === "update" ? (
-                      <SaveAltIcon />
+                      <SaveIcon />
                     ) : content.type === "send" ? (
                       <SendIcon />
+                    ) : content.type === "discard" ? (
+                      <RestartAltIcon />
                     ) : (
                       <DoneIcon />
                     )

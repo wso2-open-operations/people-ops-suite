@@ -24,18 +24,20 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 export interface EmployeePersonalInfo {
   id: number | null;
-  nic: string | null;
+  nicOrPassport: string | null;
   fullName: string;
   nameWithInitials: string | null;
   firstName: string | null;
   lastName: string | null;
   title: string | null;
   dob: string | null;
-  age: number | null;
   personalEmail: string | null;
   personalPhone: string | null;
-  homePhone: string | null;
-  address: string | null;
+  residentNumber: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
   nationality: string | null;
@@ -44,10 +46,13 @@ export interface EmployeePersonalInfo {
 export interface EmployeePersonalInfoUpdate {
   personalEmail: string | null;
   personalPhone: string | null;
-  homePhone: string | null;
-  address: string | null;
+  residentNumber: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  stateOrProvince: string | null;
   postalCode: string | null;
-  country: string | null
+  country: string | null;
 }
 
 interface EmployeePersonalInfoState {
@@ -94,7 +99,10 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
 export const updateEmployeePersonalInfo = createAsyncThunk(
   "employees/updateEmployeePersonalInfo",
   async (
-    { employeeId, data }: { employeeId: string; data: EmployeePersonalInfoUpdate },
+    {
+      employeeId,
+      data,
+    }: { employeeId: string; data: EmployeePersonalInfoUpdate },
     { dispatch, rejectWithValue }
   ) => {
     try {

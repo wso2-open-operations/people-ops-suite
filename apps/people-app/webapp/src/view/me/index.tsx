@@ -44,21 +44,8 @@ import {
   TextField,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
-
-const SectionHeader = ({ title }: { title: string }) => (
-  <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-    <Typography
-      variant="h5"
-      color="primary"
-      sx={{ mr: 2, whiteSpace: "nowrap" }}
-    >
-      {title}
-    </Typography>
-    <Box sx={{ flexGrow: 1, height: "1px", backgroundColor: "divider" }} />
-  </Box>
-);
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 const ReadOnly = ({
   label,
@@ -81,7 +68,6 @@ const FieldInput = ({
   name,
   label,
   type = "text",
-  isEditMode,
   values,
   handleChange,
   handleBlur,
@@ -93,7 +79,6 @@ const FieldInput = ({
   name: string;
   label: string;
   type?: string;
-  isEditMode: boolean;
   values: FormikValues;
   handleChange: FormikHandlers["handleChange"];
   handleBlur: FormikHandlers["handleBlur"];
@@ -103,9 +88,6 @@ const FieldInput = ({
   isRequired?: boolean;
 }) => {
   const labelWithAsterisk = isRequired ? `${label} *` : label;
-  if (!isEditMode) {
-    return <ReadOnly label={labelWithAsterisk} value={values[name]} />;
-  }
   return (
     <TextField
       sx={{
@@ -143,7 +125,6 @@ export default function Me() {
   const { personalInfo, state: personalInfoState } = useAppSelector(
     (state) => state.employeePersonalInfo
   );
-  const [isEditMode, setEditMode] = useState(false);
   const [isSavingChanges, setSavingChanges] = useState(false);
 
   const personalInfoSchema = object().shape({
@@ -154,18 +135,27 @@ export default function Me() {
     personalPhone: string()
       .nullable()
       .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
-    homePhone: string()
+    residentNumber: string()
       .nullable()
       .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
-    address: string()
+    addressLine1: string()
+      .nullable()
+      .max(255, "Address must be at most 255 characters"),
+    addressLine2: string()
+      .nullable()
+      .max(255, "Address must be at most 255 characters"),
+    city: string()
+      .nullable()
+      .max(255, "Address must be at most 255 characters"),
+    country: string()
+      .nullable()
+      .max(255, "Address must be at most 255 characters"),
+    stateOrProvince: string()
       .nullable()
       .max(255, "Address must be at most 255 characters"),
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
-    country: string()
-      .nullable()
-      .max(100, "Country must be at most 100 characters")
   });
 
   useEffect(() => {
@@ -175,28 +165,7 @@ export default function Me() {
     }
   }, [userInfo?.employeeId, dispatch]);
 
-  const handleToggleEditMode = (resetForm?: () => void) => {
-    setEditMode((prev) => {
-      if (!prev) {
-        // Entering edit mode
-        setTimeout(() => {
-          window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth",
-          });
-        }, 100);
-        return true;
-      } else {
-        // Exiting edit mode (cancel)
-        if (resetForm) {
-          resetForm();
-        }
-        return false;
-      }
-    });
-  };
-
-  const handleSave = async (values: EmployeePersonalInfo) => {
+  const handleSaveChanges = async (values: EmployeePersonalInfo) => {
     showConfirmation(
       "Confirm Save",
       "Are you sure you want to save these changes?",
@@ -207,13 +176,27 @@ export default function Me() {
     );
   };
 
+  const handleDiscardChanges = (resetForm: () => void) => {
+    showConfirmation(
+      "Discard Changes",
+      "Are you sure you want to discard all unsaved changes? This action cannot be undone.",
+      ConfirmationType.discard,
+      () => resetForm(),
+      "Discard",
+      "Keep Changes"
+    );
+  };
+
   const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
       const dataToSave = {
         personalEmail: values.personalEmail,
         personalPhone: values.personalPhone,
-        homePhone: values.homePhone,
-        address: values.address,
+        residentNumber: values.residentNumber,
+        addressLine1: values.addressLine1,
+        addressLine2: values.addressLine2,
+        city: values.city,
+        stateOrProvince: values.stateOrProvince,
         postalCode: values.postalCode,
         country: values.country,
       };
@@ -226,7 +209,6 @@ export default function Me() {
           })
         ).finally(() => {
           setSavingChanges(false);
-          setEditMode(false);
         });
       }
     } catch (err) {
@@ -274,48 +256,7 @@ export default function Me() {
           ) : employee ? (
             <Box>
               <Grid container rowSpacing={1.5} columnSpacing={3}>
-                {/* Identity Section */}
-                <Grid item xs={12}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Identity
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Name
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.firstName} {employee.lastName}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Email
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.workEmail}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee ID
                   </Typography>
@@ -323,7 +264,23 @@ export default function Me() {
                     {employee.employeeId || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Name
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.firstName} {employee.lastName}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Work Email
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.workEmail}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     EPF
                   </Typography>
@@ -331,40 +288,9 @@ export default function Me() {
                     {employee.epf || "-"}
                   </Typography>
                 </Grid>
-                {/* Job & Team Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Job & Team
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Job Role
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.jobRole}
-                  </Typography>
-                </Grid>
-                <Grid item xs={8}>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Designation
                   </Typography>
@@ -372,23 +298,17 @@ export default function Me() {
                     {employee.designation}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Team
+                    Job Role
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.team}
+                    {employee.jobRole || "N/A"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Sub Team
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.subTeam || "-"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Business Unit
                   </Typography>
@@ -396,48 +316,33 @@ export default function Me() {
                     {employee.businessUnit || "-"}
                   </Typography>
                 </Grid>
-                {/* Location & Office Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Location & Office
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Employee Location
+                    Team
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.employeeLocation || "-"}
+                    {employee.team}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Work Location
+                    Sub Team
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.workLocation || "-"}
+                    {employee.subTeam || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Unit
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.unit || "N/A"}
+                  </Typography>
+                </Grid>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Office
                   </Typography>
@@ -445,40 +350,25 @@ export default function Me() {
                     {employee.office || "-"}
                   </Typography>
                 </Grid>
-                {/* Dates & Status Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Dates & Status
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Start Date
+                    Employment Location
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.startDate || "-"}
+                    {employee.employmentLocation || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Work Location
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.workLocation || "-"}
+                  </Typography>
+                </Grid>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employment Type
                   </Typography>
@@ -486,7 +376,7 @@ export default function Me() {
                     {employee.employmentType || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Status
                   </Typography>
@@ -494,17 +384,17 @@ export default function Me() {
                     {employee.employeeStatus || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Length of Service
+                    Start Date
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.lengthOfService
-                      ? employee.lengthOfService + " Months"
-                      : "-"}
+                    {employee.startDate || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Probation End Date
                   </Typography>
@@ -512,7 +402,7 @@ export default function Me() {
                     {employee.probationEndDate || "N/A"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Agreement End Date
                   </Typography>
@@ -520,32 +410,9 @@ export default function Me() {
                     {employee.agreementEndDate || "N/A"}
                   </Typography>
                 </Grid>
-                {/* Manager & Reporting Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Manager & Reporting
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Manager Email
                   </Typography>
@@ -553,102 +420,22 @@ export default function Me() {
                     {employee.managerEmail || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={8}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Report To Email
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.reportToEmail || "-"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Additional Manager Email
+                    Additional Manager Emails
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.additionalManagerEmail || "-"}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Additional Report To Email
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.additionalReportToEmail || "-"}
-                  </Typography>
-                </Grid>
-                {/* Phone & Relocation Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Phone & Relocation
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
+              </Grid>
+              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Work Phone Number
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.workPhoneNumber || "-"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Relocation Status
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.relocationStatus || "-"}
-                  </Typography>
-                </Grid>
-                {/* Subordinates Section */}
-                <Grid item xs={12} sx={{ mt: 2 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
-                    <Typography
-                      variant="h5"
-                      color="primary"
-                      sx={{ mr: 2, whiteSpace: "nowrap" }}
-                    >
-                      Subordinates
-                    </Typography>
-                    <Box
-                      sx={{
-                        flexGrow: 1,
-                        height: "1px",
-                        backgroundColor: "divider",
-                      }}
-                    />
-                  </Box>
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Subordinate Count
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.subordinateCount ?? "N/A"}
                   </Typography>
                 </Grid>
               </Grid>
@@ -693,7 +480,7 @@ export default function Me() {
               validationSchema={personalInfoSchema}
               enableReinitialize
               onSubmit={async (values) => {
-                await handleSave(values);
+                await handleSaveChanges(values);
               }}
             >
               {({
@@ -702,81 +489,50 @@ export default function Me() {
                 handleBlur,
                 errors,
                 touched,
+                dirty,
                 resetForm,
               }) => (
                 <Form>
                   <Grid container rowSpacing={1.5} columnSpacing={3} pt={2}>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <Button
-                        startIcon={!isEditMode && <EditIcon />}
-                        sx={{ textTransform: "none" }}
-                        variant={isEditMode ? "outlined" : "contained"}
-                        color={isEditMode ? "primary" : "secondary"}
-                        onClick={() => handleToggleEditMode(resetForm)}
-                      >
-                        {isEditMode ? "Cancel" : "Edit"}
-                      </Button>
-                    </Box>
-
-                    {/* --- Identity Section (Read-only) --- */}
-                    <Grid item xs={12}>
-                      <SectionHeader title="Identity" />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Title" value={values.title} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="First Name" value={values.firstName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Last Name" value={values.lastName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <ReadOnly label="NIC" value={values.nic} />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly
                         label="Name with Initials"
                         value={values.nameWithInitials}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                  </Grid>
+                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Full Name" value={values.fullName} />
                     </Grid>
-
-                    {/* --- Birth & Nationality (Read-only) --- */}
-                    <Grid item xs={12} sx={{ mt: 2 }}>
-                      <SectionHeader title="Birth & Nationality" />
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Date of Birth" value={values.dob} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <ReadOnly label="Age" value={values.age} />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly
                         label="Nationality"
                         value={values.nationality}
                       />
                     </Grid>
-
-                    {/* --- Contact (Editable) --- */}
-                    <Grid item xs={12} sx={{ mt: 2 }}>
-                      <SectionHeader title="Contact" />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                  </Grid>
+                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
                         name="personalEmail"
                         label="Personal Email"
                         type="email"
-                        isEditMode={isEditMode}
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
@@ -785,12 +541,11 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
                         name="personalPhone"
                         label="Personal Phone"
                         type="tel"
-                        isEditMode={isEditMode}
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
@@ -799,12 +554,11 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
-                        name="homePhone"
-                        label="Home Phone"
+                        name="residentNumber"
+                        label="Resident Number"
                         type="tel"
-                        isEditMode={isEditMode}
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
@@ -813,16 +567,12 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
-
-                    {/* --- Address (Editable) --- */}
-                    <Grid item xs={12} sx={{ mt: 2 }}>
-                      <SectionHeader title="Address" />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                  </Grid>
+                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                    <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
-                        name="address"
-                        label="Address"
-                        isEditMode={isEditMode}
+                        name="addressLine1"
+                        label="Address Line 1"
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
@@ -831,24 +581,46 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FieldInput
+                        name="addressLine2"
+                        label="Address Line 2"
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FieldInput
+                        name="city"
+                        label="City"
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FieldInput
+                        name="stateOrProvince"
+                        label="State/Province"
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
                         name="postalCode"
                         label="Postal Code"
-                        isEditMode={isEditMode}
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
-                      <FieldInput
-                        name="country"
-                        label="Country"
-                        isEditMode={isEditMode}
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
@@ -858,28 +630,37 @@ export default function Me() {
                       />
                     </Grid>
 
-                    {/* --- Save Button --- */}
-                    {isEditMode && (
-                      <Box
-                        sx={{
-                          mt: 3,
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "flex-end",
-                        }}
+                    {/* --- Action Buttons --- */}
+                    <Box
+                      sx={{
+                        mt: 3,
+                        width: "100%",
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 2,
+                      }}
+                    >
+                      <Button
+                        startIcon={<RestartAltIcon />}
+                        sx={{ textTransform: "none" }}
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleDiscardChanges(resetForm)}
+                        disabled={isSavingChanges || !dirty}
                       >
-                        <Button
-                          startIcon={<SaveIcon />}
-                          sx={{ textTransform: "none" }}
-                          variant="contained"
-                          color="secondary"
-                          type="submit"
-                          disabled={isSavingChanges}
-                        >
-                          {isSavingChanges ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </Box>
-                    )}
+                        Discard Changes
+                      </Button>
+                      <Button
+                        startIcon={<SaveIcon />}
+                        sx={{ textTransform: "none" }}
+                        variant="contained"
+                        color="secondary"
+                        type="submit"
+                        disabled={isSavingChanges || !dirty}
+                      >
+                        {isSavingChanges ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </Box>
                   </Grid>
                 </Form>
               )}
