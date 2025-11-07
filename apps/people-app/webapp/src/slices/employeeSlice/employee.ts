@@ -35,7 +35,7 @@ interface Employee {
   workPhoneNumber: string | null;
   startDate: string;
   managerEmail: string;
-  additionalManagerEmail: string | null;
+  additionalManagerEmails: string | null;
   employeeStatus: string;
   probationEndDate: string | null;
   agreementEndDate: string | null;
