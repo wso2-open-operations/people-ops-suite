@@ -425,7 +425,7 @@ export default function Me() {
                     Additional Manager Emails
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.additionalManagerEmail || "-"}
+                    {employee.additionalManagerEmails || "-"}
                   </Typography>
                 </Grid>
               </Grid>
