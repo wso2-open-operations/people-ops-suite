@@ -28,7 +28,7 @@ interface Employee {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  jobRole: string;
+  secondaryJobTitle: string;
   epf: string;
   employmentLocation: string;
   workLocation: string;

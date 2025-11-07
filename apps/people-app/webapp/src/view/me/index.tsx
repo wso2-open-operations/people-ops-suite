@@ -300,10 +300,10 @@ export default function Me() {
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Job Role
+                    Secondary Job Title
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.jobRole || "N/A"}
+                    {employee.secondaryJobTitle || "N/A"}
                   </Typography>
                 </Grid>
               </Grid>
