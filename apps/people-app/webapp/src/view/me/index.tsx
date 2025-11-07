@@ -144,9 +144,7 @@ export default function Me() {
     addressLine2: string()
       .nullable()
       .max(255, "Address Line 2 must be at most 255 characters"),
-    city: string()
-      .nullable()
-      .max(100, "City must be at most 100 characters"),
+    city: string().nullable().max(100, "City must be at most 100 characters"),
     country: string()
       .nullable()
       .max(100, "Country must be at most 100 characters"),
@@ -593,6 +591,8 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
+                  </Grid>
+                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
                       <FieldInput
                         name="city"
@@ -609,6 +609,18 @@ export default function Me() {
                       <FieldInput
                         name="stateOrProvince"
                         label="State/Province"
+                        values={values}
+                        handleChange={handleChange}
+                        handleBlur={handleBlur}
+                        errors={errors}
+                        touched={touched}
+                        isSavingChanges={isSavingChanges}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <FieldInput
+                        name="country"
+                        label="Country"
                         values={values}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
