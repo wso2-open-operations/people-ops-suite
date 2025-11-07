@@ -12,11 +12,26 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-# Visitor status.
-public enum Status {
-    REQUESTED,
-    APPROVED,
-    REJECTED,
-    COMPLETED
-};
+// under the License.
+import ballerina/http;
+
+configurable string emailServiceEndpoint = ?;
+configurable ClientAuthConfig clientAuthConfig = ?;
+
+final http:Client emailClient = check new (emailServiceEndpoint, {
+    auth: {
+        ...clientAuthConfig
+    },
+    timeout: 10.0,
+    retryConfig: {
+        count: 3,
+        interval: 5.0,
+        statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});

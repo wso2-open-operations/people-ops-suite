@@ -115,7 +115,9 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
                 lineHeight: 0,
                 py: 0.7,
                 background:
-                  tabs[index] === searchParams.get("tab") ? alpha(theme.palette.primary.light, 0.2) : "inherit",
+                  tabs[index] === searchParams.get("tab")
+                    ? alpha(theme.palette.primary.light, 0.2)
+                    : "inherit",
               })}
             />
           ))}
@@ -151,7 +153,10 @@ function TabPanel(props: TabPanelProps) {
       {value === index && (
         <Box
           sx={(theme) => ({
-            boxShadow: theme.palette.mode === "dark" ? "0px 3px 10px rgba(120, 125, 129, 0.5)" : 10,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0px 3px 10px rgba(120, 125, 129, 0.5)"
+                : 10,
             overflow: "auto",
             height: "100%",
             background: "background.paper",

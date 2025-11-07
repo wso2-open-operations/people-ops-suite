@@ -1,0 +1,20 @@
+auto_review:
+  enabled: true
+  branches:
+    - main
+    - dev-* # Automatically review PRs to any dev-* branch
+    - release*
+
+rules:
+  - name: "Code quality"
+    enabled: true
+  - name: "Security"
+    enabled: true
+  - name: "Performance"
+    enabled: true
+  - name: "Best practices"
+    enabled: true
+  - name: "Readability"
+    enabled: true
+  - name: "Maintainability"
+    enabled: true

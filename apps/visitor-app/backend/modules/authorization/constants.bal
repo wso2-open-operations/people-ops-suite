@@ -13,11 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 # Authorization Constants.
-public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
+public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 
 # Privileges.
+public const SECURITY_ADMIN_PRIVILEGE = 789;
 public const EMPLOYEE_PRIVILEGE = 987;
-public const ADMIN_PRIVILEGE = 789;
+
+# Open endpoints
+public const AUTHORIZE = "authorize";
+public const FILL = "fill";
+public const INVITATIONS = "invitations";
