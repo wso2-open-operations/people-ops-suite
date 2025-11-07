@@ -641,38 +641,39 @@ export default function Me() {
                         isSavingChanges={isSavingChanges}
                       />
                     </Grid>
-
-                    {/* --- Action Buttons --- */}
-                    <Box
-                      sx={{
-                        mt: 3,
-                        width: "100%",
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 2,
-                      }}
-                    >
-                      <Button
-                        startIcon={<RestartAltIcon />}
-                        sx={{ textTransform: "none" }}
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => handleDiscardChanges(resetForm)}
-                        disabled={isSavingChanges || !dirty}
+                    <Grid item xs={12}>
+                      {/* --- Action Buttons --- */}
+                      <Box
+                        sx={{
+                          mt: 3,
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: 2,
+                        }}
                       >
-                        Discard Changes
-                      </Button>
-                      <Button
-                        startIcon={<SaveIcon />}
-                        sx={{ textTransform: "none" }}
-                        variant="contained"
-                        color="secondary"
-                        type="submit"
-                        disabled={isSavingChanges || !dirty}
-                      >
-                        {isSavingChanges ? "Saving..." : "Save Changes"}
-                      </Button>
-                    </Box>
+                        <Button
+                          startIcon={<RestartAltIcon />}
+                          sx={{ textTransform: "none" }}
+                          variant="outlined"
+                          color="primary"
+                          onClick={() => handleDiscardChanges(resetForm)}
+                          disabled={isSavingChanges || !dirty}
+                        >
+                          Discard Changes
+                        </Button>
+                        <Button
+                          startIcon={<SaveIcon />}
+                          sx={{ textTransform: "none" }}
+                          variant="contained"
+                          color="secondary"
+                          type="submit"
+                          disabled={isSavingChanges || !dirty}
+                        >
+                          {isSavingChanges ? "Saving..." : "Save Changes"}
+                        </Button>
+                      </Box>
+                    </Grid>
                   </Grid>
                 </Form>
               )}
