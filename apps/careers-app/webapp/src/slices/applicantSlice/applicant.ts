@@ -83,8 +83,8 @@ export interface ApplicantProfile {
   address: string;
   country: string;
   status: string;
-  user_thumbnail?: string;
-  resume_link?: string;
+  user_thumbnail?: number[]; 
+  resume_link?: number[]; 
   professional_links?: { title: string; link: string }[];
   educations?: Educations[];
   experiences?: Experiences[];
