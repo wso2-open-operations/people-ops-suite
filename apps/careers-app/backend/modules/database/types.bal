@@ -163,12 +163,12 @@ public type CreateApplicantProfile record {|
     # Personal interests 
     @sql:Column {name: "interests"}
     Interests interests;
-    # Link to the profile picture in Google Drive
+    # Profile picture as byte array
     @sql:Column {name: "user_thumbnail"}
-    string? user_thumbnail;
-    # Link to the resume in Google Drive
+    byte[]? user_thumbnail;
+    # Resume as byte array
     @sql:Column {name: "resume_link"}
-    string? resume_link;
+    byte[]? resume_link;
     # user who created the profile
     @sql:Column {name: "created_by"}
     string? created_by;
@@ -239,12 +239,12 @@ type ApplicantProfileDB record {|
     # Personal interests
     @sql:Column {name: "interests"}
     string interests;
-    # Link to the profile picture in Google Drive
+    # Profile picture as byte array
     @sql:Column {name: "user_thumbnail"}
-    string? user_thumbnail;
-    # Link to the resume in Google Drive
+    byte[]? user_thumbnail;
+    # Resume as byte array
     @sql:Column {name: "resume_link"}
-    string? resume_link;
+    byte[]? resume_link;
     # user who created the profile
     @sql:Column {name: "created_by"}
     string? created_by;
@@ -291,10 +291,10 @@ public type UpdateApplicantProfile record {|
     Languages[] languages?;
     # Personal interests 
     Interests interests?;
-    # Link to the profile picture in Google Drive
-    string user_thumbnail?;
-    # Link to the resume in Google Drive
-    string resume_link?;
+    # Profile picture as byte array
+    byte[]? user_thumbnail?;
+    # Resume as byte array
+    byte[]? resume_link?;
     # user who last updated the profile
     string updated_by?;
 |};
