@@ -17,9 +17,11 @@
 export const SnackMessage = {
     success: {
     applicantCreate: "Applicant profile created successfully!",
+    applicantUpdate: "Applicant profile updated successfully!",
   },
   error: {
     applicantCreate: "Failed to create applicant.",
+    applicantUpdate: "Failed to update applicant.",
     applicantUnknown: "An unknown error occurred.",
     formValidation: "Please fill all required fields before saving.",
     fetchPrivileges: "Failed to fetch Privileges",
