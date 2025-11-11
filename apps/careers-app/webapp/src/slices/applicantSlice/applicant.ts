@@ -161,6 +161,41 @@ export const fetchApplicantByEmail = createAsyncThunk(
   }
 );
 
+export const updateApplicant = createAsyncThunk(
+  "applicant/updateApplicant",
+  async (
+    { email, payload }: { email: string; payload: Partial<ApplicantPayload> },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      const response = await APIService.getInstance().patch(
+        `${AppConfig.serviceUrls.applicants}/${encodeURIComponent(email)}`,
+        payload
+      );
+      dispatch(
+        enqueueSnackbarMessage({
+          message: SnackMessage.success.applicantUpdate,
+          type: "success",
+        })
+      );
+      return response.data as ApplicantProfile;
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message:
+              error.response?.status === HttpStatusCode.InternalServerError
+                ? SnackMessage.error.applicantUpdate
+                : error.response?.data?.message || SnackMessage.error.applicantUnknown,
+            type: "error",
+          })
+        );
+      }
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const ApplicantSlice = createSlice({
   name: "applicant",
   initialState,
@@ -204,6 +239,19 @@ const ApplicantSlice = createSlice({
           state.state = State.failed;
           state.errorMessage = action.payload as string;
         }
+      })
+      .addCase(updateApplicant.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Updating applicant...";
+      })
+      .addCase(updateApplicant.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Applicant updated!";
+        state.applicantProfile = action.payload;
+      })
+      .addCase(updateApplicant.rejected, (state, action) => {
+        state.state = State.failed;
+        state.errorMessage = action.payload as string;
       });
   },
 });
