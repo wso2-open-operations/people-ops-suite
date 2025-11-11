@@ -11,8 +11,8 @@ CREATE TABLE applicants (
     phone VARCHAR(50),
     address TEXT,
     country VARCHAR(100),
-    user_thumbnail TEXT,
-    resume_link TEXT,
+    user_thumbnail LONGBLOB,
+    resume_link LONGBLOB,
     status VARCHAR(50),
     
     -- JSON Arrays
