@@ -47,13 +47,22 @@ import {
   CalendarTodayOutlined,
   DescriptionOutlined,
   GitHub,
+  EditOutlined,
 } from "@mui/icons-material";
+import { useState } from "react";
+import EditApplicant from "./editApplicant";
 
 export default function ApplicantProfile() {
   const theme = useTheme();
   const applicant = useAppSelector((s) => s.applicant.applicantProfile);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   if (!applicant) return null;
+
+  // If in edit mode, show the edit form
+  if (isEditMode) {
+    return <EditApplicant applicant={applicant} onCancel={() => setIsEditMode(false)} />;
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -123,18 +132,19 @@ export default function ApplicantProfile() {
               />
             </Stack>
           </Box>
-          {applicant.resume_link && (
-            <Tooltip title="View Resume">
+          <Stack direction="row" spacing={2}>
+            <Tooltip title="Edit Profile">
               <Button
-                href={applicant.resume_link}
-                target="_blank"
-                variant="contained"
+                onClick={() => setIsEditMode(true)}
+                variant="outlined"
                 size="large"
-                startIcon={<DescriptionOutlined />}
+                startIcon={<EditOutlined />}
                 sx={{
-                  bgcolor: theme.palette.brand.orangeDark,
+                  borderColor: theme.palette.brand.orange,
+                  color: theme.palette.brand.orangeDark,
                   "&:hover": {
-                    bgcolor: theme.palette.brand.orange,
+                    borderColor: theme.palette.brand.orangeDark,
+                    bgcolor: alpha(theme.palette.brand.orange, 0.08),
                   },
                   fontWeight: "bold",
                   px: 3,
@@ -144,10 +154,35 @@ export default function ApplicantProfile() {
                   fontSize: "1rem",
                 }}
               >
-                View Resume
+                Edit Profile
               </Button>
             </Tooltip>
-          )}
+            {applicant.resume_link && (
+              <Tooltip title="View Resume">
+                <Button
+                  href={applicant.resume_link}
+                  target="_blank"
+                  variant="contained"
+                  size="large"
+                  startIcon={<DescriptionOutlined />}
+                  sx={{
+                    bgcolor: theme.palette.brand.orangeDark,
+                    "&:hover": {
+                      bgcolor: theme.palette.brand.orange,
+                    },
+                    fontWeight: "bold",
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: "none",
+                    fontSize: "1rem",
+                  }}
+                >
+                  View Resume
+                </Button>
+              </Tooltip>
+            )}
+          </Stack>
         </Box>
       </Paper>
 
