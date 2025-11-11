@@ -49,6 +49,7 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToBase64 } from "@utils/utils";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/byteArrayUtils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
@@ -369,7 +370,7 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                     src={
                       profilePhoto
                         ? URL.createObjectURL(profilePhoto)
-                        : applicant.user_thumbnail || ""
+                        : getImageDataUrl(applicant.user_thumbnail)
                     }
                     alt={`${values.firstName} ${values.lastName}`}
                     sx={{
@@ -557,13 +558,16 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                     New resume selected: {resumeFile.name}
                   </Typography>
                 )}
-                {!resumeFile && applicant.resume_link && (
+                {!resumeFile && isValidByteArray(applicant.resume_link) && (
                   <Typography variant="body2" color="text.secondary">
                     Current resume on file.{" "}
                     <a
-                      href={applicant.resume_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        viewPdfInNewTab(applicant.resume_link);
+                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       View
                     </a>
