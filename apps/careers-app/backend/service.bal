@@ -180,19 +180,19 @@ service http:InterceptableService / on new http:Listener(9093) {
         string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
 
         // Upload profile photo
-        string|error photoLink = gdrive:uploadApplicantPhoto(applicant.base64_profile_photo, photoFileName, applicantEmail);
-        if photoLink is gdrive:InvalidFileTypeError {
+        byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.base64_profile_photo, photoFileName, applicantEmail);
+        if photoBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid profile photo type. Must be an image.";
-            log:printError(errorMessage, photoLink);
+            log:printError(errorMessage, photoBytes);
             return <http:BadRequest>{
                 body: {
                     message: errorMessage
                 }
             };
         }
-        if photoLink is error {
+        if photoBytes is error {
             string errorMessage = "Failed to upload profile photo.";
-            log:printError(errorMessage, photoLink);
+            log:printError(errorMessage, photoBytes);
             return <http:InternalServerError>{
                 body: {
                     message: errorMessage
@@ -201,19 +201,19 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
 
         // Upload CV
-        string|error cvLink = gdrive:uploadApplicantCv(applicant.base64_cv, cvFileName, applicantEmail);
-        if cvLink is gdrive:InvalidFileTypeError {
+        byte[]|error cvBytes = gdrive:uploadApplicantCv(applicant.base64_cv, cvFileName, applicantEmail);
+        if cvBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid CV type. Must be PDF.";
-            log:printError(errorMessage, cvLink);
+            log:printError(errorMessage, cvBytes);
             return <http:BadRequest>{
                 body: {
                     message: errorMessage
                 }
             };
         }
-        if cvLink is error {
+        if cvBytes is error {
             string errorMessage = "Failed to upload CV.";
-            log:printError(errorMessage, cvLink);
+            log:printError(errorMessage, cvBytes);
             return <http:InternalServerError>{
                 body: {
                     message: errorMessage
@@ -221,7 +221,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             };
         }
 
-        // Build DB payload with final links + audit
+        // Build DB payload with byte arrays + audit
         database:CreateApplicantProfile dbPayload = {
             first_name: applicant.first_name,
             last_name: applicant.last_name,
@@ -239,8 +239,8 @@ service http:InterceptableService / on new http:Listener(9093) {
             languages: applicant.languages,
             interests: applicant.interests,
 
-            user_thumbnail: photoLink,
-            resume_link: cvLink,
+            user_thumbnail: photoBytes,
+            resume_link: cvBytes,
             created_by: actor,
             updated_by: actor
         };
@@ -304,13 +304,136 @@ service http:InterceptableService / on new http:Listener(9093) {
     # + email - Email of the applicant
     # + applicant - Partial applicant profile details to update
     # + return - Updated applicantProfile|Errors
-    resource function patch applicants/[string email](http:RequestContext ctx, UpdateApplicantProfile applicant)
+    resource function patch applicants/[string email](http:RequestContext ctx, UpdateApplicantProfileRequest applicant)
         returns database:ApplicantProfile|http:BadRequest|http:InternalServerError|http:NotFound {
 
         log:printInfo(string `Updating applicant profile for email: ${email}`);
 
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            string errorMessage = "User information header not found!";
+            log:printError(errorMessage, invokerInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMessage
+                }
+            };
+        }
+
+        string actor = invokerInfo.email;
+
+        // Build the database update payload
+        database:UpdateApplicantProfile dbPayload = {
+            first_name: applicant.first_name,
+            last_name: applicant.last_name,
+            email: applicant.email,
+            phone: applicant.phone,
+            address: applicant.address,
+            country: applicant.country,
+            status: applicant.status,
+            professional_links: applicant.professional_links,
+            educations: applicant.educations,
+            experiences: applicant.experiences,
+            skills: applicant.skills,
+            certifications: applicant.certifications,
+            projects: applicant.projects,
+            languages: applicant.languages,
+            interests: applicant.interests,
+            updated_by: actor
+        };
+
+        // Handle profile photo update if provided
+        string? base64Photo = applicant?.base64_profile_photo;
+        if base64Photo is string && base64Photo != "" {
+            // Validate file size
+            error? photoSizeErr = validateFileSize(base64Photo);
+            if photoSizeErr is error {
+                string errorMessage = "Profile photo exceeds 10 MB limit";
+                log:printError(errorMessage, photoSizeErr);
+                return <http:BadRequest>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+
+            // Construct unique file name
+            string applicantFolderName = string `${applicant?.first_name ?: email}_${applicant?.last_name ?: ""}`;
+            string ts = time:utcToString(time:utcNow());
+            string photoExt = getFileExtension(applicant?.profile_photo_file_name);
+            string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
+
+            // Upload profile photo
+            byte[]|error photoBytes = gdrive:uploadApplicantPhoto(base64Photo, photoFileName, email);
+            if photoBytes is gdrive:InvalidFileTypeError {
+                string errorMessage = "Invalid profile photo type. Must be an image.";
+                log:printError(errorMessage, photoBytes);
+                return <http:BadRequest>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+            if photoBytes is error {
+                string errorMessage = "Failed to upload profile photo.";
+                log:printError(errorMessage, photoBytes);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+
+            dbPayload.user_thumbnail = photoBytes;
+        }
+
+        // Handle CV update if provided
+        string? base64Cv = applicant?.base64_cv;
+        if base64Cv is string && base64Cv != "" {
+            // Validate file size
+            error? cvSizeErr = validateFileSize(base64Cv);
+            if cvSizeErr is error {
+                string errorMessage = "CV exceeds 10 MB limit";
+                log:printError(errorMessage, cvSizeErr);
+                return <http:BadRequest>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+
+            // Construct unique file name
+            string applicantFolderName = string `${applicant?.first_name ?: email}_${applicant?.last_name ?: ""}`;
+            string ts = time:utcToString(time:utcNow());
+            string cvExt = getFileExtension(applicant?.cv_file_name);
+            string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
+
+            // Upload CV
+            byte[]|error cvBytes = gdrive:uploadApplicantCv(base64Cv, cvFileName, email);
+            if cvBytes is gdrive:InvalidFileTypeError {
+                string errorMessage = "Invalid CV type. Must be PDF.";
+                log:printError(errorMessage, cvBytes);
+                return <http:BadRequest>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+            if cvBytes is error {
+                string errorMessage = "Failed to upload CV.";
+                log:printError(errorMessage, cvBytes);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errorMessage
+                    }
+                };
+            }
+
+            dbPayload.resume_link = cvBytes;
+        }
+
         // Update profile in database
-        database:ApplicantProfile|error? updatedProfile = database:updateProfileByEmail(email, applicant);
+        database:ApplicantProfile|error? updatedProfile = database:updateProfileByEmail(email, dbPayload);
         if updatedProfile is error {
             string errorMessage = "Failed to update applicant profile.";
             log:printError(errorMessage, updatedProfile);
