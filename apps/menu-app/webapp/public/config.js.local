@@ -1,5 +1,5 @@
 window.config = {
-  APP_NAME: "Web App Marketplace",
+  APP_NAME: "Menu App",
   APP_DOMAIN: "",
   REACT_APP_BACKEND_BASE_URL: "",
   ASGARDEO_CLIENT_ID: "",

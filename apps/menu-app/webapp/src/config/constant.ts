@@ -29,6 +29,6 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const APP_DESC = "Web App Store";
+export const APP_DESC = "Menu App";
 
-export const redirectUrl = "web-app-marketplace-redirect-url";
+export const redirectUrl = "menu-app-redirect-url";
