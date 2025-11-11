@@ -306,10 +306,10 @@ public type CreateApplicantProfile record {|
     Languages[] languages;
     # Personal interests 
     Interests interests;
-    # Link to the profile picture in Google Drive
-    string user_thumbnail;
-    # Link to the resume in Google Drive
-    string resume_link;
+    # Profile picture as byte array
+    byte[]? user_thumbnail;
+    # Resume as byte array
+    byte[]? resume_link;
     # user who created the profile
     string created_by;
     # user who last updated the profile
@@ -388,7 +388,7 @@ public type CreateApplicantProfileRequest record {|
     string cv_file_name;
 |};
 
-# Partial update for applicant profile
+# Partial update for applicant profile (internal DB type)
 public type UpdateApplicantProfile record {|
     # First name of the applicant
     @constraint:String {
@@ -462,12 +462,96 @@ public type UpdateApplicantProfile record {|
     Languages[] languages?;
     # Personal interests 
     Interests interests?;
-    # Link to the profile picture in Google Drive
-    string user_thumbnail?;
-    # Link to the resume in Google Drive
-    string resume_link?;
+    # Profile picture as byte array
+    byte[]? user_thumbnail?;
+    # Resume as byte array
+    byte[]? resume_link?;
     # user who last updated the profile
     string updated_by?;
+|};
+
+# Request payload for updating applicant profile
+public type UpdateApplicantProfileRequest record {|
+    # First name of the applicant
+    @constraint:String {
+        pattern: {
+            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            message: "First name must be a non-empty printable string"
+        }
+    }
+    string first_name?;
+    # Last name of the applicant
+    @constraint:String {
+        pattern: {
+            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            message: "Last name must be a non-empty printable string"
+        }
+    }
+    string last_name?;
+    # Email address of the applicant
+    @constraint:String {
+        pattern: {
+            value: re `${REGEX_EMAIL}`,
+            message: "Invalid email format"
+        }
+    }
+    string email?;
+    # Phone number of the applicant
+    @constraint:String {
+        pattern: {
+            value: re `${REGEX_PHONE_NUMBER}`,
+            message: "Phone number must be 9–15 digits"
+        }
+    }
+    string phone?;
+    # Postal address of the applicant
+    @constraint:String {
+        pattern: {
+            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            message: "Address must be a non-empty printable string"
+        }
+    }
+    string address?;
+    # Country of residence
+    @constraint:String {
+        pattern: {
+            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            message: "Country must be a non-empty printable string"
+        }
+    }
+    string country?;
+    # Current status 
+    @constraint:String {
+        pattern: {
+            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            message: "Status must be a non-empty printable string"
+        }
+    }
+    string status?;
+    # List of professional links
+    ProfessionalLinks[] professional_links?;
+    # Educational background
+    Educations[] educations?;
+    # Work experience details 
+    Experiences[] experiences?;
+    # Skill set 
+    Skills skills?;
+    # Professional certifications 
+    Certifications[] certifications?;
+    # Project details 
+    Projects[] projects?;
+    # Languages known 
+    Languages[] languages?;
+    # Personal interests 
+    Interests interests?;
+    # Base64 encoded profile photo
+    string base64_profile_photo?;
+    # Profile photo file name
+    string profile_photo_file_name?;
+    # Base64 encoded CV
+    string base64_cv?;
+    # CV file name
+    string cv_file_name?;
 |};
 
 # Represents the response structure for retrieving user information.
