@@ -164,11 +164,13 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
         string jsonStr = applicant.interests.toJsonString();
         filters.push(`interests = ${jsonStr}`);
     }
-    if applicant.user_thumbnail is string {
-        filters.push(`user_thumbnail = ${applicant.user_thumbnail}`);
+    byte[]? userThumbnail = applicant?.user_thumbnail;
+    if userThumbnail is byte[] {
+        filters.push(`user_thumbnail = ${userThumbnail}`);
     }
-    if applicant.resume_link is string {
-        filters.push(`resume_link = ${applicant.resume_link}`);
+    byte[]? resumeLink = applicant?.resume_link;
+    if resumeLink is byte[] {
+        filters.push(`resume_link = ${resumeLink}`);
     }
     if applicant.updated_by is string {
         filters.push(`updated_by = ${applicant.updated_by}`);
