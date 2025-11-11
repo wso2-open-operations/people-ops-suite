@@ -51,6 +51,7 @@ import {
 } from "@mui/icons-material";
 import { useState } from "react";
 import EditApplicant from "./editApplicant";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/byteArrayUtils";
 
 export default function ApplicantProfile() {
   const theme = useTheme();
@@ -97,7 +98,7 @@ export default function ApplicantProfile() {
       >
         <Box display="flex" alignItems="center" gap={3} position="relative">
           <Avatar
-            src={applicant.user_thumbnail || ""}
+            src={getImageDataUrl(applicant.user_thumbnail)}
             sx={{
               width: 120,
               height: 120,
@@ -157,11 +158,10 @@ export default function ApplicantProfile() {
                 Edit Profile
               </Button>
             </Tooltip>
-            {applicant.resume_link && (
+            {isValidByteArray(applicant.resume_link) && (
               <Tooltip title="View Resume">
                 <Button
-                  href={applicant.resume_link}
-                  target="_blank"
+                  onClick={() => viewPdfInNewTab(applicant.resume_link)}
                   variant="contained"
                   size="large"
                   startIcon={<DescriptionOutlined />}
