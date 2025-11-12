@@ -48,8 +48,8 @@ import {
 } from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
-import { fileToBase64 } from "@utils/utils";
-import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/byteArrayUtils";
+import { fileToByteArray } from "@utils/utils";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
@@ -106,9 +106,9 @@ interface UpdateApplicantPayload {
   languages: Language[];
   skills: string[];
   interests: string[];
-  base64_profile_photo?: string;
+  user_thumbnail?: number[];
   profile_photo_file_name?: string;
-  base64_cv?: string;
+  resume_link?: number[];
   cv_file_name?: string;
 }
 
@@ -241,11 +241,11 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
         initialValues={initialValues}
         validationSchema={editValidationSchema}
         onSubmit={async (values, { setSubmitting }) => {
-          const base64Profile = profilePhoto
-            ? await fileToBase64(profilePhoto)
+          const byteArrayProfile = profilePhoto
+            ? await fileToByteArray(profilePhoto)
             : undefined;
-          const base64Resume = resumeFile
-            ? await fileToBase64(resumeFile)
+          const byteArrayResume = resumeFile
+            ? await fileToByteArray(resumeFile)
             : undefined;
 
           const payload: UpdateApplicantPayload = {
@@ -281,12 +281,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               .filter((s) => s.length > 0),
           };
 
-          if (base64Profile) {
-            payload.base64_profile_photo = base64Profile;
+          if (byteArrayProfile) {
+            payload.user_thumbnail = byteArrayProfile;
             payload.profile_photo_file_name = profilePhoto?.name;
           }
-          if (base64Resume) {
-            payload.base64_cv = base64Resume;
+          if (byteArrayResume) {
+            payload.resume_link = byteArrayResume;
             payload.cv_file_name = resumeFile?.name;
           }
 

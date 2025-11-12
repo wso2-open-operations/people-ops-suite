@@ -48,7 +48,7 @@ import {
 } from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
-import { fileToBase64 } from "@utils/utils";
+import { fileToByteArray } from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
@@ -293,11 +293,11 @@ export default function CreateApplicant() {
         enableReinitialize={true}
         validationSchema={mainValidationSchema}
         onSubmit={async (values, { resetForm }) => {
-          const base64Profile = profilePhoto
-            ? await fileToBase64(profilePhoto)
+          const byteArrayProfile = profilePhoto
+            ? await fileToByteArray(profilePhoto)
             : undefined;
-          const base64Resume = resumeFile
-            ? await fileToBase64(resumeFile)
+          const byteArrayResume = resumeFile
+            ? await fileToByteArray(resumeFile)
             : undefined;
 
           const payload = {
@@ -331,9 +331,9 @@ export default function CreateApplicant() {
               .map((s) => s.trim())
               .filter((s) => s.length > 0),
 
-            base64_profile_photo: base64Profile,
+            user_thumbnail: byteArrayProfile,
             profile_photo_file_name: profilePhoto?.name,
-            base64_cv: base64Resume,
+            resume_link: byteArrayResume,
             cv_file_name: resumeFile?.name,
           };
 
