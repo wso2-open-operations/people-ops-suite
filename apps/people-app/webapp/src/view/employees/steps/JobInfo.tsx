@@ -84,11 +84,9 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .required("Office is required")
     .min(1, "Select a valid office"),
   employmentLocation: Yup.string()
-    .required("Employment location is required")
-    .min(1, "Select a valid employment location"),
+    .required("Employment location is required"),
   workLocation: Yup.string()
-    .required("Work location is required")
-    .min(1, "Select a valid work location"),
+    .required("Work location is required"),
   startDate: Yup.string().required("Start date is required"),
   probationEndDate: Yup.string()
     .transform((value) => (value === "" ? null : value))
@@ -97,8 +95,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .transform((value) => (value === "" ? null : value))
     .nullable(),
   managerEmail: Yup.string()
-    .required("Manager email is required")
-    .min(1, "Select a valid manager email"),
+    .required("Manager email is required"),
   additionalManagerEmail: Yup.array()
     .of(Yup.string().email("Invalid email format"))
     .nullable(),
