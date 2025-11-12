@@ -26,6 +26,8 @@ import {
 import { Formik, Form } from "formik";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
+import { useAppDispatch } from "@slices/store";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 export interface Language {
   language: string;
@@ -60,6 +62,7 @@ export default function LanguageModal({
   editIndex,
 }: Props) {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const initialValues = editItem ? { ...editItem } : EMPTY_VALUES;
 
   return (
@@ -68,12 +71,48 @@ export default function LanguageModal({
         initialValues={initialValues}
         enableReinitialize
         validationSchema={langSchema}
-        onSubmit={(lang, { resetForm }) => {
+        onSubmit={async (lang, { resetForm, setTouched, validateForm }) => {
+          // Validate all fields
+          const validationErrors = await validateForm();
+          
+          // Check for validation errors
+          if (Object.keys(validationErrors).length > 0) {
+            // Mark all fields with errors as touched
+            setTouched(
+              Object.keys(validationErrors).reduce((acc: any, key) => {
+                acc[key] = true;
+                return acc;
+              }, {})
+            );
+            
+            // Find the first error message
+            const firstError = Object.values(validationErrors)[0];
+            
+            dispatch(
+              enqueueSnackbarMessage({
+                message: typeof firstError === "string" 
+                  ? firstError 
+                  : "Please fill all the required fields correctly.",
+                type: "error",
+              })
+            );
+            return;
+          }
+
           if (editIndex !== null && editIndex !== undefined) {
             replace(editIndex, lang);
           } else {
             push(lang);
           }
+
+          dispatch(
+            enqueueSnackbarMessage({
+              message: editIndex !== null && editIndex !== undefined 
+                ? "Language updated successfully!" 
+                : "Language added successfully!",
+              type: "success",
+            })
+          );
 
           resetForm();
           onClose();
