@@ -60,6 +60,7 @@ import EducationModal, { Education } from "@modals/EducationModal";
 import CertificationModal, { Certification } from "@modals/CertificationModal";
 import ProjectModal, { Project } from "@modals/ProjectModal";
 import LanguageModal, { Language } from "@modals/LanguageModal";
+import PreLoader from "@component/common/PreLoader";
 
 interface EditApplicantFormValues {
   firstName: string;
@@ -160,6 +161,16 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<SectionItem | null>(null);
+
+  // Show preloader when updating
+  if (state === State.loading) {
+    return (
+      <PreLoader
+        message="Updating applicant profile..."
+        isLoading
+      />
+    );
+  }
 
   const handleOpenForEdit = <K extends SectionKey>(
     sectionKey: K,
@@ -1052,7 +1063,7 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={isSubmitting || state === State.loading}
+                  disabled={isSubmitting}
                   startIcon={<SaveIcon />}
                   size="large"
                   sx={{
