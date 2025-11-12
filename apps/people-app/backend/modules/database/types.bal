@@ -242,13 +242,13 @@ public type SearchEmployeePersonalInfoPayload record {|
 # Emergency contact information.
 public type EmergencyContact record {|
     # Name of the emergency contact
-    string? name;
+    string name;
     # Relationship with the employee
-    string? relationship;
+    string relationship;
     # Telephone number of the emergency contact
-    string? telephone;
+    string telephone;
     # Mobile number of the emergency contact
-    string? mobile;
+    string mobile;
 |};
 
 # Create personal info payload.
