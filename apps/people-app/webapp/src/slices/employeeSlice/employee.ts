@@ -67,8 +67,8 @@ export type CreatePersonalInfoPayload = {
   dob?: string;
   age?: number;
   personalEmail?: string;
-  personalPhone?: string;
-  homePhone?: string;
+  personalPhoneNumber?: string;
+  residentNumber?: string;
   addressLine1?: string;
   addressLine2?: string;
   city?: string;

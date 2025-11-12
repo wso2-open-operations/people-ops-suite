@@ -306,10 +306,10 @@ export default function ReviewStep() {
             <ReviewField label="Personal Email" value={p.personalEmail} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Personal Phone" value={p.personalPhone} />
+            <ReviewField label="Personal Phone" value={p.personalPhoneNumber} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Home Phone" value={p.homePhone} />
+            <ReviewField label="Home Phone" value={p.residentNumber} />
           </Grid>
         </Grid>
       </Box>

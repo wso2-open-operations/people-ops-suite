@@ -109,9 +109,11 @@ export default function Employees() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const [activeStep, setActiveStep] = useState(0);
-  const { state: createState, createdEmployeeId } = useAppSelector(
-    (s) => s.employee
-  );
+  const {
+    state: createState,
+    createdEmployeeId,
+    errorMessage,
+  } = useAppSelector((s) => s.employee);
   const initialValues = emptyCreateEmployeeValues;
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -119,10 +121,15 @@ export default function Employees() {
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
+    dispatch(resetCreateEmployeeState());
     return () => {
       dispatch(resetCreateEmployeeState());
     };
   }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(resetCreateEmployeeState());
+  }, [activeStep, dispatch]);
 
   useEffect(() => {
     if (createState === "success" && createdEmployeeId) {
@@ -130,6 +137,7 @@ export default function Employees() {
       setTimeout(() => {
         setActiveStep(0);
         setFormKey((prev) => prev + 1);
+        setShowSuccess(false);
         dispatch(resetCreateEmployeeState());
       }, 2000);
     }
@@ -217,6 +225,17 @@ export default function Employees() {
           ))}
         </Stepper>
 
+        {showSuccess && (
+          <Typography color="success.main" sx={{ mb: 2 }}>
+            Employee created successfully!
+          </Typography>
+        )}
+        {createState === "failed" && errorMessage && (
+          <Typography color="error.main" sx={{ mb: 2 }}>
+            {errorMessage}
+          </Typography>
+        )}
+
         <Formik
           key={formKey}
           initialValues={initialValues}
@@ -229,17 +248,85 @@ export default function Employees() {
           }
           onSubmit={async (values, actions) => {
             if (activeStep === EmployeeFormSteps.length - 1) {
-              console.log("Submitting final values:", values);
+              const payload: CreateEmployeePayload = {
+                firstName: values.personalInfo.firstName || "",
+                lastName: values.personalInfo.lastName || "",
+                epf: values.epf || undefined,
+                secondaryJobTitle: values.secondaryJobTitle || "",
+                employmentLocation: values.employmentLocation,
+                workLocation: values.workLocation,
+                workEmail: values.workEmail,
+                workPhoneNumber: values.workPhoneNumber || undefined,
+                startDate: values.startDate,
+                managerEmail: values.managerEmail,
+                additionalManagerEmails: values.additionalManagerEmail?.length
+                  ? values.additionalManagerEmail
+                  : [],
+                employeeStatus: "Active",
+                probationEndDate: values.probationEndDate || undefined,
+                agreementEndDate: values.agreementEndDate || undefined,
+                employmentTypeId:
+                  values.employmentTypeId && values.employmentTypeId > 0
+                    ? values.employmentTypeId
+                    : undefined,
+                designationId: values.designationId,
+                officeId: values.officeId,
+                teamId: values.teamId,
+                subTeamId:
+                  values.subTeamId && values.subTeamId > 0
+                    ? values.subTeamId
+                    : undefined,
+                businessUnitId: values.businessUnitId,
+                unitId:
+                  values.unitId && values.unitId > 0
+                    ? values.unitId
+                    : undefined,
+                personalInfo: {
+                  nicOrPassport: values.personalInfo.nicOrPassport,
+                  fullName: values.personalInfo.fullName,
+                  nameWithInitials:
+                    values.personalInfo.nameWithInitials || undefined,
+                  firstName: values.personalInfo.firstName || undefined,
+                  lastName: values.personalInfo.lastName || undefined,
+                  title: values.personalInfo.title || undefined,
+                  dob: values.personalInfo.dob || undefined,
+                  age: values.personalInfo.age || undefined,
+                  personalEmail: values.personalInfo.personalEmail || undefined,
+                  personalPhoneNumber:
+                    values.personalInfo.personalPhoneNumber || undefined,
+                  residentNumber:
+                    values.personalInfo.residentNumber || undefined,
+                  addressLine1: values.personalInfo.addressLine1 || undefined,
+                  addressLine2: values.personalInfo.addressLine2 || undefined,
+                  postalCode: values.personalInfo.postalCode || undefined,
+                  country: values.personalInfo.country || undefined,
+                  nationality: values.personalInfo.nationality || undefined,
+                  emergencyContacts: values.personalInfo.emergencyContacts,
+                },
+              };
+              try {
+                await dispatch(createEmployee(payload)).unwrap();
+                actions.setSubmitting(false);
+              } catch (error) {
+                console.error("Failed to create employee:", error);
+                actions.setSubmitting(false);
+              }
             } else {
               handleNext();
+              actions.setSubmitting(false);
             }
-            actions.setSubmitting(false);
           }}
           validateOnChange={false}
           validateOnBlur={true}
         >
-          {({ values, isSubmitting, validateForm, setTouched }) => (
-            <Form>
+          {({ isSubmitting, validateForm, setTouched, submitForm }) => (
+            <Form
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                }
+              }}
+            >
               {renderStepContent(activeStep)}
               <Box
                 display="flex"
@@ -264,11 +351,7 @@ export default function Employees() {
                   variant="contained"
                   color="secondary"
                   type="button"
-                  disabled={
-                    isSubmitting ||
-                    createState === "loading" ||
-                    createState === "success"
-                  }
+                  disabled={isSubmitting || createState === "loading"}
                   endIcon={
                     activeStep === EmployeeFormSteps.length - 1 ? null : (
                       <ArrowForward />
@@ -276,82 +359,9 @@ export default function Employees() {
                   }
                   onClick={async () => {
                     const errors = await validateForm();
-
                     if (Object.keys(errors).length === 0) {
                       if (activeStep === EmployeeFormSteps.length - 1) {
-                        const payload: CreateEmployeePayload = {
-                          firstName: values.personalInfo.firstName || "",
-                          lastName: values.personalInfo.lastName || "",
-                          epf: values.epf || undefined,
-                          secondaryJobTitle: values.secondaryJobTitle || "",
-                          employmentLocation: values.workLocation,
-                          workLocation: values.workLocation,
-                          workEmail: values.workEmail,
-                          workPhoneNumber: values.workPhoneNumber || undefined,
-                          startDate: values.startDate,
-                          managerEmail: values.managerEmail,
-                          additionalManagerEmails: values.additionalManagerEmail
-                            ?.length
-                            ? values.additionalManagerEmail
-                            : [],
-                          employeeStatus: "Active",
-                          probationEndDate:
-                            values.probationEndDate || undefined,
-                          agreementEndDate:
-                            values.agreementEndDate || undefined,
-                          employmentTypeId:
-                            values.employmentTypeId &&
-                            values.employmentTypeId > 0
-                              ? values.employmentTypeId
-                              : undefined,
-                          designationId: values.designationId,
-                          officeId: values.officeId,
-                          teamId: values.teamId,
-                          subTeamId:
-                            values.subTeamId && values.subTeamId > 0
-                              ? values.subTeamId
-                              : undefined,
-                          businessUnitId: values.businessUnitId,
-                          unitId:
-                            values.unitId && values.unitId > 0
-                              ? values.unitId
-                              : undefined,
-                          personalInfo: {
-                            nicOrPassport: values.personalInfo.nicOrPassport,
-                            fullName: values.personalInfo.fullName,
-                            nameWithInitials:
-                              values.personalInfo.nameWithInitials || undefined,
-                            firstName:
-                              values.personalInfo.firstName || undefined,
-                            lastName: values.personalInfo.lastName || undefined,
-                            title: values.personalInfo.title || undefined,
-                            dob: values.personalInfo.dob || undefined,
-                            age: values.personalInfo.age || undefined,
-                            personalEmail:
-                              values.personalInfo.personalEmail || undefined,
-                            personalPhone:
-                              values.personalInfo.personalPhone || undefined,
-                            homePhone:
-                              values.personalInfo.homePhone || undefined,
-                            addressLine1:
-                              values.personalInfo.addressLine1 || undefined,
-                            addressLine2:
-                              values.personalInfo.addressLine2 || undefined,
-                            postalCode:
-                              values.personalInfo.postalCode || undefined,
-                            country: values.personalInfo.country || undefined,
-                            nationality:
-                              values.personalInfo.nationality || undefined,
-                            emergencyContacts:
-                              values.personalInfo.emergencyContacts,
-                          },
-                        };
-
-                        try {
-                          await dispatch(createEmployee(payload)).unwrap();
-                        } catch (error) {
-                          console.error("Failed to create employee:", error);
-                        }
+                        submitForm();
                       } else {
                         handleNext();
                       }
@@ -365,8 +375,6 @@ export default function Employees() {
                 >
                   {createState === "loading"
                     ? "Submitting..."
-                    : createState === "success"
-                    ? "Submitted"
                     : activeStep === EmployeeFormSteps.length - 1
                     ? "Submit"
                     : "Next"}

@@ -52,8 +52,8 @@ export interface CreateEmployeeFormValues {
     dob: string | null;
     age: number | null;
     personalEmail: string | null;
-    personalPhone: string | null;
-    homePhone: string | null;
+    personalPhoneNumber: string | null;
+    residentNumber: string | null;
     addressLine1: string | null;
     addressLine2: string | null;
     city: string | null;
@@ -95,8 +95,8 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     dob: null,
     age: null,
     personalEmail: null,
-    personalPhone: null,
-    homePhone: null,
+    personalPhoneNumber: null,
+    residentNumber: null,
     addressLine1: null,
     addressLine2: null,
     city: null,
