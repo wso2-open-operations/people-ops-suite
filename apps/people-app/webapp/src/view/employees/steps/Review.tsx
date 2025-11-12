@@ -151,8 +151,15 @@ export default function ReviewStep() {
   const dispatch = useAppDispatch();
   const { values } = useFormikContext<CreateEmployeeFormValues>();
 
-  const { businessUnits, teams, subTeams, units, careerFunctions, offices } =
-    useAppSelector((s) => s.organization);
+  const {
+    businessUnits,
+    teams,
+    subTeams,
+    units,
+    careerFunctions,
+    designations,
+    offices,
+  } = useAppSelector((s) => s.organization);
 
   const p = values.personalInfo ?? {};
 
@@ -166,15 +173,24 @@ export default function ReviewStep() {
     if (values.businessUnitId && values.businessUnitId !== 0) {
       dispatch(fetchTeams({ id: values.businessUnitId }));
     }
-
     if (values.teamId && values.teamId !== 0) {
       dispatch(fetchSubTeams({ id: values.teamId }));
     }
-
     if (values.subTeamId && values.subTeamId !== 0) {
       dispatch(fetchUnits({ id: values.subTeamId }));
     }
-  }, [dispatch, values.businessUnitId, values.teamId, values.subTeamId]);
+    if (values.careerFunctionId && values.careerFunctionId !== 0) {
+      dispatch(
+        fetchDesignations({ careerFunctionId: values.careerFunctionId })
+      );
+    }
+  }, [
+    dispatch,
+    values.businessUnitId,
+    values.teamId,
+    values.subTeamId,
+    values.careerFunctionId,
+  ]);
 
   const sectionBoxSx = useMemo(
     () => ({
@@ -218,7 +234,10 @@ export default function ReviewStep() {
       subTeam: subTeams.find((st) => st.id === values.subTeamId)?.name || null,
       unit: units.find((u) => u.id === values.unitId)?.name || null,
       designation:
-        careerFunctions.find((cf) => cf.id === values.designationId)
+        designations.find((cf) => cf.id === values.designationId)
+          ?.designation || null,
+      careerFunctions:
+        careerFunctions.find((cf) => cf.id === values.careerFunctionId)
           ?.careerFunction || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
       employmentType:
@@ -230,6 +249,7 @@ export default function ReviewStep() {
       values.teamId,
       values.subTeamId,
       values.unitId,
+      values.careerFunctionId,
       values.designationId,
       values.officeId,
       values.employmentTypeId,
@@ -285,14 +305,6 @@ export default function ReviewStep() {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Age"
-              value={
-                p.age !== null && p.age !== undefined ? String(p.age) : null
-              }
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Nationality" value={p.nationality} />
           </Grid>
         </Grid>
@@ -328,7 +340,7 @@ export default function ReviewStep() {
             <ReviewField label="City" value={p.city} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="State/Province" value={p.stateProvince} />
+            <ReviewField label="State / Province" value={p.stateProvince} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Postal Code" value={p.postalCode} />
@@ -336,11 +348,55 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Country" value={p.country} />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Nationality" value={p.nationality} />
-          </Grid>
         </Grid>
       </Box>
+
+      {/* Emergency Contacts */}
+      {p.emergencyContacts && p.emergencyContacts.length > 0 && (
+        <Box sx={sectionBoxSx}>
+          <SectionHeader icon={icons.contact} title="Emergency Contacts" />
+          {p.emergencyContacts.map((contact, index) => (
+            <Box
+              key={index}
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: 1.5,
+                backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 600,
+                  mb: 1,
+                  color: theme.palette.text.primary,
+                }}
+              >
+                Contact {index + 1}
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <ReviewField label="Name" value={contact.name} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <ReviewField
+                    label="Relationship"
+                    value={contact.relationship}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <ReviewField label="Telephone" value={contact.telephone} />
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <ReviewField label="Mobile" value={contact.mobile} />
+                </Grid>
+              </Grid>
+            </Box>
+          ))}
+        </Box>
+      )}
 
       <MainSectionTitle title="Job Information" />
 
@@ -353,6 +409,12 @@ export default function ReviewStep() {
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="EPF" value={values.epf} />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Secondary Job Title"
+              value={values.secondaryJobTitle}
+            />
           </Grid>
         </Grid>
       </Box>
@@ -377,6 +439,12 @@ export default function ReviewStep() {
             <ReviewField label="Unit" value={mappedNames.unit} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Career Function"
+              value={mappedNames.careerFunctions}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Designation" value={mappedNames.designation} />
           </Grid>
         </Grid>
@@ -388,6 +456,12 @@ export default function ReviewStep() {
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Office" value={mappedNames.office} />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField
+              label="Employment Location"
+              value={values.employmentLocation}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Work Location" value={values.workLocation} />
