@@ -143,6 +143,18 @@ const mainValidationSchema = yup.object({
   phone: yup.string().required("Phone number is required"),
   country: yup.string().required("Country is required"),
   address: yup.string().required("Address is required"),
+  skillsText: yup
+    .string()
+    .required("Skills are required. Please add at least one skill.")
+    .test("not-empty", "Skills are required. Please add at least one skill.", (value) => {
+      return value ? value.trim().length > 0 : false;
+    }),
+  interestsText: yup
+    .string()
+    .required("Interests are required. Please add at least one interest.")
+    .test("not-empty", "Interests are required. Please add at least one interest.", (value) => {
+      return value ? value.trim().length > 0 : false;
+    }),
   consentData: yup.boolean().oneOf([true], "You must accept data consent"),
   consentEmails: yup.boolean().oneOf([true], "You must accept email consent"),
 });
@@ -356,19 +368,56 @@ export default function CreateApplicant() {
           isSubmitting,
           isValid,
           handleSubmit,
+          setTouched,
+          validateForm,
         }) => (
           <Form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              if (!isValid) {
+              
+              // Validate all form fields first
+              const errors = await validateForm();
+              
+              // Custom validation for file uploads
+              if (!profilePhoto) {
                 dispatch(
                   enqueueSnackbarMessage({
-                    message: SnackMessage.error.formValidation,
+                    message: "Profile photo is required. Please upload your photo.",
                     type: "error",
                   })
                 );
                 return;
               }
+
+              if (!resumeFile) {
+                dispatch(
+                  enqueueSnackbarMessage({
+                    message: "Resume/CV is required. Please upload your resume.",
+                    type: "error",
+                  })
+                );
+                return;
+              }
+
+              // Check for form validation errors
+              if (Object.keys(errors).length > 0) {
+                // Mark all fields with errors as touched so they display
+                setTouched(
+                  Object.keys(errors).reduce((acc: any, key) => {
+                    acc[key] = true;
+                    return acc;
+                  }, {})
+                );
+                
+                dispatch(
+                  enqueueSnackbarMessage({
+                    message: "Please fill all the required fields before submitting.",
+                    type: "error",
+                  })
+                );
+                return;
+              }
+              
               showConfirmation(
                 "Confirm Submission",
                 "Are you sure you want to create your applicant profile? Please verify your details before saving.",
