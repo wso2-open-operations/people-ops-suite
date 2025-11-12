@@ -51,7 +51,7 @@ import {
 } from "@mui/icons-material";
 import { useState } from "react";
 import EditApplicant from "./editApplicant";
-import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/byteArrayUtils";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/utils";
 
 export default function ApplicantProfile() {
   const theme = useTheme();
@@ -322,10 +322,10 @@ export default function ApplicantProfile() {
                         elevation={0}
                         sx={{
                           p: 2.5,
-                          bgcolor: alpha(theme.palette.primary.main, 0.04),
+                          bgcolor: alpha(theme.palette.info.main, 0.04),
                           borderRadius: 2,
                           border: `1px solid ${alpha(
-                            theme.palette.primary.main,
+                            theme.palette.info.main,
                             0.1
                           )}`,
                           height: "100%",
@@ -370,7 +370,8 @@ export default function ApplicantProfile() {
                             <Chip
                               label={`GPA/Z-Score: ${edu.gpa_zscore}`}
                               size="small"
-                              color="success"
+                              variant="outlined"
+                              color="info"
                             />
                           )}
                         </Stack>
