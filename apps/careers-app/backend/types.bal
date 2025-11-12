@@ -382,9 +382,9 @@ public type CreateApplicantProfileRequest record {|
     Projects[] projects;
     Languages[] languages;
     Interests interests;
-    string base64_profile_photo;
+    byte[] user_thumbnail;
     string profile_photo_file_name;
-    string base64_cv;
+    byte[] resume_link;
     string cv_file_name;
 |};
 
@@ -545,11 +545,11 @@ public type UpdateApplicantProfileRequest record {|
     # Personal interests 
     Interests interests?;
     # Base64 encoded profile photo
-    string base64_profile_photo?;
+    byte[] user_thumbnail?;
     # Profile photo file name
     string profile_photo_file_name?;
     # Base64 encoded CV
-    string base64_cv?;
+    byte[] resume_link?;
     # CV file name
     string cv_file_name?;
 |};

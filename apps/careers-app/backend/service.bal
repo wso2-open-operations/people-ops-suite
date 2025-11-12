@@ -145,7 +145,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         string actor = invokerInfo.email;
 
         // Validate file sizes
-        error? photoSizeErr = validateFileSize(applicant.base64_profile_photo);
+        error? photoSizeErr = validateFileSize(applicant.user_thumbnail);
         if photoSizeErr is error {
             string errorMessage = "Profile photo exceeds 10 MB limit";
             log:printError(errorMessage, photoSizeErr);
@@ -156,7 +156,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             };
         }
 
-        error? cvSizeErr = validateFileSize(applicant.base64_cv);
+        error? cvSizeErr = validateFileSize(applicant.resume_link);
         if cvSizeErr is error {
             string errorMessage = "CV exceeds 10 MB limit";
             log:printError(errorMessage, cvSizeErr);
@@ -180,7 +180,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
 
         // Upload profile photo
-        byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.base64_profile_photo, photoFileName, applicantEmail);
+        byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.user_thumbnail, photoFileName, applicantEmail);
         if photoBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid profile photo type. Must be an image.";
             log:printError(errorMessage, photoBytes);
@@ -201,7 +201,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
 
         // Upload CV
-        byte[]|error cvBytes = gdrive:uploadApplicantCv(applicant.base64_cv, cvFileName, applicantEmail);
+        byte[]|error cvBytes = gdrive:uploadApplicantCv(applicant.resume_link, cvFileName, applicantEmail);
         if cvBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid CV type. Must be PDF.";
             log:printError(errorMessage, cvBytes);
@@ -343,10 +343,10 @@ service http:InterceptableService / on new http:Listener(9093) {
         };
 
         // Handle profile photo update if provided
-        string? base64Photo = applicant?.base64_profile_photo;
-        if base64Photo is string && base64Photo != "" {
+        byte[]? byteArrayPhoto = applicant?.user_thumbnail;
+        if byteArrayPhoto is byte[] && byteArrayPhoto.length() > 0 {
             // Validate file size
-            error? photoSizeErr = validateFileSize(base64Photo);
+            error? photoSizeErr = validateFileSize(byteArrayPhoto);
             if photoSizeErr is error {
                 string errorMessage = "Profile photo exceeds 10 MB limit";
                 log:printError(errorMessage, photoSizeErr);
@@ -364,7 +364,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
 
             // Upload profile photo
-            byte[]|error photoBytes = gdrive:uploadApplicantPhoto(base64Photo, photoFileName, email);
+            byte[]|error photoBytes = gdrive:uploadApplicantPhoto(byteArrayPhoto, photoFileName, email);
             if photoBytes is gdrive:InvalidFileTypeError {
                 string errorMessage = "Invalid profile photo type. Must be an image.";
                 log:printError(errorMessage, photoBytes);
@@ -388,10 +388,10 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
 
         // Handle CV update if provided
-        string? base64Cv = applicant?.base64_cv;
-        if base64Cv is string && base64Cv != "" {
+        byte[]? byteArrayCv = applicant?.resume_link;
+        if byteArrayCv is byte[] && byteArrayCv.length() > 0 {
             // Validate file size
-            error? cvSizeErr = validateFileSize(base64Cv);
+            error? cvSizeErr = validateFileSize(byteArrayCv);
             if cvSizeErr is error {
                 string errorMessage = "CV exceeds 10 MB limit";
                 log:printError(errorMessage, cvSizeErr);
@@ -409,7 +409,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
 
             // Upload CV
-            byte[]|error cvBytes = gdrive:uploadApplicantCv(base64Cv, cvFileName, email);
+            byte[]|error cvBytes = gdrive:uploadApplicantCv(byteArrayCv, cvFileName, email);
             if cvBytes is gdrive:InvalidFileTypeError {
                 string errorMessage = "Invalid CV type. Must be PDF.";
                 log:printError(errorMessage, cvBytes);
