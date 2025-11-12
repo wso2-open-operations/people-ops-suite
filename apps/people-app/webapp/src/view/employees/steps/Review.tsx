@@ -337,7 +337,7 @@ export default function ReviewStep() {
             <ReviewField label="Country" value={p.country} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Nationality" value={p.addressLine1} />
+            <ReviewField label="Nationality" value={p.nationality} />
           </Grid>
         </Grid>
       </Box>
