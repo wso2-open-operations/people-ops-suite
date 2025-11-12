@@ -25,3 +25,30 @@ function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
     return b.includes(element);
   });
 }
+
+export const markAllFieldsTouched = (errors: any) => {
+  const touched: any = {};
+  const markTouched = (obj: any, prefix = "") => {
+    Object.keys(obj).forEach((key) => {
+      const path = prefix ? `${prefix}.${key}` : key;
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        touched[key] = {};
+        markTouched(obj[key], key);
+      } else {
+        if (prefix) {
+          if (!touched[prefix.split(".")[0]])
+            touched[prefix.split(".")[0]] = {};
+          touched[prefix.split(".")[0]][key] = true;
+        } else {
+          touched[key] = true;
+        }
+      }
+    });
+  };
+  markTouched(errors);
+  return touched;
+};
