@@ -38,8 +38,7 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
         first_name,
         last_name,
         work_email,
-        employee_thumbnail,
-        secondary_job_title
+        employee_thumbnail
     FROM employee;`;
 
 # Fetch employee detailed information.
@@ -242,6 +241,7 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
         name,
+        location,
         working_locations
     FROM office;`;
 
@@ -271,6 +271,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             postal_code,
             country,
             nationality,
+            emergency_contacts,
             created_by,
             updated_by
         )
@@ -293,6 +294,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.postalCode},
             ${payload.country},
             ${payload.nationality},
+            ${payload.emergencyContacts.toJsonString()},
             ${createdBy},
             ${createdBy}
         );`;

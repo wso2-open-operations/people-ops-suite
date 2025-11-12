@@ -225,6 +225,9 @@ public type Office record {|
     int id;
     # Office name
     string name;
+    # Office location
+    @sql:Column {name: "location"}
+    string location;
     # Working locations
     @sql:Column {name: "working_locations"}
     json workingLocations;
@@ -234,6 +237,18 @@ public type Office record {|
 public type SearchEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     string nicOrPassport?;
+|};
+
+# Emergency contact information.
+public type EmergencyContact record {|
+    # Name of the emergency contact
+    string? name;
+    # Relationship with the employee
+    string? relationship;
+    # Telephone number of the emergency contact
+    string? telephone;
+    # Mobile number of the emergency contact
+    string? mobile;
 |};
 
 # Create personal info payload.
@@ -288,6 +303,8 @@ public type CreatePersonalInfoPayload record {|
     # Nationality
     @constraint:String {maxLength: 100}
     string? nationality = ();
+    # Emergency contacts
+    EmergencyContact[] emergencyContacts = [];
 |};
 
 # Create employee payload.
