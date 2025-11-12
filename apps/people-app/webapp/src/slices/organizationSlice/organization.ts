@@ -273,7 +273,7 @@ export const fetchDesignations = createAsyncThunk(
 
 // Fetch Offices
 export const fetchOffices = createAsyncThunk(
-  "employees/fetchOffices",
+  "organization/fetchOffices",
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
@@ -326,6 +326,7 @@ export const organizationSlice = createSlice({
       state.units = [];
       state.careerFunctions = [];
       state.designations = [];
+      state.offices = [];
     },
   },
   extraReducers: (builder) => {

@@ -45,9 +45,8 @@ export const EmployeeTitle = [
   { id: 2, label: "Mrs." },
   { id: 3, label: "Miss." },
   { id: 4, label: "Ms." },
-  { id: 5, label: "Mrs." },
-  { id: 6, label: "Dr." },
-  { id: 7, label: "Prof." },
+  { id: 5, label: "Dr." },
+  { id: 6, label: "Prof." },
 ];
 
 export const Countries = [
@@ -233,7 +232,7 @@ export const Countries = [
   "Qatar",
   "Reunion",
   "Romania",
-  "Russian",
+  "Russia",
   "Rwanda",
   "Saint Barthélemy",
   "Saint Helena",
