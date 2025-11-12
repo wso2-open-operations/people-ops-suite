@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/lang.array;
 import ballerina/log;
 import ballerina/mime;
 import ballerinax/googleapis.drive;
@@ -65,18 +64,17 @@ public isolated function getApplicantFolder(string email) returns string|error {
 
 # Uploads a profile photo to the applicant's Google Drive folder and returns the byte array.
 #
-# + base64Photo - Base64 encoded content of the profile photo
+# + photoBytes - Byte array content of the profile photo
 # + fileName - The file name for the photo (with extension)
 # + email - The email of the applicant
 # + return - The byte array of the photo or an error if upload/validation fails
-public isolated function uploadApplicantPhoto(string base64Photo, string fileName, string email)
+public isolated function uploadApplicantPhoto(byte[] photoBytes, string fileName, string email)
     returns byte[]|error {
-    if base64Photo == "" {
+    if photoBytes.length() == 0 {
         return [];
     }
 
     string folderId = check getApplicantFolder(email);
-    byte[] photoBytes = check array:fromBase64(base64Photo);
 
     log:printDebug("Uploading profile photo: " + fileName);
     drive:File uploaded = check gDriveClient->uploadFileUsingByteArray(photoBytes, fileName, folderId);
@@ -94,18 +92,17 @@ public isolated function uploadApplicantPhoto(string base64Photo, string fileNam
 
 # Uploads a CV to the applicant's Google Drive folder and returns the byte array.
 #
-# + base64Cv - Base64 encoded content of the CV
+# + cvBytes - Byte array content of the CV
 # + fileName - The file name for the CV (with extension)
 # + applicantFolderName - The name of the applicant folder
 # + return - The byte array of the CV or an error if upload/validation fails
-public isolated function uploadApplicantCv(string base64Cv, string fileName, string applicantFolderName)
+public isolated function uploadApplicantCv(byte[] cvBytes, string fileName, string applicantFolderName)
     returns byte[]|error {
-    if base64Cv == "" {
+    if cvBytes.length() == 0 {
         return [];
     }
 
     string folderId = check getApplicantFolder(applicantFolderName);
-    byte[] cvBytes = check array:fromBase64(base64Cv);
 
     log:printDebug("Uploading CV: " + fileName);
     drive:File uploaded = check gDriveClient->uploadFileUsingByteArray(cvBytes, fileName, folderId);

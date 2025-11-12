@@ -14,19 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/lang.array;
-
 public const int MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
-# Validates the size of a base64-encoded file.
+# Validates the size of a byte array file.
 #
-# + base64Content - The base64-encoded file content
+# + fileBytes - The byte array content of the file
 # + return - An error if the file exceeds the max size, else nil
-public isolated function validateFileSize(string base64Content) returns error? {
-    if base64Content == "" {
+public isolated function validateFileSize(byte[] fileBytes) returns error? {
+    if fileBytes.length() == 0 {
         return;
     }
-    byte[] fileBytes = check array:fromBase64(base64Content);
     if fileBytes.length() > MAX_FILE_SIZE_BYTES {
         return error("File size exceeds the maximum limit of 10 MB");
     }
