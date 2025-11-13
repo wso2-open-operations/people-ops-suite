@@ -211,7 +211,6 @@ export default function Me() {
       }
     } catch (err) {
       console.error(err);
-    } finally {
       setSavingChanges(false);
     }
   };
