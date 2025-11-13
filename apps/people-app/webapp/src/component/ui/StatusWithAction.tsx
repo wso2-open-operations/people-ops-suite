@@ -20,7 +20,6 @@ import { Box, Container, Button } from "@mui/material";
 
 interface PreLoaderProps {
   message?: string | null;
-  hideLogo?: boolean;
   action: () => void;
 }
 
