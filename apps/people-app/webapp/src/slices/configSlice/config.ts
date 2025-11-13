@@ -63,16 +63,17 @@ export const fetchAppConfig = createAsyncThunk(
           if (axios.isCancel(error)) {
             return rejectWithValue("Request canceled");
           }
+          const fallbackMessage =
+            error.response?.status === HttpStatusCode.InternalServerError
+              ? SnackMessage.error.fetchAppConfigMessage
+              : error.response?.data?.message || "An unknown error occurred.";
           dispatch(
             enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchAppConfigMessage
-                  : "An unknown error occurred.",
+              message: fallbackMessage,
               type: "error",
             })
           );
-          reject(error.response.data.message);
+          reject(fallbackMessage);
         });
     });
   }
