@@ -48,10 +48,15 @@ import {
   DescriptionOutlined,
   GitHub,
   EditOutlined,
+  Launch,
 } from "@mui/icons-material";
 import { useState } from "react";
 import EditApplicant from "./editApplicant";
-import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/utils";
+import {
+  getImageDataUrl,
+  viewPdfInNewTab,
+  isValidByteArray,
+} from "@utils/utils";
 
 export default function ApplicantProfile() {
   const theme = useTheme();
@@ -62,7 +67,12 @@ export default function ApplicantProfile() {
 
   // If in edit mode, show the edit form
   if (isEditMode) {
-    return <EditApplicant applicant={applicant} onCancel={() => setIsEditMode(false)} />;
+    return (
+      <EditApplicant
+        applicant={applicant}
+        onCancel={() => setIsEditMode(false)}
+      />
+    );
   }
 
   return (
@@ -75,7 +85,7 @@ export default function ApplicantProfile() {
             theme.palette.brand.orange,
             0.1
           )} 0%, ${alpha(theme.palette.brand.orangeDark, 0.05)} 100%)`,
-          borderRadius: 3,
+          borderRadius: 4,
           p: 4,
           mb: 4,
           position: "relative",
@@ -96,91 +106,146 @@ export default function ApplicantProfile() {
           },
         }}
       >
-        <Box display="flex" alignItems="center" gap={3} position="relative">
+        <Box display="flex" alignItems="center" gap={4} position="relative">
+          {/* Avatar Section */}
           <Avatar
             src={getImageDataUrl(applicant.user_thumbnail)}
             sx={{
-              width: 120,
-              height: 120,
-              border: `4px solid ${theme.palette.background.paper}`,
-              boxShadow: theme.shadows[4],
+              width: 100,
+              height: 100,
+              border: `3px solid ${alpha(theme.palette.brand.orange, 0.2)}`,
+              boxShadow: `0 4px 14px ${alpha(theme.palette.brand.orange, 0.2)}`,
               bgcolor: theme.palette.brand.orange,
-              fontSize: 40,
+              fontSize: 36,
               fontWeight: "bold",
+              transition: "transform 0.2s ease-in-out",
+              "&:hover": {
+                transform: "scale(1.05)",
+              },
             }}
           >
             {applicant.first_name?.[0]?.toUpperCase()}
           </Avatar>
+
+          {/* Main Info Section */}
           <Box flex={1}>
-            <Typography variant="h3" fontWeight="bold" gutterBottom>
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              sx={{
+                mb: 1,
+                background: `linear-gradient(135deg, ${
+                  theme.palette.text.primary
+                } 0%, ${alpha(theme.palette.text.primary, 0.8)} 100%)`,
+                WebkitBackgroundClip: "text",
+                letterSpacing: "-0.5px",
+              }}
+            >
               {applicant.first_name} {applicant.last_name}
             </Typography>
-            <Stack direction="row" spacing={2} alignItems="center" mb={1}>
+
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              flexWrap="wrap"
+            >
               <Chip
                 label={applicant.status}
-                color="primary"
+                size="small"
                 sx={{
-                  fontWeight: "bold",
+                  bgcolor: alpha(theme.palette.brand.orange, 0.12),
+                  color: theme.palette.brand.orangeDark,
+                  fontWeight: 600,
                   textTransform: "uppercase",
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.8,
+                  fontSize: "0.7rem",
+                  height: 24,
+                  border: `1px solid ${alpha(theme.palette.brand.orange, 0.3)}`,
                 }}
               />
-              <Chip
-                icon={<EmailOutlined />}
-                label={applicant.email}
-                variant="outlined"
-                sx={{ fontWeight: 500 }}
-              />
-            </Stack>
-          </Box>
-          <Stack direction="row" spacing={2}>
-            <Tooltip title="Edit Profile">
-              <Button
-                onClick={() => setIsEditMode(true)}
-                variant="outlined"
-                size="large"
-                startIcon={<EditOutlined />}
+              <Box
                 sx={{
-                  borderColor: theme.palette.brand.orange,
-                  color: theme.palette.brand.orangeDark,
-                  "&:hover": {
-                    borderColor: theme.palette.brand.orangeDark,
-                    bgcolor: alpha(theme.palette.brand.orange, 0.08),
-                  },
-                  fontWeight: "bold",
-                  px: 3,
-                  py: 1.5,
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontSize: "1rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  color: theme.palette.text.secondary,
+                  fontSize: "0.875rem",
                 }}
               >
-                Edit Profile
-              </Button>
-            </Tooltip>
+                <EmailOutlined sx={{ fontSize: 16 }} />
+                <Typography variant="body2" fontWeight={500}>
+                  {applicant.email}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          {/* Action Buttons - Right Side */}
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Button
+              onClick={() => setIsEditMode(true)}
+              variant="outlined"
+              size="medium"
+              startIcon={<EditOutlined />}
+              sx={{
+                borderColor: alpha(theme.palette.text.primary, 0.2),
+                color: theme.palette.text.primary,
+                "&:hover": {
+                  borderColor: theme.palette.brand.orangeDark,
+                  color: theme.palette.brand.orangeDark,
+                  bgcolor: alpha(theme.palette.brand.orange, 0.05),
+                  transform: "translateY(-1px)",
+                  boxShadow: `0 2px 8px ${alpha(
+                    theme.palette.brand.orange,
+                    0.15
+                  )}`,
+                },
+                fontWeight: 600,
+                px: 2.5,
+                py: 1,
+                borderRadius: 2,
+                textTransform: "none",
+                fontSize: "0.875rem",
+                transition: "all 0.2s ease-in-out",
+                borderWidth: 1.5,
+              }}
+            >
+              Edit Profile
+            </Button>
+
             {isValidByteArray(applicant.resume_link) && (
-              <Tooltip title="View Resume">
-                <Button
-                  onClick={() => viewPdfInNewTab(applicant.resume_link)}
-                  variant="contained"
-                  size="large"
-                  startIcon={<DescriptionOutlined />}
-                  sx={{
-                    bgcolor: theme.palette.brand.orangeDark,
-                    "&:hover": {
-                      bgcolor: theme.palette.brand.orange,
-                    },
-                    fontWeight: "bold",
-                    px: 3,
-                    py: 1.5,
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontSize: "1rem",
-                  }}
-                >
-                  View Resume
-                </Button>
-              </Tooltip>
+              <Button
+                onClick={() => viewPdfInNewTab(applicant.resume_link)}
+                variant="contained"
+                size="medium"
+                startIcon={<DescriptionOutlined />}
+                sx={{
+                  bgcolor: theme.palette.brand.orangeDark,
+                  color: theme.palette.common.white,
+                  "&:hover": {
+                    bgcolor: theme.palette.brand.orange,
+                    transform: "translateY(-1px)",
+                    boxShadow: `0 4px 12px ${alpha(
+                      theme.palette.brand.orange,
+                      0.4
+                    )}`,
+                  },
+                  fontWeight: 600,
+                  px: 2.5,
+                  py: 1,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "0.875rem",
+                  transition: "all 0.2s ease-in-out",
+                  boxShadow: `0 2px 8px ${alpha(
+                    theme.palette.brand.orange,
+                    0.25
+                  )}`,
+                }}
+              >
+                View Resume
+              </Button>
             )}
           </Stack>
         </Box>
@@ -199,7 +264,7 @@ export default function ApplicantProfile() {
             {/* Contact Information Section */}
             <Grid item xs={12}>
               <Typography
-                variant="h6"
+                variant="h5"
                 fontWeight="bold"
                 mb={3}
                 color="primary"
@@ -211,10 +276,24 @@ export default function ApplicantProfile() {
               <Grid container spacing={3}>
                 {applicant.phone && (
                   <Grid item xs={12} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                      <PhoneOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <PhoneOutlined
+                        fontSize="small"
+                        sx={{ color: "text.secondary", mt: 0.3 }}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          fontSize="0.875rem"
+                        >
                           Phone
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
@@ -226,10 +305,24 @@ export default function ApplicantProfile() {
                 )}
                 {applicant.country && (
                   <Grid item xs={12} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                      <PublicOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <PublicOutlined
+                        fontSize="small"
+                        sx={{ color: "text.secondary", mt: 0.3 }}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          fontSize="0.875rem"
+                        >
                           Country
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
@@ -241,10 +334,24 @@ export default function ApplicantProfile() {
                 )}
                 {applicant.address && (
                   <Grid item xs={12} md={4}>
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
-                      <LocationOnOutlined fontSize="small" sx={{ color: "text.secondary", mt: 0.3 }} />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 1.5,
+                      }}
+                    >
+                      <LocationOnOutlined
+                        fontSize="small"
+                        sx={{ color: "text.secondary", mt: 0.3 }}
+                      />
                       <Box>
-                        <Typography variant="caption" color="text.secondary" display="block">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          fontSize="0.875rem"
+                        >
                           Address
                         </Typography>
                         <Typography variant="body2" fontWeight={500}>
@@ -259,54 +366,55 @@ export default function ApplicantProfile() {
             </Grid>
 
             {/* Professional Links Section */}
-            {applicant.professional_links && applicant.professional_links.length > 0 && (
-              <Grid item xs={12}>
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  mb={3}
-                  color="primary"
-                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                >
-                  <LinkOutlined />
-                  Professional Links
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1.5}>
-                  {applicant.professional_links.map((link, idx) => (
-                    <Button
-                      key={idx}
-                      href={link.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      variant="outlined"
-                      size="small"
-                      startIcon={<LinkOutlined fontSize="small" />}
-                      sx={{
-                        borderColor: alpha(theme.palette.brand.orange, 0.5),
-                        color: theme.palette.brand.orangeDark,
-                        "&:hover": {
-                          borderColor: theme.palette.brand.orangeDark,
-                          bgcolor: alpha(theme.palette.brand.orange, 0.08),
-                        },
-                        textTransform: "none",
-                        fontWeight: 500,
-                        py: 0.5,
-                        px: 1.5,
-                      }}
-                    >
-                      {link.title}
-                    </Button>
-                  ))}
-                </Stack>
-                <Divider sx={{ mt: 3 }} />
-              </Grid>
-            )}
+            {applicant.professional_links &&
+              applicant.professional_links.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    mb={3}
+                    color="primary"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <LinkOutlined />
+                    Professional Links
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" gap={1.5}>
+                    {applicant.professional_links.map((link, idx) => (
+                      <Button
+                        key={idx}
+                        href={link.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outlined"
+                        size="small"
+                        startIcon={<LinkOutlined fontSize="small" />}
+                        sx={{
+                          borderColor: alpha(theme.palette.brand.orange, 0.5),
+                          color: theme.palette.brand.orangeDark,
+                          "&:hover": {
+                            borderColor: theme.palette.brand.orangeDark,
+                            bgcolor: alpha(theme.palette.brand.orange, 0.08),
+                          },
+                          textTransform: "none",
+                          fontWeight: 500,
+                          py: 0.5,
+                          px: 1.5,
+                        }}
+                      >
+                        {link.title}
+                      </Button>
+                    ))}
+                  </Stack>
+                  <Divider sx={{ mt: 3 }} />
+                </Grid>
+              )}
 
             {/* Education Section */}
             {applicant.educations && applicant.educations.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
@@ -322,20 +430,16 @@ export default function ApplicantProfile() {
                         elevation={0}
                         sx={{
                           p: 2.5,
-                          bgcolor: alpha(theme.palette.info.main, 0.04),
+                          bgcolor: alpha(theme.palette.warning.main, 0.04),
                           borderRadius: 2,
                           border: `1px solid ${alpha(
-                            theme.palette.info.main,
-                            0.1
+                            theme.palette.warning.main,
+                            0.2
                           )}`,
                           height: "100%",
                         }}
                       >
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          gutterBottom
-                        >
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
                           {edu.degree}
                         </Typography>
                         <Typography
@@ -355,23 +459,46 @@ export default function ApplicantProfile() {
                           <Chip
                             icon={<LocationOnOutlined />}
                             label={edu.location}
-                            size="small"
+                            size="medium"
                             variant="outlined"
+                            sx={{
+                              borderColor: alpha(
+                                theme.palette.brand.orangeDark,
+                                0.4
+                              ),
+                              color: theme.palette.brand.orangeDark,
+                              fontWeight: 500,
+                            }}
                           />
                           <Chip
                             icon={<CalendarTodayOutlined />}
                             label={`${edu.start_year} - ${
                               edu.end_year || "Present"
                             }`}
-                            size="small"
+                            size="medium"
                             variant="outlined"
+                            sx={{
+                              borderColor: alpha(
+                                theme.palette.brand.orangeDark,
+                                0.4
+                              ),
+                              color: theme.palette.brand.orangeDark,
+                              fontWeight: 500,
+                            }}
                           />
                           {edu.gpa_zscore && (
                             <Chip
                               label={`GPA/Z-Score: ${edu.gpa_zscore}`}
-                              size="small"
+                              size="medium"
                               variant="outlined"
-                              color="info"
+                              sx={{
+                                borderColor: alpha(
+                                  theme.palette.brand.orangeDark,
+                                  0.4
+                                ),
+                                color: theme.palette.brand.orangeDark,
+                                fontWeight: 500,
+                              }}
                             />
                           )}
                         </Stack>
@@ -387,7 +514,7 @@ export default function ApplicantProfile() {
             {applicant.experiences && applicant.experiences.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
@@ -403,19 +530,15 @@ export default function ApplicantProfile() {
                         elevation={0}
                         sx={{
                           p: 2.5,
-                          bgcolor: alpha(theme.palette.success.main, 0.04),
+                          bgcolor: alpha(theme.palette.warning.main, 0.04),
                           borderRadius: 2,
                           border: `1px solid ${alpha(
-                            theme.palette.success.main,
-                            0.1
+                            theme.palette.warning.main,
+                            0.2
                           )}`,
                         }}
                       >
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          gutterBottom
-                        >
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
                           {exp.job_title}
                         </Typography>
                         <Typography
@@ -435,17 +558,32 @@ export default function ApplicantProfile() {
                           <Chip
                             icon={<LocationOnOutlined />}
                             label={exp.location}
-                            size="small"
+                            size="medium"
                             variant="outlined"
+                            sx={{
+                              borderColor: alpha(
+                                theme.palette.brand.orangeDark,
+                                0.4
+                              ),
+                              color: theme.palette.brand.orangeDark,
+                              fontWeight: 500,
+                            }}
                           />
                           <Chip
                             icon={<CalendarTodayOutlined />}
                             label={`${exp.start_date} - ${
                               exp.end_date || "Present"
                             }`}
-                            size="small"
+                            size="medium"
                             variant="outlined"
-                            color="success"
+                            sx={{
+                              borderColor: alpha(
+                                theme.palette.brand.orangeDark,
+                                0.4
+                              ),
+                              color: theme.palette.brand.orangeDark,
+                              fontWeight: 500,
+                            }}
                           />
                         </Stack>
                       </Paper>
@@ -457,81 +595,102 @@ export default function ApplicantProfile() {
             )}
 
             {/* Certifications Section */}
-            {applicant.certifications && applicant.certifications.length > 0 && (
-              <Grid item xs={12}>
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  mb={3}
-                  color="primary"
-                  sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                >
-                  <EmojiEventsOutlined />
-                  Certifications
-                </Typography>
-                <Grid container spacing={2}>
-                  {applicant.certifications.map((cert, idx) => (
-                    <Grid item xs={12} md={6} key={idx}>
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 2.5,
-                          bgcolor: alpha(theme.palette.warning.main, 0.04),
-                          borderRadius: 2,
-                          border: `1px solid ${alpha(
-                            theme.palette.warning.main,
-                            0.2
-                          )}`,
-                          height: "100%",
-                        }}
-                      >
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          {cert.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" my={1}>
-                          {cert.issued_by}
-                        </Typography>
-                        <Chip
-                          label={cert.year}
-                          size="small"
-                          sx={{ mb: cert.link ? 1.5 : 0 }}
-                        />
-                        {cert.link && (
-                          <Box mt={1.5}>
-                            <Button
-                              href={cert.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              variant="text"
-                              size="small"
-                              sx={{
-                                color: theme.palette.brand.orangeDark,
-                                textTransform: "none",
-                                fontWeight: 600,
-                                p: 0,
-                                "&:hover": {
-                                  bgcolor: "transparent",
-                                  textDecoration: "underline",
-                                },
-                              }}
-                            >
-                              View Certificate →
-                            </Button>
-                          </Box>
-                        )}
-                      </Paper>
-                    </Grid>
-                  ))}
+            {applicant.certifications &&
+              applicant.certifications.length > 0 && (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="h5"
+                    fontWeight="bold"
+                    mb={3}
+                    color="primary"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                  >
+                    <EmojiEventsOutlined />
+                    Certifications
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {applicant.certifications.map((cert, idx) => (
+                      <Grid item xs={12} md={6} key={idx}>
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 2.5,
+                            bgcolor: alpha(theme.palette.warning.main, 0.04),
+                            borderRadius: 2,
+                            border: `1px solid ${alpha(
+                              theme.palette.warning.main,
+                              0.2
+                            )}`,
+                            height: "100%",
+                            position: "relative",
+                          }}
+                        >
+                          {cert.link && (
+                            <Tooltip title="View Certificate" placement="top">
+                              <Button
+                                href={cert.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                sx={{
+                                  position: "absolute",
+                                  top: 12,
+                                  right: 12,
+                                  minWidth: "auto",
+                                  p: 1,
+                                  borderRadius: 1.5,
+                                  color: theme.palette.brand.orangeDark,
+                                  "&:hover": {
+                                    bgcolor: alpha(
+                                      theme.palette.brand.orange,
+                                      0.1
+                                    ),
+                                  },
+                                }}
+                              >
+                                <Launch fontSize="medium" />
+                              </Button>
+                            </Tooltip>
+                          )}
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            gutterBottom
+                            sx={{ pr: cert.link ? 5 : 0 }}
+                          >
+                            {cert.name}
+                          </Typography>
+                          <Typography
+                            variant="subtitle1"
+                            color="text.secondary"
+                            my={1}
+                          >
+                            {cert.issued_by}
+                          </Typography>
+                          <Chip
+                            label={cert.year}
+                            size="small"
+                            sx={{
+                              borderColor: alpha(
+                                theme.palette.brand.orangeDark,
+                                0.4
+                              ),
+                              color: theme.palette.brand.orangeDark,
+                            }}
+                            variant="outlined"
+                          />
+                        </Paper>
+                      </Grid>
+                    ))}
+                  </Grid>
+                  <Divider sx={{ mt: 3 }} />
                 </Grid>
-                <Divider sx={{ mt: 3 }} />
-              </Grid>
-            )}
+              )}
 
             {/* Projects Section */}
             {applicant.projects && applicant.projects.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
@@ -547,10 +706,10 @@ export default function ApplicantProfile() {
                         elevation={0}
                         sx={{
                           p: 3,
-                          bgcolor: alpha(theme.palette.info.main, 0.04),
+                          bgcolor: alpha(theme.palette.warning.main, 0.04),
                           borderRadius: 2,
                           border: `1px solid ${alpha(
-                            theme.palette.info.main,
+                            theme.palette.warning.main,
                             0.2
                           )}`,
                           height: "100%",
@@ -558,61 +717,82 @@ export default function ApplicantProfile() {
                           flexDirection: "column",
                         }}
                       >
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          gutterBottom
-                        >
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>
                           {project.name}
                         </Typography>
                         <Typography
-                          variant="body2"
                           color="text.secondary"
                           mb={2}
                           flex={1}
                         >
                           {project.description}
                         </Typography>
-                        {project.technologies &&
-                          project.technologies.length > 0 && (
-                            <Stack
-                              direction="row"
-                              flexWrap="wrap"
-                              gap={1}
-                              mb={2}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 2,
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {project.technologies &&
+                            project.technologies.length > 0 && (
+                              <Stack
+                                direction="row"
+                                flexWrap="wrap"
+                                gap={1}
+                                flex={1}
+                              >
+                                {project.technologies.map((tech, techIdx) => (
+                                  <Chip
+                                    key={techIdx}
+                                    label={tech}
+                                    size="medium"
+                                    variant="outlined"
+                                    sx={{
+                                      borderColor: alpha(
+                                        theme.palette.brand.orangeDark,
+                                        0.3
+                                      ),
+                                      color: theme.palette.brand.orangeDark,
+                                    }}
+                                  />
+                                ))}
+                              </Stack>
+                            )}
+                          {project.github && (
+                            <Button
+                              href={project.github}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="outlined"
+                              size="small"
+                              startIcon={<GitHub />}
+                              sx={{
+                                borderColor: alpha(
+                                  theme.palette.text.primary,
+                                  0.2
+                                ),
+                                color: theme.palette.text.primary,
+                                "&:hover": {
+                                  borderColor: theme.palette.brand.orangeDark,
+                                  color: theme.palette.brand.orangeDark,
+                                  bgcolor: alpha(
+                                    theme.palette.brand.orange,
+                                    0.05
+                                  ),
+                                },
+                                textTransform: "none",
+                                fontWeight: 600,
+                                borderRadius: 1.5,
+                                flexShrink: 0,
+                              }}
                             >
-                              {project.technologies.map((tech, techIdx) => (
-                                <Chip
-                                  key={techIdx}
-                                  label={tech}
-                                  size="small"
-                                  variant="outlined"
-                                  color="info"
-                                />
-                              ))}
-                            </Stack>
+                              View on GitHub
+                            </Button>
                           )}
-                        {project.github && (
-                          <Button
-                            href={project.github}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            variant="contained"
-                            size="small"
-                            startIcon={<GitHub />}
-                            sx={{
-                              bgcolor: theme.palette.brand.orangeDark,
-                              "&:hover": {
-                                bgcolor: theme.palette.brand.orange,
-                              },
-                              textTransform: "none",
-                              fontWeight: 600,
-                              alignSelf: "flex-start",
-                            }}
-                          >
-                            View on GitHub
-                          </Button>
-                        )}
+                        </Box>
                       </Paper>
                     </Grid>
                   ))}
@@ -625,7 +805,7 @@ export default function ApplicantProfile() {
             {applicant.skills && applicant.skills.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
@@ -644,9 +824,6 @@ export default function ApplicantProfile() {
                         color: theme.palette.brand.orangeDark,
                         fontWeight: 600,
                         fontSize: "0.875rem",
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.brand.orange, 0.25),
-                        },
                       }}
                     />
                   ))}
@@ -659,7 +836,7 @@ export default function ApplicantProfile() {
             {applicant.languages && applicant.languages.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
@@ -677,8 +854,12 @@ export default function ApplicantProfile() {
                           justifyContent: "space-between",
                           alignItems: "center",
                           p: 1.5,
-                          bgcolor: alpha(theme.palette.primary.main, 0.04),
-                          borderRadius: 1,
+                          bgcolor: alpha(theme.palette.warning.main, 0.04),
+                          borderRadius: 2,
+                          border: `1px solid ${alpha(
+                            theme.palette.warning.main,
+                            0.2
+                          )}`
                         }}
                       >
                         <Typography variant="body1" fontWeight={600}>
@@ -689,6 +870,13 @@ export default function ApplicantProfile() {
                           size="small"
                           color="primary"
                           variant="outlined"
+                          sx={{
+                            borderColor: alpha(
+                              theme.palette.brand.orangeDark,
+                              0.3
+                            ),
+                            color: theme.palette.brand.orangeDark,
+                          }}
                         />
                       </Box>
                     </Grid>
@@ -717,13 +905,10 @@ export default function ApplicantProfile() {
                       key={idx}
                       label={interest}
                       sx={{
-                        bgcolor: alpha(theme.palette.secondary.main, 0.15),
-                        color: theme.palette.secondary.dark,
+                        bgcolor: alpha(theme.palette.brand.orange, 0.15),
+                        color: theme.palette.brand.orangeDark,
                         fontWeight: 600,
                         fontSize: "0.875rem",
-                        "&:hover": {
-                          bgcolor: alpha(theme.palette.secondary.main, 0.25),
-                        },
                       }}
                     />
                   ))}
@@ -736,4 +921,3 @@ export default function ApplicantProfile() {
     </Container>
   );
 }
-
