@@ -236,7 +236,7 @@ const ConfirmationDialogContextProvider: React.FC<
                   color={content.type === "discard" ? "error" : "secondary"}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
+                  disabled={content?.inputObj?.mandatory && comment.trim() === ""}
                   onClick={() =>
                     content?.inputObj ? handleOk(comment) : handleOk()
                   }
