@@ -127,6 +127,7 @@ const ConfirmationDialogContextProvider: React.FC<
   const handleOk = (value?: string) => {
     content && content.action(value);
     onHide();
+    resetDialog();
   };
 
   const handleCancel = () => {
