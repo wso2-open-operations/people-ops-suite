@@ -15,6 +15,7 @@
 // under the License.
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { useMemo } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
@@ -26,14 +27,18 @@ import { getActiveRoutesV2, routes } from "@src/route";
 
 const AppHandler = () => {
   const auth = useAppSelector((state: RootState) => state.auth);
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Layout />,
-      errorElement: <NotFoundPage />,
-      children: getActiveRoutesV2(routes, auth.roles),
-    },
-  ]);
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
+        {
+          path: "/",
+          element: <Layout />,
+          errorElement: <NotFoundPage />,
+          children: getActiveRoutesV2(routes, auth.roles),
+        },
+      ]),
+    [auth.roles]
+  );
 
   return (
     <>
@@ -52,5 +57,4 @@ const AppHandler = () => {
     </>
   );
 };
-
 export default AppHandler;
