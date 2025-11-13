@@ -69,13 +69,10 @@ export interface ApplicantPayload {
   projects: Projects[];
   languages: Languages[];
   interests: string[];
-  base64_profile_photo?: string;
   profile_photo_file_name?: string;
-  base64_cv?: string;
   cv_file_name?: string;
 }
 export interface ApplicantProfile {
-  id: number;
   first_name: string;
   last_name: string;
   email: string;

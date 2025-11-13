@@ -544,11 +544,11 @@ public type UpdateApplicantProfileRequest record {|
     Languages[] languages?;
     # Personal interests 
     Interests interests?;
-    # Base64 encoded profile photo
+    # Bytestring encoded profile photo
     byte[] user_thumbnail?;
     # Profile photo file name
     string profile_photo_file_name?;
-    # Base64 encoded CV
+    # Bytestring encoded CV
     byte[] resume_link?;
     # CV file name
     string cv_file_name?;
