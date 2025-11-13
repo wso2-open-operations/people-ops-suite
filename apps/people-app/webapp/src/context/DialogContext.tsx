@@ -177,7 +177,7 @@ const ConfirmationDialogContextProvider: React.FC<
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                p: 0,
               }}
             >
               {content?.title}
