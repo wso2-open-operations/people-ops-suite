@@ -19,7 +19,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
-import Error from "@layout/pages/404";
+import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState, useAppSelector } from "@slices/store";
 import { getActiveRoutesV2, routes } from "@src/route";
@@ -30,7 +30,7 @@ const AppHandler = () => {
     {
       path: "/",
       element: <Layout />,
-      errorElement: <Error />,
+      errorElement: <NotFoundPage />,
       children: getActiveRoutesV2(routes, auth.roles),
     },
   ]);
