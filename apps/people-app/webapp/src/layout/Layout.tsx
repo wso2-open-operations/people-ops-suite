@@ -102,7 +102,6 @@ export default function Layout() {
         <Header />
         <Box
           component="main"
-          className="Hello"
           sx={{
             flexGrow: 1,
             height: "100vh",
