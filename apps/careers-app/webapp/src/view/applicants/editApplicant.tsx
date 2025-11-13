@@ -49,7 +49,11 @@ import {
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToByteArray } from "@utils/utils";
-import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/utils";
+import {
+  getImageDataUrl,
+  viewPdfInNewTab,
+  isValidByteArray,
+} from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
@@ -148,7 +152,10 @@ interface EditApplicantProps {
   onCancel: () => void;
 }
 
-export default function EditApplicant({ applicant, onCancel }: EditApplicantProps) {
+export default function EditApplicant({
+  applicant,
+  onCancel,
+}: EditApplicantProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
@@ -164,12 +171,7 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
 
   // Show preloader when updating
   if (state === State.loading) {
-    return (
-      <PreLoader
-        message="Updating applicant profile..."
-        isLoading
-      />
-    );
+    return <PreLoader message="Updating applicant profile..." isLoading />;
   }
 
   const handleOpenForEdit = <K extends SectionKey>(
@@ -204,7 +206,7 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
     "StackOverflow",
     "Devto",
   ];
-  
+
   linkTypes.forEach((type) => {
     const found = applicant.professional_links?.find(
       (l) => l.title.toLowerCase() === type.toLowerCase()
@@ -356,7 +358,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               }}
             >
               {/* Form Title */}
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={4}
+              >
                 <Typography
                   variant="h2"
                   fontWeight="bold"
@@ -375,7 +382,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               </Box>
 
               {/* Profile Photo Upload Section */}
-              <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                mb={4}
+              >
                 <Box position="relative" display="inline-block">
                   <Avatar
                     src={
@@ -578,7 +590,7 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         e.preventDefault();
                         viewPdfInNewTab(applicant.resume_link);
                       }}
-                      style={{ cursor: 'pointer' }}
+                      style={{ cursor: "pointer" }}
                     >
                       View
                     </a>
@@ -592,7 +604,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               <FieldArray name="experiences">
                 {({ push, remove }) => (
                   <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box display="flex" alignItems="center">
                         {sectionIcons.experience}
                         <Typography variant="h5" fontWeight="bold">
@@ -604,7 +621,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         onClick={() => setOpenModal("experience")}
                         sx={{
                           bgcolor: theme.palette.brand.orange,
-                          "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                          "&:hover": {
+                            bgcolor: theme.palette.brand.orangeDark,
+                          },
                         }}
                       >
                         Add Experience
@@ -622,22 +641,37 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               borderRadius: 2,
                             }}
                           >
-                            <Box display="flex" justifyContent="space-between" alignItems="start">
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="start"
+                            >
                               <Box flex={1}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
                                   {exp.job_title}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {exp.company} • {exp.location}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {exp.start_date} - {exp.end_date || "Present"}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleOpenForEdit("experience", exp, idx)}
+                                  onClick={() =>
+                                    handleOpenForEdit("experience", exp, idx)
+                                  }
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -658,13 +692,17 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                       open={openModal === "experience"}
                       onClose={handleCloseModal}
                       push={push}
-                      replace={(index, value) => setFieldValue(`experiences.${index}`, value)}
+                      replace={(index, value) =>
+                        setFieldValue(`experiences.${index}`, value)
+                      }
                       editItem={
                         editingSection === "experience" && editingItem
                           ? (editingItem as Experience)
                           : undefined
                       }
-                      editIndex={editingSection === "experience" ? editingIndex : null}
+                      editIndex={
+                        editingSection === "experience" ? editingIndex : null
+                      }
                     />
                   </>
                 )}
@@ -676,7 +714,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               <FieldArray name="educations">
                 {({ push, remove }) => (
                   <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box display="flex" alignItems="center">
                         {sectionIcons.education}
                         <Typography variant="h5" fontWeight="bold">
@@ -688,7 +731,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         onClick={() => setOpenModal("education")}
                         sx={{
                           bgcolor: theme.palette.brand.orange,
-                          "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                          "&:hover": {
+                            bgcolor: theme.palette.brand.orangeDark,
+                          },
                         }}
                       >
                         Add Education
@@ -706,22 +751,37 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               borderRadius: 2,
                             }}
                           >
-                            <Box display="flex" justifyContent="space-between" alignItems="start">
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="start"
+                            >
                               <Box flex={1}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
                                   {edu.degree}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {edu.institution}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {edu.start_year} - {edu.end_year || "Present"}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleOpenForEdit("education", edu, idx)}
+                                  onClick={() =>
+                                    handleOpenForEdit("education", edu, idx)
+                                  }
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -742,13 +802,17 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                       open={openModal === "education"}
                       onClose={handleCloseModal}
                       push={push}
-                      replace={(index, value) => setFieldValue(`educations.${index}`, value)}
+                      replace={(index, value) =>
+                        setFieldValue(`educations.${index}`, value)
+                      }
                       editItem={
                         editingSection === "education" && editingItem
                           ? (editingItem as Education)
                           : undefined
                       }
-                      editIndex={editingSection === "education" ? editingIndex : null}
+                      editIndex={
+                        editingSection === "education" ? editingIndex : null
+                      }
                     />
                   </>
                 )}
@@ -760,7 +824,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               <FieldArray name="certifications">
                 {({ push, remove }) => (
                   <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box display="flex" alignItems="center">
                         {sectionIcons.certification}
                         <Typography variant="h5" fontWeight="bold">
@@ -772,7 +841,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         onClick={() => setOpenModal("certification")}
                         sx={{
                           bgcolor: theme.palette.brand.orange,
-                          "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                          "&:hover": {
+                            bgcolor: theme.palette.brand.orangeDark,
+                          },
                         }}
                       >
                         Add Certification
@@ -790,22 +861,41 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               borderRadius: 2,
                             }}
                           >
-                            <Box display="flex" justifyContent="space-between" alignItems="start">
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="start"
+                            >
                               <Box flex={1}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
                                   {cert.name}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {cert.issued_by}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
                                   {cert.year}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleOpenForEdit("certification", cert, idx)}
+                                  onClick={() =>
+                                    handleOpenForEdit(
+                                      "certification",
+                                      cert,
+                                      idx
+                                    )
+                                  }
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -826,13 +916,17 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                       open={openModal === "certification"}
                       onClose={handleCloseModal}
                       push={push}
-                      replace={(index, value) => setFieldValue(`certifications.${index}`, value)}
+                      replace={(index, value) =>
+                        setFieldValue(`certifications.${index}`, value)
+                      }
                       editItem={
                         editingSection === "certification" && editingItem
                           ? (editingItem as Certification)
                           : undefined
                       }
-                      editIndex={editingSection === "certification" ? editingIndex : null}
+                      editIndex={
+                        editingSection === "certification" ? editingIndex : null
+                      }
                     />
                   </>
                 )}
@@ -844,7 +938,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               <FieldArray name="projects">
                 {({ push, remove }) => (
                   <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box display="flex" alignItems="center">
                         {sectionIcons.project}
                         <Typography variant="h5" fontWeight="bold">
@@ -856,7 +955,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         onClick={() => setOpenModal("project")}
                         sx={{
                           bgcolor: theme.palette.brand.orange,
-                          "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                          "&:hover": {
+                            bgcolor: theme.palette.brand.orangeDark,
+                          },
                         }}
                       >
                         Add Project
@@ -874,9 +975,16 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               borderRadius: 2,
                             }}
                           >
-                            <Box display="flex" justifyContent="space-between" alignItems="start">
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="start"
+                            >
                               <Box flex={1}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
                                   {proj.name}
                                 </Typography>
                                 <Typography
@@ -895,7 +1003,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               <Stack direction="row" spacing={1}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleOpenForEdit("project", proj, idx)}
+                                  onClick={() =>
+                                    handleOpenForEdit("project", proj, idx)
+                                  }
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -916,13 +1026,17 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                       open={openModal === "project"}
                       onClose={handleCloseModal}
                       push={push}
-                      replace={(index, value) => setFieldValue(`projects.${index}`, value)}
+                      replace={(index, value) =>
+                        setFieldValue(`projects.${index}`, value)
+                      }
                       editItem={
                         editingSection === "project" && editingItem
                           ? (editingItem as Project)
                           : undefined
                       }
-                      editIndex={editingSection === "project" ? editingIndex : null}
+                      editIndex={
+                        editingSection === "project" ? editingIndex : null
+                      }
                     />
                   </>
                 )}
@@ -934,7 +1048,12 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
               <FieldArray name="languages">
                 {({ push, remove }) => (
                   <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={3}
+                    >
                       <Box display="flex" alignItems="center">
                         {sectionIcons.language}
                         <Typography variant="h5" fontWeight="bold">
@@ -946,7 +1065,9 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                         onClick={() => setOpenModal("language")}
                         sx={{
                           bgcolor: theme.palette.brand.orange,
-                          "&:hover": { bgcolor: theme.palette.brand.orangeDark },
+                          "&:hover": {
+                            bgcolor: theme.palette.brand.orangeDark,
+                          },
                         }}
                       >
                         Add Language
@@ -964,19 +1085,31 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                               borderRadius: 2,
                             }}
                           >
-                            <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Box
+                              display="flex"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
                               <Box flex={1}>
-                                <Typography variant="subtitle1" fontWeight="bold">
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
                                   {lang.language}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {lang.proficiency}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1}>
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleOpenForEdit("language", lang, idx)}
+                                  onClick={() =>
+                                    handleOpenForEdit("language", lang, idx)
+                                  }
                                 >
                                   <EditIcon fontSize="small" />
                                 </IconButton>
@@ -997,13 +1130,17 @@ export default function EditApplicant({ applicant, onCancel }: EditApplicantProp
                       open={openModal === "language"}
                       onClose={handleCloseModal}
                       push={push}
-                      replace={(index, value) => setFieldValue(`languages.${index}`, value)}
+                      replace={(index, value) =>
+                        setFieldValue(`languages.${index}`, value)
+                      }
                       editItem={
                         editingSection === "language" && editingItem
                           ? (editingItem as Language)
                           : undefined
                       }
-                      editIndex={editingSection === "language" ? editingIndex : null}
+                      editIndex={
+                        editingSection === "language" ? editingIndex : null
+                      }
                     />
                   </>
                 )}

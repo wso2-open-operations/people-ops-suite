@@ -720,11 +720,7 @@ export default function ApplicantProfile() {
                         <Typography variant="h5" fontWeight="bold" gutterBottom>
                           {project.name}
                         </Typography>
-                        <Typography
-                          color="text.secondary"
-                          mb={2}
-                          flex={1}
-                        >
+                        <Typography color="text.secondary" mb={2} flex={1}>
                           {project.description}
                         </Typography>
                         <Box
@@ -859,7 +855,7 @@ export default function ApplicantProfile() {
                           border: `1px solid ${alpha(
                             theme.palette.warning.main,
                             0.2
-                          )}`
+                          )}`,
                         }}
                       >
                         <Typography variant="body1" fontWeight={600}>
