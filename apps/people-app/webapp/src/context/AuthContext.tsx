@@ -72,20 +72,18 @@ const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const handleContinue = () => setIdlePromptOpen(false);
 
-  const refreshToken = () =>
-    new Promise<{ idToken: string }>(async (resolve, reject) => {
-      try {
-        if (await isAuthenticated()) {
-          resolve({ idToken: await getIDToken() });
-        } else {
-          await refreshAccessToken();
-          resolve({ idToken: await getIDToken() });
-        }
-      } catch (e) {
-        reject(e);
-        appSignOut();
+  const refreshToken = async (): Promise<{ idToken: string }> => {
+    try {
+      if (await isAuthenticated()) {
+        return { idToken: await getIDToken() };
       }
-    });
+      await refreshAccessToken();
+      return { idToken: await getIDToken() };
+    } catch (e) {
+      await appSignOut();
+      throw e;
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;

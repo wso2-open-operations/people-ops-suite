@@ -51,7 +51,7 @@ const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
       {...itemProps}
       role={undefined}
       style={({ isActive }) =>
-        isActive ? { background: alpha("#FFFFF", 0.05), color: "#FF7300" } : {}
+        isActive ? { background: alpha("#FFFFFF", 0.05), color: "#FF7300" } : {}
       }
     />
   );

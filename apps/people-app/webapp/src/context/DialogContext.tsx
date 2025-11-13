@@ -127,6 +127,7 @@ const ConfirmationDialogContextProvider: React.FC<
   const handleOk = (value?: string) => {
     content && content.action(value);
     onHide();
+    resetDialog();
   };
 
   const handleCancel = () => {
@@ -176,7 +177,7 @@ const ConfirmationDialogContextProvider: React.FC<
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                p: 0,
               }}
             >
               {content?.title}
@@ -235,7 +236,7 @@ const ConfirmationDialogContextProvider: React.FC<
                   color={content.type === "discard" ? "error" : "secondary"}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
+                  disabled={content?.inputObj?.mandatory && comment.trim() === ""}
                   onClick={() =>
                     content?.inputObj ? handleOk(comment) : handleOk()
                   }

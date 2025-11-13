@@ -28,7 +28,7 @@ const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
   return <RouterLink ref={ref} {...itemProps} role={undefined} />;
 });
 
-export default function Error() {
+export default function NotFoundPage() {
   return (
     <Box
       sx={{
@@ -45,7 +45,7 @@ export default function Error() {
       <Typography variant="h6" style={{ color: "gray" }}>
         The page you're looking for doesn't exist..
       </Typography>
-      <Button component={Link} to={"/"} variant="contained">
+      <Button component={Link} to={"/"} color="secondary" variant="contained" sx={{ mt: 2, textTransform: 'none' }}>
         Back Home
       </Button>
     </Box>

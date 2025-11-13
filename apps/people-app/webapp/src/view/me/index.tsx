@@ -187,18 +187,18 @@ export default function Me() {
 
   const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
-      const dataToSave = {
-        personalEmail: values.personalEmail,
-        personalPhone: values.personalPhone,
-        residentNumber: values.residentNumber,
-        addressLine1: values.addressLine1,
-        addressLine2: values.addressLine2,
-        city: values.city,
-        stateOrProvince: values.stateOrProvince,
-        postalCode: values.postalCode,
-        country: values.country,
-      };
       if (employee?.employeeId) {
+        const dataToSave = {
+          personalEmail: values.personalEmail,
+          personalPhone: values.personalPhone,
+          residentNumber: values.residentNumber,
+          addressLine1: values.addressLine1,
+          addressLine2: values.addressLine2,
+          city: values.city,
+          stateOrProvince: values.stateOrProvince,
+          postalCode: values.postalCode,
+          country: values.country,
+        };
         setSavingChanges(true);
         dispatch(
           updateEmployeePersonalInfo({
@@ -211,7 +211,6 @@ export default function Me() {
       }
     } catch (err) {
       console.error(err);
-    } finally {
       setSavingChanges(false);
     }
   };
