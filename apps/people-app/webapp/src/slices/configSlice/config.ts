@@ -51,31 +51,30 @@ export const fetchAppConfig = createAsyncThunk(
   async (_, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<AppConfigInfo>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.appConfig, {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.appConfig,
+        {
           cancelToken: newCancelTokenSource.token,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+      const fallbackMessage =
+        axios.isAxiosError(error) && error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchAppConfigMessage
+          : axios.isAxiosError(error) ? error.response?.data?.message || "An unknown error occurred." : "An unknown error occurred.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: fallbackMessage,
+          type: "error",
         })
-        .then((response) => {
-          resolve(response.data);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          const fallbackMessage =
-            error.response?.status === HttpStatusCode.InternalServerError
-              ? SnackMessage.error.fetchAppConfigMessage
-              : error.response?.data?.message || "An unknown error occurred.";
-          dispatch(
-            enqueueSnackbarMessage({
-              message: fallbackMessage,
-              type: "error",
-            })
-          );
-          reject(fallbackMessage);
-        });
-    });
+      );
+      return rejectWithValue(fallbackMessage);
+    }
   }
 );
 
