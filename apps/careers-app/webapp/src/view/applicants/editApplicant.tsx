@@ -360,7 +360,7 @@ export default function EditApplicant({
               {/* Form Title */}
               <Box
                 display="flex"
-                justifyContent="space-between"
+                justifyContent="center"
                 alignItems="center"
                 mb={4}
               >
@@ -371,14 +371,6 @@ export default function EditApplicant({
                 >
                   Edit Your Profile
                 </Typography>
-                <Button
-                  onClick={onCancel}
-                  startIcon={<CancelIcon />}
-                  variant="outlined"
-                  color="inherit"
-                >
-                  Cancel
-                </Button>
               </Box>
 
               {/* Profile Photo Upload Section */}
