@@ -78,6 +78,8 @@ declare module "@mui/material/styles" {
     dataGrid?: string;
     layout?: string;
     gradient?: string;
+    form?: string;
+    banner?: string;
   }
 
   interface PaletteOptions {
