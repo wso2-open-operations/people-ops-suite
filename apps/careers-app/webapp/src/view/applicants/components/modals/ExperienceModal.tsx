@@ -26,7 +26,9 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Formik, Form } from "formik";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
-import dayjs from "dayjs";  
+import dayjs from "dayjs";
+import { useAppDispatch } from "@slices/store";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";  
 
 export interface Experience {
   job_title: string;
@@ -51,6 +53,18 @@ const expSchema = yup.object({
   company: yup.string().required("Company is required"),
   location: yup.string().required("Location is required"),
   start_date: yup.date().required("Start date is required"),
+  end_date: yup
+    .date()
+    .nullable()
+    .when("current", {
+      is: false,
+      then: yup
+        .date()
+        .nullable()
+        .min(yup.ref("start_date"), "End date cannot be before start date")
+        .required("End date is required when not currently working"),
+      otherwise: yup.date().nullable(),
+    }), 
 });
 
 const EMPTY_VALUES = {
@@ -71,6 +85,7 @@ export default function ExperienceModal({
   editIndex,
 }: Props) {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const initialValues = editItem
     ? {
         job_title: editItem.job_title || "",
@@ -88,7 +103,34 @@ export default function ExperienceModal({
         initialValues={initialValues}
         validationSchema={expSchema}
         enableReinitialize
-        onSubmit={(exp, { resetForm }) => {
+        onSubmit={async (exp, { resetForm, setTouched, validateForm }) => {
+          // Validate all fields
+          const validationErrors = await validateForm();
+          
+          // Check for validation errors
+          if (Object.keys(validationErrors).length > 0) {
+            // Mark all fields with errors as touched
+            setTouched(
+              Object.keys(validationErrors).reduce((acc: any, key) => {
+                acc[key] = true;
+                return acc;
+              }, {})
+            );
+            
+            // Find the first error message
+            const firstError = Object.values(validationErrors)[0];
+            
+            dispatch(
+              enqueueSnackbarMessage({
+                message: typeof firstError === "string" 
+                  ? firstError 
+                  : "Please fill all the required fields correctly.",
+                type: "error",
+              })
+            );
+            return;
+          }
+
           const cleaned = {
             ...exp,
             start_date: exp.start_date ? exp.start_date.format("YYYY-MM-DD") : "",
@@ -104,6 +146,15 @@ export default function ExperienceModal({
           } else {
             push(cleaned);
           }
+
+          dispatch(
+            enqueueSnackbarMessage({
+              message: editIndex !== null && editIndex !== undefined 
+                ? "Experience updated successfully!" 
+                : "Experience added successfully!",
+              type: "success",
+            })
+          );
 
           resetForm();
           onClose();
@@ -172,6 +223,18 @@ export default function ExperienceModal({
                 label="Start Date"
                 value={values.start_date}
                 onChange={(newValue) => setFieldValue("start_date", newValue)}
+                slotProps={{
+                  textField: {
+                    error: touched.start_date && Boolean(errors.start_date),
+                    helperText: touched.start_date && errors.start_date
+                      ? typeof errors.start_date === "string"
+                        ? errors.start_date
+                        : undefined
+                      : undefined,
+                    onBlur: handleBlur,
+                    name: "start_date",
+                  },
+                }}
               />
 
               <DatePicker
@@ -179,6 +242,18 @@ export default function ExperienceModal({
                 value={values.end_date}
                 onChange={(newValue) => setFieldValue("end_date", newValue)}
                 disabled={values.current}
+                slotProps={{
+                  textField: {
+                    error: touched.end_date && Boolean(errors.end_date),
+                    helperText: touched.end_date && errors.end_date
+                      ? typeof errors.end_date === "string"
+                        ? errors.end_date
+                        : undefined
+                      : undefined,
+                    onBlur: handleBlur,
+                    name: "end_date",
+                  },
+                }}
               />
             </DialogContent>
             <DialogActions>
