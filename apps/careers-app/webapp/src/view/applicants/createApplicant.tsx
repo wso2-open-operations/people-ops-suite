@@ -42,17 +42,13 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { Formik, Form, FieldArray } from "formik";
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  createApplicant,
-  fetchApplicantByEmail,
-} from "@slices/applicantSlice/applicant";
+import { createApplicant, fetchApplicantByEmail} from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToByteArray } from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
-import { SnackMessage } from "@root/src/config/constant";
 import PreLoader from "@component/common/PreLoader";
 import ApplicantProfile from "./applicantProfile";
 

@@ -37,26 +37,18 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import SaveIcon from "@mui/icons-material/Save";
-import CancelIcon from "@mui/icons-material/Cancel";
 
 import { Formik, Form, FieldArray } from "formik";
 
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  updateApplicant,
-  ApplicantProfile,
-} from "@slices/applicantSlice/applicant";
+import { useAppDispatch} from "@slices/store";
+import { updateApplicant, ApplicantProfile } from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToByteArray } from "@utils/utils";
-import {
-  getImageDataUrl,
-  viewPdfInNewTab,
-  isValidByteArray,
-} from "@utils/utils";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray} from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
 import * as yup from "yup";
-import { State, ConfirmationType } from "@/types/types";
+import { ConfirmationType } from "@/types/types";
 import { SnackMessage } from "@root/src/config/constant";
 
 import ExperienceModal, { Experience } from "@modals/ExperienceModal";
@@ -64,7 +56,6 @@ import EducationModal, { Education } from "@modals/EducationModal";
 import CertificationModal, { Certification } from "@modals/CertificationModal";
 import ProjectModal, { Project } from "@modals/ProjectModal";
 import LanguageModal, { Language } from "@modals/LanguageModal";
-import PreLoader from "@component/common/PreLoader";
 
 interface EditApplicantFormValues {
   firstName: string;
@@ -160,19 +151,12 @@ export default function EditApplicant({
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
 
-  const { state } = useAppSelector((s) => s.applicant);
-
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [openModal, setOpenModal] = useState<SectionKey | null>(null);
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<SectionItem | null>(null);
-
-  // Show preloader when updating
-  if (state === State.loading) {
-    return <PreLoader message="Updating applicant profile..." isLoading />;
-  }
 
   const handleOpenForEdit = <K extends SectionKey>(
     sectionKey: K,
