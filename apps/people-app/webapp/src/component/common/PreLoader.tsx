@@ -23,7 +23,7 @@ import CircularProgress, {
   CircularProgressProps,
 } from "@mui/material/CircularProgress";
 
-interface PreLoaderProps {
+interface StatusWithActionProps {
   message: string | null;
   hideLogo?: boolean;
   isLoading?: boolean;
@@ -62,7 +62,7 @@ function CustomCircularProgress(props: CircularProgressProps) {
   );
 }
 
-const PreLoader = (props: PreLoaderProps) => {
+const PreLoader = (props: StatusWithActionProps) => {
   const theme = useTheme();
   return (
     <Paper
