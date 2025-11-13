@@ -170,6 +170,54 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
+    # Fetch continuos service record by work email.
+    #
+    # + workEmail - Work email of the employee
+    # + return - Employee ID and continuous service record or error response
+    resource function get continuous/service\-record(http:RequestContext ctx,  string workEmail)
+    returns database:ContinuousServiceRecordInfo|http:InternalServerError|http:NotFound|http:Forbidden|http:BadRequest {
+        
+        if workEmail.trim().length() == 0 {
+            string customErr = "Work email is a mandatory query parameter";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:ContinuousServiceRecordInfo|error? employeeInfo = database:getContinuousServiceRecordByEmail(workEmail);
+        if employeeInfo is error {
+            string customErr = "Error occurred while fetching continuous service record for work email";
+            log:printError(customErr, employeeInfo, workEmail = workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if employeeInfo is () {
+            string customErr = "No employee found for work email";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeeInfo;
+    }
+
     # Fetch all employees' basic information.
     #
     # + return - All employees' basic information

@@ -84,6 +84,39 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
     WHERE
         e.id = ${id};`;
 
+# Fetch continuos service record by work email.
+#
+# + workEmail - Work email of the employee
+# + return - Parameterized query for continuous service record
+isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
+  `SELECT 
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.employment_location AS employmentLocation,
+        e.work_location AS workLocation,
+        e.work_phone_number AS workPhoneNumber,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        e.additional_manager_emails AS additionalManagerEmails,
+        d.designation AS designation,
+        e.secondary_job_title AS secondaryJobTitle,
+        o.name AS office,
+        bu.name AS businessUnit,
+        t.name AS team,
+        COALESCE(st.name, '') AS subTeam,
+        COALESCE(u.name, '') AS unit
+    FROM
+        employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN team t ON e.team_id = t.id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE
+        e.work_email = ${workEmail};`;
+
 # Search employee personal information.
 #
 # + payload - Search employee personal information payload

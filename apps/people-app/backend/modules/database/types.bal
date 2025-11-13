@@ -167,6 +167,43 @@ public type EmployeePersonalInfo record {|
     string? nationality;
 |};
 
+# Continuous service record information.
+public type ContinuousServiceRecordInfo record {|
+    # Employee ID
+    @sql:Column {name: "employeeId"}
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Employment location
+    string employmentLocation;
+    # Work location
+    string workLocation;
+    # Work phone number
+    string workPhoneNumber;
+    # Start date
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Additional manager emails
+    string? additionalManagerEmails;
+    # Designation
+    string designation;
+    # Job role of the user
+    string secondaryJobTitle;
+    # Office
+    string office;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string subTeam;
+    # Unit
+    string? unit;
+|};
+
 # Business unit.
 public type BusinessUnit record {|
     # Business unit ID

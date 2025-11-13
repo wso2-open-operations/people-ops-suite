@@ -42,6 +42,17 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
+# Fetch continuos service record by work email.
+#
+# + workEmail - Work email of the employee
+# + return - Continuous service record information or error
+public isolated function getContinuousServiceRecordByEmail(string workEmail)
+    returns ContinuousServiceRecordInfo|error? {
+    ContinuousServiceRecordInfo|error employeeInfo = databaseClient->queryRow(
+        getContinuousServiceRecordQuery(workEmail));
+    return employeeInfo is sql:NoRowsError ? () : employeeInfo;
+}
+
 # Search employee personal information.
 #
 # + payload - Search employee personal information payload
