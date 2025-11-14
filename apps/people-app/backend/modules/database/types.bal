@@ -167,6 +167,43 @@ public type EmployeePersonalInfo record {|
     string? nationality;
 |};
 
+# Continuous service record information.
+public type ContinuousServiceRecordInfo record {|
+    # Employee ID
+    @sql:Column {name: "employeeId"}
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Employment location
+    string employmentLocation;
+    # Work location
+    string workLocation;
+    # Work phone number
+    string workPhoneNumber;
+    # Start date
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Additional manager emails
+    string? additionalManagerEmails;
+    # Designation
+    string designation;
+    # Job role of the user
+    string? secondaryJobTitle;
+    # Office
+    string office;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string subTeam;
+    # Unit
+    string? unit;
+|};
+
 # Business unit.
 public type BusinessUnit record {|
     # Business unit ID
@@ -225,6 +262,9 @@ public type Office record {|
     int id;
     # Office name
     string name;
+    # Office location
+    @sql:Column {name: "location"}
+    string location;
     # Working locations
     @sql:Column {name: "working_locations"}
     json workingLocations;
@@ -234,6 +274,18 @@ public type Office record {|
 public type SearchEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     string nicOrPassport?;
+|};
+
+# Emergency contact information.
+public type EmergencyContact record {|
+    # Name of the emergency contact
+    string name;
+    # Relationship with the employee
+    string relationship;
+    # Telephone number of the emergency contact
+    string telephone;
+    # Mobile number of the emergency contact
+    string mobile;
 |};
 
 # Create personal info payload.
@@ -288,6 +340,8 @@ public type CreatePersonalInfoPayload record {|
     # Nationality
     @constraint:String {maxLength: 100}
     string? nationality = ();
+    # Emergency contacts
+    EmergencyContact[] emergencyContacts = [];
 |};
 
 # Create employee payload.

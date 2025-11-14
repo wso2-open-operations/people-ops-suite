@@ -17,7 +17,9 @@
 import { lazy } from "react";
 
 const me = lazy(() => import("@view/me"));
+const employees = lazy(() => import("@view/employees/Employee"));
 
 export const View = {
   me,
+  employees,
 };
