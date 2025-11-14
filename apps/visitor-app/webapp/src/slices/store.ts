@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { enableMapSet } from "immer";
 import authReducer from "@slices/authSlice/auth";
 import userReducer from "@slices/userSlice/user";
@@ -23,6 +22,7 @@ import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import visitorReducer from "@slices/visitorSlice/visitor";
 import visitReducer from "@slices/visitSlice/visit";
+import invitationReducer from "@slices/invitationSlice/invitation";
 enableMapSet();
 
 export const store = configureStore({
@@ -33,6 +33,7 @@ export const store = configureStore({
     appConfig: appConfigReducer,
     visitor: visitorReducer,
     visit: visitReducer,
+    invitation: invitationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

@@ -60,6 +60,7 @@ function VisitHistory() {
   const visitsList = visits.visits?.visits ?? [];
   const [viewAccessibleFloors, setViewAccessibleFloors] = useState(false);
   const [accessibleFloors, setAccessibleFloors] = useState<FloorRoom[]>([]);
+  const loginUserEmail = useAppSelector((state) => state.auth.userInfo?.email);
 
   const handleViewAccessibleFloors = (floorRooms: FloorRoom[]) => {
     console.log(floorRooms);
@@ -145,6 +146,10 @@ function VisitHistory() {
               onClick={() =>
                 handleViewAccessibleFloors(params.row.accessibleLocations)
               }
+              disabled={
+                !params.row.accessibleLocations ||
+                params.row.accessibleLocations.length === 0
+              }
             >
               <Visibility />
             </IconButton>
@@ -159,6 +164,7 @@ function VisitHistory() {
       fetchVisits({
         limit: pageSize,
         offset: page * pageSize,
+        inviter: loginUserEmail || "",
       })
     );
   }, [dispatch, page, pageSize]);

@@ -13,15 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerina/mime;
 
-import { lazy } from "react";
+# Bind values to the email template and encode.
+#
+# + content - Email content  
+# + keyValPairs - Key value pairs
+# + return - Email content
+public isolated function bindKeyValues(string content, map<string> keyValPairs) returns string|error {
 
-const employee = lazy(() => import("@view/employee/employee"));
-const help = lazy(() => import("@view/help/help"));
-const admin = lazy(() => import("@view/admin/admin"));
-
-export const View = {
-  employee,
-  help,
-  admin,
-};
+    string bindContent = keyValPairs.entries().reduce(
+        isolated function(string accumulation, [string, string] keyVal) returns string {
+        string:RegExp r = re `<!-- \[${keyVal[0].toUpperAscii()}\] -->`;
+        return r.replaceAll(accumulation, keyVal[1]);
+    },
+    content);
+    return mime:base64Encode(bindContent).ensureType();
+}
