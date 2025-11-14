@@ -23,6 +23,7 @@ import {
   MenuItem,
   useTheme,
   alpha,
+  Tooltip,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -30,6 +31,8 @@ import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   fetchEmployeesBasicInfo,
   resetEmployee,
+  fetchContinuousServiceRecord,
+  resetSubmitState,
 } from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
@@ -52,6 +55,7 @@ import {
   PhoneOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import debounce from "lodash/debounce";
 
 export const jobInfoValidationSchema = Yup.object().shape({
   workEmail: Yup.string()
@@ -83,10 +87,8 @@ export const jobInfoValidationSchema = Yup.object().shape({
   officeId: Yup.number()
     .required("Office is required")
     .min(1, "Select a valid office"),
-  employmentLocation: Yup.string()
-    .required("Employment location is required"),
-  workLocation: Yup.string()
-    .required("Work location is required"),
+  employmentLocation: Yup.string().required("Employment location is required"),
+  workLocation: Yup.string().required("Work location is required"),
   startDate: Yup.string().required("Start date is required"),
   probationEndDate: Yup.string()
     .transform((value) => (value === "" ? null : value))
@@ -94,8 +96,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
   agreementEndDate: Yup.string()
     .transform((value) => (value === "" ? null : value))
     .nullable(),
-  managerEmail: Yup.string()
-    .required("Manager email is required"),
+  managerEmail: Yup.string().required("Manager email is required"),
   additionalManagerEmail: Yup.array()
     .of(Yup.string().email("Invalid email format"))
     .nullable(),
@@ -157,7 +158,8 @@ export default function JobInfoStep() {
   const dispatch = useAppDispatch();
   const { values, handleChange, handleBlur, touched, errors, setFieldValue } =
     useFormikContext<CreateEmployeeFormValues>();
-  const { employeesBasicInfo, state } = useAppSelector((s) => s.employee);
+  const { employeesBasicInfo, state, continuousServiceRecord, errorMessage } =
+    useAppSelector((s) => s.employee);
   const {
     businessUnits,
     teams,
@@ -245,11 +247,11 @@ export default function JobInfoStep() {
       values.employmentTypeId === INTERN_ID ||
       values.employmentTypeId === CONSULTANCY_ID
     );
-  }, [values.employmentTypeId]);
+  }, [values.employmentTypeId, INTERN_ID, CONSULTANCY_ID]);
 
   const isAgreementEndDateDisabled = useMemo(() => {
     return !values.employmentTypeId || values.employmentTypeId === FULL_TIME_ID;
-  }, [values.employmentTypeId]);
+  }, [values.employmentTypeId, FULL_TIME_ID]);
 
   // Reset probation and agreement end dates when they are disabled
   useEffect(() => {
@@ -344,6 +346,30 @@ export default function JobInfoStep() {
     }
   }, [values.officeId, offices, setFieldValue, values.workLocation]);
 
+  const debouncedFetchContinuousServiceRecord = useMemo(
+    () =>
+      debounce((email: string) => {
+        if (email && Yup.string().email().isValidSync(email)) {
+          dispatch(fetchContinuousServiceRecord(email));
+        }
+      }, 500),
+    [dispatch]
+  );
+
+  useEffect(() => {
+    debouncedFetchContinuousServiceRecord(values.workEmail);
+    if (!values.workEmail) {
+      dispatch(resetSubmitState());
+      dispatch(resetEmployee());
+    }
+  }, [values.workEmail, debouncedFetchContinuousServiceRecord, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      debouncedFetchContinuousServiceRecord.cancel();
+    };
+  }, [debouncedFetchContinuousServiceRecord]);
+
   const renderField = useCallback(
     (name: keyof CreateEmployeeFormValues, label: string, required = true) => {
       const error = Boolean(touched[name] && errors[name]);
@@ -377,6 +403,105 @@ export default function JobInfoStep() {
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             {renderField("workEmail", "Work Email")}
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <Tooltip
+              title={
+                continuousServiceRecord && !errorMessage ? (
+                  <Box sx={{ p: 1, maxWidth: 300 }}>
+                    <Typography variant="caption" fontWeight={600}>
+                      Continuous Service Record
+                    </Typography>
+                    {[
+                      {
+                        label: "Employee ID",
+                        value: continuousServiceRecord.employeeId,
+                      },
+                      {
+                        label: "Name",
+                        value: `${continuousServiceRecord.firstName} ${continuousServiceRecord.lastName}`,
+                      },
+                      {
+                        label: "Designation",
+                        value: continuousServiceRecord.designation,
+                      },
+                      {
+                        label: "Employment Location",
+                        value: continuousServiceRecord.employmentLocation,
+                      },
+                      {
+                        label: "Work Location",
+                        value: continuousServiceRecord.workLocation,
+                      },
+                      {
+                        label: "Start Date",
+                        value: dayjs(continuousServiceRecord.startDate).format(
+                          "YYYY-MM-DD"
+                        ),
+                      },
+                      {
+                        label: "Manager Email",
+                        value: continuousServiceRecord.managerEmail,
+                      },
+                      {
+                        label: "Business Unit",
+                        value: continuousServiceRecord.businessUnit,
+                      },
+                      { label: "Team", value: continuousServiceRecord.team },
+                      ...(continuousServiceRecord.subTeam
+                        ? [
+                            {
+                              label: "Sub Team",
+                              value: continuousServiceRecord.subTeam,
+                            },
+                          ]
+                        : []),
+                      ...(continuousServiceRecord.unit
+                        ? [
+                            {
+                              label: "Unit",
+                              value: continuousServiceRecord.unit,
+                            },
+                          ]
+                        : []),
+                    ].map(({ label, value }) => (
+                      <Typography key={label} variant="caption" display="block">
+                        <strong>{label}:</strong> {value}
+                      </Typography>
+                    ))}
+                  </Box>
+                ) : null
+              }
+              placement="top"
+              arrow
+            >
+              <TextField
+                fullWidth
+                label="Continuous Service Record"
+                value={
+                  errorMessage
+                    ? "Error Fetching Record"
+                    : continuousServiceRecord
+                    ? "Record Available"
+                    : "No Record"
+                }
+                disabled
+                sx={{
+                  ...textFieldSx,
+                  ...disabledSx,
+                  cursor:
+                    continuousServiceRecord && !errorMessage
+                      ? "pointer"
+                      : "not-allowed",
+                }}
+                helperText={
+                  errorMessage
+                    ? "Failed to fetch record due to a server error"
+                    : ""
+                }
+                error={!!errorMessage}
+              />
+            </Tooltip>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             {renderField("epf", "EPF", false)}

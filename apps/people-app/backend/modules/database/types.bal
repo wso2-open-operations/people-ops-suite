@@ -191,7 +191,7 @@ public type ContinuousServiceRecordInfo record {|
     # Designation
     string designation;
     # Job role of the user
-    string secondaryJobTitle;
+    string? secondaryJobTitle;
     # Office
     string office;
     # Business unit

@@ -45,7 +45,7 @@ interface Employee {
   businessUnit: string;
   team: string;
   subTeam: string;
-  unit: string | null;  
+  unit: string | null;
 }
 
 export interface EmployeeBasicInfo {
@@ -67,7 +67,7 @@ export type CreatePersonalInfoPayload = {
   dob?: string;
   age?: number;
   personalEmail?: string;
-  personalPhoneNumber?: string;
+  personalPhone?: string;
   residentNumber?: string;
   addressLine1?: string;
   addressLine2?: string;
@@ -111,6 +111,25 @@ export type CreateEmployeePayload = {
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export interface ContinuousServiceRecordInfo {
+  employeeId: string;
+  firstName: string | null;
+  lastName: string | null;
+  employmentLocation: string;
+  workLocation: string;
+  workPhoneNumber: string | null;
+  startDate: string;
+  managerEmail: string;
+  additionalManagerEmails?: string | null;
+  designation: string;
+  secondaryJobTitle?: string;
+  office: string;
+  businessUnit: string;
+  team: string;
+  subTeam?: string | null;
+  unit?: string | null;
+}
+
 interface EmployeesState {
   state: State;
   stateMessage: string | null;
@@ -118,6 +137,7 @@ interface EmployeesState {
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
   createdEmployeeId: number | null;
+  continuousServiceRecord: ContinuousServiceRecordInfo | null;
 }
 
 const initialState: EmployeesState = {
@@ -127,6 +147,7 @@ const initialState: EmployeesState = {
   employee: null,
   employeesBasicInfo: [],
   createdEmployeeId: null,
+  continuousServiceRecord: null,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -214,6 +235,45 @@ export const createEmployee = createAsyncThunk(
   }
 );
 
+export const fetchContinuousServiceRecord = createAsyncThunk(
+  "employees/fetchContinuousServiceRecord",
+  async (workEmail: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        `${
+          AppConfig.serviceUrls.continuousServiceRecord
+        }?workEmail=${encodeURIComponent(workEmail)}`
+      );
+
+      const data = response.data;
+      if (data && typeof data === "object" && "employeeId" in data) {
+        return data as ContinuousServiceRecordInfo;
+      }
+      return null;
+    } catch (error: any) {
+      const status = error.response?.status;
+
+      if (status === 404) {
+        return null;
+      }
+      const errorMessage =
+        status === HttpStatusCode.InternalServerError
+          ? "Error fetching continuous service record"
+          : error.response?.data?.message ||
+            "An unknown error occurred while fetching continuous service record.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        })
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
@@ -228,6 +288,7 @@ const EmployeeSlice = createSlice({
       state.employee = null;
       state.employeesBasicInfo = [];
       state.createdEmployeeId = null;
+      state.continuousServiceRecord = null;
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
@@ -290,6 +351,23 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Failed to create employee.";
         state.errorMessage = action.payload as string;
         state.createdEmployeeId = null;
+      })
+      .addCase(fetchContinuousServiceRecord.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching continuous service record...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchContinuousServiceRecord.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully fetched continuous service record!";
+        state.continuousServiceRecord = action.payload;
+        state.errorMessage = null;
+      })
+      .addCase(fetchContinuousServiceRecord.rejected, (state, action) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch continuous service record!";
+        state.errorMessage = action.payload as string;
+        state.continuousServiceRecord = null;
       });
   },
 });

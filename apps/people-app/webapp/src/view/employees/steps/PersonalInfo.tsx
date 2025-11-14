@@ -369,18 +369,16 @@ export default function PersonalInfoStep() {
       <Box sx={{ mt: 5 }}>
         <SectionHeader icon={icons.contact} title="Contact" />
         <Grid container spacing={3}>
-          {["personalEmail", "personalPhoneNumber", "residentNumber"].map(
-            (f) => (
-              <Grid item xs={12} sm={6} md={4} key={f}>
-                {renderField(
-                  f as keyof CreateEmployeeFormValues["personalInfo"],
-                  f
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())
-                )}
-              </Grid>
-            )
-          )}
+          {["personalEmail", "personalPhone", "residentNumber"].map((f) => (
+            <Grid item xs={12} sm={6} md={4} key={f}>
+              {renderField(
+                f as keyof CreateEmployeeFormValues["personalInfo"],
+                f
+                  .replace(/([A-Z])/g, " $1")
+                  .replace(/^./, (str) => str.toUpperCase())
+              )}
+            </Grid>
+          ))}
         </Grid>
       </Box>
 

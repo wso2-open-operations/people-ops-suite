@@ -46,8 +46,10 @@ export const SERVICE_BASE_URL = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 export const AppConfig = {
   serviceUrls: {
     userInfo: SERVICE_BASE_URL + "/user-info",
-    employee: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}`,
-    employeePersonalInfo: (employeeId: string) => SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
+    employee: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}`,
+    employeePersonalInfo: (employeeId: string) =>
+      SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
     appConfig: SERVICE_BASE_URL + "/app-config",
     businessUnits: SERVICE_BASE_URL + "/business-units",
     teams: SERVICE_BASE_URL + "/teams",
@@ -58,5 +60,6 @@ export const AppConfig = {
     designations: SERVICE_BASE_URL + "/designations",
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     createEmployee: SERVICE_BASE_URL + "/employees",
+    continuousServiceRecord: SERVICE_BASE_URL + "/continuous/service-record",
   },
 };

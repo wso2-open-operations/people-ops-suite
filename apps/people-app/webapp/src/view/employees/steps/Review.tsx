@@ -245,20 +245,21 @@ export default function ReviewStep() {
         null,
     }),
     [
-      values.businessUnitId,
-      values.teamId,
-      values.subTeamId,
-      values.unitId,
-      values.careerFunctionId,
-      values.designationId,
-      values.officeId,
-      values.employmentTypeId,
       businessUnits,
       teams,
       subTeams,
       units,
+      designations,
       careerFunctions,
       offices,
+      values.businessUnitId,
+      values.teamId,
+      values.subTeamId,
+      values.unitId,
+      values.designationId,
+      values.careerFunctionId,
+      values.officeId,
+      values.employmentTypeId,
     ]
   );
 
@@ -318,7 +319,7 @@ export default function ReviewStep() {
             <ReviewField label="Personal Email" value={p.personalEmail} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Personal Phone" value={p.personalPhoneNumber} />
+            <ReviewField label="Personal Phone" value={p.personalPhone} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Home Phone" value={p.residentNumber} />

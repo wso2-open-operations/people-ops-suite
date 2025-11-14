@@ -292,8 +292,7 @@ export default function Employees() {
                   dob: values.personalInfo.dob || undefined,
                   age: values.personalInfo.age || undefined,
                   personalEmail: values.personalInfo.personalEmail || undefined,
-                  personalPhoneNumber:
-                    values.personalInfo.personalPhoneNumber || undefined,
+                  personalPhone: values.personalInfo.personalPhone || undefined,
                   residentNumber:
                     values.personalInfo.residentNumber || undefined,
                   addressLine1: values.personalInfo.addressLine1 || undefined,
