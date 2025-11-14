@@ -12,20 +12,12 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
+import { lazy } from "react";
+
+const me = lazy(() => import("@view/me"));
+
+export const View = {
+  me,
 };
-
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};

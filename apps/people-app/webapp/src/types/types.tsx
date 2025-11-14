@@ -12,20 +12,24 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-};
+export enum State {
+  failed = "failed",
+  success = "success",
+  loading = "loading",
+  idle = "idle",
+}
 
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};
+export enum ConfirmationType {
+  update = "update",
+  send = "send",
+  upload = "upload",
+  accept = "accept",
+  discard = "discard",
+}
+
+export interface CommonCardProps {
+  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  dataCardIndex: number;
+}

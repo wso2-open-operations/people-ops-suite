@@ -12,20 +12,19 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
+export const SnackMessage = {
+  success: {
+    addEmployee: "Successfully created the employee",
+  },
+  error: {
+    fetchEmployee: "Error while fetching employee",
+    fetchPrivileges: "Error while fetching user privileges",
+    insufficientPrivileges: "You don't have sufficient privileges to access this resource",
+    fetchAppConfigMessage: "Error while fetching app config",
+    updateEmployeePersonalInfo: "Error while updating personal info",
+    addEmployee: "Unable to add employee",
+  },
+  warning: {},
 };
-
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};

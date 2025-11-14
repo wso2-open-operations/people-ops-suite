@@ -12,20 +12,16 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
+export const isIncludedRole = (a: string[], b: string[]): boolean => {
+  // TODO: Temporarily allow all roles. Remove this after the roles are finalized.
+  return true;
+  return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
 };
 
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};
+function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
+  return a.filter((element) => {
+    return b.includes(element);
+  });
+}
