@@ -21,6 +21,7 @@ import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { EmergencyContact } from "@/types/types";
 
 interface Employee {
   employeeId: string;
@@ -76,12 +77,7 @@ export type CreatePersonalInfoPayload = {
   postalCode?: string;
   country?: string;
   nationality?: string;
-  emergencyContacts?: {
-    name: string | null;
-    relationship: string | null;
-    telephone: string | null;
-    mobile: string | null;
-  }[];
+  emergencyContacts?: EmergencyContact[];
 };
 
 export type CreateEmployeePayload = {

@@ -46,11 +46,14 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
 #
 # + workEmail - Work email of the employee
 # + return - Continuous service record information or error
-public isolated function getContinuousServiceRecordByEmail(string workEmail)
-    returns ContinuousServiceRecordInfo|error? {
-    ContinuousServiceRecordInfo|error employeeInfo = databaseClient->queryRow(
-        getContinuousServiceRecordQuery(workEmail));
-    return employeeInfo is sql:NoRowsError ? () : employeeInfo;
+public isolated function getContinuousServiceRecordsByEmail(string workEmail)
+    returns ContinuousServiceRecordInfo[]|error {
+
+    stream<ContinuousServiceRecordInfo, sql:Error?> recordStream = databaseClient->query(
+        getContinuousServiceRecordQuery(workEmail)
+    );
+    return from ContinuousServiceRecordInfo serviceRecord in recordStream
+        select serviceRecord;
 }
 
 # Search employee personal information.

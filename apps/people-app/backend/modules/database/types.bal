@@ -19,7 +19,7 @@ import ballerina/sql;
 import ballerinax/mysql;
 
 # Email validation regex pattern
-const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 # Phone number validation regex pattern
 const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
@@ -169,7 +169,10 @@ public type EmployeePersonalInfo record {|
 
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
-    # Employee ID
+    # Primary key ID
+    @sql:Column {name: "id"}
+    int id;
+    # Employee ID of the user
     @sql:Column {name: "employeeId"}
     string employeeId;
     # First name
@@ -180,8 +183,6 @@ public type ContinuousServiceRecordInfo record {|
     string employmentLocation;
     # Work location
     string workLocation;
-    # Work phone number
-    string workPhoneNumber;
     # Start date
     string startDate;
     # Manager email
@@ -191,7 +192,7 @@ public type ContinuousServiceRecordInfo record {|
     # Designation
     string designation;
     # Job role of the user
-    string? secondaryJobTitle;
+    string secondaryJobTitle;
     # Office
     string office;
     # Business unit
