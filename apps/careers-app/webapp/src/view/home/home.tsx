@@ -27,13 +27,16 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
+
 import HeroImage from "@assets/images/wso2-careers-hero-image.svg";
 import InternshipImage from "@assets/images/interns-wso2-careers.svg";
 import ProfileBannerImage from "@assets/images/profile-banner-1.svg";
 import SupportedImage from "@assets/images/WSO2-Career-Supported-distribution.svg";
-import CourageImage from "@assets/images/WSO2-Career-Courageous-Honesty.svg"; 
+import CourageImage from "@assets/images/WSO2-Career-Courageous-Honesty.svg";
 import PurposeImage from "@assets/images/WSO2-Career-Purpose-Passion.svg";
 import OneTeamImage from "@assets/images/WSO2-Career-One-Team.svg";
+import EmployeesImage from "@assets/images/wso2-employees.svg";
+
 import BannerCarousel, { BannerSlide } from "@component/common/BannerCarousel";
 
 export default function Home() {
@@ -58,12 +61,12 @@ export default function Home() {
       image: ProfileBannerImage,
     },
     {
-      title: "Kick-Start Your Career with WSO2 Internships",
+      title: "Join Our Journey: Build the Future with Us",
       description:
-        "Gain hands-on experience, learn from industry experts, and work on meaningful projects that shape real-world innovation. Discover an internship program designed to grow your potential.",
+        "Our culture is powered by one simple value: treat people the way you want to be treated. This means we treat everyone in a fair, open, honest and respectful manner from the moment you apply for a role at WSO2.",
       buttonText: "Learn More",
       buttonAction: () => navigate("/"),
-      image: InternshipImage,
+      image: EmployeesImage,
     },
   ];
 
@@ -209,7 +212,6 @@ export default function Home() {
       <Box sx={{ bgcolor: theme.palette.background.banner }}>
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
-            
             <Grid item xs={12} md={6}>
               <Box
                 component="img"
@@ -309,7 +311,7 @@ export default function Home() {
               left: 0,
               right: 0,
               height: 3,
-              bgcolor: "#e0e0e0",
+              bgcolor: theme.palette.background.banner,
               zIndex: 1,
             }}
           />
@@ -348,11 +350,11 @@ export default function Home() {
                         width: 70,
                         height: 70,
                         borderRadius: "50%",
-                        backgroundColor: "white",
+                        backgroundColor: theme.palette.background.paper,
                         border: `3px solid ${
                           isActive || isCompleted
                             ? theme.palette.brand.orange
-                            : "#cfcfcf"
+                            : theme.palette.divider
                         }`,
                         display: "flex",
                         justifyContent: "center",
@@ -361,7 +363,7 @@ export default function Home() {
                         color:
                           isActive || isCompleted
                             ? theme.palette.brand.orange
-                            : "#9e9e9e",
+                            : theme.palette.text.secondary,
                         fontSize: "1.1rem",
                         transition: "0.3s",
                         boxShadow: isActive
@@ -393,8 +395,11 @@ export default function Home() {
             sx={{
               p: 4,
               borderRadius: 3,
-              border: "1px solid #e5e5e5",
-              background: "linear-gradient(180deg, #FFF7F1, #FFFFFF)",
+              border: `1px solid ${theme.palette.divider}`,
+              background:
+                theme.palette.mode === "light"
+                  ? "linear-gradient(180deg, #FFF7F1, #FFFFFF)"
+                  : `linear-gradient(180deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
               boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
               textAlign: "center",
             }}
@@ -417,6 +422,82 @@ export default function Home() {
           </Paper>
         </Box>
       </Container>
+
+      {/* Glassdoor Section */}
+      <Box
+        sx={{ bgcolor: theme.palette.background.banner, py: { xs: 6, md: 8 } }}
+      >
+        <Container maxWidth="lg">
+          <Grid container spacing={6} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <Box
+                component="img"
+                src={EmployeesImage}
+                alt="WSO2 Employees"
+                sx={{
+                  width: "100%",
+                  maxWidth: 500,
+                  height: "auto",
+                  mx: "auto",
+                  display: "block",
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <Typography
+                variant="h2"
+                fontWeight="700"
+                sx={{
+                  fontSize: { xs: "1.75rem", md: "2.25rem" },
+                  mb: 2,
+                  lineHeight: 1.3,
+                }}
+              >
+                What Employees Say in
+              </Typography>
+              <Typography
+                variant="h2"
+                fontWeight="700"
+                sx={{
+                  fontSize: { xs: "2rem", md: "2.5rem" },
+                  color: "#00a264",
+                  mb: 4,
+                  fontStyle: "italic",
+                }}
+              >
+                'GLASSDOOR'
+              </Typography>
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: theme.palette.brand.orange,
+                  color: "white",
+                  px: 5,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  borderRadius: 1,
+                  textTransform: "none",
+                  boxShadow: "none",
+                  "&:hover": {
+                    bgcolor: theme.palette.brand.orangeDark,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                  },
+                }}
+                onClick={() =>
+                  window.open(
+                    "https://www.glassdoor.com/Reviews/WSO2-Reviews-E327184.htm",
+                    "_blank"
+                  )
+                }
+              >
+                Learn More
+              </Button>
+            </Grid>
+          </Grid>
+        </Container>
+      </Box>
     </Box>
   );
 }
