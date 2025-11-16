@@ -886,7 +886,7 @@ export default function ApplicantProfile() {
             {applicant.interests && applicant.interests.length > 0 && (
               <Grid item xs={12}>
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   fontWeight="bold"
                   mb={3}
                   color="primary"
