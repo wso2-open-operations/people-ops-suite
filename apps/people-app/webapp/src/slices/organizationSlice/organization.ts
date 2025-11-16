@@ -97,7 +97,6 @@ interface FetchParams {
 interface FetchDesignationsParams {
   careerFunctionId?: number;
 }
-// Fetch Business Units
 export const fetchBusinessUnits = createAsyncThunk(
   "organization/fetchBusinessUnits",
   async (_, { dispatch, rejectWithValue }) => {
@@ -105,12 +104,16 @@ export const fetchBusinessUnits = createAsyncThunk(
       const resp = await APIService.getInstance().get(
         `${AppConfig.serviceUrls.businessUnits}`
       );
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: business units should be an array");
+      }
       return resp.data as BusinessUnit[];
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching business units"
           : error.response?.data?.message ||
+            error.message ||
             "An unknown error occurred while fetching business units.";
       dispatch(
         enqueueSnackbarMessage({
@@ -132,12 +135,16 @@ export const fetchTeams = createAsyncThunk(
         ? `${AppConfig.serviceUrls.teams}?buId=${buId}`
         : `${AppConfig.serviceUrls.teams}`;
       const resp = await APIService.getInstance().get(url);
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: teams should be an array");
+      }
       return resp.data as Team[];
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching teams"
           : error.response?.data?.message ||
+            error.message ||
             "An unknown error occurred while fetching teams.";
       dispatch(
         enqueueSnackbarMessage({
@@ -159,12 +166,16 @@ export const fetchSubTeams = createAsyncThunk(
         ? `${AppConfig.serviceUrls.subTeams}?teamId=${teamId}`
         : `${AppConfig.serviceUrls.subTeams}`;
       const resp = await APIService.getInstance().get(url);
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: sub teams should be an array");
+      }
       return resp.data as SubTeam[];
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching sub teams"
           : error.response?.data?.message ||
+            error.message ||
             "An unknown error occurred while fetching sub teams.";
       dispatch(
         enqueueSnackbarMessage({
@@ -189,12 +200,16 @@ export const fetchUnits = createAsyncThunk(
         ? `${AppConfig.serviceUrls.units}?subTeamId=${subTeamId}`
         : `${AppConfig.serviceUrls.units}`;
       const resp = await APIService.getInstance().get(url);
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: units should be an array");
+      }
       return resp.data as Unit[];
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching units"
           : error.response?.data?.message ||
+            error.message ||
             "An unknown error occurred while fetching units.";
       dispatch(
         enqueueSnackbarMessage({

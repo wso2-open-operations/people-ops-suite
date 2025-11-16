@@ -97,7 +97,7 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .max(100, "City must be at most 100 characters")
       .transform((value) => (value === "" ? null : value))
       .nullable(),
-    stateProvince: Yup.string()
+    stateOrProvince: Yup.string()
       .max(100, "State/Province must be at most 100 characters")
       .transform((value) => (value === "" ? null : value))
       .nullable(),
@@ -290,9 +290,9 @@ export default function PersonalInfoStep() {
               }
               sx={textFieldSx}
             >
-              {EmployeeTitle.map((t) => (
-                <MenuItem key={t.id} value={t.label}>
-                  {t.label}
+              {EmployeeTitle.map((title) => (
+                <MenuItem key={title} value={title}>
+                  {title}
                 </MenuItem>
               ))}
             </TextField>
@@ -395,7 +395,7 @@ export default function PersonalInfoStep() {
             {renderField("city", "City")}
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            {renderField("stateProvince", "State/Province")}
+            {renderField("stateOrProvince", "State/Province")}
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             {renderField("postalCode", "Postal Code")}

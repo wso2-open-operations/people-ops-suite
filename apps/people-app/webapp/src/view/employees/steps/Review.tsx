@@ -341,7 +341,7 @@ export default function ReviewStep() {
             <ReviewField label="City" value={p.city} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="State / Province" value={p.stateProvince} />
+            <ReviewField label="State / Province" value={p.stateOrProvince} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Postal Code" value={p.postalCode} />

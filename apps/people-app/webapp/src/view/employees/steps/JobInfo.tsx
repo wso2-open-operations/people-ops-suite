@@ -33,6 +33,7 @@ import {
   resetEmployee,
   fetchContinuousServiceRecord,
   resetSubmitState,
+  resetContinuousService,
 } from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
@@ -346,11 +347,15 @@ export default function JobInfoStep() {
     }
   }, [values.officeId, offices, setFieldValue, values.workLocation]);
 
+  // Debounced fetch for continuous service record based on work email
   const debouncedFetchContinuousServiceRecord = useMemo(
     () =>
       debounce((email: string) => {
         if (email && Yup.string().email().isValidSync(email)) {
           dispatch(fetchContinuousServiceRecord(email));
+        } else {
+          dispatch(resetSubmitState());
+          dispatch(resetContinuousService());
         }
       }, 500),
     [dispatch]
@@ -358,17 +363,18 @@ export default function JobInfoStep() {
 
   useEffect(() => {
     debouncedFetchContinuousServiceRecord(values.workEmail);
-    if (!values.workEmail) {
-      dispatch(resetSubmitState());
-      dispatch(resetEmployee());
-    }
-  }, [values.workEmail, debouncedFetchContinuousServiceRecord, dispatch]);
-
-  useEffect(() => {
     return () => {
       debouncedFetchContinuousServiceRecord.cancel();
     };
-  }, [debouncedFetchContinuousServiceRecord]);
+  }, [values.workEmail, debouncedFetchContinuousServiceRecord]);
+
+  const recordStatus = useMemo(() => {
+    if (errorMessage) return "Error Fetching Record";
+    if (!continuousServiceRecord) return "No Record";
+    return continuousServiceRecord.length > 0
+      ? "Record Available"
+      : "No Record";
+  }, [continuousServiceRecord, errorMessage]);
 
   const renderField = useCallback(
     (name: keyof CreateEmployeeFormValues, label: string, required = true) => {
@@ -412,63 +418,64 @@ export default function JobInfoStep() {
                     <Typography variant="caption" fontWeight={600}>
                       Continuous Service Record
                     </Typography>
-                    {[
-                      {
-                        label: "Employee ID",
-                        value: continuousServiceRecord.employeeId,
-                      },
-                      {
-                        label: "Name",
-                        value: `${continuousServiceRecord.firstName} ${continuousServiceRecord.lastName}`,
-                      },
-                      {
-                        label: "Designation",
-                        value: continuousServiceRecord.designation,
-                      },
-                      {
-                        label: "Employment Location",
-                        value: continuousServiceRecord.employmentLocation,
-                      },
-                      {
-                        label: "Work Location",
-                        value: continuousServiceRecord.workLocation,
-                      },
-                      {
-                        label: "Start Date",
-                        value: dayjs(continuousServiceRecord.startDate).format(
-                          "YYYY-MM-DD"
-                        ),
-                      },
-                      {
-                        label: "Manager Email",
-                        value: continuousServiceRecord.managerEmail,
-                      },
-                      {
-                        label: "Business Unit",
-                        value: continuousServiceRecord.businessUnit,
-                      },
-                      { label: "Team", value: continuousServiceRecord.team },
-                      ...(continuousServiceRecord.subTeam
-                        ? [
+
+                    {continuousServiceRecord.length > 0 ? (
+                      <>
+                        {(() => {
+                          const r = continuousServiceRecord[0];
+
+                          const fields = [
+                            { label: "Employee ID", value: r.employeeId },
                             {
-                              label: "Sub Team",
-                              value: continuousServiceRecord.subTeam,
+                              label: "Name",
+                              value: `${r.firstName || ""} ${
+                                r.lastName || ""
+                              }`.trim(),
                             },
-                          ]
-                        : []),
-                      ...(continuousServiceRecord.unit
-                        ? [
+                            { label: "Designation", value: r.designation },
                             {
-                              label: "Unit",
-                              value: continuousServiceRecord.unit,
+                              label: "Employment Location",
+                              value: r.employmentLocation,
                             },
-                          ]
-                        : []),
-                    ].map(({ label, value }) => (
-                      <Typography key={label} variant="caption" display="block">
-                        <strong>{label}:</strong> {value}
+                            { label: "Work Location", value: r.workLocation },
+                            {
+                              label: "Start Date",
+                              value: dayjs(r.startDate).format("YYYY-MM-DD"),
+                            },
+                            { label: "Manager Email", value: r.managerEmail },
+                            { label: "Business Unit", value: r.businessUnit },
+                            { label: "Team", value: r.team },
+                            ...(r.subTeam
+                              ? [{ label: "Sub Team", value: r.subTeam }]
+                              : []),
+                            ...(r.unit
+                              ? [{ label: "Unit", value: r.unit }]
+                              : []),
+                          ];
+
+                          return fields.map((f) => (
+                            <Typography
+                              key={f.label}
+                              variant="caption"
+                              display="block"
+                            >
+                              <strong>{f.label}:</strong> {f.value || "N/A"}
+                            </Typography>
+                          ));
+                        })()}
+
+                        {continuousServiceRecord.length > 1 && (
+                          <Typography variant="caption" display="block">
+                            + {continuousServiceRecord.length - 1} more
+                            record(s)
+                          </Typography>
+                        )}
+                      </>
+                    ) : (
+                      <Typography variant="caption">
+                        No records found
                       </Typography>
-                    ))}
+                    )}
                   </Box>
                 ) : null
               }
@@ -478,19 +485,13 @@ export default function JobInfoStep() {
               <TextField
                 fullWidth
                 label="Continuous Service Record"
-                value={
-                  errorMessage
-                    ? "Error Fetching Record"
-                    : continuousServiceRecord
-                    ? "Record Available"
-                    : "No Record"
-                }
+                value={recordStatus}
                 disabled
                 sx={{
                   ...textFieldSx,
                   ...disabledSx,
                   cursor:
-                    continuousServiceRecord && !errorMessage
+                    continuousServiceRecord?.length > 0 && !errorMessage
                       ? "pointer"
                       : "not-allowed",
                 }}
