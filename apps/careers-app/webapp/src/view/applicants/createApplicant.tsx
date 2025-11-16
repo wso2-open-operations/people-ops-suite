@@ -42,15 +42,17 @@ import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import { Formik, Form, FieldArray } from "formik";
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { createApplicant, fetchApplicantByEmail} from "@slices/applicantSlice/applicant";
+import { createApplicant, fetchApplicantByEmail } from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToByteArray } from "@utils/utils";
 import { useTheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import * as yup from "yup";
 import { State, ConfirmationType } from "@/types/types";
 import PreLoader from "@component/common/PreLoader";
 import ApplicantProfile from "./applicantProfile";
+import BannerCarousel, { BannerSlide } from "@component/common/BannerCarousel";
 
 import ExperienceModal, { Experience } from "@modals/ExperienceModal";
 import EducationModal, { Education } from "@modals/EducationModal";
@@ -58,6 +60,9 @@ import CertificationModal, { Certification } from "@modals/CertificationModal";
 import ProjectModal, { Project } from "@modals/ProjectModal";
 import LanguageModal, { Language } from "@modals/LanguageModal";
 import ProfileBannerImage from "@assets/images/profile-banner-1.svg";
+import HeroImage from "@assets/images/wso2-careers-hero-image.svg";
+import InternshipImage from "@assets/images/interns-wso2-careers.svg";
+
 interface ApplicantFormValues {
   firstName: string;
   lastName: string;
@@ -165,6 +170,7 @@ const mainValidationSchema = yup.object({
 
 export default function CreateApplicant() {
   const theme = useTheme();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
 
@@ -177,6 +183,34 @@ export default function CreateApplicant() {
   const [editingSection, setEditingSection] = useState<SectionKey | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<SectionItem | null>(null);
+
+  // Banner slides for the carousel
+  const bannerSlides: BannerSlide[] = [
+    {
+      title: "WSO2 Careers: Where Passion Meets Purpose",
+      description:
+        "Our culture is powered by one simple value: treat people the way you want to be treated. This means we treat everyone in a fair, open, honest and respectful manner from the moment you apply for a role at WSO2.",
+      buttonText: "View Open Positions",
+      buttonAction: () => navigate("/"),
+      image: HeroImage,
+    },
+    {
+      title: "Showcase Your Talent with a WSO2 Profile",
+      description:
+        "Upload your CV, highlight your expertise, and manage your professional profile—all in one place. Let WSO2 discover the real you and match you with opportunities that fit your passion and potential.",
+      buttonText: "Create Your Profile",
+      buttonAction: () => navigate("/profile"),
+      image: ProfileBannerImage,
+    },
+    {
+      title: "Kick-Start Your Career with WSO2 Internships",
+      description:
+        "Gain hands-on experience, learn from industry experts, and work on meaningful projects that shape real-world innovation. Discover an internship program designed to grow your potential.",
+      buttonText: "Learn More",
+      buttonAction: () => navigate("/"),
+      image: InternshipImage,
+    },
+  ];
 
   const handleOpenForEdit = <K extends SectionKey>(
     sectionKey: K,
@@ -236,62 +270,7 @@ export default function CreateApplicant() {
   return (
     <Box sx={{ mt: "-24px", overflow: "hidden", mx: "-24px" }}>
       {/* Hero Banner Section */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.palette.background.banner,
-          boxShadow: "0 2px 7px rgba(0,0,0,0.05)",
-          py: { xs: 4, md: 6 },
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {/* Inner Content Wrapper */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 4,
-            px: { xs: 3, md: 8, lg: 12 },
-            maxWidth: "1500px",
-            width: "100%",
-          }}
-        >
-          {/* Left Content */}
-          <Box sx={{ flex: 1, maxWidth: { md: "50%" } }}>
-            <Typography variant="h1" fontWeight="bold" gutterBottom>
-              Showcase Your Talent with a WSO2 Profile
-            </Typography>
-            <Typography
-              variant="h5"
-              color="text.secondary"
-              fontStyle="italic"
-              sx={{ maxWidth: 900 }}
-            >
-              Upload your CV, highlight your expertise, and manage your
-              professional profile—all in one place. Let WSO2 discover the real
-              you and match you with opportunities that fit your passion and
-              potential.
-            </Typography>
-          </Box>
-
-          {/* Right Image */}
-          <Box
-            component="img"
-            src={ProfileBannerImage}
-            alt="WSO2 Profile Banner"
-            sx={{
-              width: { xs: "100%", md: "40%" },
-              height: "auto",
-            }}
-          />
-        </Box>
-      </Box>
+      <BannerCarousel slides={bannerSlides} showIndicators={true} autoPlayInterval={5000} />
 
       {/* Form Content Container */}
       <Box
