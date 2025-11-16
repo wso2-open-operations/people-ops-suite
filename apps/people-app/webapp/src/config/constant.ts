@@ -40,14 +40,7 @@ export const EmployeeTypes = [
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
-export const EmployeeTitle = [
-  { id: 1, label: "Mr." },
-  { id: 2, label: "Mrs." },
-  { id: 3, label: "Miss." },
-  { id: 4, label: "Ms." },
-  { id: 5, label: "Dr." },
-  { id: 6, label: "Prof." },
-];
+export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
 
 export const Countries = [
   "Afghanistan",

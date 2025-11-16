@@ -73,7 +73,7 @@ export type CreatePersonalInfoPayload = {
   addressLine1?: string;
   addressLine2?: string;
   city?: string;
-  stateProvince?: string;
+  stateOrProvince?: string;
   postalCode?: string;
   country?: string;
   nationality?: string;
@@ -108,6 +108,7 @@ export type CreateEmployeePayload = {
 };
 
 export interface ContinuousServiceRecordInfo {
+  id: number;
   employeeId: string;
   firstName: string | null;
   lastName: string | null;
@@ -122,7 +123,7 @@ export interface ContinuousServiceRecordInfo {
   office: string;
   businessUnit: string;
   team: string;
-  subTeam?: string | null;
+  subTeam: string;
   unit?: string | null;
 }
 
@@ -133,7 +134,7 @@ interface EmployeesState {
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
   createdEmployeeId: number | null;
-  continuousServiceRecord: ContinuousServiceRecordInfo | null;
+  continuousServiceRecord: ContinuousServiceRecordInfo[];
 }
 
 const initialState: EmployeesState = {
@@ -143,7 +144,7 @@ const initialState: EmployeesState = {
   employee: null,
   employeesBasicInfo: [],
   createdEmployeeId: null,
-  continuousServiceRecord: null,
+  continuousServiceRecord: [],
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -240,23 +241,14 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
           AppConfig.serviceUrls.continuousServiceRecord
         }?workEmail=${encodeURIComponent(workEmail)}`
       );
-
-      const data = response.data;
-      if (data && typeof data === "object" && "employeeId" in data) {
-        return data as ContinuousServiceRecordInfo;
-      }
-      return null;
+      return response.data as ContinuousServiceRecordInfo[];
     } catch (error: any) {
       const status = error.response?.status;
-
-      if (status === 404) {
-        return null;
-      }
       const errorMessage =
         status === HttpStatusCode.InternalServerError
           ? "Error fetching continuous service record"
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching continuous service record.";
+            "An unknown error occurred while fetching continuous service record";
 
       dispatch(
         enqueueSnackbarMessage({
@@ -284,13 +276,19 @@ const EmployeeSlice = createSlice({
       state.employee = null;
       state.employeesBasicInfo = [];
       state.createdEmployeeId = null;
-      state.continuousServiceRecord = null;
+      state.continuousServiceRecord = [];
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
       state.createdEmployeeId = null;
+    },
+    resetContinuousService(state) {
+      state.continuousServiceRecord = [];
+      state.state = State.idle;
+      state.stateMessage = null;
+      state.errorMessage = null;
     },
   },
   extraReducers: (builder) => {
@@ -363,11 +361,15 @@ const EmployeeSlice = createSlice({
         state.state = State.failed;
         state.stateMessage = "Failed to fetch continuous service record!";
         state.errorMessage = action.payload as string;
-        state.continuousServiceRecord = null;
+        state.continuousServiceRecord = [];
       });
   },
 });
 
-export const { resetSubmitState, resetEmployee, resetCreateEmployeeState } =
-  EmployeeSlice.actions;
+export const {
+  resetSubmitState,
+  resetEmployee,
+  resetCreateEmployeeState,
+  resetContinuousService,
+} = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

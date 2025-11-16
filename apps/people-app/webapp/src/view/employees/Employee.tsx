@@ -297,7 +297,8 @@ export default function Employees() {
                   addressLine1: values.personalInfo.addressLine1 || undefined,
                   addressLine2: values.personalInfo.addressLine2 || undefined,
                   city: values.personalInfo.city || undefined,
-                  stateProvince: values.personalInfo.stateProvince || undefined,
+                  stateOrProvince:
+                    values.personalInfo.stateOrProvince || undefined,
                   postalCode: values.personalInfo.postalCode || undefined,
                   country: values.personalInfo.country || undefined,
                   nationality: values.personalInfo.nationality || undefined,

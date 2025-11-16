@@ -57,7 +57,7 @@ export interface CreateEmployeeFormValues {
     addressLine1: string | null;
     addressLine2: string | null;
     city: string | null;
-    stateProvince: string | null;
+    stateOrProvince: string | null;
     postalCode: string | null;
     country: string | null;
     nationality: string;
@@ -100,7 +100,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     addressLine1: null,
     addressLine2: null,
     city: null,
-    stateProvince: null,
+    stateOrProvince: null,
     postalCode: null,
     country: null,
     nationality: "",
