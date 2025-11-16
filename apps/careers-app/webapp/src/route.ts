@@ -20,6 +20,7 @@ import { Role } from "@slices/authSlice/auth";
 import PersonIcon from '@mui/icons-material/Person';
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import HomeIcon from '@mui/icons-material/Home';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -45,6 +46,13 @@ interface RouteDetail {
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
+    text: "Home",
+    icon: React.createElement(HomeIcon),
+    element: React.createElement(View.home),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+  },
+  {
+    path: "/profile",
     text: "Profile",
     icon: React.createElement(PersonIcon),
     element: React.createElement(View.applicants),

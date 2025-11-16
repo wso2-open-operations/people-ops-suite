@@ -16,10 +16,12 @@
 
 import { lazy } from "react";
 
+const home = lazy(() => import("@view/home/home"));
 const applicants = lazy(() => import("@view/applicants/createApplicant"));
 const help = lazy(() => import("@view/help/help"));
 
 export const View = {
+  home,
   applicants,
   help,
 };
