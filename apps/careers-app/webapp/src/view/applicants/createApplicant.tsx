@@ -61,7 +61,7 @@ import ProjectModal, { Project } from "@modals/ProjectModal";
 import LanguageModal, { Language } from "@modals/LanguageModal";
 import ProfileBannerImage from "@assets/images/profile-banner-1.svg";
 import HeroImage from "@assets/images/wso2-careers-hero-image.svg";
-import InternshipImage from "@assets/images/interns-wso2-careers.svg";
+import EmployeesImage from "@assets/images/wso2-employees.svg";
 
 interface ApplicantFormValues {
   firstName: string;
@@ -203,12 +203,12 @@ export default function CreateApplicant() {
       image: ProfileBannerImage,
     },
     {
-      title: "Kick-Start Your Career with WSO2 Internships",
+      title: "Join Our Journey: Build the Future with Us",
       description:
-        "Gain hands-on experience, learn from industry experts, and work on meaningful projects that shape real-world innovation. Discover an internship program designed to grow your potential.",
+        "Our culture is powered by one simple value: treat people the way you want to be treated. This means we treat everyone in a fair, open, honest and respectful manner from the moment you apply for a role at WSO2.",
       buttonText: "Learn More",
       buttonAction: () => navigate("/"),
-      image: InternshipImage,
+      image: EmployeesImage,
     },
   ];
 

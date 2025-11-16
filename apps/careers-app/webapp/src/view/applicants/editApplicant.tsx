@@ -26,7 +26,7 @@ import {
   Avatar,
   Stack,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState} from "react";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import WorkIcon from "@mui/icons-material/Work";
 import SchoolIcon from "@mui/icons-material/School";

@@ -30,8 +30,6 @@ import {
   alpha,
   Divider,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import { useAppSelector } from "@slices/store";
 import {
   WorkOutline,
   SchoolOutlined,
@@ -50,13 +48,12 @@ import {
   EditOutlined,
   Launch,
 } from "@mui/icons-material";
+import { useTheme } from "@mui/material/styles";
+
 import { useState } from "react";
+import { useAppSelector } from "@slices/store";
 import EditApplicant from "./editApplicant";
-import {
-  getImageDataUrl,
-  viewPdfInNewTab,
-  isValidByteArray,
-} from "@utils/utils";
+import { getImageDataUrl, viewPdfInNewTab, isValidByteArray } from "@utils/utils";
 
 export default function ApplicantProfile() {
   const theme = useTheme();
