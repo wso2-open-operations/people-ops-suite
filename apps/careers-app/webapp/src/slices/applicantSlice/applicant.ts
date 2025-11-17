@@ -35,7 +35,8 @@ export interface Experiences{
   company: string;
   location: string;
   start_date: string;
-  end_date: string | null;
+  end_date?: string;
+  current?: boolean;
 }
 export interface Certifications{
   name: string;

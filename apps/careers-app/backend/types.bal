@@ -118,14 +118,10 @@ public type Experiences record {
         }
     }
     string start_date;
-    # end date
-    @constraint:String {
-        pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
-            message: "End date must be a non-empty printable string."
-        }
-    }
-    string end_date;
+    # end date (optional if currently working)
+    string end_date?;
+    # currently working at this position
+    boolean current?;
 };
 
 # Certifications

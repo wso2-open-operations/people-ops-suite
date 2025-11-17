@@ -21,6 +21,8 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Formik, Form } from "formik";
@@ -53,18 +55,17 @@ const expSchema = yup.object({
   company: yup.string().required("Company is required"),
   location: yup.string().required("Location is required"),
   start_date: yup.date().required("Start date is required"),
+  current: yup.boolean(),
   end_date: yup
     .date()
     .nullable()
     .when("current", {
       is: false,
-      then: yup
-        .date()
-        .nullable()
-        .min(yup.ref("start_date"), "End date cannot be before start date")
-        .required("End date is required when not currently working"),
-      otherwise: yup.date().nullable(),
-    }), 
+      then: (schema) => schema
+        .required("End date is required when not currently working")
+        .min(yup.ref("start_date"), "End date cannot be before start date"),
+      otherwise: (schema) => schema.nullable(),
+    }),
 });
 
 const EMPTY_VALUES = {
@@ -132,13 +133,12 @@ export default function ExperienceModal({
           }
 
           const cleaned = {
-            ...exp,
+            job_title: exp.job_title,
+            company: exp.company,
+            location: exp.location,
             start_date: exp.start_date ? exp.start_date.format("YYYY-MM-DD") : "",
-            end_date: exp.current
-              ? ""
-              : exp.end_date
-              ? exp.end_date.format("YYYY-MM-DD")
-              : "",
+            end_date: exp.current || !exp.end_date ? null : exp.end_date.format("YYYY-MM-DD"),
+            current: exp.current,
           };
 
           if (editIndex !== null && editIndex !== undefined) {
@@ -235,6 +235,22 @@ export default function ExperienceModal({
                     name: "start_date",
                   },
                 }}
+              />
+
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={values.current}
+                    onChange={(e) => {
+                      setFieldValue("current", e.target.checked);
+                      if (e.target.checked) {
+                        setFieldValue("end_date", null);
+                      }
+                    }}
+                    name="current"
+                  />
+                }
+                label="I currently work here"
               />
 
               <DatePicker

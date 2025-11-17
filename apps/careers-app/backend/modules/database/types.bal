@@ -74,8 +74,10 @@ public type Experiences record {
     string job_title;
     # start date
     string start_date;
-    # end date
-    string end_date;
+    # end date 
+    string end_date?;
+    # currently working at this position
+    boolean current?;
 };
 
 # Certifications.

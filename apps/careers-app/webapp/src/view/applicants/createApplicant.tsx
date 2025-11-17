@@ -84,6 +84,15 @@ interface ApplicantFormValues {
   consentEmails: boolean;
 }
 
+interface ExperiencePayload {
+  job_title: string;
+  company: string;
+  location: string;
+  start_date: string;
+  end_date?: string;
+  current?: boolean;
+}
+
 const initialValues: ApplicantFormValues = {
   firstName: "",
   lastName: "",
@@ -310,7 +319,23 @@ export default function CreateApplicant() {
                 .map(([title, link]) => ({ title: title.toLowerCase(), link }))
                 .filter((l) => l.link),
               educations: values.educations,
-              experiences: values.experiences,
+              experiences: values.experiences.map((exp) => {
+                const experience: ExperiencePayload = {
+                  job_title: exp.job_title,
+                  company: exp.company,
+                  location: exp.location,
+                  start_date: exp.start_date,
+                };
+                // Only include end_date if it's not null
+                if (exp.end_date !== null && exp.end_date !== undefined) {
+                  experience.end_date = exp.end_date;
+                }
+                // Only include current if it's true
+                if (exp.current) {
+                  experience.current = exp.current;
+                }
+                return experience;
+              }),
               certifications: values.certifications,
               projects: values.projects.map((proj) => ({
                 ...proj,
