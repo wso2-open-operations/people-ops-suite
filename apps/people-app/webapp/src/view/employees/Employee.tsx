@@ -43,7 +43,6 @@ import { jobInfoValidationSchema } from "./steps/JobInfo";
 import {
   CreateEmployeeFormValues,
   emptyCreateEmployeeValues,
-  State,
 } from "@root/src/types/types";
 import { markAllFieldsTouched } from "@root/src/utils/utils";
 import {
@@ -116,13 +115,10 @@ export default function Employees() {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
   const [activeStep, setActiveStep] = useState(0);
-  const { state: createState, errorMessage } = useAppSelector(
-    (s) => s.employee
-  );
+  const { state: createState } = useAppSelector((s) => s.employee);
   const initialValues = emptyCreateEmployeeValues;
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
@@ -142,23 +138,15 @@ export default function Employees() {
   ) => {
     showConfirmation(
       "Confirm Employee Creation",
-      <Box>
-        <Typography variant="body1" fontWeight={600}>
-          Are you sure you want to create this employee?
-        </Typography>
-      </Box>,
+      "Are you sure you want to create this employee?",
       ConfirmationType.accept,
       async () => {
-        dispatch(createEmployee(formData));
-        if (createState === State.success) {
-          setShowSuccess(true);
-        }
-        if (resetForm) {
+        const resultAction = await dispatch(createEmployee(formData));
+        if (createEmployee.fulfilled.match(resultAction)) {
           resetForm();
           dispatch(resetCreateEmployeeState());
           setActiveStep(0);
           setFormKey((prev) => prev + 1);
-          setShowSuccess(false);
         }
       },
       "Confirm",
@@ -247,17 +235,6 @@ export default function Employees() {
             </Step>
           ))}
         </Stepper>
-
-        {showSuccess && (
-          <Typography color="success.main" sx={{ mb: 2 }}>
-            Employee created successfully!
-          </Typography>
-        )}
-        {createState === "failed" && errorMessage && (
-          <Typography color="error.main" sx={{ mb: 2 }}>
-            {errorMessage}
-          </Typography>
-        )}
 
         <Formik
           key={formKey}

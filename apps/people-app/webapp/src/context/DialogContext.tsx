@@ -172,12 +172,11 @@ const ConfirmationDialogContextProvider: React.FC<
             <DialogTitle
               variant="h5"
               sx={{
-                pl: 2,
                 fontWeight: "bold",
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                p: 0,
+                pd: 0,
               }}
             >
               {content?.title}
@@ -193,7 +192,7 @@ const ConfirmationDialogContextProvider: React.FC<
             >
               <CloseIcon />
             </IconButton>
-            <DialogContent sx={{ m: 0, px: 2, py: 2 }}>
+            <DialogContent sx={{ m: 0, px: 3, py: 2 }}>
               <DialogContentText>{content?.message}</DialogContentText>
             </DialogContent>
             {content.inputObj && (
@@ -236,7 +235,9 @@ const ConfirmationDialogContextProvider: React.FC<
                   color={content.type === "discard" ? "error" : "secondary"}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment.trim() === ""}
+                  disabled={
+                    content?.inputObj?.mandatory && comment.trim() === ""
+                  }
                   onClick={() =>
                     content?.inputObj ? handleOk(comment) : handleOk()
                   }
