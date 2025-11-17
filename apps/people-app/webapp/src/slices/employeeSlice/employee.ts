@@ -133,7 +133,6 @@ interface EmployeesState {
   errorMessage: string | null;
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
-  createdEmployeeId: number | null;
   continuousServiceRecord: ContinuousServiceRecordInfo[];
 }
 
@@ -143,7 +142,6 @@ const initialState: EmployeesState = {
   errorMessage: null,
   employee: null,
   employeesBasicInfo: [],
-  createdEmployeeId: null,
   continuousServiceRecord: [],
 };
 
@@ -275,14 +273,12 @@ const EmployeeSlice = createSlice({
       state.errorMessage = null;
       state.employee = null;
       state.employeesBasicInfo = [];
-      state.createdEmployeeId = null;
       state.continuousServiceRecord = [];
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
-      state.createdEmployeeId = null;
     },
     resetContinuousService(state) {
       state.continuousServiceRecord = [];
@@ -336,7 +332,6 @@ const EmployeeSlice = createSlice({
         (state, action: PayloadAction<number>) => {
           state.state = State.success;
           state.stateMessage = "Employee created successfully!";
-          state.createdEmployeeId = action.payload;
           state.errorMessage = null;
         }
       )
@@ -344,7 +339,6 @@ const EmployeeSlice = createSlice({
         state.state = State.failed;
         state.stateMessage = "Failed to create employee.";
         state.errorMessage = action.payload as string;
-        state.createdEmployeeId = null;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
         state.state = State.loading;

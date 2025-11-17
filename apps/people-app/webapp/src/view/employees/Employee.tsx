@@ -16,6 +16,8 @@
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { useState, useEffect } from "react";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import { ConfirmationType } from "@/types/types";
 import {
   Box,
   Stepper,
@@ -38,7 +40,11 @@ import ReviewStep from "./steps/Review";
 import { Check, ArrowBack, ArrowForward } from "@mui/icons-material";
 import { personalInfoValidationSchema } from "./steps/PersonalInfo";
 import { jobInfoValidationSchema } from "./steps/JobInfo";
-import { emptyCreateEmployeeValues } from "@root/src/types/types";
+import {
+  CreateEmployeeFormValues,
+  emptyCreateEmployeeValues,
+  State,
+} from "@root/src/types/types";
 import { markAllFieldsTouched } from "@root/src/utils/utils";
 import {
   createEmployee,
@@ -108,12 +114,11 @@ function CustomStepIcon(props: StepIconProps) {
 export default function Employees() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
+  const { showConfirmation } = useConfirmationModalContext();
   const [activeStep, setActiveStep] = useState(0);
-  const {
-    state: createState,
-    createdEmployeeId,
-    errorMessage,
-  } = useAppSelector((s) => s.employee);
+  const { state: createState, errorMessage } = useAppSelector(
+    (s) => s.employee
+  );
   const initialValues = emptyCreateEmployeeValues;
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBack = () => setActiveStep((prev) => prev - 1);
@@ -131,17 +136,35 @@ export default function Employees() {
     dispatch(resetCreateEmployeeState());
   }, [activeStep, dispatch]);
 
-  useEffect(() => {
-    if (createState === "success" && createdEmployeeId) {
-      setShowSuccess(true);
-      setTimeout(() => {
-        setActiveStep(0);
-        setFormKey((prev) => prev + 1);
-        setShowSuccess(false);
-        dispatch(resetCreateEmployeeState());
-      }, 2000);
-    }
-  }, [createState, createdEmployeeId, dispatch]);
+  const handleFormSubmit = (
+    formData: CreateEmployeePayload,
+    resetForm: () => void
+  ) => {
+    showConfirmation(
+      "Confirm Employee Creation",
+      <Box>
+        <Typography variant="body1" fontWeight={600}>
+          Are you sure you want to create this employee?
+        </Typography>
+      </Box>,
+      ConfirmationType.accept,
+      async () => {
+        dispatch(createEmployee(formData));
+        if (createState === State.success) {
+          setShowSuccess(true);
+        }
+        if (resetForm) {
+          resetForm();
+          dispatch(resetCreateEmployeeState());
+          setActiveStep(0);
+          setFormKey((prev) => prev + 1);
+          setShowSuccess(false);
+        }
+      },
+      "Confirm",
+      "Cancel"
+    );
+  };
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -246,7 +269,7 @@ export default function Employees() {
               ? jobInfoValidationSchema
               : null
           }
-          onSubmit={async (values, actions) => {
+          onSubmit={async (values: CreateEmployeeFormValues, actions) => {
             if (activeStep === EmployeeFormSteps.length - 1) {
               const payload: CreateEmployeePayload = {
                 firstName: values.personalInfo.firstName || "",
@@ -306,7 +329,7 @@ export default function Employees() {
                 },
               };
               try {
-                await dispatch(createEmployee(payload)).unwrap();
+                handleFormSubmit(payload, actions.resetForm);
                 actions.setSubmitting(false);
               } catch (error) {
                 console.error("Failed to create employee:", error);
