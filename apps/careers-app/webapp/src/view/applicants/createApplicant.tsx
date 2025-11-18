@@ -1127,24 +1127,6 @@ export default function CreateApplicant() {
                         : undefined
                     }
                     editIndex={
-                      editingSection === "certification" ? editingIndex : null
-                    }
-                  />
-                )}
-              </FieldArray>
-              <FieldArray name="projects">
-                {({ push, replace }) => (
-                  <ProjectModal
-                    open={openModal === "project"}
-                    onClose={handleCloseModal}
-                    push={push}
-                    replace={replace}
-                    editItem={
-                      editingSection === "project"
-                        ? (editingItem as Project)
-                        : undefined
-                    }
-                    editIndex={
                       editingSection === "project" ? editingIndex : null
                     }
                   />

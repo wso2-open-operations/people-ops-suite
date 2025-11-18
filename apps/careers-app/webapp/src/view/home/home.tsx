@@ -114,7 +114,7 @@ export default function Home() {
       step: "Step 3",
       title: "Founder & CEO",
       description:
-        "Meet the Founder & CEO. This conversation will focus on WSO2's culture and the upshering year's important to us.",
+        "Meet the Founder & CEO. This conversation will focus on WSO2's culture and the ushering year's important to us.",
     },
   ];
 
