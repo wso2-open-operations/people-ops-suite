@@ -42,14 +42,22 @@ public isolated service class JwtInterceptor {
         if result is jwt:Error {
             string errorMsg = "Error while reading the Invoker info!";
             log:printError(errorMsg, result);
-            return <http:InternalServerError>{body: {message: errorMsg}};
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
         }
 
         CustomJwtPayload|error userInfo = result[1].cloneWithType(CustomJwtPayload);
         if userInfo is error {
             string errorMsg = "Malformed Invoker info object!";
             log:printError(errorMsg, userInfo);
-            return <http:InternalServerError>{body: {message: errorMsg}};
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
         }
 
         foreach anydata role in authorizedRoles.toArray() {
@@ -60,8 +68,12 @@ public isolated service class JwtInterceptor {
         }
 
         log:printError(
-                string `${userInfo.email} is missing required permissions, only has ${userInfo.groups.toBalString()}`);
+                string `${userInfo.email} is missing required permissions.`);
 
-        return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
+        return <http:Forbidden>{
+            body: {
+                message: "Insufficient privileges!"
+            }
+        };
     }
 }
