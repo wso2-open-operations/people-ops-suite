@@ -259,7 +259,7 @@ export default function CreateApplicant() {
     );
   }
 
-  // If existing applicant found → show profile page
+  // If existing applicant found show profile page
   if (applicantProfile) {
     return <ApplicantProfile />;
   }

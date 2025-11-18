@@ -30,9 +30,9 @@ public type AppConfig record {|
     SupportTeamEmail[] supportTeamEmails;
 |};
 
-# Professional links
+# Professional links.
 public type ProfessionalLinks record {
-    # link.
+    # link
     @constraint:String {
         pattern: {
             value: re `${REGEX_URL}`,
@@ -40,7 +40,7 @@ public type ProfessionalLinks record {
         }
     }
     string link;
-    # title.
+    # title
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -50,9 +50,9 @@ public type ProfessionalLinks record {
     string title;
 };
 
-# Educations
+# Educations.
 public type Educations record {
-    # degree.
+    # degree
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -60,7 +60,7 @@ public type Educations record {
         }
     }
     string degree;
-    # End year.
+    # End year
     int end_year;
     # location
     @constraint:String {
@@ -84,7 +84,7 @@ public type Educations record {
     string institution;
 };
 
-# Experiences
+# Experiences.
 public type Experiences record {
     # company
     @constraint:String {
@@ -118,13 +118,13 @@ public type Experiences record {
         }
     }
     string start_date;
-    # end date (optional if currently working)
+    # end date
     string end_date?;
     # currently working at this position
     boolean current?;
 };
 
-# Certifications
+# Certifications.
 public type Certifications record {
     # name
     @constraint:String {
@@ -154,7 +154,7 @@ public type Certifications record {
     string link;
 };
 
-# Projects
+# Projects.
 public type Projects record {
     # name
     @constraint:String {
@@ -190,7 +190,7 @@ public type Projects record {
     string github;
 };
 
-# Languages
+# Languages.
 public type Languages record {
     # language
     @constraint:String {
@@ -210,7 +210,7 @@ public type Languages record {
     string proficiency;
 };
 
-# Skills
+# Skills.
 @constraint:Array {
     minLength: {
         value: 1,
@@ -219,7 +219,7 @@ public type Languages record {
 }
 public type Skills string[];
 
-# Interests
+# Interests.
 @constraint:Array {
     minLength: {
         value: 1,
@@ -230,7 +230,7 @@ public type Interests string[];
 
 # create a new applicant profile.
 public type CreateApplicantProfile record {|
-    # First name of the applicant
+    # First name 
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -238,7 +238,7 @@ public type CreateApplicantProfile record {|
         }
     }
     string first_name;
-    # Last name of the applicant
+    # Last name 
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -246,7 +246,7 @@ public type CreateApplicantProfile record {|
         }
     }
     string last_name;
-    # Email address of the applicant
+    # Email address 
     @constraint:String {
         pattern: {
             value: re `${REGEX_EMAIL}`,
@@ -254,7 +254,7 @@ public type CreateApplicantProfile record {|
         }
     }
     string email;
-    # Phone number of the applicant
+    # Phone number 
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
@@ -262,7 +262,7 @@ public type CreateApplicantProfile record {|
         }
     }
     string phone;
-    # Address of the applicant
+    # Address 
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -270,7 +270,7 @@ public type CreateApplicantProfile record {|
         }
     }
     string address;
-    # Country of residence
+    # Country 
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -286,23 +286,23 @@ public type CreateApplicantProfile record {|
         }
     }
     string status;
-    # List of professional links
+    # Professional links
     ProfessionalLinks[] professional_links;
-    # Educational background
+    # Educations
     Educations[] educations;
-    # Work experience details 
+    # Experiences
     Experiences[] experiences;
-    # Skill set 
+    # Skills
     Skills skills;
-    # Professional certifications 
+    # Certifications 
     Certifications[] certifications;
-    # Project details 
+    # Projects 
     Projects[] projects;
-    # Languages known 
+    # Languages 
     Languages[] languages;
-    # Personal interests 
+    # Interests 
     Interests interests;
-    # Profile picture as byte array
+    # User thumbnail
     byte[]? user_thumbnail;
     # Resume as byte array
     byte[]? resume_link;
@@ -312,8 +312,9 @@ public type CreateApplicantProfile record {|
     string updated_by;
 |};
 
+# Request payload for creating applicant profile.
 public type CreateApplicantProfileRequest record {|
-    // Required user data
+    # First name
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -322,6 +323,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string first_name;
 
+    # Last name
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -330,6 +332,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string last_name;
 
+    # Email address
     @constraint:String {
         pattern: {
             value: re `${REGEX_EMAIL}`,
@@ -338,6 +341,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string email;
 
+    # Phone number
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
@@ -346,6 +350,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string phone;
 
+    # Address
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -354,6 +359,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string address;
 
+    # Country
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -362,6 +368,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string country;
 
+    # Current status
     @constraint:String {
         pattern: {
             value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
@@ -369,22 +376,33 @@ public type CreateApplicantProfileRequest record {|
         }
     }
     string status;
-
+    # List of professional links
     ProfessionalLinks[] professional_links;
+    # Educations
     Educations[] educations;
+    # Experiences
     Experiences[] experiences;
+    # Skills
     Skills skills;
+    # Certifications
     Certifications[] certifications;
+    # Projects
     Projects[] projects;
+    # Languages
     Languages[] languages;
+    # Interests
     Interests interests;
+    # User thumbnail
     byte[] user_thumbnail;
+    # Profile picture file name
     string profile_photo_file_name;
+    # Resume as byte array
     byte[] resume_link;
+    # CV file name
     string cv_file_name;
 |};
 
-# Partial update for applicant profile (internal DB type)
+# Partial update for applicant profile.
 public type UpdateApplicantProfile record {|
     # First name of the applicant
     @constraint:String {
@@ -466,7 +484,7 @@ public type UpdateApplicantProfile record {|
     string updated_by?;
 |};
 
-# Request payload for updating applicant profile
+# Request payload for updating applicant profile.
 public type UpdateApplicantProfileRequest record {|
     # First name of the applicant
     @constraint:String {

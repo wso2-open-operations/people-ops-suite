@@ -282,11 +282,9 @@ public isolated function getAllApplicants() returns ApplicantProfile[]|error {
             updated_at: dbResult.updated_at
         });
 
-        // Get next record
         result = check resultStream.next();
     }
 
-    // Close the stream
     check resultStream.close();
 
     return profiles;

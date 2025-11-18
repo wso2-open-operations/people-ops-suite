@@ -484,7 +484,6 @@ modules = [
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.authorization"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.database"},
 	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.gdrive"},
-	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.people"},
-	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.utils"}
+	{org = "wso2", packageName = "careers_app", moduleName = "careers_app.people"}
 ]
 
