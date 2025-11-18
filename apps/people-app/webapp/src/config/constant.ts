@@ -17,7 +17,6 @@
 export const SnackMessage = {
   success: {
     addEmployee: "Successfully created the employee",
-    createEmployee: "Employee created successfully!",
   },
   error: {
     fetchEmployee: "Error while fetching employee",
@@ -27,7 +26,6 @@ export const SnackMessage = {
     fetchAppConfigMessage: "Error while fetching app config",
     updateEmployeePersonalInfo: "Error while updating personal info",
     addEmployee: "Unable to add employee",
-    createEmployee: "Failed to create employee. Please try again later.",
   },
   warning: {},
 };

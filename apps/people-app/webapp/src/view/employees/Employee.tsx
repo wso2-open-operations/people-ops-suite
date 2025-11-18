@@ -244,7 +244,7 @@ export default function Employees() {
               ? personalInfoValidationSchema
               : activeStep === 1
               ? jobInfoValidationSchema
-              : null
+              : undefined
           }
           onSubmit={async (values: CreateEmployeeFormValues, actions) => {
             if (activeStep === EmployeeFormSteps.length - 1) {

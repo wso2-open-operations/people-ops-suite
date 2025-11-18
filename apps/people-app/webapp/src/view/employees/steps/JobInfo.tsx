@@ -14,7 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useEffect, useCallback, useMemo, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useState,
+  useRef,
+} from "react";
 import {
   Box,
   Grid,
@@ -157,9 +163,14 @@ export default function JobInfoStep() {
   const dispatch = useAppDispatch();
   const { values, handleChange, handleBlur, touched, errors, setFieldValue } =
     useFormikContext<CreateEmployeeFormValues>();
-  const { employeesBasicInfo, state, continuousServiceRecord, errorMessage } =
-    useAppSelector((s) => s.employee);
   const {
+    employeesBasicInfo,
+    employeeBasicInfoState,
+    continuousServiceRecord,
+    errorMessage,
+  } = useAppSelector((s) => s.employee);
+  const {
+    state: organizationState,
     businessUnits,
     teams,
     subTeams,
@@ -229,9 +240,9 @@ export default function JobInfoStep() {
     []
   );
 
-  const [selectedRecordIndex, setSelectedRecordIndex] = useState<
-    number | null
-  >(null);
+  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
+    null
+  );
 
   const FULL_TIME_ID = EmployeeTypes.find(
     (type) => type.label === "Full-time"
@@ -366,16 +377,6 @@ export default function JobInfoStep() {
     }
   }, [continuousServiceRecord, selectedRecordIndex]);
 
-  useEffect(() => {
-    const email = values.workEmail?.trim();
-    if (email && Yup.string().email().isValidSync(email)) {
-      dispatch(fetchContinuousServiceRecord(email));
-    } else {
-      dispatch(resetContinuousService());
-      setSelectedRecordIndex(null);
-    }
-  }, [values.workEmail, dispatch]);
-
   const renderField = useCallback(
     (name: keyof CreateEmployeeFormValues, label: string, required = true) => {
       const error = Boolean(touched[name] && errors[name]);
@@ -408,7 +409,26 @@ export default function JobInfoStep() {
         />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            {renderField("workEmail", "Work Email")}
+            <MemoizedTextField
+              name="workEmail"
+              label="Work Email"
+              required
+              value={values.workEmail ?? ""}
+              onChange={handleChange}
+              onBlur={(e: { target: { value: string } }) => {
+                handleBlur(e);
+                const email = e.target.value?.trim();
+                if (email && Yup.string().email().isValidSync(email)) {
+                  dispatch(fetchContinuousServiceRecord(values.workEmail));
+                } else {
+                  dispatch(resetContinuousService());
+                  setSelectedRecordIndex(null);
+                }
+              }}
+              error={Boolean(touched.workEmail && errors.workEmail)}
+              helperText={touched.workEmail && errors.workEmail}
+              textFieldSx={textFieldSx}
+            />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <Tooltip
@@ -567,7 +587,7 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {state === "loading"
+                  {organizationState === "loading"
                     ? "Loading business units..."
                     : "No business units found"}
                 </MenuItem>
@@ -707,7 +727,7 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {state === "loading"
+                  {organizationState === "loading"
                     ? "Loading career functions..."
                     : "No career functions found"}
                 </MenuItem>
@@ -746,7 +766,7 @@ export default function JobInfoStep() {
                 <MenuItem disabled>
                   {!values.careerFunctionId || values.careerFunctionId === 0
                     ? "Select career function first"
-                    : state === "loading"
+                    : organizationState === "loading"
                     ? "Loading designations..."
                     : "No designations found"}
                 </MenuItem>
@@ -788,7 +808,7 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {state === "loading"
+                  {organizationState === "loading"
                     ? "Loading offices..."
                     : "No offices found"}
                 </MenuItem>
@@ -985,7 +1005,7 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {state === "loading"
+                  {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : "No employees found"}
                 </MenuItem>
@@ -1024,7 +1044,7 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {state === "loading"
+                  {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : "No employees found"}
                 </MenuItem>

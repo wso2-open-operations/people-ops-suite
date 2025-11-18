@@ -207,17 +207,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ContinuousServiceRecordInfo[]|error employeeRecords = database:getContinuousServiceRecordsByEmail(workEmail);
-        if employeeRecords is error {
+        database:ContinuousServiceRecordInfo[]|error serviceRecords = database:getContinuousServiceRecordsByEmail(workEmail);
+        if serviceRecords is error {
             string customErr = "Error occurred while fetching continuous service records";
-            log:printError(customErr, employeeRecords, workEmail = workEmail);
+            log:printError(customErr, serviceRecords, workEmail = workEmail);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
             };
         }
-        return employeeRecords;
+        return serviceRecords;
     }
 
     # Fetch all employees' basic information.

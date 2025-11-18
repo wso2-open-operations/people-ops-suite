@@ -129,6 +129,7 @@ export interface ContinuousServiceRecordInfo {
 
 interface EmployeesState {
   state: State;
+  employeeBasicInfoState: State;
   stateMessage: string | null;
   errorMessage: string | null;
   employee: Employee | null;
@@ -138,6 +139,7 @@ interface EmployeesState {
 
 const initialState: EmployeesState = {
   state: State.idle,
+  employeeBasicInfoState: State.idle,
   stateMessage: null,
   errorMessage: null,
   employee: null,
@@ -202,7 +204,7 @@ export const createEmployee = createAsyncThunk(
   async (payload: CreateEmployeePayload, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().post(
-        AppConfig.serviceUrls.createEmployee,
+        AppConfig.serviceUrls.employees,
         payload
       );
       const employeeId = response.data as number;
@@ -216,7 +218,7 @@ export const createEmployee = createAsyncThunk(
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
-          ? SnackMessage.error.createEmployee
+          ? SnackMessage.error.addEmployee
           : error.response?.data?.message ||
             "Failed to create employee. Please try again.";
       dispatch(
@@ -306,19 +308,19 @@ const EmployeeSlice = createSlice({
         state.employee = null;
       })
       .addCase(fetchEmployeesBasicInfo.pending, (state) => {
-        state.state = State.loading;
+        state.employeeBasicInfoState = State.loading;
         state.stateMessage = "Fetching employees' basic information...";
         state.errorMessage = null;
       })
       .addCase(fetchEmployeesBasicInfo.fulfilled, (state, action) => {
         state.employeesBasicInfo = action.payload;
-        state.state = State.success;
+        state.employeeBasicInfoState = State.success;
         state.stateMessage =
           "Employees' basic information fetched successfully";
         state.errorMessage = null;
       })
       .addCase(fetchEmployeesBasicInfo.rejected, (state, action) => {
-        state.state = State.failed;
+        state.employeeBasicInfoState = State.failed;
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
       })
