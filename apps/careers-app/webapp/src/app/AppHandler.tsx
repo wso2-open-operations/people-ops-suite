@@ -15,7 +15,7 @@
 // under the License.
 
 import Layout from "@layout/Layout";
-import Error from "@layout/pages/404";
+import NotFoundPage from "@layout/pages/404";
 import PreLoader from "@component/common/PreLoader";
 import { getActiveRoutesV2, routes } from "@src/route";
 import MaintenancePage from "@layout/pages/Maintenance";
@@ -29,7 +29,7 @@ const AppHandler = () => {
     {
       path: "/",
       element: <Layout />,
-      errorElement: <Error />,
+      errorElement: <NotFoundPage />,
       children: getActiveRoutesV2(routes, auth.roles),
     },
   ]);
