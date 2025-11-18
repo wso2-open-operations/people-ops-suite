@@ -17,12 +17,12 @@
 # List of employee statuses.
 public enum EmployeeStatus {
     Active,
-    Marked\ leaver
+    Marked_leaver
 };
 
 # Employment types.
 public enum EmploymentType {
     PERMANENT,
     CONSULTANCY,
-    PART\ TIME\ CONSULTANCY
+    PART_TIME_CONSULTANCY
 };

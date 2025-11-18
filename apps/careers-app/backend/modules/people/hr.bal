@@ -45,8 +45,8 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
 public isolated function getEmployees() returns EmployeeBasic[]|error {
 
     EmployeeFilter filter = {
-        employeeStatus: [Active, Marked\ leaver],
-        employmentType: [PERMANENT, CONSULTANCY, PART\ TIME\ CONSULTANCY]
+        employeeStatus: [Active, Marked_leaver],
+        employmentType: [PERMANENT, CONSULTANCY, PART_TIME_CONSULTANCY]
     };
 
     string document = string `query getAllEmployees($filter: EmployeeFilter!, $limit: Int, $offset: Int) {
