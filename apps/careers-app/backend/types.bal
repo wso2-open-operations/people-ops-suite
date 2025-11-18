@@ -43,7 +43,7 @@ public type ProfessionalLinks record {
     # title
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Title must be a non-empty printable string"
         }
     }
@@ -55,7 +55,7 @@ public type Educations record {
     # degree
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Degree must be a non-empty printable string"
         }
     }
@@ -65,7 +65,7 @@ public type Educations record {
     # location
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "location must be a non-empty printable string"
         }
     }
@@ -77,7 +77,7 @@ public type Educations record {
     # institution
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Institution must be a non-empty printable string"
         }
     }
@@ -89,7 +89,7 @@ public type Experiences record {
     # company
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Company must be a non-empty printable string."
         }
     }
@@ -97,7 +97,7 @@ public type Experiences record {
     # location
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Location must be a non-empty printable string."
         }
     }
@@ -105,7 +105,7 @@ public type Experiences record {
     # job tilte
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Job title must be a non-empty printable string."
         }
     }
@@ -113,7 +113,7 @@ public type Experiences record {
     # start date
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Start date must be a non-empty printable string."
         }
     }
@@ -129,7 +129,7 @@ public type Certifications record {
     # name
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Name must be a non-empty printable string."
         }
     }
@@ -137,7 +137,7 @@ public type Certifications record {
     # issued by
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Issuer must be a non-empty printable string."
         }
     }
@@ -159,7 +159,7 @@ public type Projects record {
     # name
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Project name must be a non-empty printable string."
         }
     }
@@ -167,7 +167,7 @@ public type Projects record {
     # description
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Description must be a non-empty printable string."
         }
     }
@@ -195,7 +195,7 @@ public type Languages record {
     # language
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Language must be a non-empty printable string."
         }
     }
@@ -203,7 +203,7 @@ public type Languages record {
     # proficiency
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Proficiency must be a non-empty printable string."
         }
     }
@@ -233,7 +233,7 @@ public type CreateApplicantProfile record {|
     # First name 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "First name must be a non-empty printable string"
         }
     }
@@ -241,7 +241,7 @@ public type CreateApplicantProfile record {|
     # Last name 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Last name must be a non-empty printable string"
         }
     }
@@ -258,14 +258,14 @@ public type CreateApplicantProfile record {|
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
-            message: "Phone number must be 9–15 digits"
+            message: "Phone number must be 2–15 digits"
         }
     }
     string phone;
     # Address 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Address must be a non-empty printable string"
         }
     }
@@ -273,7 +273,7 @@ public type CreateApplicantProfile record {|
     # Country 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Country must be a non-empty printable string"
         }
     }
@@ -281,7 +281,7 @@ public type CreateApplicantProfile record {|
     # Current status 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Status must be a non-empty printable string"
         }
     }
@@ -317,7 +317,7 @@ public type CreateApplicantProfileRequest record {|
     # First name
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "First name must be a non-empty printable string"
         }
     }
@@ -326,7 +326,7 @@ public type CreateApplicantProfileRequest record {|
     # Last name
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Last name must be a non-empty printable string"
         }
     }
@@ -345,7 +345,7 @@ public type CreateApplicantProfileRequest record {|
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
-            message: "Phone number must be 9–15 digits"
+            message: "Phone number must be 2–15 digits"
         }
     }
     string phone;
@@ -353,7 +353,7 @@ public type CreateApplicantProfileRequest record {|
     # Address
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Address must be a non-empty printable string"
         }
     }
@@ -362,7 +362,7 @@ public type CreateApplicantProfileRequest record {|
     # Country
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Country must be a non-empty printable string"
         }
     }
@@ -371,7 +371,7 @@ public type CreateApplicantProfileRequest record {|
     # Current status
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Status must be a non-empty printable string"
         }
     }
@@ -407,7 +407,7 @@ public type UpdateApplicantProfile record {|
     # First name of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "First name must be a non-empty printable string"
         }
     }
@@ -415,7 +415,7 @@ public type UpdateApplicantProfile record {|
     # Last name of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Last name must be a non-empty printable string"
         }
     }
@@ -432,14 +432,14 @@ public type UpdateApplicantProfile record {|
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
-            message: "Phone number must be 9–15 digits"
+            message: "Phone number must be 2–15 digits"
         }
     }
     string phone?;
     # Postal address of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Address must be a non-empty printable string"
         }
     }
@@ -447,7 +447,7 @@ public type UpdateApplicantProfile record {|
     # Country of residence
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Country must be a non-empty printable string"
         }
     }
@@ -455,7 +455,7 @@ public type UpdateApplicantProfile record {|
     # Current status 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Status must be a non-empty printable string"
         }
     }
@@ -489,7 +489,7 @@ public type UpdateApplicantProfileRequest record {|
     # First name of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "First name must be a non-empty printable string"
         }
     }
@@ -497,7 +497,7 @@ public type UpdateApplicantProfileRequest record {|
     # Last name of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Last name must be a non-empty printable string"
         }
     }
@@ -514,14 +514,14 @@ public type UpdateApplicantProfileRequest record {|
     @constraint:String {
         pattern: {
             value: re `${REGEX_PHONE_NUMBER}`,
-            message: "Phone number must be 9–15 digits"
+            message: "Phone number must be 2–15 digits"
         }
     }
     string phone?;
     # Postal address of the applicant
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Address must be a non-empty printable string"
         }
     }
@@ -529,7 +529,7 @@ public type UpdateApplicantProfileRequest record {|
     # Country of residence
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Country must be a non-empty printable string"
         }
     }
@@ -537,7 +537,7 @@ public type UpdateApplicantProfileRequest record {|
     # Current status 
     @constraint:String {
         pattern: {
-            value: re `${NONE_EMPTY_PRINTABLE_STRING_REGEX}`,
+            value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
             message: "Status must be a non-empty printable string"
         }
     }

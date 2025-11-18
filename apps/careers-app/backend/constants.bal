@@ -15,12 +15,12 @@
 // under the License. 
 
 # Regex for non-empty printable string (at least one visible char)
-public const NONE_EMPTY_PRINTABLE_STRING_REGEX = "^(?:.*\\S)[ -~]+$";
+public const NON_EMPTY_PRINTABLE_STRING_REGEX = "^(?:.*\\S)[ -~]+$";
 
 # Regex for email validation
 public const REGEX_EMAIL = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
-# Regex for phone number (9–15 digits only)
+# Regex for phone number (E.164 format, 2–15 digits)
 public const REGEX_PHONE_NUMBER = "^\\+[1-9]\\d{1,14}$";
 
 # URL validation for professional links
