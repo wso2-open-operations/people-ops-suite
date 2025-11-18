@@ -30,8 +30,9 @@ public isolated function initializeGoogleDriveClient() returns drive:Client|erro
             refreshToken: googleDriveConfigs.refreshToken,
             refreshUrl: drive:REFRESH_URL
         },
-        http1Settings: { 
-            keepAlive: http:KEEPALIVE_NEVER
+        timeout: 30,
+        http1Settings: {
+            keepAlive: http:KEEPALIVE_AUTO
         }
     };
     return new (gDriveConfig);

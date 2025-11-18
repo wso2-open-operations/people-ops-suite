@@ -49,17 +49,35 @@ public isolated function getApplicantFolder(string email) returns string|error {
 
     log:printDebug("Searching for applicant folder: " + email);
     stream<drive:File> applicantSearch = check gDriveClient->getFoldersByName(email);
-    record {|drive:File value;|}? applicantRecord = applicantSearch.next();
+
+    // Filter folders to find only those under the correct parent
+    drive:File? applicantFolder = ();
+    record {|drive:File value;|}|error? next = applicantSearch.next();
+
+    while next is record {|drive:File value;|} {
+        drive:File folder = next.value;
+        // Check if this folder has the correct parent
+        if folder.parents is string[] {
+            string[] parents = <string[]>folder.parents;
+            if parents.indexOf(parentId) != () {
+                applicantFolder = folder;
+                break;
+            }
+        }
+        next = applicantSearch.next();
+    }
+
     applicantSearch.close();
 
-    if applicantRecord is () {
-        log:printWarn("Applicant folder not found, creating: " + email);
+    if applicantFolder is () {
+        log:printWarn("Applicant folder not found under parent, creating: " + email);
         drive:File newFolder = check gDriveClient->createFolder(email, parentId);
         return newFolder.id.toString();
     }
 
-    log:printDebug("Applicant folder found: " + applicantRecord.value.id.toString());
-    return applicantRecord.value.id.toString();
+    drive:File folder = <drive:File>applicantFolder;
+    log:printDebug("Applicant folder found: " + folder.id.toString());
+    return folder.id.toString();
 }
 
 # Uploads a profile photo to the applicant's Google Drive folder and returns the byte array.
