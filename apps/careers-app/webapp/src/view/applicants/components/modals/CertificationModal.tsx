@@ -45,7 +45,12 @@ interface Props {
 
 const certSchema = yup.object({
   name: yup.string().required("Certification name is required"),
-  year: yup.string().required("Year is required"),
+  year: yup
+    .number()
+    .typeError("Year must be a number")
+    .integer("Year must be an integer")
+    .min(1900, "Year must be a valid year")
+    .required("Year is required"),
   issued_by: yup.string().required("Issued By is required"),
   link: yup.string().url("Must be a valid URL").required("Link is required"),
 });
@@ -67,7 +72,7 @@ export default function CertificationModal({
 }: Props) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const initialValues = editItem ? { ...editItem } : EMPTY_VALUES;
+  const initialValues = editItem ? { ...editItem } : { ...EMPTY_VALUES };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -105,7 +110,7 @@ export default function CertificationModal({
 
           const cleaned = {
             ...cert,
-            year: cert.year ? Number(cert.year) : 0,
+            year: Number(cert.year),
           };
 
           if (editIndex !== null && editIndex !== undefined) {

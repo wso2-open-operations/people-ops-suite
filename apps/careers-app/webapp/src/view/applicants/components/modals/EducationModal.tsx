@@ -87,9 +87,9 @@ const EMPTY_VALUES = {
   degree: "",
   institution: "",
   location: "",
-  gpa_zscore: "" as any,
-  start_year: "" as any,
-  end_year: "" as any,
+  gpa_zscore: "",
+  start_year: "",
+  end_year: "",
 };
 
 export default function EducationModal({
@@ -102,7 +102,7 @@ export default function EducationModal({
 }: Props) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const initialValues = editItem ? { ...editItem } : EMPTY_VALUES;
+  const initialValues = editItem ? { ...editItem } : { ...EMPTY_VALUES };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">

@@ -51,6 +51,18 @@ export default function BannerCarousel({
     return () => clearInterval(interval);
   }, [slides.length, autoPlayInterval]);
 
+  // Clamp currentSlide if slides array shrinks
+  useEffect(() => {
+    if (currentSlide >= slides.length) {
+      setCurrentSlide(0);
+    }
+  }, [slides.length, currentSlide]);
+
+  // Early return after all hooks
+  if (!slides || slides.length === 0) {
+    return null;
+  }
+
   return (
     <Box
       sx={{

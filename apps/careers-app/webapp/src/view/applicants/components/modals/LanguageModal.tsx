@@ -63,7 +63,7 @@ export default function LanguageModal({
 }: Props) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const initialValues = editItem ? { ...editItem } : EMPTY_VALUES;
+  const initialValues = editItem ? { ...editItem } : { ...EMPTY_VALUES };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
