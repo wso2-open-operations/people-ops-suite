@@ -18,13 +18,13 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { Box, Container, Button } from "@mui/material";
 
-interface PreLoaderProps {
+interface StatusWithActionProps {
   message?: string | null;
   hideLogo?: boolean;
   action: () => void;
 }
 
-const StatusWithAction = (props: PreLoaderProps) => {
+const StatusWithAction = (props: StatusWithActionProps) => {
   return (
     <Box
       sx={{
