@@ -116,6 +116,7 @@ export const authSlice = createSlice({
       state.userInfo = action.payload.userInfo;
       state.decodedIdToken = action.payload.decodedIdToken;
       state.status = State.success;
+      state.isAuthenticated = true;
     },
   },
   extraReducers: (builder) => {
