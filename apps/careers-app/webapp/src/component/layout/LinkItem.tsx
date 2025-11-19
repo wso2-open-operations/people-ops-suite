@@ -20,7 +20,7 @@ import ListItem from "@mui/material/ListItem";
 import { Theme, alpha } from "@mui/material/styles";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import { NavLink as RouterLink, LinkProps as RouterLinkProps } from "react-router-dom";
+import { NavLink as RouterLink, NavLinkProps as RouterLinkProps } from "react-router-dom";
 
 interface ListItemLinkProps {
   icon?: React.ReactElement;
@@ -37,7 +37,7 @@ const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
       ref={ref}
       {...itemProps}
       role={undefined}
-      style={({ isActive }) => (isActive ? { background: alpha("#FFFFF", 0.05), color: "#FF7300" } : {})}
+      style={({ isActive }) => (isActive ? { color: "#FF7300" } : {})}
     />
   );
 });
