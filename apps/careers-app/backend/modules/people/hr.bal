@@ -41,7 +41,7 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
 
 # Retrieves all active or marked-leaver employees with specific employment types.
 #
-# + return - Employee Info Array
+# + return - EmployeeBasic Array or error
 public isolated function getEmployees() returns EmployeeBasic[]|error {
 
     EmployeeFilter filter = {

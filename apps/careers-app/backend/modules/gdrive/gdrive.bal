@@ -47,37 +47,23 @@ public isolated function getGDriveParentFolder() returns string|error {
 public isolated function getApplicantFolder(string email) returns string|error {
     string parentId = check getGDriveParentFolder();
 
-    log:printDebug("Searching for applicant folder: " + email);
-    stream<drive:File> applicantSearch = check gDriveClient->getFoldersByName(email);
+    log:printDebug("Searching for applicant folder: " + email + " inside parent: " + parentId);
 
-    // Filter folders to find only those under the correct parent
-    drive:File? applicantFolder = ();
-    record {|drive:File value;|}|error? next = applicantSearch.next();
+    // Search for folder with specific name AND parent folder
+    string query = string `name='${email}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    stream<drive:File, error?> applicantSearch = check gDriveClient->getAllFiles(query);
+    record {|drive:File value;|}? applicantRecord = check applicantSearch.next();
 
-    while next is record {|drive:File value;|} {
-        drive:File folder = next.value;
-        // Check if this folder has the correct parent
-        if folder.parents is string[] {
-            string[] parents = <string[]>folder.parents;
-            if parents.indexOf(parentId) != () {
-                applicantFolder = folder;
-                break;
-            }
-        }
-        next = applicantSearch.next();
-    }
+    check applicantSearch.close();
 
-    applicantSearch.close();
-
-    if applicantFolder is () {
-        log:printWarn("Applicant folder not found under parent, creating: " + email);
+    if applicantRecord is () {
+        log:printWarn("Applicant folder not found in parent, creating: " + email);
         drive:File newFolder = check gDriveClient->createFolder(email, parentId);
         return newFolder.id.toString();
     }
 
-    drive:File folder = <drive:File>applicantFolder;
-    log:printDebug("Applicant folder found: " + folder.id.toString());
-    return folder.id.toString();
+    log:printDebug("Applicant folder found in parent: " + applicantRecord.value.id.toString());
+    return applicantRecord.value.id.toString();
 }
 
 # Uploads a profile photo to the applicant's Google Drive folder and returns the byte array.

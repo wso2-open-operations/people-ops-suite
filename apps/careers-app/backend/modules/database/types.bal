@@ -177,10 +177,9 @@ public type CreateApplicantProfile record {|
     # user who last updated the profile
     @sql:Column {name: "updated_by"}
     string? updated_by;
-
 |};
 
-# applicant profile .
+# Applicant profile record.
 public type ApplicantProfile record {|
     *CreateApplicantProfile;
     # Unique identifier for the applicant profile

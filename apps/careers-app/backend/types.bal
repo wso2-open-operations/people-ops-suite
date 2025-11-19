@@ -102,7 +102,7 @@ public type Experiences record {
         }
     }
     string location;
-    # job tilte
+    # job title
     @constraint:String {
         pattern: {
             value: re `${NON_EMPTY_PRINTABLE_STRING_REGEX}`,
