@@ -54,7 +54,7 @@ VALUES (
     ]',
 
     '[
-        {"job_title": "Full Stack Developer", "company": "InnovateX Solutions", "location": "New York, NY", "start_date": 2021, "end_date": null},
+        {"job_title": "Full Stack Developer", "company": "InnovateX Solutions", "location": "New York, NY", "start_date": 2021, "end_date": 2021},
         {"job_title": "Software Engineering Intern", "company": "TechCore", "location": "San Francisco, CA", "start_date": 2020, "end_date": 2020}
     ]',
 

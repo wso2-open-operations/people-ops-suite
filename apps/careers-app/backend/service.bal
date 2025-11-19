@@ -433,20 +433,20 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
 
         // Update profile in database
-        database:ApplicantProfile|error? updatedProfile = database:updateProfileByEmail(email, dbPayload);
+        database:ApplicantProfile|error updatedProfile = database:updateProfileByEmail(email, dbPayload);
         if updatedProfile is error {
+            if updatedProfile.message().startsWith("No applicant found with email:") {
+                string notFoundMsg = "Applicant profile not found for email: " + email;
+                log:printInfo(notFoundMsg);
+                return <http:NotFound>{
+                    body: {
+                        message: notFoundMsg
+                    }
+                };
+            }
             string errorMessage = "Failed to update applicant profile.";
             log:printError(errorMessage, updatedProfile);
             return <http:InternalServerError>{
-                body: {
-                    message: errorMessage
-                }
-            };
-        }
-        if updatedProfile is null {
-            string errorMessage = "applicant profile not found.";
-            log:printError(errorMessage);
-            return <http:NotFound>{
                 body: {
                     message: errorMessage
                 }
