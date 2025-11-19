@@ -98,15 +98,15 @@ public isolated function uploadApplicantPhoto(byte[] photoBytes, string fileName
 #
 # + cvBytes - Byte array content of the CV
 # + fileName - The file name for the CV (with extension)
-# + applicantFolderName - The name of the applicant folder
+# + email - The email of the applicant
 # + return - The byte array of the CV or an error if upload/validation fails
-public isolated function uploadApplicantCv(byte[] cvBytes, string fileName, string applicantFolderName)
+public isolated function uploadApplicantCv(byte[] cvBytes, string fileName, string email)
     returns byte[]|error {
     if cvBytes.length() == 0 {
         return [];
     }
 
-    string folderId = check getApplicantFolder(applicantFolderName);
+    string folderId = check getApplicantFolder(email);
 
     log:printDebug("Uploading CV: " + fileName);
     drive:File uploaded = check gDriveClient->uploadFileUsingByteArray(cvBytes, fileName, folderId);

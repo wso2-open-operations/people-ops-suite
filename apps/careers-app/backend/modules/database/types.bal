@@ -52,7 +52,7 @@ public type ProfessionalLinks record {
 public type Educations record {
     # degree.
     string degree;
-    # link.
+    # end year
     int end_year;
     # location
     string location;
@@ -70,7 +70,7 @@ public type Experiences record {
     string company;
     # location
     string location;
-    # job tilte
+    # job title
     string job_title;
     # start date
     string start_date;
