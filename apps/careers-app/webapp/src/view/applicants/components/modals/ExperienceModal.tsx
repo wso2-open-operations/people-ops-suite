@@ -93,10 +93,12 @@ export default function ExperienceModal({
         company: editItem.company || "",
         location: editItem.location || "",
         start_date: editItem.start_date ? dayjs(editItem.start_date) : null,
-        end_date: editItem.current ? null : dayjs(editItem.end_date) || null,
+        end_date: editItem.current || !editItem.end_date
+          ? null
+          : dayjs(editItem.end_date),
         current: !!editItem.current,
       }
-    : EMPTY_VALUES;
+    : { ...EMPTY_VALUES };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
