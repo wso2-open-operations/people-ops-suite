@@ -26,9 +26,9 @@ final drive:Client gDriveClient = check initializeGoogleDriveClient();
 # + return - Folder ID as a string, or an error if the operation fails
 public isolated function getGDriveParentFolder() returns string|error {
     log:printDebug("Retrieving parent folder ID for: " + googleDriveParentDirName);
-    stream<drive:File> parentSearch = check gDriveClient->getFoldersByName(googleDriveParentDirName);
-    record {|drive:File value;|}? parentRecord = parentSearch.next();
-    parentSearch.close();
+    stream<drive:File, error?> parentSearch = check gDriveClient->getFoldersByName(googleDriveParentDirName);
+    record {|drive:File value;|}? parentRecord = check parentSearch.next();
+    check parentSearch.close();
 
     if parentRecord is () {
         log:printWarn("Parent folder not found, creating: " + googleDriveParentDirName);
