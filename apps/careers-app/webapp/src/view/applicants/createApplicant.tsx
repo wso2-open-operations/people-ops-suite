@@ -308,14 +308,14 @@ export default function CreateApplicant() {
               : undefined;
 
             const payload = {
-              first_name: values.firstName,
-              last_name: values.lastName,
+              firstName: values.firstName,
+              lastName: values.lastName,
               email: values.email,
               phone: values.phone,
               address: values.address,
               country: values.country,
               status: "active",
-              professional_links: Object.entries(values.professionalLinks)
+              professionalLinks: Object.entries(values.professionalLinks)
                 .map(([title, link]) => ({ title: title.toLowerCase(), link }))
                 .filter((l) => l.link),
               educations: values.educations,
@@ -354,9 +354,9 @@ export default function CreateApplicant() {
                 .map((s) => s.trim())
                 .filter((s) => s.length > 0),
 
-              user_thumbnail: byteArrayProfile,
+              userThumbnail: byteArrayProfile,
               profile_photo_file_name: profilePhoto?.name,
-              resume_link: byteArrayResume,
+              resume: byteArrayResume,
               cv_file_name: resumeFile?.name,
             };
 

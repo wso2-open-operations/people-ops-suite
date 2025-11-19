@@ -98,12 +98,12 @@ interface ExperiencePayload {
 }
 
 interface UpdateApplicantPayload {
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   phone: string;
   address: string;
   country: string;
-  professional_links: ProfessionalLink[];
+  professionalLinks: ProfessionalLink[];
   educations: Education[];
   experiences: ExperiencePayload[];
   certifications: Certification[];
@@ -111,9 +111,9 @@ interface UpdateApplicantPayload {
   languages: Language[];
   skills: string[];
   interests: string[];
-  user_thumbnail?: number[];
+  userThumbnail?: number[];
   profile_photo_file_name?: string;
-  resume_link?: number[];
+  resume?: number[];
   cv_file_name?: string;
 }
 
@@ -185,7 +185,7 @@ export default function EditApplicant({
     setEditingItem(null);
   };
 
-  // Convert professional_links array to object
+  // Convert professionalLinks array to object
   const professionalLinksObj: Record<string, string> = {};
   const linkTypes = [
     "LinkedIn",
@@ -201,15 +201,15 @@ export default function EditApplicant({
   ];
 
   linkTypes.forEach((type) => {
-    const found = applicant.professional_links?.find(
+    const found = applicant.professionalLinks?.find(
       (l) => l.title.toLowerCase() === type.toLowerCase()
     );
     professionalLinksObj[type] = found?.link || "";
   });
 
   const initialValues: EditApplicantFormValues = {
-    firstName: applicant.first_name,
-    lastName: applicant.last_name,
+    firstName: applicant.firstName,
+    lastName: applicant.lastName,
     phone: applicant.phone,
     email: applicant.email,
     country: applicant.country,
@@ -255,12 +255,12 @@ export default function EditApplicant({
             : undefined;
 
           const payload: UpdateApplicantPayload = {
-            first_name: values.firstName,
-            last_name: values.lastName,
+            firstName: values.firstName,
+            lastName: values.lastName,
             phone: values.phone,
             address: values.address,
             country: values.country,
-            professional_links: Object.entries(values.professionalLinks)
+            professionalLinks: Object.entries(values.professionalLinks)
               .map(([title, link]) => ({ title: title.toLowerCase(), link }))
               .filter((l) => l.link),
             educations: values.educations,
@@ -304,11 +304,11 @@ export default function EditApplicant({
           };
 
           if (byteArrayProfile) {
-            payload.user_thumbnail = byteArrayProfile;
+            payload.userThumbnail = byteArrayProfile;
             payload.profile_photo_file_name = profilePhoto?.name;
           }
           if (byteArrayResume) {
-            payload.resume_link = byteArrayResume;
+            payload.resume = byteArrayResume;
             payload.cv_file_name = resumeFile?.name;
           }
 
@@ -394,7 +394,7 @@ export default function EditApplicant({
                     src={
                       profilePhoto
                         ? URL.createObjectURL(profilePhoto)
-                        : getImageDataUrl(applicant.user_thumbnail)
+                        : getImageDataUrl(applicant.userThumbnail)
                     }
                     alt={`${values.firstName} ${values.lastName}`}
                     sx={{
@@ -582,14 +582,14 @@ export default function EditApplicant({
                     New resume selected: {resumeFile.name}
                   </Typography>
                 )}
-                {!resumeFile && isValidByteArray(applicant.resume_link) && (
+                {!resumeFile && isValidByteArray(applicant.resume) && (
                   <Typography variant="body2" color="text.secondary">
                     Current resume on file.{" "}
                     <a
                       href="#"
                       onClick={(e) => {
                         e.preventDefault();
-                        viewPdfInNewTab(applicant.resume_link);
+                        viewPdfInNewTab(applicant.resume);
                       }}
                       style={{ cursor: "pointer" }}
                     >

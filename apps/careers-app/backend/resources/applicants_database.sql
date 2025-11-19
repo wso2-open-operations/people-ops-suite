@@ -5,18 +5,18 @@ CREATE TABLE applicants (
     id INT AUTO_INCREMENT PRIMARY KEY,
     
     -- Personal Info
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
+    firstName VARCHAR(100),
+    lastName VARCHAR(100),
     email VARCHAR(150),
     phone VARCHAR(50),
     address TEXT,
     country VARCHAR(100),
-    user_thumbnail LONGBLOB,
-    resume_link LONGBLOB,
+    userThumbnail LONGBLOB,
+    resume LONGBLOB,
     status VARCHAR(50),
     
     -- JSON Arrays
-    professional_links JSON,
+    professionalLinks JSON,
     educations JSON,
     experiences JSON,
     skills JSON,
@@ -25,19 +25,19 @@ CREATE TABLE applicants (
     languages JSON,
     interests JSON,
 
-    created_by    VARCHAR(255) NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by    VARCHAR(255) NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    createdBy    VARCHAR(255) NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedBy    VARCHAR(255) NULL,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 
 INSERT INTO applicants (
-    first_name, last_name, email, phone, address, country, user_thumbnail, resume_link, status,
-    professional_links, educations, experiences, skills, certifications, projects, languages, interests
+    firstName, lastName, email, phone, address, country, userThumbnail, resume, status,
+    professionalLinks, educations, experiences, skills, certifications, projects, languages, interests
 )
 VALUES (
-    'Jane', 'Smith', 'janesmith@example.com', '+1 555 123 4567', '45 Maple Street, Springfield', 'United States',
+    'Jane', 'Smith', 'janesmith@example.com', '+15551234567', '45 Maple Street, Springfield', 'United States',
     'https://example.com/jane_thumbnail.jpg', 'https://example.com/jane_resume.pdf', 'active',
 
     -- Convert each JSON array to valid JSON string

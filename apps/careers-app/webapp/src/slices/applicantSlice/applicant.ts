@@ -55,14 +55,14 @@ export interface Languages{
   proficiency: string;
 }
 export interface ApplicantPayload {
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
   country: string;
   status: string;
-  professional_links: { title: string; link: string }[];
+  professionalLinks: { title: string; link: string }[];
   educations: Educations[];
   experiences: Experiences[];
   skills: string[];
@@ -74,16 +74,16 @@ export interface ApplicantPayload {
   cv_file_name?: string;
 }
 export interface ApplicantProfile {
-  first_name: string;
-  last_name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   address: string;
   country: string;
   status: string;
-  user_thumbnail?: number[]; 
-  resume_link?: number[]; 
-  professional_links?: { title: string; link: string }[];
+  userThumbnail?: number[]; 
+  resume?: number[]; 
+  professionalLinks?: { title: string; link: string }[];
   educations?: Educations[];
   experiences?: Experiences[];
   certifications?: Certifications[];

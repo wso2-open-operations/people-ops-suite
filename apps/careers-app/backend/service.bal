@@ -145,7 +145,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         string actor = invokerInfo.email;
 
         // Validate file sizes
-        error? photoSizeErr = validateFileSize(applicant.user_thumbnail);
+        error? photoSizeErr = validateFileSize(applicant.userThumbnail);
         if photoSizeErr is error {
             string errorMessage = "Profile photo exceeds 10 MB limit";
             log:printError(errorMessage, photoSizeErr);
@@ -156,7 +156,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             };
         }
 
-        error? cvSizeErr = validateFileSize(applicant.resume_link);
+        error? cvSizeErr = validateFileSize(applicant.resume);
         if cvSizeErr is error {
             string errorMessage = "CV exceeds 10 MB limit";
             log:printError(errorMessage, cvSizeErr);
@@ -167,7 +167,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             };
         }
 
-        string applicantFolderName = string `${applicant.first_name}_${applicant.last_name}`;
+        string applicantFolderName = string `${applicant.firstName}_${applicant.lastName}`;
         string applicantEmail = applicant.email;
 
         // Construct unique file names
@@ -180,7 +180,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
 
         // Upload profile photo
-        byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.user_thumbnail, photoFileName, applicantEmail);
+        byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.userThumbnail, photoFileName, applicantEmail);
         if photoBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid profile photo type. Must be an image.";
             log:printError(errorMessage, photoBytes);
@@ -201,7 +201,7 @@ service http:InterceptableService / on new http:Listener(9093) {
         }
 
         // Upload CV
-        byte[]|error cvBytes = gdrive:uploadApplicantCv(applicant.resume_link, cvFileName, applicantEmail);
+        byte[]|error cvBytes = gdrive:uploadApplicantCv(applicant.resume, cvFileName, applicantEmail);
         if cvBytes is gdrive:InvalidFileTypeError {
             string errorMessage = "Invalid CV type. Must be PDF.";
             log:printError(errorMessage, cvBytes);
@@ -223,14 +223,14 @@ service http:InterceptableService / on new http:Listener(9093) {
 
         // Build DB payload with byte arrays + audit
         database:CreateApplicantProfile dbPayload = {
-            first_name: applicant.first_name,
-            last_name: applicant.last_name,
+            firstName: applicant.firstName,
+            lastName: applicant.lastName,
             email: applicant.email,
             phone: applicant.phone,
             address: applicant.address,
             country: applicant.country,
             status: applicant.status,
-            professional_links: applicant.professional_links,
+            professionalLinks: applicant.professionalLinks,
             educations: applicant.educations,
             experiences: applicant.experiences,
             skills: applicant.skills,
@@ -239,10 +239,10 @@ service http:InterceptableService / on new http:Listener(9093) {
             languages: applicant.languages,
             interests: applicant.interests,
 
-            user_thumbnail: photoBytes,
-            resume_link: cvBytes,
-            created_by: actor,
-            updated_by: actor
+            userThumbnail: photoBytes,
+            resume: cvBytes,
+            createdBy: actor,
+            updatedBy: actor
         };
 
         // Insert into database
@@ -324,14 +324,14 @@ service http:InterceptableService / on new http:Listener(9093) {
 
         // Build the database update payload
         database:UpdateApplicantProfile dbPayload = {
-            first_name: applicant.first_name,
-            last_name: applicant.last_name,
+            firstName: applicant.firstName,
+            lastName: applicant.lastName,
             email: applicant.email,
             phone: applicant.phone,
             address: applicant.address,
             country: applicant.country,
             status: applicant.status,
-            professional_links: applicant.professional_links,
+            professionalLinks: applicant.professionalLinks,
             educations: applicant.educations,
             experiences: applicant.experiences,
             skills: applicant.skills,
@@ -339,11 +339,11 @@ service http:InterceptableService / on new http:Listener(9093) {
             projects: applicant.projects,
             languages: applicant.languages,
             interests: applicant.interests,
-            updated_by: actor
+            updatedBy: actor
         };
 
         // Handle profile photo update if provided
-        byte[]? byteArrayPhoto = applicant?.user_thumbnail;
+        byte[]? byteArrayPhoto = applicant?.userThumbnail;
         if byteArrayPhoto is byte[] && byteArrayPhoto.length() > 0 {
             // Validate file size
             error? photoSizeErr = validateFileSize(byteArrayPhoto);
@@ -358,7 +358,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             }
 
             // Construct unique file name
-            string applicantFolderName = string `${applicant?.first_name ?: email}_${applicant?.last_name ?: ""}`;
+            string applicantFolderName = string `${applicant?.firstName ?: email}_${applicant?.lastName ?: ""}`;
             string ts = time:utcToString(time:utcNow());
             string photoExt = getFileExtension(applicant?.profile_photo_file_name);
             string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
@@ -384,11 +384,11 @@ service http:InterceptableService / on new http:Listener(9093) {
                 };
             }
 
-            dbPayload.user_thumbnail = photoBytes;
+            dbPayload.userThumbnail = photoBytes;
         }
 
         // Handle CV update if provided
-        byte[]? byteArrayCv = applicant?.resume_link;
+        byte[]? byteArrayCv = applicant?.resume;
         if byteArrayCv is byte[] && byteArrayCv.length() > 0 {
             // Validate file size
             error? cvSizeErr = validateFileSize(byteArrayCv);
@@ -403,7 +403,7 @@ service http:InterceptableService / on new http:Listener(9093) {
             }
 
             // Construct unique file name
-            string applicantFolderName = string `${applicant?.first_name ?: email}_${applicant?.last_name ?: ""}`;
+            string applicantFolderName = string `${applicant?.firstName ?: email}_${applicant?.lastName ?: ""}`;
             string ts = time:utcToString(time:utcNow());
             string cvExt = getFileExtension(applicant?.cv_file_name);
             string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
@@ -429,7 +429,7 @@ service http:InterceptableService / on new http:Listener(9093) {
                 };
             }
 
-            dbPayload.resume_link = cvBytes;
+            dbPayload.resume = cvBytes;
         }
 
         // Update profile in database

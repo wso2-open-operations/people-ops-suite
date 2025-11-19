@@ -25,14 +25,14 @@ public const string ACTIVE = "active";
 # + return - sql:ParameterizedQuery - Insert query for the applicantss table
 isolated function createapplicantProfileQuery(CreateApplicantProfile applicant) returns sql:ParameterizedQuery =>
     `INSERT INTO applicants (
-        first_name,
-        last_name, 
+        firstName,
+        lastName, 
         email, 
         phone, 
         address, 
         country, 
         status,
-        professional_links, 
+        professionalLinks, 
         educations, 
         experiences, 
         skills, 
@@ -40,19 +40,19 @@ isolated function createapplicantProfileQuery(CreateApplicantProfile applicant) 
         projects, 
         languages, 
         interests,
-        user_thumbnail,
-        resume_link,
-        created_by,
-        updated_by
+        userThumbnail,
+        resume,
+        createdBy,
+        updatedBy
     ) VALUES (
-        ${applicant.first_name}, 
-        ${applicant.last_name}, 
+        ${applicant.firstName}, 
+        ${applicant.lastName}, 
         ${applicant.email}, 
         ${applicant.phone}, 
         ${applicant.address},
         ${applicant.country}, 
         ${applicant.status},
-        ${applicant.professional_links.toString()}, 
+        ${applicant.professionalLinks.toString()}, 
         ${applicant.educations.toString()}, 
         ${applicant.experiences.toString()},
         ${applicant.skills.toString()}, 
@@ -60,10 +60,10 @@ isolated function createapplicantProfileQuery(CreateApplicantProfile applicant) 
         ${applicant.projects.toString()},
         ${applicant.languages.toString()}, 
         ${applicant.interests.toString()},
-        ${applicant.user_thumbnail},
-        ${applicant.resume_link},
-        ${applicant.created_by},
-        ${applicant.updated_by}
+        ${applicant.userThumbnail},
+        ${applicant.resume},
+        ${applicant.createdBy},
+        ${applicant.updatedBy}
     )`;
 
 # Retrieve applicant profile by email.
@@ -73,14 +73,14 @@ isolated function createapplicantProfileQuery(CreateApplicantProfile applicant) 
 isolated function getApplicantByEmailQuery(string email) returns sql:ParameterizedQuery => `
     SELECT
         id AS 'id',
-        first_name AS 'first_name',
-        last_name AS 'last_name',
+        firstName AS 'firstName',
+        lastName AS 'lastName',
         email AS 'email',
         phone AS 'phone',
         address AS 'address',
         country AS 'country',
         status AS 'status',
-        professional_links AS 'professional_links',
+        professionalLinks AS 'professionalLinks',
         educations AS 'educations',
         experiences AS 'experiences',
         skills AS 'skills',
@@ -88,12 +88,12 @@ isolated function getApplicantByEmailQuery(string email) returns sql:Parameteriz
         projects AS 'projects',
         languages AS 'languages',
         interests AS 'interests',
-        user_thumbnail AS 'user_thumbnail',
-        resume_link AS 'resume_link',
-        created_by AS 'created_by',
-        updated_by AS 'updated_by',
-        DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS 'created_at',
-        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS 'updated_at'
+        userThumbnail AS 'userThumbnail',
+        resume AS 'resume',
+        createdBy AS 'createdBy',
+        updatedBy AS 'updatedBy',
+        DATE_FORMAT(createdAt, '%Y-%m-%d %H:%i:%s') AS 'createdAt',
+        DATE_FORMAT(updatedAt, '%Y-%m-%d %H:%i:%s') AS 'updatedAt'
     FROM applicants
     WHERE email = ${email}
     LIMIT 1;
@@ -111,11 +111,11 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
     sql:ParameterizedQuery subQuery = ` WHERE email = ${email}`;
     sql:ParameterizedQuery[] filters = [];
 
-    if applicant.first_name is string {
-        filters.push(`first_name = ${applicant.first_name}`);
+    if applicant.firstName is string {
+        filters.push(`firstName = ${applicant.firstName}`);
     }
-    if applicant.last_name is string {
-        filters.push(`last_name = ${applicant.last_name}`);
+    if applicant.lastName is string {
+        filters.push(`lastName = ${applicant.lastName}`);
     }
     if applicant.email is string {
         filters.push(`email = ${applicant.email}`);
@@ -132,9 +132,9 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
     if applicant.status is string {
         filters.push(`status = ${applicant.status}`);
     }
-    if applicant.professional_links is ProfessionalLinks[] {
-        string jsonStr = applicant.professional_links.toJsonString();
-        filters.push(`professional_links = ${jsonStr}`);
+    if applicant.professionalLinks is ProfessionalLinks[] {
+        string jsonStr = applicant.professionalLinks.toJsonString();
+        filters.push(`professionalLinks = ${jsonStr}`);
     }
     if applicant.educations is Educations[] {
         string jsonStr = applicant.educations.toJsonString();
@@ -164,20 +164,20 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
         string jsonStr = applicant.interests.toJsonString();
         filters.push(`interests = ${jsonStr}`);
     }
-    byte[]? userThumbnail = applicant?.user_thumbnail;
+    byte[]? userThumbnail = applicant?.userThumbnail;
     if userThumbnail is byte[] {
-        filters.push(`user_thumbnail = ${userThumbnail}`);
+        filters.push(`userThumbnail = ${userThumbnail}`);
     }
-    byte[]? resumeLink = applicant?.resume_link;
+    byte[]? resumeLink = applicant?.resume;
     if resumeLink is byte[] {
-        filters.push(`resume_link = ${resumeLink}`);
+        filters.push(`resume = ${resumeLink}`);
     }
-    if applicant.updated_by is string {
-        filters.push(`updated_by = ${applicant.updated_by}`);
+    if applicant.updatedBy is string {
+        filters.push(`updatedBy = ${applicant.updatedBy}`);
     }
 
-    // Always update `updated_at` field
-    filters.push(`updated_at = current_timestamp`);
+    // Always update `updatedAt` field
+    filters.push(`updatedAt = current_timestamp`);
 
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);
 
@@ -190,14 +190,14 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
 isolated function getAllApplicantsQuery() returns sql:ParameterizedQuery =>
     `SELECT
         id AS 'id',
-        first_name AS 'first_name',
-        last_name AS 'last_name',
+        firstName AS 'firstName',
+        lastName AS 'lastName',
         email AS 'email',
         phone AS 'phone',
         address AS 'address',
         country AS 'country',
         status AS 'status',
-        professional_links AS 'professional_links',
+        professionalLinks AS 'professionalLinks',
         educations AS 'educations',
         experiences AS 'experiences',
         skills AS 'skills',
@@ -205,10 +205,10 @@ isolated function getAllApplicantsQuery() returns sql:ParameterizedQuery =>
         projects AS 'projects',
         languages AS 'languages',
         interests AS 'interests',
-        user_thumbnail AS 'user_thumbnail',
-        resume_link AS 'resume_link',
-        created_by AS 'created_by',
-        DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS 'created_at',
-        updated_by AS 'updated_by',
-        DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS 'updated_at'
+        userThumbnail AS 'userThumbnail',
+        resume AS 'resume',
+        createdBy AS 'createdBy',
+        DATE_FORMAT(createdAt, '%Y-%m-%d %H:%i:%s') AS 'createdAt',
+        updatedBy AS 'updatedBy',
+        DATE_FORMAT(updatedAt, '%Y-%m-%d %H:%i:%s') AS 'updatedAt'
      FROM applicants`;

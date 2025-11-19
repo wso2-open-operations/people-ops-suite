@@ -105,7 +105,7 @@ export default function ApplicantProfile() {
         <Box display="flex" alignItems="center" gap={4} position="relative">
           {/* Avatar Section */}
           <Avatar
-            src={getImageDataUrl(applicant.user_thumbnail)}
+            src={getImageDataUrl(applicant.userThumbnail)}
             sx={{
               width: 100,
               height: 100,
@@ -120,7 +120,7 @@ export default function ApplicantProfile() {
               },
             }}
           >
-            {applicant.first_name?.[0]?.toUpperCase()}
+            {applicant.firstName?.[0]?.toUpperCase()}
           </Avatar>
 
           {/* Main Info Section */}
@@ -137,7 +137,7 @@ export default function ApplicantProfile() {
                 letterSpacing: "-0.5px",
               }}
             >
-              {applicant.first_name} {applicant.last_name}
+              {applicant.firstName} {applicant.lastName}
             </Typography>
 
             <Stack
@@ -210,9 +210,9 @@ export default function ApplicantProfile() {
               Edit Profile
             </Button>
 
-            {isValidByteArray(applicant.resume_link) && (
+            {isValidByteArray(applicant.resume) && (
               <Button
-                onClick={() => viewPdfInNewTab(applicant.resume_link)}
+                onClick={() => viewPdfInNewTab(applicant.resume)}
                 variant="contained"
                 size="medium"
                 startIcon={<DescriptionOutlined />}
@@ -362,8 +362,8 @@ export default function ApplicantProfile() {
             </Grid>
 
             {/* Professional Links Section */}
-            {applicant.professional_links &&
-              applicant.professional_links.length > 0 && (
+            {applicant.professionalLinks &&
+              applicant.professionalLinks.length > 0 && (
                 <Grid item xs={12}>
                   <Typography
                     variant="h5"
@@ -376,7 +376,7 @@ export default function ApplicantProfile() {
                     Professional Links
                   </Typography>
                   <Stack direction="row" flexWrap="wrap" gap={1.5}>
-                    {applicant.professional_links.map((link, idx) => (
+                    {applicant.professionalLinks.map((link, idx) => (
                       <Button
                         key={idx}
                         href={link.link}

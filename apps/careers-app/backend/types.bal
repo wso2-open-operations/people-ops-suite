@@ -237,7 +237,7 @@ public type CreateApplicantProfile record {|
             message: "First name must be a non-empty printable string"
         }
     }
-    string first_name;
+    string firstName;
     # Last name 
     @constraint:String {
         pattern: {
@@ -245,7 +245,7 @@ public type CreateApplicantProfile record {|
             message: "Last name must be a non-empty printable string"
         }
     }
-    string last_name;
+    string lastName;
     # Email address 
     @constraint:String {
         pattern: {
@@ -287,7 +287,7 @@ public type CreateApplicantProfile record {|
     }
     string status;
     # Professional links
-    ProfessionalLinks[] professional_links;
+    ProfessionalLinks[] professionalLinks;
     # Educations
     Educations[] educations;
     # Experiences
@@ -303,13 +303,13 @@ public type CreateApplicantProfile record {|
     # Interests 
     Interests interests;
     # User thumbnail
-    byte[]? user_thumbnail;
+    byte[]? userThumbnail;
     # Resume as byte array
-    byte[]? resume_link;
+    byte[]? resume;
     # user who created the profile
-    string created_by;
+    string createdBy;
     # user who last updated the profile
-    string updated_by;
+    string updatedBy;
 |};
 
 # Request payload for creating applicant profile.
@@ -321,7 +321,7 @@ public type CreateApplicantProfileRequest record {|
             message: "First name must be a non-empty printable string"
         }
     }
-    string first_name;
+    string firstName;
 
     # Last name
     @constraint:String {
@@ -330,7 +330,7 @@ public type CreateApplicantProfileRequest record {|
             message: "Last name must be a non-empty printable string"
         }
     }
-    string last_name;
+    string lastName;
 
     # Email address
     @constraint:String {
@@ -377,7 +377,7 @@ public type CreateApplicantProfileRequest record {|
     }
     string status;
     # List of professional links
-    ProfessionalLinks[] professional_links;
+    ProfessionalLinks[] professionalLinks;
     # Educations
     Educations[] educations;
     # Experiences
@@ -393,11 +393,11 @@ public type CreateApplicantProfileRequest record {|
     # Interests
     Interests interests;
     # User thumbnail
-    byte[] user_thumbnail;
+    byte[] userThumbnail;
     # Profile picture file name
     string profile_photo_file_name;
     # Resume as byte array
-    byte[] resume_link;
+    byte[] resume;
     # CV file name
     string cv_file_name;
 |};
@@ -411,7 +411,7 @@ public type UpdateApplicantProfile record {|
             message: "First name must be a non-empty printable string"
         }
     }
-    string first_name?;
+    string firstName?;
     # Last name of the applicant
     @constraint:String {
         pattern: {
@@ -419,7 +419,7 @@ public type UpdateApplicantProfile record {|
             message: "Last name must be a non-empty printable string"
         }
     }
-    string last_name?;
+    string lastName?;
     # Email address of the applicant
     @constraint:String {
         pattern: {
@@ -461,7 +461,7 @@ public type UpdateApplicantProfile record {|
     }
     string status?;
     # List of professional links
-    ProfessionalLinks[] professional_links?;
+    ProfessionalLinks[] professionalLinks?;
     # Educational background
     Educations[] educations?;
     # Work experience details 
@@ -477,11 +477,11 @@ public type UpdateApplicantProfile record {|
     # Personal interests 
     Interests interests?;
     # Profile picture as byte array
-    byte[]? user_thumbnail?;
+    byte[]? userThumbnail?;
     # Resume as byte array
-    byte[]? resume_link?;
+    byte[]? resume?;
     # user who last updated the profile
-    string updated_by?;
+    string updatedBy?;
 |};
 
 # Request payload for updating applicant profile.
@@ -493,7 +493,7 @@ public type UpdateApplicantProfileRequest record {|
             message: "First name must be a non-empty printable string"
         }
     }
-    string first_name?;
+    string firstName?;
     # Last name of the applicant
     @constraint:String {
         pattern: {
@@ -501,7 +501,7 @@ public type UpdateApplicantProfileRequest record {|
             message: "Last name must be a non-empty printable string"
         }
     }
-    string last_name?;
+    string lastName?;
     # Email address of the applicant
     @constraint:String {
         pattern: {
@@ -543,7 +543,7 @@ public type UpdateApplicantProfileRequest record {|
     }
     string status?;
     # List of professional links
-    ProfessionalLinks[] professional_links?;
+    ProfessionalLinks[] professionalLinks?;
     # Educational background
     Educations[] educations?;
     # Work experience details 
@@ -559,11 +559,11 @@ public type UpdateApplicantProfileRequest record {|
     # Personal interests 
     Interests interests?;
     # Bytestring encoded profile photo
-    byte[] user_thumbnail?;
+    byte[] userThumbnail?;
     # Profile photo file name
     string profile_photo_file_name?;
     # Bytestring encoded CV
-    byte[] resume_link?;
+    byte[] resume?;
     # CV file name
     string cv_file_name?;
 |};

@@ -48,9 +48,9 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
     }
 
     // Transform JSON fields to typed arrays
-    ProfessionalLinks[]|error professionalLinks = dbResult.professional_links.fromJsonStringWithType();
+    ProfessionalLinks[]|error professionalLinks = dbResult.professionalLinks.fromJsonStringWithType();
     if professionalLinks is error {
-        string errorMsg = string `Error parsing professional_links for applicant ${email}!`;
+        string errorMsg = string `Error parsing professionalLinks for applicant ${email}!`;
         log:printError(errorMsg, professionalLinks);
         return error(errorMsg);
     }
@@ -106,14 +106,14 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
 
     return {
         id: dbResult.id,
-        first_name: dbResult.first_name,
-        last_name: dbResult.last_name,
+        firstName: dbResult.firstName,
+        lastName: dbResult.lastName,
         email: dbResult.email,
         phone: dbResult.phone,
         address: dbResult.address,
         country: dbResult.country,
         status: dbResult.status,
-        professional_links: professionalLinks,
+        professionalLinks: professionalLinks,
         educations: educations,
         experiences: experiences,
         skills: skills,
@@ -121,12 +121,12 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
         projects: projects,
         languages: languages,
         interests: interests,
-        user_thumbnail: dbResult.user_thumbnail,
-        resume_link: dbResult.resume_link,
-        created_by: dbResult.created_by,
-        created_at: dbResult.created_at,
-        updated_by: dbResult.updated_by,
-        updated_at: dbResult.updated_at
+        userThumbnail: dbResult.userThumbnail,
+        resume: dbResult.resume,
+        createdBy: dbResult.createdBy,
+        createdAt: dbResult.createdAt,
+        updatedBy: dbResult.updatedBy,
+        updatedAt: dbResult.updatedAt
     };
 }
 
@@ -176,11 +176,11 @@ public isolated function getAllApplicants() returns ApplicantProfile[]|error {
         Languages[] languages = [];
         Interests interests = [];
 
-        // Parse professional_links if not null or "null"
-        if dbResult.professional_links != "" && dbResult.professional_links != "null" {
-            ProfessionalLinks[]|error plResult = dbResult.professional_links.fromJsonStringWithType();
+        // Parse professionalLinks if not null or "null"
+        if dbResult.professionalLinks != "" && dbResult.professionalLinks != "null" {
+            ProfessionalLinks[]|error plResult = dbResult.professionalLinks.fromJsonStringWithType();
             if plResult is error {
-                log:printError(string `Error parsing professional_links for applicant ${dbResult.id}`, plResult);
+                log:printError(string `Error parsing professionalLinks for applicant ${dbResult.id}`, plResult);
             } else {
                 professionalLinks = plResult;
             }
@@ -259,14 +259,14 @@ public isolated function getAllApplicants() returns ApplicantProfile[]|error {
         // Create and add the transformed profile to the array
         profiles.push({
             id: dbResult.id,
-            first_name: dbResult.first_name,
-            last_name: dbResult.last_name,
+            firstName: dbResult.firstName,
+            lastName: dbResult.lastName,
             email: dbResult.email,
             phone: dbResult.phone,
             address: dbResult.address,
             country: dbResult.country,
             status: dbResult.status,
-            professional_links: professionalLinks,
+            professionalLinks: professionalLinks,
             educations: educations,
             experiences: experiences,
             skills: skills,
@@ -274,12 +274,12 @@ public isolated function getAllApplicants() returns ApplicantProfile[]|error {
             projects: projects,
             languages: languages,
             interests: interests,
-            user_thumbnail: dbResult.user_thumbnail,
-            resume_link: dbResult.resume_link,
-            created_by: dbResult.created_by,
-            updated_by: dbResult.updated_by,
-            created_at: dbResult.created_at,
-            updated_at: dbResult.updated_at
+            userThumbnail: dbResult.userThumbnail,
+            resume: dbResult.resume,
+            createdBy: dbResult.createdBy,
+            updatedBy: dbResult.updatedBy,
+            createdAt: dbResult.createdAt,
+            updatedAt: dbResult.updatedAt
         });
 
         result = check resultStream.next();

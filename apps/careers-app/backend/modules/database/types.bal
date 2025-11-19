@@ -121,11 +121,11 @@ public type Interests string[];
 # create a new applicant profile.
 public type CreateApplicantProfile record {|
     # First name of the applicant
-    @sql:Column {name: "first_name"}
-    string first_name;
+    @sql:Column {name: "firstName"}
+    string firstName;
     # Last name of the applicant
-    @sql:Column {name: "last_name"}
-    string last_name;
+    @sql:Column {name: "lastName"}
+    string lastName;
     # Email address of the applicant
     @sql:Column {name: "email"}
     string email;
@@ -142,8 +142,8 @@ public type CreateApplicantProfile record {|
     @sql:Column {name: "status"}
     string status;
     # List of professional links
-    @sql:Column {name: "professional_links"}
-    ProfessionalLinks[] professional_links;
+    @sql:Column {name: "professionalLinks"}
+    ProfessionalLinks[] professionalLinks;
     # Educational background
     @sql:Column {name: "educations"}
     Educations[] educations;
@@ -166,17 +166,17 @@ public type CreateApplicantProfile record {|
     @sql:Column {name: "interests"}
     Interests interests;
     # Profile picture as byte array
-    @sql:Column {name: "user_thumbnail"}
-    byte[]? user_thumbnail;
+    @sql:Column {name: "userThumbnail"}
+    byte[]? userThumbnail;
     # Resume as byte array
-    @sql:Column {name: "resume_link"}
-    byte[]? resume_link;
+    @sql:Column {name: "resume"}
+    byte[]? resume;
     # user who created the profile
-    @sql:Column {name: "created_by"}
-    string? created_by;
+    @sql:Column {name: "createdBy"}
+    string? createdBy;
     # user who last updated the profile
-    @sql:Column {name: "updated_by"}
-    string? updated_by;
+    @sql:Column {name: "updatedBy"}
+    string? updatedBy;
 |};
 
 # Applicant profile record.
@@ -185,9 +185,9 @@ public type ApplicantProfile record {|
     # Unique identifier for the applicant profile
     int id;
     # Timestamp when the profile was created
-    string created_at;
+    string createdAt;
     # Timestamp when the profile was last updated
-    string updated_at;
+    string updatedAt;
 |};
 
 # Database record type for applicant profile.
@@ -196,11 +196,11 @@ type ApplicantProfileDB record {|
     @sql:Column {name: "id"}
     int id;
     # First name of the applicant
-    @sql:Column {name: "first_name"}
-    string first_name;
+    @sql:Column {name: "firstName"}
+    string firstName;
     # Last name of the applicant
-    @sql:Column {name: "last_name"}
-    string last_name;
+    @sql:Column {name: "lastName"}
+    string lastName;
     # Email address of the applicant
     @sql:Column {name: "email"}
     string email;
@@ -217,8 +217,8 @@ type ApplicantProfileDB record {|
     @sql:Column {name: "status"}
     string status;
     # List of professional links
-    @sql:Column {name: "professional_links"}
-    string professional_links;
+    @sql:Column {name: "professionalLinks"}
+    string professionalLinks;
     # Educational background
     @sql:Column {name: "educations"}
     string educations;
@@ -241,31 +241,31 @@ type ApplicantProfileDB record {|
     @sql:Column {name: "interests"}
     string interests;
     # Profile picture as byte array
-    @sql:Column {name: "user_thumbnail"}
-    byte[]? user_thumbnail;
+    @sql:Column {name: "userThumbnail"}
+    byte[]? userThumbnail;
     # Resume as byte array
-    @sql:Column {name: "resume_link"}
-    byte[]? resume_link;
+    @sql:Column {name: "resume"}
+    byte[]? resume;
     # user who created the profile
-    @sql:Column {name: "created_by"}
-    string? created_by;
+    @sql:Column {name: "createdBy"}
+    string? createdBy;
     # user who last updated the profile
-    @sql:Column {name: "updated_by"}
-    string? updated_by;
+    @sql:Column {name: "updatedBy"}
+    string? updatedBy;
     # Timestamp when the profile was created
-    @sql:Column {name: "created_at"}
-    string created_at;
+    @sql:Column {name: "createdAt"}
+    string createdAt;
     # Timestamp when the profile was last updated
-    @sql:Column {name: "updated_at"}
-    string updated_at;
+    @sql:Column {name: "updatedAt"}
+    string updatedAt;
 |};
 
 # Partial update for applicant profile.
 public type UpdateApplicantProfile record {|
     # First name of the applicant
-    string first_name?;
+    string firstName?;
     # Last name of the applicant
-    string last_name?;
+    string lastName?;
     # Email address of the applicant
     string email?;
     # Phone number of the applicant
@@ -277,7 +277,7 @@ public type UpdateApplicantProfile record {|
     # Current status 
     string status?;
     # List of professional links
-    ProfessionalLinks[] professional_links?;
+    ProfessionalLinks[] professionalLinks?;
     # Educational background
     Educations[] educations?;
     # Work experience details 
@@ -293,9 +293,9 @@ public type UpdateApplicantProfile record {|
     # Personal interests 
     Interests interests?;
     # Profile picture as byte array
-    byte[]? user_thumbnail?;
+    byte[]? userThumbnail?;
     # Resume as byte array
-    byte[]? resume_link?;
+    byte[]? resume?;
     # user who last updated the profile
-    string updated_by?;
+    string updatedBy?;
 |};
