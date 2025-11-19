@@ -18,6 +18,7 @@ import people.database;
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/regex;
 
 @display {
     label: "People Service",
@@ -168,6 +169,55 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Fetch continuous service record by work email.
+    #
+    # + workEmail - Work email of the employee
+    # + return - Employee ID and continuous service record or error response
+    resource function get continuous\-service\-records(http:RequestContext ctx, string workEmail)
+        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        if workEmail.trim().length() == 0 {
+            string customErr = "Work email is a mandatory query parameter";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:ContinuousServiceRecordInfo[]|error serviceRecords = database:getContinuousServiceRecordsByEmail(workEmail);
+        if serviceRecords is error {
+            string customErr = "Error occurred while fetching continuous service records";
+            log:printError(customErr, serviceRecords, workEmail = workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return serviceRecords;
     }
 
     # Fetch all employees' basic information.
