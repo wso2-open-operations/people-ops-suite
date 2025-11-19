@@ -57,12 +57,12 @@ public isolated function getApplicantFolder(string email) returns string|error {
     check applicantSearch.close();
 
     if applicantRecord is () {
-        log:printWarn("Applicant folder not found in parent, creating: " + email);
+        log:printWarn("Applicant folder not found, creating: " + email);
         drive:File newFolder = check gDriveClient->createFolder(email, parentId);
         return newFolder.id.toString();
     }
 
-    log:printDebug("Applicant folder found in parent: " + applicantRecord.value.id.toString());
+    log:printDebug("Applicant folder found: " + applicantRecord.value.id.toString());
     return applicantRecord.value.id.toString();
 }
 
