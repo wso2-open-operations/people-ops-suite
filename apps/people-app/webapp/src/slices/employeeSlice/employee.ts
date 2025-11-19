@@ -50,12 +50,11 @@ interface Employee {
 }
 
 export interface EmployeeBasicInfo {
-  id: number;
+  employeeId: string;
   firstName: string;
   lastName: string;
   workEmail: string;
   employeeThumbnail?: string;
-  jobRole?: string;
 }
 
 export type CreatePersonalInfoPayload = {
@@ -114,7 +113,6 @@ export interface ContinuousServiceRecordInfo {
   lastName: string | null;
   employmentLocation: string;
   workLocation: string;
-  workPhoneNumber: string | null;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string | null;

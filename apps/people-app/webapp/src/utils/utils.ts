@@ -37,6 +37,15 @@ export const markAllFieldsTouched = (errors: any) => {
       ) {
         touchedObj[key] = {};
         markTouched(obj[key], touchedObj[key]);
+      } else if (Array.isArray(obj[key])) {
+        touchedObj[key] = obj[key].map((item: any) =>
+          typeof item === "object" && item !== null ? {} : true
+        );
+        obj[key].forEach((item: any, index: number) => {
+          if (typeof item === "object" && item !== null) {
+            markTouched(item, touchedObj[key][index]);
+          }
+        });
       } else {
         touchedObj[key] = true;
       }

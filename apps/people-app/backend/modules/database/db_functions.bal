@@ -42,7 +42,7 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
-# Fetch continuos service record by work email.
+# Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
 # + return - Continuous service record information or error
