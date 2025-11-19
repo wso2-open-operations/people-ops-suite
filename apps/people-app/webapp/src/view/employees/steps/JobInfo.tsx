@@ -94,6 +94,9 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .min(1, "Select a valid office"),
   employmentLocation: Yup.string().required("Employment location is required"),
   workLocation: Yup.string().required("Work location is required"),
+  employmentTypeId: Yup.number()
+    .required("Employment type is required")
+    .min(1, "Select a valid employment type"),
   startDate: Yup.string().required("Start date is required"),
   probationEndDate: Yup.string()
     .transform((value) => (value === "" ? null : value))
@@ -999,7 +1002,10 @@ export default function JobInfoStep() {
             >
               {employeesBasicInfo.length ? (
                 employeesBasicInfo.map((employee) => (
-                  <MenuItem key={employee.id} value={employee.workEmail}>
+                  <MenuItem
+                    key={employee.employeeId}
+                    value={employee.workEmail}
+                  >
                     {employee.workEmail}
                   </MenuItem>
                 ))
@@ -1038,7 +1044,10 @@ export default function JobInfoStep() {
             >
               {employeesBasicInfo.length ? (
                 employeesBasicInfo.map((employee) => (
-                  <MenuItem key={employee.id} value={employee.workEmail}>
+                  <MenuItem
+                    key={employee.employeeId}
+                    value={employee.workEmail}
+                  >
                     {employee.workEmail}
                   </MenuItem>
                 ))

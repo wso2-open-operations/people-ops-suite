@@ -84,7 +84,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
     WHERE
         e.id = ${id};`;
 
-# Fetch continuos service record by work email.
+# Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
 # + return - Parameterized query for continuous service record

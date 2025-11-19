@@ -77,7 +77,7 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .max(254, "Email must be at most 254 characters")
       .transform((value) => (value === "" ? null : value))
       .nullable(),
-    personalPhoneNumber: Yup.string()
+    personalPhone: Yup.string()
       .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone format")
       .transform((value) => (value === "" ? null : value))
       .nullable(),

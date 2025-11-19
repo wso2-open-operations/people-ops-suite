@@ -171,7 +171,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
-    # Fetch continuos service record by work email.
+    # Fetch continuous service record by work email.
     #
     # + workEmail - Work email of the employee
     # + return - Employee ID and continuous service record or error response
