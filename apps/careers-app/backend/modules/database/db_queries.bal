@@ -96,7 +96,7 @@ isolated function getApplicantByEmailQuery(string email) returns sql:Parameteriz
         DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS 'updated_at'
     FROM applicants
     WHERE email = ${email}
-    LIMIT 1
+    LIMIT 1;
 `;
 
 # Builds query to update an applicants profile by email.

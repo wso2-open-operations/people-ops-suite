@@ -488,7 +488,8 @@ export default function Home() {
                 onClick={() =>
                   window.open(
                     "https://www.glassdoor.com/Reviews/WSO2-Reviews-E327184.htm",
-                    "_blank"
+                    "_blank",
+                    "noopener,noreferrer"
                   )
                 }
               >

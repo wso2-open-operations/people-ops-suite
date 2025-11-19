@@ -483,9 +483,7 @@ export default function CreateApplicant() {
                       src={
                         profilePhoto
                           ? URL.createObjectURL(profilePhoto)
-                          : values.firstName
-                          ? values.firstName[0].toUpperCase()
-                          : ""
+                          : undefined
                       }
                       alt={
                         values.firstName
@@ -495,7 +493,7 @@ export default function CreateApplicant() {
                       sx={{
                         width: 140,
                         height: 140,
-                        bgcolor: `linear-gradient(135deg, ${theme.palette.brand.orange}30 0%, ${theme.palette.brand.orange}10 100%)`,
+                        background: `linear-gradient(135deg, ${theme.palette.brand.orange}30 0%, ${theme.palette.brand.orange}10 100%)`,
                         fontSize: 48,
                         fontWeight: 600,
                         border: `4px solid ${theme.palette.brand.orange}40`,
@@ -506,7 +504,9 @@ export default function CreateApplicant() {
                           boxShadow: `0 12px 32px ${theme.palette.brand.orange}30`,
                         },
                       }}
-                    />
+                    >
+                      {values.firstName?.[0]?.toUpperCase()}
+                    </Avatar>
 
                     <IconButton
                       component="label"
