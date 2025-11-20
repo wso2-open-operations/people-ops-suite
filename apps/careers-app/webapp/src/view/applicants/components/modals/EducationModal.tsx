@@ -34,7 +34,7 @@ export interface Education {
   location: string;
   gpa_zscore: number;
   start_year: number;
-  end_year: number | null;
+  end_year: number;
 }
 
 interface Props {
@@ -68,7 +68,6 @@ const eduSchema = yup.object({
   end_year: yup
     .number()
     .typeError("End year must be a number")
-    .nullable()
     .required("End year is required")
     .test('not-zero', 'End year is required', (value) => value !== 0 && value !== null && value !== undefined)
     .test('valid-year', 'Please enter a valid year', (value) => {
@@ -77,7 +76,7 @@ const eduSchema = yup.object({
     })
     .test('after-start', 'End year must be after start year', function(value) {
       const { start_year } = this.parent;
-      if (value === null || value === undefined || !start_year) return true;
+      if (!value || !start_year) return true;
       return value >= start_year;
     }),
 });
@@ -141,7 +140,7 @@ export default function EducationModal({
             ...edu,
             gpa_zscore: edu.gpa_zscore ? Number(edu.gpa_zscore) : 0,
             start_year: edu.start_year ? Number(edu.start_year) : 0,
-            end_year: edu.end_year ? Number(edu.end_year) : null,
+            end_year: edu.end_year ? Number(edu.end_year) : 0,
           };
 
           if (editIndex !== null && editIndex !== undefined) {

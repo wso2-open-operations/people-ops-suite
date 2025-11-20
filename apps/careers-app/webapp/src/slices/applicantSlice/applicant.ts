@@ -28,7 +28,7 @@ export interface Educations{
   location: string;
   gpa_zscore: number;
   start_year: number;
-  end_year: number | null;
+  end_year: number;
 }
 export interface Experiences{
   job_title: string;

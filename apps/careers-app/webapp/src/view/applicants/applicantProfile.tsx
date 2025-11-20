@@ -468,9 +468,7 @@ export default function ApplicantProfile() {
                           />
                           <Chip
                             icon={<CalendarTodayOutlined />}
-                            label={`${edu.start_year} - ${
-                              edu.end_year || "Present"
-                            }`}
+                            label={`${edu.start_year} - ${edu.end_year}`}
                             size="medium"
                             variant="outlined"
                             sx={{

@@ -748,7 +748,7 @@ export default function EditApplicant({
                                   variant="caption"
                                   color="text.secondary"
                                 >
-                                  {edu.start_year} - {edu.end_year || "Present"}
+                                  {edu.start_year} - {edu.end_year}
                                 </Typography>
                               </Box>
                               <Stack direction="row" spacing={1}>
