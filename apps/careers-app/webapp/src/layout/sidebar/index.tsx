@@ -138,7 +138,7 @@ const Sidebar = (props: SidebarProps) => {
                       {r.icon}
                       <span className="menu-tooltip">
                         <Typography sx={{ color: "white" }} variant="h6">
-                          {"Help"}
+                          {r.text}
                         </Typography>
                       </span>
                     </IconButton>

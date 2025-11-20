@@ -19,6 +19,7 @@ import { APP_NAME } from "@config/config";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useAppAuthContext } from "@context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { RootState, useAppSelector } from "@slices/store";
 import { AppBar, Avatar, Box, Menu, MenuItem, Stack, Tooltip } from "@mui/material";
 
@@ -26,6 +27,7 @@ const Header = () => {
   const authContext = useAppAuthContext();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const user = useAppSelector((state: RootState) => state.user);
+  const navigate = useNavigate();
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -62,7 +64,7 @@ const Header = () => {
             height: "40px",
             maxWidth: "100px",
           }}
-          onClick={() => (window.location.href = "/")}
+          onClick={() => navigate("/")}
           src={require("@assets/images/wso2-logo.svg").default}
         ></img>
         <Typography
