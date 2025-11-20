@@ -131,6 +131,7 @@ export const authSlice = createSlice({
       .addCase(loadPrivileges.rejected, (state, action) => {
         state.status = State.failed;
         state.statusMessage = action.payload as string;
+        state.roles = [];
       });
   },
 });

@@ -44,6 +44,7 @@ const StatusWithAction = (props: StatusWithActionProps) => {
             alignItems="center"
             spacing={2}
           >
+            {!props.hideLogo && (
             <Grid item xs={12}>
               <img
                 alt="logo"
@@ -52,6 +53,7 @@ const StatusWithAction = (props: StatusWithActionProps) => {
                 src={require("@assets/images/wso2-logo.svg").default}
               ></img>
             </Grid>
+            )}
             <Grid item xs={12}></Grid>
             <Grid item xs={12}>
               <Typography variant="h5">{props.message}</Typography>
