@@ -41,7 +41,16 @@ import SaveIcon from "@mui/icons-material/Save";
 import { Formik, Form, FieldArray } from "formik";
 
 import { useAppDispatch} from "@slices/store";
-import { updateApplicant, ApplicantProfile } from "@slices/applicantSlice/applicant";
+import { 
+  updateApplicant, 
+  ApplicantProfile, 
+  ApplicantPayload,
+  Experiences,
+  Educations,
+  Certifications,
+  Projects,
+  Languages
+} from "@slices/applicantSlice/applicant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { fileToByteArray } from "@utils/utils";
@@ -76,46 +85,11 @@ interface EditApplicantFormValues {
   interestsText: string;
 }
 
-interface ProfessionalLink {
-  title: string;
-  link: string;
-}
-
-interface ProjectPayload {
-  name: string;
-  description: string;
-  technologies: string[];
-  github: string;
-}
-
-interface ExperiencePayload {
-  job_title: string;
-  company: string;
-  location: string;
-  start_date: string;
-  end_date?: string;
-  current?: boolean;
-}
-
-interface UpdateApplicantPayload {
-  firstName: string;
-  lastName: string;
-  phone: string;
-  address: string;
-  country: string;
-  professionalLinks: ProfessionalLink[];
-  educations: Education[];
-  experiences: ExperiencePayload[];
-  certifications: Certification[];
-  projects: ProjectPayload[];
-  languages: Language[];
-  skills: string[];
-  interests: string[];
+// Reuse the slice's ApplicantPayload type with optional file fields for updates
+type UpdateApplicantPayload = Partial<ApplicantPayload> & {
   userThumbnail?: number[];
-  profile_photo_file_name?: string;
   resume?: number[];
-  cv_file_name?: string;
-}
+};
 
 type SectionKey =
   | "experience"
@@ -263,9 +237,9 @@ export default function EditApplicant({
             professionalLinks: Object.entries(values.professionalLinks)
               .map(([title, link]) => ({ title: title.toLowerCase(), link }))
               .filter((l) => l.link),
-            educations: values.educations,
-            experiences: values.experiences.map((exp) => {
-              const experience: ExperiencePayload = {
+            educations: values.educations as Educations[],
+            experiences: values.experiences.map((exp): Experiences => {
+              const experience: Experiences = {
                 job_title: exp.job_title,
                 company: exp.company,
                 location: exp.location,
@@ -281,8 +255,8 @@ export default function EditApplicant({
               }
               return experience;
             }),
-            certifications: values.certifications,
-            projects: values.projects.map((proj) => ({
+            certifications: values.certifications as Certifications[],
+            projects: values.projects.map((proj): Projects => ({
               ...proj,
               technologies:
                 typeof proj.technologies === "string"
@@ -292,7 +266,7 @@ export default function EditApplicant({
                       .filter((t: string) => t.length > 0)
                   : proj.technologies,
             })),
-            languages: values.languages,
+            languages: values.languages as Languages[],
             skills: values.skillsText
               .split(",")
               .map((s) => s.trim())
