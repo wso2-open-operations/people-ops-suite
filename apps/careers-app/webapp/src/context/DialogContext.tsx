@@ -78,7 +78,7 @@ const ConfirmationModalContext = React.createContext<ConfirmationDialogContextTy
 const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProviderProps> = (props) => {
   const { setShow, show, onHide } = useDialogShow();
 
-  const [comment, setComment] = React.useState("");
+  const [comment, setComment] = React.useState<string>("");
 
   const [content, setContent] = useState<{
     title: string;
@@ -122,6 +122,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
 
   const handleOk = (value?: string) => {
     content && content.action(value);
+    Reset();
     onHide();
   };
 
