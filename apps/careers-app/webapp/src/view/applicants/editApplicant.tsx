@@ -325,7 +325,7 @@ export default function EditApplicant({
                 "Confirm Update",
                 "Are you sure you want to update your profile? Please verify your changes before saving.",
                 ConfirmationType.update,
-                () => handleSubmit(e),
+                () => handleSubmit(),
                 "Yes, Update",
                 "Cancel"
               );

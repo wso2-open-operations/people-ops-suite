@@ -49,8 +49,12 @@ public isolated function getApplicantFolder(string email) returns string|error {
 
     log:printDebug("Searching for applicant folder: " + email + " inside parent: " + parentId);
 
+    // Escape single quotes in email and parentId to prevent query injection
+    string escapedEmail = re `'`.replaceAll(email, "\\'");
+    string escapedParentId = re `'`.replaceAll(parentId, "\\'");
+
     // Search for folder with specific name AND parent folder
-    string query = string `name='${email}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    string query = string `name='${escapedEmail}' and '${escapedParentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
     stream<drive:File, error?> applicantSearch = check gDriveClient->getAllFiles(query);
     record {|drive:File value;|}? applicantRecord = check applicantSearch.next();
 

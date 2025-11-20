@@ -108,7 +108,7 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE applicants SET `;
-    sql:ParameterizedQuery subQuery = ` WHERE email = ${email}`;
+    sql:ParameterizedQuery subQuery = ` WHERE email = ${email} LIMIT 1`;
     sql:ParameterizedQuery[] filters = [];
 
     if applicant.firstName is string {

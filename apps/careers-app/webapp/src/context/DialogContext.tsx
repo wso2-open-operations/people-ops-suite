@@ -30,6 +30,8 @@ import { IconButton, Stack, TextField } from "@mui/material";
 import DialogContentText from "@mui/material/DialogContentText";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { Dayjs } from "dayjs";
 
 type InputObj = {
   label: string;
@@ -79,6 +81,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
   const { setShow, show, onHide } = useDialogShow();
 
   const [comment, setComment] = React.useState<string>("");
+  const [dateValue, setDateValue] = React.useState<Dayjs | null>(null);
 
   const [content, setContent] = useState<{
     title: string;
@@ -142,10 +145,15 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
     });
 
     setComment("");
+    setDateValue(null);
   };
 
   const onChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setComment(event.target.value);
+  };
+
+  const onDateChange = (newValue: Dayjs | null) => {
+    setDateValue(newValue);
   };
 
   return (
@@ -190,7 +198,7 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
             <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
               <DialogContentText variant="body2">{content?.message}</DialogContentText>
             </DialogContent>
-            {content.inputObj && (
+            {content.inputObj && content.inputObj.type === "textarea" && (
               <TextField
                 sx={{ marginX: 2, mt: 2, maxWidth: 350 }}
                 value={comment}
@@ -201,6 +209,19 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
                 rows={2}
                 maxRows={6}
                 onChange={onChange}
+              />
+            )}
+            {content.inputObj && content.inputObj.type === "date" && (
+              <DatePicker
+                label={content.inputObj?.label}
+                value={dateValue}
+                onChange={onDateChange}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    sx: { marginX: 2, mt: 2, maxWidth: 350 },
+                  },
+                }}
               />
             )}
 
@@ -229,8 +250,18 @@ const ConfirmationDialogContextProvider: React.FC<ConfirmationModalContextProvid
                   }}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
-                  onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
+                  disabled={
+                    content?.inputObj?.mandatory &&
+                    (content.inputObj.type === "textarea" ? comment === "" : !dateValue)
+                  }
+                  onClick={() => {
+                    if (content?.inputObj) {
+                      const value = content.inputObj.type === "date" ? dateValue?.toISOString() : comment;
+                      handleOk(value);
+                    } else {
+                      handleOk();
+                    }
+                  }}
                   loadingPosition="start"
                   startIcon={
                     content.type === "update" ? <SaveAltIcon /> : content.type === "send" ? <SendIcon /> : <DoneIcon />

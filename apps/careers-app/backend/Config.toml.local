@@ -19,7 +19,7 @@ clientSecret =
 refreshToken = 
 
 [careers_app.people]
-hrEntityBaseUrl = "
+hrEntityBaseUrl = 
 [careers_app.people.retryConfig]
 backOffFactor = 
 count = 

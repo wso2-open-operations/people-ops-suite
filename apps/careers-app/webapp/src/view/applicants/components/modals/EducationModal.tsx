@@ -55,8 +55,7 @@ const eduSchema = yup.object({
     .typeError("GPA must be a number")
     .min(0, "GPA cannot be negative")
     .max(10, "GPA cannot exceed 10")
-    .required("GPA is required")
-    .test('not-zero', 'GPA is required', (value) => value !== 0 && value !== null && value !== undefined),
+    .required("GPA is required"),
   start_year: yup
     .number()
     .typeError("Start year must be a number")
@@ -78,7 +77,7 @@ const eduSchema = yup.object({
     })
     .test('after-start', 'End year must be after start year', function(value) {
       const { start_year } = this.parent;
-      if (!value || !start_year) return true;
+      if (value === null || value === undefined || !start_year) return true;
       return value >= start_year;
     }),
 });

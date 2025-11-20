@@ -7,7 +7,7 @@ CREATE TABLE applicants (
     -- Personal Info
     firstName VARCHAR(100),
     lastName VARCHAR(100),
-    email VARCHAR(150),
+    email VARCHAR(150) UNIQUE,
     phone VARCHAR(50),
     address TEXT,
     country VARCHAR(100),
