@@ -47,33 +47,42 @@ const initialState: AppConfigState = {
 
 export const fetchAppConfig = createAsyncThunk(
   "appConfig/fetchAppConfig",
-  async (_, {dispatch, rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<AppConfigInfo>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.appConfig, {
-          cancelToken: newCancelTokenSource.token,
+
+    try {
+      const response = await APIService.getInstance().get<AppConfigInfo>(
+        AppConfig.serviceUrls.appConfig,
+        { cancelToken: newCancelTokenSource.token }
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+
+      const status = axios.isAxiosError(error)
+        ? error.response?.status
+        : undefined;
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            status === HttpStatusCode.InternalServerError
+              ? SnackMessage.error.fetchAppConfigMessage
+              : "An unknown error occurred.",
+          type: "error",
         })
-        .then((response) => {
-          resolve(response.data);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchAppConfigMessage
-                  : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response.data.message);
-        });
-    });
+      );
+
+      const message =
+        axios.isAxiosError(error) && error.response?.data?.message
+          ? error.response.data.message
+          : "Failed to fetch application configurations.";
+
+      return rejectWithValue(message);
+    }
   }
 );
 

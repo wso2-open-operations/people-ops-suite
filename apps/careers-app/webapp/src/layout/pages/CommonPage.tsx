@@ -50,6 +50,7 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
+    setSearchParams({ tab: tabs[newValue] });
   };
 
   return (
@@ -108,7 +109,6 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
               key={index}
               icon={tab.icon}
               label={tab.tabTitle}
-              onClick={() => setSearchParams({ tab: tabs[index] })}
               iconPosition="start"
               sx={(theme) => ({
                 minHeight: 0,
