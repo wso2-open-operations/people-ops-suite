@@ -57,7 +57,7 @@ service class ErrorInterceptor {
 
 }
 
-service http:InterceptableService / on new http:Listener(9093) {
+service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
