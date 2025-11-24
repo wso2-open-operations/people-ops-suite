@@ -135,7 +135,7 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
 # + email - Email of the applicant profile
 # + updateData - Partial applicant profile details to update
 # + return - Updated ApplicantProfile | error
-public isolated function updateProfileByEmail(string email, UpdateApplicantProfile updateData) returns ApplicantProfile|error {
+public isolated function updateProfileByEmail(string email, UpdateApplicantProfileRequest updateData) returns ApplicantProfile|error {
     sql:ExecutionResult|error result = check dbClient->execute(
         updateApplicantProfileByEmailQuery(email, updateData));
 

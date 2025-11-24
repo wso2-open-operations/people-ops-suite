@@ -322,25 +322,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string actor = invokerInfo.email;
 
-        // Build the database update payload
-        database:UpdateApplicantProfile dbPayload = {
-            firstName: applicant.firstName,
-            lastName: applicant.lastName,
-            email: applicant.email,
-            phone: applicant.phone,
-            address: applicant.address,
-            country: applicant.country,
-            status: applicant.status,
-            professionalLinks: applicant.professionalLinks,
-            educations: applicant.educations,
-            experiences: applicant.experiences,
-            skills: applicant.skills,
-            certifications: applicant.certifications,
-            projects: applicant.projects,
-            languages: applicant.languages,
-            interests: applicant.interests,
-            updatedBy: actor
-        };
+        // Set the updatedBy field to the invoker's email
+        applicant.updatedBy = actor;
 
         // Handle profile photo update if provided
         byte[]? byteArrayPhoto = applicant?.userThumbnail;
@@ -358,7 +341,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             // Construct unique file name
-            string applicantFolderName = string `${applicant?.firstName ?: email}_${applicant?.lastName ?: ""}`;
+            string applicantFolderName = string `${applicant.firstName}_${applicant.lastName}`;
             string ts = time:utcToString(time:utcNow());
             string photoExt = getFileExtension(applicant?.profile_photo_file_name);
             string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
@@ -384,7 +367,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            dbPayload.userThumbnail = photoBytes;
+            applicant.userThumbnail = photoBytes;
         }
 
         // Handle CV update if provided
@@ -403,7 +386,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             // Construct unique file name
-            string applicantFolderName = string `${applicant?.firstName ?: email}_${applicant?.lastName ?: ""}`;
+            string applicantFolderName = string `${applicant.firstName}_${applicant.lastName}`;
             string ts = time:utcToString(time:utcNow());
             string cvExt = getFileExtension(applicant?.cv_file_name);
             string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
@@ -429,11 +412,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            dbPayload.resume = cvBytes;
+            applicant.resume = cvBytes;
         }
 
         // Update profile in database
-        database:ApplicantProfile|error updatedProfile = database:updateProfileByEmail(email, dbPayload);
+        database:ApplicantProfile|error updatedProfile = database:updateProfileByEmail(email, applicant);
         if updatedProfile is error {
             if updatedProfile.message().startsWith("No applicant found with email:") {
                 string notFoundMsg = "Applicant profile not found for email: " + email;

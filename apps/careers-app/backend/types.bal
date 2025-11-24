@@ -493,7 +493,7 @@ public type UpdateApplicantProfileRequest record {|
             message: "First name must be a non-empty printable string"
         }
     }
-    string firstName?;
+    string firstName;
     # Last name of the applicant
     @constraint:String {
         pattern: {
@@ -501,7 +501,7 @@ public type UpdateApplicantProfileRequest record {|
             message: "Last name must be a non-empty printable string"
         }
     }
-    string lastName?;
+    string lastName;
     # Email address of the applicant
     @constraint:String {
         pattern: {
@@ -566,6 +566,8 @@ public type UpdateApplicantProfileRequest record {|
     byte[] resume?;
     # CV file name
     string cv_file_name?;
+    # Email of the user who updated the profile
+    string updatedBy?;
 |};
 
 # Represents the response structure for retrieving user information.

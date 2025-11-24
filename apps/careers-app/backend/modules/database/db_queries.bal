@@ -104,19 +104,16 @@ isolated function getApplicantByEmailQuery(string email) returns sql:Parameteriz
 # + email - Email of the applicants profile
 # + applicant - Partial applicant profile to update
 # + return - sql:ParameterizedQuery - Update query for the applicants table
-isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplicantProfile applicant)
+isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplicantProfileRequest applicant)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE applicants SET `;
     sql:ParameterizedQuery subQuery = ` WHERE email = ${email} LIMIT 1`;
     sql:ParameterizedQuery[] filters = [];
 
-    if applicant.firstName is string {
-        filters.push(`firstName = ${applicant.firstName}`);
-    }
-    if applicant.lastName is string {
-        filters.push(`lastName = ${applicant.lastName}`);
-    }
+    filters.push(`firstName = ${applicant.firstName}`);
+    filters.push(`lastName = ${applicant.lastName}`);
+
     if applicant.email is string {
         filters.push(`email = ${applicant.email}`);
     }
@@ -172,6 +169,7 @@ isolated function updateApplicantProfileByEmailQuery(string email, UpdateApplica
     if resumeLink is byte[] {
         filters.push(`resume = ${resumeLink}`);
     }
+
     if applicant.updatedBy is string {
         filters.push(`updatedBy = ${applicant.updatedBy}`);
     }

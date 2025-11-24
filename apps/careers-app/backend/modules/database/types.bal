@@ -263,11 +263,11 @@ type ApplicantProfileDB record {|
 # Partial update for applicant profile.
 public type UpdateApplicantProfile record {|
     # First name of the applicant
-    string firstName?;
+    string firstName;
     # Last name of the applicant
-    string lastName?;
+    string lastName;
     # Email address of the applicant
-    string email?;
+    string email;
     # Phone number of the applicant
     string phone?;
     # Postal address of the applicant
@@ -297,5 +297,49 @@ public type UpdateApplicantProfile record {|
     # Resume as byte array
     byte[]? resume?;
     # user who last updated the profile
+    string updatedBy?;
+|};
+
+# Request payload for updating applicant profile.
+public type UpdateApplicantProfileRequest record {|
+    # First name of the applicant
+    string firstName;
+    # Last name of the applicant
+    string lastName;
+    # Email address of the applicant
+    string email?;
+    # Phone number of the applicant
+    string phone?;
+    # Postal address of the applicant
+    string address?;
+    # Country of residence
+    string country?;
+    # Current status 
+    string status?;
+    # List of professional links
+    ProfessionalLinks[] professionalLinks?;
+    # Educational background
+    Educations[] educations?;
+    # Work experience details 
+    Experiences[] experiences?;
+    # Skill set 
+    Skills skills?;
+    # Professional certifications 
+    Certifications[] certifications?;
+    # Project details 
+    Projects[] projects?;
+    # Languages known 
+    Languages[] languages?;
+    # Personal interests 
+    Interests interests?;
+    # Bytestring encoded profile photo
+    byte[] userThumbnail?;
+    # Profile photo file name
+    string profile_photo_file_name?;
+    # Bytestring encoded CV
+    byte[] resume?;
+    # CV file name
+    string cv_file_name?;
+    # Email of the user who updated the profile
     string updatedBy?;
 |};
