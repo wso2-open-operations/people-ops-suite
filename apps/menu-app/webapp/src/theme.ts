@@ -96,7 +96,7 @@ export const tokens = (mode: PaletteMode) => {
               p4: { active: colors.neutral["1300"], hover: "#ffffff" },
             },
             brand: {
-              p1: { active: colors.primary["1100"], hover: "#FF6A0096" },
+              p1: { active: colors.primary["1100"], hover: "#FF6A0096", disabled: "#ff730096" },
             },
           },
 
