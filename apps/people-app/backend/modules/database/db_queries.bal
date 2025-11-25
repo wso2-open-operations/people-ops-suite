@@ -15,6 +15,411 @@
 // under the License. 
 import ballerina/sql;
 
+# Fetch employee basic information.
+#
+# + email - Employee's work email address
+# + return - Query to get employee basic information
+isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        first_name,
+        last_name,
+        work_email,
+        employee_thumbnail
+    FROM employee
+    WHERE work_email = ${email};`;
+
+# Fetch all employees' basic information.
+#
+# + return - Query to get all employees basic information
+isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        first_name,
+        last_name,
+        work_email,
+        employee_thumbnail
+    FROM employee;`;
+
+# Fetch employee detailed information.
+#
+# + id - Employee ID
+# + return - Query to get employee detailed information
+isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
+    `SELECT 
+        e.id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        e.work_email AS workEmail,
+        e.employee_thumbnail AS employeeThumbnail,
+        e.epf AS epf,
+        c.location AS employmentLocation,
+        e.work_location AS workLocation,
+        e.work_phone_number AS workPhoneNumber,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        e.additional_manager_emails AS additionalManagerEmails,
+        e.employee_status AS employeeStatus,
+        e.continuous_service_record AS continuousServiceRecord,
+        e.probation_end_date AS probationEndDate,
+        e.agreement_end_date AS agreementEndDate,
+        et.name AS employmentType,
+        d.designation AS designation,
+        e.secondary_job_title AS secondaryJobTitle,
+        o.name AS office,
+        bu.name AS businessUnit,
+        t.name AS team,
+        st.name AS subTeam,
+        u.name AS unit
+    FROM
+        employee e
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = o.company_id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN sub_team st ON e.sub_team_id = st.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        INNER JOIN unit u ON e.unit_id = u.id
+    WHERE
+        e.id = ${id};`;
+
+# Fetch continuous service record by work email.
+#
+# + workEmail - Work email of the employee
+# + return - Parameterized query for continuous service record
+isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT 
+        e.id AS id,
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        c.location AS employmentLocation,
+        e.work_location AS workLocation,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        e.additional_manager_emails AS additionalManagerEmails,
+        d.designation AS designation,
+        e.secondary_job_title AS secondaryJobTitle,
+        o.name AS office,
+        bu.name AS businessUnit,
+        t.name AS team,
+        st.name AS subTeam,
+        u.name AS unit
+    FROM
+        employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = o.company_id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE
+        e.work_email = ${workEmail};`;
+
+# Search employee personal information.
+#
+# + payload - Search employee personal information payload
+# + return - Query to search employee personal information
+isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayload payload)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+        SELECT 
+            p.id AS id,
+            nic_or_passport,
+            full_name,
+            name_with_initials,
+            p.first_name AS firstName,
+            p.last_name AS lastName,
+            title,
+            dob,
+            personal_email,
+            personal_phone,
+            resident_number,
+            address_line_1,
+            address_line_2,
+            city,
+            state_or_province,
+            postal_code,
+            country,
+            nationality
+        FROM personal_info p`;
+
+    string? nicOrPassport = payload?.nicOrPassport;
+    if nicOrPassport is string {
+        mainQuery = sql:queryConcat(mainQuery, ` WHERE p.nic_or_passport = ${nicOrPassport}`);
+    }
+    return sql:queryConcat(mainQuery, `;`);
+}
+
+# Fetch employee personal information.
+#
+# + id - Employee ID
+# + return - Query to get employee personal information
+isolated function getEmployeePersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
+    `SELECT 
+        p.id AS id,
+        nic_or_passport,
+        full_name,
+        name_with_initials,
+        p.first_name AS firstName,
+        p.last_name AS lastName,
+        title,
+        dob,
+        personal_email,
+        personal_phone,
+        resident_number,
+        address_line_1,
+        address_line_2,
+        city,
+        state_or_province,
+        postal_code,
+        country,
+        nationality
+    FROM personal_info p
+    INNER JOIN employee e ON p.id = e.personal_info_id
+        WHERE e.id = ${id};`;
+
+# Get business units query.
+# + return - Business units query
+isolated function getBusinessUnitsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+    FROM business_unit;`;
+
+# Get teams query.
+#
+# + buId - Business unit ID (optional)
+# + return - Teams query
+isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            t.id, t.name
+        FROM
+            team t
+        LEFT JOIN 
+            business_unit_team but ON but.team_id = t.id`;
+
+    if buId is int {
+        query = sql:queryConcat(query, ` WHERE but.business_unit_id = ${buId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Get sub teams query.
+#
+# + teamId - Team ID (optional)
+# + return - Sub teams query
+isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            st.id, st.name
+        FROM
+            sub_team st
+        LEFT JOIN business_unit_team_sub_team butst ON butst.sub_team_id = st.id`;
+    if teamId is int {
+        query = sql:queryConcat(query, ` WHERE butst.business_unit_team_id = ${teamId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Get units query.
+#
+# + subTeamId - Sub team ID (optional)
+# + return - Units query
+isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT
+            u.id, u.name
+        FROM
+            unit u
+        LEFT JOIN business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id`;
+    if subTeamId is int {
+        query = sql:queryConcat(query, ` WHERE butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Get career functions query.
+#
+# + return - Career functions query
+isolated function getCareerFunctionsQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        career_function
+    FROM career_function;`;
+
+# Get designations query.
+#
+# + careerFunctionId - Career function ID (optional)
+# + return - Designations query
+isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            id,
+            designation,
+            job_band
+        FROM designation`;
+    if careerFunctionId is int {
+        query = sql:queryConcat(query, ` WHERE career_function_id = ${careerFunctionId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
+
+# Get offices query.
+#
+# + return - Offices query
+isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name,
+        location,
+        working_locations
+    FROM office;`;
+
+# Add employee personal information query.
+#
+# + payload - Create personal info payload
+# + createdBy - Creator of the personal info record
+# + return - Personal info insert query
+isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info
+        (
+            nic_or_passport,
+            full_name,
+            name_with_initials,
+            first_name,
+            last_name,
+            title,
+            dob,
+            personal_email,
+            personal_phone,
+            resident_number,
+            address_line_1,
+            address_line_2,
+            city,
+            state_or_province,
+            postal_code,
+            country,
+            nationality,
+            emergency_contacts,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            ${payload.nicOrPassport},
+            ${payload.fullName},
+            ${payload.nameWithInitials},
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.title},
+            ${payload.dob},
+            ${payload.personalEmail},
+            ${payload.personalPhone},
+            ${payload.residentNumber},
+            ${payload.addressLine1},
+            ${payload.addressLine2},
+            ${payload.city},
+            ${payload.stateOrProvince},
+            ${payload.postalCode},
+            ${payload.country},
+            ${payload.nationality},
+            ${payload.emergencyContacts.toJsonString()},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Add employee query.
+#
+# + payload - Add employee payload
+# + createdBy - Creator of the employee record
+# + personalInfoId - Personal info ID
+# + return - Employee insert query
+isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee
+        (
+            first_name,
+            last_name,
+            epf,
+            employment_location,
+            work_location,
+            work_email,
+            work_phone_number,
+            start_date,
+            secondary_job_title,
+            manager_email,
+            additional_manager_emails,
+            employee_status,
+            employee_thumbnail,
+            probation_end_date,
+            agreement_end_date,
+            personal_info_id,
+            employment_type_id,
+            designation_id,
+            office_id,
+            team_id,
+            sub_team_id,
+            business_unit_id,
+            unit_id,
+            created_by,
+            updated_by
+        )
+    VALUES
+        (
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.epf},
+            ${payload.employmentLocation},
+            ${payload.workLocation},
+            ${payload.workEmail},
+            ${payload.workPhoneNumber},
+            ${payload.startDate},
+            ${payload.secondaryJobTitle},
+            ${payload.managerEmail},
+            ${string:'join(", ", ...payload.additionalManagerEmails)},
+            ${payload.employeeStatus},
+            ${payload.employeeThumbnail},
+            ${payload.probationEndDate},
+            ${payload.agreementEndDate},
+            ${personalInfoId},
+            ${payload.employmentTypeId},
+            ${payload.designationId},
+            ${payload.officeId},
+            ${payload.teamId},
+            ${payload.subTeamId},
+            ${payload.businessUnitId},
+            ${payload.unitId},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Update employee personal information query.
+#
+# + id - Personal info ID
+# + payload - Personal info update payload
+# + return - Personal info update query
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload)
+    returns sql:ParameterizedQuery =>
+    `UPDATE
+        personal_info
+     SET
+        personal_email = ${payload.personalEmail},
+        personal_phone = ${payload.personalPhone},
+        resident_number = ${payload.residentNumber},
+        address_line_1 = ${payload.addressLine1},
+        address_line_2 = ${payload.addressLine2},
+        city = ${payload.city},
+        state_or_province = ${payload.stateOrProvince},
+        postal_code = ${payload.postalCode},
+        country = ${payload.country}
+     WHERE
+        id = ${id};`;
+
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles
@@ -127,4 +532,3 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 
     return sql:queryConcat(mainQuery, subQuery);
 }
-

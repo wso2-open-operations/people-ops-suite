@@ -12,20 +12,8 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-};
-
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};
+const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found";
+const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information";
+const ERROR_EMPLOYEE_CREATION_FAILED = "Error occurred while creating a new employee";

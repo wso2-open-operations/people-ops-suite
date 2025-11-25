@@ -1,0 +1,56 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+export const isIncludedRole = (a: string[], b: string[]): boolean => {
+  // TODO: Temporarily allow all roles. Remove this after the roles are finalized.
+  return true;
+  return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
+};
+
+function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
+  return a.filter((element) => {
+    return b.includes(element);
+  });
+}
+
+export const markAllFieldsTouched = (errors: any) => {
+  const touched: any = {};
+  const markTouched = (obj: any, touchedObj: any) => {
+    Object.keys(obj).forEach((key) => {
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
+        touchedObj[key] = {};
+        markTouched(obj[key], touchedObj[key]);
+      } else if (Array.isArray(obj[key])) {
+        touchedObj[key] = obj[key].map((item: any) =>
+          typeof item === "object" && item !== null ? {} : true
+        );
+        obj[key].forEach((item: any, index: number) => {
+          if (typeof item === "object" && item !== null) {
+            markTouched(item, touchedObj[key][index]);
+          }
+        });
+      } else {
+        touchedObj[key] = true;
+      }
+    });
+  };
+  markTouched(errors, touched);
+  return touched;
+};

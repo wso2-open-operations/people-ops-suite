@@ -12,20 +12,17 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-};
+export type stateType = "failed" | "success" | "loading" | "idle";
 
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for the employee
-    string EMPLOYEE_ROLE;
-    # Role for the admin
-    string ADMIN_ROLE;
-|};
+export interface Header {
+  title: string;
+  size: number;
+  align: "left" | "right" | "center";
+}
+
+export enum ThemeMode {
+  Light = "light",
+  Dark = "dark",
+}
