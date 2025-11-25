@@ -95,3 +95,131 @@ type EmployeesResponse record {
     # Employees data
     EmployeesData data;
 };
+
+# [Configurable] Employee entity configuration.
+type HrServiceConfig record {|
+    # URL
+    string apiEndpoint;
+    # Token Endpoint
+    string tokenEndpoint;
+    # Client ID
+    string clientId;
+    # Client Secret
+    string clientSecret;
+|};
+
+# Designation.
+public type Designation record {
+    # Name of the designation
+    string designation;
+    # Job band of the designation
+    int jobBand;
+    # Id of the designation
+    int id;
+};
+
+# Career function.
+public type CareerFunction record {
+    # Id of the career function
+    int id;
+    # Title of the career function
+    string careerFunction;
+    # Designations of the career function
+    Designation[] designations;
+};
+
+# Career function data.
+type CareerFunctionData record {
+    # Array of career functions
+    CareerFunction[] careerFunctions;
+};
+
+# Career function response.
+type CareerFunctionResponse record {
+    # Career function data
+    CareerFunctionData data;
+};
+
+# Sub team.
+public type SubTeam record {
+    # Id of the sub team
+    int id;
+    # Name of the sub team
+    string subTeam;
+};
+
+# Team.
+public type Team record {
+    # Id of the team
+    int id;
+    # Name of the team
+    string team;
+    # Sub teams of the team
+    SubTeam[]? subTeams;
+};
+
+# Department.
+public type Department record {
+    # Id of the department
+    int id;
+    # Name of the department
+    string department;
+    # Teams of the department
+    Team[]? teams;
+};
+
+# Business unit.
+public type BusinessUnit record {
+    # Id of the business unit
+    int id;
+    # Name of the business unit
+    string businessUnit;
+    # Departments of the business unit
+    Department[]? departments;
+};
+
+# Org Details.
+type OrgDetails record {
+    # Business units
+    BusinessUnit[] orgDetails;
+};
+
+# Org Details Response.
+type OrgDetailsResponse record {
+    # Org Details
+    OrgDetails data;
+};
+
+# Company.
+public type Company record {
+    # Id of the company
+    int id;
+    # Name of the company
+    string company;
+    # Location of the company
+    string location;
+    # Offices of the company
+    Office[] offices;
+};
+
+# Office.
+public type Office record {
+    # Id of the office
+    int id;
+    # Name of the office
+    string office;
+    # Location of the office
+    string location;
+};
+
+# Company data.
+type CompanyData record {
+    # Array of companies
+    Company[] companies;
+};
+
+# Company response.
+type CompanyResponse record {
+    # Company data
+    CompanyData data;
+};

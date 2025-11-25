@@ -25,3 +25,9 @@ public const REGEX_PHONE_NUMBER = "^\\+[1-9]\\d{1,14}$";
 
 # URL validation for professional links
 public const REGEX_URL = "https?://[^\\s]+";
+
+# Cache key for companies.
+const string CACHE_KEY_COMPANIES = "companies";
+
+# Cache key for org details.
+const string CACHE_KEY_ORG_DETAILS = "org_details";

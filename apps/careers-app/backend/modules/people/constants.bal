@@ -28,3 +28,21 @@ public const decimal RETRY_MAX_INTERVAL = 20.0;
 
 # Default limit for the entity.
 public const int DEFAULT_LIMIT = 100;
+
+# Client retry configuration for wait interval in seconds.
+const CONSTANT_RETRY_INTERVAL = 3.0d;
+
+# Client retry configuration for interval increment in seconds.
+const CONSTANT_RETRY_BACKOFF_FACTOR = 2.0;
+
+# Client retry configuration for maximum wait interval in seconds.
+const CONSTANT_RETRY_MAX_INTERVAL = 20.0d;
+
+# HR entity.
+const HR_ENTITY_NAME = "HR";
+
+# Org details Cache key.
+const BUSINESS_UNITS_CACHE_KEY = "businessUnits";
+
+# Org details Cache key.
+const COMPANIES_CACHE_KEY = "companies";

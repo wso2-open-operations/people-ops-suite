@@ -21,7 +21,7 @@ import ballerina/sql;
 #
 # + ApplicantProfile - applicant profile details
 # + return - ID of the applicant profile | Error
-public isolated function createProfile(CreateApplicantProfile ApplicantProfile) returns int|error {
+public isolated function createApplicant(CreateApplicantProfile ApplicantProfile) returns int|error {
 
     sql:ExecutionResult|error result = check dbClient->execute(
         createapplicantProfileQuery(ApplicantProfile));
@@ -35,7 +35,7 @@ public isolated function createProfile(CreateApplicantProfile ApplicantProfile) 
 #
 # + email - Email of the applicant
 # + return - ApplicantProfile | error
-public isolated function getApplicantProfileByEmail(string email) returns ApplicantProfile|error {
+public isolated function getApplicant(string email) returns ApplicantProfile|error {
     ApplicantProfileDB|sql:Error dbResult = dbClient->queryRow(getApplicantByEmailQuery(email));
 
     if dbResult is sql:NoRowsError {
@@ -135,7 +135,7 @@ public isolated function getApplicantProfileByEmail(string email) returns Applic
 # + email - Email of the applicant profile
 # + updateData - Partial applicant profile details to update
 # + return - Updated ApplicantProfile | error
-public isolated function updateProfileByEmail(string email, UpdateApplicantProfileRequest updateData) returns ApplicantProfile|error {
+public isolated function updateApplicant(string email, UpdateApplicantProfileRequest updateData) returns ApplicantProfile|error {
     sql:ExecutionResult|error result = check dbClient->execute(
         updateApplicantProfileByEmailQuery(email, updateData));
 
@@ -149,13 +149,13 @@ public isolated function updateProfileByEmail(string email, UpdateApplicantProfi
     }
 
     // Fetch and return the updated profile
-    return check getApplicantProfileByEmail(email);
+    return check getApplicant(email);
 }
 
 # Retrieves all applicant profiles.
 #
 # + return - Array of ApplicantProfile | error
-public isolated function getAllApplicants() returns ApplicantProfile[]|error {
+public isolated function getApplicants() returns ApplicantProfile[]|error {
     stream<ApplicantProfileDB, sql:Error?> resultStream = dbClient->query(getAllApplicantsQuery());
 
     // Initialize an array to store the profiles

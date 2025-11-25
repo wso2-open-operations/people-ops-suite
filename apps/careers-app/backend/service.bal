@@ -18,13 +18,22 @@ import careers_app.authorization;
 import careers_app.database;
 import careers_app.gdrive;
 import careers_app.people;
+import careers_app.ats;
 
 import ballerina/cache;
 import ballerina/http;
+import ballerina/lang.array;
 import ballerina/log;
 import ballerina/time;
 
 public configurable AppConfig appConfig = ?;
+
+isolated cache:Cache orgDetailsCache = new (capacity = 100, defaultMaxAge = 3600, evictionFactor = 0.25,
+    cleanupInterval = 3600
+);
+isolated cache:Cache companiesCache = new (capacity = 100, defaultMaxAge = 3600, evictionFactor = 0.25,
+    cleanupInterval = 3600
+);
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -108,11 +117,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Fetch the user's privileges based on the roles.
         int[] privileges = [];
-        if authorization:checkPermissions([authorization:authorizedRoles.SALES_TEAM], userInfo.groups) {
-            privileges.push(authorization:SALES_TEAM_PRIVILEGE);
-        }
-        if authorization:checkPermissions([authorization:authorizedRoles.SALES_ADMIN], userInfo.groups) {
-            privileges.push(authorization:SALES_ADMIN_PRIVILEGE);
+        if authorization:checkPermissions([authorization:authorizedRoles.CANDIDATE], userInfo.groups) {
+            privileges.push(authorization:CANDIDATE_PRIVILEGE);
         }
 
         UserInfoResponse userInfoResponse = {...loggedInUser, privileges};
@@ -246,7 +252,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
 
         // Insert into database
-        int|error applicantId = database:createProfile(dbPayload);
+        int|error applicantId = database:createApplicant(dbPayload);
         if applicantId is error {
             string errorMessage = "Failed to create applicant profile.";
             log:printError(errorMessage, applicantId);
@@ -274,7 +280,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         log:printInfo(string `Checking applicant profile for email: ${email}`);
 
-        database:ApplicantProfile|error applicant = database:getApplicantProfileByEmail(email);
+        database:ApplicantProfile|error applicant = database:getApplicant(email);
 
         if applicant is error {
             if applicant.message().startsWith("No applicant found with email:") {
@@ -416,7 +422,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Update profile in database
-        database:ApplicantProfile|error updatedProfile = database:updateProfileByEmail(email, applicant);
+        database:ApplicantProfile|error updatedProfile = database:updateApplicant(email, applicant);
         if updatedProfile is error {
             if updatedProfile.message().startsWith("No applicant found with email:") {
                 string notFoundMsg = "Applicant profile not found for email: " + email;
@@ -444,7 +450,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get applicants(http:RequestContext ctx)
         returns database:ApplicantProfile[]|http:InternalServerError {
 
-        database:ApplicantProfile[]|error applicants = database:getAllApplicants();
+        database:ApplicantProfile[]|error applicants = database:getApplicants();
         if applicants is error {
             string errMsg = "Failed to retrieve applicant profiles.";
             log:printError(errMsg, applicants);
@@ -455,5 +461,291 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return applicants;
+    }
+
+    # Get org details.
+    #
+    # + return - Org details or error
+    resource function get org\-structure() returns ats:OrgStructure|http:InternalServerError {
+        people:Company[]|error companies = getCompanies();
+        if companies is error {
+            string cusError = "Error while retrieving companies.";
+            log:printError(cusError, companies);
+            return {
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string[] locations = from people:Company c in companies
+            select c.location;
+
+        map<string> locationMap = {};
+        foreach int i in 0 ..< locations.length() {
+            locationMap[i.toString()] = locations[i];
+        }
+
+        people:BusinessUnit[]|error businessUnits = getOrgDetails();
+        if businessUnits is error {
+            string cusError = "Error while retrieving org details.";
+            log:printError(cusError, businessUnits);
+            return {
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string[] teamNames = from people:BusinessUnit bu in businessUnits
+            let var departments = bu.departments
+            where departments !is ()
+            from people:Department dept in departments
+            select dept.department;
+
+        map<string> teamMap = {};
+        foreach int i in 0 ..< teamNames.length() {
+            teamMap[i.toString()] = teamNames[i];
+        }
+
+        ats:OrgStructure orgStructure = {
+            location_list: locationMap,
+            team_list: teamMap
+        };
+
+        return orgStructure.cloneReadOnly();
+    }
+
+    # Get basic info for vacancies.
+    #
+    # + depId - Department ID
+    # + visibility - Visibility status
+    # + officeId - Office ID
+    # + designationId - Designation ID
+    # + employmentType - Employment type
+    # + return - Vacancies array or error
+    resource function get vacancies/basic\-info(int? depId, string[]? visibility, int? officeId, int? designationId,
+            string[]? employmentType) returns ats:VacancyBasicInfo[]|http:InternalServerError {
+
+        ats:AtsVacancy[]|error rawVacancies = ats:getVacanciesBasicInfo(
+
+                (), depId, visibility, officeId, designationId, employmentType);
+
+        if rawVacancies is error {
+            string cusError = "Error while retrieving vacancy basic info.";
+            log:printError(cusError, rawVacancies);
+            return {
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        people:BusinessUnit[]|error businessUnits = getOrgDetails();
+        if businessUnits is error {
+            string cusError = "Error while retrieving org details.";
+            log:printError(cusError, businessUnits);
+            return {
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        ats:VacancyBasicInfo[] basicInfos = [];
+        foreach var v in rawVacancies {
+            string? departmentName = from var bu in businessUnits
+                where bu.id == v.businessUnitId
+                from var dept in bu.departments ?: []
+                where dept.id == v.departmentId
+                select dept.department;
+            if departmentName is () {
+                log:printWarn(string `Department name not found for vacancy ID: ${v.id}, using "Unknown".`);
+                departmentName = "Unknown";
+            }
+            basicInfos.push({
+                id: v.id,
+                title: v.title,
+                publish_status: v.visibility,
+                country: v.hiringLocations,
+                job_type: v.employmentType,
+                team: <string>departmentName,
+                published_on: <string>v.publishedOn
+            });
+        }
+        return basicInfos;
+    }
+
+    # Get a vacancy for the given ID.
+    #
+    # + return - Vacancy
+    resource function get vacancies/[int id]() returns ats:Vacancy|http:BadRequest|http:InternalServerError {
+        ats:AtsVacancy|error atsVacancy = ats:getVacancy(id);
+        if atsVacancy is error {
+            string cusError = string `Error while retrieving vacancy data for id: ${id}.`;
+            log:printError(cusError, atsVacancy);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+        ats:JdContent|error jd = atsVacancy.jdHtmlObject.fromJsonWithType();
+        if jd is error {
+            string cusError = string `Error while parsing job description for vacancy id: ${id}.`;
+            log:printError(cusError, jd);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        people:Company[]|error companies = getCompanies();
+        if companies is error {
+            string cusError = string `Error while retrieving company details for vacancy id: ${id}.`;
+            log:printError(cusError, companies);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string? officeName = from var company in companies
+            from var office in company.offices
+            where office.id == atsVacancy.officeId
+            select office.office;
+        if officeName is () {
+            log:printWarn(string `Office name not found for vacancy ID: ${atsVacancy.id}, office ID: ${atsVacancy.officeId}, using "Unknown".`);
+            officeName = "Unknown";
+        }
+
+        people:BusinessUnit[]|error businessUnits = getOrgDetails();
+        if businessUnits is error {
+            string cusError = string `Error while retrieving org details for vacancy id: ${id}.`;
+            log:printError(cusError, businessUnits);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string? departmentName = from var bu in businessUnits
+            where bu.id == atsVacancy.businessUnitId
+            from var dept in bu.departments ?: []
+            where dept.id == atsVacancy.departmentId
+            select dept.department;
+        if departmentName is () {
+            log:printWarn(string `Department name not found for vacancy ID: ${atsVacancy.id}, using "Unknown".`);
+            departmentName = "Unknown";
+        }
+
+        string|error designation = getDesignationById(atsVacancy.designationId);
+        if designation is error {
+            string cusError = string `Error while retrieving designation for vacancy id: ${id}.`;
+            log:printError(cusError, designation);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        ats:AtsVacancy[]|error allVacancies = ats:getVacanciesBasicInfo(designationId = atsVacancy.designationId,
+                employmentType = [atsVacancy.employmentType]);
+        if allVacancies is error {
+            string cusError = string `Error while retrieving similar vacancies for vacancy id: ${id}.`;
+            log:printError(cusError, allVacancies);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string[] sortedCurrentLocations = array:sort(atsVacancy.hiringLocations.clone());
+
+        ats:VacancyBasicInfo[] similarVacancies = [];
+        foreach var v in allVacancies {
+            if v.id != id {
+                string[] sortedVLocations = array:sort(v.hiringLocations.clone());
+                if sortedVLocations == sortedCurrentLocations {
+                    string? similarDepartmentName = from var bu in businessUnits
+                        where bu.id == v.businessUnitId
+                        from var dept in bu.departments ?: []
+                        where dept.id == v.departmentId
+                        select dept.department;
+                    if similarDepartmentName is () {
+                        log:printWarn(string `Department name not found for vacancy ID: ${v.id}, using "Unknown".`);
+                        similarDepartmentName = "Unknown";
+                    }
+                    similarVacancies.push({
+                        id: v.id,
+                        title: v.title,
+                        publish_status: v.visibility,
+                        country: v.hiringLocations,
+                        job_type: v.employmentType,
+                        team: <string>similarDepartmentName,
+                        published_on: v.publishedOn ?: ""
+                    });
+                }
+            }
+        }
+
+        ats:Vacancy vacancy = {
+            id: atsVacancy.id,
+            title: atsVacancy.title,
+            country: atsVacancy.hiringLocations,
+            team: <string>departmentName,
+            designation: designation,
+            job_type: atsVacancy.employmentType,
+            allow_remote: atsVacancy.modeOfWork === ats:REMOTE ? true : false,
+            office_locations: {"0": <string>officeName},
+            publish_status: atsVacancy.visibility,
+            published_on: atsVacancy.publishedOn,
+            mainContent: jd.mainContent,
+            taskInformation: jd.taskInformation,
+            additionalContent: jd.additionalContent,
+            similar_job_listing: similarVacancies
+        };
+
+        return vacancy;
+    }
+
+    # Apply for a vacancy.
+    #
+    # + id - Vacancy ID
+    # + candidate - Candidate details
+    # + return - Success response or error
+    resource function post vacancies/[int id]/apply(ats:Candidate candidate)
+        returns http:Ok|http:InternalServerError|http:BadRequest {
+
+        ats:AtsVacancy|error vacancy = ats:getVacancy(id);
+        if vacancy is error {
+            string cusError = string `Error while retrieving vacancy data for id: ${id}.`;
+            log:printError(cusError, vacancy);
+            return <http:InternalServerError>{
+                body: {
+                    message: cusError
+                }
+            };
+        }
+
+        string|error applicationResponse = ats:insertCandidate(candidate, id);
+        if applicationResponse is error {
+            log:printError(applicationResponse.message(), applicationResponse);
+            return <http:InternalServerError>{
+                body: {
+                    message: applicationResponse.message()
+                }
+            };
+        }
+        return <http:Ok>{
+            body: {
+                message: applicationResponse
+            }
+        };
     }
 }

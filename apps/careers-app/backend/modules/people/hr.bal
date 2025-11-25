@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import ballerina/log;
 
 # Retrieves basic employee details by work email.
 #
@@ -70,3 +71,127 @@ public isolated function getEmployees() returns EmployeeBasic[]|error {
     }
     return employees;
 }
+
+# Get career function Data.
+#
+# + return - Array of career functions or error
+public isolated function getCareerFunctions() returns CareerFunction[]|error {
+    string document = string `
+        query careerFunctionsQuery($filter: CareerFunctionFilter, $limit:Int) {
+            careerFunctions(filter:$filter, limit:$limit) {
+                id,
+                careerFunction,
+                designations {
+                    designation,
+                    jobBand,
+                    id
+                }           
+            }
+        }
+    `;
+
+    CareerFunctionResponse|error response = hrClient->execute(document, {
+        filter: {},
+        'limit: 1000
+    });
+
+    if response is error {
+        log:printError("Error while fetching career function details.", response);
+        return error("Error while fetching career function details.");
+    }
+
+    return response.data.careerFunctions;
+}
+
+# Get cached org details.
+#
+# + return - Array of org details or error
+public isolated function getOrgDetails() returns BusinessUnit[]|error {
+    final error|BusinessUnit[] & readonly businessUnits = fetchOrgDetails().cloneReadOnly();
+    if businessUnits is error {
+        log:printError("Error while fetching Org Details.", businessUnits);
+        return error("Error while fetching Org Details.");
+    }
+
+    return businessUnits;
+}
+
+# Fetch Org details.
+#
+# + return - Array of org details
+isolated function fetchOrgDetails() returns BusinessUnit[]|error {
+    string document = string `
+        query orgDetailsQuery($filter: OrgDetailsFilter, $limit:Int) {
+            orgDetails(filter:$filter, limit:$limit) {
+                id,
+                businessUnit,
+                departments  {
+                    id,
+                    department,
+                    teams {
+                        id,
+                        team,
+                        subTeams {
+                            id,
+                            subTeam
+                        }
+                    }
+                }           
+            }
+        }
+    `;
+
+    OrgDetailsResponse|error response = hrClient->execute(document, {
+        filter: {},
+        'limit: 1000
+    });
+
+    if response is error {
+        log:printError("Error while fetching Org Details.", response);
+        return error("Error while fetching Org Details.");
+    }
+
+    return response.data.orgDetails;
+}
+
+# Get cached company details.
+#
+# + return - Array of Companies or error
+public isolated function getCompanies() returns Company[]|error {
+    final error|Company[] & readonly companies = fetchCompanies().cloneReadOnly();
+    if companies is error {
+        log:printError("Error while fetching Companies.", companies);
+        return error("Error while fetching Companies.");
+    }
+    return companies;
+}
+
+# Fetch company details.
+#
+# + return - Array of Companies or error
+public isolated function fetchCompanies() returns Company[]|error {
+    string document = string `
+        query getCompaniesQuery ($filter: CompanyFilter,$limit:Int) {
+            companies(filter: $filter,limit:$limit) {
+                id,
+                company,
+                location,
+                offices {
+                    id,
+                    office,
+                    location
+                }
+            }
+        }
+    `;
+
+    CompanyResponse|error response = hrClient->execute(document, {});
+
+    if response is error {
+        log:printError("Error while fetching Companies.", response);
+        return error("Error while fetching Companies.");
+    }
+
+    return response.data.companies;
+}
+
