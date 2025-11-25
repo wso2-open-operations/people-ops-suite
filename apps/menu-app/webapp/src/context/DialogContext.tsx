@@ -126,6 +126,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
 
   const handleOk = (value?: string) => {
     content && content.action(value);
+    Reset();
     onHide();
   };
 
