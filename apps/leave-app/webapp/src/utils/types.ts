@@ -17,7 +17,7 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 import { Role } from "@slices/authSlice/auth";
-import { Collection } from "@slices/collections/collection";
+import { State } from "@/types/types";
 
 export interface AuthState {
   status: State;
@@ -63,22 +63,7 @@ export interface ErrorHandlerProps {
   message: string | null;
 }
 
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
-
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
-
 export interface CommonCardProps {
-  collection: Collection;
   actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
   dataCardIndex: number;
 }
