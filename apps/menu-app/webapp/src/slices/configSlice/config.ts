@@ -13,16 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
+import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
-
-import { State } from "@/types/types";
 
 interface SupportTeamEmail {
   team: string;
@@ -60,16 +58,21 @@ export const fetchAppConfig = createAsyncThunk(
           if (axios.isCancel(error)) {
             return rejectWithValue("Request canceled");
           }
+
+          const errorMessage = error.response?.data?.message
+            ? String(error.response.data.message)
+            : "An unknown error occurred.";
+
           dispatch(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? SnackMessage.error.fetchAppConfigMessage
-                  : "An unknown error occurred.",
+                  : errorMessage ,
               type: "error",
             }),
           );
-          reject(error.response.data.message);
+          reject(errorMessage);
         });
     });
   },
