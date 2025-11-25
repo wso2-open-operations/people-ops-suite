@@ -165,6 +165,9 @@ public type EmployeePersonalInfo record {|
     string? country;
     # Nationality
     string? nationality;
+    # Emergency contacts
+    @sql:Column {name: "emergency_contacts"}
+    json emergencyContacts;
 |};
 
 # Continuous service record information.
@@ -438,6 +441,9 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # Country of residence
     @constraint:String {maxLength: 100}
     string? country = ();
+    # Emergency contacts
+    @constraint:Array {minLength: 1, maxLength: 4}
+    EmergencyContact[]? emergencyContacts = ();
 |};
 
 # [Database] Insert type for vehicle.

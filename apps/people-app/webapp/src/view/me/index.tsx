@@ -30,6 +30,7 @@ import {
   FormikHandlers,
   FormikValues,
   FormikErrors,
+  FieldArray,
 } from "formik";
 import { object, string } from "yup";
 import {
@@ -46,6 +47,9 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import IconButton from "@mui/material/IconButton";
 
 const ReadOnly = ({
   label,
@@ -198,6 +202,14 @@ export default function Me() {
           stateOrProvince: values.stateOrProvince,
           postalCode: values.postalCode,
           country: values.country,
+          emergencyContacts: (values.emergencyContacts || []).map(
+            (contact) => ({
+              name: contact.name,
+              relationship: contact.relationship,
+              telephone: contact.telephone,
+              mobile: contact.mobile,
+            })
+          ),
         };
         setSavingChanges(true);
         dispatch(
@@ -639,6 +651,141 @@ export default function Me() {
                         touched={touched}
                         isSavingChanges={isSavingChanges}
                       />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FieldArray name="emergencyContacts">
+                        {({ push, remove }) => (
+                          <Box sx={{ pt: 2 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 2,
+                              }}
+                            >
+                              <Typography sx={{ fontWeight: 600 }}>
+                                Emergency Contacts (
+                                {values.emergencyContacts?.length ?? 0}/4)
+                              </Typography>
+                            </Box>
+
+                            {!values.emergencyContacts ||
+                            values.emergencyContacts.length === 0 ? (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ textAlign: "center", py: 3 }}
+                              >
+                                No emergency contacts added yet.
+                              </Typography>
+                            ) : (
+                              values.emergencyContacts.map((contact, index) => (
+                                <Grid
+                                  container
+                                  spacing={2}
+                                  key={index}
+                                  alignItems="center"
+                                  sx={{ mb: 2 }}
+                                >
+                                  <Grid item xs={12} sm={3}>
+                                    <TextField
+                                      label="Name"
+                                      name={`emergencyContacts.${index}.name`}
+                                      value={contact.name ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={3}>
+                                    <TextField
+                                      label="Relationship"
+                                      name={`emergencyContacts.${index}.relationship`}
+                                      value={contact.relationship ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2.5}>
+                                    <TextField
+                                      label="Telephone"
+                                      name={`emergencyContacts.${index}.telephone`}
+                                      value={contact.telephone ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2.5}>
+                                    <TextField
+                                      label="Mobile"
+                                      name={`emergencyContacts.${index}.mobile`}
+                                      value={contact.mobile ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                    />
+                                  </Grid>
+                                  <Grid item sx={{ width: "32px" }}>
+                                    <IconButton
+                                      color="error"
+                                      size="small"
+                                      onClick={() => remove(index)}
+                                      disabled={isSavingChanges}
+                                    >
+                                      <RemoveCircleOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                  </Grid>
+                                </Grid>
+                              ))
+                            )}
+                            <Button
+                              variant="contained"
+                              startIcon={<AddCircleOutlineIcon />}
+                              size="small"
+                              sx={{ textTransform: "none" }}
+                              onClick={() =>
+                                push({
+                                  name: "",
+                                  relationship: "",
+                                  telephone: "",
+                                  mobile: "",
+                                })
+                              }
+                              disabled={
+                                isSavingChanges ||
+                                (values.emergencyContacts?.length ?? 0) >= 4
+                              }
+                            >
+                              Add Contact
+                            </Button>
+
+                            {(values.emergencyContacts?.length ?? 0) >= 4 && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: "block",
+                                  textAlign: "center",
+                                  mt: 1,
+                                }}
+                              >
+                                Maximum 4 emergency contacts reached.
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </FieldArray>
                     </Grid>
                     <Grid item xs={12}>
                       {/* --- Action Buttons --- */}

@@ -176,7 +176,8 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         state_or_province,
         postal_code,
         country,
-        nationality
+        nationality,
+        emergency_contacts
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
@@ -416,7 +417,8 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         city = ${payload.city},
         state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
-        country = ${payload.country}
+        country = ${payload.country},
+        emergency_contacts = ${payload.emergencyContacts.toJsonString()}
      WHERE
         id = ${id};`;
 

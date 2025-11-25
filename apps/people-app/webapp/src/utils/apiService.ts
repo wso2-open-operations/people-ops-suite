@@ -90,7 +90,6 @@ export class APIService {
     APIService._instance.interceptors.request.use(
       (config) => {
         config.headers.set("Authorization", "Bearer " + APIService._idToken);
-        config.headers.set("X-JWT-ASSERTION", APIService._idToken);
 
         const endpoint = config.url || "";
 
