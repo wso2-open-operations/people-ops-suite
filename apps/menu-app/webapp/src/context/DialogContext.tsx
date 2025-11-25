@@ -174,7 +174,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                pb: 0,
               }}
             >
               {content?.title}
