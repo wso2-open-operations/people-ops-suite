@@ -47,31 +47,47 @@ const initialState: AppConfigState = {
   config: null,
 };
 
-export const fetchAppConfig = createAsyncThunk(
+export const fetchAppConfig = createAsyncThunk<
+  AppConfigInfo,
+  void,
+  { rejectValue: string }
+>(
   "appConfig/fetchAppConfig",
   async (_, { dispatch, rejectWithValue }) => {
-    return new Promise<AppConfigInfo>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.appConfig)
-        .then((response) => {
-          resolve(response.data);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchAppConfigMessage
-                  : "An unknown error occurred.",
-              type: "error",
-            }),
-          );
-          reject(error.response.data.message);
-        });
-    });
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.appConfig,
+      );
+      return response.data;
+    } catch (err) {
+      if (axios.isCancel(err)) {
+        return rejectWithValue("Request canceled");
+      }
+
+      if (axios.isAxiosError(err)) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message:
+              err.response?.status === HttpStatusCode.InternalServerError
+                ? SnackMessage.error.fetchAppConfigMessage
+                : "An unknown error occurred.",
+            type: "error",
+          }),
+        );
+        return rejectWithValue(
+          (err.response?.data as { message?: string })?.message ??
+            "Failed to fetch app configurations.",
+        );
+      }
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "An unknown error occurred.",
+          type: "error",
+        }),
+      );
+      return rejectWithValue("Failed to fetch app configurations.");
+    }
   },
 );
 
@@ -94,9 +110,13 @@ const AppConfigSlice = createSlice({
         state.stateMessage = "Successfully fetched app configurations!";
         state.config = action.payload;
       })
-      .addCase(fetchAppConfig.rejected, (state) => {
-        state.state = State.failed;
-        state.stateMessage = "Failed to fetch application configurations.";
+      .addCase(fetchAppConfig.rejected, (state, action) => {
+      state.state = State.failed;
+      state.stateMessage = "Failed to fetch application configurations.";
+      state.errorMessage =
+        (action.payload as string | undefined) ??
+        action.error.message ??
+        null;
       });
   },
 });
