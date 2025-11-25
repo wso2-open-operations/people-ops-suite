@@ -17,7 +17,6 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 import { Role } from "@slices/authSlice/auth";
-import { Collection } from "@slices/collections/collection";
 
 export type stateType = "failed" | "success" | "loading" | "idle";
 
@@ -77,10 +76,4 @@ export enum ConfirmationType {
   send = "send",
   upload = "upload",
   accept = "accept",
-}
-
-export interface CommonCardProps {
-  collection: Collection;
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  dataCardIndex: number;
 }
