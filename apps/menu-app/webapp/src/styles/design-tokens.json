@@ -932,7 +932,7 @@
           "active": {
             "description": "",
             "type": "color",
-            "value": "{variables.colors.primary.brand}"
+            "value": "{variables.colors.primary.main}"
           },
           "hover": {
             "type": "color",
