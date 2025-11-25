@@ -16,19 +16,21 @@
 
 export const SnackMessage = {
   success: {
-    addEmployee: "Successfully created the employee",
+    addCollections: "Successfully added the Collection",
   },
   error: {
-    fetchEmployees: "Error while fetching employees",
-    fetchPrivileges: "Error while fetching user privileges",
-    insufficientPrivileges: "You don't have sufficient privileges to access this resource",
-    fetchAppConfigMessage: "Error while fetching app config",
-    addEmployee: "Unable to add employee",
-    fetchApps: "Unable to fetch apps",
+    fetchCollectionsMessage: "Unable to retrieve list of selected Collections",
+    addCollections: "Unable to create the Collection",
+    insufficientPrivileges: "Insufficient Privileges",
+    fetchPrivileges: "Failed to fetch Privileges",
+    fetchContacts: "Unable to retrieve list of Contacts",
+    fetchEmployees: "Unable to retrieve list of Employees",
+    fetchCustomers: "Unable to retrieve list of Customers",
+    fetchAppConfigMessage: "Unable to retrieve app configurations",
   },
   warning: {},
 };
 
-export const APP_DESC = "Menu App";
+export const APP_DESC = " Internal App Product Template.";
 
-export const redirectUrl = "menu-app-redirect-url";
+export const redirectUrl = "iapm-marketplace-redirect-url";

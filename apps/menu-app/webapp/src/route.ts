@@ -13,70 +13,88 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import AppsIcon from '@mui/icons-material/Apps';
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
-import AccountBoxOutlinedIcon from '@mui/icons-material/AccountBoxOutlined';
+import { HomeIcon } from "lucide-react";
+import { CircleQuestionMark } from "lucide-react";
+import type { RouteObject } from "react-router-dom";
 
 import React from "react";
-import { NonIndexRouteObject, RouteObject } from "react-router-dom";
 
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
 
-export interface RouteObjectWithRole extends NonIndexRouteObject {
-  allowRoles: string[];
-  icon:
-  | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-  | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-}
-
-interface RouteDetail {
-  path: string;
-  allowRoles: string[];
-  icon:
-  | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-  | undefined;
-  text: string;
-  bottomNav?: boolean;
-}
+import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
     text: "Home",
-    icon: React.createElement(AppsIcon),
-    element: React.createElement(View.home),
+    icon: React.createElement(HomeIcon),
+    element: React.createElement(View.firstView),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
-
-  /*
-   TODO: Implement User Guide page when the user guide content is ready.
-   The /help route is commented out for now and will be re-enabled once the
-   user guide page (View.help) is implemented.
-
   {
     path: "/help",
-    text: "Help",
-    icon: React.createElement(HelpOutlineIcon),
+    text: "Help & Support",
+    icon: React.createElement(CircleQuestionMark),
     element: React.createElement(View.help),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
     bottomNav: true,
-  }
-  */
+  },
+  {
+    path: "/page",
+    text: "Page 1",
+    icon: React.createElement(CircleQuestionMark),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    children: [
+      {
+        path: "nested-page",
+        text: "Nested Page",
+        icon: React.createElement(CircleQuestionMark),
+        element: React.createElement(View.nestedPage),
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+      },
+      {
+        path: "nested-page-2",
+        text: "Nested Page 2",
+        icon: React.createElement(CircleQuestionMark),
+        element: React.createElement(View.nestedPage),
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+      },
+    ],
+  },
+
+  {
+    path: "/page-two",
+    text: "Page 2",
+    icon: React.createElement(CircleQuestionMark),
+    element: React.createElement(View.pageTwo),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    children: [
+      {
+        path: "nested-page",
+        text: "Nested Page",
+        icon: React.createElement(CircleQuestionMark),
+        element: React.createElement(View.nestedPage),
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+      },
+      {
+        path: "nested-page-2",
+        text: "Nested Page 2",
+        icon: React.createElement(CircleQuestionMark),
+        element: React.createElement(View.nestedPage),
+        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+      },
+    ],
+  },
 ];
+
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: string[]
+  roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
-  var routesObj: RouteObjectWithRole[] = [];
+  const routesObj: RouteObjectWithRole[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
@@ -90,7 +108,7 @@ export const getActiveRoutesV2 = (
 };
 
 export const getActiveRoutes = (roles: string[]): RouteObject[] => {
-  var routesObj: RouteObject[] = [];
+  const routesObj: RouteObject[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
@@ -102,14 +120,37 @@ export const getActiveRoutes = (roles: string[]): RouteObject[] => {
 };
 
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
-  var routesObj: RouteDetail[] = [];
+  const routesObj: RouteDetail[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
-        path: routeObj.path ? routeObj.path : "",
         ...routeObj,
+        path: routeObj.path ?? "",
       });
     }
   });
   return routesObj;
+};
+
+interface getActiveParentRoutesProps {
+  routes: RouteObjectWithRole[] | undefined;
+  roles: string[];
+}
+
+export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
+  if (!routes) return [];
+
+  let activeParentPaths: string[] = [];
+
+  routes.forEach((routeObj) => {
+    if (!routeObj.element) return;
+
+    if (isIncludedRole(roles, routeObj.allowRoles)) {
+      if (routeObj.path) {
+        activeParentPaths.push(routeObj.path);
+      }
+    }
+  });
+
+  return activeParentPaths;
 };

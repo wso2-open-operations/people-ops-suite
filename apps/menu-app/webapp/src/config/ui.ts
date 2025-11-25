@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export const SIDEBAR_WIDTH = 180;
+export const SIDEBAR_WIDTH = 230;
 export const DEFAULT_CHARACTER_LIMIT = 5000;
-export const REJECTED_NOTE_CHARACTER_LIMIT = 250;
 export const APPLICATION_STATEMENT_CHARACTER_LIMIT = 5000;
+export const REJECTED_NOTE_CHARACTER_LIMIT = 250;

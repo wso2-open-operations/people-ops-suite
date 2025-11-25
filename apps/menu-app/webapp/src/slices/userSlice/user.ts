@@ -14,11 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { State } from "@/types/types";
+import { State } from "../../types/types";
 import { AppConfig } from "@config/config";
 import { APIService } from "@utils/apiService";
-import { UserState, UserInfoInterface } from "@slices/authSlice/auth";
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import type { UserState, UserInfoInterface } from "@slices/authSlice/auth";
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
 
 const initialState: UserState = {
@@ -39,7 +43,7 @@ export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
           UserInfo: resp.data,
         });
       })
-      .catch((error: Error) => {
+      .catch((error: AxiosError) => {
         reject(error);
       });
   });

@@ -18,6 +18,7 @@ import { Box } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
 import MarkdownPreview from "@uiw/react-markdown-preview";
+import { fetchAppConfig } from "@slices/configSlice/config";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 
 function UserGuide() {
@@ -32,19 +33,16 @@ function UserGuide() {
   const [markdownContent, setMarkdownContent] = useState("");
 
   useEffect(() => {
+    dispatch(fetchAppConfig());
     fetch("/README.md")
       .then((response) => response.text())
       .then((text) => setMarkdownContent(text))
       .catch((error) => console.error("Error fetching README.md file:", error));
   }, [dispatch]);
 
-  const supportTeamEmails =
-    useAppSelector((state) => state.appConfig.config?.supportTeamEmails) || [];
+  const supportTeamEmails = useAppSelector((state) => state.appConfig.config?.supportTeamEmails) || [];
   const supportTeams = supportTeamEmails
-    .map(
-      ({ team, email }) =>
-        `- For **${team.toLowerCase()}**, email: [${email}](mailto:${email})`
-    )
+    .map(({ team, email }) => `- For **${team.toLowerCase()}**, email: [${email}](mailto:${email})`)
     .join("\n");
   const doc = markdownContent + supportTeams;
 

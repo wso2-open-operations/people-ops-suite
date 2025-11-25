@@ -15,7 +15,7 @@
 // under the License.
 
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
@@ -36,7 +36,6 @@ interface AuthState {
   status: State;
   mode: "active" | "maintenance";
   statusMessage: string | null;
-  isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
   decodedIdToken: ExtendedDecodedIDTokenPayload | null;
   roles: Role[];
@@ -68,7 +67,6 @@ const initialState: AuthState = {
   status: State.idle,
   mode: "active",
   statusMessage: null,
-  isAuthenticated: false,
   userInfo: null,
   decodedIdToken: null,
   roles: [],
@@ -77,16 +75,14 @@ const initialState: AuthState = {
 export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
   (_, { getState, dispatch, rejectWithValue }) => {
-    const { userInfo, state, errorMessage } = (
-      getState() as { user: UserState }
-    ).user;
+    const { userInfo, state, errorMessage } = (getState() as { user: UserState }).user;
 
     if (state === State.failed) {
       dispatch(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
@@ -105,12 +101,12 @@ export const loadPrivileges = createAsyncThunk(
         enqueueSnackbarMessage({
           message: SnackMessage.error.insufficientPrivileges,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue("No roles found");
     }
     return { roles };
-  }
+  },
 );
 
 export const authSlice = createSlice({
@@ -126,8 +122,8 @@ export const authSlice = createSlice({
       state.status = State.failed;
       state.userInfo = null;
       state.decodedIdToken = null;
-      state.roles = []; 
-    }
+      state.roles = [];
+    },
   },
   extraReducers: (builder) => {
     builder

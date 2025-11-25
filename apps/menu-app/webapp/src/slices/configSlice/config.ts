@@ -14,14 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
-import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
+
+import { State } from "@/types/types";
 
 interface SupportTeamEmail {
   team: string;
@@ -49,39 +50,29 @@ const initialState: AppConfigState = {
 export const fetchAppConfig = createAsyncThunk(
   "appConfig/fetchAppConfig",
   async (_, { dispatch, rejectWithValue }) => {
-    try {
-      APIService.getCancelToken().cancel();
-      const newCancelTokenSource = APIService.updateCancelToken();
-      
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.appConfig,
-        {
-          cancelToken: newCancelTokenSource.token,
-        }
-      );
-      
-      return response.data;
-    } catch (error) {
-      if (axios.isCancel(error)) {
-        return rejectWithValue("Request Cancelled");
-      }
-      
-      if (axios.isAxiosError(error)) {
-        dispatch(
-          enqueueSnackbarMessage({
-            message:
-              error.response?.status === HttpStatusCode.InternalServerError
-                ? SnackMessage.error.fetchAppConfigMessage
-                : "An unknown error occurred.",
-            type: "error",
-          })
-        );
-        
-        return rejectWithValue(error.response?.data?.message || "An error occurred");
-      }
-      return rejectWithValue("An unexpected error occurred");
-    }
-  }
+    return new Promise<AppConfigInfo>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.appConfig)
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.fetchAppConfigMessage
+                  : "An unknown error occurred.",
+              type: "error",
+            }),
+          );
+          reject(error.response.data.message);
+        });
+    });
+  },
 );
 
 const AppConfigSlice = createSlice({

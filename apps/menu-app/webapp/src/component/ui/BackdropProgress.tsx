@@ -14,26 +14,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
+import { Backdrop, CircularProgress, useTheme } from "@mui/material";
 
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
+type BackdropProgressProps = {
+  open: boolean;
+};
 
-export interface CommonCardProps {
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  dataCardIndex: number;
-}
+const BackdropProgress = ({ open }: BackdropProgressProps) => {
+  const theme = useTheme();
+  return (
+    <Backdrop
+      sx={{ zIndex: 500 + 1, color: theme.palette.secondary.contrastText }}
+      open={open}
+    >
+      <CircularProgress />
+    </Backdrop>
+  );
+};
 
-export enum UpdateAction {
-  Favorite = "favourite",
-  Unfavourite = "unfavourite"
-}
+export default BackdropProgress;

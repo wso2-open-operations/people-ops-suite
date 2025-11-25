@@ -14,13 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import StateWithImage from "@component/ui/StateWithImage";
 import { Box, Container } from "@mui/material";
-import Grid from "@mui/material/Grid";
 
-interface ErrorHandlerProps {
-  message: string | null;
-}
+import Wso2Logo from "@assets/images/wso2-logo.svg";
+import StateWithImage from "@component/ui/StateWithImage";
+import ErrorSvg from "@assets/images/error.svg"
+import { ErrorHandlerProps } from "@root/src/utils/types";
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
   return (
@@ -31,30 +30,18 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
       }}
     >
       <Container maxWidth="md">
-        <Grid
-          container
-          direction="column"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-        >
-          <Grid item xs={12}>
+        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 2}}>
             <img
               alt="logo"
               width="150"
               height="auto"
-              src={require("@assets/images/wso2-logo.svg").default}
+              src={Wso2Logo}
             />
-          </Grid>
-          <Grid item xs={12}>
             <StateWithImage
-              message={
-                props.message || "Something went wrong! Please try again later."
-              }
-              imageUrl={require("@assets/images/error.svg").default}
+              message={props.message || "Something went wrong! Please try again later."}
+              imageUrl={ErrorSvg}
             />
-          </Grid>
-        </Grid>
+        </Box>
       </Container>
     </Box>
   );

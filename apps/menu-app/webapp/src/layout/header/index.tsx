@@ -13,28 +13,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React from "react";
-import { APP_NAME } from "@config/config";
+import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+
+import React from "react";
+
+import Wso2Logo from "@assets/images/wso2-logo.svg";
+import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
+import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 import { RootState, useAppSelector } from "@slices/store";
-import {
-  AppBar,
-  Avatar,
-  Box,
-  Menu,
-  MenuItem,
-  Stack,
-  Tooltip,
-} from "@mui/material";
 
 const Header = () => {
   const authContext = useAppAuthContext();
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
+  const theme = useTheme();
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const user = useAppSelector((state: RootState) => state.user);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -46,26 +40,19 @@ const Header = () => {
   };
 
   return (
-    <AppBar
-      position="fixed"
+    <Box
       sx={{
-        zIndex: (theme) => theme.zIndex.drawer + 1,
-        color: (theme) =>
-          theme.palette.mode === "light"
-            ? theme.palette.primary.main
-            : theme.palette.common.white,
-
-        background: (theme) =>
-          theme.palette.mode === "light"
-            ? theme.palette.common.white
-            : theme.palette.primary.dark,
-        boxShadow: 2,
+        zIndex: 10,
+        backgroundColor: theme.palette.surface.territory.active,
+        boxShadow: theme.shadows[4],
       }}
     >
       <Toolbar
         variant="dense"
         sx={{
           paddingY: 0.3,
+          display: "flex",
+          gap: 0.5,
           "&.MuiToolbar-root": {
             pl: 0.3,
           },
@@ -78,41 +65,69 @@ const Header = () => {
             maxWidth: "100px",
           }}
           onClick={() => (window.location.href = "/")}
-          src={require("@assets/images/wso2-logo.svg").default}
+          src={Wso2Logo}
         ></img>
-        <Typography
-          variant="h5"
+
+        <Box
           sx={{
-            ml: 1,
-            flexGrow: 1,
-            fontWeight: 600,
+            display: "flex",
+            flexDirection: "row",
+            gap: theme.spacing(0.5),
+            width: "100%",
+            alignItems: "center",
+            height: "100%",
           }}
         >
-          {APP_NAME}
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color: theme.palette.customText.primary.p1.active,
+            }}
+          >
+            {APP_NAME}
+          </Typography>
+          <BasicBreadcrumbs />
+        </Box>
 
         <Box sx={{ flexGrow: 0 }}>
           {user.userInfo && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={2}>
-                <Box>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
-                  </Typography>
-                  <Typography variant="body2">
-                    {user.userInfo?.jobRole}
-                  </Typography>
-                </Box>
+              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}
-                    sx={{ border: 1, borderColor: "primary.main" }}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      border: 1,
+                      borderColor: theme.palette.customBorder.territory.active,
+                    }}
                     src={user.userInfo?.employeeThumbnail || ""}
                     alt={user.userInfo?.firstName || "Avatar"}
                   >
                     {user.userInfo?.firstName?.charAt(0)}
                   </Avatar>
                 </Tooltip>
+                <Box sx={{ width: "fit-content" }}>
+                  <Typography
+                    noWrap
+                    variant="body1"
+                    sx={{
+                      color: theme.palette.customText.primary.p2.active,
+                    }}
+                  >
+                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
+                  </Typography>
+                  <Typography
+                    noWrap
+                    variant="body2"
+                    sx={{
+                      color: theme.palette.customText.primary.p3.active,
+                    }}
+                  >
+                    {user.userInfo?.jobRole}
+                  </Typography>
+                </Box>
               </Stack>
 
               <Menu
@@ -144,7 +159,7 @@ const Header = () => {
           )}
         </Box>
       </Toolbar>
-    </AppBar>
+    </Box>
   );
 };
 

@@ -13,14 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { configureStore } from "@reduxjs/toolkit";
 import { enableMapSet } from "immer";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
 
 import authReducer from "@slices/authSlice/auth";
+import collectionReducer from "@slices/collections/collection";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
+import employeeReducer from "@slices/employeeSlice/employee";
 import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
@@ -30,6 +31,8 @@ export const store = configureStore({
     auth: authReducer,
     user: userReducer,
     common: commonReducer,
+    employee: employeeReducer,
+    collection: collectionReducer,
     appConfig: appConfigReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware(),

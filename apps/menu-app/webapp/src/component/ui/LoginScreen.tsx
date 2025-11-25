@@ -14,24 +14,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import LoadingButton from "@mui/lab/LoadingButton";
+import Grid from "@mui/material/Grid";
+import Typography from "@mui/material/Typography";
 import {
   Box,
+  Container,
   Card,
   CardContent,
-  Container,
   Divider,
   Stack,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-
+import BackgroundImage from "@src/assets/images/app-login-background.png";
+import ProductLogos from "@src/assets/images/app-login-logos.png";
+import LoadingButton from "@mui/lab/LoadingButton";
+import logo from "@src/assets/images/wso2-logo-black.png";
 import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
-import BackgroundImage from "@assets/images/app-store-login-logos.png";
-import ProductLogos from "@assets/images/app-store-login-background.png";
-import logo from "@assets/images/wso2-logo-black.png";
-import { useAppAuthContext } from "@context/AuthContext";
+import { useAppAuthContext } from "@root/src/context/AuthContext";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
@@ -74,10 +73,10 @@ const LoginScreen = () => {
                 spacing={2}
                 p={1}
               >
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <img alt="logo" width="130" height="auto" src={logo}></img>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <Typography
                     align="center"
                     sx={{ fontWeight: "bold" }}
@@ -87,7 +86,7 @@ const LoginScreen = () => {
                     {APP_NAME}
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sx={{ pb: 2 }}>
+                <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
                   <Typography
                     align="center"
                     sx={{ fontSize: "1em" }}
@@ -97,7 +96,7 @@ const LoginScreen = () => {
                     {APP_DESC}
                   </Typography>
                 </Grid>
-                <Grid item xs={12}>
+                <Grid size={{ xs: 12 }}>
                   <LoadingButton
                     variant="contained"
                     color="primary"
@@ -111,17 +110,17 @@ const LoginScreen = () => {
                     LOG IN
                   </LoadingButton>
                 </Grid>
-                <Grid item xs={12} mt={6}>
+                <Grid size={{ xs: 12 }} mt={6}>
                   <Stack direction="column" spacing={2}>
                     <Typography align="center" color={"black"}>
                       Powered By
                     </Typography>
                     <Stack direction="row" spacing={2}>
-                      <img height={22} src={ProductLogos} alt="Product logos"  />
+                      <img height={22} alt="Product logos" src={ProductLogos} />
                     </Stack>
                   </Stack>
                 </Grid>
-                <Grid item xs={12} mt={3}>
+                <Grid size={{ xs: 12 }} mt={3}>
                   <Typography
                     align="center"
                     color={"grey"}

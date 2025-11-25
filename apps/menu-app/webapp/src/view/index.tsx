@@ -3,7 +3,7 @@
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
-// You may obtain a copy of the License ats
+// You may obtain a copy of the License at
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -13,13 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { lazy } from "react";
 
-const home = lazy(() => import("@view/home/home"));
 const help = lazy(() => import("@view/help/help"));
+const nestedPage = lazy(() => import("@root/src/view/nested-page/NestedPage"));
+const firstView = lazy(() => import("@view/first-view/index"));
+const pageTwo = lazy(() => import("@view/page-two/PageTwo"));
+const home = lazy(() => import("@view/home/Home"));
 
 export const View = {
-  home,
   help,
+  nestedPage,
+  firstView,
+  pageTwo,
+  home
 };

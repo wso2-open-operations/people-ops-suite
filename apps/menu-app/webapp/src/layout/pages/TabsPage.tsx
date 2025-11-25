@@ -13,13 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box, Button, useTheme } from "@mui/material";
+import { AnimatePresence, motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import Box from "@mui/material/Box";
-import {Tabs as MUITabs} from "@mui/material";
-import Tab from "@mui/material/Tab";
 
 interface TabsPageProps {
   title: string;
@@ -37,7 +35,7 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [value, setValue] = useState<number>(0);
 
-  const tabs = useMemo(() => tabsPage.map((t) => t.tabPath), [tabsPage]);
+  const tabs = useMemo(() => tabsPage.map((tab) => tab.tabPath), [tabsPage]);
 
   useEffect(() => {
     const currentTab = searchParams.get("tab");
@@ -47,9 +45,9 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
       setValue(tabIndex);
     } else {
       setValue(0);
-      if (tabs[0]) setSearchParams({ tab: tabs[0] }, { replace: true });
+      setSearchParams({ tab: tabs[0] }, { replace: true });
     }
-  }, [searchParams, tabs]);
+  }, [searchParams, tabs, setSearchParams]);
 
   const handleTabClick = (index: number) => {
     setValue(index);
@@ -57,7 +55,13 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
   };
 
   return (
-    <Box sx={{ height: "100%", transition: "color 200ms" }}>
+    <Box
+      sx={{
+        height: "100%",
+        transition: "color 200ms",
+      }}
+    >
+      {/* Tab Navigation */}
       <Tabs tabs={tabsPage} activeIndex={value} handleTabClick={handleTabClick} />
 
       {/* Tab Content with animations */}
@@ -65,19 +69,20 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
         {tabsPage.map(
           (tab, index) =>
             value === index && (
-              <motion.div
-                key={tabs[index] ?? index}
+              <Box
+                component={motion.div}
+                key={index}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                style={{ width: "100%" }}
+                sx={{ width: "100%" }}
               >
                 <TabPanel value={value} index={index}>
                   {tab.page}
                 </TabPanel>
-              </motion.div>
-            )
+              </Box>
+            ),
         )}
       </AnimatePresence>
     </Box>
@@ -91,55 +96,70 @@ interface TabToggleProps {
 }
 
 export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
+  const theme = useTheme();
+
   return (
     <Box sx={{ display: "flex", flexDirection: "row" }}>
       <Box
         sx={{
-          width: "100%",
+          display: "flex",
           borderBottom: 1,
-          borderColor: "divider",
+          borderColor: theme.palette.customBorder.territory.active,
+          width: "100%",
           position: "relative",
           transition: "color 200ms",
         }}
+        role="tablist"
+        aria-orientation="horizontal"
       >
-        <MUITabs
-          value={activeIndex}
-          onChange={(_evt, newValue) => handleTabClick(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          aria-label="Tabs navigation"
-          textColor="inherit"
-          TabIndicatorProps={{
-            sx: {
-              height: 2,
-              bgcolor: "text.primary",
-            },
-          }}
-          sx={{
-            "& .MuiTab-root": {
+        {tabs.map((tab, index) => (
+          <Button
+            component={motion.button}
+            key={index}
+            onClick={() => handleTabClick(index)}
+            disableRipple
+            role="tab"
+            id={`simple-tab-${index}`}
+            aria-selected={activeIndex === index}
+            aria-controls={`simple-tabpanel-${index}`}
+            tabIndex={activeIndex === index ? 0 : -1}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 2,
+              paddingTop: "8px",
+              paddingBottom: "16px",
+              borderRadius: "0px",
+              px: 2,
+              fontSize: "0.875rem",
+              fontWeight: "medium",
+              position: "relative",
+              color:
+                activeIndex === index
+                  ? theme.palette.customText.primary.p2.active
+                  : theme.palette.customText.primary.p3.active,
               textTransform: "none",
-              minHeight: 48,
-              pr: 2,
-              py: 1.5,
-              color: "text.secondary",
-              fontSize: "14px"
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "text.primary",
-            },
-          }}
-        >
-          {tabs.map((tab, index) => (
-            <Tab
-              key={index}
-              icon={tab.icon}
-              iconPosition="start"
-              label={tab.tabTitle}
-              id={`tab-${index}`}
-              aria-controls={`tabpanel-${index}`}
-            />
-          ))}
-        </MUITabs>
+              minWidth: "auto",
+              borderBottom:
+                activeIndex === index
+                  ? `2px solid ${theme.palette.customText.primary.p2.active}`
+                  : "none",
+              "&:hover": {
+                backgroundColor: "transparent",
+              },
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ width: "fit-content", display: "flex", alignItems: "center" }}
+            >
+              {React.cloneElement(tab.icon)}
+            </Box>
+            <Box component="span">{tab.tabTitle}</Box>
+
+          </Button>
+        ))}
       </Box>
     </Box>
   );
@@ -151,25 +171,25 @@ interface TabPanelProps {
   value: number;
 }
 
-export function TabPanel({ children, value, index }: TabPanelProps) {
-  const isActive = value === index;
+export function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
   return (
     <Box
       role="tabpanel"
-      hidden={!isActive}
-      id={`tabpanel-${index}`}
-      aria-labelledby={`tab-${index}`}
-      sx={{ py: 2 }}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+      sx={{ p: 4 }}
     >
-      {isActive && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
-        >
-          {children}
-        </motion.div>
-      )}
+      <Box
+        component={motion.div}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut", delay: 0.1 }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 }

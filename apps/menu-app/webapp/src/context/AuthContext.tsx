@@ -15,18 +15,18 @@
 // under the License.
 
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
-
 import { useIdleTimer } from "react-idle-timer";
+
 import React, { useContext, useEffect, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
-import { loadPrivileges, setUserAuthData, setAuthError } from "@slices/authSlice/auth";
-import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { redirectUrl } from "@config/constant";
+import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
+import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { APIService } from "@utils/apiService";
-import { redirectUrl } from "@config/constant";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -52,10 +52,9 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
 
   const dispatch = useAppDispatch();
-  const auth = useAppSelector((state: RootState) => state.auth);
 
   const onPrompt = () => {
-    appState ===  AppState.Authenticated && setSessionWarningOpen(true);
+    appState === AppState.Authenticated && setSessionWarningOpen(true);
   };
 
   const { activate } = useIdleTimer({
@@ -76,7 +75,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getDecodedIDToken,
     getBasicUserInfo,
     refreshAccessToken,
-    isAuthenticated,
     getIDToken,
     trySignInSilently,
     getAccessToken,
@@ -85,10 +83,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!localStorage.getItem(redirectUrl)) {
-      localStorage.setItem(
-        redirectUrl,
-        window.location.href.replace(window.location.origin, "")
-      );
+      localStorage.setItem(redirectUrl, window.location.href.replace(window.location.origin, ""));
     }
   }, []);
 
@@ -103,7 +98,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       setUserAuthData({
         userInfo: userInfo,
         decodedIdToken: decodedIdToken,
-      })
+      }),
     );
 
     new APIService(idToken, refreshToken);
@@ -126,11 +121,11 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
           await setupAuthenticatedUser();
 
           if (mounted) setAppState(AppState.Authenticated);
-          
         } else {
           const silentSignInSuccess = await trySignInSilently();
 
-          if (mounted) setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
+          if (mounted)
+            setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
         }
       } catch (err) {
         if (mounted) {
@@ -146,23 +141,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = () => {
-    return new Promise<{ accessToken: string }>(async (resolve) => {
-      const userIsAuthenticated = await isAuthenticated();
-      if (userIsAuthenticated) {
-        resolve({ accessToken: await getAccessToken() });
-      } else {
-        refreshAccessToken()
-          .then(async () => {
-            const accessToken = await getAccessToken();
-            resolve({ accessToken: accessToken });
-          })
-          .catch(() => {
-            appSignOut();
-          });
-      }
-    });
-  };
+  const refreshToken = async (): Promise<{ accessToken: string }> => {  
+    if (state.isAuthenticated) {
+      const accessToken = await getIDToken();
+      return {accessToken}
+    }
+
+    try {  
+      await refreshAccessToken();  
+      const accessToken = await getAccessToken();  
+      return { accessToken };  
+    } catch (error) {  
+      console.error("Token refresh failed: ",error)
+      await appSignOut();  
+      throw error;  
+    }  
+  };  
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
@@ -189,11 +183,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <PreLoader isLoading message="Loading User Info ..." />;
 
       case AppState.Authenticated:
-        return (
-          <AuthContext.Provider value={authContext}>
-            {props.children}
-          </AuthContext.Provider>
-        );
+        return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       case AppState.Unauthenticated:
         return (

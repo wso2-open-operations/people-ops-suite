@@ -14,13 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import "@src/index.css";
-
-import ReactDOM from "react-dom/client";
-
-import App from "@src/App";
-
-const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
-);
-root.render(<App />);
+export default function NestedPage() {
+  return (
+    <div>
+      <div>Page Two</div>
+    </div>
+  );
+}

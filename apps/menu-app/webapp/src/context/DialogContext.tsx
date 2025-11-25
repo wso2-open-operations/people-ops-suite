@@ -13,23 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import CloseIcon from "@mui/icons-material/Close";
+import DoneIcon from "@mui/icons-material/Done";
+import SaveAltIcon from "@mui/icons-material/SaveAlt";
+import SendIcon from "@mui/icons-material/Send";
+import LoadingButton from "@mui/lab/LoadingButton";
+import { IconButton, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
-import DoneIcon from "@mui/icons-material/Done";
-import SendIcon from "@mui/icons-material/Send";
-import { ConfirmationType } from "@/types/types";
-import CloseIcon from "@mui/icons-material/Close";
-import LoadingButton from "@mui/lab/LoadingButton";
-import DialogTitle from "@mui/material/DialogTitle";
-import React, { useContext, useState } from "react";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import { IconButton, Stack, TextField } from "@mui/material";
 import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+
+import * as React from "react";
+import { useContext, useState } from "react";
+
+import { ConfirmationType } from "@/types/types";
 
 type InputObj = {
   label: string;
@@ -60,12 +62,12 @@ const useDialogShow = (): UseConfirmationDialogShowReturnType => {
 type ConfirmationDialogContextType = {
   showConfirmation: (
     title: string,
-    message: string | JSX.Element,
+    message: string | React.ReactNode,
     type: ConfirmationType,
     action: () => void,
     okText?: string,
     cancelText?: string,
-    inputObj?: InputObj
+    inputObj?: InputObj,
   ) => void;
 };
 
@@ -73,20 +75,19 @@ type ConfirmationModalContextProviderProps = {
   children: React.ReactNode;
 };
 
-const ConfirmationModalContext =
-  React.createContext<ConfirmationDialogContextType | null>(null);
+const ConfirmationModalContext = React.createContext<ConfirmationDialogContextType | null>(null);
 
-const ConfirmationDialogContextProvider: React.FC<
-  ConfirmationModalContextProviderProps
-> = (props) => {
+const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (
+  props,
+) => {
   const { setShow, show, onHide } = useDialogShow();
 
   const [comment, setComment] = React.useState("");
 
   const [content, setContent] = useState<{
     title: string;
-    message: string | JSX.Element;
-    type: "update" | "send" | "upload" | "accept";
+    message: string | React.ReactNode;
+    type: ConfirmationType
     action: (value?: string) => void;
     okText?: string;
     cancelText?: string;
@@ -94,18 +95,18 @@ const ConfirmationDialogContextProvider: React.FC<
   }>({
     title: "",
     message: "",
-    type: "send",
+    type: ConfirmationType.send,
     action: () => {},
   });
 
   const handleShow = (
     title: string,
-    message: string | JSX.Element,
-    type: "update" | "send" | "upload" | "accept",
+    message: string | React.ReactNode,
+    type: ConfirmationType,
     action: (value?: string) => void,
     okText?: string,
     cancelText?: string,
-    inputObj?: InputObj
+    inputObj?: InputObj,
   ) => {
     setContent({
       title,
@@ -137,7 +138,7 @@ const ConfirmationDialogContextProvider: React.FC<
     setContent({
       title: "",
       message: "",
-      type: "accept",
+      type: ConfirmationType.accept,
       action: () => {},
       okText: undefined,
       cancelText: undefined,
@@ -146,9 +147,7 @@ const ConfirmationDialogContextProvider: React.FC<
     setComment("");
   };
 
-  const onChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const onChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setComment(event.target.value);
   };
 
@@ -186,15 +185,13 @@ const ConfirmationDialogContextProvider: React.FC<
                 position: "absolute",
                 right: 8,
                 top: 8,
-                color: (theme) => theme.palette.grey[500],
+                color: (theme) => theme.palette.secondary.dark,
               }}
             >
               <CloseIcon />
             </IconButton>
             <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
-              <DialogContentText variant="body2">
-                {content?.message}
-              </DialogContentText>
+              <DialogContentText variant="body2">{content?.message}</DialogContentText>
             </DialogContent>
             {content.inputObj && (
               <TextField
@@ -236,9 +233,7 @@ const ConfirmationDialogContextProvider: React.FC<
                   variant="contained"
                   size="small"
                   disabled={content?.inputObj?.mandatory && comment === ""}
-                  onClick={() =>
-                    content?.inputObj ? handleOk(comment) : handleOk()
-                  }
+                  onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
                   loadingPosition="start"
                   startIcon={
                     content.type === "update" ? (
@@ -265,7 +260,7 @@ const useConfirmationModalContext = (): ConfirmationDialogContextType => {
   const context = useContext(ConfirmationModalContext);
   if (!context) {
     throw new Error(
-      "useConfirmationModalContext must be used within a ConfirmationDialogContextProvider"
+      "useConfirmationModalContext must be used within a ConfirmationModalContextProvider",
     );
   }
   return context;
@@ -273,4 +268,4 @@ const useConfirmationModalContext = (): ConfirmationDialogContextType => {
 
 export { useDialogShow, useConfirmationModalContext };
 
-export default ConfirmationDialogContextProvider;
+export default ConfirmationModalContextProvider;

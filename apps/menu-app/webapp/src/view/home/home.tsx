@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export default function Home(){
-  return(
+export default function Home() {
+  return (
     <div>
-      <h1>Home</h1>
+      <div>Home</div>
     </div>
-  )
+  );
 }

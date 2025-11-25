@@ -49,7 +49,7 @@ export class APIService {
       statusCodesToRetry: [[401, 401]],
       retryDelay: 100,
 
-      onRetryAttempt: async (err) => {
+      onRetryAttempt: async () => {
         if (!APIService._isRefreshing) {
           APIService._isRefreshing = true;
           APIService._refreshPromise = APIService.callback()
@@ -89,7 +89,7 @@ export class APIService {
   private static updateRequestInterceptor() {
     APIService._instance.interceptors.request.use(
       (config) => {
-        config.headers.set("Authorization", "Bearer " + APIService._idToken);
+        // config.headers.set("Authorization", "Bearer " + APIService._idToken);
         config.headers.set("x-jwt-assertion", APIService._idToken);
 
         const endpoint = config.url || "";
