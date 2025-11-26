@@ -43,6 +43,13 @@ function useRouteMatch(patterns: readonly string[]) {
 
   let matches = useMatches();
 
+  for (let i = patterns.length - 1; i >= 0; i -= 1) {
+    const pattern = patterns[i];
+    if (pattern !== "/" && pathname.startsWith(pattern + "/")) {
+      return i;
+    }
+  }
+
   for (let i = 0; i < patterns.length; i += 1) {
     const pattern = patterns[i];
     const possibleMatch = matchPath(pattern, pathname);

@@ -46,5 +46,8 @@ export const AppConfig = {
     applicants: ServiceBaseUrl + "/applicants",
     userInfo: ServiceBaseUrl + "/user-info",
     appConfig: ServiceBaseUrl + "/app-config",
+    vacanciesBasicInfo: ServiceBaseUrl + "/vacancies/basic-info",
+    vacancies: ServiceBaseUrl + "/vacancies",
+    orgStructure: ServiceBaseUrl + "/org-structure",
   },
 };

@@ -21,6 +21,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import HomeIcon from '@mui/icons-material/Home';
+import WorkIcon from '@mui/icons-material/Work';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -31,6 +32,7 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
+  hideInSidebar?: boolean;
 }
 
 interface RouteDetail {
@@ -50,6 +52,21 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.TEAM],
+  },
+    {
+    path: "/vacancies",
+    text: "Vacancies",
+    icon: React.createElement(WorkIcon),
+    element: React.createElement(View.vacancies),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+  },
+  {
+    path: "/vacancies/:id",
+    text: "Vacancy Detail",
+    icon: React.createElement(WorkIcon),
+    element: React.createElement(View.vacancyDetail),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+    hideInSidebar: true,
   },
   {
     path: "/profile",
@@ -100,7 +117,7 @@ export const getActiveRoutes = (roles: string[]): RouteObject[] => {
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
   var routesObj: RouteDetail[] = [];
   routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
+    if (isIncludedRole(roles, routeObj.allowRoles) && !routeObj.hideInSidebar) {
       routesObj.push({
         path: routeObj.path ? routeObj.path : "",
         ...routeObj,
