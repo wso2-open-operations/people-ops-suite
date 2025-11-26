@@ -32,7 +32,7 @@ import {
   FormikErrors,
   FieldArray,
 } from "formik";
-import { object, string } from "yup";
+import { array, object, string } from "yup";
 import {
   Accordion,
   AccordionSummary,
@@ -159,6 +159,24 @@ export default function Me() {
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
+    emergencyContacts: array()
+    .of(
+      object().shape({
+        name: string()
+          .nullable()
+          .max(100, "Name must be at most 100 characters"),
+        relationship: string()
+          .nullable()
+          .max(50, "Relationship must be at most 50 characters"),
+        telephone: string()
+          .nullable()
+          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+        mobile: string()
+          .nullable()
+          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      })
+    )
+    .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
   useEffect(() => {
