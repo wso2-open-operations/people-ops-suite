@@ -43,6 +43,7 @@ import {
   Skeleton,
   Button,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
@@ -737,14 +738,37 @@ export default function Me() {
                                     />
                                   </Grid>
                                   <Grid item sx={{ width: "32px" }}>
-                                    <IconButton
-                                      color="error"
-                                      size="small"
-                                      onClick={() => remove(index)}
-                                      disabled={isSavingChanges}
+                                    <Tooltip
+                                      title={
+                                        (values.emergencyContacts?.length ??
+                                          0) <= 1
+                                          ? "At least one emergency contact is required"
+                                          : "Remove contact"
+                                      }
                                     >
-                                      <RemoveCircleOutlineIcon fontSize="small" />
-                                    </IconButton>
+                                      <span>
+                                        <IconButton
+                                          color="error"
+                                          size="small"
+                                          onClick={() => {
+                                            if (
+                                              (values.emergencyContacts
+                                                ?.length ?? 0) <= 1
+                                            ) {
+                                              return;
+                                            }
+                                            remove(index);
+                                          }}
+                                          disabled={
+                                            isSavingChanges ||
+                                            (values.emergencyContacts?.length ??
+                                              0) <= 1
+                                          }
+                                        >
+                                          <RemoveCircleOutlineIcon fontSize="small" />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
                                   </Grid>
                                 </Grid>
                               ))
