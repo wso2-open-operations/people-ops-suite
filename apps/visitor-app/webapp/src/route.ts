@@ -22,6 +22,7 @@ import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import WifiPasswordIcon from "@mui/icons-material/WifiPassword";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
@@ -57,6 +58,13 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(AdminPanelSettingsOutlinedIcon),
     element: React.createElement(View.admin),
     allowRoles: [Role.ADMIN],
+  },
+  {
+    path: "wifi",
+    text: "WiFi",
+    icon: React.createElement(WifiPasswordIcon),
+    element: React.createElement(View.wifi),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
     path: "/help",
