@@ -176,6 +176,7 @@ export default function Me() {
           .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
       })
     )
+    .min(1, "At least one emergency contact is required")
     .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
