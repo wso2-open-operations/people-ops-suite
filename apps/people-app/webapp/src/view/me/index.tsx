@@ -32,7 +32,7 @@ import {
   FormikErrors,
   FieldArray,
 } from "formik";
-import { object, string } from "yup";
+import { array, object, string } from "yup";
 import {
   Accordion,
   AccordionSummary,
@@ -43,6 +43,7 @@ import {
   Skeleton,
   Button,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
@@ -158,6 +159,25 @@ export default function Me() {
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
+    emergencyContacts: array()
+    .of(
+      object().shape({
+        name: string()
+          .nullable()
+          .max(100, "Name must be at most 100 characters"),
+        relationship: string()
+          .nullable()
+          .max(50, "Relationship must be at most 50 characters"),
+        telephone: string()
+          .nullable()
+          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+        mobile: string()
+          .nullable()
+          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      })
+    )
+    .min(1, "At least one emergency contact is required")
+    .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
   useEffect(() => {
@@ -737,14 +757,37 @@ export default function Me() {
                                     />
                                   </Grid>
                                   <Grid item sx={{ width: "32px" }}>
-                                    <IconButton
-                                      color="error"
-                                      size="small"
-                                      onClick={() => remove(index)}
-                                      disabled={isSavingChanges}
+                                    <Tooltip
+                                      title={
+                                        (values.emergencyContacts?.length ??
+                                          0) <= 1
+                                          ? "At least one emergency contact is required"
+                                          : "Remove contact"
+                                      }
                                     >
-                                      <RemoveCircleOutlineIcon fontSize="small" />
-                                    </IconButton>
+                                      <span>
+                                        <IconButton
+                                          color="error"
+                                          size="small"
+                                          onClick={() => {
+                                            if (
+                                              (values.emergencyContacts
+                                                ?.length ?? 0) <= 1
+                                            ) {
+                                              return;
+                                            }
+                                            remove(index);
+                                          }}
+                                          disabled={
+                                            isSavingChanges ||
+                                            (values.emergencyContacts?.length ??
+                                              0) <= 1
+                                          }
+                                        >
+                                          <RemoveCircleOutlineIcon fontSize="small" />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
                                   </Grid>
                                 </Grid>
                               ))
