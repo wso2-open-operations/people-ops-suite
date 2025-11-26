@@ -70,7 +70,7 @@ public isolated function getOfficeIdByCountryName(string country) returns int[]|
         select office.id;
 
     if officeIdArray.length() === 0 {
-        return error(string `No company ID found for ${country}`);
+        return error(string `No office ID found for ${country}`);
     }
 
     return officeIdArray;

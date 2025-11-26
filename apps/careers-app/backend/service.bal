@@ -14,11 +14,11 @@
 // specific language governing permissions and limitations
 // under the License
 
+import careers_app.ats;
 import careers_app.authorization;
 import careers_app.database;
 import careers_app.gdrive;
 import careers_app.people;
-import careers_app.ats;
 
 import ballerina/cache;
 import ballerina/http;
@@ -180,10 +180,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         string ts = time:utcToString(time:utcNow());
 
         string photoExt = getFileExtension(applicant.profile_photo_file_name);
-        string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
+        string photoFileName = string `${applicantFolderName}_profile_${ts}.${photoExt}`;
 
         string cvExt = getFileExtension(applicant.cv_file_name);
-        string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
+        string cvFileName = string `${applicantFolderName}_resume_${ts}.${cvExt}`;
 
         // Upload profile photo
         byte[]|error photoBytes = gdrive:uploadApplicantPhoto(applicant.userThumbnail, photoFileName, applicantEmail);
@@ -350,7 +350,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string applicantFolderName = string `${applicant.firstName}_${applicant.lastName}`;
             string ts = time:utcToString(time:utcNow());
             string photoExt = getFileExtension(applicant?.profile_photo_file_name);
-            string photoFileName = string `${applicantFolderName}_profile.${photoExt}_${ts}`;
+            string photoFileName = string `${applicantFolderName}_profile_${ts}.${photoExt}`;
 
             // Upload profile photo
             byte[]|error photoBytes = gdrive:uploadApplicantPhoto(byteArrayPhoto, photoFileName, email);
@@ -395,7 +395,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string applicantFolderName = string `${applicant.firstName}_${applicant.lastName}`;
             string ts = time:utcToString(time:utcNow());
             string cvExt = getFileExtension(applicant?.cv_file_name);
-            string cvFileName = string `${applicantFolderName}_resume.${cvExt}_${ts}`;
+            string cvFileName = string `${applicantFolderName}_resume_${ts}.${cvExt}`;
 
             // Upload CV
             byte[]|error cvBytes = gdrive:uploadApplicantCv(byteArrayCv, cvFileName, email);

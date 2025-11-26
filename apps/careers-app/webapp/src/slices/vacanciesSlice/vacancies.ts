@@ -53,9 +53,10 @@ export interface OrgStructure {
 }
 
 interface VacanciesState {
-  state: State;
-  stateMessage: string | null;
-  errorMessage: string | null;
+  vacanciesState: State;
+  vacanciesError: string | null;
+  orgStructureState: State;
+  orgStructureError: string | null;
   vacancies: VacancyBasicInfo[];
   orgStructure: OrgStructure | null;
   filteredVacancies: VacancyBasicInfo[];
@@ -67,9 +68,10 @@ interface VacanciesState {
 }
 
 const initialState: VacanciesState = {
-  state: State.idle,
-  stateMessage: null,
-  errorMessage: null,
+  vacanciesState: State.idle,
+  vacanciesError: null,
+  orgStructureState: State.idle,
+  orgStructureError: null,
   vacancies: [],
   orgStructure: null,
   filteredVacancies: [],
@@ -85,7 +87,7 @@ export const fetchVacancies = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.vacanciesBasicInfo
+        `${AppConfig.serviceUrls.vacancies}/basic-info`
       );
       return response.data as VacancyBasicInfo[];
     } catch (error: any) {
@@ -172,30 +174,31 @@ const VacanciesSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchVacancies.pending, (state) => {
-        state.state = State.loading;
-        state.stateMessage = "Loading vacancies...";
+        state.vacanciesState = State.loading;
+        state.vacanciesError = null;
       })
       .addCase(fetchVacancies.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.stateMessage = "Vacancies loaded successfully!";
+        state.vacanciesState = State.success;
         state.vacancies = action.payload;
         state.filteredVacancies = action.payload;
+        state.vacanciesError = null;
       })
       .addCase(fetchVacancies.rejected, (state, action) => {
-        state.state = State.failed;
-        state.errorMessage = action.payload as string;
-        state.stateMessage = "Failed to load vacancies.";
+        state.vacanciesState = State.failed;
+        state.vacanciesError = action.payload as string;
       })
       .addCase(fetchOrgStructure.pending, (state) => {
-        state.state = State.loading;
+        state.orgStructureState = State.loading;
+        state.orgStructureError = null;
       })
       .addCase(fetchOrgStructure.fulfilled, (state, action) => {
-        state.state = State.success;
+        state.orgStructureState = State.success;
         state.orgStructure = action.payload;
+        state.orgStructureError = null;
       })
       .addCase(fetchOrgStructure.rejected, (state, action) => {
-        state.state = State.failed;
-        state.errorMessage = action.payload as string;
+        state.orgStructureState = State.failed;
+        state.orgStructureError = action.payload as string;
       })
       .addCase(fetchVacancyDetail.pending, (state) => {
         state.vacancyDetailState = State.loading;

@@ -130,22 +130,6 @@ export default function VacancyDetail() {
   const taskInformation = taskInformationParsed || {};
   const additionalContent = additionalContentParsed || {};
 
-  // Additional safety check
-  if (!vacancy) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "60vh",
-        }}
-      >
-        <CircularProgress sx={{ color: theme.palette.brand.orange }} />
-      </Box>
-    );
-  }
-
   return (
     <Box sx={{ bgcolor: theme.palette.background.default, minHeight: "100vh" }}>
       {/* Main Content */}
@@ -248,7 +232,7 @@ export default function VacancyDetail() {
                           Office
                         </Typography>
                         <Typography variant="body2" fontWeight="600">
-                          {vacancy.office_locations["0"]}
+                          {Object.values(vacancy.office_locations)[0] || "N/A"}
                         </Typography>
                       </Box>
                     </Box>

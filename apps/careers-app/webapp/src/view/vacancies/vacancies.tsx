@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Typography,
@@ -60,8 +60,10 @@ export default function Vacancies() {
   const {
     filteredVacancies,
     orgStructure,
-    state: vacancyState,
-    errorMessage,
+    vacanciesState,
+    vacanciesError,
+    orgStructureState,
+    orgStructureError,
     selectedLocations,
     selectedTeams,
   } = useSelector((state: RootState) => state.vacancies);
@@ -381,7 +383,7 @@ export default function Vacancies() {
 
           {/* Vacancies List */}
           <Grid item xs={12} md={9}>
-            {vacancyState === State.loading && (
+            {(vacanciesState === State.loading || orgStructureState === State.loading) && (
               <Box
                 sx={{
                   display: "flex",
@@ -394,13 +396,19 @@ export default function Vacancies() {
               </Box>
             )}
 
-            {vacancyState === State.failed && errorMessage && (
+            {vacanciesState === State.failed && vacanciesError && (
               <Alert severity="error" sx={{ mb: 3 }}>
-                {errorMessage}
+                {vacanciesError}
               </Alert>
             )}
 
-            {vacancyState === State.success && (
+            {orgStructureState === State.failed && orgStructureError && (
+              <Alert severity="error" sx={{ mb: 3 }}>
+                {orgStructureError}
+              </Alert>
+            )}
+
+            {vacanciesState === State.success && orgStructureState === State.success && (
               <>
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h4" fontWeight="700" gutterBottom>
