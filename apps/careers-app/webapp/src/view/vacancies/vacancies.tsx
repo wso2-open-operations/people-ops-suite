@@ -90,7 +90,7 @@ export default function Vacancies() {
       description:
         "We empower talents to develop their skills and contribute to innovative projects in a dynamic and collaborative environment. Join our global team and make an impact.",
       buttonText: "Learn More",
-      buttonAction: () => {},
+      buttonAction: () => navigate("/"),
       image: HeroImageCareer,
     },
   ];

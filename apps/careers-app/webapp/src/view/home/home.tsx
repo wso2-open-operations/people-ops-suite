@@ -49,7 +49,7 @@ export default function Home() {
       description:
         "Our culture is powered by one simple value: treat people the way you want to be treated. This means we treat everyone in a fair, open, honest and respectful manner from the moment you apply for a role at WSO2.",
       buttonText: "View Open Positions",
-      buttonAction: () => navigate("/"),
+      buttonAction: () => navigate("/vacancies"),
       image: HeroImage,
     },
     {
