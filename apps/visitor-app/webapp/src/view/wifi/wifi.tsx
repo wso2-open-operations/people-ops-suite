@@ -14,16 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import CommonPage from "@layout/pages/CommonPage";
+import WifiCard from "@view/wifi/panel/wificard";
+import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
+import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 
-const admin = lazy(() => import("@view/admin/admin"));
-const employee = lazy(() => import("@view/employee/employee"));
-const help = lazy(() => import("@view/help/help"));
-const wifi = lazy(() => import("@view/wifi/wifi"));
-
-export const View = {
-  admin,
-  employee,
-  help,
-  wifi,
-};
+export default function Wifi() {
+  return (
+    <CommonPage
+      title="Wi-Fi"
+      icon={<WifiTetheringRoundedIcon />}
+      commonPageTabs={[
+        {
+          tabTitle: "Wi-Fi",
+          tabPath: "wi-fi",
+          icon: <WifiRoundedIcon />,
+          page: <WifiCard />,
+        },
+      ]}
+    />
+  );
+}

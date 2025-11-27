@@ -18,12 +18,10 @@ import { Box } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useTheme } from "@mui/material/styles";
 import MarkdownPreview from "@uiw/react-markdown-preview";
-import { fetchAppConfig } from "@slices/configSlice/config";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useAppSelector } from "@slices/store";
 
 function UserGuide() {
   const theme = useTheme();
-  const dispatch = useAppDispatch();
   const imageStyle = {
     maxWidth: "80%",
     height: "auto",

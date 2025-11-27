@@ -18,7 +18,6 @@ import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
-import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
@@ -59,7 +58,7 @@ export interface AddVisitorPayload {
 
 export const fetchVisitor = createAsyncThunk(
   "visitor/fetchVisitor",
-  async (hashedNic: string, { dispatch, rejectWithValue }) => {
+  (hashedNic: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visitor>((resolve, reject) => {
@@ -95,7 +94,7 @@ export const fetchVisitor = createAsyncThunk(
 
 export const addVisitor = createAsyncThunk(
   "visitor/addVisitor",
-  async (payload: AddVisitorPayload, { dispatch }) => {
+  (payload: AddVisitorPayload, { dispatch }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<AddVisitorPayload>((resolve, reject) => {
