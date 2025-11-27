@@ -244,7 +244,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             projects: applicant.projects,
             languages: applicant.languages,
             interests: applicant.interests,
-
             userThumbnail: photoBytes,
             resume: cvBytes,
             createdBy: actor,
@@ -497,11 +496,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string[] teamNames = from people:BusinessUnit bu in businessUnits
-            let var departments = bu.departments
-            where departments !is ()
-            from people:Department dept in departments
-            select dept.department;
+        string[] teamNames = [];
+        foreach people:BusinessUnit bu in businessUnits {
+            people:Department[]? departments = bu.departments;
+            if departments is people:Department[] {
+                foreach people:Department department in departments {
+                    if teamNames.indexOf(department.department) is () {
+                        teamNames.push(department.department);
+                    }
+                }
+            }
+        }
 
         map<string> teamMap = {};
         foreach int i in 0 ..< teamNames.length() {

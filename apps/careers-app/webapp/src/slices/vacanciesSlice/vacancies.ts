@@ -52,6 +52,15 @@ export interface OrgStructure {
   team_list: { [key: string]: string };
 }
 
+export interface VacancyApplicationPayload {
+  firstName: string;
+  lastName: string;
+  personalEmail: string;
+  contactNo: string;
+  address: string;
+  resume: number[];
+}
+
 interface VacanciesState {
   vacanciesState: State;
   vacanciesError: string | null;
@@ -65,6 +74,8 @@ interface VacanciesState {
   selectedVacancy: VacancyDetail | null;
   vacancyDetailState: State;
   vacancyDetailError: string | null;
+  applyVacancyState: State;
+  applyVacancyError: string | null;
 }
 
 const initialState: VacanciesState = {
@@ -80,6 +91,8 @@ const initialState: VacanciesState = {
   selectedVacancy: null,
   vacancyDetailState: State.idle,
   vacancyDetailError: null,
+  applyVacancyState: State.idle,
+  applyVacancyError: null,
 };
 
 export const fetchVacancies = createAsyncThunk(
@@ -148,6 +161,32 @@ export const fetchVacancyDetail = createAsyncThunk(
   }
 );
 
+export const applyToVacancy = createAsyncThunk(
+  "vacancies/applyToVacancy",
+  async (
+    { vacancyId, payload }: { vacancyId: number; payload: VacancyApplicationPayload },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await APIService.getInstance().post(
+        `${AppConfig.serviceUrls.vacancies}/${vacancyId}/apply`,
+        payload
+      );
+      return response.data;
+    } catch (error: any) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Failed to submit application. Please try again later."
+          : error.response?.data?.message ||
+            "An unknown error occurred while submitting your application.";
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 const VacanciesSlice = createSlice({
   name: "vacancies",
   initialState,
@@ -169,6 +208,10 @@ const VacanciesSlice = createSlice({
       state.selectedVacancy = null;
       state.vacancyDetailState = State.idle;
       state.vacancyDetailError = null;
+    },
+    resetApplyVacancyState: (state) => {
+      state.applyVacancyState = State.idle;
+      state.applyVacancyError = null;
     },
   },
   extraReducers: (builder) => {
@@ -213,6 +256,18 @@ const VacanciesSlice = createSlice({
         state.vacancyDetailState = State.failed;
         state.vacancyDetailError = action.payload as string;
         state.selectedVacancy = null;
+      })
+      .addCase(applyToVacancy.pending, (state) => {
+        state.applyVacancyState = State.loading;
+        state.applyVacancyError = null;
+      })
+      .addCase(applyToVacancy.fulfilled, (state) => {
+        state.applyVacancyState = State.success;
+        state.applyVacancyError = null;
+      })
+      .addCase(applyToVacancy.rejected, (state, action) => {
+        state.applyVacancyState = State.failed;
+        state.applyVacancyError = action.payload as string;
       });
   },
 });
@@ -237,7 +292,7 @@ function applyFilters(state: VacanciesState) {
   state.filteredVacancies = filtered;
 }
 
-export const { setSelectedLocations, setSelectedTeams, clearFilters, clearVacancyDetail } =
+export const { setSelectedLocations, setSelectedTeams, clearFilters, clearVacancyDetail, resetApplyVacancyState } =
   VacanciesSlice.actions;
 
 export default VacanciesSlice.reducer;
