@@ -21,7 +21,6 @@ import {
 } from "@root/src/slices/store";
 import { fetchWifiDetails } from "@slices/wifiSlice/wifi";
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 
 const WifiCard = () => {
@@ -84,8 +83,6 @@ const WifiCard = () => {
 
   return (
     <CardContent>
-      <BackgroundLoader open={loading} message={"Loading... "} />
-
       <Stack
         spacing={2}
         sx={{

@@ -60,8 +60,8 @@ export const routes: RouteObjectWithRole[] = [
     allowRoles: [Role.ADMIN],
   },
   {
-    path: "wifi",
-    text: "WiFi",
+    path: "wi-fi",
+    text: "Wi-Fi",
     icon: React.createElement(WifiPasswordIcon),
     element: React.createElement(View.wifi),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],

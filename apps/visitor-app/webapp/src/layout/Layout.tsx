@@ -28,6 +28,7 @@ import { RootState, useAppSelector } from "@slices/store";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ConfirmationModalContextProvider from "@context/DialogContext";
+import ThreeDoteWave from "../component/common/ThreeDotWave";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -86,7 +87,7 @@ export default function Layout() {
             pb: 4.5,
           }}
         >
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense fallback={<ThreeDoteWave />}>
             <Outlet />
           </Suspense>
           <Box

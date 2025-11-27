@@ -73,6 +73,7 @@ export const wifiSlice = createSlice({
       })
       .addCase(fetchWifiDetails.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         state.ssid = action.payload.ssid;
         state.password = action.payload.password;
       })

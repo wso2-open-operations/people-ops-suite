@@ -14,18 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
 import ActiveVisits from "@view/admin/panel/activeVisits";
 import VisitHistory from "@view/admin/panel/visitHistory";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import HistoryIcon from "@mui/icons-material/History";
+import SupervisorAccountRoundedIcon from "@mui/icons-material/SupervisorAccountRounded";
 
 export default function Admin() {
   return (
     <CommonPage
       title="Admin Panel"
-      icon={<BadgeIcon />}
+      icon={<SupervisorAccountRoundedIcon />}
       commonPageTabs={[
         {
           tabTitle: "Active Visits",

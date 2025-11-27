@@ -14,20 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import BadgeIcon from "@mui/icons-material/Badge";
 import CommonPage from "@layout/pages/CommonPage";
 import WifiCard from "@view/wifi/panel/wificard";
 import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
+import WifiTetheringRoundedIcon from "@mui/icons-material/WifiTetheringRounded";
 
 export default function Wifi() {
   return (
     <CommonPage
-      title="Wifi"
-      icon={<BadgeIcon />}
+      title="Wi-Fi"
+      icon={<WifiTetheringRoundedIcon />}
       commonPageTabs={[
         {
-          tabTitle: "Wifi",
-          tabPath: "wifi",
+          tabTitle: "Wi-Fi",
+          tabPath: "wi-fi",
           icon: <WifiRoundedIcon />,
           page: <WifiCard />,
         },
