@@ -14,22 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { State } from "@/types/types";
-import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+
+import { State } from "@/types/types";
 import { APIService } from "@utils/apiService";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
-const initialState: VisitState = {
-  state: State.idle,
-  submitState: State.idle,
-  visits: null,
-  stateMessage: "",
-  errorMessage: "",
-  backgroundProcess: false,
-  backgroundProcessMessage: null,
-};
+import { AppConfig } from "@config/config";
 
 interface VisitState {
   state: State;
@@ -41,27 +34,20 @@ interface VisitState {
   backgroundProcessMessage: string | null;
 }
 
-export interface Visit extends AddVisitPayload {
-  createdBy: string;
-  createdOn: string;
-  updatedBy: string;
-  updatedOn: string;
+export interface FloorRoom {
+  floor: string;
+  rooms: string[];
 }
 
 export interface AddVisitPayload {
   nicHash: string;
   companyName: string | null;
-  passNumber: string;
+  passNumber?: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
-  accessibleLocations: FloorRoom[];
+  accessibleLocations?: FloorRoom[] | null;
   timeOfEntry: string;
   timeOfDeparture: string;
-}
-
-export interface FloorRoom {
-  floor: string;
-  rooms: string[];
 }
 
 export interface Visit {
@@ -75,7 +61,7 @@ export interface Visit {
   passNumber: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
-  accessibleLocations: FloorRoom[];
+  accessibleLocations: FloorRoom[] | null;
   timeOfEntry: string;
   timeOfDeparture: string;
   status: string;
@@ -83,6 +69,7 @@ export interface Visit {
   createdOn: string;
   updatedBy: string;
   updatedOn: string;
+  invitationId: number | null;
 }
 
 export interface FetchVisitsResponse {
@@ -90,11 +77,32 @@ export interface FetchVisitsResponse {
   visits: Visit[];
 }
 
+export interface UpdateVisitPayload {
+  rejectionReason: string | null | undefined;
+  passNumber: string | null;
+  accessibleLocations: FloorRoom[] | null;
+  visitId: number;
+  status: string;
+}
+
+const initialState: VisitState = {
+  state: State.idle,
+  submitState: State.idle,
+  visits: null,
+  stateMessage: null,
+  errorMessage: null,
+  backgroundProcess: false,
+  backgroundProcessMessage: null,
+};
+
 export const addVisit = createAsyncThunk(
   "visit/addVisit",
   async (payload: AddVisitPayload, { dispatch }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
+    if (payload.passNumber === "") delete payload.passNumber;
+    if (payload.accessibleLocations?.length === 0)
+      delete payload.accessibleLocations;
     return new Promise<AddVisitPayload>((resolve, reject) => {
       APIService.getInstance()
         .post(AppConfig.serviceUrls.visits, payload, {
@@ -112,6 +120,15 @@ export const addVisit = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while adding visit!",
+              type: "error",
+            })
+          );
           reject(error);
         });
     });
@@ -121,7 +138,17 @@ export const addVisit = createAsyncThunk(
 export const fetchVisits = createAsyncThunk(
   "visit/fetchVisits",
   async (
-    { limit, offset }: { limit: number; offset: number },
+    {
+      limit,
+      offset,
+      inviter,
+      statusArray,
+    }: {
+      limit: number;
+      offset: number;
+      inviter?: string;
+      statusArray?: string[];
+    },
     { dispatch, rejectWithValue }
   ) => {
     APIService.getCancelToken().cancel();
@@ -129,7 +156,12 @@ export const fetchVisits = createAsyncThunk(
     return new Promise<FetchVisitsResponse>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.visits, {
-          params: { limit, offset },
+          params: {
+            limit,
+            offset,
+            inviter,
+            statusArray: statusArray?.join(","),
+          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -154,6 +186,49 @@ export const fetchVisits = createAsyncThunk(
   }
 );
 
+export const visitStatusUpdate = createAsyncThunk(
+  "visit/visitStatusUpdate",
+  async (payload: UpdateVisitPayload, { dispatch, rejectWithValue }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+
+    return new Promise<{ message: string }>((resolve, reject) => {
+      APIService.getInstance()
+        .post(
+          `${AppConfig.serviceUrls.visits}/${payload.visitId}/${payload.status}`,
+          {
+            rejectionReason: payload.rejectionReason,
+            passNumber: payload.passNumber,
+            accessibleLocations: payload.accessibleLocations,
+          },
+          {
+            cancelToken: newCancelTokenSource.token,
+          }
+        )
+        .then((response) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: `Visit status updated to "${payload.status}" successfully!`,
+              type: "success",
+            })
+          );
+          resolve(response.data);
+        })
+        .catch((error) => {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.data?.message ??
+                "An error occurred while updating visit status!",
+              type: "error",
+            })
+          );
+          reject(error);
+        });
+    });
+  }
+);
+
 const VisitSlice = createSlice({
   name: "visits",
   initialState,
@@ -163,6 +238,9 @@ const VisitSlice = createSlice({
     },
     resetState(state) {
       state.state = State.idle;
+    },
+    resetStatusUpdateState(state) {
+      state.submitState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -182,19 +260,42 @@ const VisitSlice = createSlice({
       .addCase(fetchVisits.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Hang tight! We’re fetching your visits...";
+        state.errorMessage = null;
       })
-      .addCase(fetchVisits.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.visits = action.payload;
-        state.stateMessage = "Your visits have been fetched successfully!";
-      })
-      .addCase(fetchVisits.rejected, (state) => {
+      .addCase(
+        fetchVisits.fulfilled,
+        (state, action: PayloadAction<FetchVisitsResponse>) => {
+          state.state = State.success;
+          state.visits = action.payload;
+          state.stateMessage = "Your visits have been fetched successfully!";
+        }
+      )
+      .addCase(fetchVisits.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage =
           "Oops! Something went wrong while fetching visits!";
+        state.errorMessage =
+          (action.payload as string) || "Failed to fetch visits";
+      })
+      .addCase(visitStatusUpdate.pending, (state) => {
+        state.submitState = State.loading;
+        state.stateMessage = "Hang tight! We’re updating visit status...";
+      })
+      .addCase(
+        visitStatusUpdate.fulfilled,
+        (state, action: PayloadAction<{ message: string }>) => {
+          state.submitState = State.success;
+          state.stateMessage = action.payload.message;
+        }
+      )
+      .addCase(visitStatusUpdate.rejected, (state, action) => {
+        state.submitState = State.failed;
+        state.stateMessage =
+          (action.payload as string) || "Failed to update visit status";
       });
   },
 });
 
-export const { resetSubmitState, resetState } = VisitSlice.actions;
+export const { resetSubmitState, resetState, resetStatusUpdateState } =
+  VisitSlice.actions;
 export default VisitSlice.reducer;

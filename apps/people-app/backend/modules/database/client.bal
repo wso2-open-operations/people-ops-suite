@@ -19,8 +19,7 @@ import ballerinax/mysql.driver as _;
 # Database Client Configuration.
 configurable DatabaseConfig dbConfig = ?;
 
-function initPeopleOpsDbClient() returns mysql:Client|error
-=> new (...dbConfig);
+function initPeopleOpsDbClient() returns mysql:Client|error => new (...dbConfig);
 
 # Database Client.
 final mysql:Client databaseClient = check initPeopleOpsDbClient();
