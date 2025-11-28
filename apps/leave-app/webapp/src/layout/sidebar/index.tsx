@@ -146,7 +146,7 @@ const Sidebar = (props: SidebarProps) => {
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: props.open ? "200px" : "fit-content",
+              width: "fit-content" ,
               overflow: "visible",
             }}
           >
