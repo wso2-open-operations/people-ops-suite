@@ -13,79 +13,53 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { HomeIcon } from "lucide-react";
-import { CircleQuestionMark } from "lucide-react";
+import { 
+  History, 
+  CalendarX2,
+  FileText,
+  Briefcase,
+} from 'lucide-react';
 import type { RouteObject } from "react-router-dom";
 
 import React from "react";
 
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
-import { View } from "@view/index";
+import { SabbaticalLeave } from "@view/index";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
+import LeaveHistory from './layout/pages/LeaveHistory';
+import LeadReport from './layout/pages/LeadReport';
+import GeneralLeave from "./layout/pages/GeneralLeave";
 
 export const routes: RouteObjectWithRole[] = [
   {
-    path: "/",
-    text: "Home",
-    icon: React.createElement(HomeIcon),
-    element: React.createElement(View.help),
+    path: "general-leave",          
+    text: "General Leave", 
+    icon: React.createElement(Briefcase),
+    element: React.createElement(GeneralLeave),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/help",
-    text: "Help & Support",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.help),
+    path: "sabbatical-leave",       
+    text: "Sabbatical Leave",      
+    icon: React.createElement(CalendarX2),
+    element: React.createElement(SabbaticalLeave), 
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    bottomNav: true,
   },
   {
-    path: "/page",
-    text: "Page 1",
-    icon: React.createElement(CircleQuestionMark),
+    path: "leave-history",          
+    text: "Leave History",         
+    icon: React.createElement(History),
+    element: React.createElement(LeaveHistory),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-    ],
   },
-
   {
-    path: "/page-two",
-    text: "Page 2",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.pageTwo),
+    path: "lead-report",
+    text: "Lead Report",
+    icon: React.createElement(FileText),
+    element: React.createElement(LeadReport),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-    ],
   },
 ];
 
