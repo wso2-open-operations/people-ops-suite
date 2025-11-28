@@ -15,14 +15,4 @@
 // under the License.
 import { lazy } from "react";
 
-const help = lazy(() => import("@view/help/help"));
-const nestedPage = lazy(() => import("@root/src/view/nested-page/NestedPage"));
-const pageTwo = lazy(() => import("@view/page-two/PageTwo"));
-const home = lazy(() => import("@view/home/Home"));
-
-export const View = {
-  help,
-  nestedPage,
-  pageTwo,
-  home
-};
+export const SabbaticalLeave = lazy(() => import("@root/src/view/SabbaticalLeave/SabbaticalLeave"));
