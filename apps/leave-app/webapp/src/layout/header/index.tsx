@@ -50,7 +50,7 @@ const Header = () => {
       <Toolbar
         variant="dense"
         sx={{
-          paddingY: 0.3,
+          paddingY: "0.5rem",
           display: "flex",
           gap: 0.5,
           "&.MuiToolbar-root": {
@@ -82,6 +82,7 @@ const Header = () => {
             variant="h5"
             sx={{
               color: theme.palette.customText.primary.p1.active,
+              fontWeight: "600",
             }}
           >
             {APP_NAME}
@@ -97,8 +98,8 @@ const Header = () => {
                   <Avatar
                     onClick={handleOpenUserMenu}
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: "2.5rem",
+                      height: "2.5rem",
                       border: 1,
                       borderColor: theme.palette.customBorder.territory.active,
                     }}
@@ -116,7 +117,8 @@ const Header = () => {
                       color: theme.palette.customText.primary.p2.active,
                     }}
                   >
-                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
+                    {/* {user.userInfo?.firstName + " " + user.userInfo.lastName} */}
+                    {"Saajid" + " " + "Ahamed"}
                   </Typography>
                   <Typography
                     noWrap
