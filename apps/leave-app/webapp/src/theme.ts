@@ -433,6 +433,7 @@ export const themeSettings = (mode: PaletteMode) => {
       customText: colors.text,
     },
     typography: {
+      fontFamily: "Poppins",
       fontSize: 14,
       h1: {
         fontSize: typography.h1.fontSize,
