@@ -13,13 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Typography } from "@mui/material";
+import Title from "@root/src/component/common/Title";
 
 export default function LeaveHistory() {
-  return (
-      <Typography variant="h4" style={{ color: "gray" }}>
-        Leave History Page
-      </Typography>
-  );
+  return <Title firstWord="Leave" secondWord="History" />;
 }
