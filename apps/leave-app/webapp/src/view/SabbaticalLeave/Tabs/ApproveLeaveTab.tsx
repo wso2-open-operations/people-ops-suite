@@ -13,14 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import Title from "@root/src/component/common/Title";
 
-import { Box } from "@mui/material";
 function ApproveLeaveTab() {
-  return (
-    <Box>
-      Approve Leave Tab
-    </Box>
-  );
+  return <Title firstWord="Approve" secondWord="Leave" />;
 }
 
 export default ApproveLeaveTab;

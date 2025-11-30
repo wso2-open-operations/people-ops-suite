@@ -13,14 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import Title from "@root/src/component/common/Title";
 
-import { Box } from "@mui/material";
-function FunctionalLeadViewTab() {
-  return (
-    <Box>
-      Functional Lead View Tab
-    </Box>
-  );
+export default function FunctionalLeadViewTab() {
+  return <Title firstWord="Functional" secondWord="Lead View" />;
 }
-
-export default FunctionalLeadViewTab;
