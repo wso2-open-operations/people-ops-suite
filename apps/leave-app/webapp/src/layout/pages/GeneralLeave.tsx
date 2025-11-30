@@ -13,13 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Stack } from "@mui/material";
 
-import { Typography } from "@mui/material";
+import Title from "@root/src/component/common/Title";
+import LeaveDateSelection from "@root/src/view/GeneralLeave/LeaveDateSelection";
+import LeaveSelection from "@root/src/view/GeneralLeave/LeaveSelection";
 
 export default function GeneralLeave() {
   return (
-      <Typography variant="h4" style={{ color: "gray" }}>
-        General Leave Page
-      </Typography>
+    <Stack direction="column" width="100%" maxWidth="1280px" margin="auto" gap="2rem">
+      <Title firstWord="General" secondWord="Leave Submission" />
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        width="100%"
+        justifyContent={{ md: "space-between" }}
+        gap={{ xs: "2rem" }}
+      >
+        <LeaveDateSelection />
+        <LeaveSelection />
+      </Stack>
+    </Stack>
   );
 }
