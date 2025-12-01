@@ -19,20 +19,52 @@ import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
 import { Stack, Typography } from "@mui/material";
 
+import { useState } from "react";
+
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
 export default function LeaveSelection() {
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>(null);
+  const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
+
+  const handleLeaveTypeSelection = (leaveType: string) => {
+    setSelectedLeaveType(leaveType);
+  };
+
+  const handleDayPortionSelection = (dayPortion: string) => {
+    setSelectedDayPortion(dayPortion);
+  };
   return (
     <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
       <Typography variant="h5" style={{}}>
         Leave Type
       </Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <LeaveSelectionIcon Icon={WorkOffIcon} label="Casual Leave" isSelected={false} />
-        <LeaveSelectionIcon Icon={PregnantWomanIcon} label="Maternity" isSelected={false} />
-        <LeaveSelectionIcon Icon={FamilyRestroomIcon} label="Paternity" isSelected={false} />
-        <LeaveSelectionIcon Icon={AccessTimeIcon} label="Lieu" isSelected={false} />
+        <LeaveSelectionIcon
+          Icon={WorkOffIcon}
+          label="Casual Leave"
+          isSelected={selectedLeaveType === "casual"}
+          onClick={() => handleLeaveTypeSelection("casual")}
+        />
+        <LeaveSelectionIcon
+          Icon={PregnantWomanIcon}
+          label="Maternity"
+          isSelected={selectedLeaveType === "maternity"}
+          onClick={() => handleLeaveTypeSelection("maternity")}
+        />
+        <LeaveSelectionIcon
+          Icon={FamilyRestroomIcon}
+          label="Paternity"
+          isSelected={selectedLeaveType === "paternity"}
+          onClick={() => handleLeaveTypeSelection("paternity")}
+        />
+        <LeaveSelectionIcon
+          Icon={AccessTimeIcon}
+          label="Lieu"
+          isSelected={selectedLeaveType === "lieu"}
+          onClick={() => handleLeaveTypeSelection("lieu")}
+        />
       </Stack>
       <Typography variant="h5" style={{}}>
         Portion of the day
@@ -43,9 +75,21 @@ export default function LeaveSelection() {
         gap={{ xs: "2rem" }}
         alignItems="center"
       >
-        <DatePill partOfDay="Full Day" />
-        <DatePill partOfDay="First Half" />
-        <DatePill partOfDay="Second Half" />
+        <DatePill
+          partOfDay="Full Day"
+          isSelected={selectedDayPortion === "full"}
+          onClick={() => handleDayPortionSelection("full")}
+        />
+        <DatePill
+          partOfDay="First Half"
+          isSelected={selectedDayPortion === "first"}
+          onClick={() => handleDayPortionSelection("first")}
+        />
+        <DatePill
+          partOfDay="Second Half"
+          isSelected={selectedDayPortion === "second"}
+          onClick={() => handleDayPortionSelection("second")}
+        />
       </Stack>
     </Stack>
   );
