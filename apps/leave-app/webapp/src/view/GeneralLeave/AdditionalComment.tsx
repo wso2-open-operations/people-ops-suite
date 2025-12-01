@@ -44,7 +44,7 @@ export default function AdditionalComment() {
         <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap="1rem">
           <Typography variant="body2" sx={{ color: "text.secondary" }} textAlign="center">
             {isPublicComment
-              ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@wso2.com)."
+              ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
           <Button sx={{ backgroundColor: "#ff7300", color: "white", paddingX: "2rem" }}>
