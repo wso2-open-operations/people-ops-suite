@@ -41,12 +41,16 @@ export default function LeaveDateSelection() {
           width="100%"
           marginTop="2rem"
         >
-          <Typography variant="subtitle1">Days selected: 2</Typography>
-          <Typography variant="subtitle1">Working days selected: 2</Typography>
+          <Typography variant="subtitle1" color="gray">
+            Days selected: 2
+          </Typography>
+          <Typography variant="subtitle1" color="gray">
+            Working days selected: 2
+          </Typography>
         </Stack>
       </Stack>
       <Box
-        width={{ xs: "50%" }}
+        width={{ xs: "70%", md: "70%" }}
         marginX="auto"
         sx={{
           display: "flex",
