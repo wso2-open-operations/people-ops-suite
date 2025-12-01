@@ -16,8 +16,10 @@
 import { Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
+import AdditionalComment from "@root/src/view/GeneralLeave/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/LeaveSelection";
+import NotifyPeople from "@root/src/view/GeneralLeave/NotifyPeople";
 
 export default function GeneralLeave() {
   return (
@@ -32,6 +34,8 @@ export default function GeneralLeave() {
         <LeaveDateSelection />
         <LeaveSelection />
       </Stack>
+      <NotifyPeople />
+      <AdditionalComment />
     </Stack>
   );
 }
