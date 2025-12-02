@@ -15,14 +15,18 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import { Autocomplete, Avatar, Chip, Stack, TextField, Typography } from "@mui/material";
+import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
 
 import { mockEmailContacts } from "./mockEmailData";
 
 export default function NotifyPeople() {
+  const theme = useTheme();
+
   return (
     <Stack gap="1rem">
-      <Typography variant="h5">Select people/groups to notify (via email)</Typography>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+        Select people/groups to notify (via email)
+      </Typography>
       <Autocomplete
         multiple
         options={mockEmailContacts.map((contact) => contact.email)}
@@ -34,8 +38,8 @@ export default function NotifyPeople() {
               key={index}
               label={option}
               avatar={
-                <Avatar sx={{ bgcolor: "#ff7300", width: 30, height: 30 }}>
-                  <Email sx={{ fontSize: 12, color: "white" }} />
+                <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
+                  <Email sx={{ fontSize: 12, color: theme.palette.primary.contrastText }} />
                 </Avatar>
               }
             />
@@ -43,20 +47,20 @@ export default function NotifyPeople() {
         }
         sx={{
           "& .MuiChip-root": {
-            backgroundColor: "#fff",
-            color: "#ff7300",
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.primary.main,
             fontWeight: 500,
             borderRadius: "6px",
-            border: "1px solid #ff7300",
+            border: `1px solid ${theme.palette.primary.main}`,
           },
           "& .MuiChip-root:hover": {
-            backgroundColor: "#fff",
+            backgroundColor: theme.palette.action.hover,
           },
           "& .MuiChip-deleteIcon": {
-            color: "#ff7300",
+            color: theme.palette.primary.main,
           },
           "& .MuiChip-deleteIcon:hover": {
-            color: "#ff7300",
+            color: theme.palette.primary.dark,
           },
         }}
       />

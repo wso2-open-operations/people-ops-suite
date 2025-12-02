@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 
 interface DatePillProps {
   partOfDay: string;
@@ -23,6 +23,8 @@ interface DatePillProps {
 }
 
 export default function DatePill({ partOfDay, isSelected = false, onClick }: DatePillProps) {
+  const theme = useTheme();
+  
   return (
     <Box
       py={1}
@@ -33,13 +35,13 @@ export default function DatePill({ partOfDay, isSelected = false, onClick }: Dat
       maxWidth="20rem"
       onClick={onClick}
       sx={{
-        borderColor: isSelected ? "#ff7300" : "lightgrey",
-        backgroundColor: isSelected ? "#ff7300" : "transparent",
+        borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
+        backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
         cursor: onClick ? "pointer" : "default",
         transition: "all 0.2s ease",
         "&:hover": onClick
           ? {
-              borderColor: "#ff7300",
+              borderColor: theme.palette.primary.main,
               transform: "translateY(-1px)",
               boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
             }
@@ -54,7 +56,7 @@ export default function DatePill({ partOfDay, isSelected = false, onClick }: Dat
       <Typography
         variant="subtitle2"
         sx={{
-          color: isSelected ? "white" : "gray",
+          color: isSelected ? theme.palette.common.white : theme.palette.grey[600],
           fontWeight: isSelected ? 600 : 400,
           transition: "color 0.2s ease",
         }}

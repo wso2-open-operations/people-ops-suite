@@ -18,7 +18,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
 import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
-import { Stack, Typography } from "@mui/material";
+import { Stack, Typography, useTheme } from "@mui/material";
 
 import { useState } from "react";
 
@@ -26,6 +26,7 @@ import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
 export default function LeaveSelection() {
+  const theme = useTheme();
   const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>(null);
   const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
 
@@ -38,7 +39,9 @@ export default function LeaveSelection() {
   };
   return (
     <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
-      <Typography variant="h5">Leave Type</Typography>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+        Leave Type
+      </Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <LeaveSelectionIcon
           Icon={WorkOffIcon}
@@ -65,7 +68,9 @@ export default function LeaveSelection() {
           onClick={() => handleLeaveTypeSelection("lieu")}
         />
       </Stack>
-      <Typography variant="h5">Portion of the day</Typography>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+        Portion of the day
+      </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent={{ md: "space-between" }}

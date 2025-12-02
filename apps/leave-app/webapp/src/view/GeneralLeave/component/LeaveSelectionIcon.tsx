@@ -15,7 +15,7 @@
 // under the License.
 
 import { SvgIconComponent } from "@mui/icons-material";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 
 interface LeaveSelectionIconProps {
   Icon: SvgIconComponent;
@@ -29,6 +29,8 @@ export default function LeaveSelectionIcon({
   isSelected,
   onClick,
 }: LeaveSelectionIconProps) {
+  const theme = useTheme();
+
   return (
     <Stack
       direction="column"
@@ -45,7 +47,7 @@ export default function LeaveSelectionIcon({
           ? {
               transform: "translateY(-2px)",
               "& .icon-box": {
-                borderColor: "#ff7300",
+                borderColor: theme.palette.primary.main,
                 boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
               },
             }
@@ -62,15 +64,15 @@ export default function LeaveSelectionIcon({
         alignItems="center"
         justifyContent="center"
         sx={{
-          borderColor: isSelected ? "#ff7300" : "lightgrey",
-          backgroundColor: isSelected ? "#ff7300" : "transparent",
+          borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
+          backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
           transition: "all 0.2s ease",
         }}
       >
         <Icon
           fontSize="large"
           sx={{
-            color: isSelected ? "white" : "gray",
+            color: isSelected ? theme.palette.common.white : theme.palette.grey[600],
             transition: "color 0.2s ease",
           }}
         />
@@ -79,7 +81,7 @@ export default function LeaveSelectionIcon({
         variant="subtitle2"
         textAlign="center"
         sx={{
-          color: isSelected ? "#ff7300" : "gray",
+          color: isSelected ? theme.palette.primary.main : theme.palette.grey[600],
           fontWeight: isSelected ? 600 : 400,
           transition: "all 0.2s ease",
         }}

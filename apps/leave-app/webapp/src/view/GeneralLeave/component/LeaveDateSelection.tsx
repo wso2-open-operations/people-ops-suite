@@ -14,11 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Info } from "lucide-react";
 
 export default function LeaveDateSelection() {
+  const theme = useTheme();
+
   return (
     <Stack
       direction="column"
@@ -26,7 +28,9 @@ export default function LeaveDateSelection() {
       width={{ md: "40%" }}
       gap={{ xs: "2rem" }}
     >
-      <Typography variant="h5">Select Date(s)</Typography>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+        Select Date(s)
+      </Typography>
       <Stack
         direction="row"
         spacing={2}
@@ -42,10 +46,10 @@ export default function LeaveDateSelection() {
           width="100%"
           marginTop="2rem"
         >
-          <Typography variant="subtitle1" color="gray">
+          <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
             Days selected: 2
           </Typography>
-          <Typography variant="subtitle1" color="gray">
+          <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
             Working days selected: 2
           </Typography>
         </Stack>
@@ -58,8 +62,8 @@ export default function LeaveDateSelection() {
           justifyContent: "center",
           alignItems: "center",
           gap: "0.5rem",
-          backgroundColor: "#ff7300",
-          color: "white",
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
           borderRadius: "0.4rem",
           py: "0.5rem",
           px: "2rem",
