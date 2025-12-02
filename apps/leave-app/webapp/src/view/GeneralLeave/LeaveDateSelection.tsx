@@ -31,8 +31,8 @@ export default function LeaveDateSelection() {
         spacing={2}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
-        <DatePicker label="From" format="ddd, Do MMM" sx={{ minWidth: "10%" }} />
-        <DatePicker label="To" format="ddd, Do MMM" sx={{ minWidth: "10%" }} />
+        <DatePicker label="From" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
+        <DatePicker label="To" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
       </Stack>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
         <Stack
