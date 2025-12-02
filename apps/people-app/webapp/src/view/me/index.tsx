@@ -139,10 +139,10 @@ export default function Me() {
       .max(254, "Email must be at most 254 characters"),
     personalPhone: string()
       .nullable()
-      .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
     residentNumber: string()
       .nullable()
-      .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
     addressLine1: string()
       .nullable()
       .max(255, "Address Line 1 must be at most 255 characters"),
@@ -170,10 +170,16 @@ export default function Me() {
             .max(50, "Relationship must be at most 50 characters"),
           telephone: string()
             .nullable()
-            .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+            .matches(
+              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              "Invalid phone number format"
+            ),
           mobile: string()
             .nullable()
-            .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+            .matches(
+              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              "Invalid phone number format"
+            ),
         })
       )
       .min(1, "At least one emergency contact is required")

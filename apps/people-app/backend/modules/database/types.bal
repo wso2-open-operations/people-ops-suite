@@ -22,7 +22,7 @@ import ballerinax/mysql;
 public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 # Phone number validation regex pattern
-const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
+const PHONE_PATTERN_STRING = "^(?=.*\\d)[0-9+\\-()\\s]{6,20}$";
 
 # Date validation regex pattern (YYYY-MM-DD format)
 const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
@@ -345,7 +345,7 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? nationality = ();
     # Emergency contacts
-    EmergencyContact[] emergencyContacts = [];
+    EmergencyContact[] emergencyContacts;
 |};
 
 # Create employee payload.
