@@ -29,9 +29,9 @@ import { isIncludedRole } from "@utils/utils";
 import { SabbaticalLeave } from "@view/index";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
-import LeaveHistory from './layout/pages/LeaveHistory';
-import LeadReport from './layout/pages/LeadReport';
-import GeneralLeave from "./layout/pages/GeneralLeave";
+import LeaveHistory from '@view/LeaveHistory/LeaveHistory';
+import LeadReport from '@view/LeadReport/LeadReport';
+import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
 
 export const routes: RouteObjectWithRole[] = [
   {

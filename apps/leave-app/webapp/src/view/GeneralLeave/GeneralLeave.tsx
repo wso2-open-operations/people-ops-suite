@@ -17,10 +17,10 @@
 import { Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
-import AdditionalComment from "@root/src/view/GeneralLeave/AdditionalComment";
-import LeaveDateSelection from "@root/src/view/GeneralLeave/LeaveDateSelection";
-import LeaveSelection from "@root/src/view/GeneralLeave/LeaveSelection";
-import NotifyPeople from "@root/src/view/GeneralLeave/NotifyPeople";
+import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
+import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
+import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
+import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   return (

@@ -17,11 +17,11 @@
 import { CircleCheckBig, ClipboardList, History, NotebookPen } from "lucide-react";
 
 import TabsPage from "@root/src/layout/pages/TabsPage";
-import ApplyTab from "@root/src/view/SabbaticalLeave/Tabs/ApplyTab";
+import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
-import ApprovalHistoryTab from "./Tabs/ApprovalHistoryTab";
-import ApproveLeaveTab from "./Tabs/ApproveLeaveTab";
-import FunctionalLeadViewTab from "./Tabs/FunctionalLeadViewTab";
+import ApprovalHistoryTab from "./Panel/ApprovalHistoryTab";
+import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
+import FunctionalLeadViewTab from "./Panel/FunctionalLeadViewTab";
 
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
 export default function SabbaticalLeave() {
