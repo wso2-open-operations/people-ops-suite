@@ -408,6 +408,9 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # Continuous service record
+    @constraint:String {maxLength: 99}
+    string? continuousServiceRecord = ();
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};
