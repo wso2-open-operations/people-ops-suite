@@ -50,7 +50,7 @@ const Header = () => {
       <Toolbar
         variant="dense"
         sx={{
-          paddingY: "0.5rem",
+          py: "0.5rem",
           display: "flex",
           gap: 0.5,
           "&.MuiToolbar-root": {

@@ -140,8 +140,8 @@ const Sidebar = (props: SidebarProps) => {
           <Box
             sx={{
               height: "100%",
-              paddingY: "16px",
-              paddingX: "12px",
+              py: "16px",
+              px: "12px",
               backgroundColor: theme.palette.surface.secondary.active,
               zIndex: 10,
               display: "flex",

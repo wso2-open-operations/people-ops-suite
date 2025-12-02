@@ -190,7 +190,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
             >
               <CloseIcon />
             </IconButton>
-            <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
+            <DialogContent sx={{ p: 0, m: 0, px: 2 }}>
               <DialogContentText variant="body2">{content?.message}</DialogContentText>
             </DialogContent>
             {content.inputObj && (
@@ -207,7 +207,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
               />
             )}
 
-            <DialogActions sx={{ pb: 2, pt: 0, mt: 0, paddingX: 2 }}>
+            <DialogActions sx={{ pb: 2, pt: 0, mt: 0, px: 2 }}>
               <Stack flexDirection={"row"} sx={{ mt: 1 }} gap={1}>
                 {/* Cancel button */}
                 <Button

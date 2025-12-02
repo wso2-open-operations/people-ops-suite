@@ -60,8 +60,8 @@ export default function LeaveDateSelection() {
           backgroundColor: "#ff7300",
           color: "white",
           borderRadius: "0.4rem",
-          paddingY: "0.5rem",
-          paddingX: "2rem",
+          py: "0.5rem",
+          px: "2rem",
         }}
       >
         <Info />

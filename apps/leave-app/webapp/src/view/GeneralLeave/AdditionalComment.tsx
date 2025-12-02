@@ -47,7 +47,7 @@ export default function AdditionalComment() {
               ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
-          <Button sx={{ backgroundColor: "#ff7300", color: "white", paddingX: "2rem" }}>
+          <Button sx={{ backgroundColor: "#ff7300", color: "white", px: "2rem" }}>
             Submit
           </Button>
         </Stack>

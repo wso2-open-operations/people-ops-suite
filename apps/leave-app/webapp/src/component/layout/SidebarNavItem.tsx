@@ -129,7 +129,7 @@ function SidebarNavItem({
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
             borderLeft: open ? `1px solid ${theme.palette.neutral["1000"]}` : "none",
-            paddingX: "8px",
+            px: "8px",
           }}
         >
           <SidebarSubMenu parentRoute={route} open={open} />
