@@ -14,11 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Button, Checkbox, Stack, TextField, Typography } from "@mui/material";
+import { Button, Checkbox, Stack, TextField, Typography, useTheme } from "@mui/material";
 
 import { useState } from "react";
 
 export default function AdditionalComment() {
+  const theme = useTheme();
   const [isPublicComment, setIsPublicComment] = useState(false);
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +49,14 @@ export default function AdditionalComment() {
               ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
-          <Button sx={{ backgroundColor: "#ff7300", color: "white", px: "2rem" }}>
+          <Button sx={{ 
+            backgroundColor: theme.palette.primary.main, 
+            color: theme.palette.common.white, 
+            px: "2rem",
+            "&:hover": {
+              backgroundColor: theme.palette.primary.dark,
+            }
+          }}>
             Submit
           </Button>
         </Stack>

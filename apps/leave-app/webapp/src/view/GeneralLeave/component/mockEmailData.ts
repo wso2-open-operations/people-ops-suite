@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// NOTE: THIS IS MOCK DATA FOR EMAIL CONTACTS AND GROUPS USED IN THE GENERAL LEAVE VIEW (TO BE REMOVED)
 export interface EmailContact {
   id: string;
   name: string;
