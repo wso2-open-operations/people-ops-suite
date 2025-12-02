@@ -42,14 +42,14 @@ export default function NotifyPeople() {
         }
         sx={{
           "& .MuiChip-root": {
-            backgroundColor: "#ffff",
+            backgroundColor: "#fff",
             color: "#ff7300",
             fontWeight: 500,
             borderRadius: "6px",
             border: "1px solid #ff7300",
           },
           "& .MuiChip-root:hover": {
-            backgroundColor: "#ffff",
+            backgroundColor: "#fff",
           },
           "& .MuiChip-deleteIcon": {
             color: "#ff7300",

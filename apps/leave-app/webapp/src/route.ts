@@ -18,7 +18,7 @@ import {
   CalendarX2,
   FileText,
   Briefcase,
-} from 'lucide-react';
+} from "lucide-react";
 import type { RouteObject } from "react-router-dom";
 
 import React from "react";

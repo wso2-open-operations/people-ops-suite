@@ -37,9 +37,7 @@ export default function LeaveSelection() {
   };
   return (
     <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
-      <Typography variant="h5" style={{}}>
-        Leave Type
-      </Typography>
+      <Typography variant="h5">Leave Type</Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <LeaveSelectionIcon
           Icon={WorkOffIcon}
@@ -66,9 +64,7 @@ export default function LeaveSelection() {
           onClick={() => handleLeaveTypeSelection("lieu")}
         />
       </Stack>
-      <Typography variant="h5" style={{}}>
-        Portion of the day
-      </Typography>
+      <Typography variant="h5">Portion of the day</Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent={{ md: "space-between" }}
