@@ -15,8 +15,6 @@
 // under the License.
 import Title from "@root/src/component/common/Title";
 
-function ApproveLeaveTab() {
+export default function ApproveLeaveTab() {
   return <Title firstWord="Approve" secondWord="Leave" />;
 }
-
-export default ApproveLeaveTab;

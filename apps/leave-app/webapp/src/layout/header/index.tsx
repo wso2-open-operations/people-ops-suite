@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -117,7 +118,8 @@ const Header = () => {
                       color: theme.palette.customText.primary.p2.active,
                     }}
                   >
-                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
+                    {/* {user.userInfo?.firstName + " " + user.userInfo.lastName} */}
+                    {"Saajid Ahamed"}
                   </Typography>
                   <Typography
                     noWrap

@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";

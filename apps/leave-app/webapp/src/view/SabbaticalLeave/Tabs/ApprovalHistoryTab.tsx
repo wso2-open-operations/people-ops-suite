@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import Title from "@root/src/component/common/Title";
 
-function ApprovalHistoryTab() {
+export default function ApprovalHistoryTab() {
   return <Title firstWord="Approval" secondWord="History" />;
 }
 
-export default ApprovalHistoryTab;
