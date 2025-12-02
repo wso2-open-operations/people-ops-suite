@@ -160,24 +160,24 @@ export default function Me() {
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
     emergencyContacts: array()
-    .of(
-      object().shape({
-        name: string()
-          .nullable()
-          .max(100, "Name must be at most 100 characters"),
-        relationship: string()
-          .nullable()
-          .max(50, "Relationship must be at most 50 characters"),
-        telephone: string()
-          .nullable()
-          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
-        mobile: string()
-          .nullable()
-          .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
-      })
-    )
-    .min(1, "At least one emergency contact is required")
-    .max(4, "Maximum 4 emergency contacts allowed"),
+      .of(
+        object().shape({
+          name: string()
+            .nullable()
+            .max(100, "Name must be at most 100 characters"),
+          relationship: string()
+            .nullable()
+            .max(50, "Relationship must be at most 50 characters"),
+          telephone: string()
+            .nullable()
+            .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+          mobile: string()
+            .nullable()
+            .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+        })
+      )
+      .min(1, "At least one emergency contact is required")
+      .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
   useEffect(() => {
@@ -718,6 +718,24 @@ export default function Me() {
                                       fullWidth
                                       size="medium"
                                       disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.name
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name
+                                      }
                                     />
                                   </Grid>
                                   <Grid item xs={12} sm={3}>
@@ -730,6 +748,24 @@ export default function Me() {
                                       fullWidth
                                       size="medium"
                                       disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.relationship
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship
+                                      }
                                     />
                                   </Grid>
                                   <Grid item xs={12} sm={2.5}>
@@ -742,6 +778,24 @@ export default function Me() {
                                       fullWidth
                                       size="medium"
                                       disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.telephone
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone
+                                      }
                                     />
                                   </Grid>
                                   <Grid item xs={12} sm={2.5}>
@@ -754,6 +808,22 @@ export default function Me() {
                                       fullWidth
                                       size="medium"
                                       disabled={isSavingChanges}
+                                      error={Boolean(
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile &&
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.mobile
+                                      )}
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile
+                                      }
                                     />
                                   </Grid>
                                   <Grid item sx={{ width: "32px" }}>
