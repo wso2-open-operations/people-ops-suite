@@ -50,7 +50,7 @@ export default function LeaveDateSelection() {
         </Stack>
       </Stack>
       <Box
-        width={{ xs: "70%", md: "70%" }}
+        width="70%"
         marginX="auto"
         sx={{
           display: "flex",
