@@ -14,8 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Title from "@root/src/component/common/Title";
+import { Box } from "@mui/material";
+
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+
+import LeadReportTable from "./component/LeadReportTable";
+import Toolbar from "./component/Toolbar";
 
 export default function LeadReport() {
-  return <Title firstWord="Lead" secondWord="Report" />;
+  return (
+    <Box display="flex" gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Toolbar />
+      <LeadReportTable />
+    </Box>
+  );
 }
