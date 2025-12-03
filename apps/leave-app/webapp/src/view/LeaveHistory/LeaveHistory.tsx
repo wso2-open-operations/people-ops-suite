@@ -14,14 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { StyledEngineProvider } from "@mui/material/styles";
-import ReactDOM from "react-dom/client";
+import Title from "@root/src/component/common/Title";
 
-import App from "./App";
-
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(
-  <StyledEngineProvider injectFirst>
-    <App />
-  </StyledEngineProvider>,
-);
+export default function LeaveHistory() {
+  return <Title firstWord="Leave" secondWord="History" />;
+}

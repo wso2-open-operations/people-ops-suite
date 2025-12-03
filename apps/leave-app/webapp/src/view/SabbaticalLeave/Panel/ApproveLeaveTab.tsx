@@ -13,11 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import Title from "@root/src/component/common/Title";
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Page Two</div>
-    </div>
-  );
+export default function ApproveLeaveTab() {
+  return <Title firstWord="Approve" secondWord="Leave" />;
 }

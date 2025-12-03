@@ -14,10 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export default function Home() {
-  return (
-    <div>
-      <div>Home</div>
-    </div>
-  );
+import Title from "@root/src/component/common/Title";
+
+export default function ApplyTab() {
+  return <Title firstWord="Sabbatical" secondWord="Leave Application" />;
 }
