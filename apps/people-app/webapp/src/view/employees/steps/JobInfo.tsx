@@ -109,7 +109,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .of(Yup.string().email("Invalid email format"))
     .nullable(),
   workPhoneNumber: Yup.string()
-    .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format")
+    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid phone number format")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
 });

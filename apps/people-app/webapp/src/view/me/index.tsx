@@ -139,10 +139,16 @@ export default function Me() {
       .max(254, "Email must be at most 254 characters"),
     personalPhone: string()
       .nullable()
-      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      ),
     residentNumber: string()
       .nullable()
-      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      ),
     addressLine1: string()
       .nullable()
       .max(255, "Address Line 1 must be at most 255 characters"),
@@ -171,13 +177,13 @@ export default function Me() {
           telephone: string()
             .nullable()
             .matches(
-              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
               "Invalid phone number format"
             ),
           mobile: string()
             .nullable()
             .matches(
-              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
               "Invalid phone number format"
             ),
         })
@@ -695,6 +701,17 @@ export default function Me() {
                                 {values.emergencyContacts?.length ?? 0}/4)
                               </Typography>
                             </Box>
+
+                            {touched.emergencyContacts &&
+                              typeof errors.emergencyContacts === "string" && (
+                                <Typography
+                                  color="error"
+                                  variant="body2"
+                                  sx={{ mt: 1, mb: 2 }}
+                                >
+                                  {errors.emergencyContacts}
+                                </Typography>
+                              )}
 
                             {!values.emergencyContacts ||
                             values.emergencyContacts.length === 0 ? (

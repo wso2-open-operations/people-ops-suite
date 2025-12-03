@@ -78,11 +78,17 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     personalPhone: Yup.string()
-      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     residentNumber: Yup.string()
-      .matches(/^(?=.*\d)[0-9+\-()\s]{6,20}$/, "Invalid phone number format")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     addressLine1: Yup.string()
@@ -123,13 +129,13 @@ export const personalInfoValidationSchema = Yup.object().shape({
             .max(100, "Relationship must be at most 100 characters"),
           telephone: Yup.string()
             .matches(
-              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
               "Invalid phone number format"
             )
             .required("Telephone is required"),
           mobile: Yup.string()
             .matches(
-              /^(?=.*\d)[0-9+\-()\s]{6,20}$/,
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
               "Invalid phone number format"
             )
             .required("Mobile is required"),
