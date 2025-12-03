@@ -14,8 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Stack } from "@mui/material";
+
 import Title from "@root/src/component/common/Title";
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
 export default function ApplyTab() {
-  return <Title firstWord="Sabbatical" secondWord="Leave Application" />;
+  return (
+    <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Title firstWord="Sabbatical" secondWord="Leave Application" />
+    </Stack>
+  );
 }

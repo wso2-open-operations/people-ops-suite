@@ -13,8 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+import { Stack } from "@mui/material";
+
 import Title from "@root/src/component/common/Title";
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+
+import { rows } from "../MockData";
+import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
 
 export default function ApproveLeaveTab() {
-  return <Title firstWord="Approve" secondWord="Leave" />;
+  return (
+    <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Title firstWord="Approve" secondWord="Leave (For Reporting Leads)" />
+      <ApprovalHistoryTable rows={rows} />
+    </Stack>
+  );
 }

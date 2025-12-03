@@ -14,8 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Stack } from "@mui/material";
+
 import Title from "@root/src/component/common/Title";
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+
+import { rows } from "../MockData";
+import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
 
 export default function FunctionalLeadViewTab() {
-  return <Title firstWord="Functional" secondWord="Lead View" />;
+  return (
+    <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Title firstWord="Functional" secondWord="Lead View" />
+      <ApprovalHistoryTable rows={rows} />
+    </Stack>
+  );
 }
