@@ -243,6 +243,14 @@ export default function JobInfoStep() {
     []
   );
 
+  const filteredAdditionalManagerOptions = useMemo(() => {
+    if (!values.managerEmail) return employeesBasicInfo;
+
+    return employeesBasicInfo.filter(
+      (employee) => employee.workEmail !== values.managerEmail
+    );
+  }, [employeesBasicInfo, values.managerEmail]);
+
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null
   );
@@ -1063,8 +1071,8 @@ export default function JobInfoStep() {
               SelectProps={{ multiple: true }}
               sx={textFieldSx}
             >
-              {employeesBasicInfo.length ? (
-                employeesBasicInfo.map((employee) => (
+              {filteredAdditionalManagerOptions.length ? (
+                filteredAdditionalManagerOptions.map((employee) => (
                   <MenuItem
                     key={employee.employeeId}
                     value={employee.workEmail}
@@ -1076,7 +1084,9 @@ export default function JobInfoStep() {
                 <MenuItem disabled>
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
-                    : "No employees found"}
+                    : values.managerEmail
+                    ? "No other managers available"
+                    : "Select primary manager first"}
                 </MenuItem>
               )}
             </TextField>
