@@ -17,7 +17,7 @@
 import { Email } from "@mui/icons-material";
 import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
 
-import { mockEmailContacts } from "./mockEmailData";
+import { mockEmailContacts } from "../MockData";
 
 export default function NotifyPeople() {
   const theme = useTheme();

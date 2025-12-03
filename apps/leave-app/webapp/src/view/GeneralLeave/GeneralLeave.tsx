@@ -17,6 +17,7 @@
 import { Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
@@ -24,7 +25,7 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   return (
-    <Stack direction="column" width="100%" maxWidth="1280px" margin="auto" gap="2rem">
+    <Stack direction="column" width="100%" maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="2rem">
       <Title firstWord="General" secondWord="Leave Submission" />
       <Stack
         direction={{ xs: "column", md: "row" }}
