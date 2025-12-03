@@ -20,6 +20,8 @@ import { useSearchParams } from "react-router-dom";
 
 import React, { useEffect, useMemo, useState } from "react";
 
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+
 interface TabsPageProps {
   title: string;
   tabsPage: TabProps[];
@@ -100,7 +102,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
   const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "row" }}>
+    <Box sx={{ display: "flex", flexDirection: "row", width: PAGE_MAX_WIDTH, mx: "auto" }}>
       <Box
         sx={{
           display: "flex",
@@ -158,7 +160,6 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               {React.cloneElement(tab.icon)}
             </Box>
             <Box component="span">{tab.tabTitle}</Box>
-
           </Button>
         ))}
       </Box>
