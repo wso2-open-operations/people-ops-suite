@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// NOTE: THIS IS MOCK TEST DATA FOR TESTING PURPOSES ONLY (TO BE REMOVED)
 export interface LeaveData {
   id: string;
   type: string;

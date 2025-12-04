@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Mock data for sabbatical leave applications (To be removed)
+// NOTE: THIS IS MOCK TEST DATA FOR TESTING PURPOSES ONLY (TO BE REMOVED)
 export interface EmployeeLeaveData {
   id: number;
   email: string;
