@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box } from "@mui/material";
+import { Stack } from "@mui/material";
 
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
@@ -23,9 +23,9 @@ import Toolbar from "./component/Toolbar";
 
 export default function LeadReport() {
   return (
-    <Box display="flex" gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+    <Stack gap="2rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Toolbar />
       <LeadReportTable />
-    </Box>
+    </Stack>
   );
 }

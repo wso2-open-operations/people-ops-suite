@@ -20,13 +20,13 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
 import { rows } from "../MockData";
-import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
+import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="Approve" secondWord="Leave (For Reporting Leads)" />
-      <ApprovalHistoryTable rows={rows} />
+      <ApproveLeaveTable rows={rows} />
     </Stack>
   );
 }
