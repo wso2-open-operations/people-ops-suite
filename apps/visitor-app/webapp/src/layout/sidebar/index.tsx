@@ -25,10 +25,21 @@ import { MUIStyledCommonProps } from "@mui/system";
 import ListLinkItem from "@component/layout/LinkItem";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { useLocation, matchPath, useMatches, useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  matchPath,
+  useMatches,
+  useNavigate,
+} from "react-router-dom";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
-import { styled, Theme, CSSObject, alpha, useTheme } from "@mui/material/styles";
+import {
+  styled,
+  Theme,
+  CSSObject,
+  alpha,
+  useTheme,
+} from "@mui/material/styles";
 
 interface SidebarProps {
   open: boolean;
@@ -60,7 +71,9 @@ function useRouteMatch(patterns: readonly string[]) {
 }
 
 const Sidebar = (props: SidebarProps) => {
-  const currentIndex = useRouteMatch([...getActiveRouteDetails(props.roles).map((r) => r.path)]);
+  const currentIndex = useRouteMatch([
+    ...getActiveRouteDetails(props.roles).map((r) => r.path),
+  ]);
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -123,7 +136,10 @@ const Sidebar = (props: SidebarProps) => {
                               marginLeft: -3,
                               opacity: 1,
                               visibility: "visible",
-                              boxShadow: theme.palette.mode === "dark" ? "0px 0px 10px rgba(120, 125, 129, 0.2)" : 10,
+                              boxShadow:
+                                theme.palette.mode === "dark"
+                                  ? "0px 0px 10px rgba(120, 125, 129, 0.2)"
+                                  : 10,
                             },
                           }),
                         },
@@ -156,16 +172,25 @@ const Sidebar = (props: SidebarProps) => {
                         marginLeft: -3,
                         opacity: 1,
                         visibility: "visible",
-                        boxShadow: theme.palette.mode === "dark" ? "0px 0px 10px rgba(120, 125, 129, 0.2)" : 10,
+                        boxShadow:
+                          theme.palette.mode === "dark"
+                            ? "0px 0px 10px rgba(120, 125, 129, 0.2)"
+                            : 10,
                       },
                     }),
                   },
                 }}
               >
-                {props.theme.palette.mode === "dark" ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+                {props.theme.palette.mode === "dark" ? (
+                  <LightModeOutlinedIcon />
+                ) : (
+                  <DarkModeOutlinedIcon />
+                )}
                 <span className="menu-tooltip">
                   <Typography variant="h6">
-                    {"Switch to " + (props.theme.palette.mode === "dark" ? "light" : "dark") + " mode"}
+                    {"Switch to " +
+                      (props.theme.palette.mode === "dark" ? "light" : "dark") +
+                      " mode"}
                   </Typography>
                 </span>
               </IconButton>
@@ -181,7 +206,10 @@ const Sidebar = (props: SidebarProps) => {
                         marginLeft: -3,
                         opacity: 1,
                         visibility: "visible",
-                        boxShadow: theme.palette.mode === "dark" ? "0px 0px 10px rgba(120, 125, 129, 0.2)" : 10,
+                        boxShadow:
+                          theme.palette.mode === "dark"
+                            ? "0px 0px 10px rgba(120, 125, 129, 0.2)"
+                            : 10,
                       },
                     }),
                   },
@@ -193,7 +221,9 @@ const Sidebar = (props: SidebarProps) => {
                   <ChevronLeftIcon sx={{ color: "white" }} />
                 )}
                 <span className="menu-tooltip">
-                  <Typography variant="h6">{(props.open ? "Collapse" : "Expand") + " Sidebar"}</Typography>
+                  <Typography variant="h6">
+                    {(props.open ? "Collapse" : "Expand") + " Sidebar"}
+                  </Typography>
                 </span>
               </IconButton>
             </Stack>
@@ -265,17 +295,19 @@ const closedMixin = (theme: Theme): CSSObject => ({
   padding: theme.spacing(0.5),
 });
 
-export const DrawerHeader = styled("div")<DrawerHeaderInterface>(({ theme, open }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "flex-end",
-  padding: theme.spacing(0.5),
-  transition: theme.transitions.create(["display"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...theme.mixins.toolbar,
-  ...(open && {
-    justifyContent: "flex-start",
-  }),
-}));
+export const DrawerHeader = styled("div")<DrawerHeaderInterface>(
+  ({ theme, open }) => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    padding: theme.spacing(0.5),
+    transition: theme.transitions.create(["display"], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    ...theme.mixins.toolbar,
+    ...(open && {
+      justifyContent: "flex-start",
+    }),
+  })
+);

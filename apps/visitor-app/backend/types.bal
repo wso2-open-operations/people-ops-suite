@@ -44,7 +44,7 @@ public type AddVisitPayload record {|
             message: "The pass number should be a non-empty string with printable characters."
         }
     }
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     @constraint:String {
         pattern: {
@@ -56,7 +56,111 @@ public type AddVisitPayload record {|
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    database:Floor[] accessibleLocations;
+    @constraint:Array {
+        minLength: {
+            value: 1,
+            message: "At least one accessible location should be provided."
+        }
+    }
+    database:Floor[] accessibleLocations?;
+    # Time at which the visitor is supposed to check in [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:UTC_TIMESTAMP_REGEX,
+            message: "The time of entry should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+        }
+    }
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:UTC_TIMESTAMP_REGEX,
+            message: "The time of departure should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+        }
+    }
+    string timeOfDeparture;
+|};
+
+# Payload for updating an existing visit.
+public type ActionPayload record {|
+    # Reason for rejecting the visit
+    string? rejectionReason = ();
+    # Status of the visit
+    string? passNumber = ();
+    # The floors and rooms that the visitor can access
+    database:Floor[]? accessibleLocations = ();
+|};
+
+# Payload for adding a new visit invitation.
+public type AddInvitationPayload record {|
+    # Invitations count
+    int noOfVisitors;
+    # Invitee email
+    @constraint:String {
+        pattern: {
+            value: database:EMAIL_REGEX,
+            message: "The invitee email should be a valid email address."
+        }
+    }
+    string inviteeEmail;
+|};
+
+# Payload for filling an existing visit invitation.
+public type FillInvitationPayload record {|
+    # Name of the visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The name should be a non-empty string with printable characters."
+        }
+    }
+    string name;
+    # NIC number of visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The NIC number should be a non-empty string with printable characters."
+        }
+    }
+    string nicNumber;
+    # Nic Hash of the visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The NIC Hash should be a non-empty string with printable characters."
+        }
+    }
+    string nicHash;
+    # Working phone number of visitor
+    @constraint:String {
+        pattern: {
+            value: database:INTERNATIONAL_CONTACT_NUMBER_REGEX,
+            message: "The contact number should be in valid international format."
+        }
+    }
+    string contactNumber;
+    # Email of the visitor
+    string? email;
+    # Company name of visitor
+    string? companyName;
+    # The person the visitor is supposed to meet
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The who they meet should be a non-empty string with printable characters."
+        }
+    }
+    string whomTheyMeet;
+    # Purpose of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The purpose of the visit should be a non-empty string with printable characters."
+        }
+    }
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    database:Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     @constraint:String {
         pattern: {

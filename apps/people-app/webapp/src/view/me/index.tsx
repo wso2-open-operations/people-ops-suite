@@ -30,8 +30,9 @@ import {
   FormikHandlers,
   FormikValues,
   FormikErrors,
+  FieldArray,
 } from "formik";
-import { object, string } from "yup";
+import { array, object, string } from "yup";
 import {
   Accordion,
   AccordionSummary,
@@ -42,10 +43,14 @@ import {
   Skeleton,
   Button,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import IconButton from "@mui/material/IconButton";
 
 const ReadOnly = ({
   label,
@@ -134,10 +139,16 @@ export default function Me() {
       .max(254, "Email must be at most 254 characters"),
     personalPhone: string()
       .nullable()
-      .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      ),
     residentNumber: string()
       .nullable()
-      .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone number format"),
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid phone number format"
+      ),
     addressLine1: string()
       .nullable()
       .max(255, "Address Line 1 must be at most 255 characters"),
@@ -154,6 +165,31 @@ export default function Me() {
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
+    emergencyContacts: array()
+      .of(
+        object().shape({
+          name: string()
+            .nullable()
+            .max(100, "Name must be at most 100 characters"),
+          relationship: string()
+            .nullable()
+            .max(50, "Relationship must be at most 50 characters"),
+          telephone: string()
+            .nullable()
+            .matches(
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+              "Invalid phone number format"
+            ),
+          mobile: string()
+            .nullable()
+            .matches(
+              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+              "Invalid phone number format"
+            ),
+        })
+      )
+      .min(1, "At least one emergency contact is required")
+      .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
   useEffect(() => {
@@ -198,6 +234,14 @@ export default function Me() {
           stateOrProvince: values.stateOrProvince,
           postalCode: values.postalCode,
           country: values.country,
+          emergencyContacts: (values.emergencyContacts || []).map(
+            (contact) => ({
+              name: contact.name,
+              relationship: contact.relationship,
+              telephone: contact.telephone,
+              mobile: contact.mobile,
+            })
+          ),
         };
         setSavingChanges(true);
         dispatch(
@@ -639,6 +683,245 @@ export default function Me() {
                         touched={touched}
                         isSavingChanges={isSavingChanges}
                       />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FieldArray name="emergencyContacts">
+                        {({ push, remove }) => (
+                          <Box sx={{ pt: 2 }}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 2,
+                              }}
+                            >
+                              <Typography sx={{ fontWeight: 600 }}>
+                                Emergency Contacts (
+                                {values.emergencyContacts?.length ?? 0}/4)
+                              </Typography>
+                            </Box>
+
+                            {touched.emergencyContacts &&
+                              typeof errors.emergencyContacts === "string" && (
+                                <Typography
+                                  color="error"
+                                  variant="body2"
+                                  sx={{ mt: 1, mb: 2 }}
+                                >
+                                  {errors.emergencyContacts}
+                                </Typography>
+                              )}
+
+                            {!values.emergencyContacts ||
+                            values.emergencyContacts.length === 0 ? (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ textAlign: "center", py: 3 }}
+                              >
+                                No emergency contacts added yet.
+                              </Typography>
+                            ) : (
+                              values.emergencyContacts.map((contact, index) => (
+                                <Grid
+                                  container
+                                  spacing={2}
+                                  key={index}
+                                  alignItems="center"
+                                  sx={{ mb: 2 }}
+                                >
+                                  <Grid item xs={12} sm={3}>
+                                    <TextField
+                                      label="Name"
+                                      name={`emergencyContacts.${index}.name`}
+                                      value={contact.name ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.name
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.name
+                                      }
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={3}>
+                                    <TextField
+                                      label="Relationship"
+                                      name={`emergencyContacts.${index}.relationship`}
+                                      value={contact.relationship ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.relationship
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.relationship
+                                      }
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2.5}>
+                                    <TextField
+                                      label="Telephone"
+                                      name={`emergencyContacts.${index}.telephone`}
+                                      value={contact.telephone ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                      error={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone &&
+                                        Boolean(
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.telephone
+                                        )
+                                      }
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.telephone
+                                      }
+                                    />
+                                  </Grid>
+                                  <Grid item xs={12} sm={2.5}>
+                                    <TextField
+                                      label="Mobile"
+                                      name={`emergencyContacts.${index}.mobile`}
+                                      value={contact.mobile ?? ""}
+                                      onChange={handleChange}
+                                      onBlur={handleBlur}
+                                      fullWidth
+                                      size="medium"
+                                      disabled={isSavingChanges}
+                                      error={Boolean(
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile &&
+                                          (errors.emergencyContacts as any)?.[
+                                            index
+                                          ]?.mobile
+                                      )}
+                                      helperText={
+                                        (touched.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile &&
+                                        (errors.emergencyContacts as any)?.[
+                                          index
+                                        ]?.mobile
+                                      }
+                                    />
+                                  </Grid>
+                                  <Grid item sx={{ width: "32px" }}>
+                                    <Tooltip
+                                      title={
+                                        (values.emergencyContacts?.length ??
+                                          0) <= 1
+                                          ? "At least one emergency contact is required"
+                                          : "Remove contact"
+                                      }
+                                    >
+                                      <span>
+                                        <IconButton
+                                          color="error"
+                                          size="small"
+                                          onClick={() => {
+                                            if (
+                                              (values.emergencyContacts
+                                                ?.length ?? 0) <= 1
+                                            ) {
+                                              return;
+                                            }
+                                            remove(index);
+                                          }}
+                                          disabled={
+                                            isSavingChanges ||
+                                            (values.emergencyContacts?.length ??
+                                              0) <= 1
+                                          }
+                                        >
+                                          <RemoveCircleOutlineIcon fontSize="small" />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  </Grid>
+                                </Grid>
+                              ))
+                            )}
+                            <Button
+                              variant="contained"
+                              startIcon={<AddCircleOutlineIcon />}
+                              size="small"
+                              sx={{ textTransform: "none" }}
+                              onClick={() =>
+                                push({
+                                  name: "",
+                                  relationship: "",
+                                  telephone: "",
+                                  mobile: "",
+                                })
+                              }
+                              disabled={
+                                isSavingChanges ||
+                                (values.emergencyContacts?.length ?? 0) >= 4
+                              }
+                            >
+                              Add Contact
+                            </Button>
+
+                            {(values.emergencyContacts?.length ?? 0) >= 4 && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                  display: "block",
+                                  textAlign: "center",
+                                  mt: 1,
+                                }}
+                              >
+                                Maximum 4 emergency contacts reached.
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </FieldArray>
                     </Grid>
                     <Grid item xs={12}>
                       {/* --- Action Buttons --- */}

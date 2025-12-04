@@ -19,10 +19,10 @@ import ballerina/sql;
 import ballerinax/mysql;
 
 # Email validation regex pattern
-const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 # Phone number validation regex pattern
-const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
+const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
 
 # Date validation regex pattern (YYYY-MM-DD format)
 const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
@@ -165,6 +165,47 @@ public type EmployeePersonalInfo record {|
     string? country;
     # Nationality
     string? nationality;
+    # Emergency contacts
+    @sql:Column {name: "emergency_contacts"}
+    json emergencyContacts;
+|};
+
+# Continuous service record information.
+public type ContinuousServiceRecordInfo record {|
+    # Primary key ID
+    @sql:Column {name: "id"}
+    int id;
+    # Employee ID of the user
+    @sql:Column {name: "employeeId"}
+    string employeeId;
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Employment location
+    string employmentLocation;
+    # Work location
+    string workLocation;
+    # Start date
+    string startDate;
+    # Manager email
+    string managerEmail;
+    # Additional manager emails
+    string? additionalManagerEmails;
+    # Designation
+    string designation;
+    # Job role of the user
+    string secondaryJobTitle;
+    # Office
+    string office;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string subTeam;
+    # Unit
+    string? unit;
 |};
 
 # Business unit.
@@ -225,6 +266,9 @@ public type Office record {|
     int id;
     # Office name
     string name;
+    # Office location
+    @sql:Column {name: "location"}
+    string location;
     # Working locations
     @sql:Column {name: "working_locations"}
     json workingLocations;
@@ -234,6 +278,18 @@ public type Office record {|
 public type SearchEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
     string nicOrPassport?;
+|};
+
+# Emergency contact information.
+public type EmergencyContact record {|
+    # Name of the emergency contact
+    string name;
+    # Relationship with the employee
+    string relationship;
+    # Telephone number of the emergency contact
+    string telephone;
+    # Mobile number of the emergency contact
+    string mobile;
 |};
 
 # Create personal info payload.
@@ -288,6 +344,8 @@ public type CreatePersonalInfoPayload record {|
     # Nationality
     @constraint:String {maxLength: 100}
     string? nationality = ();
+    # Emergency contacts
+    EmergencyContact[] emergencyContacts;
 |};
 
 # Create employee payload.
@@ -350,6 +408,9 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # Continuous service record
+    @constraint:String {maxLength: 99}
+    string? continuousServiceRecord = ();
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};
@@ -383,6 +444,9 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # Country of residence
     @constraint:String {maxLength: 100}
     string? country = ();
+    # Emergency contacts
+    @constraint:Array {minLength: 1, maxLength: 4}
+    EmergencyContact[] emergencyContacts;
 |};
 
 # [Database] Insert type for vehicle.

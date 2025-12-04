@@ -38,8 +38,7 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
         first_name,
         last_name,
         work_email,
-        employee_thumbnail,
-        secondary_job_title
+        employee_thumbnail
     FROM employee;`;
 
 # Fetch employee detailed information.
@@ -84,6 +83,40 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         INNER JOIN unit u ON e.unit_id = u.id
     WHERE
         e.id = ${id};`;
+
+# Fetch continuous service record by work email.
+#
+# + workEmail - Work email of the employee
+# + return - Parameterized query for continuous service record
+isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
+    `SELECT 
+        e.id AS id,
+        e.employee_id AS employeeId,
+        e.first_name AS firstName,
+        e.last_name AS lastName,
+        c.location AS employmentLocation,
+        e.work_location AS workLocation,
+        e.start_date AS startDate,
+        e.manager_email AS managerEmail,
+        e.additional_manager_emails AS additionalManagerEmails,
+        d.designation AS designation,
+        e.secondary_job_title AS secondaryJobTitle,
+        o.name AS office,
+        bu.name AS businessUnit,
+        t.name AS team,
+        st.name AS subTeam,
+        u.name AS unit
+    FROM
+        employee e
+        INNER JOIN designation d ON e.designation_id = d.id
+        INNER JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = o.company_id
+        INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN business_unit bu ON e.business_unit_id = bu.id
+        LEFT JOIN sub_team st ON e.sub_team_id = st.id
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE
+        e.work_email = ${workEmail};`;
 
 # Search employee personal information.
 #
@@ -143,7 +176,8 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         state_or_province,
         postal_code,
         country,
-        nationality
+        nationality,
+        emergency_contacts
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
@@ -242,6 +276,7 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
         name,
+        location,
         working_locations
     FROM office;`;
 
@@ -271,6 +306,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             postal_code,
             country,
             nationality,
+            emergency_contacts,
             created_by,
             updated_by
         )
@@ -293,6 +329,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.postalCode},
             ${payload.country},
             ${payload.nationality},
+            ${payload.emergencyContacts.toJsonString()},
             ${createdBy},
             ${createdBy}
         );`;
@@ -319,6 +356,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             manager_email,
             additional_manager_emails,
             employee_status,
+            continuous_service_record,
             employee_thumbnail,
             probation_end_date,
             agreement_end_date,
@@ -347,6 +385,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.managerEmail},
             ${string:'join(", ", ...payload.additionalManagerEmails)},
             ${payload.employeeStatus},
+            ${payload.continuousServiceRecord},
             ${payload.employeeThumbnail},
             ${payload.probationEndDate},
             ${payload.agreementEndDate},
@@ -380,7 +419,8 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         city = ${payload.city},
         state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
-        country = ${payload.country}
+        country = ${payload.country},
+        emergency_contacts = ${payload.emergencyContacts.toJsonString()}
      WHERE
         id = ${id};`;
 

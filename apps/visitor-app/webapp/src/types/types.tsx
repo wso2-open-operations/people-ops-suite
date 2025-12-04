@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 export enum State {
   failed = "failed",
   success = "success",
@@ -26,6 +25,19 @@ export enum ConfirmationType {
   send = "send",
   upload = "upload",
   accept = "accept",
+}
+
+export enum VisitStatus {
+  requested = "REQUESTED",
+  approved = "APPROVED",
+  completed = "COMPLETED",
+  rejected = "REJECTED",
+}
+
+export enum VisitAction {
+  approve = "APPROVE",
+  reject = "REJECT",
+  complete = "COMPLETE",
 }
 
 export interface CommonCardProps {

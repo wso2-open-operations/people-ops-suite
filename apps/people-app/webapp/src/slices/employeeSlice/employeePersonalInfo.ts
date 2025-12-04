@@ -21,6 +21,7 @@ import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { EmergencyContact } from "@/types/types";
 
 export interface EmployeePersonalInfo {
   id: number | null;
@@ -41,6 +42,7 @@ export interface EmployeePersonalInfo {
   postalCode: string | null;
   country: string | null;
   nationality: string | null;
+  emergencyContacts: EmergencyContact[] | null;
 }
 
 export interface EmployeePersonalInfoUpdate {
@@ -53,6 +55,7 @@ export interface EmployeePersonalInfoUpdate {
   stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
+  emergencyContacts: EmergencyContact[] | null;
 }
 
 interface EmployeePersonalInfoState {

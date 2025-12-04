@@ -18,8 +18,10 @@ import { lazy } from "react";
 
 const employee = lazy(() => import("@view/employee/employee"));
 const help = lazy(() => import("@view/help/help"));
+const admin = lazy(() => import("@view/admin/admin"));
 
 export const View = {
   employee,
   help,
+  admin,
 };

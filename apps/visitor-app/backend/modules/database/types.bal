@@ -12,9 +12,10 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 import ballerina/constraint;
 import ballerina/sql;
+import ballerina/time;
 import ballerinax/mysql;
 
 # [Configurable] Database configs.
@@ -88,7 +89,7 @@ public type AddVisitorPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string? email = ();
 |};
 
 # [Database] Floor record.
@@ -106,17 +107,17 @@ public type AddVisitPayload record {|
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    Floor[] accessibleLocations;
+    Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    time:Utc timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    time:Utc timeOfDeparture;
     # Status of the visit
     Status status;
 |};
@@ -135,21 +136,23 @@ public type VisitRecord record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string? email = ();
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
-    string passNumber;
+    string passNumber?;
     # The person the visitor is supposed to meet
     string whomTheyMeet;
     # Purpose of the visit
     string purposeOfVisit;
     # The floors and rooms that the visitor can access
-    json accessibleLocations;
+    string? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
     string timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
     string timeOfDeparture;
+    # Invitation ID associated with the visit
+    int? invitationId;
     # Status of the visit
     Status status;
     # Total number of visits
@@ -158,10 +161,27 @@ public type VisitRecord record {|
 
 # Visit record.
 public type Visit record {|
-    *AddVisitPayload;
     *AuditFields;
     # Unique identifier for the visit
     int id;
+    # Nic Hash of the visitor
+    string nicHash;
+    # Company name of visitor
+    string? companyName;
+    # Number in the tag given to visitor
+    string passNumber?;
+    # The person the visitor is supposed to meet
+    string whomTheyMeet;
+    # Purpose of the visit
+    string purposeOfVisit;
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
+    # Time at which the visitor is supposed to check in [in UTC]
+    string timeOfEntry;
+    # Time at which the visitor is supposed to check out [in UTC]
+    string timeOfDeparture;
+    # Status of the visit
+    Status status;
     # Name of the visitor
     string name;
     # NIC number of visitor
@@ -169,7 +189,9 @@ public type Visit record {|
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string? email = ();
+    # Invitation ID associated with the visit
+    int? invitationId;
 |};
 
 # Response Record for Visits.
@@ -178,4 +200,109 @@ public type VisitsResponse record {|
     int totalCount;
     # Array of visits
     Visit[] visits;
+|};
+
+# [Database] Insert record for visit invitation.
+public type AddInvitationPayload record {|
+    # invitations count
+    int noOfVisitors;
+    # invitation status
+    boolean isActive;
+    # invitee email
+    string inviteeEmail;
+|};
+
+# [Database] Invitation record.
+public type InvitationRecord record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
+    # Validity of the invitation
+    boolean active;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    string? visitInfo = ();
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
+|};
+
+# Invitation.
+public type Invitation record {|
+    *AuditFields;
+    # Id of the invitation
+    int invitationId;
+    # Email of the invitee
+    string inviteeEmail;
+    # Validity of the invitation
+    boolean active;
+    # No of invitations
+    int noOfVisitors;
+    # Visit details in the invitation
+    VisitInfo? visitInfo = ();
+    # Who invited the visitor
+    AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
+|};
+
+# Visit information of invitation.
+public type VisitInfo record {|
+    # Name of company
+    string? companyName = ();
+    # Person they meet
+    string whomTheyMeet;
+    # Purpose of visit
+    string purposeOfVisit;
+    # Time of entry
+    string timeOfEntry;
+    # Time of departure
+    string timeOfDeparture;
+|};
+
+# Payload to update visit details.
+public type UpdateVisitPayload record {|
+    # Number in the tag given to visitor
+    string? passNumber = ();
+    # Status of the visit
+    Status? status = ();
+    # Reason for rejecting the visit
+    string? rejectionReason = ();
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
+    # Who actioned the visit
+    string? actionedBy = ();
+    # Time of entry
+    time:Utc? timeOfEntry = ();
+    # Time of departure
+    time:Utc? timeOfDeparture = ();
+|};
+
+# Payload to update Invitation details.
+public type UpdateInvitationPayload record {|
+    # Visit details in the invitation
+    VisitInfo? visitInfo = ();
+    # Validity of the invitation
+    boolean? active = ();
+|};
+
+// Filter Types.
+# Filters for the visits.
+public type VisitFilters record {|
+    # Email of the inviter
+    string? inviter = ();
+    # ID of the visit
+    int? visitId = ();
+    # Invitation ID associated with the visit
+    int? invitationId = ();
+    # Status array of the visits
+    Status[]? statusArray = ();
+    # Limit number of visits to fetch
+    int? 'limit = DEFAULT_LIMIT;
+    # Offset for pagination
+    int? offset = ();
 |};
