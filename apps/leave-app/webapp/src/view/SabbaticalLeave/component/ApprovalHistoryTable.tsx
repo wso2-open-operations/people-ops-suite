@@ -14,8 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Chip, useTheme } from "@mui/material";
-import Box from "@mui/material/Box";
+import { Chip, Box, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { EmployeeLeaveData } from "../MockData";
