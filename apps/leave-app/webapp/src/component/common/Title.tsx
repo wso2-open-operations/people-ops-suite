@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Typography, useTheme } from "@mui/material";
 
 interface TitleProps {
@@ -24,7 +25,11 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
   const theme = useTheme();
 
   return (
-    <Typography variant="h4" sx={{ color: theme.palette.text.primary, fontWeight: "600" }}>
+    <Typography
+      variant="h4"
+      textAlign={{ xs: "center", md: "left" }}
+      sx={{ color: theme.palette.text.primary, fontWeight: "600" }}
+    >
       <span style={{ color: theme.palette.primary.main, display: "inline" }}>{firstWord}</span>{" "}
       {secondWord}
     </Typography>
