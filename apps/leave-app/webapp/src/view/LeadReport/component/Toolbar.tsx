@@ -45,7 +45,7 @@ export default function Toolbar() {
           color="primary"
           sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
         >
-          Submit
+          Fetch Report
         </Button>
       </Stack>
     </Stack>
