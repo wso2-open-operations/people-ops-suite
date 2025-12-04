@@ -46,7 +46,7 @@ export default function LeaveSelection() {
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <LeaveSelectionIcon
           Icon={WorkOffIcon}
-          label="Casual Leave"
+          label="Casual/Annual"
           isSelected={selectedLeaveType === "casual"}
           onClick={() => handleLeaveTypeSelection("casual")}
         />
