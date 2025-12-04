@@ -102,7 +102,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
   const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "row", width: PAGE_MAX_WIDTH, mx: "auto" }}>
+    <Box sx={{ display: "flex", flexDirection: "row", maxWidth: PAGE_MAX_WIDTH, mx: "auto" }}>
       <Box
         sx={{
           display: "flex",
@@ -182,7 +182,7 @@ export function TabPanel(props: TabPanelProps) {
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
-      sx={{ p: 4 }}
+      sx={{ py: 4 }}
     >
       <Box
         component={motion.div}
