@@ -27,7 +27,7 @@ import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
 export default function LeaveSelection() {
   const theme = useTheme();
-  const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>(null);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>("casual");
   const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
 
   const handleLeaveTypeSelection = (leaveType: string) => {
@@ -37,6 +37,7 @@ export default function LeaveSelection() {
   const handleDayPortionSelection = (dayPortion: string) => {
     setSelectedDayPortion(dayPortion);
   };
+
   return (
     <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
       <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>

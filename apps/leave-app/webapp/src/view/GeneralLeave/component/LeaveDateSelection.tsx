@@ -16,6 +16,7 @@
 
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
 import { Info } from "lucide-react";
 
 export default function LeaveDateSelection() {
@@ -36,8 +37,18 @@ export default function LeaveDateSelection() {
         spacing={2}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
-        <DatePicker label="From" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
-        <DatePicker label="To" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
+        <DatePicker
+          label="From"
+          format="ddd, d MMM"
+          sx={{ minWidth: "10%" }}
+          value={dayjs().add(1, "day")}
+        />
+        <DatePicker
+          label="To"
+          format="ddd, d MMM"
+          sx={{ minWidth: "10%" }}
+          value={dayjs().add(2, "day")}
+        />
       </Stack>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
         <Stack
