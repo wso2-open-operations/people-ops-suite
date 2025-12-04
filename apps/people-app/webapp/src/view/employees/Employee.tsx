@@ -27,11 +27,11 @@ import {
   Typography,
   Paper,
   useTheme,
-  alpha,
   StepConnector,
   stepConnectorClasses,
   StepIconProps,
   styled,
+  alpha,
 } from "@mui/material";
 import { Formik, Form } from "formik";
 import PersonalInfoStep from "./steps/PersonalInfo";
@@ -53,18 +53,18 @@ import {
 import { EmployeeFormSteps } from "@root/src/config/constant";
 
 const OrangeConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 18,
-  },
+  [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 18 },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage:
-        "linear-gradient(90deg, #ff7300, rgba(255, 115, 0, 0.5))",
+      backgroundImage: `linear-gradient(90deg, ${
+        theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: "linear-gradient(90deg, #ff7300, #ff7300)",
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
+        theme.palette.secondary.contrastText})`,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -91,12 +91,21 @@ const StepIconRoot = styled("div")<{
   alignItems: "center",
   fontSize: "0.75rem",
   fontWeight: 600,
+
   ...(ownerState.active && {
-    backgroundImage: "linear-gradient(135deg, #ff7300, rgba(255, 115, 0, 0.8))",
-    boxShadow: "0 4px 10px 0 rgba(255, 115, 0, 0.3)",
+    backgroundImage: `linear-gradient(135deg, ${
+      theme.palette.secondary.contrastText
+    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    boxShadow: `0 4px 10px 0 ${alpha(
+      theme.palette.secondary.contrastText,
+      0.3
+    )}`,
   }),
+
   ...(ownerState.completed && {
-    backgroundImage: "linear-gradient(135deg, #ff7300, rgba(255, 115, 0, 0.8))",
+    backgroundImage: `linear-gradient(135deg, ${
+      theme.palette.secondary.contrastText
+    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
 
@@ -221,7 +230,7 @@ export default function Employees() {
                     fontWeight: 400,
                   },
                   "& .MuiStepLabel-label.Mui-active": {
-                    color: "#ff7300",
+                    color: "secondary.contrastText",
                     fontWeight: 400,
                     fontSize: "0.85rem",
                   },
@@ -281,7 +290,8 @@ export default function Employees() {
                   values.unitId && values.unitId > 0
                     ? values.unitId
                     : undefined,
-                continuousServiceRecord: values.continuousServiceRecord || undefined,
+                continuousServiceRecord:
+                  values.continuousServiceRecord || undefined,
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
                   fullName: values.personalInfo.fullName,
@@ -331,34 +341,34 @@ export default function Employees() {
             >
               {renderStepContent(activeStep)}
               <Box
+                mt={3}
+                width="100%"
                 display="flex"
-                justifyContent="space-between"
-                mt={4}
-                pt={2.5}
-                borderTop={`1px solid ${alpha(theme.palette.divider, 0.1)}`}
+                justifyContent="flex-end"
+                gap={2}
               >
+                {activeStep > 0 && (
+                  <Button
+                    startIcon={<ArrowBack />}
+                    sx={{ textTransform: "none" }}
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleBack}
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
-                  disabled={activeStep === 0}
-                  onClick={handleBack}
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<ArrowBack />}
-                  sx={{
-                    textTransform: "none",
-                  }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  type="button"
-                  disabled={isSubmitting || createState === "loading"}
                   endIcon={
                     activeStep === EmployeeFormSteps.length - 1 ? null : (
                       <ArrowForward />
                     )
                   }
+                  sx={{ textTransform: "none" }}
+                  variant="contained"
+                  color="secondary"
+                  type="button"
+                  disabled={isSubmitting || createState === "loading"}
                   onClick={async () => {
                     const errors = await validateForm();
                     if (Object.keys(errors).length === 0) {
@@ -370,9 +380,6 @@ export default function Employees() {
                     } else {
                       setTouched(markAllFieldsTouched(errors));
                     }
-                  }}
-                  sx={{
-                    textTransform: "none",
                   }}
                 >
                   {createState === "loading"

@@ -141,13 +141,13 @@ export default function Me() {
       .nullable()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid personal phone number format"
       ),
     residentNumber: string()
       .nullable()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid resident number format"
       ),
     addressLine1: string()
       .nullable()
@@ -169,22 +169,22 @@ export default function Me() {
       .of(
         object().shape({
           name: string()
-            .nullable()
+            .required("Name is required")
             .max(100, "Name must be at most 100 characters"),
           relationship: string()
-            .nullable()
+            .required("Relationship is required")
             .max(50, "Relationship must be at most 50 characters"),
           telephone: string()
-            .nullable()
+            .required("Telephone is required")
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid telephone number format"
             ),
           mobile: string()
-            .nullable()
+            .required("Mobile is required")
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid mobile number format"
             ),
         })
       )
@@ -886,9 +886,9 @@ export default function Me() {
                               ))
                             )}
                             <Button
-                              variant="contained"
+                              variant="outlined"
+                              color="secondary"
                               startIcon={<AddCircleOutlineIcon />}
-                              size="small"
                               sx={{ textTransform: "none" }}
                               onClick={() =>
                                 push({
