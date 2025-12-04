@@ -31,6 +31,7 @@ import {
   stepConnectorClasses,
   StepIconProps,
   styled,
+  alpha,
 } from "@mui/material";
 import { Formik, Form } from "formik";
 import PersonalInfoStep from "./steps/PersonalInfo";
@@ -52,18 +53,18 @@ import {
 import { EmployeeFormSteps } from "@root/src/config/constant";
 
 const OrangeConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 18,
-  },
+  [`&.${stepConnectorClasses.alternativeLabel}`]: { top: 18 },
   [`&.${stepConnectorClasses.active}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage:
-        "linear-gradient(90deg, #ff7300, rgba(255, 115, 0, 0.5))",
+      backgroundImage: `linear-gradient(90deg, ${
+        theme.palette.secondary.contrastText
+      }, ${alpha(theme.palette.secondary.contrastText, 0.5)})`,
     },
   },
   [`&.${stepConnectorClasses.completed}`]: {
     [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: "linear-gradient(90deg, #ff7300, #ff7300)",
+      backgroundImage: `linear-gradient(90deg, ${theme.palette.secondary.contrastText}, ${
+        theme.palette.secondary.contrastText})`,
     },
   },
   [`& .${stepConnectorClasses.line}`]: {
@@ -90,12 +91,21 @@ const StepIconRoot = styled("div")<{
   alignItems: "center",
   fontSize: "0.75rem",
   fontWeight: 600,
+
   ...(ownerState.active && {
-    backgroundImage: "linear-gradient(135deg, #ff7300, rgba(255, 115, 0, 0.8))",
-    boxShadow: "0 4px 10px 0 rgba(255, 115, 0, 0.3)",
+    backgroundImage: `linear-gradient(135deg, ${
+      theme.palette.secondary.contrastText
+    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
+    boxShadow: `0 4px 10px 0 ${alpha(
+      theme.palette.secondary.contrastText,
+      0.3
+    )}`,
   }),
+
   ...(ownerState.completed && {
-    backgroundImage: "linear-gradient(135deg, #ff7300, rgba(255, 115, 0, 0.8))",
+    backgroundImage: `linear-gradient(135deg, ${
+      theme.palette.secondary.contrastText
+    }, ${alpha(theme.palette.secondary.contrastText, 0.8)})`,
   }),
 }));
 
@@ -220,7 +230,7 @@ export default function Employees() {
                     fontWeight: 400,
                   },
                   "& .MuiStepLabel-label.Mui-active": {
-                    color: "#ff7300",
+                    color: "secondary.contrastText",
                     fontWeight: 400,
                     fontSize: "0.85rem",
                   },
