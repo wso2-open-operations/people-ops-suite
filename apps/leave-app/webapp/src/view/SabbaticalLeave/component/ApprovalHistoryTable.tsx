@@ -14,12 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Chip, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { EmployeeLeaveData } from "../MockData";
 
 export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData[] }) {
+  const theme = useTheme();
+
   const columns: GridColDef[] = [
     {
       field: "email",
@@ -43,11 +46,60 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
       editable: false,
     },
     {
-      field: "Status",
+      field: "status",
       headerName: "Status",
       type: "string",
       flex: 1,
       editable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params) => {
+        const status = params.value?.toLowerCase() || "";
+        const displayValue = params.value || "Unknown";
+
+        let chipProps;
+        switch (status) {
+          case "approved":
+            chipProps = {
+              color: theme.palette.success.main,
+              backgroundColor: theme.palette.success.light,
+            };
+            break;
+          case "rejected":
+            chipProps = {
+              color: theme.palette.error.main,
+              backgroundColor: theme.palette.error.light,
+            };
+            break;
+          case "pending":
+            chipProps = {
+              color: theme.palette.primary.main,
+              backgroundColor: theme.palette.primary.light,
+            };
+            break;
+          default:
+            chipProps = {
+              color: theme.palette.grey[600],
+              backgroundColor: theme.palette.grey[200],
+            };
+        }
+
+        return (
+          <Chip
+            label={displayValue}
+            sx={{
+              color: theme.palette.common.white,
+              backgroundColor: chipProps.backgroundColor,
+              borderRadius: "0.5rem",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              width: "10rem",
+              textTransform: "capitalize",
+              border: `1px solid ${chipProps.color}`,
+            }}
+          />
+        );
+      },
     },
   ];
 
