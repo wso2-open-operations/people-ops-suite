@@ -14,12 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
+// Mock data for sabbatical leave applications (To be removed)
 export interface EmployeeLeaveData {
   id: number;
   email: string;
   startDate: Date;
   endDate: Date;
-  Status: string;
+  status: string;
+}
+
+export interface EmployeeApprovalData {
+  id: number;
+  email: string;
+  startDate: Date;
+  endDate: Date;
 }
 
 export const rows: EmployeeLeaveData[] = [
@@ -28,34 +36,132 @@ export const rows: EmployeeLeaveData[] = [
     email: "john.doe@example.com",
     startDate: new Date("2025-01-05"),
     endDate: new Date("2025-01-10"),
-    Status: "Approved",
+    status: "Approved",
   },
   {
     id: 2,
     email: "emma.smith@example.com",
     startDate: new Date("2025-02-12"),
     endDate: new Date("2025-02-14"),
-    Status: "Pending",
+    status: "Pending",
   },
   {
     id: 3,
     email: "liam.kumar@example.com",
     startDate: new Date("2025-03-01"),
     endDate: new Date("2025-03-03"),
-    Status: "Rejected",
+    status: "Rejected",
   },
   {
     id: 4,
     email: "sophia.ranasinghe@example.com",
     startDate: new Date("2025-04-20"),
     endDate: new Date("2025-04-25"),
-    Status: "Approved",
+    status: "Approved",
   },
   {
     id: 5,
     email: "michael.perera@example.com",
     startDate: new Date("2025-05-10"),
     endDate: new Date("2025-05-15"),
-    Status: "Pending",
+    status: "Pending",
+  },
+  {
+    id: 6,
+    email: "john.doe@example.com",
+    startDate: new Date("2025-01-05"),
+    endDate: new Date("2025-01-10"),
+    status: "Approved",
+  },
+  {
+    id: 7,
+    email: "emma.smith@example.com",
+    startDate: new Date("2025-02-12"),
+    endDate: new Date("2025-02-14"),
+    status: "Pending",
+  },
+  {
+    id: 8,
+    email: "liam.kumar@example.com",
+    startDate: new Date("2025-03-01"),
+    endDate: new Date("2025-03-03"),
+    status: "Rejected",
+  },
+  {
+    id: 9,
+    email: "sophia.ranasinghe@example.com",
+    startDate: new Date("2025-04-20"),
+    endDate: new Date("2025-04-25"),
+    status: "Approved",
+  },
+  {
+    id: 10,
+    email: "michael.perera@example.com",
+    startDate: new Date("2025-05-10"),
+    endDate: new Date("2025-05-15"),
+    status: "Pending",
+  },
+];
+
+export const employeeApprovalData: EmployeeApprovalData[] = [
+  {
+    id: 1,
+    email: "john.doe@example.com",
+    startDate: new Date("2025-01-05"),
+    endDate: new Date("2025-01-10"),
+  },
+  {
+    id: 2,
+    email: "emma.smith@example.com",
+    startDate: new Date("2025-02-12"),
+    endDate: new Date("2025-02-14"),
+  },
+  {
+    id: 3,
+    email: "liam.kumar@example.com",
+    startDate: new Date("2025-03-01"),
+    endDate: new Date("2025-03-03"),
+  },
+  {
+    id: 4,
+    email: "sophia.ranasinghe@example.com",
+    startDate: new Date("2025-04-20"),
+    endDate: new Date("2025-04-25"),
+  },
+  {
+    id: 5,
+    email: "michael.perera@example.com",
+    startDate: new Date("2025-05-10"),
+    endDate: new Date("2025-05-15"),
+  },
+  {
+    id: 6,
+    email: "john.doe@example.com",
+    startDate: new Date("2025-01-05"),
+    endDate: new Date("2025-01-10"),
+  },
+  {
+    id: 7,
+    email: "emma.smith@example.com",
+    startDate: new Date("2025-02-12"),
+    endDate: new Date("2025-02-14"),
+  },
+  {
+    id: 8,
+    email: "liam.kumar@example.com",
+    startDate: new Date("2025-03-01"),
+    endDate: new Date("2025-03-03"),
+  },
+  {
+    id: 9,
+    email: "sophia.ranasinghe@example.com",
+    startDate: new Date("2025-04-20"),
+    endDate: new Date("2025-04-25"),
+  },
+  {
+    id: 10,
+    email: "michael.perera@example.com",
+    startDate: new Date("2025-05-10"),
+    endDate: new Date("2025-05-15"),
   },
 ];
