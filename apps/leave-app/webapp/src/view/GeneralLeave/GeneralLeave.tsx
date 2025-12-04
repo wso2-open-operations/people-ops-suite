@@ -13,8 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Stack, useTheme } from "@mui/material";
 
+import { Stack } from "@mui/material";
+
+import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
@@ -23,35 +25,22 @@ import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
-  const theme = useTheme();
   return (
-    <Stack
-      direction="column"
-      width="100%"
-      maxWidth={PAGE_MAX_WIDTH}
-      margin="auto"
-      gap="2rem"
-      padding="1rem"
-      borderRadius="0.5rem"
-      border={`1px solid ${theme.palette.divider}`}
-      sx={{
-        backgroundColor: theme.palette.background.paper,
-        overflowX: "hidden",
-        boxSizing: "border-box",
-      }}
-    >
+    <Stack direction="column" gap="2rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="General" secondWord="Leave Submission" />
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        width="100%"
-        justifyContent={{ md: "space-between" }}
-        gap={{ xs: "2rem" }}
-      >
-        <LeaveDateSelection />
-        <LeaveSelection />
-      </Stack>
-      <NotifyPeople />
-      <AdditionalComment />
+      <FormContainer>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          width="100%"
+          justifyContent={{ md: "space-between" }}
+          gap={{ xs: "2rem" }}
+        >
+          <LeaveDateSelection />
+          <LeaveSelection />
+        </Stack>
+        <NotifyPeople />
+        <AdditionalComment />
+      </FormContainer>
     </Stack>
   );
 }
