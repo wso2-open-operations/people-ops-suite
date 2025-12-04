@@ -109,7 +109,10 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .of(Yup.string().email("Invalid email format"))
     .nullable(),
   workPhoneNumber: Yup.string()
-    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid phone number format")
+    .matches(
+      /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+      "Invalid work phone number format"
+    )
     .transform((value) => (value === "" ? null : value))
     .nullable(),
 });
@@ -254,6 +257,17 @@ export default function JobInfoStep() {
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null
   );
+
+  useEffect(() => {
+    if (values.managerEmail && values.additionalManagerEmail?.length) {
+      const filtered = values.additionalManagerEmail.filter(
+        (email) => email !== values.managerEmail
+      );
+      if (filtered.length !== values.additionalManagerEmail.length) {
+        setFieldValue("additionalManagerEmail", filtered);
+      }
+    }
+  }, [values.managerEmail, values.additionalManagerEmail, setFieldValue]);
 
   const FULL_TIME_ID = EmployeeTypes.find(
     (type) => type.label === "Full-time"

@@ -80,14 +80,14 @@ export const personalInfoValidationSchema = Yup.object().shape({
     personalPhone: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid personal phone number format"
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     residentNumber: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid resident number format"
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
@@ -130,13 +130,13 @@ export const personalInfoValidationSchema = Yup.object().shape({
           telephone: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid telephone number format"
             )
             .required("Telephone is required"),
           mobile: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid mobile number format"
             )
             .required("Mobile is required"),
         })

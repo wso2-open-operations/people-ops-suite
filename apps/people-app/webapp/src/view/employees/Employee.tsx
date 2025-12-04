@@ -27,7 +27,6 @@ import {
   Typography,
   Paper,
   useTheme,
-  alpha,
   StepConnector,
   stepConnectorClasses,
   StepIconProps,
@@ -281,7 +280,8 @@ export default function Employees() {
                   values.unitId && values.unitId > 0
                     ? values.unitId
                     : undefined,
-                continuousServiceRecord: values.continuousServiceRecord || undefined,
+                continuousServiceRecord:
+                  values.continuousServiceRecord || undefined,
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
                   fullName: values.personalInfo.fullName,
@@ -331,34 +331,34 @@ export default function Employees() {
             >
               {renderStepContent(activeStep)}
               <Box
+                mt={3}
+                width="100%"
                 display="flex"
-                justifyContent="space-between"
-                mt={4}
-                pt={2.5}
-                borderTop={`1px solid ${alpha(theme.palette.divider, 0.1)}`}
+                justifyContent="flex-end"
+                gap={2}
               >
+                {activeStep > 0 && (
+                  <Button
+                    startIcon={<ArrowBack />}
+                    sx={{ textTransform: "none" }}
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleBack}
+                  >
+                    Back
+                  </Button>
+                )}
                 <Button
-                  disabled={activeStep === 0}
-                  onClick={handleBack}
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<ArrowBack />}
-                  sx={{
-                    textTransform: "none",
-                  }}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  type="button"
-                  disabled={isSubmitting || createState === "loading"}
                   endIcon={
                     activeStep === EmployeeFormSteps.length - 1 ? null : (
                       <ArrowForward />
                     )
                   }
+                  sx={{ textTransform: "none" }}
+                  variant="contained"
+                  color="secondary"
+                  type="button"
+                  disabled={isSubmitting || createState === "loading"}
                   onClick={async () => {
                     const errors = await validateForm();
                     if (Object.keys(errors).length === 0) {
@@ -370,9 +370,6 @@ export default function Employees() {
                     } else {
                       setTouched(markAllFieldsTouched(errors));
                     }
-                  }}
-                  sx={{
-                    textTransform: "none",
                   }}
                 >
                   {createState === "loading"
