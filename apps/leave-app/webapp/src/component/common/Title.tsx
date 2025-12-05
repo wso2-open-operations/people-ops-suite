@@ -30,7 +30,7 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
       textAlign={{ xs: "center", md: "left" }}
       sx={{ color: theme.palette.text.primary, fontWeight: "600" }}
     >
-      <span style={{ color: theme.palette.primary.main, display: "inline" }}>{firstWord}</span>{" "}
+      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
       {secondWord}
     </Typography>
   );
