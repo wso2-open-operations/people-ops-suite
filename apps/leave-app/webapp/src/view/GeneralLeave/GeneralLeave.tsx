@@ -16,6 +16,7 @@
 
 import { Stack } from "@mui/material";
 
+import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
@@ -25,19 +26,21 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   return (
-    <Stack direction="column" width="100%" maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="2rem">
+    <Stack direction="column" gap="2rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="General" secondWord="Leave Submission" />
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        width="100%"
-        justifyContent={{ md: "space-between" }}
-        gap={{ xs: "2rem" }}
-      >
-        <LeaveDateSelection />
-        <LeaveSelection />
-      </Stack>
-      <NotifyPeople />
-      <AdditionalComment />
+      <FormContainer>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          width="100%"
+          justifyContent={{ md: "space-between" }}
+          gap={{ xs: "2rem" }}
+        >
+          <LeaveDateSelection />
+          <LeaveSelection />
+        </Stack>
+        <NotifyPeople />
+        <AdditionalComment />
+      </FormContainer>
     </Stack>
   );
 }

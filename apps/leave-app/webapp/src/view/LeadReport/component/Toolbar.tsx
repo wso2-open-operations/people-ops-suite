@@ -14,19 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack } from "@mui/material";
+import { Stack, useTheme } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
+import CheckBox from "@root/src/component/common/CheckBox";
+import CustomButton from "@root/src/component/common/CustomButton";
 import Title from "@root/src/component/common/Title";
-import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
-import { rows } from "../MockData";
-import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
-
-export default function FunctionalLeadViewTab() {
+export default function Toolbar() {
   return (
-    <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Functional" secondWord="Lead View" />
-      <ApprovalHistoryTable rows={rows} />
+    <Stack direction="row" width="100%" alignItems="center">
+      <Title firstWord="Lead" secondWord="Report" />
+
+      <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
+        <DatePicker label="From" format="ddd, d MMM" />
+        <DatePicker label="To" format="ddd, d MMM" />
+        <CheckBox label="Include indirect reports" />
+        <CustomButton label="Fetch Report" />
+      </Stack>
     </Stack>
   );
 }

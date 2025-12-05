@@ -14,9 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Button, Checkbox, Stack, TextField, Typography, useTheme } from "@mui/material";
+import { Checkbox, Stack, TextField, Typography, useTheme } from "@mui/material";
 
 import { useState } from "react";
+
+import CustomButton from "@root/src/component/common/CustomButton";
 
 export default function AdditionalComment() {
   const theme = useTheme();
@@ -28,7 +30,9 @@ export default function AdditionalComment() {
 
   return (
     <Stack gap="1rem">
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>Additional Comments</Typography>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+        Additional Comments
+      </Typography>
       <TextField label="Add a comment..." multiline minRows={3} fullWidth variant="outlined" />
 
       <Stack
@@ -44,21 +48,16 @@ export default function AdditionalComment() {
         </Stack>
 
         <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap="1rem">
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }} textAlign="center">
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary }}
+            textAlign="center"
+          >
             {isPublicComment
               ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
-          <Button sx={{ 
-            backgroundColor: theme.palette.primary.main, 
-            color: theme.palette.common.white, 
-            px: "2rem",
-            "&:hover": {
-              backgroundColor: theme.palette.primary.dark,
-            }
-          }}>
-            Submit
-          </Button>
+          <CustomButton label="Submit" />
         </Stack>
       </Stack>
     </Stack>

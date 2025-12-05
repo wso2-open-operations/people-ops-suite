@@ -14,24 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Typography, useTheme } from "@mui/material";
+import { Button } from "@mui/material";
 
-interface TitleProps {
-  firstWord: string;
-  secondWord: string;
+interface CustomButtonProps {
+  label: string;
 }
-
-export default function Title({ firstWord, secondWord }: TitleProps) {
-  const theme = useTheme();
-
+export default function CustomButton({ label }: CustomButtonProps) {
   return (
-    <Typography
-      variant="h4"
-      textAlign={{ xs: "center", md: "left" }}
-      sx={{ color: theme.palette.text.primary, fontWeight: "600" }}
+    <Button
+      type="submit"
+      variant="contained"
+      color="primary"
+      sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
     >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
-      {secondWord}
-    </Typography>
+      {label}
+    </Button>
   );
 }
