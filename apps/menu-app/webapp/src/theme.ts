@@ -124,11 +124,11 @@ export const tokens = (mode: PaletteMode) => {
 
           // Navigation colors - Dark mode
           navigation: {
-            text: "#ffffff8f",
-            textClicked: "#ffffff",
-            hover: "#ffffffd9",
-            hoverBg: "#ffffff0a",
-            clickedBg: "#ffffff14",
+            text: colors.neutral["800"],
+            hover:  colors.neutral["400"],
+            textClicked: colors.neutral.white,
+            hoverBg: colors.neutral["1800"],
+            clickedBg: colors.primary["1200"],
             border: colors.neutral["1700"],
           },
 
@@ -139,7 +139,7 @@ export const tokens = (mode: PaletteMode) => {
               hover: colors.neutral["1900"],
             },
             secondary: {
-              active: colors.secondary["2000"],
+              active: colors.neutral["1900"],
               hover: colors.secondary["1700"],
             },
             territory: {
@@ -162,7 +162,7 @@ export const tokens = (mode: PaletteMode) => {
               disabled: "#0A475C96",
             },
             territory: {
-              active: colors.secondary["1900"],
+              active: colors.neutral["1800"],
             },
           },
         }
@@ -214,7 +214,7 @@ export const tokens = (mode: PaletteMode) => {
               hover: colors.neutral.white,
             },
             secondary: {
-              active: colors.secondary["1500"],
+              active: colors.neutral["1900"],
               hover: "#FFF",
             },
             territory: {
@@ -237,18 +237,18 @@ export const tokens = (mode: PaletteMode) => {
               disabled: "#00CEFF96",
             },
             territory: {
-              active: colors.secondary["1600"],
+              active: colors.neutral["1800"],
             },
           },
 
           // Navigation colors - Light mode
           navigation: {
-            text: "#ffffffbd",
-            textClicked: "#ffffff",
-            hover: "#ffffffd9",
-            hoverBg: "#ffffff0a",
-            clickedBg: colors.secondary["1600"],
-            border: "#2F454C",
+            text: colors.neutral["800"],
+            hover:  colors.neutral["400"],
+            textClicked: colors.neutral.white,
+            hoverBg: colors.neutral["1800"],
+            clickedBg: colors.primary["1200"],
+            border: colors.neutral["1700"],
           },
         }),
   };
