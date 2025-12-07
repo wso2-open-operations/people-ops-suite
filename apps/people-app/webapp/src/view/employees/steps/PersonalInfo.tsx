@@ -26,7 +26,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useFormikContext, FieldArray } from "formik";
+import { useFormikContext, FieldArray, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import {
   PersonOutline,
@@ -38,10 +38,7 @@ import {
   RemoveCircleOutline,
 } from "@mui/icons-material";
 import { EmployeeTitle, Countries } from "@root/src/config/constant";
-import {
-  CreateEmployeeFormValues,
-  EmergencyContact,
-} from "@root/src/types/types";
+import { CreateEmployeeFormValues } from "@root/src/types/types";
 import dayjs from "dayjs";
 
 export const personalInfoValidationSchema = Yup.object().shape({
@@ -259,26 +256,6 @@ export default function PersonalInfoStep() {
     []
   );
 
-  const getEmergencyContactError = useCallback(
-    (index: number, field: keyof EmergencyContact) => {
-      const contactErrors = errors.personalInfo?.emergencyContacts?.[index];
-      const contactTouched = touched.personalInfo?.emergencyContacts?.[index];
-
-      if (
-        contactErrors &&
-        typeof contactErrors === "object" &&
-        contactTouched
-      ) {
-        return contactErrors[field] as string | undefined;
-      }
-      return undefined;
-    },
-    [
-      errors.personalInfo?.emergencyContacts,
-      touched.personalInfo?.emergencyContacts,
-    ]
-  );
-
   return (
     <Box sx={{ width: "100%", px: 0 }}>
       <Box sx={{ mt: 5 }}>
@@ -438,13 +415,12 @@ export default function PersonalInfoStep() {
           </Grid>
         </Grid>
       </Box>
-
       <Box sx={{ mt: 5 }}>
         <SectionHeader icon={icons.emergency} title="Emergency Contacts" />
         <FieldArray name="personalInfo.emergencyContacts">
           {({ push, remove }) => (
             <>
-              {values.personalInfo.emergencyContacts.map((contact, index) => (
+              {values.personalInfo.emergencyContacts.map((_, index) => (
                 <Box
                   key={index}
                   sx={{
@@ -456,66 +432,35 @@ export default function PersonalInfoStep() {
                   }}
                 >
                   <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.name`}
-                        label="Name"
-                        value={contact.name || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(getEmergencyContactError(index, "name"))}
-                        helperText={getEmergencyContactError(index, "name")}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.relationship`}
-                        label="Relationship"
-                        value={contact.relationship || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "relationship")
-                        )}
-                        helperText={getEmergencyContactError(
-                          index,
-                          "relationship"
-                        )}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.telephone`}
-                        label="Telephone"
-                        value={contact.telephone || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "telephone")
-                        )}
-                        helperText={getEmergencyContactError(
-                          index,
-                          "telephone"
-                        )}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.mobile`}
-                        label="Mobile"
-                        value={contact.mobile || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "mobile")
-                        )}
-                        helperText={getEmergencyContactError(index, "mobile")}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
+                    {["name", "relationship", "telephone", "mobile"].map(
+                      (field) => (
+                        <Grid item xs={12} sm={6} md={3} key={field}>
+                          <Field
+                            as={TextField}
+                            fullWidth
+                            required
+                            name={`personalInfo.emergencyContacts.${index}.${field}`}
+                            label={
+                              field.charAt(0).toUpperCase() + field.slice(1)
+                            }
+                            sx={textFieldSx}
+                          />
+                          <ErrorMessage
+                            name={`personalInfo.emergencyContacts.${index}.${field}`}
+                          >
+                            {(msg) => (
+                              <Typography
+                                color="error"
+                                variant="caption"
+                                sx={{ ml: 2, display: "block", mt: 0.5 }}
+                              >
+                                {msg}
+                              </Typography>
+                            )}
+                          </ErrorMessage>
+                        </Grid>
+                      )
+                    )}
                   </Grid>
                   <Box
                     sx={{
@@ -525,26 +470,14 @@ export default function PersonalInfoStep() {
                       mt: 2,
                     }}
                   >
-                    <IconButton
-                      onClick={() => remove(index)}
-                      disabled={
-                        values.personalInfo.emergencyContacts.length === 1
-                      }
-                      sx={{
-                        color: theme.palette.error.main,
-                        "&:hover": {
-                          backgroundColor: alpha(theme.palette.error.main, 0.1),
-                        },
-                        "&.Mui-disabled": {
-                          color: alpha(theme.palette.action.disabled, 0.3),
-                        },
-                      }}
-                    >
-                      <RemoveCircleOutline />
-                    </IconButton>
-                    {index ===
-                      values.personalInfo.emergencyContacts.length - 1 &&
-                      values.personalInfo.emergencyContacts.length < 4 && (
+                    {values.personalInfo.emergencyContacts.length > 1 && (
+                      <IconButton onClick={() => remove(index)} color="error">
+                        <RemoveCircleOutline />
+                      </IconButton>
+                    )}
+                    {values.personalInfo.emergencyContacts.length < 4 &&
+                      index ===
+                        values.personalInfo.emergencyContacts.length - 1 && (
                         <IconButton
                           onClick={() =>
                             push({
@@ -554,15 +487,7 @@ export default function PersonalInfoStep() {
                               mobile: "",
                             })
                           }
-                          sx={{
-                            color: theme.palette.secondary.contrastText,
-                            "&:hover": {
-                              backgroundColor: alpha(
-                                theme.palette.secondary.contrastText,
-                                0.1
-                              ),
-                            },
-                          }}
+                          sx={{ color: theme.palette.secondary.contrastText }}
                         >
                           <AddCircleOutline />
                         </IconButton>
@@ -577,44 +502,9 @@ export default function PersonalInfoStep() {
                     variant="body2"
                     sx={{ mt: 1, ml: 2 }}
                   >
-                    {errors.personalInfo.emergencyContacts}
+                    {errors.personalInfo?.emergencyContacts}
                   </Typography>
                 )}
-              {values.personalInfo.emergencyContacts.length === 0 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <IconButton
-                    onClick={() =>
-                      push({
-                        name: "",
-                        relationship: "",
-                        telephone: "",
-                        mobile: "",
-                      })
-                    }
-                    sx={{
-                      color: theme.palette.secondary.contrastText,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      px: 2,
-                      py: 1,
-                      borderRadius: 2,
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: alpha(
-                          theme.palette.secondary.contrastText,
-                          0.1
-                        ),
-                      },
-                    }}
-                  >
-                    <AddCircleOutline />
-                    <Typography fontWeight={500}>
-                      Add Emergency Contact
-                    </Typography>
-                  </IconButton>
-                </Box>
-              )}
             </>
           )}
         </FieldArray>
