@@ -26,7 +26,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useFormikContext, FieldArray, Field, ErrorMessage } from "formik";
+import { useFormikContext, FieldArray, Field, getIn } from "formik";
 import * as Yup from "yup";
 import {
   PersonOutline,
@@ -433,33 +433,27 @@ export default function PersonalInfoStep() {
                 >
                   <Grid container spacing={3}>
                     {["name", "relationship", "telephone", "mobile"].map(
-                      (field) => (
-                        <Grid item xs={12} sm={6} md={3} key={field}>
-                          <Field
-                            as={TextField}
-                            fullWidth
-                            required
-                            name={`personalInfo.emergencyContacts.${index}.${field}`}
-                            label={
-                              field.charAt(0).toUpperCase() + field.slice(1)
-                            }
-                            sx={textFieldSx}
-                          />
-                          <ErrorMessage
-                            name={`personalInfo.emergencyContacts.${index}.${field}`}
-                          >
-                            {(msg) => (
-                              <Typography
-                                color="error"
-                                variant="caption"
-                                sx={{ ml: 2, display: "block", mt: 0.5 }}
-                              >
-                                {msg}
-                              </Typography>
-                            )}
-                          </ErrorMessage>
-                        </Grid>
-                      )
+                      (field) => {
+                        const fieldName = `personalInfo.emergencyContacts.${index}.${field}`;
+                        const fieldError = getIn(errors, fieldName);
+                        const fieldTouched = getIn(touched, fieldName);
+                        return (
+                          <Grid item xs={12} sm={6} md={3} key={field}>
+                            <Field
+                              as={TextField}
+                              fullWidth
+                              required
+                              name={fieldName}
+                              label={
+                                field.charAt(0).toUpperCase() + field.slice(1)
+                              }
+                              sx={textFieldSx}
+                              error={fieldTouched && Boolean(fieldError)}
+                              helperText={fieldTouched && fieldError}
+                            />
+                          </Grid>
+                        );
+                      }
                     )}
                   </Grid>
                   <Box
