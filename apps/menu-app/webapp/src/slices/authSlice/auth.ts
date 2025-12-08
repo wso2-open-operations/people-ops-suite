@@ -26,6 +26,7 @@ import {
 import { PRIVILEGE_EMPLOYEE, PRIVILEGE_ADMIN, SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
+import { userApi } from "@root/src/services/user.api";
 
 const initialState: AuthState = {
   status: State.idle,
@@ -40,9 +41,9 @@ export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
   (_, { getState, dispatch, rejectWithValue }) => {
     const state = getState() as RootState;
-    const userInfoQuery = state.userApi?.queries?.['getUserInfo(undefined)'];
-    
-    if (!userInfoQuery || userInfoQuery.status === 'rejected') {
+
+    const user = userApi.endpoints.getUserInfo.select()(state);
+    if (!user || user.status === 'rejected') {
       dispatch(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
@@ -52,8 +53,7 @@ export const loadPrivileges = createAsyncThunk(
       return rejectWithValue("Failed to fetch user info");
     }
 
-    const userInfo = userInfoQuery.data as UserInfoInterface | undefined;
-    
+    const userInfo = user.data as UserInfoInterface | undefined;
     if (!userInfo) {
       dispatch(
         enqueueSnackbarMessage({
