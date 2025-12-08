@@ -18,8 +18,10 @@ export const setTokens = (
 const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
-    headers.set("Authorization", `Bear${ACCESS_TOKEN}`);
-    headers.set("x-jwt-assertion", ACCESS_TOKEN);
+    if (ACCESS_TOKEN) {
+      headers.set("Authorization", `Bear${ACCESS_TOKEN}`);
+      headers.set("x-jwt-assertion", ACCESS_TOKEN);
+    }
   },
 });
 
