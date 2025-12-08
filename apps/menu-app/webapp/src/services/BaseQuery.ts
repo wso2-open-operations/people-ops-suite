@@ -19,7 +19,7 @@ const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
-      headers.set("Authorization", `Bear${ACCESS_TOKEN}`);
+      headers.set("Authorization", `Bearer${ACCESS_TOKEN}`);
       headers.set("x-jwt-assertion", ACCESS_TOKEN);
     }
   },
@@ -43,7 +43,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
           ACCESS_TOKEN = refreshResult.accessToken;
           result = await baseQuery(args, api, extraOptions);
         } else {
-          // logout
+          // TODO: Implement logout logic - redirect to login or trigger auth context logout
+          console.error("Token refresh failed - no access token returned");
         }
       } catch (error) {
         console.error("Error refreshing token:", error);
