@@ -214,7 +214,7 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: theme.palette.customNavigation.clickedBg,
+                  backgroundColor: theme.palette.neutral["1700"],
                 }}
               />
 

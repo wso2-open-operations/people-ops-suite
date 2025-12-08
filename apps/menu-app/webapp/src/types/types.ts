@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { NonIndexRouteObject } from "react-router-dom";
+import type { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 export type NavState = {
   hovered: number | null;
@@ -27,6 +27,47 @@ export enum State {
   success = "success",
   loading = "loading",
   idle = "idle",
+}
+
+export enum Role {
+  ADMIN = "ADMIN",
+  EMPLOYEE = "EMPLOYEE",
+}
+
+// Auth-related types
+export interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
+  groups?: string[];
+}
+
+export interface AuthState {
+  status: State;
+  mode: "active" | "maintenance";
+  statusMessage: string | null;
+  userInfo: BasicUserInfo | null;
+  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
+  roles: Role[];
+}
+
+export interface AuthData {
+  userInfo: BasicUserInfo;
+  decodedIdToken: ExtendedDecodedIDTokenPayload;
+}
+
+export interface UserInfoInterface {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  jobRole: string;
+  privileges: number[];
+}
+
+export interface UserState {
+  state: State;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  userInfo: UserInfoInterface | null;
 }
 
 export enum ConfirmationType {
@@ -53,4 +94,18 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+}
+
+export interface MetaData {
+  title: string;
+  body: string;
+}
+
+export interface Menu {
+  date: string;
+  breakfast: MetaData;
+  juice: MetaData;
+  lunch: MetaData;
+  dessert: MetaData;
+  snack: MetaData;
 }
