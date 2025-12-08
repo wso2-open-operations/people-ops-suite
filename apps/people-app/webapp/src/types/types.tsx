@@ -105,7 +105,14 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     postalCode: null,
     country: null,
     nationality: "",
-    emergencyContacts: [],
+    emergencyContacts: [
+      {
+        name: "",
+        relationship: "",
+        telephone: "",
+        mobile: "",
+      },
+    ],
   },
   workEmail: "",
   epf: "",

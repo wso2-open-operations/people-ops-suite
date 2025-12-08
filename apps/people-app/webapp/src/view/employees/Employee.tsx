@@ -195,10 +195,10 @@ export default function Employees() {
           maxWidth: 1600,
           borderRadius: 3,
           boxShadow: 2,
-          backgroundColor: theme.palette.background.default,
+          backgroundColor: theme.palette.background.paper,
         }}
       >
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 2.5 }}>
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Add Employee
           </Typography>
@@ -216,7 +216,7 @@ export default function Employees() {
           connector={<OrangeConnector />}
           sx={{
             mb: 2,
-            py: 0.5,
+            py: 0,
           }}
         >
           {EmployeeFormSteps.map((label) => (

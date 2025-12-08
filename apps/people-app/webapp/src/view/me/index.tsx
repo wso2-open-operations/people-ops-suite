@@ -31,6 +31,7 @@ import {
   FormikValues,
   FormikErrors,
   FieldArray,
+  getIn,
 } from "formik";
 import { array, object, string } from "yup";
 import {
@@ -104,13 +105,13 @@ const FieldInput = ({
       label={labelWithAsterisk}
       name={name}
       type={type}
-      value={values[name] || ""}
+      value={getIn(values, name) || ""}
       onChange={handleChange}
       onBlur={handleBlur}
       disabled={isSavingChanges}
-      error={touched[name] && Boolean(errors[name])}
+      error={getIn(touched, name) && Boolean(getIn(errors, name))}
       helperText={
-        touched[name] && errors[name] ? String(errors[name]) : undefined
+        getIn(touched, name) && getIn(errors, name) ? String(getIn(errors, name)) : undefined
       }
       variant="outlined"
       InputProps={{ style: { fontSize: 15 } }}
@@ -723,164 +724,107 @@ export default function Me() {
                                 No emergency contacts added yet.
                               </Typography>
                             ) : (
-                              values.emergencyContacts.map((contact, index) => (
+                              values.emergencyContacts.map((_, index) => (
                                 <Grid
                                   container
-                                  spacing={2}
+                                  rowSpacing={1.5}
+                                  columnSpacing={3}
                                   key={index}
-                                  alignItems="center"
                                   sx={{ mb: 2 }}
                                 >
-                                  <Grid item xs={12} sm={3}>
-                                    <TextField
-                                      label="Name"
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <FieldInput
                                       name={`emergencyContacts.${index}.name`}
-                                      value={contact.name ?? ""}
-                                      onChange={handleChange}
-                                      onBlur={handleBlur}
-                                      fullWidth
-                                      size="medium"
-                                      disabled={isSavingChanges}
-                                      error={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.name &&
-                                        Boolean(
-                                          (errors.emergencyContacts as any)?.[
-                                            index
-                                          ]?.name
-                                        )
-                                      }
-                                      helperText={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.name &&
-                                        (errors.emergencyContacts as any)?.[
-                                          index
-                                        ]?.name
-                                      }
+                                      label="Name"
+                                      values={values}
+                                      handleChange={handleChange}
+                                      handleBlur={handleBlur}
+                                      errors={errors}
+                                      touched={touched}
+                                      isSavingChanges={isSavingChanges}
+                                      isRequired
                                     />
                                   </Grid>
-                                  <Grid item xs={12} sm={3}>
-                                    <TextField
-                                      label="Relationship"
+
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <FieldInput
                                       name={`emergencyContacts.${index}.relationship`}
-                                      value={contact.relationship ?? ""}
-                                      onChange={handleChange}
-                                      onBlur={handleBlur}
-                                      fullWidth
-                                      size="medium"
-                                      disabled={isSavingChanges}
-                                      error={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.relationship &&
-                                        Boolean(
-                                          (errors.emergencyContacts as any)?.[
-                                            index
-                                          ]?.relationship
-                                        )
-                                      }
-                                      helperText={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.relationship &&
-                                        (errors.emergencyContacts as any)?.[
-                                          index
-                                        ]?.relationship
-                                      }
+                                      label="Relationship"
+                                      values={values}
+                                      handleChange={handleChange}
+                                      handleBlur={handleBlur}
+                                      errors={errors}
+                                      touched={touched}
+                                      isSavingChanges={isSavingChanges}
+                                      isRequired
                                     />
                                   </Grid>
-                                  <Grid item xs={12} sm={2.5}>
-                                    <TextField
-                                      label="Telephone"
+
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <FieldInput
                                       name={`emergencyContacts.${index}.telephone`}
-                                      value={contact.telephone ?? ""}
-                                      onChange={handleChange}
-                                      onBlur={handleBlur}
-                                      fullWidth
-                                      size="medium"
-                                      disabled={isSavingChanges}
-                                      error={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.telephone &&
-                                        Boolean(
-                                          (errors.emergencyContacts as any)?.[
-                                            index
-                                          ]?.telephone
-                                        )
-                                      }
-                                      helperText={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.telephone &&
-                                        (errors.emergencyContacts as any)?.[
-                                          index
-                                        ]?.telephone
-                                      }
+                                      label="Telephone"
+                                      type="tel"
+                                      values={values}
+                                      handleChange={handleChange}
+                                      handleBlur={handleBlur}
+                                      errors={errors}
+                                      touched={touched}
+                                      isSavingChanges={isSavingChanges}
+                                      isRequired
                                     />
                                   </Grid>
-                                  <Grid item xs={12} sm={2.5}>
-                                    <TextField
-                                      label="Mobile"
-                                      name={`emergencyContacts.${index}.mobile`}
-                                      value={contact.mobile ?? ""}
-                                      onChange={handleChange}
-                                      onBlur={handleBlur}
-                                      fullWidth
-                                      size="medium"
-                                      disabled={isSavingChanges}
-                                      error={Boolean(
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.mobile &&
-                                          (errors.emergencyContacts as any)?.[
-                                            index
-                                          ]?.mobile
-                                      )}
-                                      helperText={
-                                        (touched.emergencyContacts as any)?.[
-                                          index
-                                        ]?.mobile &&
-                                        (errors.emergencyContacts as any)?.[
-                                          index
-                                        ]?.mobile
-                                      }
-                                    />
-                                  </Grid>
-                                  <Grid item sx={{ width: "32px" }}>
-                                    <Tooltip
-                                      title={
-                                        (values.emergencyContacts?.length ??
-                                          0) <= 1
-                                          ? "At least one emergency contact is required"
-                                          : "Remove contact"
-                                      }
+
+                                  <Grid item xs={12} sm={6} md={3}>
+                                    <Box
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                      }}
                                     >
-                                      <span>
-                                        <IconButton
-                                          color="error"
-                                          size="small"
-                                          onClick={() => {
-                                            if (
+                                      <FieldInput
+                                        name={`emergencyContacts.${index}.mobile`}
+                                        label="Mobile"
+                                        type="tel"
+                                        values={values}
+                                        handleChange={handleChange}
+                                        handleBlur={handleBlur}
+                                        errors={errors}
+                                        touched={touched}
+                                        isSavingChanges={isSavingChanges}
+                                        isRequired
+                                      />
+
+                                      <Tooltip
+                                        title={
+                                          (values.emergencyContacts?.length ??
+                                            0) <= 1
+                                            ? "At least one emergency contact is required"
+                                            : "Remove contact"
+                                        }
+                                      >
+                                        <span>
+                                          <IconButton
+                                            color="error"
+                                            size="small"
+                                            onClick={() =>
+                                              (values.emergencyContacts
+                                                ?.length ?? 0) > 1 &&
+                                              remove(index)
+                                            }
+                                            disabled={
+                                              isSavingChanges ||
                                               (values.emergencyContacts
                                                 ?.length ?? 0) <= 1
-                                            ) {
-                                              return;
                                             }
-                                            remove(index);
-                                          }}
-                                          disabled={
-                                            isSavingChanges ||
-                                            (values.emergencyContacts?.length ??
-                                              0) <= 1
-                                          }
-                                        >
-                                          <RemoveCircleOutlineIcon fontSize="small" />
-                                        </IconButton>
-                                      </span>
-                                    </Tooltip>
+                                            sx={{ flexShrink: 0 }}
+                                          >
+                                            <RemoveCircleOutlineIcon fontSize="small" />
+                                          </IconButton>
+                                        </span>
+                                      </Tooltip>
+                                    </Box>
                                   </Grid>
                                 </Grid>
                               ))
