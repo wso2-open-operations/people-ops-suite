@@ -19,22 +19,29 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
-import appConfigReducer from "@slices/configSlice/config";
-import userReducer from "@slices/userSlice/user";
-import { menuApi } from "../services/menu";
+
+// RTK Query APIs
+import { menuApi } from "../services/menu.api";
+import { userApi } from "../services/user.api";
+import { configApi } from "../services/config.api";
 
 enableMapSet();
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    user: userReducer,
     common: commonReducer,
-    appConfig: appConfigReducer,
-    [menuApi.reducerPath]: menuApi.reducer
+    
+    // RTK Query API reducers
+    [menuApi.reducerPath]: menuApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
+    [configApi.reducerPath]: configApi.reducer,
   },
   middleware: (getDefaultMiddleware) => 
-    getDefaultMiddleware().concat(menuApi.middleware),
+    getDefaultMiddleware()
+      .concat(menuApi.middleware)
+      .concat(userApi.middleware)
+      .concat(configApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
