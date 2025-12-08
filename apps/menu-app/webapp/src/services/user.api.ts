@@ -11,10 +11,6 @@ export const userApi = createApi({
   baseQuery: baseQueryWithRetry,
   tagTypes: ["User"],
   endpoints: (builder) => ({
-    /**
-     * Fetch current user information
-     * Automatically caches and deduplicates requests
-     */
     getUserInfo: builder.query<UserInfoInterface, void>({
       query: () => AppConfig.serviceUrls.userInfo,
       providesTags: ["User"],

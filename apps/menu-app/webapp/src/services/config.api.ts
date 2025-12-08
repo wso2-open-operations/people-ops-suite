@@ -19,10 +19,6 @@ export const configApi = createApi({
   baseQuery: baseQueryWithRetry,
   tagTypes: ["Config"],
   endpoints: (builder) => ({
-    /**
-     * Fetch application configuration
-     * Automatically caches and deduplicates requests
-     */
     getAppConfig: builder.query<AppConfigInfo, void>({
       query: () => AppConfig.serviceUrls.appConfig,
       providesTags: ["Config"],

@@ -10,9 +10,6 @@ export const menuApi = createApi({
   baseQuery: baseQueryWithRetry,
   tagTypes: ["Menu"],
   endpoints: (builder) => ({
-    /**
-     * Fetch application menu structure
-     */
     getMenu: builder.query<Menu, void>({
       query: () => "menu",
       providesTags: ["Menu"],
