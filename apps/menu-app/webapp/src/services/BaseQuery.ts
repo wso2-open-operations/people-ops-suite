@@ -7,7 +7,7 @@ import { SERVICE_BASE_URL } from "../config/config";
 let ACCESS_TOKEN: string;
 let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
 
-export const setToken = (
+export const setTokens = (
   accessToken: string,
   refreshCallback: () => Promise<{ accessToken: string }>,
 ) => {
