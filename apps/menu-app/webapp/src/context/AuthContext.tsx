@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
@@ -27,6 +26,8 @@ import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { APIService } from "@utils/apiService";
+
+import { setTokens } from "../services/menu";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -102,6 +103,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     );
 
     new APIService(idToken, refreshToken);
+    setTokens(idToken, refreshToken);
 
     await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
@@ -141,22 +143,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = async (): Promise<{ accessToken: string }> => {  
+  const refreshToken = async (): Promise<{ accessToken: string }> => {
     if (state.isAuthenticated) {
       const accessToken = await getIDToken();
-      return {accessToken}
+      return { accessToken };
     }
 
-    try {  
-      await refreshAccessToken();  
-      const accessToken = await getAccessToken();  
-      return { accessToken };  
-    } catch (error) {  
-      console.error("Token refresh failed: ",error)
-      await appSignOut();  
-      throw error;  
-    }  
-  };  
+    try {
+      await refreshAccessToken();
+      const accessToken = await getAccessToken();
+      return { accessToken };
+    } catch (error) {
+      console.error("Token refresh failed: ", error);
+      await appSignOut();
+      throw error;
+    }
+  };
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
