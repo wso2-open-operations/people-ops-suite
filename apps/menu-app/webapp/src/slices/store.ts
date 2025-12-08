@@ -21,9 +21,9 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 
 // RTK Query APIs
-import { menuApi } from "../services/menu.api";
-import { userApi } from "../services/user.api";
-import { configApi } from "../services/config.api";
+import { menuApi } from "@services/menu.api";
+import { userApi } from "@services/user.api";
+import { configApi } from "@services/config.api";
 
 enableMapSet();
 
