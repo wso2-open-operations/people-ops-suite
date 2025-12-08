@@ -23,13 +23,17 @@ import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
-import { useGetUserInfoQuery } from "@root/src/services/user.api";
+import { userApi } from "@services/user.api";
+import { useAppSelector } from "@slices/store";
 
 const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-  const {data: user} = useGetUserInfoQuery()
+  
+  const user = useAppSelector((state) => 
+    userApi.endpoints.getUserInfo.select()(state)?.data
+  );
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
