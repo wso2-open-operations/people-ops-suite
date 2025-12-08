@@ -14,54 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { State } from "@/types/types";
+import { 
+  State, 
+  Role, 
+  AuthState, 
+  AuthData, 
+  UserInfoInterface 
+} from "@/types/types";
 import { PRIVILEGE_EMPLOYEE, PRIVILEGE_ADMIN, SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
-
-export enum Role {
-  ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
-}
-
-// Custom extended interface
-interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
-  groups?: string[];
-}
-
-interface AuthState {
-  status: State;
-  mode: "active" | "maintenance";
-  statusMessage: string | null;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-interface AuthData {
-  userInfo: BasicUserInfo;
-  decodedIdToken: ExtendedDecodedIDTokenPayload;
-}
-
-export interface UserState {
-  state: State;
-  stateMessage: string | null;
-  errorMessage: string | null;
-  userInfo: UserInfoInterface | null;
-}
-
-export interface UserInfoInterface {
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
-  jobRole: string;
-  privileges: number[];
-}
 
 const initialState: AuthState = {
   status: State.idle,
@@ -75,17 +39,31 @@ const initialState: AuthState = {
 export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
   (_, { getState, dispatch, rejectWithValue }) => {
-    const { userInfo, state, errorMessage } = (getState() as { user: UserState }).user;
-
-    if (state === State.failed) {
+    const state = getState() as RootState;
+    const userInfoQuery = state.userApi?.queries?.['getUserInfo(undefined)'];
+    
+    if (!userInfoQuery || userInfoQuery.status === 'rejected') {
       dispatch(
         enqueueSnackbarMessage({
           message: SnackMessage.error.fetchPrivileges,
           type: "error",
         }),
       );
-      return rejectWithValue(errorMessage);
+      return rejectWithValue("Failed to fetch user info");
     }
+
+    const userInfo = userInfoQuery.data as UserInfoInterface | undefined;
+    
+    if (!userInfo) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: SnackMessage.error.fetchPrivileges,
+          type: "error",
+        }),
+      );
+      return rejectWithValue("User info not available");
+    }
+
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
