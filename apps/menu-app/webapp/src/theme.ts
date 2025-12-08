@@ -125,7 +125,7 @@ export const tokens = (mode: PaletteMode) => {
           // Navigation colors - Dark mode
           navigation: {
             text: colors.neutral["800"],
-            hover:  colors.neutral["400"],
+            hover: colors.neutral["400"],
             textClicked: colors.neutral.white,
             hoverBg: colors.neutral["1800"],
             clickedBg: colors.primary["1200"],
@@ -244,7 +244,7 @@ export const tokens = (mode: PaletteMode) => {
           // Navigation colors - Light mode
           navigation: {
             text: colors.neutral["800"],
-            hover:  colors.neutral["400"],
+            hover: colors.neutral["400"],
             textClicked: colors.neutral.white,
             hoverBg: colors.neutral["1800"],
             clickedBg: colors.primary["1200"],

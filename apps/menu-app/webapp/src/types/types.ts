@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -56,8 +55,8 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
 }
 
 export interface MetaData {
-  title: string,
-  body: string
+  title: string;
+  body: string;
 }
 
 export interface Menu {

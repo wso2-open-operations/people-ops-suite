@@ -14,7 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { useGetMenuQuery } from "@root/src/services/menu.api";
+
 export default function Home() {
+
+  const {data, error, isLoading} = useGetMenuQuery();
+
+  console.log("Data : ", data);
+
   return (
     <div>
       <div>Home</div>
