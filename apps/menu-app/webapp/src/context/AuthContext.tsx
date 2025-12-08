@@ -104,7 +104,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       }),
     );
 
-    setTokens(idToken, refreshToken);
+    setTokens(idToken, refreshToken, appSignOut);
     await triggerGetUserInfo();
 
     await dispatch(loadPrivileges());
