@@ -6,13 +6,16 @@ import { SERVICE_BASE_URL } from "../config/config";
 
 let ACCESS_TOKEN: string;
 let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
+let LOGOUT_CALLBACK: () => void
 
 export const setTokens = (
   accessToken: string,
   refreshCallback: () => Promise<{ accessToken: string }>,
+  logoutCallBack: () => void
 ) => {
   ACCESS_TOKEN = accessToken;
   REFRESH_TOKEN_CALLBACK = refreshCallback;
+  LOGOUT_CALLBACK = logoutCallBack;
 };
 
 const baseQuery = fetchBaseQuery({
@@ -43,8 +46,8 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
           ACCESS_TOKEN = refreshResult.accessToken;
           result = await baseQuery(args, api, extraOptions);
         } else {
-          // TODO: Implement logout logic - redirect to login or trigger auth context logout
           console.error("Token refresh failed - no access token returned");
+          LOGOUT_CALLBACK();
         }
       } catch (error) {
         console.error("Error refreshing token:", error);
