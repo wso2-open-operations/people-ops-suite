@@ -54,3 +54,17 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   bottomNav?: boolean;
   element?: React.ReactNode;
 }
+
+export interface MetaData {
+  title: string,
+  body: string
+}
+
+export interface Menu {
+  date: string;
+  breakfast: MetaData;
+  juice: MetaData;
+  lunch: MetaData;
+  dessert: MetaData;
+  snack: MetaData;
+}
