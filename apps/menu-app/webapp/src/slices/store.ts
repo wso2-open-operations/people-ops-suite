@@ -21,6 +21,7 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import userReducer from "@slices/userSlice/user";
+import { menuApi } from "../services/menu";
 
 enableMapSet();
 
@@ -30,8 +31,10 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     appConfig: appConfigReducer,
+    [menuApi.reducerPath]: menuApi.reducer
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
+  middleware: (getDefaultMiddleware) => 
+    getDefaultMiddleware().concat(menuApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
