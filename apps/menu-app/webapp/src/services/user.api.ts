@@ -1,19 +1,10 @@
 // RTK Query API for user-related endpoints
 import { createApi } from "@reduxjs/toolkit/query/react";
 
+import { UserInfoInterface } from "@/types/types";
 import { AppConfig } from "@config/config";
 
 import { baseQueryWithRetry } from "./BaseQuery";
-
-export interface UserInfoInterface {
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
-  jobRole: string;
-  privileges: number[];
-}
 
 export const userApi = createApi({
   reducerPath: "userApi",
