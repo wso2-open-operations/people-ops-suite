@@ -24,10 +24,9 @@ import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
-import { getUserInfo } from "@slices/userSlice/user";
-import { APIService } from "@utils/apiService";
 
-import { setTokens } from "../services/BaseQuery";
+import { setTokens } from "@services/BaseQuery";
+import { useLazyGetUserInfoQuery } from "@services/user.api";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -54,9 +53,18 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const dispatch = useAppDispatch();
 
+  // useLazyGetUserInfoQuery returns a trigger function that can be called manually
+  const [triggerGetUserInfo] = useLazyGetUserInfoQuery();
+
   const onPrompt = () => {
     appState === AppState.Authenticated && setSessionWarningOpen(true);
   };
+
+  useEffect(() => {
+    if (!localStorage.getItem(redirectUrl)) {
+      localStorage.setItem(redirectUrl, window.location.href.replace(window.location.origin, ""));
+    }
+  }, []);
 
   const { activate } = useIdleTimer({
     onPrompt,
@@ -82,12 +90,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     state,
   } = useAuthContext();
 
-  useEffect(() => {
-    if (!localStorage.getItem(redirectUrl)) {
-      localStorage.setItem(redirectUrl, window.location.href.replace(window.location.origin, ""));
-    }
-  }, []);
-
   const setupAuthenticatedUser = async () => {
     const [userInfo, idToken, decodedIdToken] = await Promise.all([
       getBasicUserInfo(),
@@ -102,10 +104,9 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       }),
     );
 
-    new APIService(idToken, refreshToken);
     setTokens(idToken, refreshToken);
+    await triggerGetUserInfo();
 
-    await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
   };
 
