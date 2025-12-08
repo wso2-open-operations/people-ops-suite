@@ -27,7 +27,7 @@ import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { APIService } from "@utils/apiService";
 
-import { setTokens } from "../services/menu";
+import { setTokens } from "../services/BaseQuery";
 
 type AuthContextType = {
   appSignIn: () => void;
