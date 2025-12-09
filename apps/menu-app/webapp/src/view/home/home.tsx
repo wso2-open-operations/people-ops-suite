@@ -13,11 +13,44 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Box } from "@mui/material";
+
+import { useGetMenuQuery } from "@services/menu.api";
+import ErrorHandler from "@component/common/ErrorHandler";
+import PreLoader from "@component/common/PreLoader";
+
+import MenuCard from "./components/Card";
 
 export default function Home() {
+  const { data, isLoading, isError } = useGetMenuQuery();
+
+  if (isLoading) {
+    return <PreLoader />;
+  }
+
+  if (isError || !data) {
+    return <ErrorHandler message={"No menu data available"} />;
+  }
+
+  const { date, ...meals } = data;
+
   return (
-    <div>
-      <div>Home</div>
-    </div>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          md: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
+        },
+        gap: 2,
+      }}
+    >
+      {Object.entries(meals).map(([mealType, mealData]) => {
+        if (!mealData.title) return null;
+
+        return <MenuCard mealType={mealType} mealData={mealData} />;
+      })}
+    </Box>
   );
 }
