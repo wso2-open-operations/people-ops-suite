@@ -15,7 +15,6 @@
 // under the License.
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
-import { matchPath } from "react-router-dom";
 
 import { useMemo, useState } from "react";
 
@@ -46,7 +45,7 @@ const Sidebar = (props: SidebarProps) => {
   const handleClick = (idx: number) => {
     setNavState((prev) => ({
       ...prev,
-      expanded: prev.expanded === idx ? null : idx,
+      active: prev.active === idx ? null : idx,
     }));
   };
 
@@ -133,6 +132,8 @@ const Sidebar = (props: SidebarProps) => {
     return button;
   };
 
+  console.log("render");
+
   return (
     <ColorModeContext.Consumer>
       {(colorMode) => {
@@ -162,8 +163,6 @@ const Sidebar = (props: SidebarProps) => {
               }}
             >
               {allRoutes.map((route, idx) => {
-                const isActive =
-                  matchPath({ path: route.path, end: true }, location.pathname) !== null;
                 return (
                   !route.bottomNav && (
                     <Box
@@ -178,9 +177,7 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={isActive}
-                        isHovered={navState.hovered === idx}
-                        isExpanded={navState.expanded === idx}
+                        isActive={navState.active === null ? idx === 0 : navState.active === idx}
                         onClick={() => handleClick(idx)}
                       />
                     </Box>
@@ -218,7 +215,7 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: theme.palette.neutral["1700"],
+                  backgroundColor: theme.palette.customNavigation.clickedBg,
                 }}
               />
 
