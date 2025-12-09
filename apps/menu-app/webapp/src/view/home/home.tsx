@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box } from "@mui/material";
-
 import { useGetMenuQuery } from "@services/menu.api";
+
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 
