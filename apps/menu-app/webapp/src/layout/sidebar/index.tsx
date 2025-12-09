@@ -15,6 +15,7 @@
 // under the License.
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+import { matchPath } from "react-router-dom";
 
 import { useMemo, useState } from "react";
 
@@ -160,8 +161,10 @@ const Sidebar = (props: SidebarProps) => {
                 width: props.open ? "100%" : "fit-content",
               }}
             >
-              {allRoutes.map(
-                (route, idx) =>
+              {allRoutes.map((route, idx) => {
+                const isActive =
+                  matchPath({ path: route.path, end: true }, location.pathname) !== null;
+                return (
                   !route.bottomNav && (
                     <Box
                       key={idx}
@@ -175,14 +178,15 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === idx}
+                        isActive={isActive}
                         isHovered={navState.hovered === idx}
                         isExpanded={navState.expanded === idx}
                         onClick={() => handleClick(idx)}
                       />
                     </Box>
-                  ),
-              )}
+                  )
+                );
+              })}
             </Stack>
 
             {/* Spacer */}
