@@ -91,7 +91,7 @@ export const tokens = (mode: PaletteMode) => {
           text: {
             primary: {
               p1: { active: colors.neutral.white, hover: "#ffffff" },
-              p2: { active: colors.neutral["400"], hover: "#ffffff" },
+              p2: { active: colors.neutral["300"], hover: "#ffffff" },
               p3: { active: colors.neutral["800"], hover: "#ffffff" },
               p4: { active: colors.neutral["1300"], hover: "#ffffff" },
             },
