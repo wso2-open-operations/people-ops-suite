@@ -15,10 +15,11 @@
 // under the License.
 import BlenderOutlinedIcon from "@mui/icons-material/BlenderOutlined";
 import BreakfastDiningOutlinedIcon from "@mui/icons-material/BreakfastDiningOutlined";
+import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import CookieOutlinedIcon from "@mui/icons-material/CookieOutlined";
 import DinnerDiningOutlinedIcon from "@mui/icons-material/DinnerDiningOutlined";
 import LunchDiningOutlinedIcon from "@mui/icons-material/LunchDiningOutlined";
-import { Box, Card, Typography, useTheme } from "@mui/material";
+import { Box, Card, IconButton, Typography, useTheme } from "@mui/material";
 
 interface MealData {
   title: string | null;
@@ -53,8 +54,6 @@ export default function MenuCard(props: MenuCardProps) {
         flexDirection: "column",
         alignItems: "flex-start",
         gap: "16px",
-        flex: "1 0 0",
-        alignSelf: "stretch",
         borderRadius: "12px",
         border: `1px solid ${theme.palette.customBorder.territory.active}`,
         background: theme.palette.surface.territory,
@@ -113,15 +112,55 @@ export default function MenuCard(props: MenuCardProps) {
         {mealData.description}
       </Typography>
 
-      <Typography
-        variant="body2"
+      <Box
         sx={{
-          color: theme.palette.customText.primary.p2.active,
-          fontWeight: 500,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
         }}
       >
-        Supplier : {mealData.title}
-      </Typography>
+        <Typography
+          variant="body2"
+          sx={{
+            color: theme.palette.customText.primary.p2.active,
+            fontWeight: 500,
+          }}
+        >
+          Supplier : {mealData.title}
+        </Typography>
+
+        <IconButton
+          onClick={() => {
+            console.log("Feedback clicked for", mealType);
+          }}
+          disabled={mealType !== "lunch"}
+          sx={{
+            display: "flex",
+            gap: 1,
+            alignItems: "center",
+            border: `1px solid ${theme.palette.customBorder.secondary.active}`,
+            px: 1,
+            py: 0.5,
+            borderRadius: 0.5,
+            color: theme.palette.customText.secondary.p1.active,
+            visibility: mealType !== "lunch" ? "hidden" : "visible", // Keeps space but hides
+            "&:hover": {
+              backgroundColor: "#F5FDFF",
+            },
+          }}
+        >
+          <ChatOutlinedIcon />
+          <Typography
+            variant="body1"
+            sx={{
+              fontWeight: 500,
+            }}
+          >
+            Feedback
+          </Typography>
+        </IconButton>
+      </Box>
     </Card>
   );
 }
