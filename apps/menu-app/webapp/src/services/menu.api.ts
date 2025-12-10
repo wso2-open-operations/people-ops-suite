@@ -5,6 +5,11 @@ import type { Menu, MetaData, RawMenu, RawMetaData } from "@/types/types";
 
 import { baseQueryWithRetry } from "./BaseQuery";
 
+interface FeedbackRequest {
+  message: string;
+  mealType?: string;
+}
+
 const transformMetaData = (data: RawMetaData): MetaData => ({
   title: data.title.trim() === "" ? null : data.title,
   description: data.description.trim() === "" ? null : data.description,
@@ -29,7 +34,14 @@ export const menuApi = createApi({
       providesTags: ["Menu"],
       transformResponse: (response: RawMenu) => transformMenuResponse(response),
     }),
+    submitFeedback: builder.mutation<void, FeedbackRequest>({
+      query: (feedback) => ({
+        url: "feedback",
+        method: "POST",
+        body: feedback,
+      }),
+    }),
   }),
 });
 
-export const { useGetMenuQuery } = menuApi;
+export const { useGetMenuQuery, useSubmitFeedbackMutation } = menuApi;
