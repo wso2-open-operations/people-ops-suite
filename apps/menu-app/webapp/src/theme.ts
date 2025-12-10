@@ -95,6 +95,9 @@ export const tokens = (mode: PaletteMode) => {
               p3: { active: colors.neutral["800"], hover: "#ffffff" },
               p4: { active: colors.neutral["1300"], hover: "#ffffff" },
             },
+            secondary: {
+              p1: { active: colors.secondary["900"], hover: "#FF6A0096", disabled: "#ff730096" },
+            },
             brand: {
               p1: { active: colors.primary["1100"], hover: "#FF6A0096", disabled: "#ff730096" },
             },
@@ -109,9 +112,9 @@ export const tokens = (mode: PaletteMode) => {
               disabled: colors.neutral.white,
             },
             secondary: {
-              active: colors.neutral.white,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
+              active: "#0099CC",
+              hover: "#2ECBFF",
+              clicked: "#06B1F4",
               disabled: colors.neutral.white,
             },
             territory: {
@@ -180,6 +183,9 @@ export const tokens = (mode: PaletteMode) => {
               p3: { active: colors.neutral["1200"], hover: "#ffffff" },
               p4: { active: colors.neutral["700"], hover: "#ffffff" },
             },
+            secondary: {
+              p1: { active: colors.secondary["800"], hover: "#FF6A0096", disabled: "#ff730096" },
+            },
             brand: {
               p1: { active: colors.primary["brand"], hover: "#ffffff", disabled: "#ff730096" },
             },
@@ -194,9 +200,9 @@ export const tokens = (mode: PaletteMode) => {
               disabled: colors.neutral.white,
             },
             secondary: {
-              active: colors.neutral.white,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
+              active: "#00BFFF",
+              hover: "#2ECBFF",
+              clicked: "#06B1F4",
               disabled: colors.neutral.white,
             },
             territory: {
@@ -318,6 +324,9 @@ declare module "@mui/material/styles" {
         p3: { active: string; hover: string };
         p4: { active: string; hover: string };
       };
+      secondary: {
+        p1: { active: string; hover: string; disabled?: string };
+      };
       brand: {
         p1: { active: string; hover: string; disabled?: string };
       };
@@ -374,6 +383,9 @@ declare module "@mui/material/styles" {
         p2?: { active: string; hover: string };
         p3?: { active: string; hover: string };
         p4?: { active: string; hover: string };
+      };
+      secondary: {
+        p1: { active: string; hover: string; disabled?: string };
       };
       brand?: {
         p1?: { active: string; hover: string; disabled?: string };
