@@ -135,7 +135,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               paddingBottom: "16px",
               borderRadius: "0px",
               px: 2,
-              fontSize: "0.875rem",
+              fontSize: theme.typography.body2.fontSize,
               fontWeight: "medium",
               position: "relative",
               color:

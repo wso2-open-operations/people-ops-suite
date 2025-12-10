@@ -31,6 +31,7 @@ export default function CheckBox({ label }: CheckBoxProps) {
         color: theme.palette.text.primary,
         "& .MuiFormControlLabel-label": {
           color: theme.palette.text.primary,
+          fontSize: theme.typography.body2.fontSize,
         },
         textAlign: { xs: "center", md: "left" },
         display: "flex",

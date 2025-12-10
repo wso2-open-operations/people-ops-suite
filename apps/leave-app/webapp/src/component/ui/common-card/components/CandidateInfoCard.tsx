@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid, Stack, Typography, useTheme } from "@mui/material";
 
 import React from "react";
 
@@ -30,6 +30,7 @@ interface CandidateInfoArray {
 }
 
 const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
+  const theme = useTheme();
   return (
     <Grid
       size={{ xs: 12 }}
@@ -52,7 +53,7 @@ const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
             {React.cloneElement(item.icon, {
               sx: {
                 color: "secondary.dark",
-                fontSize: 15,
+                fontSize: theme.typography.body2.fontSize,
               },
             })}
             <>
