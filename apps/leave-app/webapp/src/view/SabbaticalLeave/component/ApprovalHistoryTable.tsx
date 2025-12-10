@@ -61,25 +61,25 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
           case "approved":
             chipProps = {
               color: theme.palette.success.main,
-              backgroundColor: theme.palette.success.light,
+              BorderColor: theme.palette.success.main,
             };
             break;
           case "rejected":
             chipProps = {
               color: theme.palette.error.main,
-              backgroundColor: theme.palette.error.light,
+              BorderColor: theme.palette.error.main,
             };
             break;
           case "pending":
             chipProps = {
               color: theme.palette.primary.main,
-              backgroundColor: theme.palette.primary.light,
+              BorderColor: theme.palette.primary.main,
             };
             break;
           default:
             chipProps = {
-              color: theme.palette.grey[600],
-              backgroundColor: theme.palette.grey[200],
+              color: theme.palette.info.main,
+              BorderColor: theme.palette.info.main,
             };
         }
 
@@ -87,14 +87,15 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
           <Chip
             label={displayValue}
             sx={{
-              color: theme.palette.common.white,
-              backgroundColor: chipProps.backgroundColor,
+              color: chipProps.BorderColor,
+              BorderColor: chipProps.BorderColor,
+              backgroundColor: "transparent",
               borderRadius: "0.5rem",
               fontSize: theme.typography.caption.fontSize,
-              fontWeight: 600,
+              fontWeight: 700,
               width: "10rem",
               textTransform: "capitalize",
-              border: `1px solid ${chipProps.color}`,
+              border: `0.1rem solid ${chipProps.color}`,
             }}
           />
         );
