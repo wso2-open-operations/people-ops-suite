@@ -4,16 +4,24 @@ import * as Yup from "yup";
 
 import { useState } from "react";
 
+import { useSubmitFeedbackMutation } from "@root/src/services/menu.api";
+
 interface FeedbackForm {
   handleCloseFeedback: () => void;
 }
 
 const FeedbackForm = (props: FeedbackForm) => {
   const { handleCloseFeedback } = props;
+  const [submitFeedback] = useSubmitFeedbackMutation();
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const hour = new Date().getHours();
+  const now = new Date();
+  const startTime = new Date(now);
+  startTime.setHours(12, 0, 0, 0);
+
+  const endTime = new Date(now);
+  endTime.setHours(16, 15, 0, 0);
 
   const validationSchema = Yup.object({
     message: Yup.string()
@@ -33,17 +41,20 @@ const FeedbackForm = (props: FeedbackForm) => {
   const formik = useFormik({
     initialValues: { message: "" },
     validationSchema,
-    onSubmit: (values, { setSubmitting, resetForm }) => {
-      console.log("Submit values : ", values);
-      setTimeout(() => {
-        setSubmitting(false);
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      try {
+        await submitFeedback({ message: values.message }).unwrap();
         resetForm();
         handleCloseFeedback();
-      }, 400);
+      } catch (error) {
+        console.error("Failed to submit feedback:", error);
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
 
-  const isFeedbackTime = hour >= 12 && hour <= 15;
+  const isFeedbackTime = now >= startTime && now <= endTime;
 
   if (isFeedbackTime) {
     return (
