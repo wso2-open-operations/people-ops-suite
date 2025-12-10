@@ -22,7 +22,6 @@ const PreLoader = (props: PreLoaderProps) => {
   return (
     <Box
       sx={{
-        background: (theme) => theme.palette.background.default,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
