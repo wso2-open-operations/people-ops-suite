@@ -25,7 +25,7 @@ export default function Home() {
   const { data, isLoading, isError } = useGetMenuQuery();
 
   if (isLoading) {
-    return <PreLoader />;
+    return <PreLoader isLoading message="Loading menu data" />;
   }
 
   if (isError || !data) {
@@ -49,7 +49,7 @@ export default function Home() {
       {Object.entries(meals).map(([mealType, mealData]) => {
         if (!mealData.title) return null;
 
-        return <MenuCard mealType={mealType} mealData={mealData} />;
+        return <MenuCard key={mealType} mealType={mealType} mealData={mealData} />;
       })}
     </Box>
   );
