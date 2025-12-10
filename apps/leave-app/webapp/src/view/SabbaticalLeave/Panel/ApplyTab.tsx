@@ -35,7 +35,7 @@ export default function ApplyTab() {
           gap="3rem"
           justifyContent="flex-start"
         >
-          <Stack flex="1" gap="1rem">
+          <Stack flex="1" gap="1.5rem">
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Employment Start Date
             </Typography>
@@ -45,7 +45,7 @@ export default function ApplyTab() {
             <DatePicker label="Last sabbatical leave end date" />
           </Stack>
 
-          <Stack flex="1" gap="1rem">
+          <Stack flex="1" gap="1.5rem">
             <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Eligibility Status
             </Typography>
