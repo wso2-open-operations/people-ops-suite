@@ -34,7 +34,7 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
         fontSize: theme.typography.h4.fontSize,
       }}
     >
-      <span style={{ color: theme.palette.primary.main, display: "inline" }}>{firstWord}</span>{" "}
+      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
       {secondWord}
     </Typography>
   );
