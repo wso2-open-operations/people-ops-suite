@@ -132,8 +132,6 @@ const Sidebar = (props: SidebarProps) => {
     return button;
   };
 
-  console.log("render");
-
   return (
     <ColorModeContext.Consumer>
       {(colorMode) => {
@@ -215,7 +213,6 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: theme.palette.customNavigation.clickedBg,
                 }}
               />
 
