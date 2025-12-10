@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Stack, TextField, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import CheckBox from "@root/src/component/common/CheckBox";
@@ -26,7 +25,7 @@ import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 export default function ApplyTab() {
   const theme = useTheme();
   return (
-    <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+    <Stack gap="1.5rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="Sabbatical" secondWord="Leave Application" />
       <FormContainer>
         <Stack
@@ -35,39 +34,34 @@ export default function ApplyTab() {
           gap="3rem"
           justifyContent="flex-start"
         >
-          <Stack flex="0 0 25%" alignItems="center" gap="0.5rem">
-            <Typography sx={{ color: theme.palette.text.secondary, fontSize: "0.875rem" }}>
+          <Stack flex="1" gap="1rem">
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Employment Start Date
             </Typography>
             <Typography sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
               22/12/2025
             </Typography>
+            <DatePicker label="Last sabbatical leave end date" />
           </Stack>
 
-          <Stack flex="0 0 25%" alignItems="center" gap="0.5rem">
-            <Typography sx={{ color: theme.palette.text.secondary, fontSize: "0.875rem" }}>
+          <Stack flex="1" gap="1rem">
+            <Typography variant="body2" sx={{ color: theme.palette.text.secondary }}>
               Eligibility Status
             </Typography>
             <Typography sx={{ color: theme.palette.text.primary, fontWeight: 600 }}>
               Not Eligible
             </Typography>
+            <DatePicker label="Leave request end date" />
           </Stack>
-          <CheckBox label="Have you taken Sabbatical Leave before?" />
+          <Stack flex="1" justifyContent="space-between">
+            <CheckBox label="Have you taken Sabbatical Leave before?" />
+            <DatePicker label="Leave request end date" />
+          </Stack>
         </Stack>
-
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          gap="3rem"
-          width="100%"
-          justifyContent="flex-start"
-        >
-          <DatePicker
-            label="Last Sabbatical Leave End Date"
-            sx={{ flex: { xs: "1", md: "0 0 25%" } }}
-          />
-          <DatePicker label="Leave request start date" sx={{ flex: { xs: "1", md: "0 0 25%" } }} />
-          <DatePicker label="Leave request end date" sx={{ flex: { xs: "1", md: "0 0 25%" } }} />
-        </Stack>
+        <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+          Additional Comments
+        </Typography>
+        <TextField label="Add a comment..." multiline minRows={3} fullWidth variant="outlined" />
 
         <CheckBox label="I have read and understood the terms of the Sabbatical Leave Policy." />
         <CheckBox label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period." />

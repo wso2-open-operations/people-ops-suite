@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Checkbox, Stack, TextField, Typography, useTheme } from "@mui/material";
+import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
 import { useState } from "react";
 
@@ -30,7 +30,7 @@ export default function AdditionalComment() {
 
   return (
     <Stack gap="1rem">
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Additional Comments
       </Typography>
       <TextField label="Add a comment..." multiline minRows={3} fullWidth variant="outlined" />
@@ -43,8 +43,11 @@ export default function AdditionalComment() {
         gap="0.5rem"
       >
         <Stack direction="row" gap="0.5rem" alignItems="center">
-          <Checkbox checked={isPublicComment} onChange={handleCheckboxChange} />
-          <Typography sx={{ color: theme.palette.text.primary }}>Public comment</Typography>
+          <FormControlLabel
+            control={<Switch onChange={handleCheckboxChange} />}
+            label="Public comment"
+            sx={{ color: theme.palette.text.secondary }}
+          />
         </Stack>
 
         <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap="1rem">

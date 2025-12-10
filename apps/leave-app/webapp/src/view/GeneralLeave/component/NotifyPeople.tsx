@@ -24,7 +24,7 @@ export default function NotifyPeople() {
 
   return (
     <Stack gap="1rem">
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Select people/groups to notify (via email)
       </Typography>
       <Autocomplete
@@ -39,7 +39,12 @@ export default function NotifyPeople() {
               label={option}
               avatar={
                 <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
-                  <Email sx={{ fontSize: 12, color: theme.palette.primary.contrastText }} />
+                  <Email
+                    sx={{
+                      fontSize: theme.typography.caption.fontSize,
+                      color: theme.palette.primary.contrastText,
+                    }}
+                  />
                 </Avatar>
               }
             />

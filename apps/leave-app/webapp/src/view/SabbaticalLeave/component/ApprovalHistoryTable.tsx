@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Chip, Box, useTheme } from "@mui/material";
+import { Box, Chip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
 import { EmployeeLeaveData } from "../MockData";
@@ -90,7 +90,7 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
               color: theme.palette.common.white,
               backgroundColor: chipProps.backgroundColor,
               borderRadius: "0.5rem",
-              fontSize: "0.75rem",
+              fontSize: theme.typography.caption.fontSize,
               fontWeight: 600,
               width: "10rem",
               textTransform: "capitalize",

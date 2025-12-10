@@ -34,14 +34,13 @@ export default function LeaveCard(leave: LeaveData) {
         },
       }}
     >
-      <CardContent sx={{ p: "1.5rem" }}>
+      <CardContent sx={{ p: "1.25rem" }}>
         <Stack spacing="1rem">
           <Typography
-            variant="h6"
+            variant="body2"
             sx={{
               color: theme.palette.text.primary,
               fontWeight: 600,
-              fontSize: "1.1rem",
             }}
           >
             {leave.type}
@@ -72,9 +71,8 @@ export default function LeaveCard(leave: LeaveData) {
                 }}
               >
                 <Typography
-                  variant="caption"
+                  variant="overline"
                   sx={{
-                    fontSize: "10px",
                     fontWeight: 600,
                     textTransform: "uppercase",
                     letterSpacing: "0.5px",
@@ -95,11 +93,10 @@ export default function LeaveCard(leave: LeaveData) {
                 }}
               >
                 <Typography
-                  variant="h6"
+                  variant="h5"
                   sx={{
                     color: theme.palette.text.primary,
                     fontWeight: 700,
-                    fontSize: "18px",
                     lineHeight: 1,
                   }}
                 >
@@ -111,20 +108,18 @@ export default function LeaveCard(leave: LeaveData) {
             {/* Leave Details */}
             <Stack spacing="4px" flex={1}>
               <Typography
-                variant="body1"
+                variant="body2"
                 sx={{
                   color: theme.palette.text.primary,
                   fontWeight: 500,
-                  fontSize: "14px",
                 }}
               >
                 {leave.startDate} - {leave.endDate}
               </Typography>
               <Typography
-                variant="body2"
+                variant="caption"
                 sx={{
                   color: theme.palette.text.secondary,
-                  fontSize: "12px",
                 }}
               >
                 {leave.duration}
@@ -143,9 +138,9 @@ export default function LeaveCard(leave: LeaveData) {
               }}
             >
               <Typography
+                variant="caption"
                 sx={{
                   color: theme.palette.common.white,
-                  fontSize: "0.8rem",
                   fontWeight: 600,
                 }}
               >

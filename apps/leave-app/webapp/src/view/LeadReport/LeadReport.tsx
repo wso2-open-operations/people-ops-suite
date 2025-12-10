@@ -23,7 +23,7 @@ import Toolbar from "./component/Toolbar";
 
 export default function LeadReport() {
   return (
-    <Stack gap="2rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+    <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Toolbar />
       <LeadReportTable />
     </Stack>

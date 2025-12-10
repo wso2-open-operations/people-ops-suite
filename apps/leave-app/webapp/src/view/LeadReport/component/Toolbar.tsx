@@ -14,23 +14,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack, useTheme } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import { Button, FormControlLabel, Stack, Switch, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
-import CheckBox from "@root/src/component/common/CheckBox";
-import CustomButton from "@root/src/component/common/CustomButton";
 import Title from "@root/src/component/common/Title";
 
 export default function Toolbar() {
+  const theme = useTheme();
   return (
     <Stack direction="row" width="100%" alignItems="center">
       <Title firstWord="Lead" secondWord="Report" />
-
       <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
+        <FormControlLabel
+          control={<Switch />}
+          label="Include indirect reports"
+          sx={{ color: theme.palette.text.secondary }}
+        />
         <DatePicker label="From" format="ddd, d MMM" />
         <DatePicker label="To" format="ddd, d MMM" />
-        <CheckBox label="Include indirect reports" />
-        <CustomButton label="Fetch Report" />
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          startIcon={<SearchIcon />}
+          sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
+        >
+          Fetch Report
+        </Button>
       </Stack>
     </Stack>
   );

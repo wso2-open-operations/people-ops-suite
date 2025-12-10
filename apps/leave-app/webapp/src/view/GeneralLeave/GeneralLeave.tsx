@@ -26,14 +26,14 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   return (
-    <Stack direction="column" gap="2rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+    <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="General" secondWord="Leave Submission" />
       <FormContainer>
         <Stack
           direction={{ xs: "column", md: "row" }}
           width="100%"
           justifyContent={{ md: "space-between" }}
-          gap={{ xs: "2rem" }}
+          gap={{ xs: "1.5rem" }}
         >
           <LeaveDateSelection />
           <LeaveSelection />

@@ -26,26 +26,18 @@ export default function LeaveDateSelection() {
       direction="column"
       justifyContent="space-between"
       width={{ md: "40%" }}
-      gap={{ xs: "2rem" }}
+      gap={{ xs: "1rem" }}
     >
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Select Date(s)
       </Typography>
       <Stack
         direction="row"
-        spacing={2}
+        spacing={1.5}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
-        <DatePicker
-          label="From"
-          format="ddd, d MMM"
-          sx={{ minWidth: "10%" }}
-        />
-        <DatePicker
-          label="To"
-          format="ddd, d MMM"
-          sx={{ minWidth: "10%" }}
-        />
+        <DatePicker label="From" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
+        <DatePicker label="To" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
       </Stack>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
         <Stack

@@ -39,8 +39,8 @@ export default function LeaveSelection() {
   };
 
   return (
-    <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+    <Stack direction="column" width={{ md: "50%" }} gap="1rem">
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Leave Type
       </Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -69,13 +69,13 @@ export default function LeaveSelection() {
           onClick={() => handleLeaveTypeSelection("lieu")}
         />
       </Stack>
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Portion of the day
       </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent={{ md: "space-between" }}
-        gap={{ xs: "2rem" }}
+        gap={{ xs: "1.5rem" }}
         alignItems="center"
       >
         <DatePill
