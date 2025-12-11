@@ -96,8 +96,8 @@ const approvalValidationSchema = Yup.object({
   selectedFloorsAndRooms: Yup.array()
     .min(1, "At least one floor and room must be selected")
     .required("Floor and room selection is required"),
-  purposeOfVisit: Yup.string().required("Purpose of visit is required"),
-  whomTheyMeet: Yup.string().required("Meeting person is required"),
+  purposeOfVisit: Yup.string().trim().required("Purpose of visit is required"),
+  whomTheyMeet: Yup.string().trim().required("Meeting person is required"),
 });
 
 const ActiveVisits = () => {
@@ -120,6 +120,8 @@ const ActiveVisits = () => {
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
+
+  const currentVisit = visitsList.find((v) => String(v.id) === currentVisitId);
 
   useEffect(() => {
     dispatch(
@@ -429,12 +431,8 @@ const ActiveVisits = () => {
             initialValues={{
               passNumber: "",
               selectedFloorsAndRooms: [],
-              whomTheyMeet:
-                visitsList.find((v) => String(v.id) === currentVisitId)
-                  ?.whomTheyMeet || "",
-              purposeOfVisit:
-                visitsList.find((v) => String(v.id) === currentVisitId)
-                  ?.purposeOfVisit || "",
+              whomTheyMeet: currentVisit?.whomTheyMeet || "",
+              purposeOfVisit: currentVisit?.purposeOfVisit || "",
             }}
             validationSchema={approvalValidationSchema}
             onSubmit={(values) => {
