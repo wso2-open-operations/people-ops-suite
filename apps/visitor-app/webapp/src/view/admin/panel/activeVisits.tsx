@@ -96,6 +96,8 @@ const approvalValidationSchema = Yup.object({
   selectedFloorsAndRooms: Yup.array()
     .min(1, "At least one floor and room must be selected")
     .required("Floor and room selection is required"),
+  purposeOfVisit: Yup.string().required("Purpose of visit is required"),
+  whomTheyMeet: Yup.string().required("Meeting person is required"),
 });
 
 const ActiveVisits = () => {
@@ -132,7 +134,9 @@ const ActiveVisits = () => {
   const handleApproveSingleVisit = async (
     visitId: string,
     passNumber: string,
-    accessibleLocations: { floor: string; rooms: string[] }[]
+    accessibleLocations: { floor: string; rooms: string[] }[],
+    whomTheyMeet: string,
+    purposeOfVisit: string
   ) => {
     try {
       const payload = {
@@ -141,6 +145,8 @@ const ActiveVisits = () => {
         status: VisitAction.approve,
         accessibleLocations,
         rejectionReason: null,
+        whomTheyMeet: whomTheyMeet.trim(),
+        purposeOfVisit: purposeOfVisit.trim(),
       };
 
       await dispatch(visitStatusUpdate(payload));
@@ -253,12 +259,26 @@ const ActiveVisits = () => {
       minWidth: 150,
       flex: 1,
     },
+    {
+      field: "whomTheyMeet",
+      headerName: "Whom They Meet",
+      minWidth: 170,
+      flex: 1.2,
+    },
     { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
     { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",
       headerName: "Time Of Entry",
       minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
+      minWidth: 170,
       flex: 1,
       renderCell: (params) =>
         params.value ? toLocalDateTime(params.value) : "N/A",
@@ -409,13 +429,21 @@ const ActiveVisits = () => {
             initialValues={{
               passNumber: "",
               selectedFloorsAndRooms: [],
+              whomTheyMeet:
+                visitsList.find((v) => String(v.id) === currentVisitId)
+                  ?.whomTheyMeet || "",
+              purposeOfVisit:
+                visitsList.find((v) => String(v.id) === currentVisitId)
+                  ?.purposeOfVisit || "",
             }}
             validationSchema={approvalValidationSchema}
             onSubmit={(values) => {
               handleApproveSingleVisit(
                 currentVisitId || "",
                 values.passNumber,
-                values.selectedFloorsAndRooms
+                values.selectedFloorsAndRooms,
+                values.whomTheyMeet,
+                values.purposeOfVisit
               );
             }}
           >
@@ -436,6 +464,36 @@ const ActiveVisits = () => {
                     errors.passNumber
                   }
                   error={touched.passNumber && Boolean(errors.passNumber)}
+                  sx={{ mb: 2 }}
+                />
+                <Field
+                  as={TextField}
+                  name="whomTheyMeet"
+                  label="Whom They Meet"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter person to meet"
+                  helperText={
+                    (touched.whomTheyMeet && errors.whomTheyMeet) ??
+                    errors.whomTheyMeet
+                  }
+                  error={touched.whomTheyMeet && Boolean(errors.whomTheyMeet)}
+                  sx={{ mb: 2 }}
+                />
+                <Field
+                  as={TextField}
+                  name="purposeOfVisit"
+                  label="Purpose of Visit"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter purpose of visit"
+                  helperText={
+                    (touched.purposeOfVisit && errors.purposeOfVisit) ??
+                    errors.purposeOfVisit
+                  }
+                  error={
+                    touched.purposeOfVisit && Boolean(errors.purposeOfVisit)
+                  }
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector

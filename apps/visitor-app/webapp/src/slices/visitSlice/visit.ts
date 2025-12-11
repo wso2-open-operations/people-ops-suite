@@ -83,6 +83,8 @@ export interface UpdateVisitPayload {
   accessibleLocations: FloorRoom[] | null;
   visitId: number;
   status: string;
+  purposeOfVisit?: string;
+  whomTheyMeet?: string;
 }
 
 const initialState: VisitState = {
@@ -200,6 +202,8 @@ export const visitStatusUpdate = createAsyncThunk(
             rejectionReason: payload.rejectionReason,
             passNumber: payload.passNumber,
             accessibleLocations: payload.accessibleLocations,
+            whomTheyMeet: payload.whomTheyMeet,
+            purposeOfVisit: payload.purposeOfVisit,
           },
           {
             cancelToken: newCancelTokenSource.token,
