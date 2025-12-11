@@ -807,6 +807,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
+            string? purposeOfVisit = payload.purposeOfVisit;
+            string? whomTheyMeet = payload.whomTheyMeet;
             if passNumber is () {
                 return <http:BadRequest>{
                     body: {
@@ -821,6 +823,20 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            if purposeOfVisit is () || purposeOfVisit == "" {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Purpose of visit is required when approving a visit!"
+                    }
+                };
+            }
+            if whomTheyMeet is () || whomTheyMeet == "" {
+                return <http:BadRequest>{
+                    body: {
+                        message: "The person they meet is required when approving a visit!"
+                    }
+                };
+            }
 
             error? response = database:updateVisit(visitId,
                     {
@@ -828,7 +844,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                         passNumber: payload.passNumber,
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
-                        timeOfEntry: time:utcNow()
+                        timeOfEntry: time:utcNow(),
+                        purposeOfVisit: purposeOfVisit,
+                        whomTheyMeet: whomTheyMeet
                     }, invokerInfo.email);
 
             if response is error {

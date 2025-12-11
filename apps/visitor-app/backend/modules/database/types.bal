@@ -280,6 +280,10 @@ public type UpdateVisitPayload record {|
     time:Utc? timeOfEntry = ();
     # Time of departure
     time:Utc? timeOfDeparture = ();
+    # Purpose of the visit
+    string? purposeOfVisit = ();
+    # The person the visitor is supposed to meet
+    string? whomTheyMeet = ();
 |};
 
 # Payload to update Invitation details.

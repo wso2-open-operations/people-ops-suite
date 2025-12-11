@@ -89,6 +89,10 @@ public type ActionPayload record {|
     string? passNumber = ();
     # The floors and rooms that the visitor can access
     database:Floor[]? accessibleLocations = ();
+    # Purpose of the visit
+    string? purposeOfVisit = ();
+    # The person the visitor is supposed to meet
+    string? whomTheyMeet = ();
 |};
 
 # Payload for adding a new visit invitation.

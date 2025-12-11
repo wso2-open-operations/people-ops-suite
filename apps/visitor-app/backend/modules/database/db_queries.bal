@@ -295,6 +295,14 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
         filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
     }
 
+    if payload.purposeOfVisit is string {
+        filters.push(`purpose_of_visit = ${payload.purposeOfVisit}`);
+    }
+
+    if payload.whomTheyMeet is string {
+        filters.push(`whom_they_meet = ${payload.whomTheyMeet}`);
+    }
+
     // Setting the updated_by field to record who performed the update, for audit purposes.
     filters.push(`updated_by = ${updatedBy}`);
 
