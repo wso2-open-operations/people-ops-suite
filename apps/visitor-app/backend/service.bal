@@ -823,14 +823,14 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if purposeOfVisit is () || purposeOfVisit == "" {
+            if purposeOfVisit is () || purposeOfVisit.trim() == "" {
                 return <http:BadRequest>{
                     body: {
                         message: "Purpose of visit is required when approving a visit!"
                     }
                 };
             }
-            if whomTheyMeet is () || whomTheyMeet == "" {
+            if whomTheyMeet is () || whomTheyMeet.trim() == "" {
                 return <http:BadRequest>{
                     body: {
                         message: "The person they meet is required when approving a visit!"
@@ -845,8 +845,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
                         timeOfEntry: time:utcNow(),
-                        purposeOfVisit: purposeOfVisit,
-                        whomTheyMeet: whomTheyMeet
+                        purposeOfVisit: purposeOfVisit.trim(),
+                        whomTheyMeet: whomTheyMeet.trim()
                     }, invokerInfo.email);
 
             if response is error {
