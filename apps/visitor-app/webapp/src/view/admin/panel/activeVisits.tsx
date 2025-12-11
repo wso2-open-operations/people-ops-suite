@@ -244,76 +244,13 @@ const ActiveVisits = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
-    {
-      field: "contactNumber",
-      headerName: "Contact Number",
-      minWidth: 150,
-      flex: 1,
-    },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
-    {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
-    },
-    {
-      field: "whomTheyMeet",
-      headerName: "Whom They Meet",
-      minWidth: 170,
-      flex: 1.2,
-    },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
-    {
-      field: "timeOfEntry",
-      headerName: "Time Of Entry",
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? toLocalDateTime(params.value) : "N/A",
-    },
-    {
-      field: "timeOfDeparture",
-      headerName: "Time Of Departure",
-      minWidth: 170,
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? toLocalDateTime(params.value) : "N/A",
-    },
-    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
-    {
-      field: "accessibleLocations",
-      headerName: "Accessible Locations",
-      minWidth: 100,
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => {
-        const locations = params.value || [];
-        return (
-          <Tooltip title="View Attachments" arrow>
-            <IconButton
-              color="info"
-              onClick={() => showViewAccessibleFloors(locations)}
-              title="View Accessible Floors"
-              disabled={locations.length === 0}
-            >
-              <Visibility />
-            </IconButton>
-          </Tooltip>
-        );
-      },
-    },
     {
       field: "action",
       headerName: "Action",
       minWidth: 150,
       flex: 1,
       headerAlign: "center",
-      align: "center",
+      align: "left",
       renderCell: (params) => {
         const visit = params.row;
         const isRequested = visit.status === VisitStatus.requested;
@@ -360,6 +297,69 @@ const ActiveVisits = () => {
               </IconButton>
             )}
           </>
+        );
+      },
+    },
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
+    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
+      minWidth: 150,
+      flex: 1,
+    },
+    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    {
+      field: "companyName",
+      headerName: "Company Name",
+      minWidth: 150,
+      flex: 1,
+    },
+    {
+      field: "whomTheyMeet",
+      headerName: "Whom They Meet",
+      minWidth: 170,
+      flex: 1.2,
+    },
+    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "timeOfEntry",
+      headerName: "Time Of Entry",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
+      minWidth: 170,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
+    {
+      field: "accessibleLocations",
+      headerName: "Accessible Locations",
+      minWidth: 100,
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => {
+        const locations = params.value || [];
+        return (
+          <Tooltip title="View Attachments" arrow>
+            <IconButton
+              color="info"
+              onClick={() => showViewAccessibleFloors(locations)}
+              title="View Accessible Floors"
+              disabled={locations.length === 0}
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
         );
       },
     },
