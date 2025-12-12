@@ -16,16 +16,29 @@
 
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
-import { useState } from "react";
-
 import CustomButton from "@root/src/component/common/CustomButton";
 
-export default function AdditionalComment() {
+interface AdditionalCommentProps {
+  comment: string;
+  onCommentChange: (comment: string) => void;
+  isPublicComment: boolean;
+  onPublicCommentChange: (isPublic: boolean) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+}
+
+export default function AdditionalComment({
+  comment,
+  onCommentChange,
+  isPublicComment,
+  onPublicCommentChange,
+  onSubmit,
+  isSubmitting,
+}: AdditionalCommentProps) {
   const theme = useTheme();
-  const [isPublicComment, setIsPublicComment] = useState(false);
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIsPublicComment(event.target.checked);
+    onPublicCommentChange(event.target.checked);
   };
 
   return (
@@ -33,7 +46,15 @@ export default function AdditionalComment() {
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Additional Comments
       </Typography>
-      <TextField label="Add a comment..." multiline minRows={3} fullWidth variant="outlined" />
+      <TextField
+        label="Add a comment..."
+        multiline
+        minRows={3}
+        fullWidth
+        variant="outlined"
+        value={comment}
+        onChange={(e) => onCommentChange(e.target.value)}
+      />
 
       <Stack
         direction={{ xs: "column", md: "row" }}
@@ -44,7 +65,7 @@ export default function AdditionalComment() {
       >
         <Stack direction="row" gap="0.5rem" alignItems="center">
           <FormControlLabel
-            control={<Switch onChange={handleCheckboxChange} />}
+            control={<Switch checked={isPublicComment} onChange={handleCheckboxChange} />}
             label="Public comment"
             sx={{ color: theme.palette.text.secondary }}
           />
@@ -60,7 +81,7 @@ export default function AdditionalComment() {
               ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
-          <CustomButton label="Submit" />
+          <CustomButton label="Submit" onClick={onSubmit} disabled={isSubmitting} />
         </Stack>
       </Stack>
     </Stack>
