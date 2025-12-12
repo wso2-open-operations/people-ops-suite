@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Card, CardContent, Chip, Stack, Typography, useTheme } from "@mui/material";
 
 import { LeaveData } from "../MockData";
 
@@ -127,26 +126,20 @@ export default function LeaveCard(leave: LeaveData) {
             </Stack>
 
             {/* Status Badge */}
-            <Box
+            <Chip
+              label={"Submitted"}
               sx={{
-                backgroundColor: theme.palette.primary.main,
-                color: theme.palette.success.dark,
-                px: "0.5rem",
-                py: "0.2rem",
+                color: theme.palette.primary.main,
+                borderColor: theme.palette.primary.main,
+                backgroundColor: "transparent",
                 borderRadius: "0.5rem",
-                alignSelf: "flex-start",
+                fontSize: theme.typography.caption.fontSize,
+                fontWeight: 700,
+                width: "10rem",
+                textTransform: "capitalize",
+                border: `0.1rem solid ${theme.palette.primary.main}`,
               }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: theme.palette.common.white,
-                  fontWeight: 600,
-                }}
-              >
-                Submitted
-              </Typography>
-            </Box>
+            />
           </Stack>
         </Stack>
       </CardContent>

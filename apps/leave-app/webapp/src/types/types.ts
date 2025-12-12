@@ -48,9 +48,24 @@ export interface RouteDetail {
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-  element?: React.ReactNode;
+}
+
+// Leave validation types
+export interface LeaveValidationRequest {
+  periodType: "one" | "multiple";
+  startDate: string;
+  endDate: string;
+  isMorningLeave: boolean | null;
+}
+
+export interface LeaveValidationResponse {
+  workingDays: number;
+  isValid: boolean;
+  message?: string;
+}
+
+// Employee types
+export interface Employee {
+  workEmail: string;
+  [key: string]: any;
 }

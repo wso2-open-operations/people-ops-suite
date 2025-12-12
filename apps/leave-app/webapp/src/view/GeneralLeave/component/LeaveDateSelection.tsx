@@ -17,9 +17,100 @@
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import dayjs, { Dayjs } from "dayjs";
+import { validateLeaveRequest, formatDateForAPI, getPeriodType } from "@root/src/services/leaveService";
 
-export default function LeaveDateSelection() {
+interface LeaveDateSelectionProps {
+  onDaysChange: (days: number) => void;
+}
+
+export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionProps) {
   const theme = useTheme();
+  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs());
+  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
+  const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
+    if (!start || !end) return 0;
+    if (end.isBefore(start)) return 0;
+    return end.diff(start, 'day') + 1;
+  };
+
+  const daysSelected = calculateTotalDays(startDate, endDate);
+
+  useEffect(() => {
+    onDaysChange(daysSelected);
+  }, [daysSelected, onDaysChange]);
+
+  // Initial validation on mount
+  useEffect(() => {
+    if (startDate && endDate) {
+      validateDates(startDate, endDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Validate dates and fetch working days from API
+  const validateDates = async (start: Dayjs | null, end: Dayjs | null) => {
+    if (!start || !end) {
+      setWorkingDaysSelected(0);
+      return;
+    }
+
+    if (end.isBefore(start)) {
+      setWorkingDaysSelected(0);
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const totalDays = calculateTotalDays(start, end);
+      const response = await validateLeaveRequest({
+        periodType: getPeriodType(totalDays),
+        startDate: formatDateForAPI(start),
+        endDate: formatDateForAPI(end),
+        isMorningLeave: null,
+      });
+
+      setWorkingDaysSelected(response.workingDays);
+    } catch (error) {
+      console.error("Error validating leave dates:", error);
+      setWorkingDaysSelected(0);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleStartDateChange = (newValue: Dayjs | null) => {
+    setStartDate(newValue);
+    // If end date is before new start date, clear end date
+    if (newValue && endDate && endDate.isBefore(newValue)) {
+      setEndDate(null);
+      setWorkingDaysSelected(0);
+    } else if (newValue && endDate) {
+      validateDates(newValue, endDate);
+    }
+  };
+
+  const handleEndDateChange = (newValue: Dayjs | null) => {
+    setEndDate(newValue);
+    if (startDate && newValue) {
+      validateDates(startDate, newValue);
+    }
+  };
+
+  // Determine status based on selection
+  const getStatus = () => {
+    if (!startDate || !endDate) return "Please select dates";
+    if (endDate.isBefore(startDate)) return "Invalid date range";
+    if (daysSelected === 0) return "Invalid selection";
+    return "Valid Leave Request";
+  };
+
+  const status = getStatus();
+  const isValidSelection = status === "Valid Leave Request";
 
   return (
     <Stack
@@ -36,8 +127,23 @@ export default function LeaveDateSelection() {
         spacing={1.5}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
-        <DatePicker label="From" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
-        <DatePicker label="To" format="ddd, d MMM" sx={{ minWidth: "10%" }} />
+        <DatePicker 
+          label="From" 
+          format="ddd, d MMM" 
+          sx={{ minWidth: "10%" }}
+          value={startDate}
+          onChange={handleStartDateChange}
+          disablePast
+        />
+        <DatePicker 
+          label="To" 
+          format="ddd, d MMM" 
+          sx={{ minWidth: "10%" }}
+          value={endDate}
+          onChange={handleEndDateChange}
+          minDate={startDate || undefined}
+          disablePast
+        />
       </Stack>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
         <Stack
@@ -47,10 +153,10 @@ export default function LeaveDateSelection() {
           marginTop="2rem"
         >
           <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
-            Days selected: 2
+            Days selected: {daysSelected}
           </Typography>
           <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
-            Working days selected: 2
+            Working days selected: {workingDaysSelected}
           </Typography>
         </Stack>
       </Stack>
@@ -62,15 +168,15 @@ export default function LeaveDateSelection() {
           justifyContent: "center",
           alignItems: "center",
           gap: "0.5rem",
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
+          backgroundColor: isValidSelection ? theme.palette.primary.main : theme.palette.warning.main,
+          color: isValidSelection ? theme.palette.primary.contrastText : theme.palette.warning.contrastText,
           borderRadius: "0.4rem",
           py: "0.5rem",
           px: "2rem",
         }}
       >
         <Info />
-        <Typography>Status: Valid Leave Request</Typography>
+        <Typography variant="body2">Status: {status}</Typography>
       </Box>
     </Stack>
   );

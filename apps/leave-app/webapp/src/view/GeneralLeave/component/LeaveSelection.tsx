@@ -25,10 +25,15 @@ import { useState } from "react";
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
-export default function LeaveSelection() {
+interface LeaveSelectionProps {
+  daysSelected: number;
+}
+
+export default function LeaveSelection({ daysSelected }: LeaveSelectionProps) {
   const theme = useTheme();
   const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>("casual");
   const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
+  const isHalfDayDisabled = daysSelected !== 1;
 
   const handleLeaveTypeSelection = (leaveType: string) => {
     setSelectedLeaveType(leaveType);
@@ -86,12 +91,14 @@ export default function LeaveSelection() {
         <DatePill
           partOfDay="First Half"
           isSelected={selectedDayPortion === "first"}
-          onClick={() => handleDayPortionSelection("first")}
+          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("first")}
+          disabled={isHalfDayDisabled}
         />
         <DatePill
           partOfDay="Second Half"
           isSelected={selectedDayPortion === "second"}
-          onClick={() => handleDayPortionSelection("second")}
+          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("second")}
+          disabled={isHalfDayDisabled}
         />
       </Stack>
     </Stack>

@@ -15,6 +15,7 @@
 // under the License.
 
 import { Stack } from "@mui/material";
+import { useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
@@ -25,6 +26,8 @@ import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
+  const [daysSelected, setDaysSelected] = useState(0);
+
   return (
     <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="General" secondWord="Leave Submission" />
@@ -35,8 +38,8 @@ export default function GeneralLeave() {
           justifyContent={{ md: "space-between" }}
           gap={{ xs: "1.5rem" }}
         >
-          <LeaveDateSelection />
-          <LeaveSelection />
+          <LeaveDateSelection onDaysChange={setDaysSelected} />
+          <LeaveSelection daysSelected={daysSelected} />
         </Stack>
         <NotifyPeople />
         <AdditionalComment />
