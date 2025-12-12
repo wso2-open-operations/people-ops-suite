@@ -59,7 +59,10 @@ public isolated function getEmployee(string email)
         return error(ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED, response);
     }
 
-    EmployeeResponse employeeResp = response.data.employee;
+    EmployeeResponse|null employeeResp = response.data.employee;
+    if employeeResp is () {
+        return error(ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED);
+    }
     readonly & Employee employee = toEmployee(employeeResp);
 
     lock {
