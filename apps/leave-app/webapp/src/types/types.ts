@@ -72,3 +72,22 @@ export interface Employee {
   workEmail: string;
   employeeThumbnail: string | null;
 }
+
+// Leave submission type
+export interface LeaveSubmissionRequest {
+  periodType: "one" | "multiple" | "half";
+  startDate: string;
+  endDate: string;
+  isMorningLeave: boolean | null;
+  comment: string;
+  leaveType: string;
+  emailRecipients: string[];
+  isPublicComment: boolean;
+}
+
+// Leave submission response type
+export interface LeaveSubmissionResponse {
+  success: boolean;
+  message?: string;
+  leaveId?: string;
+}
