@@ -158,7 +158,7 @@ public isolated function getValidEmailRecipientsFromList(string[] emailsList) re
 #
 # + subject - Email subject
 # + return - Prefixed email subject
-isolated function getPrefixedEmailSubject(string subject) returns string => string `[${appName}] - ${subject}`;
+isolated function getPrefixedEmailSubject(string subject) returns string => string `[Leave App] - ${subject}`;
 
 # Validate if the given email is a WSO2 email address (has wso2.com or ws02.com domains).
 #
