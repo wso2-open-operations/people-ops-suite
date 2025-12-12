@@ -23,6 +23,9 @@ import ballerina/sql;
 # + return - SQL filter clause
 isolated function buildSqlQuery(sql:ParameterizedQuery mainQuery, sql:ParameterizedQuery[] filterQueries)
     returns sql:ParameterizedQuery {
+    if filterQueries.length() == 0 {
+        return mainQuery;
+    }
     sql:ParameterizedQuery sqlQuery = mainQuery;
     foreach int i in 0 ... filterQueries.length() - 1 {
         if i == 0 {
