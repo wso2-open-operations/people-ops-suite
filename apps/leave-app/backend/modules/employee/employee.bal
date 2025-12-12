@@ -68,7 +68,7 @@ public isolated function getEmployee(string email)
     lock {
         cache:Error? cachingErr = hrisEmployeeCache.put(email, employee);
         if cachingErr is cache:Error {
-            log:printError(string `Error with hris employee cache when pushing email: ${email}.`);
+            log:printError("Error caching employee data from HRIS");
         }
     }
 
