@@ -33,7 +33,7 @@ public isolated function initializeLeaveClient() returns mysql:Client|error {
         }
     };
 
-    mysql:Client|error mysqlClient = check new (...leaveDBConfig);
+    mysql:Client|error mysqlClient = new (...leaveDBConfig);
 
     if mysqlClient is error {
         log:printError(mysqlClient.toBalString());
