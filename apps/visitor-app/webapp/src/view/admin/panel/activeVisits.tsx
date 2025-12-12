@@ -96,6 +96,8 @@ const approvalValidationSchema = Yup.object({
   selectedFloorsAndRooms: Yup.array()
     .min(1, "At least one floor and room must be selected")
     .required("Floor and room selection is required"),
+  purposeOfVisit: Yup.string().trim().required("Purpose of visit is required"),
+  whomTheyMeet: Yup.string().trim().required("Meeting person is required"),
 });
 
 const ActiveVisits = () => {
@@ -119,6 +121,8 @@ const ActiveVisits = () => {
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
 
+  const currentVisit = visitsList.find((v) => String(v.id) === currentVisitId);
+
   useEffect(() => {
     dispatch(
       fetchVisits({
@@ -132,7 +136,9 @@ const ActiveVisits = () => {
   const handleApproveSingleVisit = async (
     visitId: string,
     passNumber: string,
-    accessibleLocations: { floor: string; rooms: string[] }[]
+    accessibleLocations: { floor: string; rooms: string[] }[],
+    whomTheyMeet: string,
+    purposeOfVisit: string
   ) => {
     try {
       const payload = {
@@ -140,7 +146,8 @@ const ActiveVisits = () => {
         passNumber: passNumber.trim(),
         status: VisitAction.approve,
         accessibleLocations,
-        rejectionReason: null,
+        whomTheyMeet: whomTheyMeet.trim(),
+        purposeOfVisit: purposeOfVisit.trim(),
       };
 
       await dispatch(visitStatusUpdate(payload));
@@ -170,8 +177,6 @@ const ActiveVisits = () => {
             visitId: +visitId,
             status: VisitAction.reject,
             rejectionReason: reason?.trim(),
-            passNumber: null,
-            accessibleLocations: null,
           };
 
           await dispatch(visitStatusUpdate(payload));
@@ -206,9 +211,6 @@ const ActiveVisits = () => {
         const payload = {
           visitId: +visitId,
           status: VisitAction.complete,
-          passNumber: null,
-          accessibleLocations: null,
-          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));
@@ -238,62 +240,13 @@ const ActiveVisits = () => {
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
-    {
-      field: "contactNumber",
-      headerName: "Contact Number",
-      minWidth: 150,
-      flex: 1,
-    },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
-    {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
-    },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
-    {
-      field: "timeOfEntry",
-      headerName: "Time Of Entry",
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? toLocalDateTime(params.value) : "N/A",
-    },
-    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
-    {
-      field: "accessibleLocations",
-      headerName: "Accessible Locations",
-      minWidth: 100,
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => {
-        const locations = params.value || [];
-        return (
-          <Tooltip title="View Attachments" arrow>
-            <IconButton
-              color="info"
-              onClick={() => showViewAccessibleFloors(locations)}
-              title="View Accessible Floors"
-              disabled={locations.length === 0}
-            >
-              <Visibility />
-            </IconButton>
-          </Tooltip>
-        );
-      },
-    },
     {
       field: "action",
       headerName: "Action",
       minWidth: 150,
       flex: 1,
       headerAlign: "center",
-      align: "center",
+      align: "left",
       renderCell: (params) => {
         const visit = params.row;
         const isRequested = visit.status === VisitStatus.requested;
@@ -340,6 +293,69 @@ const ActiveVisits = () => {
               </IconButton>
             )}
           </>
+        );
+      },
+    },
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
+    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
+      minWidth: 150,
+      flex: 1,
+    },
+    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    {
+      field: "companyName",
+      headerName: "Company Name",
+      minWidth: 150,
+      flex: 1,
+    },
+    {
+      field: "whomTheyMeet",
+      headerName: "Whom They Meet",
+      minWidth: 170,
+      flex: 1.2,
+    },
+    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "timeOfEntry",
+      headerName: "Time Of Entry",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
+      minWidth: 170,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
+    {
+      field: "accessibleLocations",
+      headerName: "Accessible Locations",
+      minWidth: 100,
+      flex: 1,
+      headerAlign: "center",
+      align: "center",
+      renderCell: (params) => {
+        const locations = params.value || [];
+        return (
+          <Tooltip title="View Attachments" arrow>
+            <IconButton
+              color="info"
+              onClick={() => showViewAccessibleFloors(locations)}
+              title="View Accessible Floors"
+              disabled={locations.length === 0}
+            >
+              <Visibility />
+            </IconButton>
+          </Tooltip>
         );
       },
     },
@@ -409,13 +425,17 @@ const ActiveVisits = () => {
             initialValues={{
               passNumber: "",
               selectedFloorsAndRooms: [],
+              whomTheyMeet: currentVisit?.whomTheyMeet || "",
+              purposeOfVisit: currentVisit?.purposeOfVisit || "",
             }}
             validationSchema={approvalValidationSchema}
             onSubmit={(values) => {
               handleApproveSingleVisit(
                 currentVisitId || "",
                 values.passNumber,
-                values.selectedFloorsAndRooms
+                values.selectedFloorsAndRooms,
+                values.whomTheyMeet,
+                values.purposeOfVisit
               );
             }}
           >
@@ -436,6 +456,36 @@ const ActiveVisits = () => {
                     errors.passNumber
                   }
                   error={touched.passNumber && Boolean(errors.passNumber)}
+                  sx={{ mb: 2 }}
+                />
+                <Field
+                  as={TextField}
+                  name="whomTheyMeet"
+                  label="Whom They Meet"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter person to meet"
+                  helperText={
+                    (touched.whomTheyMeet && errors.whomTheyMeet) ??
+                    errors.whomTheyMeet
+                  }
+                  error={touched.whomTheyMeet && Boolean(errors.whomTheyMeet)}
+                  sx={{ mb: 2 }}
+                />
+                <Field
+                  as={TextField}
+                  name="purposeOfVisit"
+                  label="Purpose of Visit"
+                  fullWidth
+                  variant="outlined"
+                  placeholder="Enter purpose of visit"
+                  helperText={
+                    (touched.purposeOfVisit && errors.purposeOfVisit) ??
+                    errors.purposeOfVisit
+                  }
+                  error={
+                    touched.purposeOfVisit && Boolean(errors.purposeOfVisit)
+                  }
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector
