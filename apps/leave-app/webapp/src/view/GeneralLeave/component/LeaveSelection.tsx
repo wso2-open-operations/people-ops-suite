@@ -20,27 +20,33 @@ import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
 import { Stack, Typography, useTheme } from "@mui/material";
 
-import { useState } from "react";
-
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
 interface LeaveSelectionProps {
   daysSelected: number;
+  selectedLeaveType: string;
+  onLeaveTypeChange: (leaveType: string) => void;
+  selectedDayPortion: string | null;
+  onDayPortionChange: (dayPortion: string | null) => void;
 }
 
-export default function LeaveSelection({ daysSelected }: LeaveSelectionProps) {
+export default function LeaveSelection({
+  daysSelected,
+  selectedLeaveType,
+  onLeaveTypeChange,
+  selectedDayPortion,
+  onDayPortionChange,
+}: LeaveSelectionProps) {
   const theme = useTheme();
-  const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>("casual");
-  const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
   const isHalfDayDisabled = daysSelected !== 1;
 
   const handleLeaveTypeSelection = (leaveType: string) => {
-    setSelectedLeaveType(leaveType);
+    onLeaveTypeChange(leaveType);
   };
 
   const handleDayPortionSelection = (dayPortion: string) => {
-    setSelectedDayPortion(dayPortion);
+    onDayPortionChange(dayPortion);
   };
 
   return (
