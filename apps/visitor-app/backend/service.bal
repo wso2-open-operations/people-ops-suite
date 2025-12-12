@@ -823,14 +823,14 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if purposeOfVisit is () || purposeOfVisit.trim() == "" {
+            if purposeOfVisit is () {
                 return <http:BadRequest>{
                     body: {
                         message: "Purpose of visit is required when approving a visit!"
                     }
                 };
             }
-            if whomTheyMeet is () || whomTheyMeet.trim() == "" {
+            if whomTheyMeet is () {
                 return <http:BadRequest>{
                     body: {
                         message: "The person they meet is required when approving a visit!"
