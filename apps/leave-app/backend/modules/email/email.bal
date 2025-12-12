@@ -48,7 +48,6 @@ isolated function processEmailNotification(string alertHeader, string subject, m
     string htmlContent = string `
         <html>
             <body>
-                <h2>${alertHeader}</h2>
                 <p>${body.get("CONTENT")}</p>
             </body>
         </html>
