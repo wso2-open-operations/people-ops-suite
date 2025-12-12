@@ -234,7 +234,7 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
                 return error("Employee start date is not set!");
             }
             time:Civil civilEndDate = employmentEndDate is string ?
-                check getCivilDateFromString(employmentStartDate) : time:utcToCivil(time:utcNow());
+                check getCivilDateFromString(employmentEndDate) : time:utcToCivil(time:utcNow());
             time:Civil civilEmploymentStartDate = check getCivilDateFromString(employmentStartDate);
 
             int yearsOfEmployment = civilEndDate.year - civilEmploymentStartDate.year;
