@@ -281,7 +281,6 @@ export default function Employees() {
                   values.unitId && values.unitId > 0
                     ? values.unitId
                     : undefined,
-                continuousServiceRecord: values.continuousServiceRecord || undefined,
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
                   fullName: values.personalInfo.fullName,
