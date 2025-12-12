@@ -195,7 +195,7 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
         (string `
             <p>
                 Hi all,
-                <br />
+                <br/>
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave (${isMorningHalf ? "first" : "second"} half) on ${date}.
             <p>
         `)
@@ -203,7 +203,7 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
         (string `
             <p>
                 Hi all,
-                <br />
+                <br/>
                 Please note that ${employeeName} has cancelled the half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
             <p>
         `);
