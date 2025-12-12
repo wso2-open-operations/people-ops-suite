@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Typography, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link, matchPath, useLocation } from "react-router-dom";
@@ -46,8 +47,8 @@ const SubLink = (props: SubLinkProps) => {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            paddingX: "8px",
-            paddingY: "8px",
+            px: "8px",
+            py: "8px",
             borderRadius: "8px",
             justifyContent: "flex-start",
             textDecoration: "none",

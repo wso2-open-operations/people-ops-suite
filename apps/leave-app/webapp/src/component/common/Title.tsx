@@ -13,15 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Typography, useTheme } from "@mui/material";
 
-import { StyledEngineProvider } from "@mui/material/styles";
-import ReactDOM from "react-dom/client";
+interface TitleProps {
+  firstWord: string;
+  secondWord: string;
+}
 
-import App from "./App";
+export default function Title({ firstWord, secondWord }: TitleProps) {
+  const theme = useTheme();
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(
-  <StyledEngineProvider injectFirst>
-    <App />
-  </StyledEngineProvider>,
-);
+  return (
+    <Typography variant="h4" sx={{ color: theme.palette.text.primary, fontWeight: "600" }}>
+      <span style={{ color: theme.palette.primary.main, display: "inline" }}>{firstWord}</span>{" "}
+      {secondWord}
+    </Typography>
+  );
+}

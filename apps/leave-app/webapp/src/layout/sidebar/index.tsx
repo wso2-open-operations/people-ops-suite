@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
@@ -140,13 +141,13 @@ const Sidebar = (props: SidebarProps) => {
           <Box
             sx={{
               height: "100%",
-              paddingY: "16px",
-              paddingX: "12px",
+              py: "16px",
+              px: "12px",
               backgroundColor: theme.palette.surface.secondary.active,
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: props.open ? "200px" : "fit-content",
+              width: "fit-content" ,
               overflow: "visible",
             }}
           >

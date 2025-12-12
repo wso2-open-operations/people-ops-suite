@@ -14,10 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Nested page</div>
-    </div>
-  );
+import Title from "@root/src/component/common/Title";
+
+export default function ApprovalHistoryTab() {
+  return <Title firstWord="Approval" secondWord="History" />;
 }
+

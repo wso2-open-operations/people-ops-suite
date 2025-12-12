@@ -14,22 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import TabsPage from "@root/src/layout/pages/TabsPage";
-import UserGuide from "@view/help/panel/userGuide";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
+import Title from "@root/src/component/common/Title";
 
-export default function Help() {
-  return (
-    <TabsPage
-      title="Help"
-      tabsPage={[
-        {
-          tabTitle: "User Guide",
-          tabPath: "user-guide",
-          icon: <MenuBookIcon />,
-          page: <UserGuide />,
-        },
-      ]}
-    />
-  );
+export default function FunctionalLeadViewTab() {
+  return <Title firstWord="Functional" secondWord="Lead View" />;
 }
