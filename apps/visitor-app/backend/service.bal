@@ -816,7 +816,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
+            if accessibleLocations is () {
                 return <http:BadRequest>{
                     body: {
                         message: "At least one accessible location is required when approving a visit!"
@@ -845,8 +845,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
                         timeOfEntry: time:utcNow(),
-                        purposeOfVisit: purposeOfVisit.trim(),
-                        whomTheyMeet: whomTheyMeet.trim()
+                        purposeOfVisit: payload.purposeOfVisit,
+                        whomTheyMeet: payload.whomTheyMeet
                     }, invokerInfo.email);
 
             if response is error {

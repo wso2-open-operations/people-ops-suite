@@ -92,12 +92,28 @@ public type AddVisitorPayload record {|
     string? email = ();
 |};
 
+
+#[Database] Room type.
+@constraint:String{
+    pattern: {
+        value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
+        message: "Room should be a non-empty string with printable characters."
+    }
+}
+public type Room string;
+
 # [Database] Floor record.
 public type Floor record {|
-    # Floor
+    # Floor number
+    @constraint:String{
+        pattern: {
+            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "Floor should be a non-empty string with printable characters."
+        }
+    }
     string floor;
     # Array of rooms
-    string[] rooms;
+    Room[] rooms;
 |};
 
 # [Database] Insert record for visit.
