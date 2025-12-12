@@ -66,7 +66,10 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
     }
     int lastInsertId = check result.lastInsertId.ensureType();
     Leave|error? insertedLeave = getLeave(lastInsertId);
-    if insertedLeave is error? {
+    if insertedLeave is () {
+        return error("Inserted leave not found after insertion");
+    }
+    if insertedLeave is error {
         return error("Error occurred while fetching inserted leave!", insertedLeave);
     }
     return insertedLeave;
