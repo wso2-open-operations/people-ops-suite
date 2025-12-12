@@ -25,9 +25,8 @@ isolated cache:Cache hrisEmployeeCache = new (
 # Get Employee from HRIS by email with caching using GraphQL.
 #
 # + email - Employee email
-# + token - JWT token (not used in GraphQL OAuth2 flow)
 # + return - Return Employee entity or error
-public isolated function getEmployee(string email, string token)
+public isolated function getEmployee(string email)
     returns readonly & Employee|error {
 
     lock {
@@ -75,13 +74,9 @@ public isolated function getEmployee(string email, string token)
 
 # Get Employees from HRIS by filters using GraphQL.
 #
-# + token - JWT token (not used in GraphQL OAuth2 flow)
 # + filters - Filter object containing the filter criteria for the query
-# + 'limit - The maximum number of employees to return
-# + offset - The number of employees to skip before starting to collect the result set
 # + return - Return an array of Employee entity or error
-public isolated function getEmployees(string token, EmployeeFilter filters = {}, int 'limit = DEFAULT_LIMIT,
-        int offset = DEFAULT_OFFSET) returns readonly & Employee[]|error {
+public isolated function getEmployees(EmployeeFilter filters = {}) returns readonly & Employee[]|error {
 
     GraphQLEmployeeFilter gqlFilter = {
         location: filters.location,
@@ -128,7 +123,7 @@ public isolated function getEmployees(string token, EmployeeFilter filters = {},
 # + return - The employee's location or an error
 public isolated function getEmployeeLocation(string email, string token) returns string|error {
 
-    readonly & Employee|error employee = getEmployee(email, token);
+    readonly & Employee|error employee = getEmployee(email);
     if employee is error {
         return error(employee.message(), employee);
     }

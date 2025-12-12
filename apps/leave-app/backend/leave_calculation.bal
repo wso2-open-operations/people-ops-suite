@@ -328,7 +328,7 @@ isolated function getLeaveReportContent(LeaveResponse[] leaves) returns ReportCo
 isolated function getUserCalendarInformation(string email, string startDate, string endDate, string token)
     returns UserCalendarInformation|error {
 
-    readonly & Employee|error employeeEntityResponse = employee:getEmployee(email, token);
+    readonly & Employee|error employeeEntityResponse = employee:getEmployee(email);
     if employeeEntityResponse is error {
         return error(employee:ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED, employeeEntityResponse);
     }

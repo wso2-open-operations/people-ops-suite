@@ -42,8 +42,7 @@ service http:InterceptableService / on new http:Listener(9091) {
     resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            employee:Employee empInfo = check employee:getEmployee(userInfo.email, jwt);
+            employee:Employee empInfo = check employee:getEmployee(userInfo.email);
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
@@ -429,7 +428,7 @@ service http:InterceptableService / on new http:Listener(9091) {
             LeaveResponse[] leaveResponses = from database:Leave leave in leaves
                 select check toLeaveEntity(leave, jwt);
 
-            Employee & readonly employee = check employee:getEmployee(email, jwt);
+            Employee & readonly employee = check employee:getEmployee(email);
             Employee {leadEmail, location} = employee;
             string[] emailRecipients = leaveResponses.length() > 0 ? leaveResponses[0].emailRecipients : [];
             string[] leadEmails = leadEmail == () ? [] : [leadEmail];
@@ -472,9 +471,7 @@ service http:InterceptableService / on new http:Listener(9091) {
             string? unit, string[]? employeeStatuses, string? leadEmail) returns Employee[]|http:InternalServerError {
 
         do {
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             Employee[] & readonly employees = check employee:getEmployees(
-                    jwt,
                     {
                         location,
                         businessUnit,
@@ -482,9 +479,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                         unit,
                         status: employeeStatuses,
                         leadEmail
-                    },
-                    'limit = 1000,
-                    offset = 0
+                    }
             );
 
             Employee[] employeesToReturn = from Employee employee in employees
@@ -531,8 +526,7 @@ service http:InterceptableService / on new http:Listener(9091) {
         }
 
         do {
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            Employee & readonly employee = check employee:getEmployee(email, jwt);
+            Employee & readonly employee = check employee:getEmployee(email);
 
             return {
                 employeeId: employee.employeeId,
@@ -592,7 +586,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                 }
             }
 
-            Employee & readonly employee = check employee:getEmployee(email, jwt);
+            Employee & readonly employee = check employee:getEmployee(email);
             LeaveEntitlement[]|error leaveEntitlements = getLeaveEntitlement(employee, jwt, years ?: []);
             if leaveEntitlements is error {
                 fail error("Error occurred while retrieving leave entitlement!", leaveEntitlements);
@@ -662,7 +656,6 @@ service http:InterceptableService / on new http:Listener(9091) {
             Employee[] & readonly employees;
 
             employees = check employee:getEmployees(
-                    jwt,
                     {
                         location: payload.location,
                         businessUnit: payload.businessUnit,

@@ -128,7 +128,7 @@ public isolated function getAllEmailRecipientsForUser(string email, string[] use
         recipientMap[defaultRecipient] = true;
     }
 
-    readonly & Employee employee = check employee:getEmployee(email, token);
+    readonly & Employee employee = check employee:getEmployee(email);
     recipientMap[<string>employee.leadEmail] = true;
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
@@ -387,7 +387,7 @@ public isolated function getPrivateRecipientsForUser(string email, string[] user
     map<true> recipientMap = {
         [email]: true
     };
-    readonly & Employee employee = check employee:getEmployee(email, token);
+    readonly & Employee employee = check employee:getEmployee(email);
     recipientMap[<string>employee.leadEmail] = true;
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
