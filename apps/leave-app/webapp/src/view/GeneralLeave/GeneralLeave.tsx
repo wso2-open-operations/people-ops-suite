@@ -16,6 +16,8 @@
 
 import { Stack } from "@mui/material";
 import { useState } from "react";
+import { useSnackbar } from "notistack";
+import { Dayjs } from "dayjs";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
@@ -24,9 +26,82 @@ import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalC
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
+import { submitLeaveRequest, formatDateForAPI } from "@root/src/services/leaveService";
 
 export default function GeneralLeave() {
+  const { enqueueSnackbar } = useSnackbar();
   const [daysSelected, setDaysSelected] = useState(0);
+  const [startDate, setStartDate] = useState<Dayjs | null>(null);
+  const [endDate, setEndDate] = useState<Dayjs | null>(null);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string>("casual");
+  const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
+  const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
+  const [comment, setComment] = useState("");
+  const [isPublicComment, setIsPublicComment] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!startDate || !endDate) {
+      enqueueSnackbar("Please select start and end dates", { variant: "error" });
+      return;
+    }
+
+    if (!selectedDayPortion) {
+      enqueueSnackbar("Please select a portion of the day", { variant: "error" });
+      return;
+    }
+
+    if (!selectedLeaveType) {
+      enqueueSnackbar("Please select a leave type", { variant: "error" });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Determine periodType based on day portion selection
+      let periodType: "one" | "multiple" | "half";
+      let isMorningLeave: boolean | null = null;
+
+      if (selectedDayPortion === "full") {
+        periodType = daysSelected === 1 ? "one" : "multiple";
+      } else {
+        periodType = "half";
+        isMorningLeave = selectedDayPortion === "first";
+      }
+
+      const payload = {
+        periodType,
+        startDate: formatDateForAPI(startDate),
+        endDate: formatDateForAPI(endDate),
+        isMorningLeave,
+        comment,
+        leaveType: selectedLeaveType,
+        emailRecipients,
+        isPublicComment,
+      };
+
+      await submitLeaveRequest(payload);
+
+      enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
+
+      // Reset form
+      setStartDate(null);
+      setEndDate(null);
+      setSelectedLeaveType("casual");
+      setSelectedDayPortion(null);
+      setEmailRecipients([]);
+      setComment("");
+      setIsPublicComment(false);
+    } catch (error: any) {
+      console.error("Error submitting leave request:", error);
+      const errorMessage = error?.response?.data?.message || "Failed to submit leave request. Please try again.";
+      enqueueSnackbar(errorMessage, { variant: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -38,11 +113,33 @@ export default function GeneralLeave() {
           justifyContent={{ md: "space-between" }}
           gap={{ xs: "1.5rem" }}
         >
-          <LeaveDateSelection onDaysChange={setDaysSelected} />
-          <LeaveSelection daysSelected={daysSelected} />
+          <LeaveDateSelection 
+            onDaysChange={setDaysSelected}
+            onDatesChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }}
+          />
+          <LeaveSelection 
+            daysSelected={daysSelected}
+            selectedLeaveType={selectedLeaveType}
+            onLeaveTypeChange={setSelectedLeaveType}
+            selectedDayPortion={selectedDayPortion}
+            onDayPortionChange={setSelectedDayPortion}
+          />
         </Stack>
-        <NotifyPeople />
-        <AdditionalComment />
+        <NotifyPeople 
+          selectedEmails={emailRecipients}
+          onEmailsChange={setEmailRecipients}
+        />
+        <AdditionalComment 
+          comment={comment}
+          onCommentChange={setComment}
+          isPublicComment={isPublicComment}
+          onPublicCommentChange={setIsPublicComment}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+        />
       </FormContainer>
     </Stack>
   );
