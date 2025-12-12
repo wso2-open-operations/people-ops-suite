@@ -272,7 +272,7 @@ service http:InterceptableService / on new http:Listener(9091) {
                     allRecipientsForUser
             );
             _ = start createLeaveEventInCalendar(email, leaveResponse, calendarEventId);
-            if comment is string && checkIfEmptyString(comment) {
+            if comment is string && !checkIfEmptyString(comment) {
                 string[] commentRecipients = allRecipientsForUser;
                 if !payload.isPublicComment {
                     commentRecipients = check getPrivateRecipientsForUser(
