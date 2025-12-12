@@ -16,26 +16,36 @@
 
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Info } from "lucide-react";
-import { useState, useEffect } from "react";
 import dayjs, { Dayjs } from "dayjs";
-import { validateLeaveRequest, formatDateForAPI, getPeriodType } from "@root/src/services/leaveService";
+import { Info } from "lucide-react";
+
+import { useEffect, useState } from "react";
+
+import {
+  formatDateForAPI,
+  getPeriodType,
+  validateLeaveRequest,
+} from "@root/src/services/leaveService";
 
 interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
+  onDatesChange: (startDate: Dayjs | null, endDate: Dayjs | null) => void;
 }
 
-export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionProps) {
+export default function LeaveDateSelection({
+  onDaysChange,
+  onDatesChange,
+}: LeaveDateSelectionProps) {
   const theme = useTheme();
-  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs());
-  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
+  const [startDate, setStartDate] = useState<Dayjs | null>(null);
+  const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isValidating, setIsValidating] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
     if (end.isBefore(start)) return 0;
-    return end.diff(start, 'day') + 1;
+    return end.diff(start, "day") + 1;
   };
 
   const daysSelected = calculateTotalDays(startDate, endDate);
@@ -43,6 +53,12 @@ export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionP
   useEffect(() => {
     onDaysChange(daysSelected);
   }, [daysSelected, onDaysChange]);
+
+  // Notify parent of initial dates on mount
+  useEffect(() => {
+    onDatesChange(startDate, endDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Initial validation on mount
   useEffect(() => {
@@ -85,9 +101,12 @@ export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionP
 
   const handleStartDateChange = (newValue: Dayjs | null) => {
     setStartDate(newValue);
+    onDatesChange(newValue, endDate);
+
     // If end date is before new start date, clear end date
-    if (newValue && endDate && endDate.isBefore(newValue)) {
+    if (newValue && endDate && endDate.isBefore(newValue, "day")) {
       setEndDate(null);
+      onDatesChange(newValue, null);
       setWorkingDaysSelected(0);
     } else if (newValue && endDate) {
       validateDates(newValue, endDate);
@@ -96,6 +115,8 @@ export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionP
 
   const handleEndDateChange = (newValue: Dayjs | null) => {
     setEndDate(newValue);
+    onDatesChange(startDate, newValue);
+
     if (startDate && newValue) {
       validateDates(startDate, newValue);
     }
@@ -127,17 +148,15 @@ export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionP
         spacing={1.5}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
-        <DatePicker 
-          label="From" 
-          format="ddd, d MMM" 
+        <DatePicker
+          label="From"
           sx={{ minWidth: "10%" }}
           value={startDate}
           onChange={handleStartDateChange}
           disablePast
         />
-        <DatePicker 
-          label="To" 
-          format="ddd, d MMM" 
+        <DatePicker
+          label="To"
           sx={{ minWidth: "10%" }}
           value={endDate}
           onChange={handleEndDateChange}
@@ -168,8 +187,12 @@ export default function LeaveDateSelection({ onDaysChange }: LeaveDateSelectionP
           justifyContent: "center",
           alignItems: "center",
           gap: "0.5rem",
-          backgroundColor: isValidSelection ? theme.palette.primary.main : theme.palette.warning.main,
-          color: isValidSelection ? theme.palette.primary.contrastText : theme.palette.warning.contrastText,
+          backgroundColor: isValidSelection
+            ? theme.palette.primary.main
+            : theme.palette.warning.main,
+          color: isValidSelection
+            ? theme.palette.primary.contrastText
+            : theme.palette.warning.contrastText,
           borderRadius: "0.4rem",
           py: "0.5rem",
           px: "2rem",
