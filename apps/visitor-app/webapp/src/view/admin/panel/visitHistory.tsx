@@ -66,7 +66,9 @@ const VisitHistory = () => {
   }, [dispatch, page, pageSize]);
 
   const columns: GridColDef[] = [
+    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
     {
       field: "contactNumber",
       headerName: "Contact Number",
@@ -74,14 +76,18 @@ const VisitHistory = () => {
       flex: 1,
     },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
     },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
+    {
+      field: "whomTheyMeet",
+      headerName: "Whom They Meet",
+      minWidth: 170,
+      flex: 1.2,
+    },
     { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
     {
       field: "timeOfEntry",

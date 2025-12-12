@@ -146,7 +146,6 @@ const ActiveVisits = () => {
         passNumber: passNumber.trim(),
         status: VisitAction.approve,
         accessibleLocations,
-        rejectionReason: null,
         whomTheyMeet: whomTheyMeet.trim(),
         purposeOfVisit: purposeOfVisit.trim(),
       };
@@ -178,8 +177,6 @@ const ActiveVisits = () => {
             visitId: +visitId,
             status: VisitAction.reject,
             rejectionReason: reason?.trim(),
-            passNumber: null,
-            accessibleLocations: null,
           };
 
           await dispatch(visitStatusUpdate(payload));
@@ -214,9 +211,6 @@ const ActiveVisits = () => {
         const payload = {
           visitId: +visitId,
           status: VisitAction.complete,
-          passNumber: null,
-          accessibleLocations: null,
-          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));
