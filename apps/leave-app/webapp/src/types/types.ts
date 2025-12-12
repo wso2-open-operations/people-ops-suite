@@ -66,6 +66,9 @@ export interface LeaveValidationResponse {
 
 // Employee types
 export interface Employee {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
   workEmail: string;
-  [key: string]: any;
+  employeeThumbnail: string | null;
 }

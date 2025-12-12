@@ -15,12 +15,43 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
+import { Autocomplete, Avatar, Chip, CircularProgress, Stack, TextField, Typography, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
+import { fetchEmployees } from "@root/src/services/leaveService";
+import { Employee } from "@root/src/types/types";
 
-import { mockEmailContacts } from "../MockData";
+interface EmployeeOption {
+  label: string;
+  email: string;
+  thumbnail: string | null;
+}
 
 export default function NotifyPeople() {
   const theme = useTheme();
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        setLoading(true);
+        const employees = await fetchEmployees();
+        const options = employees.map((employee: Employee) => ({
+          label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
+          email: employee.workEmail,
+          thumbnail: employee.employeeThumbnail,
+        }));
+        setEmployeeOptions(options);
+      } catch (error) {
+        console.error("Failed to fetch employees:", error);
+        setEmployeeOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEmployees();
+  }, []);
 
   return (
     <Stack gap="1rem">
@@ -29,23 +60,47 @@ export default function NotifyPeople() {
       </Typography>
       <Autocomplete
         multiple
-        options={mockEmailContacts.map((contact) => contact.email)}
-        renderInput={(params) => <TextField {...params} label="Select emails" />}
+        options={employeeOptions}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.email === value.email}
+        loading={loading}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Select emails"
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
         renderTags={(value, getTagProps) =>
           value.map((option, index) => (
             <Chip
               {...getTagProps({ index })}
               key={index}
-              label={option}
+              label={option.email}
               avatar={
-                <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
-                  <Email
-                    sx={{
-                      fontSize: theme.typography.caption.fontSize,
-                      color: theme.palette.primary.contrastText,
-                    }}
+                option.thumbnail ? (
+                  <Avatar
+                    src={option.thumbnail}
+                    sx={{ width: 30, height: 30 }}
                   />
-                </Avatar>
+                ) : (
+                  <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
+                    <Email
+                      sx={{
+                        fontSize: theme.typography.caption.fontSize,
+                        color: theme.palette.primary.contrastText,
+                      }}
+                    />
+                  </Avatar>
+                )
               }
             />
           ))
