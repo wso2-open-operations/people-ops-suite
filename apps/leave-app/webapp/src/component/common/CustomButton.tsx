@@ -18,13 +18,17 @@ import { Button } from "@mui/material";
 
 interface CustomButtonProps {
   label: string;
+  onClick?: () => void;
+  disabled?: boolean;
 }
-export default function CustomButton({ label }: CustomButtonProps) {
+export default function CustomButton({ label, onClick, disabled }: CustomButtonProps) {
   return (
     <Button
       type="submit"
       variant="contained"
       color="primary"
+      onClick={onClick}
+      disabled={disabled}
       sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
     >
       {label}
