@@ -26,7 +26,12 @@ interface EmployeeOption {
   thumbnail: string | null;
 }
 
-export default function NotifyPeople() {
+interface NotifyPeopleProps {
+  selectedEmails: string[];
+  onEmailsChange: (emails: string[]) => void;
+}
+
+export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyPeopleProps) {
   const theme = useTheme();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +66,10 @@ export default function NotifyPeople() {
       <Autocomplete
         multiple
         options={employeeOptions}
+        value={employeeOptions.filter(opt => selectedEmails.includes(opt.email))}
+        onChange={(_, newValue) => {
+          onEmailsChange(newValue.map(opt => opt.email));
+        }}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(option, value) => option.email === value.email}
         loading={loading}
