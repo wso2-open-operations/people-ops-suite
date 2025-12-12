@@ -155,7 +155,7 @@ public isolated function generateContentForLeave(string token, string employeeEm
             boolean? isMorningLeave = leave.isMorningLeave;
             if isMorningLeave is () {
                 log:printError("Leave in invalid state at generateContentForLeave. isMorningLeave is not set for the Leave!");
-                panic error("isMorningLeave is not set for the leave");
+                return error("isMorningLeave is not set for the leave");
             }
             notificationDetails = generateContentForHalfDayLeave(
                     employeeName,
