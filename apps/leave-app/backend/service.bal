@@ -1,4 +1,4 @@
-// Copyright (c) 2024 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -36,6 +36,7 @@ service http:InterceptableService / on new http:Listener(9091) {
     function init() returns error? => log:printInfo("Leave application backend service started.");
 
     # Get user info with privileges.
+    # 
     # + ctx - HTTP request context
     # + return - User Info payload or Internal Server Error
     resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError {
