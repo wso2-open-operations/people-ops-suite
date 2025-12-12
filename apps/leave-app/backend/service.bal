@@ -35,6 +35,9 @@ service http:InterceptableService / on new http:Listener(9091) {
 
     function init() returns error? => log:printInfo("Leave application backend service started.");
 
+    # Get user info with privileges.
+    # + ctx - HTTP request context
+    # + return - User Info payload or Internal Server Error
     resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
