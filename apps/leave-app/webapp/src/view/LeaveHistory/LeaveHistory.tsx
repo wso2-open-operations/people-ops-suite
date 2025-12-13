@@ -15,31 +15,72 @@
 // under the License.
 
 import { Box, Stack } from "@mui/material";
+import { useSelector } from "react-redux";
+
+import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { selectUserEmail } from "@root/src/slices/userSlice/user";
+import { SingleLeaveHistory } from "@root/src/types/types";
 
-import { mockLeaveHistory } from "./MockData";
 import LeaveCard from "./component/LeaveCard";
 
 export default function LeaveHistory() {
+  const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const email = useSelector(selectUserEmail);
+
+  useEffect(() => {
+    const fetchLeaveHistory = async () => {
+      setLoading(true);
+
+      try {
+        const response = await getLeaveHistory({
+          isActive: true,
+          email: email || "",
+          startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
+        });
+
+        setLeaves(response.leaves);
+      } catch (err) {
+        console.error("Failed to load leave history", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeaveHistory();
+  }, []);
+
+  const getMonthAndDay = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleString("en-US", { month: "short" }).toUpperCase();
+    const day = date.getDate().toString();
+    return { month, day };
+  };
+
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
       <Title firstWord="Leave" secondWord="History" />
-      <Box gap="2rem" display="grid" gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr" }}>
-        {mockLeaveHistory.map((leave) => (
-          <LeaveCard
-            key={leave.id}
-            id={leave.id}
-            type={leave.type}
-            startDate={leave.startDate}
-            endDate={leave.endDate}
-            duration={leave.duration}
-            status={leave.status}
-            month={leave.month}
-            day={leave.day}
-          />
-        ))}
+      <Box gap="2rem" display="grid" gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr 1fr" }}>
+        {leaves.map((leave) => {
+          const { month, day } = getMonthAndDay(leave.startDate);
+          return (
+            <LeaveCard
+              key={leave.id}
+              id={leave.id}
+              type={`${leave.leaveType.toUpperCase()} LEAVE`}
+              startDate={leave.startDate.substring(0, 10)}
+              endDate={leave.endDate.substring(0, 10)}
+              duration={`${leave.numberOfDays} days`}
+              status="approved"
+              month={month}
+              day={day}
+            />
+          );
+        })}
       </Box>
     </Stack>
   );
