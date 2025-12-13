@@ -50,7 +50,7 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
 }
 
-// Leave validation types
+// Leave validation types.
 export interface LeaveValidationRequest {
   periodType: "one" | "multiple";
   startDate: string;
@@ -58,13 +58,14 @@ export interface LeaveValidationRequest {
   isMorningLeave: boolean | null;
 }
 
+// Leave validation response type.
 export interface LeaveValidationResponse {
   workingDays: number;
   isValid: boolean;
   message?: string;
 }
 
-// Employee types
+// Employee types.
 export interface Employee {
   employeeId: string;
   firstName: string;
@@ -73,7 +74,7 @@ export interface Employee {
   employeeThumbnail: string | null;
 }
 
-// Leave submission type
+// Leave submission type.
 export interface LeaveSubmissionRequest {
   periodType: "one" | "multiple" | "half";
   startDate: string;
@@ -85,9 +86,47 @@ export interface LeaveSubmissionRequest {
   isPublicComment: boolean;
 }
 
-// Leave submission response type
+// Leave submission response type.
 export interface LeaveSubmissionResponse {
   success: boolean;
   message?: string;
   leaveId?: string;
+}
+
+// Leave history response for a single leave.
+export interface SingleLeaveHistory {
+  id: string;
+  email: string;
+  leaveType: string;
+  periodType: string;
+  copyEmailList: string;
+  notifyEveryone: boolean;
+  submitComment: string;
+  cancelComment: string;
+  createdDate: string | null;
+  updatedDate: string | null;
+  emailId: string | null;
+  emailSubject: string | null;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+  startHalf: number | null;
+  isEndHalf: number | null;
+  canceledDate: string | null;
+  numberOfDays: number;
+  isPublicComment: boolean;
+  calendarEventId: string | null;
+  location: string;
+}
+
+// Leave history response type.
+export interface LeaveHistoryResponse {
+  leaves: SingleLeaveHistory[];
+}
+
+// Query parameters for leave history request.
+export interface LeaveHistoryQueryParam {
+  isActive: boolean;
+  email: string;
+  startDate: string;
 }
