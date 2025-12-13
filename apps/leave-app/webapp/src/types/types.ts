@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -129,4 +128,23 @@ export interface LeaveHistoryQueryParam {
   isActive: boolean;
   email: string;
   startDate: string;
+}
+
+// Lead report request type.
+export interface LeadReportRequest {
+  startDate: string;
+  endDate: string;
+}
+
+// Lead report response type.
+export interface LeadReportResponse {
+  [email: string]: {
+    casual?: number;
+    total?: number;
+    totalExLieu?: number;
+    lieu?: number;
+    maternity?: number;
+    paternity?: number;
+    sabbatical?: number;
+  };
 }
