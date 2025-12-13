@@ -17,6 +17,8 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   Employee,
+  LeadReportRequest,
+  LeadReportResponse,
   LeaveHistoryQueryParam,
   LeaveHistoryResponse,
   LeaveSubmissionRequest,
@@ -77,7 +79,7 @@ export const submitLeaveRequest = async (
 /**
  * Get a list of leave history records.
  * @param request - Leave submission request payload
- * @returns Promise with submission response
+ * @returns leave history data
  */
 export const getLeaveHistory = async (
   params: LeaveHistoryQueryParam,
@@ -86,6 +88,22 @@ export const getLeaveHistory = async (
 
   const response = await apiInstance.get<LeaveHistoryResponse>(
     `${AppConfig.serviceUrls.leaves}?isActive=${params.isActive}&email=${params.email}&startDate=${params.startDate}`,
+  );
+
+  return response.data;
+};
+
+/**
+ * Get a lead report.
+ * @param request - request payload
+ * @returns Promise with submission response
+ */
+export const getLeadReport = async (request: LeadReportRequest): Promise<LeadReportResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<LeadReportResponse>(
+    AppConfig.serviceUrls.leadReport,
+    request,
   );
 
   return response.data;
