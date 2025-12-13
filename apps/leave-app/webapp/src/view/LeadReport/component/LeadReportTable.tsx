@@ -17,9 +17,32 @@
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { rows } from "../MockData";
+import { useMemo } from "react";
 
-export default function LeadReportTable() {
+import { LeadReportResponse } from "@root/src/types/types";
+
+interface LeadReportTableProps {
+  reportData: LeadReportResponse | null;
+  loading: boolean;
+}
+
+export default function LeadReportTable({ reportData, loading }: LeadReportTableProps) {
+  const rows = useMemo(() => {
+    if (!reportData) return [];
+
+    return Object.entries(reportData).map(([email, data]) => ({
+      id: email,
+      employee: email,
+      annual: data.casual || 0,
+      paternity: data.paternity || 0,
+      maternity: data.maternity || 0,
+      lieu: data.lieu || 0,
+      sabbatical: data.sabbatical || 0,
+      totalExclLieu: data.totalExLieu || 0,
+      total: data.total || 0,
+    }));
+  }, [reportData]);
+
   const columns: GridColDef[] = [
     {
       field: "employee",
@@ -27,14 +50,8 @@ export default function LeadReportTable() {
       flex: 1,
     },
     {
-      field: "other",
-      headerName: "Other",
-      type: "number",
-      flex: 1,
-    },
-    {
       field: "annual",
-      headerName: "Annual",
+      headerName: "Annual/Casual",
       type: "number",
       flex: 1,
     },
@@ -57,6 +74,12 @@ export default function LeadReportTable() {
       type: "number",
     },
     {
+      field: "sabbatical",
+      headerName: "Sabbatical",
+      flex: 1,
+      type: "number",
+    },
+    {
       field: "totalExclLieu",
       headerName: "Total (Excl. Lieu)",
       flex: 1,
@@ -75,10 +98,10 @@ export default function LeadReportTable() {
       <DataGrid
         rows={rows}
         columns={columns}
+        loading={loading}
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-        pageSizeOptions={[5]}
+        pageSizeOptions={[5, 10, 25]}
         disableRowSelectionOnClick
-        showToolbar
       />
     </Box>
   );
