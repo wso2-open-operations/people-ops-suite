@@ -55,24 +55,6 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
 };
 
 /**
- * Helper function to format date for API (YYYY-MM-DD)
- * @param date - Dayjs date object
- * @returns Formatted date string
- */
-export const formatDateForAPI = (date: any): string => {
-  return date.format("YYYY-MM-DD");
-};
-
-/**
- * Helper function to determine period type based on days count
- * @param daysCount - Number of days selected
- * @returns Period type "one" or "multiple"
- */
-export const getPeriodType = (daysCount: number): "one" | "multiple" => {
-  return daysCount === 1 ? "one" : "multiple";
-};
-
-/**
  * Submits a leave request
  * @param request - Leave submission request payload
  * @returns Promise with submission response
@@ -88,4 +70,21 @@ export const submitLeaveRequest = async (
   );
 
   return response.data;
+};
+/**
+ * Helper function to format date for API (YYYY-MM-DD)
+ * @param date - Dayjs date object
+ * @returns Formatted date string
+ */
+export const formatDateForAPI = (date: any): string => {
+  return date.format("YYYY-MM-DD");
+};
+
+/**
+ * Helper function to determine period type based on days count
+ * @param daysCount - Number of days selected
+ * @returns Period type "one" or "multiple"
+ */
+export const getPeriodType = (daysCount: number): "one" | "multiple" => {
+  return daysCount === 1 ? "one" : "multiple";
 };
