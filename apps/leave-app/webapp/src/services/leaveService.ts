@@ -17,6 +17,8 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   Employee,
+  LeaveHistoryQueryParam,
+  LeaveHistoryResponse,
   LeaveSubmissionRequest,
   LeaveSubmissionResponse,
   LeaveValidationRequest,
@@ -25,7 +27,7 @@ import {
 import { APIService } from "@root/src/utils/apiService";
 
 /**
- * Validates leave request dates and returns working days calculation
+ * Validate leave request dates and return working days calculation.
  * @param request - Leave validation request payload
  * @returns Promise with validation response including working days
  */
@@ -43,7 +45,7 @@ export const validateLeaveRequest = async (
 };
 
 /**
- * Fetches all employees from the backend
+ * Fetch all employees from the backend.
  * @returns Promise with array of employees
  */
 export const fetchEmployees = async (): Promise<Employee[]> => {
@@ -55,7 +57,7 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
 };
 
 /**
- * Submits a leave request
+ * Submit a leave request.
  * @param request - Leave submission request payload
  * @returns Promise with submission response
  */
@@ -71,6 +73,24 @@ export const submitLeaveRequest = async (
 
   return response.data;
 };
+
+/**
+ * Get a list of leave history records.
+ * @param request - Leave submission request payload
+ * @returns Promise with submission response
+ */
+export const getLeaveHistory = async (
+  params: LeaveHistoryQueryParam,
+): Promise<LeaveHistoryResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.get<LeaveHistoryResponse>(
+    `${AppConfig.serviceUrls.leaves}?isActive=${params.isActive}&email=${params.email}&startDate=${params.startDate}`,
+  );
+
+  return response.data;
+};
+
 /**
  * Helper function to format date for API (YYYY-MM-DD)
  * @param date - Dayjs date object
