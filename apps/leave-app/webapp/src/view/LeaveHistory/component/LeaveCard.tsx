@@ -13,11 +13,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Card, CardContent, Chip, Stack, Typography, useTheme } from "@mui/material";
 
-import { LeaveData } from "../MockData";
+import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 
-export default function LeaveCard(leave: LeaveData) {
+export interface LeaveCardProps {
+  id: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  duration: string;
+  status: "approved" | "pending" | "rejected";
+  month: string;
+  day: string;
+}
+
+export default function LeaveCard(leave: LeaveCardProps) {
   const theme = useTheme();
 
   return (
@@ -25,7 +35,8 @@ export default function LeaveCard(leave: LeaveData) {
       sx={{
         borderRadius: "12px",
         border: `1px solid ${theme.palette.divider}`,
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+        alignItems: "center",
+        boxShadow: "0 2px 8px rgba(5, 5, 5, 0.08)",
         "&:hover": {
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
           transform: "translateY(-2px)",
@@ -33,7 +44,7 @@ export default function LeaveCard(leave: LeaveData) {
         },
       }}
     >
-      <CardContent sx={{ p: "1.25rem" }}>
+      <CardContent sx={{ p: "1.25rem", width: "fit-content" }}>
         <Stack spacing="1rem">
           <Typography
             variant="body2"
@@ -124,22 +135,6 @@ export default function LeaveCard(leave: LeaveData) {
                 {leave.duration}
               </Typography>
             </Stack>
-
-            {/* Status Badge */}
-            <Chip
-              label={"Submitted"}
-              sx={{
-                color: theme.palette.primary.main,
-                borderColor: theme.palette.primary.main,
-                backgroundColor: "transparent",
-                borderRadius: "0.5rem",
-                fontSize: theme.typography.caption.fontSize,
-                fontWeight: 700,
-                width: "10rem",
-                textTransform: "capitalize",
-                border: `0.1rem solid ${theme.palette.primary.main}`,
-              }}
-            />
           </Stack>
         </Stack>
       </CardContent>
