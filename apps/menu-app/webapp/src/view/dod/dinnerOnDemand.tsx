@@ -13,14 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { lazy } from "react";
-
-const home = lazy(() => import("@view/home/home"));
-const help = lazy(() => import("@view/help/help"));
-const dod = lazy(() => import("@view/dod/dinnerOnDemand"));
-
-export const View = {
-  help,
-  home,
-  dod,
-};
+export default function DinnerOnDemand() {
+  return (
+    <div>
+      <h1>Dinner on Demand</h1>
+    </div>
+  );
+}
