@@ -78,6 +78,9 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
           }));
 
         setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
+
+        // Initialize parent state with fixed emails
+        onEmailsChange(fixedEmailList);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setEmployeeOptions([]);
@@ -87,7 +90,7 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
     };
 
     loadData();
-  }, []);
+  }, [onEmailsChange]);
 
   const selectedOptions = employeeOptions.filter(
     (opt) => fixedEmails.includes(opt.email) || selectedEmails.includes(opt.email),
@@ -129,29 +132,48 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
           />
         )}
         renderTags={(value, getTagProps) =>
-          value.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option.email}
-              label={option.label}
-              avatar={
-                option.thumbnail ? (
-                  <Avatar src={option.thumbnail} sx={{ width: 30, height: 30 }} />
-                ) : (
-                  <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
-                    <Email
-                      sx={{
-                        fontSize: theme.typography.caption.fontSize,
-                        color: theme.palette.primary.contrastText,
-                      }}
-                    />
-                  </Avatar>
-                )
-              }
-              // Disable delete for fixed options
-              onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
-            />
-          ))
+          value.map((option, index) => {
+            const ChipAvatar = option.thumbnail ? (
+              <Avatar
+                src={option.thumbnail}
+                alt={option.email}
+                imgProps={{
+                  onError: (e: any) => {
+                    e.target.style.display = "none";
+                  },
+                }}
+                sx={{ width: 30, height: 30 }}
+              >
+                {!option.thumbnail && (
+                  <Email
+                    sx={{
+                      fontSize: theme.typography.caption.fontSize,
+                      color: theme.palette.primary.contrastText,
+                    }}
+                  />
+                )}
+              </Avatar>
+            ) : (
+              <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
+                <Email
+                  sx={{
+                    fontSize: theme.typography.caption.fontSize,
+                    color: theme.palette.primary.contrastText,
+                  }}
+                />
+              </Avatar>
+            );
+
+            return (
+              <Chip
+                {...getTagProps({ index })}
+                key={option.email}
+                label={option.email}
+                avatar={ChipAvatar}
+                onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+              />
+            );
+          })
         }
         sx={{
           "& .MuiChip-root": {
