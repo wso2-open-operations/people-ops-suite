@@ -46,13 +46,15 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
-            if authorization:checkPermissions(authorization:authorizedRoles.userRoles, userInfo.groups) {
+            if authorization:checkPermissions(authorization:authorizedRoles.generalRoles, userInfo.groups) {
+                privileges.push(authorization:GENERAL_PRIVILEGE);
+            }
+            if authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, userInfo.groups) {
                 privileges.push(authorization:EMPLOYEE_PRIVILEGE);
+                if (getIsSabbaticalLeaveEnabled()) {
+                    privileges.push(authorization:SABBATICAL_LEAVE_PRIVILEGE);
+                }
             }
-            if authorization:checkPermissions(authorization:authorizedRoles.adminRoles, userInfo.groups) {
-                privileges.push(authorization:ADMIN_PRIVILEGE);
-            }
-
             UserInfo userInfoResponse = {
                 employeeId: empInfo.employeeId,
                 firstName: empInfo.firstName,
@@ -63,7 +65,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead
             };
+
+            if (<boolean>userInfoResponse.isLead) {
+                privileges.push(authorization:LEAD_PRIVILEGE);
+            }
             return userInfoResponse;
+
         } on fail error internalErr {
             string errMsg = "Error occurred while fetching user info";
             log:printError(errMsg, internalErr);
@@ -100,7 +107,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             if email != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
+                        authorization:authorizedRoles.employeeRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource 
                         /leaves with email=${email.toString()}`);
@@ -337,7 +344,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             final string email = userInfo.email;
             if leaveResponse.email != email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
+                        authorization:authorizedRoles.employeeRoles);
                 if !validateForSingleRole {
                     return <http:Forbidden>{
                         body: {
@@ -575,7 +582,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             if email != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
+                        authorization:authorizedRoles.employeeRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the${false ?
                                 " admin " : " "}resource /leave-entitlement with email=${email.toString()}`);
@@ -653,7 +660,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
 
-            boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.adminRoles, groups);
+            boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.employeeRoles, groups);
             Employee[] & readonly employees;
 
             employees = check employee:getEmployees(
