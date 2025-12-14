@@ -60,7 +60,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Lead Report",
     icon: React.createElement(FileText),
     element: React.createElement(LeadReport),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.LEAD],
   },
 ];
 
