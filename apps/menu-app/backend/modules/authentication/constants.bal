@@ -8,10 +8,11 @@
 # Authorization Constants.
 public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
+public const USER_NOT_FOUND_ERROR = "User information header not found!";
 
 # Privileges.
 public const EMPLOYEE_PRIVILEGE = 987;
 public const ADMIN_PRIVILEGE = 789;
 
 // Validation regex patterns
-public final string:RegExp WSO2_EMAIL = re `^[a-zA-Z0-9._%+-]+@wso2\.com$`;
+public final string:RegExp WSO2_EMAIL = re `^[a-zA-Z][\p{L}_\-]+@wso2\.com$`;
