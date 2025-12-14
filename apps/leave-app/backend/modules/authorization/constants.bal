@@ -25,8 +25,10 @@ public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const INVOKER_TOKEN = "invoker-token";
 
 # Privileges.
-public const ADMIN_PRIVILEGE = 789;
-public const EMPLOYEE_PRIVILEGE = 987;
+public const EMPLOYEE_PRIVILEGE = 789;
+public const GENERAL_PRIVILEGE = 987;
+public const SABBATICAL_LEAVE_PRIVILEGE = 897;
+public const LEAD_PRIVILEGE = 879;
 
 // Authorization related constants
 public final map<string[]> & readonly adminPathToAllowedMethods = {
