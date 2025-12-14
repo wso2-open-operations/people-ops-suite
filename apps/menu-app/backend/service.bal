@@ -6,8 +6,8 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 import menu_app.authentication;
-import menu_app.people;
 import menu_app.menu_sheet as menu;
+import menu_app.people;
 
 import ballerina/cache;
 import ballerina/http;
@@ -35,7 +35,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch logged-in user's details.
     #
     # + return - User information or InternalServerError
-    resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError|http:NotFound {
+    resource function get user\-info(http:RequestContext ctx) returns http:InternalServerError|http:NotFound|UserInfo {
         authentication:CustomJwtPayload|error userInfo = ctx.getWithType(authentication:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(USER_NOT_FOUND_ERROR, userInfo);
@@ -80,7 +80,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authentication:checkPermissions([authentication:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authentication:ADMIN_PRIVILEGE);
         }
-        
+
         UserInfo userInfoResponse = {...employee, privileges};
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
@@ -111,11 +111,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Retrieve list of menu items.
     #
     # + return - Menu items or error response
-    isolated resource function get menu() returns Menu|AppServerErrorResponse {
+    isolated resource function get menu() returns http:InternalServerError|Menu {
         Menu|error menu = menu:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
-            return <AppServerErrorResponse>{
+            return <http:InternalServerError>{
                 body: {message: "Error retrieving menu data"}
             };
         }
@@ -126,13 +126,13 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Successful feedback or en error
     isolated resource function post feedback(Feedback feedback)
-        returns http:Created|http:InternalServerError|http:BadRequest {
+        returns http:InternalServerError|http:BadRequest|http:Created {
 
         Menu|error menu = menu:getMenu();
         if menu is error {
             string customErr = "Error retrieving menu data when getting vendor for the feedback";
             log:printError(customErr, menu);
-            return <AppServerErrorResponse>{
+            return <http:InternalServerError>{
                 body: {message: customErr}
             };
         }
@@ -149,10 +149,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !isFeedbackPeriod {
             string errorMessage = string `Lunch feedback can only be submitted on ${menu.date} between ${
-                lunchFeedbackStartTime.hour.toString().padStart(2,"0")}:${
-                lunchFeedbackStartTime.minute.toString().padStart(2,"0")} and ${
-                lunchFeedbackEndTime.hour.toString().padStart(2,"0")}:${
-                lunchFeedbackEndTime.minute.toString().padStart(2,"0")}`;
+                lunchFeedbackStartTime.hour.toString().padStart(2, "0")}:${
+                lunchFeedbackStartTime.minute.toString().padStart(2, "0")} and ${
+                lunchFeedbackEndTime.hour.toString().padStart(2, "0")}:${
+                lunchFeedbackEndTime.minute.toString().padStart(2, "0")}`;
             log:printWarn(errorMessage);
             return <http:BadRequest>{
                 body: {
