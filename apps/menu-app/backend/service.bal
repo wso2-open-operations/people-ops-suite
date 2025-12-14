@@ -163,10 +163,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         int|error feedbackId = menu:addFeedback(feedback, menu.lunch.title);
         if feedbackId is error {
-            string customeErr = "Error occurred while inserting the lunch feedback";
-            log:printError(customeErr, feedbackId);
+            string customErr = "Error occurred while inserting the lunch feedback";
+            log:printError(customErr, feedbackId);
             return <http:InternalServerError>{
-                body: {message: customeErr}
+                body: {message: customErr}
             };
         }
 
