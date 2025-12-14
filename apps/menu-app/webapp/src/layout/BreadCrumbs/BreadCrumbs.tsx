@@ -24,7 +24,10 @@ export default function BasicBreadcrumbs() {
   const theme = useTheme();
 
   const { pathname } = location;
-  const pathnames = pathname === "/" ? [] : pathname.split("/");
+  const pathnames =
+    pathname === "/"
+      ? []
+      : pathname.split("/").map((path) => path.charAt(0).toUpperCase() + path.slice(1));
 
   const renderBreadCrumbs = () => {
     let routeTo = "";
