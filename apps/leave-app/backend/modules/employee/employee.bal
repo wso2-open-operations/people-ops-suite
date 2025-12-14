@@ -15,7 +15,6 @@
 // under the License.
 import ballerina/cache;
 import ballerina/graphql;
-import ballerina/log;
 
 isolated cache:Cache hrisEmployeeCache = new (
     'defaultMaxAge = CACHE_DEFAULT_MAX_AGE,
@@ -26,15 +25,15 @@ isolated cache:Cache hrisEmployeeCache = new (
 #
 # + email - Employee email
 # + return - Return Employee entity or error
-public isolated function getEmployee(string email)
+public isolated function getEmployee(string? email)
     returns readonly & Employee|error {
 
-    lock {
-        any|cache:Error cachedEmployee = hrisEmployeeCache.get(email);
-        if cachedEmployee is readonly & Employee {
-            return cachedEmployee;
-        }
-    }
+    // lock {
+    //     any|cache:Error cachedEmployee = hrisEmployeeCache.get(email);
+    //     if cachedEmployee is readonly & Employee {
+    //         return cachedEmployee;
+    //     }
+    // }
 
     string document = string `
         query getEmployee($email: String!) {
@@ -65,12 +64,12 @@ public isolated function getEmployee(string email)
     }
     readonly & Employee employee = toEmployee(employeeResp);
 
-    lock {
-        cache:Error? cachingErr = hrisEmployeeCache.put(email, employee);
-        if cachingErr is cache:Error {
-            log:printError("Error caching employee data from HRIS");
-        }
-    }
+    // lock {
+    //     cache:Error? cachingErr = hrisEmployeeCache.put(email, employee);
+    //     if cachingErr is cache:Error {
+    //         log:printError("Error caching employee data from HRIS");
+    //     }
+    // }
 
     return employee;
 }

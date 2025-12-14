@@ -120,6 +120,14 @@ public type Employee record {|
     boolean? lead;
 |};
 
+# Mandatory mails to be notified when submitting a leave.
+public type MandatoryMails record {|
+    # Email address / group to be notified
+    string email;
+    # Thumbnail image of the email address / group
+    string thumbnail = "";
+|};
+
 # Employee response type.
 public type EmployeeResponse record {
     # Id of the employee

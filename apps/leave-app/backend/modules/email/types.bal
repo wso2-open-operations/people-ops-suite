@@ -50,6 +50,7 @@ public type Employee record {|
     *employee:Employee;
 |};
 
+# Months.
 public type Month JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER;
 
 # Payload for leave creation.

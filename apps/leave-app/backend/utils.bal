@@ -24,6 +24,7 @@ import ballerina/regex;
 import ballerina/time;
 
 configurable string[] defaultRecipients = [];
+configurable string emailGroupToNotify = ?;
 
 # Checks if a passed string is an empty.
 #
@@ -573,4 +574,10 @@ public isolated function validateDateRange(string startDate, string endDate) ret
     } on fail error err {
         return error(err.message());
     }
+}
+
+# Get mandatory email group to notify.
+# + return - return value description
+public isolated function getEmailGroupsToNotify() returns string {
+    return emailGroupToNotify;
 }
