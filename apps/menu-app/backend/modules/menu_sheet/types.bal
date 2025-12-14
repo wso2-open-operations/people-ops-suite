@@ -5,7 +5,7 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 # [Configurable] Google sheet OAuth2 application configuration.
-type SheetApp record {|
+type MenuSheet record {|
     # OAuth2 token endpoint
     string tokenUrl;
     # OAuth 2 refresh token

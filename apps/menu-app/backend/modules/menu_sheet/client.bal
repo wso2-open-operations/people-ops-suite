@@ -6,7 +6,7 @@
 
 import ballerinax/googleapis.sheets as sheets;
 
-configurable SheetApp sheetClientConfig = ?;
+configurable MenuSheet sheetClientConfig = ?;
 
 final sheets:ConnectionConfig sheetsConfig = {
     auth: {

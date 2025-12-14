@@ -12,11 +12,11 @@ import ballerina/time;
 isolated function getDateTimeInReadableFormat() returns string {
     // currentTime = Fri, 25 Jul 2025 21:39:46 +0000
     time:Utc currentTime = time:utcAddSeconds(time:utcNow(), 19800);
-    string[] splittedTime = re ` `.split(time:utcToEmailString(currentTime));
+    string[] splitTime = re ` `.split(time:utcToEmailString(currentTime));
 
     // return Fri, 25 Jul 2025 21:39:46 
-    if splittedTime.length() > 5 {
-        return string:'join(" ", splittedTime[0], splittedTime[1], splittedTime[2], splittedTime[3], splittedTime[4]);
+    if splitTime.length() > 5 {
+        return string:'join(" ", splitTime[0], splitTime[1], splitTime[2], splitTime[3], splitTime[4]);
     }
 
     return currentTime.toString(); // return Fri, 25 Jul 2025 21:39:46 +0000 for fallback
