@@ -16,7 +16,7 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Stack, useTheme } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
@@ -44,7 +44,6 @@ export default function Toolbar({
   onFetchReport,
   setLoading,
 }: ToolbarProps) {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
 
   const handleFetchReport = async () => {

@@ -30,7 +30,7 @@ import LeaveCard from "./component/LeaveCard";
 export default function LeaveHistory() {
   const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
-  const email = useSelector(selectUserEmail);
+  const userInfo = useSelector(selectUserEmail);
 
   useEffect(() => {
     const fetchLeaveHistory = async () => {
@@ -39,7 +39,7 @@ export default function LeaveHistory() {
       try {
         const response = await getLeaveHistory({
           isActive: true,
-          email: email || "",
+          email: userInfo?.workEmail || "",
           startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
         });
 
