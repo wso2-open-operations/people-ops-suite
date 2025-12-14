@@ -9,7 +9,7 @@
 #
 # + workEmail - Employee email
 # + return - Employee object or Error if so
-public isolated function fetchEmployee(string workEmail) returns Employee|error? {
+public isolated function fetchEmployee(string workEmail) returns Employee|error {
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -19,11 +19,14 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
                 lastName
                 jobRole
                 employeeThumbnail
+                managerEmail
+                team
+                department
             }
         }
     `;
 
     EmployeeResponse employeeResponse = check hrClient->execute(document, {workEmail});
-    Employee? employee = employeeResponse.data.employee;
+    Employee employee = employeeResponse.data.employee;
     return employee;
 }
