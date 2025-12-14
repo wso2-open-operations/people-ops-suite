@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { getLeaveHistory } from "@root/src/services/leaveService";
-import { selectUserEmail } from "@root/src/slices/userSlice/user";
+import { selectUser } from "@root/src/slices/userSlice/user";
 import { SingleLeaveHistory } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
@@ -29,7 +29,7 @@ import LeaveCard from "./component/LeaveCard";
 export default function LeaveHistory() {
   const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
-  const userInfo = useSelector(selectUserEmail);
+  const userInfo = useSelector(selectUser);
 
   useEffect(() => {
     const fetchLeaveHistory = async () => {
