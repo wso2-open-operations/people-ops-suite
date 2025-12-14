@@ -15,15 +15,27 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import { Autocomplete, Avatar, Chip, CircularProgress, Stack, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Autocomplete,
+  Avatar,
+  Chip,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
 import { useEffect, useState } from "react";
-import { fetchEmployees } from "@root/src/services/leaveService";
-import { Employee } from "@root/src/types/types";
+
+import { fetchEmployees, getDefaultMails } from "@root/src/services/leaveService";
+import { DefaultMail, Employee } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
   email: string;
   thumbnail: string | null;
+  isFixed?: boolean;
 }
 
 interface NotifyPeopleProps {
@@ -35,28 +47,51 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
   const theme = useTheme();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fixedEmails, setFixedEmails] = useState<string[]>([]);
 
   useEffect(() => {
-    const loadEmployees = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const employees = await fetchEmployees();
-        const options = employees.map((employee: Employee) => ({
+
+        // Fetch both employees and default mails
+        const [employees, defaultMails] = await Promise.all([fetchEmployees(), getDefaultMails()]);
+
+        const fixedEmailList = defaultMails.map((mail: DefaultMail) => mail.email);
+        setFixedEmails(fixedEmailList);
+
+        const employeeOptions = employees.map((employee: Employee) => ({
           label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
           email: employee.workEmail,
           thumbnail: employee.employeeThumbnail,
+          isFixed: fixedEmailList.includes(employee.workEmail),
         }));
-        setEmployeeOptions(options);
+
+        // Add default mails that are not in employee list
+        const missingFixedOptions = defaultMails
+          .filter((mail: DefaultMail) => !employeeOptions.find((opt) => opt.email === mail.email))
+          .map((mail: DefaultMail) => ({
+            label: mail.email,
+            email: mail.email,
+            thumbnail: mail.thumbnail || null,
+            isFixed: true,
+          }));
+
+        setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
       } catch (error) {
-        console.error("Failed to fetch employees:", error);
+        console.error("Failed to fetch data:", error);
         setEmployeeOptions([]);
       } finally {
         setLoading(false);
       }
     };
 
-    loadEmployees();
+    loadData();
   }, []);
+
+  const selectedOptions = employeeOptions.filter(
+    (opt) => fixedEmails.includes(opt.email) || selectedEmails.includes(opt.email),
+  );
 
   return (
     <Stack gap="1rem">
@@ -66,9 +101,14 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
       <Autocomplete
         multiple
         options={employeeOptions}
-        value={employeeOptions.filter(opt => selectedEmails.includes(opt.email))}
+        value={selectedOptions}
         onChange={(_, newValue) => {
-          onEmailsChange(newValue.map(opt => opt.email));
+          // Keep fixed options in value
+          const newEmails = [
+            ...fixedEmails,
+            ...newValue.filter((opt) => !opt.isFixed).map((opt) => opt.email),
+          ];
+          onEmailsChange(newEmails);
         }}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(option, value) => option.email === value.email}
@@ -92,14 +132,11 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
           value.map((option, index) => (
             <Chip
               {...getTagProps({ index })}
-              key={index}
-              label={option.email}
+              key={option.email}
+              label={option.label}
               avatar={
                 option.thumbnail ? (
-                  <Avatar
-                    src={option.thumbnail}
-                    sx={{ width: 30, height: 30 }}
-                  />
+                  <Avatar src={option.thumbnail} sx={{ width: 30, height: 30 }} />
                 ) : (
                   <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
                     <Email
@@ -111,6 +148,8 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
                   </Avatar>
                 )
               }
+              // Disable delete for fixed options
+              onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
             />
           ))
         }

@@ -52,5 +52,6 @@ export const AppConfig = {
     collections: ServiceBaseUrl + "/collections",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
+    defaultMails: ServiceBaseUrl + "/defaultMails",
   },
 };

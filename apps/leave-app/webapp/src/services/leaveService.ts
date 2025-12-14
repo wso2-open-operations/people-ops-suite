@@ -16,6 +16,7 @@
 
 import { AppConfig } from "@root/src/config/config";
 import {
+  DefaultMail,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -54,6 +55,18 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.get<Employee[]>(AppConfig.serviceUrls.employees);
+
+  return response.data;
+};
+
+/**
+ * Fetch default mail recipients from the backend.
+ * @returns Promise with array of default mails
+ */
+export const getDefaultMails = async (): Promise<DefaultMail[]> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.get<DefaultMail[]>(AppConfig.serviceUrls.defaultMails);
 
   return response.data;
 };
