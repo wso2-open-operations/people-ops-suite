@@ -24,7 +24,7 @@ import { Box, Card, Dialog, DialogContent, IconButton, Typography, useTheme } fr
 
 import { useState } from "react";
 
-import FeedbackForm from "./FeedBackForm";
+import FeedbackForm from "./FeedbackForm";
 
 interface MealData {
   title: string | null;
