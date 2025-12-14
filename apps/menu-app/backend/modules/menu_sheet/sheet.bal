@@ -3,8 +3,6 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-import menu_app.types;
-
 import ballerina/cache;
 import ballerinax/googleapis.sheets as sheets;
 
@@ -14,23 +12,23 @@ isolated cache:Cache menuLongTermCache = new (capacity = 3, defaultMaxAge = 4320
 # Get menu from cache or sheet.
 #
 # + return - Menu or error
-public isolated function getMenu() returns types:Menu|error {
+public isolated function getMenu() returns Menu|error {
     lock {
         string[] sortedKeys = menuShortTermCache.keys().sort("descending");
         if sortedKeys.length() > 0 {
             any|cache:Error shortTermCacheValue = menuShortTermCache.get(sortedKeys[0]);
-            if shortTermCacheValue is types:Menu {
+            if shortTermCacheValue is Menu {
                 return shortTermCacheValue.cloneReadOnly();
             }
         }
     }
 
-    future<types:Menu|error> menuDataFuture = start getMenuData();
+    future<Menu|error> menuDataFuture = start getMenuData();
     lock {
         string[] sortedKeys = menuLongTermCache.keys().sort("descending");
         if sortedKeys.length() > 0 {
             any|cache:Error longTermCacheValue = menuLongTermCache.get(sortedKeys[0]);
-            if longTermCacheValue is types:Menu {
+            if longTermCacheValue is Menu {
                 return longTermCacheValue.cloneReadOnly();
             }
         }
@@ -42,7 +40,7 @@ public isolated function getMenu() returns types:Menu|error {
 # Retrieve menu data from sheet.
 #
 # + return - string[]|error
-isolated function getMenuData() returns types:Menu|error {
+isolated function getMenuData() returns Menu|error {
     future<string[]|error> menuItemsFuture = start getRowData(sheetClientConfig.sheetRangeItem);
     future<string[]|error> menuDescriptionsFuture = start getRowData(sheetClientConfig.sheetRangeDescription);
     string[] menuItems = check wait menuItemsFuture;
@@ -53,7 +51,7 @@ isolated function getMenuData() returns types:Menu|error {
     }
 
     final readonly & string date = menuItems[0];
-    final readonly & types:Menu menu = {
+    final readonly & Menu menu = {
         date,
         breakfast: {title: menuItems[1], description: menuDescriptions[1]},
         juice: {title: menuItems[2], description: menuDescriptions[2]},
@@ -92,7 +90,7 @@ isolated function getRowData(int sheetRange) returns string[]|error {
 # + feedback - Lunch feedback
 # + vendor - Vendor name
 # + return - Return the updated row position or an error
-public isolated function addFeedback(types:Feedback feedback, string vendor) returns int|error {
+public isolated function addFeedback(Feedback feedback, string vendor) returns int|error {
     sheets:ValueRange result = check spreadsheetClient->appendValue(
         sheetClientConfig.sheetId,
         [getDateTimeInReadableFormat(), vendor, feedback.message],

@@ -27,3 +27,40 @@ type MenuSheet record {|
     # Sheet name for feedbacks
     string mealFeedbackSheetName;
 |};
+
+# Meta Data.
+public type MetaData record {|
+    # Title
+    string title;
+    # Description
+    string description;
+|};
+
+# Menu Items.
+public type Menu record {|
+    # Meal date
+    string date;
+    # Breakfast item
+    MetaData breakfast;
+    # Juice item
+    MetaData juice;
+    # Lunch item
+    MetaData lunch;
+    # Dessert item
+    MetaData dessert;
+    # Snack item
+    MetaData snack;
+|};
+
+# Meal enum.
+public enum Meal {
+    LUNCH = "Lunch"
+}
+
+# Lunch feedback record.
+public type Feedback record {|
+    # Feedback message
+    string message;
+    # Meal type
+    Meal meal = LUNCH;
+|};
