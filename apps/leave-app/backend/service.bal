@@ -60,7 +60,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 workEmail: empInfo.workEmail,
                 employeeThumbnail: empInfo.employeeThumbnail,
                 jobRole: empInfo.jobRole,
-                privileges: privileges
+                privileges: privileges,
+                isLead: empInfo.lead
             };
             return userInfoResponse;
         } on fail error internalErr {

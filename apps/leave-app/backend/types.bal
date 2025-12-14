@@ -221,20 +221,21 @@ public type ReportFilters record {|
 |};
 
 # User Info payload (for frontend).
-#
-# + employeeId - Employee ID
-# + firstName - First name
-# + lastName - Last name
-# + workEmail - Work email
-# + employeeThumbnail - Employee thumbnail
-# + jobRole - Job role
-# + privileges - Privileges
 public type UserInfo record {|
+    # Employee Id
     string? employeeId;
+    # First name
     string? firstName;
+    # Last name
     string? lastName;
+    # Work email
     string? workEmail;
+    # Employee thumbnail
     string? employeeThumbnail;
+    # Job role
     string? jobRole;
+    # Privileges
     int[] privileges;
+    # Is lead or not
+    boolean? isLead;
 |};
