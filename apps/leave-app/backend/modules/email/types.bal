@@ -30,7 +30,6 @@ type ChoreoApp record {|
 #
 # + baseUrl - Authorized app UUID provided by the Email service
 # + emailFrom - Email sender
-# + emailTo - Email recipients
 public type EmailServiceConfig record {|
     string baseUrl;
     string 'emailFrom;
