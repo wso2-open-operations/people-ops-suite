@@ -8,7 +8,6 @@
 import menu_app.authentication;
 import menu_app.people;
 import menu_app.menu_sheet as menu;
-import menu_app.types;
 
 import ballerina/cache;
 import ballerina/http;
@@ -36,7 +35,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch logged-in user's details.
     #
     # + return - User information or InternalServerError
-    resource function get user\-info(http:RequestContext ctx) returns types:UserInfo|http:InternalServerError|http:NotFound {
+    resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError|http:NotFound {
         authentication:CustomJwtPayload|error userInfo = ctx.getWithType(authentication:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(USER_NOT_FOUND_ERROR, userInfo);
@@ -49,54 +48,40 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Check if the user-info is already cached
         if cache.hasKey(userInfo.email) {
-            types:UserInfo|error cachedUserInfo = cache.get(userInfo.email).ensureType();
-            if cachedUserInfo is types:UserInfo {
+            UserInfo|error cachedUserInfo = cache.get(userInfo.email).ensureType();
+            if cachedUserInfo is UserInfo {
                 return cachedUserInfo;
             }
         }
 
-        // people:Employee|error? employee = people:fetchEmployee(userInfo.email);
-        // if employee is error {
-        //     string customError = string `Error occurred while fetching user information for user : ${userInfo.email}`;
-        //     log:printError(customError, employee);
-        //     return <http:InternalServerError>{
-        //         body: customError
-        //     };
-        // }
+        people:Employee|error? employee = people:fetchEmployee(userInfo.email);
+        if employee is error {
+            string customError = string `Error occurred while fetching user information for user : ${userInfo.email}`;
+            log:printError(customError, employee);
+            return <http:InternalServerError>{
+                body: customError
+            };
+        }
 
-        // if employee is () {
-        //     log:printError(string `No employee information found for the user: ${userInfo.email}`);
-        //     return <http:NotFound>{
-        //         body: {
-        //             message: "No user found!"
-        //         }
-        //     };
-        // }
+        if employee is () {
+            log:printError(string `No employee information found for the user: ${userInfo.email}`);
+            return <http:NotFound>{
+                body: {
+                    message: "No user found!"
+                }
+            };
+        }
 
-        // // Fetch the user's privileges based on the roles.
-        // int[] privileges = [];
-        // if authentication:checkPermissions([authentication:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
-        //     privileges.push(authentication:EMPLOYEE_PRIVILEGE);
-        // }
-        // if authentication:checkPermissions([authentication:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-        //     privileges.push(authentication:ADMIN_PRIVILEGE);
-        // }
-        
-        people:Employee employee = {
-            firstName: "Dineth",
-            lastName: "Silva",
-            employeeId: "E001",
-            employeeThumbnail: (),
-            workEmail: "dineths@wso2.com",
-            jobRole: "Intern"
-        };
-
+        // Fetch the user's privileges based on the roles.
         int[] privileges = [];
-
-        privileges.push(authentication:EMPLOYEE_PRIVILEGE);
-        privileges.push(authentication:ADMIN_PRIVILEGE);
-
-        types:UserInfo userInfoResponse = {...employee, privileges};
+        if authentication:checkPermissions([authentication:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+            privileges.push(authentication:EMPLOYEE_PRIVILEGE);
+        }
+        if authentication:checkPermissions([authentication:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            privileges.push(authentication:ADMIN_PRIVILEGE);
+        }
+        
+        UserInfo userInfoResponse = {...employee, privileges};
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {
@@ -107,7 +92,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     function init() {
-        types:Menu|error menu = menu:getMenu();
+        Menu|error menu = menu:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
         }
@@ -118,7 +103,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch meta info.
     #
     # + return - Meta info
-    isolated resource function get meta\-info() returns types:MetaInfo => {
+    isolated resource function get meta\-info() returns MetaInfo => {
         lunchFeedbackStartTime,
         lunchFeedbackEndTime
     };
@@ -126,11 +111,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Retrieve list of menu items.
     #
     # + return - Menu items or error response
-    isolated resource function get menu() returns types:Menu|types:AppServerErrorResponse {
-        types:Menu|error menu = menu:getMenu();
+    isolated resource function get menu() returns Menu|AppServerErrorResponse {
+        Menu|error menu = menu:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
-            return <types:AppServerErrorResponse>{
+            return <AppServerErrorResponse>{
                 body: {message: "Error retrieving menu data"}
             };
         }
@@ -140,14 +125,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Add feedback to a sheet.
     #
     # + return - Successful feedback or en error
-    isolated resource function post feedback(types:Feedback feedback)
+    isolated resource function post feedback(Feedback feedback)
         returns http:Created|http:InternalServerError|http:BadRequest {
 
-        types:Menu|error menu = menu:getMenu();
+        Menu|error menu = menu:getMenu();
         if menu is error {
             string customErr = "Error retrieving menu data when getting vendor for the feedback";
             log:printError(customErr, menu);
-            return <types:AppServerErrorResponse>{
+            return <AppServerErrorResponse>{
                 body: {message: customErr}
             };
         }
