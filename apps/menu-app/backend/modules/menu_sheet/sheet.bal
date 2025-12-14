@@ -41,8 +41,8 @@ public isolated function getMenu() returns Menu|error {
 #
 # + return - string[]|error
 isolated function getMenuData() returns Menu|error {
-    future<string[]|error> menuItemsFuture = start getRowData(sheetClientConfig.sheetRangeItem);
-    future<string[]|error> menuDescriptionsFuture = start getRowData(sheetClientConfig.sheetRangeDescription);
+    future<string[]|error> menuItemsFuture = start getRowData(menuSheetClientConfig.sheetRangeItem);
+    future<string[]|error> menuDescriptionsFuture = start getRowData(menuSheetClientConfig.sheetRangeDescription);
     string[] menuItems = check wait menuItemsFuture;
     string[] menuDescriptions = check wait menuDescriptionsFuture;
     if menuItems.length() < 6 || menuDescriptions.length() < 6 {
@@ -77,8 +77,8 @@ isolated function getMenuData() returns Menu|error {
 # + return - string[]|error
 isolated function getRowData(int sheetRange) returns string[]|error {
     sheets:Row row = check spreadsheetClient->getRow(
-        sheetClientConfig.sheetId,
-        sheetClientConfig.sheetName,
+        menuSheetClientConfig.sheetId,
+        menuSheetClientConfig.sheetName,
         sheetRange
     );
 
@@ -92,9 +92,9 @@ isolated function getRowData(int sheetRange) returns string[]|error {
 # + return - Return the updated row position or an error
 public isolated function addFeedback(Feedback feedback, string vendor) returns int|error {
     sheets:ValueRange result = check spreadsheetClient->appendValue(
-        sheetClientConfig.sheetId,
+        menuSheetClientConfig.sheetId,
         [getDateTimeInReadableFormat(), vendor, feedback.message],
-        {sheetName: sheetClientConfig.mealFeedbackSheetName}
+        {sheetName: menuSheetClientConfig.mealFeedbackSheetName}
     );
 
     return result.rowPosition;

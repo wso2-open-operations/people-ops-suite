@@ -6,14 +6,14 @@
 
 import ballerinax/googleapis.sheets as sheets;
 
-configurable MenuSheet sheetClientConfig = ?;
+configurable MenuSheet menuSheetClientConfig = ?;
 
 final sheets:ConnectionConfig sheetsConfig = {
     auth: {
-        clientId: sheetClientConfig.clientId,
-        clientSecret: sheetClientConfig.clientSecret,
-        refreshToken: sheetClientConfig.refreshToken,
-        refreshUrl: sheetClientConfig.tokenUrl
+        clientId: menuSheetClientConfig.clientId,
+        clientSecret: menuSheetClientConfig.clientSecret,
+        refreshToken: menuSheetClientConfig.refreshToken,
+        refreshUrl: menuSheetClientConfig.tokenUrl
     },
     retryConfig: {
         count: GSHEET_CONFIG_RETRY_COUNT,
