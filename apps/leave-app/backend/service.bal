@@ -699,7 +699,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
-    # Generate and fetch leave reports for admins and leads.
+    # Get the default email addresses to notify for leave notifications.
     #
     # + ctx - Request context
     # + return - Mandatory email addresses for leave notifications or Internal Server Error
@@ -729,7 +729,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        employee:MandatoryMails[] mandatoryMails = [
+        employee:MandatoryMails[] defaultMailsToNotify = [
             {
                 email: empLead.workEmail,
                 thumbnail: empLead.employeeThumbnail ?: ""
@@ -739,7 +739,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 thumbnail: ""
             }
         ];
-
-        return mandatoryMails;
+        return defaultMailsToNotify;
     }
 }
