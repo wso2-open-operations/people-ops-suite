@@ -16,7 +16,7 @@
 
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs, { Dayjs } from "dayjs";
+import { Dayjs } from "dayjs";
 import { Info } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -54,7 +54,6 @@ export default function LeaveDateSelection({
     onDaysChange(daysSelected);
   }, [daysSelected, onDaysChange]);
 
-  // Notify parent of initial dates on mount
   useEffect(() => {
     onDatesChange(startDate, endDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
