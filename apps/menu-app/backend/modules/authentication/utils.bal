@@ -4,6 +4,7 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import ballerina/http;
 
 # Check permissions.
 #
@@ -17,4 +18,28 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
 
     final string[] & readonly userRolesReadOnly = userRoles.cloneReadOnly();
     return requiredRoles.every(role => userRolesReadOnly.indexOf(role) !is ());
+}
+
+# Get user email from the request context.
+#
+# + ctx - request context
+# + return - email string or error response
+public isolated function getUserEmailFromRequestContext(http:RequestContext ctx) returns http:BadRequest|string {
+    CustomJwtPayload|error userInfo = ctx.getWithType(HEADER_USER_INFO);
+    if userInfo is error {
+        return <http:BadRequest>{
+            body:  {
+                message: USER_NOT_FOUND_ERROR
+            }
+        };
+    }
+
+    string email = userInfo.email;
+    if !email.matches(WSO2_EMAIL) {
+        return <http:BadRequest> {
+            body: {message: "Invalid email"}
+        };
+    }
+
+    return email;
 }
