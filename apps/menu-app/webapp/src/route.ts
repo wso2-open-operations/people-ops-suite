@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import DiningOutlinedIcon from "@mui/icons-material/DiningOutlined";
 import { HomeIcon } from "lucide-react";
 import { CircleQuestionMark } from "lucide-react";
 import type { RouteObject } from "react-router-dom";
@@ -34,13 +35,20 @@ export const routes: RouteObjectWithRole[] = [
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
+    path: "/dinner-on-demand",
+    text: "Dinner on Demand",
+    icon: React.createElement(DiningOutlinedIcon),
+    element: React.createElement(View.dod),
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+  },
+  {
     path: "/help",
     text: "Help & Support",
     icon: React.createElement(CircleQuestionMark),
     element: React.createElement(View.help),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
     bottomNav: true,
-  }
+  },
 ];
 
 export const getActiveRoutesV2 = (
