@@ -79,6 +79,6 @@ export const UserSlice = createSlice({
 });
 
 export const { updateStateMessage } = UserSlice.actions;
-export const selectUserEmail = (state: RootState) => state.user.userInfo;
+export const selectUser = (state: RootState) => state.user.userInfo;
 
 export default UserSlice.reducer;

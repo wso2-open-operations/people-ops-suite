@@ -25,6 +25,7 @@ import { RootState } from "@slices/store";
 export enum Role {
   ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  LEAD = "LEAD",
 }
 
 // Custom extended interface
@@ -60,6 +61,7 @@ export interface UserInfoInterface {
   workEmail: string;
   employeeThumbnail: string | null;
   jobRole: string;
+  isLead: boolean;
   privileges: number[];
 }
 
@@ -94,6 +96,9 @@ export const loadPrivileges = createAsyncThunk(
     }
     if (userPrivileges.includes(987)) {
       roles.push(Role.EMPLOYEE);
+    }
+    if (userInfo?.isLead) {
+      roles.push(Role.LEAD);
     }
 
     if (roles.length === 0) {
