@@ -15,7 +15,7 @@
 // under the License.
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
 import { getDefaultMails } from "@root/src/services/leaveService";

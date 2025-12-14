@@ -31,6 +31,7 @@ import { submitLeaveRequest, formatDateForAPI } from "@root/src/services/leaveSe
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
   const [daysSelected, setDaysSelected] = useState(0);
+  const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [selectedLeaveType, setSelectedLeaveType] = useState<string>("casual");
@@ -44,6 +45,11 @@ export default function GeneralLeave() {
     // Validation
     if (!startDate || !endDate) {
       enqueueSnackbar("Please select start and end dates", { variant: "error" });
+      return;
+    }
+
+    if (workingDays < 1) {
+      enqueueSnackbar("Working days must be at least 1 to submit a leave request", { variant: "error" });
       return;
     }
 
@@ -119,6 +125,7 @@ export default function GeneralLeave() {
               setStartDate(start);
               setEndDate(end);
             }}
+            onWorkingDaysChange={setWorkingDays}
           />
           <LeaveSelection 
             daysSelected={daysSelected}

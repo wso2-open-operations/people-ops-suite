@@ -20,44 +20,33 @@ import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
 import { Stack, Typography, useTheme } from "@mui/material";
 
+import { useState } from "react";
+
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
-interface LeaveSelectionProps {
-  daysSelected: number;
-  selectedLeaveType: string;
-  onLeaveTypeChange: (leaveType: string) => void;
-  selectedDayPortion: string | null;
-  onDayPortionChange: (dayPortion: string | null) => void;
-}
-
-export default function LeaveSelection({
-  daysSelected,
-  selectedLeaveType,
-  onLeaveTypeChange,
-  selectedDayPortion,
-  onDayPortionChange,
-}: LeaveSelectionProps) {
+export default function LeaveSelection() {
   const theme = useTheme();
-  const isHalfDayDisabled = daysSelected !== 1;
+  const [selectedLeaveType, setSelectedLeaveType] = useState<string | null>(null);
+  const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
 
   const handleLeaveTypeSelection = (leaveType: string) => {
-    onLeaveTypeChange(leaveType);
+    setSelectedLeaveType(leaveType);
   };
 
   const handleDayPortionSelection = (dayPortion: string) => {
-    onDayPortionChange(dayPortion);
+    setSelectedDayPortion(dayPortion);
   };
-
+  
   return (
-    <Stack direction="column" width={{ md: "50%" }} gap="1rem">
-      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+    <Stack direction="column" width={{ md: "50%" }} gap={4.5}>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
         Leave Type
       </Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <LeaveSelectionIcon
           Icon={WorkOffIcon}
-          label="Casual/Annual"
+          label="Casual Leave"
           isSelected={selectedLeaveType === "casual"}
           onClick={() => handleLeaveTypeSelection("casual")}
         />
@@ -80,13 +69,13 @@ export default function LeaveSelection({
           onClick={() => handleLeaveTypeSelection("lieu")}
         />
       </Stack>
-      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
         Portion of the day
       </Typography>
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent={{ md: "space-between" }}
-        gap={{ xs: "1.5rem" }}
+        gap={{ xs: "2rem" }}
         alignItems="center"
       >
         <DatePill
@@ -97,14 +86,12 @@ export default function LeaveSelection({
         <DatePill
           partOfDay="First Half"
           isSelected={selectedDayPortion === "first"}
-          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("first")}
-          disabled={isHalfDayDisabled}
+          onClick={() => handleDayPortionSelection("first")}
         />
         <DatePill
           partOfDay="Second Half"
           isSelected={selectedDayPortion === "second"}
-          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("second")}
-          disabled={isHalfDayDisabled}
+          onClick={() => handleDayPortionSelection("second")}
         />
       </Stack>
     </Stack>

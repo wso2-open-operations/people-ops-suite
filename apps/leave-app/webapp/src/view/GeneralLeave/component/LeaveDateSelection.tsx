@@ -30,11 +30,13 @@ import {
 interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
   onDatesChange: (startDate: Dayjs | null, endDate: Dayjs | null) => void;
+  onWorkingDaysChange: (workingDays: number) => void;
 }
 
 export default function LeaveDateSelection({
   onDaysChange,
   onDatesChange,
+  onWorkingDaysChange,
 }: LeaveDateSelectionProps) {
   const theme = useTheme();
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -71,11 +73,13 @@ export default function LeaveDateSelection({
   const validateDates = async (start: Dayjs | null, end: Dayjs | null) => {
     if (!start || !end) {
       setWorkingDaysSelected(0);
+      onWorkingDaysChange(0);
       return;
     }
 
     if (end.isBefore(start)) {
       setWorkingDaysSelected(0);
+      onWorkingDaysChange(0);
       return;
     }
 
@@ -90,9 +94,11 @@ export default function LeaveDateSelection({
       });
 
       setWorkingDaysSelected(response.workingDays);
+      onWorkingDaysChange(response.workingDays);
     } catch (error) {
       console.error("Error validating leave dates:", error);
       setWorkingDaysSelected(0);
+      onWorkingDaysChange(0);
     } finally {
       setIsValidating(false);
     }
@@ -126,6 +132,7 @@ export default function LeaveDateSelection({
     if (!startDate || !endDate) return "Please select dates";
     if (endDate.isBefore(startDate)) return "Invalid date range";
     if (daysSelected === 0) return "Invalid selection";
+    if (workingDaysSelected < 1) return "No working days selected";
     return "Valid Leave Request";
   };
 
