@@ -53,9 +53,8 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
     const loadData = async () => {
       try {
         setLoading(true);
-
-        // Fetch both employees and default mails
-        const [employees, defaultMails] = await Promise.all([fetchEmployees(), getDefaultMails()]);
+        const employees = await fetchEmployees();
+        const defaultMails = await getDefaultMails();
 
         const fixedEmailList = defaultMails.map((mail: DefaultMail) => mail.email);
         setFixedEmails(fixedEmailList);
@@ -78,9 +77,6 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
           }));
 
         setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
-
-        // Initialize parent state with fixed emails
-        onEmailsChange(fixedEmailList);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setEmployeeOptions([]);
@@ -93,7 +89,7 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
   }, [onEmailsChange]);
 
   const selectedOptions = employeeOptions.filter(
-    (opt) => fixedEmails.includes(opt.email) || selectedEmails.includes(opt.email),
+    (opt) => opt.isFixed || selectedEmails.includes(opt.email),
   );
 
   return (
