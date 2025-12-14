@@ -27,7 +27,7 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
-service http:InterceptableService / on new http:Listener(9091) {
+service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     # + return - authorization:JwtInterceptor
@@ -36,7 +36,7 @@ service http:InterceptableService / on new http:Listener(9091) {
     function init() returns error? => log:printInfo("Leave application backend service started.");
 
     # Get user info with privileges.
-    # 
+    #
     # + ctx - HTTP request context
     # + return - User Info payload or Internal Server Error
     resource function get user\-info(http:RequestContext ctx) returns UserInfo|http:InternalServerError {
@@ -697,5 +697,49 @@ service http:InterceptableService / on new http:Listener(9091) {
                 }
             };
         }
+    }
+
+    # Generate and fetch leave reports for admins and leads.
+    #
+    # + ctx - Request context
+    # + return - Mandatory email addresses for leave notifications or Internal Server Error
+    resource function get defaultMails(http:RequestContext ctx)
+        returns employee:MandatoryMails[]|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        employee:Employee & readonly|error empInfo = employee:getEmployee(email);
+        if empInfo is error {
+            string errorMsg = "Error occurred while fetching employee info";
+            log:printError(errorMsg);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
+
+        }
+        employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
+        if empLead is error {
+            string errorMsg = "Error occurred while fetching employee lead info";
+            log:printError(errorMsg);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
+        }
+
+        employee:MandatoryMails[] mandatoryMails = [
+            {
+                email: empLead.workEmail,
+                thumbnail: empLead.employeeThumbnail ?: ""
+            },
+            {
+                email: getEmailGroupsToNotify(),
+                thumbnail: ""
+            }
+        ];
+
+        return mandatoryMails;
     }
 }
