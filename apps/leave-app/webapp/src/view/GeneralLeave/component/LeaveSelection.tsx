@@ -86,7 +86,7 @@ export default function LeaveSelection({
           onClick={() => handleLeaveTypeSelection("lieu")}
         />
       </Stack>
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Portion of the day
       </Typography>
       <Stack
