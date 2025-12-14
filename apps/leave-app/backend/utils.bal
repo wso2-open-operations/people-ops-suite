@@ -25,6 +25,7 @@ import ballerina/time;
 
 configurable string[] defaultRecipients = [];
 configurable string emailGroupToNotify = ?;
+configurable boolean isSabbaticalLeaveEnabled = ?;
 
 # Checks if a passed string is an empty.
 #
@@ -577,7 +578,15 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 }
 
 # Get mandatory email group to notify.
+# 
 # + return - return value description
 public isolated function getEmailGroupsToNotify() returns string {
     return emailGroupToNotify;
+}
+
+# Get boolean if sabbatical leave is enabled.
+# 
+# + return - boolean indicating if sabbatical leave is enabled or not
+public isolated function getIsSabbaticalLeaveEnabled() returns boolean {
+    return isSabbaticalLeaveEnabled;
 }
