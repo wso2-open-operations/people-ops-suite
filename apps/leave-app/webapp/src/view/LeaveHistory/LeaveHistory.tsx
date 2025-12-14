@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Box, Stack } from "@mui/material";
+import { Box, CircularProgress, Stack } from "@mui/material";
 import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
@@ -65,6 +64,7 @@ export default function LeaveHistory() {
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
       <Title firstWord="Leave" secondWord="History" />
       <Box gap="2rem" display="grid" gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr 1fr" }}>
+        {loading && <CircularProgress size={30} />}
         {leaves.map((leave) => {
           const { month, day } = getMonthAndDay(leave.startDate);
           return (
