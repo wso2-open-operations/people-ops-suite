@@ -23,9 +23,10 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  GENERAL = "GENERAL",
   LEAD = "LEAD",
+  SABBATICAL_USER = "SABBATICAL_USER",
 }
 
 // Custom extended interface
@@ -91,14 +92,17 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(789)) {
-      roles.push(Role.ADMIN);
-    }
     if (userPrivileges.includes(987)) {
+      roles.push(Role.GENERAL);
+    }
+    if (userPrivileges.includes(789)) {
       roles.push(Role.EMPLOYEE);
     }
-    if (userInfo?.isLead) {
+    if (userPrivileges.includes(879)) {
       roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(897)) {
+      roles.push(Role.SABBATICAL_USER);
     }
 
     if (roles.length === 0) {
