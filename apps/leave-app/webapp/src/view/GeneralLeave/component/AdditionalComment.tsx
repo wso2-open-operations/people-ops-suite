@@ -13,10 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
+import { use, useEffect, useState } from "react";
+
 import CustomButton from "@root/src/component/common/CustomButton";
+import { getDefaultMails } from "@root/src/services/leaveService";
+import { DefaultMail } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
   comment: string;
@@ -40,6 +43,21 @@ export default function AdditionalComment({
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onPublicCommentChange(event.target.checked);
   };
+
+  const [defaultMails, setDefaultMails] = useState<DefaultMail[]>([]);
+
+  useEffect(() => {
+    const fetchDefaultMails = async () => {
+      try {
+        const mails = await getDefaultMails();
+        setDefaultMails(mails);
+      } catch (error) {
+        console.error("Error fetching default mails:", error);
+      }
+    };
+
+    fetchDefaultMails();
+  }, []);
 
   return (
     <Stack gap="1rem">
@@ -78,7 +96,7 @@ export default function AdditionalComment({
             textAlign="center"
           >
             {isPublicComment
-              ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
+              ? `Your comment will be shown to all email recipients including WSO2 Vacation Group (${defaultMails[1].email}).`
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
           <CustomButton label="Submit" onClick={onSubmit} disabled={isSubmitting} />
