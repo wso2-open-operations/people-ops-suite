@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { Box, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { Info } from "lucide-react";
@@ -61,7 +61,6 @@ export default function LeaveDateSelection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initial validation on mount
   useEffect(() => {
     if (startDate && endDate) {
       validateDates(startDate, endDate);
@@ -149,6 +148,7 @@ export default function LeaveDateSelection({
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Select Date(s)
       </Typography>
+      {isValidating && <CircularProgress size={30} />}
       <Stack
         direction="row"
         spacing={1.5}
