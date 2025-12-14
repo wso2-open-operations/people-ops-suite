@@ -41,6 +41,12 @@ public type Employee record {|
     string workEmail;
     # Employee job role
     string jobRole;
+    # Team of the employee
+    string? team;
+    # Department of the employee
+    string department?;
+    # Employee manager email
+    string managerEmail;
 |};
 
 # Employee information.
