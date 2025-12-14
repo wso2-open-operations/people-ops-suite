@@ -19,8 +19,6 @@ import leave_service.employee;
 import ballerina/http;
 import ballerina/log;
 
-// import ballerina/mime;
-
 configurable boolean isDebug = false;
 configurable boolean emailNotificationsEnabled = false;
 configurable string[] debugRecipients = ?;
@@ -59,7 +57,7 @@ isolated function processEmailNotification(string alertHeader, string subject, m
     json payload = {
         template: encodedTemplate, // Send base64-encoded HTML
         "from": emailServiceConfig.'emailFrom,
-        to: emailServiceConfig.emailTo,
+        to: to,
         subject
     };
 

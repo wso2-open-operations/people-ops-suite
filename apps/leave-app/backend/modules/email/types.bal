@@ -34,7 +34,6 @@ type ChoreoApp record {|
 public type EmailServiceConfig record {|
     string baseUrl;
     string 'emailFrom;
-    string[] emailTo;
 |};
 
 # Email notification details record.
