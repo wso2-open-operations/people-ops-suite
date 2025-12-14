@@ -12,8 +12,8 @@ import ballerinax/googleapis.sheets as sheets;
 # + return - Dinner request for employee
 public isolated function insertDinnerRequest(DinnerRequest payload, string email) returns error? {
     string[] values = [payload.date, payload.team?: "null", payload.managerEmail, payload.mealOption, email];
-    _ = check spreadsheetClient->appendValue(sheetClientConfig.sheetId, values, <sheets:A1Range>{sheetName: 
-        sheetClientConfig.sheetName});
+    _ = check spreadsheetClient->appendValue(dodSheetClientConfig.sheetId, values, <sheets:A1Range>{sheetName: 
+        dodSheetClientConfig.sheetName});
 }
 
 # Cancel dinner requests by email to sheet.
@@ -23,13 +23,13 @@ public isolated function insertDinnerRequest(DinnerRequest payload, string email
 public isolated function cancelDinnerRequest(string email) returns error? {
     int index = 1;
     sheets:Range range = check spreadsheetClient->getRange(
-        sheetClientConfig.sheetId,
-        sheetClientConfig.sheetName, 
-        sheetClientConfig.sheetRange
+        dodSheetClientConfig.sheetId,
+        dodSheetClientConfig.sheetName, 
+        dodSheetClientConfig.sheetRange
     );
     foreach (int|string|decimal)[] row in range.values {
         if row[0] == email {
-            _ = check spreadsheetClient->deleteRows(sheetClientConfig.sheetId, sheetClientConfig.worksheetId, index, 1);
+            _ = check spreadsheetClient->deleteRows(dodSheetClientConfig.sheetId, dodSheetClientConfig.worksheetId, index, 1);
         }
         index += 1;
     }

@@ -6,14 +6,14 @@
 
 import ballerinax/googleapis.sheets as sheets;
 
-configurable DodSheet sheetClientConfig = ?;
+configurable DodSheet dodSheetClientConfig = ?;
 
 public final sheets:ConnectionConfig sheetsConfig = {
     auth: {
-        clientId: sheetClientConfig.clientId,
-        clientSecret: sheetClientConfig.clientSecret,
-        refreshToken: sheetClientConfig.refreshToken,
-        refreshUrl: sheetClientConfig.tokenUrl
+        clientId: dodSheetClientConfig.clientId,
+        clientSecret: dodSheetClientConfig.clientSecret,
+        refreshToken: dodSheetClientConfig.refreshToken,
+        refreshUrl: dodSheetClientConfig.tokenUrl
     },
     retryConfig: {
         count: GSHEET_CONFIG_RETRY_COUNT,
