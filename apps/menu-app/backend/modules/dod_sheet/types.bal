@@ -24,3 +24,21 @@ type DodSheet record {|
     # Sheet range
     string sheetRange;
 |};
+
+# Dinner request data.
+public type DinnerRequest record {|
+    # Request Id 
+    string id?;
+    # Meal option
+    string mealOption;
+    # Date of meal request
+    string date;
+    # Department of employee
+    string department;
+    # Team of employee
+    string? team;
+    # Manager email
+    string managerEmail;
+    # Timestamp of the request
+    string timestamp?;
+|};
