@@ -7,7 +7,7 @@
 
 import menu_app.authentication;
 import menu_app.people;
-import menu_app.sheet;
+import menu_app.menu_sheet as menu;
 import menu_app.types;
 
 import ballerina/cache;
@@ -107,7 +107,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     function init() {
-        types:Menu|error menu = sheet:getMenu();
+        types:Menu|error menu = menu:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
         }
@@ -127,7 +127,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Menu items or error response
     isolated resource function get menu() returns types:Menu|types:AppServerErrorResponse {
-        types:Menu|error menu = sheet:getMenu();
+        types:Menu|error menu = menu:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
             return <types:AppServerErrorResponse>{
@@ -143,7 +143,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     isolated resource function post feedback(types:Feedback feedback)
         returns http:Created|http:InternalServerError|http:BadRequest {
 
-        types:Menu|error menu = sheet:getMenu();
+        types:Menu|error menu = menu:getMenu();
         if menu is error {
             string customErr = "Error retrieving menu data when getting vendor for the feedback";
             log:printError(customErr, menu);
@@ -176,7 +176,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error feedbackId = sheet:addFeedback(feedback, menu.lunch.title);
+        int|error feedbackId = menu:addFeedback(feedback, menu.lunch.title);
         if feedbackId is error {
             string customeErr = "Error occurred while inserting the lunch feedback";
             log:printError(customeErr, feedbackId);
