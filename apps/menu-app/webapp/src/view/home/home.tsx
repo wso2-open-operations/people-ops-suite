@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box } from "@mui/material";
-import { useGetMenuQuery } from "@services/menu.api";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
+import { useGetMenuQuery } from "@services/menu.api";
 
 import MenuCard from "./components/Card";
 
@@ -29,10 +29,20 @@ export default function Home() {
   }
 
   if (isError || !data) {
-    return <ErrorHandler message={"No menu data available"} />;
+    return <ErrorHandler message={"oops something went wrong..."} />;
   }
 
   const { date, ...meals } = data;
+
+  if (!meals.breakfast.title && !meals.lunch.title) {
+    const date = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    return <ErrorHandler message={`No menu available on ${date}`} />;
+  }
 
   return (
     <Box
