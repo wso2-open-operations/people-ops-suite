@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import type { NonIndexRouteObject } from "react-router-dom";
 import type { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
+import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
   hovered: number | null;
@@ -61,6 +61,9 @@ export interface UserInfoInterface {
   employeeThumbnail: string | null;
   jobRole: string;
   privileges: number[];
+  managerEmail: string;
+  department: string;
+  team: string;
 }
 
 export interface UserState {
@@ -122,4 +125,20 @@ export interface Menu {
   lunch: MetaData;
   dessert: MetaData;
   snack: MetaData;
+}
+
+export enum MealOption {
+  vegetarian = "Vegetarian",
+  fish = "Fish",
+  chicken = "Chicken",
+}
+
+export interface DinnerRequest {
+  id?: string;
+  mealOption: MealOption;
+  date: string;
+  department: string;
+  team?: string;
+  managerEmail: string;
+  timeStamp?: string;
 }
