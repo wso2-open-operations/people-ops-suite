@@ -28,13 +28,6 @@ isolated cache:Cache hrisEmployeeCache = new (
 public isolated function getEmployee(string? email)
     returns readonly & Employee|error {
 
-    // lock {
-    //     any|cache:Error cachedEmployee = hrisEmployeeCache.get(email);
-    //     if cachedEmployee is readonly & Employee {
-    //         return cachedEmployee;
-    //     }
-    // }
-
     string document = string `
         query getEmployee($email: String!) {
             employee(email: $email) {
@@ -63,13 +56,6 @@ public isolated function getEmployee(string? email)
         return error(ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED);
     }
     readonly & Employee employee = toEmployee(employeeResp);
-
-    // lock {
-    //     cache:Error? cachingErr = hrisEmployeeCache.put(email, employee);
-    //     if cachingErr is cache:Error {
-    //         log:printError("Error caching employee data from HRIS");
-    //     }
-    // }
 
     return employee;
 }
