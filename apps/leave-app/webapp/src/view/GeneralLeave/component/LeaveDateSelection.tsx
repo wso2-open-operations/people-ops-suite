@@ -22,7 +22,7 @@ import { Info } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
-  formatDateForAPI,
+  formatDateForApi,
   getPeriodType,
   validateLeaveRequest,
 } from "@root/src/services/leaveService";
@@ -87,8 +87,8 @@ export default function LeaveDateSelection({
       const totalDays = calculateTotalDays(start, end);
       const response = await validateLeaveRequest({
         periodType: getPeriodType(totalDays),
-        startDate: formatDateForAPI(start),
-        endDate: formatDateForAPI(end),
+        startDate: formatDateForApi(start),
+        endDate: formatDateForApi(end),
         isMorningLeave: null,
       });
 

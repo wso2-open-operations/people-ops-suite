@@ -23,7 +23,7 @@ import { useSnackbar } from "notistack";
 import { useEffect } from "react";
 
 import Title from "@root/src/component/common/Title";
-import { formatDateForAPI, getLeadReport } from "@root/src/services/leaveService";
+import { formatDateForApi, getLeadReport } from "@root/src/services/leaveService";
 import { LeadReportResponse } from "@root/src/types/types";
 
 interface ToolbarProps {
@@ -59,8 +59,8 @@ export default function Toolbar({
     try {
       setLoading(true);
       const response = await getLeadReport({
-        startDate: formatDateForAPI(startDate),
-        endDate: formatDateForAPI(endDate),
+        startDate: formatDateForApi(startDate),
+        endDate: formatDateForApi(endDate),
       });
       onFetchReport(response);
       enqueueSnackbar("Report fetched successfully", { variant: "success" });

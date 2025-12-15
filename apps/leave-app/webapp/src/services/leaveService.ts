@@ -127,7 +127,7 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
  * @param date - Dayjs date object
  * @returns Formatted date string
  */
-export const formatDateForAPI = (date: any): string => {
+export const formatDateForApi = (date: any): string => {
   return date.format("YYYY-MM-DD");
 };
 
