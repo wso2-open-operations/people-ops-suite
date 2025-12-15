@@ -17,7 +17,12 @@
 import { Box, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { EmployeeApprovalData } from "../MockData";
+export interface EmployeeApprovalData {
+  id: number;
+  email: string;
+  startDate: Date;
+  endDate: Date;
+}
 
 export default function ApproveLeaveTable({ rows }: { rows: EmployeeApprovalData[] }) {
   const theme = useTheme();
