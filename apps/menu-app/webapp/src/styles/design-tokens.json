@@ -83,10 +83,10 @@
     "h6": {
       "type": "custom-fontStyle",
       "value": {
-        "fontSize": 16,
+        "fontSize": 18,
         "textDecoration": "none",
         "fontFamily": "Geist",
-        "fontWeight": 600,
+        "fontWeight": 500,
         "fontStyle": "normal",
         "fontStretch": "normal",
         "letterSpacing": -0.48,
