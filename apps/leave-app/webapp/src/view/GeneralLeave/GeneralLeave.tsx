@@ -26,7 +26,7 @@ import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalC
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
-import { submitLeaveRequest, formatDateForAPI } from "@root/src/services/leaveService";
+import { submitLeaveRequest, formatDateForApi } from "@root/src/services/leaveService";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
@@ -79,8 +79,8 @@ export default function GeneralLeave() {
 
       const payload = {
         periodType,
-        startDate: formatDateForAPI(startDate),
-        endDate: formatDateForAPI(endDate),
+        startDate: formatDateForApi(startDate),
+        endDate: formatDateForApi(endDate),
         isMorningLeave,
         comment,
         leaveType: selectedLeaveType,
