@@ -27,7 +27,14 @@ export interface LeaveCardProps {
   day: string;
 }
 
-export default function LeaveCard(leave: LeaveCardProps) {
+export default function LeaveCard({
+  duration,
+  type,
+  startDate,
+  endDate,
+  month,
+  day,
+}: LeaveCardProps) {
   const theme = useTheme();
 
   return (
@@ -53,7 +60,7 @@ export default function LeaveCard(leave: LeaveCardProps) {
               fontWeight: 600,
             }}
           >
-            {leave.type}
+            {type}
           </Typography>
 
           <Stack direction="row" gap="1rem" alignItems="center">
@@ -88,7 +95,7 @@ export default function LeaveCard(leave: LeaveCardProps) {
                     letterSpacing: "0.5px",
                   }}
                 >
-                  {leave.month}
+                  {month}
                 </Typography>
               </Box>
 
@@ -110,7 +117,7 @@ export default function LeaveCard(leave: LeaveCardProps) {
                     lineHeight: 1,
                   }}
                 >
-                  {leave.day}
+                  {day}
                 </Typography>
               </Box>
             </Box>
@@ -124,7 +131,7 @@ export default function LeaveCard(leave: LeaveCardProps) {
                   fontWeight: 500,
                 }}
               >
-                {leave.startDate} - {leave.endDate}
+                {startDate} - {endDate}
               </Typography>
               <Typography
                 variant="caption"
@@ -132,7 +139,7 @@ export default function LeaveCard(leave: LeaveCardProps) {
                   color: theme.palette.text.secondary,
                 }}
               >
-                {leave.duration}
+                {duration}
               </Typography>
             </Stack>
           </Stack>
