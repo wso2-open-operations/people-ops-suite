@@ -150,7 +150,7 @@ const ActiveVisits = () => {
         purposeOfVisit: purposeOfVisit.trim(),
       };
 
-      await dispatch(visitStatusUpdate(payload));
+      await dispatch(visitStatusUpdate(payload)).unwrap();
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
 
