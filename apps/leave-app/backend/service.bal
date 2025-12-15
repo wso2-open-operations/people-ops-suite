@@ -628,7 +628,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             UserCalendarInformation|http:InternalServerError|error userCalendarInformation =
                 getUserCalendarInformation(email, startDate, endDate, jwt);
             if userCalendarInformation is error {
-                return {
+                return <http:InternalServerError> {
                     body: {
                         message: userCalendarInformation.message()
                     }
