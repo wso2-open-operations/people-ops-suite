@@ -28,6 +28,10 @@ isolated cache:Cache hrisEmployeeCache = new (
 public isolated function getEmployee(string? email)
     returns readonly & Employee|error {
 
+    if email is () {
+        return error(ERR_MSG_EMPLOYEE_RETRIEVAL_FAILED);
+    }
+
     string document = string `
         query getEmployee($email: String!) {
             employee(email: $email) {
