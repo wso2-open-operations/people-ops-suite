@@ -101,7 +101,7 @@ public isolated function calculateLeaveDetails(LeaveInput input, string token)
 #
 # + leave - Leave to be checked
 # + return - Whether the leave is allowed to be cancelled or error
-isolated function checkIfLeavedAllowedToCancel(LeaveResponse leave) returns boolean {
+isolated function checkIfLeaveAllowedToCancel(LeaveResponse leave) returns boolean {
 
     final LeaveResponse {startDate} = leave;
     time:Utc|error startUtc = getUtcDateFromString(getDateStringFromTimestamp(startDate));
@@ -361,7 +361,7 @@ isolated function getUserCalendarInformation(string email, string startDate, str
                 isActive: leaveResponse.isActive,
                 periodType: leaveResponse.periodType,
                 email: leaveResponse.email,
-                isCancelAllowed: checkIfLeavedAllowedToCancel(leaveResponse),
+                isCancelAllowed: checkIfLeaveAllowedToCancel(leaveResponse),
                 createdDate: leaveResponse.createdDate
             };
     }

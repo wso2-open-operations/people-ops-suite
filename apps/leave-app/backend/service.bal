@@ -155,7 +155,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     email: entityEmail,
                     isMorningLeave,
                     numberOfDays,
-                    isCancelAllowed: checkIfLeavedAllowedToCancel(leaveResponse)
+                    isCancelAllowed: checkIfLeaveAllowedToCancel(leaveResponse)
                 });
                 statsMap[leaveType] = statsMap.hasKey(leaveType) ?
                     statsMap.get(leaveType) + numberOfDays : numberOfDays;
