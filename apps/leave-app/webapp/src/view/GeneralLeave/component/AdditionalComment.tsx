@@ -59,6 +59,7 @@ export default function AdditionalComment({
     fetchDefaultMails();
   }, []);
 
+  const EmailGroupToNotify = defaultMails[1]?.email || "";
   return (
     <Stack gap="1rem">
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
@@ -96,7 +97,7 @@ export default function AdditionalComment({
             textAlign="center"
           >
             {isPublicComment
-              ? `Your comment will be shown to all email recipients including WSO2 Vacation Group (${defaultMails[1].email}).`
+              ? `Your comment will be shown to all email recipients including WSO2 Vacation Group (${EmailGroupToNotify}).`
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
           <CustomButton label="Submit" onClick={onSubmit} disabled={isSubmitting} />
