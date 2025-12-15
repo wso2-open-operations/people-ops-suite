@@ -19,7 +19,6 @@ const FeedbackForm = (props: FeedbackForm) => {
   const now = new Date();
   const startTime = new Date(now);
   startTime.setHours(12, 0, 0, 0);
-
   const endTime = new Date(now);
   endTime.setHours(16, 15, 0, 0);
 
