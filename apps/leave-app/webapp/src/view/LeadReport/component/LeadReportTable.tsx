@@ -33,7 +33,7 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
     return Object.entries(reportData).map(([email, data]) => ({
       id: email,
       employee: email,
-      annual: data.casual || 0,
+      annual: data.casual || 0, // since annual and casual are combined
       paternity: data.paternity || 0,
       maternity: data.maternity || 0,
       lieu: data.lieu || 0,
