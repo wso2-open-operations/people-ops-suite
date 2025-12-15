@@ -17,7 +17,13 @@
 import { Box, Chip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { EmployeeLeaveData } from "../MockData";
+export interface EmployeeLeaveData {
+  id: number;
+  email: string;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+}
 
 export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData[] }) {
   const theme = useTheme();
@@ -61,25 +67,25 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
           case "approved":
             chipProps = {
               color: theme.palette.success.main,
-              BorderColor: theme.palette.success.main,
+              borderColor: theme.palette.success.main,
             };
             break;
           case "rejected":
             chipProps = {
               color: theme.palette.error.main,
-              BorderColor: theme.palette.error.main,
+              borderColor: theme.palette.error.main,
             };
             break;
           case "pending":
             chipProps = {
               color: theme.palette.primary.main,
-              BorderColor: theme.palette.primary.main,
+              borderColor: theme.palette.primary.main,
             };
             break;
           default:
             chipProps = {
               color: theme.palette.info.main,
-              BorderColor: theme.palette.info.main,
+              borderColor: theme.palette.info.main,
             };
         }
 
@@ -87,8 +93,8 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
           <Chip
             label={displayValue}
             sx={{
-              color: chipProps.BorderColor,
-              BorderColor: chipProps.BorderColor,
+              color: chipProps.borderColor,
+              borderColor: chipProps.borderColor,
               backgroundColor: "transparent",
               borderRadius: "0.5rem",
               fontSize: theme.typography.caption.fontSize,
