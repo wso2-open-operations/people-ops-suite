@@ -726,6 +726,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
 
         }
+        if empInfo.leadEmail is () {
+            return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
+        }
         employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
         if empLead is error {
             string errorMsg = "Error occurred while fetching employee lead info";
