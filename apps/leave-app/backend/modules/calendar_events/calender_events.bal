@@ -30,9 +30,7 @@ isolated map<map<Holiday[]>> countryToYearToHolidays = {};
 # + return - Event ID if returned or error
 public isolated function createEvent(string email, EventPayload payload) returns string|error? {
 
-    CreatedMessage response = check eventClient->/events/[email].post(payload, {
-        "x-jwt-assertion": "x-jwt-assertion"
-    });
+    CreatedMessage response = check eventClient->/events/[email].post(payload);
     return response.id;
 }
 
@@ -43,9 +41,7 @@ public isolated function createEvent(string email, EventPayload payload) returns
 # + return - Error or nil
 public isolated function deleteEvent(string email, string eventId) returns error? {
 
-    http:Response response = check eventClient->/events/[email]/[eventId].delete({
-        "x-jwt-assertion": "x-jwt-assertion"
-    });
+    http:Response response = check eventClient->/events/[email]/[eventId].delete();
     if response.statusCode != http:STATUS_OK {
         return error(string `Event deletion unsuccessful. Status code: ${response.statusCode}.`);
     }
