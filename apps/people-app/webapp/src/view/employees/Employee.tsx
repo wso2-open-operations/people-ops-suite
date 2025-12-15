@@ -180,8 +180,8 @@ export default function Employees() {
     <Box
       sx={{
         minHeight: "100vh",
-        py: { xs: 2, sm: 3, md: 4 },
-        px: { xs: 1.5, sm: 2, md: 2.5 },
+        py: { xs: 1, sm: 1.5 },
+        px: { xs: 1, sm: 1.5 },
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -198,7 +198,7 @@ export default function Employees() {
           backgroundColor: theme.palette.background.paper,
         }}
       >
-        <Box sx={{ mb: 2.5 }}>
+        <Box sx={{ mb: 1 }}>
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Add Employee
           </Typography>
@@ -215,7 +215,7 @@ export default function Employees() {
           alternativeLabel
           connector={<OrangeConnector />}
           sx={{
-            mb: 2,
+            mb: 1,
             py: 0,
           }}
         >

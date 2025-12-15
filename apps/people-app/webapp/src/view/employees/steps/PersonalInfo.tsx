@@ -258,7 +258,7 @@ export default function PersonalInfoStep() {
 
   return (
     <Box sx={{ width: "100%", px: 0 }}>
-      <Box sx={{ mt: 5 }}>
+      <Box sx={{ mt: 1 }}>
         <SectionHeader icon={icons.person} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
