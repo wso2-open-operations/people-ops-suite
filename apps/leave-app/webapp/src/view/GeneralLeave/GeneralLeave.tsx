@@ -48,7 +48,7 @@ export default function GeneralLeave() {
       return;
     }
 
-    if (workingDays < 1) {
+    if (workingDays <= 0) {
       enqueueSnackbar("Working days must be at least 1 to submit a leave request", { variant: "error" });
       return;
     }
