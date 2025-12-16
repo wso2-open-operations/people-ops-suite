@@ -17,6 +17,7 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
+  DayType,
   DefaultMail,
   Employee,
   LeadReportRequest,
@@ -149,6 +150,6 @@ export const formatDateForApi = (date: any): string => {
  * @param daysCount - Number of days selected
  * @returns Period type "one" or "multiple"
  */
-export const getPeriodType = (daysCount: number): "one" | "multiple" => {
-  return daysCount === 1 ? "one" : "multiple";
+export const getPeriodType = (daysCount: number): DayType.one | DayType.multiple => {
+  return daysCount === 1 ? DayType.one : DayType.multiple;
 };

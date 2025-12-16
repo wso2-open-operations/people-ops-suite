@@ -36,6 +36,11 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
+export enum DayType {
+  one = "one",
+  multiple = "multiple",
+}
+
 export interface RouteDetail {
   path: string;
   allowRoles?: string[];
