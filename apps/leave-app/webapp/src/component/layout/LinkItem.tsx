@@ -80,7 +80,7 @@ const LinkItem = (props: ListItemLinkProps) => {
         {open && (
           <Typography
             sx={{
-              fontSize: "14px",
+              fontSize: theme.typography.body2.fontSize,
               fontWeight: 500,
               lineHeight: "150%",
               letterSpacing: "-0.03em",

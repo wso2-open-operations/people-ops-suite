@@ -13,23 +13,67 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
-import { Button, Checkbox, Stack, TextField, Typography, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
 
-import { useState } from "react";
+import CustomButton from "@root/src/component/common/CustomButton";
+import { getDefaultMails } from "@root/src/services/leaveService";
+import { DefaultMail } from "@root/src/types/types";
 
-export default function AdditionalComment() {
+interface AdditionalCommentProps {
+  comment: string;
+  onCommentChange: (comment: string) => void;
+  isPublicComment: boolean;
+  onPublicCommentChange: (isPublic: boolean) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+}
+
+export default function AdditionalComment({
+  comment,
+  onCommentChange,
+  isPublicComment,
+  onPublicCommentChange,
+  onSubmit,
+  isSubmitting,
+}: AdditionalCommentProps) {
   const theme = useTheme();
-  const [isPublicComment, setIsPublicComment] = useState(false);
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setIsPublicComment(event.target.checked);
+    onPublicCommentChange(event.target.checked);
   };
 
+  const [defaultMails, setDefaultMails] = useState<DefaultMail[]>([]);
+
+  useEffect(() => {
+    const fetchDefaultMails = async () => {
+      try {
+        const mails = await getDefaultMails();
+        setDefaultMails(mails);
+      } catch (error) {
+        console.error("Error fetching default mails:", error);
+      }
+    };
+
+    fetchDefaultMails();
+  }, []);
+
+  const EmailGroupToNotify = defaultMails[1]?.email || "";
   return (
     <Stack gap="1rem">
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>Additional Comments</Typography>
-      <TextField label="Add a comment..." multiline minRows={3} fullWidth variant="outlined" />
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+        Additional Comments
+      </Typography>
+      <TextField
+        label="Add a comment..."
+        multiline
+        minRows={3}
+        fullWidth
+        variant="outlined"
+        value={comment}
+        onChange={(e) => onCommentChange(e.target.value)}
+      />
 
       <Stack
         direction={{ xs: "column", md: "row" }}
@@ -39,26 +83,24 @@ export default function AdditionalComment() {
         gap="0.5rem"
       >
         <Stack direction="row" gap="0.5rem" alignItems="center">
-          <Checkbox checked={isPublicComment} onChange={handleCheckboxChange} />
-          <Typography sx={{ color: theme.palette.text.primary }}>Public comment</Typography>
+          <FormControlLabel
+            control={<Switch checked={isPublicComment} onChange={handleCheckboxChange} />}
+            label="Public comment"
+            sx={{ color: theme.palette.text.secondary }}
+          />
         </Stack>
 
         <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap="1rem">
-          <Typography variant="body2" sx={{ color: theme.palette.text.secondary }} textAlign="center">
+          <Typography
+            variant="body2"
+            sx={{ color: theme.palette.text.secondary }}
+            textAlign="center"
+          >
             {isPublicComment
-              ? "Your comment will be shown to all email recipients including WSO2 Vacation Group (vacation-group@leaveapp.com)."
+              ? `Your comment will be shown to all email recipients including WSO2 Vacation Group (${EmailGroupToNotify}).`
               : "Your comment will only be shown to your lead and any emails that have been added."}
           </Typography>
-          <Button sx={{ 
-            backgroundColor: theme.palette.primary.main, 
-            color: theme.palette.common.white, 
-            px: "2rem",
-            "&:hover": {
-              backgroundColor: theme.palette.primary.dark,
-            }
-          }}>
-            Submit
-          </Button>
+          <CustomButton label="Submit" onClick={onSubmit} disabled={isSubmitting} />
         </Stack>
       </Stack>
     </Stack>

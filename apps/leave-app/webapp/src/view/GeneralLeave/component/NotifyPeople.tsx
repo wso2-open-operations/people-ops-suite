@@ -15,35 +15,161 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Autocomplete,
+  Avatar,
+  Chip,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
 
-import { mockEmailContacts } from "../MockData";
+import { useEffect, useState } from "react";
 
-export default function NotifyPeople() {
+import { fetchEmployees, getDefaultMails } from "@root/src/services/leaveService";
+import { DefaultMail, Employee } from "@root/src/types/types";
+
+interface EmployeeOption {
+  label: string;
+  email: string;
+  thumbnail: string | null;
+  isFixed?: boolean;
+}
+
+interface NotifyPeopleProps {
+  selectedEmails: string[];
+  onEmailsChange: (emails: string[]) => void;
+}
+
+export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyPeopleProps) {
   const theme = useTheme();
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fixedEmails, setFixedEmails] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const employees = await fetchEmployees();
+        const defaultMails = await getDefaultMails();
+
+        const fixedEmailList = defaultMails.map((mail: DefaultMail) => mail.email);
+        setFixedEmails(fixedEmailList);
+
+        const employeeOptions = employees.map((employee: Employee) => ({
+          label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
+          email: employee.workEmail,
+          thumbnail: employee.employeeThumbnail,
+          isFixed: fixedEmailList.includes(employee.workEmail),
+        }));
+
+        // Add default mails that are not in employee list
+        const missingFixedOptions = defaultMails
+          .filter((mail: DefaultMail) => !employeeOptions.find((opt) => opt.email === mail.email))
+          .map((mail: DefaultMail) => ({
+            label: mail.email,
+            email: mail.email,
+            thumbnail: mail.thumbnail || null,
+            isFixed: true,
+          }));
+
+        setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        setEmployeeOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [onEmailsChange]);
+
+  const selectedOptions = employeeOptions.filter(
+    (opt) => opt.isFixed || selectedEmails.includes(opt.email),
+  );
 
   return (
     <Stack gap="1rem">
-      <Typography variant="h5" sx={{ color: theme.palette.text.primary }}>
+      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Select people/groups to notify (via email)
       </Typography>
       <Autocomplete
         multiple
-        options={mockEmailContacts.map((contact) => contact.email)}
-        renderInput={(params) => <TextField {...params} label="Select emails" />}
+        options={employeeOptions}
+        value={selectedOptions}
+        onChange={(_, newValue) => {
+          // Keep fixed options in value
+          const newEmails = [
+            ...fixedEmails,
+            ...newValue.filter((opt) => !opt.isFixed).map((opt) => opt.email),
+          ];
+          onEmailsChange(newEmails);
+        }}
+        getOptionLabel={(option) => option.label}
+        isOptionEqualToValue={(option, value) => option.email === value.email}
+        loading={loading}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Select emails"
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
         renderTags={(value, getTagProps) =>
-          value.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={index}
-              label={option}
-              avatar={
-                <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
-                  <Email sx={{ fontSize: 12, color: theme.palette.primary.contrastText }} />
-                </Avatar>
-              }
-            />
-          ))
+          value.map((option, index) => {
+            const ChipAvatar = option.thumbnail ? (
+              <Avatar
+                src={option.thumbnail}
+                alt={option.email}
+                imgProps={{
+                  onError: (e: any) => {
+                    e.target.style.display = "none";
+                  },
+                }}
+                sx={{ width: 30, height: 30 }}
+              >
+                {!option.thumbnail && (
+                  <Email
+                    sx={{
+                      fontSize: theme.typography.caption.fontSize,
+                      color: theme.palette.primary.contrastText,
+                    }}
+                  />
+                )}
+              </Avatar>
+            ) : (
+              <Avatar sx={{ bgcolor: theme.palette.primary.main, width: 30, height: 30 }}>
+                <Email
+                  sx={{
+                    fontSize: theme.typography.caption.fontSize,
+                    color: theme.palette.primary.contrastText,
+                  }}
+                />
+              </Avatar>
+            );
+
+            return (
+              <Chip
+                {...getTagProps({ index })}
+                key={option.email}
+                label={option.email}
+                avatar={ChipAvatar}
+                onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+              />
+            );
+          })
         }
         sx={{
           "& .MuiChip-root": {

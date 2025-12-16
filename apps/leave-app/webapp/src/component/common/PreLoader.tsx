@@ -14,11 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Box, Container, LinearProgress, Typography, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { Box, Container, LinearProgress, Typography } from "@mui/material";
+
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -51,7 +53,7 @@ const PreLoader = (props: PreLoaderProps) => {
               <Typography
                 variant="inherit"
                 sx={{
-                  fontSize: "14px",
+                  fontSize: theme.typography.body2.fontSize,
                   fontWeight: 500,
                   color: (theme) =>
                     theme.palette.mode === "light"

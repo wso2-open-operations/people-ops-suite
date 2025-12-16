@@ -118,8 +118,7 @@ const Header = () => {
                       color: theme.palette.customText.primary.p2.active,
                     }}
                   >
-                    {/* {user.userInfo?.firstName + " " + user.userInfo.lastName} */}
-                    {"Saajid Ahamed"}
+                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
                   </Typography>
                   <Typography
                     noWrap
