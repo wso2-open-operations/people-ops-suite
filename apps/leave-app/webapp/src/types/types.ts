@@ -47,7 +47,6 @@ export interface RouteDetail {
   element?: React.ReactNode;
 }
 
-
 export type RouteObjectWithRole = RouteObject & {
   allowRoles?: string[];
   denyRoles?: string[];
@@ -155,4 +154,8 @@ export interface LeadReportResponse {
     paternity?: number;
     sabbatical?: number;
   };
+}
+// App config response type.
+export interface AppConfigResponse {
+  isSabbaticalLeaveEnabled: boolean;
 }

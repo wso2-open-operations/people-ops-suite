@@ -16,6 +16,7 @@
 
 import { AppConfig } from "@root/src/config/config";
 import {
+  AppConfigResponse,
   DefaultMail,
   Employee,
   LeadReportRequest,
@@ -118,6 +119,18 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
     AppConfig.serviceUrls.leadReport,
     request,
   );
+
+  return response.data;
+};
+
+/**
+ * Get the application configurations.
+ * @returns application configuration data
+ */
+export const getAppConfig = async (): Promise<AppConfigResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.get<AppConfigResponse>(AppConfig.serviceUrls.appConfig);
 
   return response.data;
 };
