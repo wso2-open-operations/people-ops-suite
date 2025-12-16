@@ -567,10 +567,3 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 public isolated function getEmailGroupsToNotify() returns string {
     return emailGroupToNotify;
 }
-
-# Get boolean if sabbatical leave is enabled.
-#
-# + return - boolean indicating if sabbatical leave is enabled or not
-public isolated function getIsSabbaticalLeaveEnabled() returns boolean {
-    return isSabbaticalLeaveEnabled;
-}

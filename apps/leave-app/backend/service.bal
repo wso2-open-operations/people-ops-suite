@@ -26,16 +26,7 @@ import ballerina/time;
     label: "Leave Backend Service",
     id: "people-ops/leave-application"
 }
-// dont push service config
-@http:ServiceConfig {
-    cors: {
-        allowOrigins: ["*"],
-        allowCredentials: false,
-        allowHeaders: ["x-jwt-assertion", "Authorization", "Content-Type"],
-        allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
-        maxAge: 84900
-    }
-}
+
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -95,7 +86,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Application configurations or Internal Server Error
     resource function get app\-config() returns AppConfig|http:InternalServerError {
         AppConfig|error appConfig = {
-            isSabbaticalLeaveEnabled: getIsSabbaticalLeaveEnabled()
+            isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled
         };
         if appConfig is error {
             string errMsg = "Error occurred while fetching application configurations";
