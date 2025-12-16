@@ -15,10 +15,12 @@
 // under the License.
 import { lazy } from "react";
 
-const home = lazy(() => import("@view/home/Home"));
-const help = lazy(() => import("@view/help/help"));;
+const home = lazy(() => import("@view/home/home"));
+const help = lazy(() => import("@view/help/help"));
+const dod = lazy(() => import("@view/dod/dinnerOnDemand"));
 
 export const View = {
   help,
-  home
+  home,
+  dod,
 };
