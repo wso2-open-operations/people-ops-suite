@@ -32,7 +32,6 @@ configurable boolean isSabbaticalLeaveEnabled = ?;
 # + stringToCheck - String to be checked
 # + return - Whether the string is empty or not
 public isolated function checkIfEmptyString(string stringToCheck) returns boolean {
-
     if stringToCheck.length() == 0 {
         return true;
     }
@@ -59,7 +58,6 @@ public isolated function checkIfWeekday(time:Civil|time:Utc date) returns boolea
 # + return - Returns a `LeaveDetails` record if successful, or an error otherwise
 public isolated function insertLeaveToDatabase(database:LeaveInput input, boolean isValidationOnlyMode, string token)
     returns LeaveDetails|error {
-
     LeaveDetails[]|error? leaveDetails = calculateLeaveDetails(input, token);
     if leaveDetails is LeaveDetails[] {
         return error(ERR_MSG_LEAVE_OVERLAPS_WITH_EXISTING_LEAVE);
@@ -122,7 +120,6 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
 # + return - Returns a readonly array of unique email addresses or an error if the process fails
 public isolated function getAllEmailRecipientsForUser(string email, string[] userAddedRecipients, string token)
     returns readonly & string[]|error {
-
     map<true> recipientMap = {
         [email]: true
     };
@@ -144,7 +141,6 @@ public isolated function getAllEmailRecipientsForUser(string email, string[] use
 # + date - String date in ISO 8601 format
 # + return - Return Civil date or error for validation failure
 public isolated function getCivilDateFromString(string date) returns time:Civil|error {
-
     time:Civil|time:Error civilDate = time:civilFromString(getTimestampFromDateString(date));
     if civilDate is error {
         return error(
@@ -161,7 +157,6 @@ public isolated function getCivilDateFromString(string date) returns time:Civil|
 # + timestamp - Timestamp
 # + return - String date in ISO 8601 format
 public isolated function getDateStringFromTimestamp(string timestamp) returns string {
-
     if regexp:isFullMatch(REGEX_DATE_YYYY_MM_DD_T_HH_MM_SS, timestamp) ||
         regexp:isFullMatch(REGEX_DATE_YYYY_MM_DD_T_HH_MM_SS_SSS, timestamp) {
         return timestamp.substring(0, 10);
@@ -177,7 +172,6 @@ public isolated function getDateStringFromTimestamp(string timestamp) returns st
 # + return - An array of `LeaveDay` records with calculated effective leave days or an error if the calculation fails
 public isolated function getEffectiveLeaveDaysFromLeave(database:LeaveInput leaveInput, string token)
     returns LeaveDay[]|error {
-
     string|error location = employee:getEmployeeLocation(leaveInput.email, token);
     if location is error {
         return location;
@@ -221,7 +215,6 @@ public isolated function getEndDateOfYear(time:Utc? date = (), int? year = ()) r
 # + return - Return Leave entity
 public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, string token,
         boolean fetchEffectiveDays = false) returns LeaveDetails|error {
-
     database:Leave {
         id,
         email,
@@ -243,8 +236,7 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
     database:LeavePeriodType entityLeavePeriodType;
     database:LeaveType|error clonedLeaveType = leaveType.ensureType();
     if clonedLeaveType is error {
-        log:printWarn(
-                string `Detected unsupported leave type: ${leaveType.toString()}. Leave ID: ${id.toString()}.`,
+        log:printWarn(string `Detected unsupported leave type: ${leaveType.toString()}. Leave ID: ${id.toString()}.`,
                 clonedLeaveType
         );
         entityLeaveType = database:CASUAL_LEAVE;
@@ -254,8 +246,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
 
     database:LeavePeriodType|error clonedLeavePeriodType = periodType.ensureType();
     if clonedLeavePeriodType is error {
-        log:printWarn(
-                string `Detected unsupported leave period type: ${periodType.toString()}. Leave ID: ${id.toString()}.`,
+        log:printWarn(string `Detected unsupported leave period type: 
+            ${periodType.toString()}. Leave ID: ${id.toString()}.`,
                 clonedLeavePeriodType
         );
         entityLeavePeriodType = database:MULTIPLE_DAYS_LEAVE;
@@ -319,7 +311,6 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
 # + return - Return Leave entity
 public isolated function getLeaveEntitiesFromDbRecords(database:Leave[] dbLeaves, string token,
         boolean fetchEffectiveDays = false, boolean failOnError = false) returns LeaveDetails[]|error {
-
     LeaveDetails[] leaves = [];
     foreach database:Leave dbLeave in dbLeaves {
         do {
@@ -354,7 +345,6 @@ public isolated function getStartDateOfYear(time:Utc? date = (), int? year = ())
 # + date - String date in ISO 8601 format
 # + return - Return timestamp
 public isolated function getTimestampFromDateString(string date) returns string {
-
     string timestamp = date;
     if regexp:find(REGEX_DATE_YYYY_MM_DD, date) is regexp:Span {
         timestamp = date.substring(0, 10) + "T00:00:00Z";
@@ -367,7 +357,6 @@ public isolated function getTimestampFromDateString(string date) returns string 
 # + leaveDays - An array of `LeaveDay` records representing the leave days to be calculated
 # + return - The total number of days as a `float`
 public isolated function getNumberOfDaysFromLeaveDays(LeaveDay[] leaveDays) returns float {
-
     float numberOfDays = 0.0;
     from LeaveDay leaveDay in leaveDays
     do {
@@ -385,7 +374,6 @@ public isolated function getNumberOfDaysFromLeaveDays(LeaveDay[] leaveDays) retu
 # + return - A readonly array of private email recipients or an error if the operation fails
 public isolated function getPrivateRecipientsForUser(string email, string[] userAddedRecipients, string token)
     returns readonly & string[]|error {
-
     map<true> recipientMap = {
         [email]: true
     };
@@ -408,7 +396,6 @@ public isolated function getPrivateRecipientsForUser(string email, string[] user
 # + date - String date in ISO 8601 format
 # + return - Return UTC date or error for validation failure
 public isolated function getUtcDateFromString(string date) returns time:Utc|error {
-
     string timestamp = getTimestampFromDateString(date);
     time:Utc|time:Error utcDate = time:utcFromString(timestamp);
     if utcDate is time:Error {
@@ -425,7 +412,6 @@ public isolated function getUtcDateFromString(string date) returns time:Utc|erro
 # + endDate - End date
 # + return - Return Utc array of weekdays
 public isolated function getWeekdaysFromRange(time:Utc startDate, time:Utc endDate) returns database:Day[] {
-
     database:Day[] weekdays = [];
     time:Utc utcToCheck = startDate;
     while utcToCheck <= endDate {
@@ -445,7 +431,6 @@ public isolated function getWeekdaysFromRange(time:Utc startDate, time:Utc endDa
 # + return - Return Utc array of weekdays
 public isolated function getWorkingDaysAfterHolidays(database:Day[] weekdays, database:Holiday[] holidays)
     returns database:Day[] {
-
     map<database:Day> workingDaysMap = {};
     foreach database:Day weekday in weekdays {
         string weekdayDate = getTimestampFromDateString(weekday.date);
@@ -521,11 +506,11 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
         database:LeaveDay[]|error effectiveDays = getEffectiveLeaveDaysFromLeave(
                 {
                     email,
-                    startDate: startDate,
-                    endDate: endDate,
+                    startDate,
+                    endDate,
                     leaveType: entityLeaveType,
                     periodType: entityLeavePeriodType,
-                    isMorningLeave: isMorningLeave
+                    isMorningLeave
                 }, token);
 
         if effectiveDays is error {
@@ -562,7 +547,6 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
 # + endDate - End date of the range
 # + return - Returns UTC start and end dates or error for validation failure
 public isolated function validateDateRange(string startDate, string endDate) returns [time:Utc, time:Utc]|error {
-
     do {
         time:Utc startUtc = check getUtcDateFromString(startDate);
         time:Utc endUtc = check getUtcDateFromString(endDate);
@@ -578,14 +562,14 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 }
 
 # Get mandatory email group to notify.
-# 
+#
 # + return - return value description
 public isolated function getEmailGroupsToNotify() returns string {
     return emailGroupToNotify;
 }
 
 # Get boolean if sabbatical leave is enabled.
-# 
+#
 # + return - boolean indicating if sabbatical leave is enabled or not
 public isolated function getIsSabbaticalLeaveEnabled() returns boolean {
     return isSabbaticalLeaveEnabled;

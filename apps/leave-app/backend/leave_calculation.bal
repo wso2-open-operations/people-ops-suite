@@ -38,10 +38,7 @@ public isolated function calculateLeaveDetails(LeaveInput input, string token)
         return error(employeeLocation.message(), employeeLocation);
     }
     future<database:Holiday[]|error> futureHolidaysInRange = start calendar_events:getHolidaysForCountry(
-                employeeLocation,
-            startDate,
-            endDate
-        );
+            employeeLocation, startDate, endDate);
     float workingDays = 0.0;
     [time:Utc, time:Utc] [startDateUtc, endDateUtc] = check validateDateRange(startDate, endDate);
     database:Day[] weekdaysFromRange = getWeekdaysFromRange(startDateUtc, endDateUtc);

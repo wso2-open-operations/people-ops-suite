@@ -220,7 +220,7 @@ public type ReportFilters record {|
     EmployeeStatus[] employeeStatuses;
 |};
 
-# User Info payload (for frontend).
+# User Info payload.
 public type UserInfo record {|
     # Employee Id
     string? employeeId;
