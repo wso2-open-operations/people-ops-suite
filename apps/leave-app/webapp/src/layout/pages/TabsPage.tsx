@@ -13,11 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Button, useTheme } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams } from "react-router-dom";
 
 import React, { useEffect, useMemo, useState } from "react";
+
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
 interface TabsPageProps {
   title: string;
@@ -99,7 +102,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
   const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "row" }}>
+    <Box sx={{ display: "flex", flexDirection: "row", maxWidth: PAGE_MAX_WIDTH, mx: "auto" }}>
       <Box
         sx={{
           display: "flex",
@@ -132,7 +135,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               paddingBottom: "16px",
               borderRadius: "0px",
               px: 2,
-              fontSize: "0.875rem",
+              fontSize: theme.typography.body2.fontSize,
               fontWeight: "medium",
               position: "relative",
               color:
@@ -157,7 +160,6 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               {React.cloneElement(tab.icon)}
             </Box>
             <Box component="span">{tab.tabTitle}</Box>
-
           </Button>
         ))}
       </Box>
@@ -180,7 +182,7 @@ export function TabPanel(props: TabPanelProps) {
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
-      sx={{ p: 4 }}
+      sx={{ py: 4 }}
     >
       <Box
         component={motion.div}

@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
@@ -23,8 +22,10 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  INTERN = "INTERN",
+  LEAD = "LEAD",
+  ADMIN = "ADMIN",
 }
 
 // Custom extended interface
@@ -60,6 +61,7 @@ export interface UserInfoInterface {
   workEmail: string;
   employeeThumbnail: string | null;
   jobRole: string;
+  isLead: boolean;
   privileges: number[];
 }
 
@@ -89,11 +91,17 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(789)) {
-      roles.push(Role.ADMIN);
-    }
     if (userPrivileges.includes(987)) {
       roles.push(Role.EMPLOYEE);
+    }
+    if (userPrivileges.includes(879)) {
+      roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(678)) {
+      roles.push(Role.INTERN);
+    }
+    if (userPrivileges.includes(789)) {
+      roles.push(Role.ADMIN);
     }
 
     if (roles.length === 0) {

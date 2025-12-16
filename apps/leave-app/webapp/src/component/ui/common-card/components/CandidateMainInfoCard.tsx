@@ -14,9 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React from "react";
 import { Theme } from "@mui/material";
-import { Grid, alpha, Typography, Stack } from "@mui/material";
+import { Grid, Stack, Typography, alpha } from "@mui/material";
+
+import React from "react";
 
 interface CandidateMainInfoCardProps {
   title: string;
@@ -24,21 +25,13 @@ interface CandidateMainInfoCardProps {
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 }
 
-const CandidateMainInfoCard = ({
-  title,
-  subTitle,
-  icon,
-}: CandidateMainInfoCardProps) => {
+const CandidateMainInfoCard = ({ title, subTitle, icon }: CandidateMainInfoCardProps) => {
   return (
     <Grid
       size={{ xs: 12 }}
       sx={{
         p: 1,
-        bgcolor: (theme) =>
-          alpha(
-            theme.palette.primary.main,
-            theme.palette.action.selectedOpacity
-          ),
+        bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
         borderColor: "primary.main",
         borderRadius: 2.5,
         display: "flex",
@@ -51,15 +44,17 @@ const CandidateMainInfoCard = ({
         sx: {
           bgcolor: (theme: Theme) => alpha(theme.palette.primary.main, 0.3),
           p: 0.4,
-          fontSize: 25,
+          fontSize: 24,
           borderRadius: 1,
           color: "primary.main",
         },
       })}
 
       <Stack gap={0.4}>
-        <Typography sx={{ fontWeight: 600, fontSize: 10 }}>{title}</Typography>
-        <Typography sx={{ fontWeight: 600, fontSize: 10 }} color="primary.dark">
+        <Typography variant="overline" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+        <Typography variant="overline" sx={{ fontWeight: 600 }} color="primary.dark">
           {subTitle}
         </Typography>
       </Stack>

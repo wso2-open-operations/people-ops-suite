@@ -14,26 +14,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import LoadingButton from "@mui/lab/LoadingButton";
+import { Box, Card, CardContent, Container, Divider, Stack, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import {
-  Box,
-  Container,
-  Card,
-  CardContent,
-  Divider,
-  Stack,
-} from "@mui/material";
-import BackgroundImage from "@src/assets/images/app-login-background.png";
-import ProductLogos from "@src/assets/images/app-login-logos.png";
-import LoadingButton from "@mui/lab/LoadingButton";
-import logo from "@src/assets/images/wso2-logo-black.png";
+
 import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
 import { useAppAuthContext } from "@root/src/context/AuthContext";
+import BackgroundImage from "@src/assets/images/app-login-background.png";
+import ProductLogos from "@src/assets/images/app-login-logos.png";
+import logo from "@src/assets/images/wso2-logo-black.png";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
+  const theme = useTheme();
 
   return (
     <Box
@@ -89,7 +84,7 @@ const LoginScreen = () => {
                 <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
                   <Typography
                     align="center"
-                    sx={{ fontSize: "1em" }}
+                    sx={{ fontSize: theme.typography.body1.fontSize }}
                     color={"black"}
                     fontWeight={"400"}
                   >
@@ -124,7 +119,7 @@ const LoginScreen = () => {
                   <Typography
                     align="center"
                     color={"grey"}
-                    sx={{ fontSize: "0.8em" }}
+                    sx={{ fontSize: theme.typography.caption.fontSize }}
                   >
                     {/* {`© ${format(new Date(), "yyyy")} WSO2 LLC`} */}
                   </Typography>

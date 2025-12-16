@@ -13,11 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerina/http;
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Nested page</div>
-    </div>
-  );
-}
+configurable string emailServiceBaseUrl = ?;
+configurable ChoreoApp choreoAppConfig = ?;
+
+final http:Client emailClient = check new (emailServiceBaseUrl, {
+    auth: {
+        ...choreoAppConfig
+    },
+    timeout: 10.0,
+    retryConfig: {
+        count: 3,
+        interval: 5.0,
+        statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});

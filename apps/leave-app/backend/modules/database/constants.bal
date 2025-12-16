@@ -14,22 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import TabsPage from "@root/src/layout/pages/TabsPage";
-import UserGuide from "@view/help/panel/userGuide";
-import MenuBookIcon from "@mui/icons-material/MenuBook";
+# Maximum page size value. 
+const MAXIMUM_LIMIT_VALUE = 214;
 
-export default function Help() {
-  return (
-    <TabsPage
-      title="Help"
-      tabsPage={[
-        {
-          tabTitle: "User Guide",
-          tabPath: "user-guide",
-          icon: <MenuBookIcon />,
-          page: <UserGuide />,
-        },
-      ]}
-    />
-  );
-}
+# Default page size value. This value will be applied if no page size value is specified.
+public const DEFAULT_LIMIT = 100;
+
+# Upper limit of the page size value. A specified page size value should be less than 1000. If a greater than
+# 1000 value is specified the limit will be set to 1000.
+public const UPPER_LIMIT = 1000;

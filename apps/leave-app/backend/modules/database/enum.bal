@@ -14,10 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Page Two</div>
-    </div>
-  );
+# Leave period type.
+public enum LeavePeriodType {
+    MULTIPLE_DAYS_LEAVE = "multiple",
+    ONE_DAY_LEAVE = "one",
+    HALF_DAY_LEAVE = "half"
+}
+
+# Leave type.
+public enum LeaveType {
+    CASUAL_LEAVE = "casual",
+    SICK_LEAVE = "sick",
+    ANNUAL_LEAVE = "annual",
+    LIEU_LEAVE = "lieu",
+    MATERNITY_LEAVE = "maternity",
+    PATERNITY_LEAVE = "paternity"
+}
+
+# Order by.
+public enum OrderBy {
+    ASC,
+    DESC
 }
