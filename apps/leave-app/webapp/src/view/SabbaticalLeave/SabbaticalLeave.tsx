@@ -45,7 +45,7 @@ export default function SabbaticalLeave() {
     fetchSabbaticalLeaveFeatureStatus();
   }, []);
 
-  if (sabbaticalFeatureEnabled) {
+  if (!sabbaticalFeatureEnabled) {
     return (
       <Title
         firstWord="Sabbatical "
