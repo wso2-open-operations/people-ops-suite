@@ -109,7 +109,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .of(Yup.string().email("Invalid email format"))
     .nullable(),
   workPhoneNumber: Yup.string()
-    .matches(/^[0-9+\-()\s]{6,20}$/, "Invalid phone format")
+    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid phone number format")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
 });
@@ -380,6 +380,25 @@ export default function JobInfoStep() {
     }
   }, [continuousServiceRecord, selectedRecordIndex]);
 
+  useEffect(() => {
+    if (continuousServiceRecord?.length === 1) {
+      setFieldValue(
+        "continuousServiceRecord",
+        continuousServiceRecord[0].employeeId
+      );
+    } else if (
+      continuousServiceRecord?.length > 1 &&
+      selectedRecordIndex !== null
+    ) {
+      setFieldValue(
+        "continuousServiceRecord",
+        continuousServiceRecord[selectedRecordIndex].employeeId
+      );
+    } else {
+      setFieldValue("continuousServiceRecord", null);
+    }
+  }, [continuousServiceRecord, selectedRecordIndex, setFieldValue]);
+
   const renderField = useCallback(
     (name: keyof CreateEmployeeFormValues, label: string, required = true) => {
       const error = Boolean(touched[name] && errors[name]);
@@ -513,24 +532,26 @@ export default function JobInfoStep() {
                   fullWidth
                   label="Employee ID (Previous)"
                   value={selectedRecordIndex ?? ""}
-                  onChange={(e) =>
-                    setSelectedRecordIndex(Number(e.target.value))
-                  }
-                  disabled={!!errorMessage}
-                  sx={{
-                    ...textFieldSx,
-                    cursor: "pointer",
+                  onChange={(e) => {
+                    const index = Number(e.target.value);
+                    setSelectedRecordIndex(index);
+                    setFieldValue(
+                      "continuousServiceRecord",
+                      continuousServiceRecord[index].employeeId
+                    );
                   }}
+                  disabled={!!errorMessage}
+                  sx={{ ...textFieldSx, cursor: "pointer" }}
                   helperText={
-                    errorMessage
-                      ? "Failed to fetch record due to a server error"
-                      : undefined
+                    errorMessage ? "Failed to fetch record" : undefined
                   }
                   error={!!errorMessage}
                 >
                   {continuousServiceRecord.map((rec, idx) => (
                     <MenuItem key={idx} value={idx}>
-                      {rec.employeeId}
+                      {rec.employeeId} -{" "}
+                      {`${rec.firstName || ""} ${rec.lastName || ""}`.trim() ||
+                        "N/A"}
                     </MenuItem>
                   ))}
                 </TextField>

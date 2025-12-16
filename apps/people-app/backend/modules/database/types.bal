@@ -22,7 +22,7 @@ import ballerinax/mysql;
 public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
 # Phone number validation regex pattern
-const PHONE_PATTERN_STRING = "^\\+?[0-9][0-9\\-()\\s]{5,19}$";
+const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
 
 # Date validation regex pattern (YYYY-MM-DD format)
 const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
@@ -165,6 +165,9 @@ public type EmployeePersonalInfo record {|
     string? country;
     # Nationality
     string? nationality;
+    # Emergency contacts
+    @sql:Column {name: "emergency_contacts"}
+    json emergencyContacts;
 |};
 
 # Continuous service record information.
@@ -342,7 +345,7 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? nationality = ();
     # Emergency contacts
-    EmergencyContact[] emergencyContacts = [];
+    EmergencyContact[] emergencyContacts;
 |};
 
 # Create employee payload.
@@ -405,6 +408,9 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # Continuous service record
+    @constraint:String {maxLength: 99}
+    string? continuousServiceRecord = ();
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};
@@ -438,6 +444,9 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # Country of residence
     @constraint:String {maxLength: 100}
     string? country = ();
+    # Emergency contacts
+    @constraint:Array {minLength: 1, maxLength: 4}
+    EmergencyContact[] emergencyContacts;
 |};
 
 # [Database] Insert type for vehicle.
