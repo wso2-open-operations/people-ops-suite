@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Briefcase, CalendarX2, FileText, History } from "lucide-react";
 import { type RouteObject } from "react-router-dom";
 
@@ -31,6 +30,7 @@ import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 type RouteObjectWithMeta = RouteObjectWithRole & {
   text?: string;
   icon?: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  denyRoles?: string[];
 };
 
 export const routes: RouteObjectWithMeta[] = [
@@ -39,21 +39,22 @@ export const routes: RouteObjectWithMeta[] = [
     text: "General Leave",
     icon: React.createElement(Briefcase),
     element: React.createElement(GeneralLeave),
-    allowRoles: [Role.GENERAL, Role.EMPLOYEE, Role.LEAD],
+    allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
     path: "sabbatical-leave",
     text: "Sabbatical Leave",
     icon: React.createElement(CalendarX2),
     element: React.createElement(SabbaticalLeave),
-    allowRoles: [Role.SABBATICAL_USER],
+    allowRoles: [Role.EMPLOYEE, Role.LEAD],
+    denyRoles: [Role.INTERN],
   },
   {
     path: "leave-history",
     text: "Leave History",
     icon: React.createElement(History),
     element: React.createElement(LeaveHistory),
-    allowRoles: [Role.GENERAL, Role.EMPLOYEE],
+    allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
     path: "lead-report",
@@ -73,7 +74,10 @@ export const getActiveRoutesV2 = (
   const routesObj: RouteObjectWithRole[] = [];
 
   routes.forEach((routeObj) => {
-    if (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) {
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
       if (routeObj.index) {
         routesObj.push({ ...routeObj });
       } else {
@@ -92,7 +96,10 @@ export const getActiveRoutes = (roles: string[]): RouteObject[] => {
   const routesObj: RouteObject[] = [];
 
   routes.forEach((routeObj) => {
-    if (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) {
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
       routesObj.push({ ...routeObj });
     }
   });
@@ -104,12 +111,16 @@ export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
   const routesObj: RouteDetail[] = [];
 
   routes.forEach((routeObj) => {
-    if (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) {
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
       routesObj.push({
         path: routeObj.path ?? "",
         text: routeObj.text!,
         icon: routeObj.icon!,
         allowRoles: routeObj.allowRoles,
+        denyRoles: routeObj.denyRoles,
         element: routeObj.element,
       });
     }
@@ -132,7 +143,8 @@ export const getActiveParentRoutes = ({ routes, roles }: GetActiveParentRoutesPr
     if (
       routeObj.path &&
       routeObj.element &&
-      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles))
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
     ) {
       activeParentPaths.push(routeObj.path);
     }

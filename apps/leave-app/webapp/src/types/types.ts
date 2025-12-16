@@ -39,6 +39,7 @@ export enum ConfirmationType {
 export interface RouteDetail {
   path: string;
   allowRoles?: string[];
+  denyRoles?: string[];
   icon?: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
   text?: string;
   children?: RouteObjectWithRole[];
@@ -49,6 +50,7 @@ export interface RouteDetail {
 
 export type RouteObjectWithRole = RouteObject & {
   allowRoles?: string[];
+  denyRoles?: string[];
 };
 
 // Leave validation types.
