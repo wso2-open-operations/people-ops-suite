@@ -16,7 +16,7 @@
 import leave_service.database;
 import leave_service.employee;
 
-# Holiday record.
+# Holiday.
 public type Holiday record {|
     # Title of the holiday
     string title;
@@ -24,7 +24,7 @@ public type Holiday record {|
     string date;
 |};
 
-# Calculated leave record.
+# Calculated leave.
 public type CalculatedLeave record {|
     # Number of working days
     float workingDays;
@@ -36,7 +36,7 @@ public type CalculatedLeave record {|
     Holiday[] holidays?;
 |};
 
-# Day record.
+# Day.
 public type Day record {|
     # string date
     string date;
@@ -44,7 +44,7 @@ public type Day record {|
     Holiday[] holidays?;
 |};
 
-# Leave stat record.
+# Leave stat.
 public type LeaveStat record {|
     # Leave type
     string 'type;
@@ -60,7 +60,7 @@ public type FetchedLeavesRecord record {|
     LeaveStat[] stats;
 |};
 
-# Leave policy record.
+# Leave policy.
 public type LeavePolicy record {|
     # Annual leave count
     float? annual?;
@@ -68,7 +68,7 @@ public type LeavePolicy record {|
     float? casual?;
 |};
 
-# Form data record.
+# Form data.
 public type FormData record {|
     # List of email recipients
     string[] emailRecipients = [];
@@ -95,7 +95,7 @@ public type FormData record {|
     ];
 |};
 
-# Leave record.
+# Leave.
 public type Leave record {|
     # Leave ID
     int id;
@@ -125,12 +125,12 @@ public type Leave record {|
     boolean isCancelAllowed = false;
 |};
 
-# Leave day record.
+# Leave day.
 public type LeaveDay record {|
     *database:LeaveDay;
 |};
 
-# Leave Entitlement record.
+# Leave Entitlement.
 public type LeaveEntitlement record {|
     # Year of the leave entitlement
     int year;
@@ -147,7 +147,7 @@ public type LeaveInput record {|
     *database:LeaveInput;
 |};
 
-# Leave details record.
+# Leave details.
 public type LeaveDetails record {|
     *LeaveInput;
     # Leave ID
@@ -171,7 +171,7 @@ public type LeavePayload record {|
     *database:LeavePayload;
 |};
 
-# Leave entity record.
+# Leave entity.
 public type LeaveResponse record {|
     *database:LeaveResponse;
 |};
@@ -202,7 +202,7 @@ public type UserCalendarInformation record {|
     Holiday[] holidays;
 |};
 
-# Employee record.
+# Employee.
 public type Employee record {|
     *employee:Employee;
 |};
