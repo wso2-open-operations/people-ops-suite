@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { CircleCheckBig, ClipboardList, History, NotebookPen } from "lucide-react";
+import { CircleCheckBig, History, NotebookPen } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -26,7 +26,6 @@ import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
 import ApprovalHistoryTab from "./Panel/ApprovalHistoryTab";
 import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
-import FunctionalLeadViewTab from "./Panel/FunctionalLeadViewTab";
 
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
 export default function SabbaticalLeave() {
@@ -75,12 +74,6 @@ export default function SabbaticalLeave() {
             tabPath: "approval-history",
             icon: <History />,
             page: <ApprovalHistoryTab />,
-          },
-          {
-            tabTitle: "Functional Lead View",
-            tabPath: "functional-lead-view",
-            icon: <ClipboardList />,
-            page: <FunctionalLeadViewTab />,
           },
         ]}
       />
