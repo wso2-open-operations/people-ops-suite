@@ -26,7 +26,16 @@ import ballerina/time;
     label: "Leave Backend Service",
     id: "people-ops/leave-application"
 }
-
+// dont push service config
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"],
+        allowCredentials: false,
+        allowHeaders: ["x-jwt-assertion", "Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+        maxAge: 84900
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -46,14 +55,14 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             // Fetch the user's privileges based on the roles.
             int[] privileges = [];
-            if authorization:checkPermissions(authorization:authorizedRoles.generalRoles, userInfo.groups) {
-                privileges.push(authorization:GENERAL_PRIVILEGE);
-            }
             if authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, userInfo.groups) {
                 privileges.push(authorization:EMPLOYEE_PRIVILEGE);
-                if (getIsSabbaticalLeaveEnabled()) {
-                    privileges.push(authorization:SABBATICAL_LEAVE_PRIVILEGE);
-                }
+            }
+            if authorization:checkPermissions(authorization:authorizedRoles.internRoles, userInfo.groups) {
+                privileges.push(authorization:INTERN_PRIVILEGE);
+            }
+            if authorization:checkPermissions(authorization:authorizedRoles.adminRoles, userInfo.groups) {
+                privileges.push(authorization:ADMIN_PRIVILEGE);
             }
             UserInfo userInfoResponse = {
                 employeeId: empInfo.employeeId,
@@ -82,6 +91,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
+    # Get application configurations.
+    # + return - Application configurations or Internal Server Error
+    resource function get app\-config() returns AppConfig|http:InternalServerError {
+        AppConfig|error appConfig = {
+            isSabbaticalLeaveEnabled: getIsSabbaticalLeaveEnabled()
+        };
+        if appConfig is error {
+            string errMsg = "Error occurred while fetching application configurations";
+            log:printError(errMsg, appConfig);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        return appConfig;
+    }
+
     # Get leaves for the given filters.
     #
     # + ctx - HTTP request context
@@ -107,7 +134,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             if email != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.employeeRoles);
+                        authorization:authorizedRoles.adminRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource 
                         /leaves with email=${email.toString()}`);
@@ -344,7 +371,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             final string email = userInfo.email;
             if leaveResponse.email != email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.employeeRoles);
+                        authorization:authorizedRoles.adminRoles);
                 if !validateForSingleRole {
                     return <http:Forbidden>{
                         body: {
@@ -582,7 +609,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             if email != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.employeeRoles);
+                        authorization:authorizedRoles.adminRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the${false ?
                                 " admin " : " "}resource /leave-entitlement with email=${email.toString()}`);
@@ -628,7 +655,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             UserCalendarInformation|http:InternalServerError|error userCalendarInformation =
                 getUserCalendarInformation(email, startDate, endDate, jwt);
             if userCalendarInformation is error {
-                return <http:InternalServerError> {
+                return <http:InternalServerError>{
                     body: {
                         message: userCalendarInformation.message()
                     }
@@ -660,7 +687,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
 
-            boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.employeeRoles, groups);
+            boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.adminRoles, groups);
             Employee[] & readonly employees;
 
             employees = check employee:getEmployees(

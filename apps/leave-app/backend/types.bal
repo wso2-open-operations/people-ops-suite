@@ -239,3 +239,9 @@ public type UserInfo record {|
     # Is lead or not
     boolean? isLead;
 |};
+
+# Application configurations.
+public type AppConfig record {|
+    # Is sabbatical leave enabled or not
+    boolean isSabbaticalLeaveEnabled;
+|};
