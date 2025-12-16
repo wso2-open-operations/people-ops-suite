@@ -14,8 +14,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Title from "@root/src/component/common/Title";
+import { Stack } from "@mui/material";
+import { Dayjs } from "dayjs";
+import dayjs from "dayjs";
+
+import { useState } from "react";
+
+import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { LeadReportResponse } from "@root/src/types/types";
+
+import LeadReportTable from "./component/LeadReportTable";
+import Toolbar from "./component/Toolbar";
 
 export default function LeadReport() {
-  return <Title firstWord="Lead" secondWord="Report" />;
+  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
+  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
+  const [reportData, setReportData] = useState<LeadReportResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  return (
+    <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Toolbar
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onFetchReport={setReportData}
+        setLoading={setLoading}
+      />
+      <LeadReportTable reportData={reportData} loading={loading} />
+    </Stack>
+  );
 }

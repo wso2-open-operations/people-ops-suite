@@ -20,9 +20,10 @@ interface DatePillProps {
   partOfDay: string;
   isSelected?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
-export default function DatePill({ partOfDay, isSelected = false, onClick }: DatePillProps) {
+export default function DatePill({ partOfDay, isSelected = false, onClick, disabled = false }: DatePillProps) {
   const theme = useTheme();
   
   return (
@@ -37,9 +38,10 @@ export default function DatePill({ partOfDay, isSelected = false, onClick }: Dat
       sx={{
         borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
         backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
-        cursor: onClick ? "pointer" : "default",
+        cursor: disabled ? "not-allowed" : (onClick ? "pointer" : "default"),
+        opacity: disabled ? 0.5 : 1,
         transition: "all 0.2s ease",
-        "&:hover": onClick
+        "&:hover": (onClick && !disabled)
           ? {
               borderColor: theme.palette.primary.main,
               transform: "translateY(-1px)",

@@ -14,8 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Title from "@root/src/component/common/Title";
+import { Button } from "@mui/material";
 
-export default function FunctionalLeadViewTab() {
-  return <Title firstWord="Functional" secondWord="Lead View" />;
+interface CustomButtonProps {
+  label: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+export default function CustomButton({ label, onClick, disabled }: CustomButtonProps) {
+  return (
+    <Button
+      type="submit"
+      variant="contained"
+      color="primary"
+      onClick={onClick}
+      disabled={disabled}
+      sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
+    >
+      {label}
+    </Button>
+  );
 }

@@ -14,28 +14,31 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Typography, useTheme } from "@mui/material";
+import { Checkbox, FormControlLabel, useTheme } from "@mui/material";
 
-interface TitleProps {
-  firstWord: string;
-  secondWord: string;
+interface CheckBoxProps {
+  label: string;
 }
 
-export default function Title({ firstWord, secondWord }: TitleProps) {
+// Custom reusable check box component
+export default function CheckBox({ label }: CheckBoxProps) {
   const theme = useTheme();
-
   return (
-    <Typography
-      variant="h5"
-      textAlign={{ xs: "center", md: "left" }}
+    <FormControlLabel
+      control={<Checkbox color="primary" />}
+      label={label}
       sx={{
         color: theme.palette.text.primary,
-        fontWeight: "600",
-        fontSize: theme.typography.h4.fontSize,
+        "& .MuiFormControlLabel-label": {
+          color: theme.palette.text.primary,
+          fontSize: theme.typography.body2.fontSize,
+        },
+        textAlign: { xs: "center", md: "left" },
+        display: "flex",
+        flexDirection: { xs: "column-reverse", md: "row" },
+        alignItems: { xs: "center", md: "left" },
+        m: 0,
       }}
-    >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
-      {secondWord}
-    </Typography>
+    />
   );
 }

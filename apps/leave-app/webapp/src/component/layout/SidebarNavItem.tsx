@@ -64,7 +64,7 @@ function SidebarNavItem({
               color: theme.palette.neutral.white,
               padding: theme.spacing(0.75, 1.5),
               borderRadius: "4px",
-              fontSize: "12px",
+              fontSize: theme.typography.caption.fontSize,
               boxShadow: theme.shadows[8],
             },
           },

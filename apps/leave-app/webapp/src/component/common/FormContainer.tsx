@@ -14,28 +14,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Typography, useTheme } from "@mui/material";
+import { Stack, useTheme } from "@mui/material";
 
-interface TitleProps {
-  firstWord: string;
-  secondWord: string;
-}
+import React from "react";
 
-export default function Title({ firstWord, secondWord }: TitleProps) {
+type Props = {
+  children: React.ReactNode;
+};
+
+// Container component for forms to provide consistent styling
+export const FormContainer: React.FC<Props> = ({ children }) => {
   const theme = useTheme();
-
   return (
-    <Typography
-      variant="h5"
-      textAlign={{ xs: "center", md: "left" }}
+    <Stack
+      direction="column"
+      width="100%"
+      margin="auto"
+      gap="2rem"
+      padding="1.5rem"
+      borderRadius="0.5rem"
+      border={`1px solid ${theme.palette.divider}`}
       sx={{
-        color: theme.palette.text.primary,
-        fontWeight: "600",
-        fontSize: theme.typography.h4.fontSize,
+        backgroundColor: theme.palette.background.paper,
+        overflowX: "hidden",
+        boxSizing: "border-box",
       }}
     >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
-      {secondWord}
-    </Typography>
+      {children}
+    </Stack>
   );
-}
+};

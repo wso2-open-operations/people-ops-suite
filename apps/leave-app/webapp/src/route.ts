@@ -13,54 +13,55 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { 
-  History, 
-  CalendarX2,
-  FileText,
-  Briefcase,
-} from "lucide-react";
-import type { RouteObject } from "react-router-dom";
+import { Briefcase, CalendarX2, FileText, History } from "lucide-react";
+import { type RouteObject } from "react-router-dom";
 
 import React from "react";
 
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
+import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
+import LeadReport from "@view/LeadReport/LeadReport";
+import LeaveHistory from "@view/LeaveHistory/LeaveHistory";
 import { SabbaticalLeave } from "@view/index";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
-import LeaveHistory from '@view/LeaveHistory/LeaveHistory';
-import LeadReport from '@view/LeadReport/LeadReport';
-import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
 
-export const routes: RouteObjectWithRole[] = [
+type RouteObjectWithMeta = RouteObjectWithRole & {
+  text?: string;
+  icon?: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  denyRoles?: string[];
+};
+
+export const routes: RouteObjectWithMeta[] = [
   {
-    path: "general-leave",          
-    text: "General Leave", 
+    path: "",
+    text: "General Leave",
     icon: React.createElement(Briefcase),
     element: React.createElement(GeneralLeave),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
-    path: "sabbatical-leave",       
-    text: "Sabbatical Leave",      
+    path: "sabbatical-leave",
+    text: "Sabbatical Leave",
     icon: React.createElement(CalendarX2),
-    element: React.createElement(SabbaticalLeave), 
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    element: React.createElement(SabbaticalLeave),
+    allowRoles: [Role.EMPLOYEE, Role.LEAD],
+    denyRoles: [Role.INTERN],
   },
   {
-    path: "leave-history",          
-    text: "Leave History",         
+    path: "leave-history",
+    text: "Leave History",
     icon: React.createElement(History),
     element: React.createElement(LeaveHistory),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
     path: "lead-report",
     text: "Lead Report",
     icon: React.createElement(FileText),
     element: React.createElement(LeadReport),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.LEAD],
   },
 ];
 
@@ -69,13 +70,22 @@ export const getActiveRoutesV2 = (
   roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
+
   const routesObj: RouteObjectWithRole[] = [];
+
   routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-        children: getActiveRoutesV2(routeObj.children, roles),
-      });
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
+      if (routeObj.index) {
+        routesObj.push({ ...routeObj });
+      } else {
+        routesObj.push({
+          ...routeObj,
+          children: getActiveRoutesV2(routeObj.children, roles),
+        });
+      }
     }
   });
 
@@ -84,46 +94,59 @@ export const getActiveRoutesV2 = (
 
 export const getActiveRoutes = (roles: string[]): RouteObject[] => {
   const routesObj: RouteObject[] = [];
+
   routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-      });
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
+      routesObj.push({ ...routeObj });
     }
   });
+
   return routesObj;
 };
 
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
   const routesObj: RouteDetail[] = [];
+
   routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
+    if (
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
       routesObj.push({
-        ...routeObj,
         path: routeObj.path ?? "",
+        text: routeObj.text!,
+        icon: routeObj.icon!,
+        allowRoles: routeObj.allowRoles,
+        denyRoles: routeObj.denyRoles,
+        element: routeObj.element,
       });
     }
   });
+
   return routesObj;
 };
 
-interface getActiveParentRoutesProps {
+interface GetActiveParentRoutesProps {
   routes: RouteObjectWithRole[] | undefined;
   roles: string[];
 }
 
-export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
+export const getActiveParentRoutes = ({ routes, roles }: GetActiveParentRoutesProps): string[] => {
   if (!routes) return [];
 
-  let activeParentPaths: string[] = [];
+  const activeParentPaths: string[] = [];
 
   routes.forEach((routeObj) => {
-    if (!routeObj.element) return;
-
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      if (routeObj.path) {
-        activeParentPaths.push(routeObj.path);
-      }
+    if (
+      routeObj.path &&
+      routeObj.element &&
+      (!routeObj.allowRoles || isIncludedRole(roles, routeObj.allowRoles)) &&
+      (!routeObj.denyRoles || !isIncludedRole(roles, routeObj.denyRoles))
+    ) {
+      activeParentPaths.push(routeObj.path);
     }
   });
 

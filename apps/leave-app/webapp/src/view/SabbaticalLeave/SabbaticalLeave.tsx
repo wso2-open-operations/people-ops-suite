@@ -14,46 +14,69 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { CircleCheckBig, ClipboardList, History, NotebookPen } from "lucide-react";
+import { CircleCheckBig, History, NotebookPen } from "lucide-react";
 
+import { useEffect, useState } from "react";
+
+import Title from "@root/src/component/common/Title";
 import TabsPage from "@root/src/layout/pages/TabsPage";
+import { getAppConfig } from "@root/src/services/leaveService";
+import { AppConfigResponse } from "@root/src/types/types";
 import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
 import ApprovalHistoryTab from "./Panel/ApprovalHistoryTab";
 import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
-import FunctionalLeadViewTab from "./Panel/FunctionalLeadViewTab";
 
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
 export default function SabbaticalLeave() {
+  const [sabbaticalFeatureEnabled, setSabbaticalFeatureEnabled] = useState<boolean>(false);
+  // Fetch app config to check if sabbatical leave feature is enabled
+  useEffect(() => {
+    const fetchSabbaticalLeaveFeatureStatus = async () => {
+      try {
+        const appConfig: AppConfigResponse = await getAppConfig();
+        setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
+      } catch (error) {
+        console.error("Error fetching app config:", error);
+      }
+    };
+
+    fetchSabbaticalLeaveFeatureStatus();
+  }, []);
+
+  if (!sabbaticalFeatureEnabled) {
+    return (
+      <Title
+        firstWord="Sabbatical "
+        secondWord="Leave Feature is currently not available. Please check again later."
+      />
+    );
+  }
   return (
-    <TabsPage
-      title="Sabbatical Leave"
-      tabsPage={[
-        {
-          tabTitle: "Apply",
-          tabPath: "apply",
-          icon: <NotebookPen />,
-          page: <ApplyTab />,
-        },
-        {
-          tabTitle: "Approve Leave",
-          tabPath: "approve-leave",
-          icon: <CircleCheckBig />,
-          page: <ApproveLeaveTab />,
-        },
-        {
-          tabTitle: "Approval History",
-          tabPath: "approval-history",
-          icon: <History />,
-          page: <ApprovalHistoryTab />,
-        },
-        {
-          tabTitle: "Functional Lead View",
-          tabPath: "functional-lead-view",
-          icon: <ClipboardList />,
-          page: <FunctionalLeadViewTab />,
-        },
-      ]}
-    />
+    <>
+      <TabsPage
+        title="Sabbatical Leave"
+        tabsPage={[
+          {
+            tabTitle: "Apply",
+            tabPath: "apply",
+            icon: <NotebookPen />,
+            page: <ApplyTab />,
+          },
+          {
+            tabTitle: "Approve Leave",
+            tabPath: "approve-leave",
+            icon: <CircleCheckBig />,
+            page: <ApproveLeaveTab />,
+          },
+          {
+            tabTitle: "Approval History",
+            tabPath: "approval-history",
+            icon: <History />,
+            page: <ApprovalHistoryTab />,
+          },
+        ]}
+      />
+    </>
   );
 }
