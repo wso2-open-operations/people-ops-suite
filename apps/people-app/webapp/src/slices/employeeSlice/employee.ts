@@ -103,6 +103,7 @@ export type CreateEmployeePayload = {
   subTeamId?: number;
   businessUnitId: number;
   unitId?: number;
+  continuousServiceRecord?: string | null;
   personalInfo: CreatePersonalInfoPayload;
 };
 
