@@ -15,7 +15,7 @@
 // under the License.
 
 import axios, { AxiosInstance, CancelTokenSource } from "axios";
-import * as rax from "retry-axios";
+import { RaxConfig, attach } from "retry-axios";
 
 export class APIService {
   private static _instance: AxiosInstance;
@@ -29,12 +29,12 @@ export class APIService {
 
   constructor(idToken: string, callback: () => Promise<{ accessToken: string }>) {
     APIService._instance = axios.create();
-    rax.attach(APIService._instance);
+    attach(APIService._instance);
 
     APIService._idToken = idToken;
     APIService.updateRequestInterceptor();
     APIService.callback = callback;
-    (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
+    (APIService._instance.defaults as unknown as RaxConfig).raxConfig = {
       retry: 3,
       instance: APIService._instance,
       httpMethodsToRetry: ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH", "PUT"],
