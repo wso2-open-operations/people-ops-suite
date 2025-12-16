@@ -31,7 +31,7 @@ import { ThemeMode } from "@utils/types";
 import "./index.css";
 
 export const ColorModeContext = createContext({
-  mode: ThemeMode.Dark,
+  mode: ThemeMode.Light,
   toggleColorMode: () => {},
 });
 
