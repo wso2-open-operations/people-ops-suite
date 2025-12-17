@@ -433,56 +433,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
-    # Get Application specific data required for initializing the leave form.
-    #
-    # + ctx - HTTP request context
-    # + return - Form data related to leaves
-    resource function get form\-data(http:RequestContext ctx) returns FormData|http:InternalServerError {
-
-        do {
-            authorization:CustomJwtPayload {email} = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            final readonly & string[] emails = [email];
-            final string startDate = getStartDateOfYear();
-            final string endDate = getEndDateOfYear();
-            final database:Leave[]|error leaves = database:getLeaves(
-                    {emails, startDate, endDate, orderBy: database:DESC}
-            );
-            if leaves is error {
-                fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
-            }
-            LeaveResponse[] leaveResponses = from database:Leave leave in leaves
-                select check toLeaveEntity(leave, jwt);
-
-            Employee & readonly employee = check employee:getEmployee(email);
-            Employee {leadEmail, location} = employee;
-            string[] emailRecipients = leaveResponses.length() > 0 ? leaveResponses[0].emailRecipients : [];
-            string[] leadEmails = leadEmail == () ? [] : [leadEmail];
-            LeavePolicy|error legallyEntitledLeave = getLegallyEntitledLeave(employee);
-            if legallyEntitledLeave is error {
-                fail error(employee:ERR_MSG_EMPLOYEES_RETRIEVAL_FAILED, legallyEntitledLeave);
-            }
-
-            return {
-                emailRecipients,
-                leadEmails,
-                isLead: <boolean>employee.lead,
-                location,
-                legallyEntitledLeave,
-                leaveReportContent: getLeaveReportContent(leaveResponses)
-            };
-
-        } on fail error internalErr {
-            string errMsg = "Error occurred while fetching leave form data";
-            log:printError(errMsg, internalErr);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
-    }
-
     # Fetch all the employees.
     #
     # + ctx - HTTP request context
