@@ -65,6 +65,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
         }
       } catch (error) {
         console.error("Error refreshing token:", error);
+        LOGOUT_CALLBACK();
       } finally {
         release();
       }
