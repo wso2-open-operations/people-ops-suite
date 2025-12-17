@@ -145,3 +145,23 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
 
     return insertQuery;
 }
+
+# Query to get sabbatical leave approval status records for leads.
+#
+# + params - Parameters to filter the leave approval status
+# + return - Select query to get sabbatical leave approval status
+isolated function getLeaveApprovalStatusQuery(LeaveApprovalStatusParam params)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = sql:queryConcat(`
+        SELECT 
+            la.id as id,
+            la.approval_status as approvalStatus
+            ls.start_date as startDate,
+            ls.end_date as endDate,
+            ls.submit_note as submitNote,
+        FROM leave_approval la INNER JOIN leave_submissions ls ON la.leave_submission_id = ls.id
+        WHERE la.approver_email = ${params.leadEmail} AND la.approval_status IN (`,
+            sql:arrayFlattenQuery(params.status), `)`);
+
+    return query;
+}
