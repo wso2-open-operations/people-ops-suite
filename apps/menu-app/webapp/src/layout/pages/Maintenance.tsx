@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Typography } from "@mui/material";
+
 import MaintenanceGif from "@assets/images/maintenance.gif";
 
 export default function MaintenancePage() {
@@ -30,9 +30,8 @@ export default function MaintenancePage() {
     >
       <img alt="maintenance" src={MaintenanceGif} />
       <Typography variant="h4" style={{ color: "gray" }}>
-        Exciting changes are on the way! Our website is currently undergoing a
-        transformation to enhance your experience. Please check back soon to see
-        the amazing updates.
+        Exciting changes are on the way! Our website is currently undergoing a transformation to
+        enhance your experience. Please check back soon to see the amazing updates.
       </Typography>
     </Box>
   );
