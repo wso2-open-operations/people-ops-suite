@@ -87,3 +87,17 @@ public isolated function cancelLeave(int id) returns error? {
         return error("Error occurred while cancelling leave!", result);
     }
 }
+
+# Get Leave Approval Status records for leads.
+#
+# + leadEmail - Email of the lead
+# + approvalStatus - List of approval statuses to filter (APPROVED, REJECTED, PENDING)
+# + return - List of LeaveApprovalStatus records or an error on failure
+public isolated function getLeaveApprovalStatusList(string leadEmail, string[] approvalStatus)
+    returns LeaveApprovalStatus[]|error {
+
+    sql:ParameterizedQuery sqlQuery = getLeaveApprovalStatusListQuery(leadEmail, approvalStatus);
+    stream<LeaveApprovalStatus, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
+    return from LeaveApprovalStatus leaveApproval in resultStream
+        select leaveApproval;
+}
