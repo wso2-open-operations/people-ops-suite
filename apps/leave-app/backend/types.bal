@@ -84,7 +84,7 @@ public type FormData record {|
     ReportContent leaveReportContent = {};
     # List of leave types
     record {|
-        string key;
+        string 'key;
         string value;
     |}[] leaveTypes = [
         {'key: "casual", value: "Other leave (Casual, Sick, etc.)"},
