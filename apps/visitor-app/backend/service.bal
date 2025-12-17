@@ -807,6 +807,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
+            string? purposeOfVisit = payload.purposeOfVisit;
+            string? whomTheyMeet = payload.whomTheyMeet;
             if passNumber is () {
                 return <http:BadRequest>{
                     body: {
@@ -814,10 +816,24 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
+            if accessibleLocations is () {
                 return <http:BadRequest>{
                     body: {
                         message: "At least one accessible location is required when approving a visit!"
+                    }
+                };
+            }
+            if purposeOfVisit is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Purpose of visit is required when approving a visit!"
+                    }
+                };
+            }
+            if whomTheyMeet is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "The person they meet is required when approving a visit!"
                     }
                 };
             }
@@ -828,7 +844,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                         passNumber: payload.passNumber,
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
-                        timeOfEntry: time:utcNow()
+                        timeOfEntry: time:utcNow(),
+                        purposeOfVisit: payload.purposeOfVisit,
+                        whomTheyMeet: payload.whomTheyMeet
                     }, invokerInfo.email);
 
             if response is error {
