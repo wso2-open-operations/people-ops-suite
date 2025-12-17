@@ -261,12 +261,6 @@ public type LeaveResponse record {|
 |};
 
 # Parameters for leave approval status.
-public type LeaveApprovalStatusParam record {|
-    # Lead email
-    string leadEmail;
-    # Approval status (PENDING/APPROVED/REJECTED)
-    string[] status;
-|};
 
 # Leave approval status response.
 public type LeaveApprovalStatus record {|
@@ -279,5 +273,5 @@ public type LeaveApprovalStatus record {|
     # Approval status
     string approvalStatus;
     # Submission note
-    string submitNote
+    string submitNote;
 |};

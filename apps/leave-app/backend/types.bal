@@ -212,6 +212,21 @@ public type UserInfo record {|
     # Is lead or not
     boolean? isLead;
 |};
+public type LeaveApprovalStatusPayload record {|
+    # Approval status (PENDING/APPROVED/REJECTED)
+    string[] status;
+|};
+
+
+# Sabbatical leave application payload record.
+public type SabbaticalLeaveApplicationPayload record {|
+    # Leave start date
+    string startDate = "";
+    # Leave end date
+    string endDate = "";
+    # Additional comment
+    string additionalComment = "";
+|};
 
 # Application configurations.
 public type AppConfig record {|
