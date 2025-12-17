@@ -1,3 +1,18 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import { fetchBaseQuery, retry } from "@reduxjs/toolkit/query";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Mutex } from "async-mutex";
@@ -6,12 +21,12 @@ import { SERVICE_BASE_URL } from "../config/config";
 
 let ACCESS_TOKEN: string;
 let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
-let LOGOUT_CALLBACK: () => void
+let LOGOUT_CALLBACK: () => void;
 
 export const setTokens = (
   accessToken: string,
   refreshCallback: () => Promise<{ accessToken: string }>,
-  logoutCallBack: () => void
+  logoutCallBack: () => void,
 ) => {
   ACCESS_TOKEN = accessToken;
   REFRESH_TOKEN_CALLBACK = refreshCallback;
@@ -23,7 +38,6 @@ const baseQuery = fetchBaseQuery({
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
       headers.set("Authorization", `Bearer${ACCESS_TOKEN}`);
-      headers.set("x-jwt-assertion", ACCESS_TOKEN);
     }
   },
 });
