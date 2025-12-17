@@ -19,6 +19,7 @@ import leave_service.email;
 import leave_service.employee;
 
 import ballerina/http;
+import ballerina/io;
 import ballerina/log;
 import ballerina/time;
 
@@ -27,6 +28,16 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
+// dont push service config
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"],
+        allowCredentials: false,
+        allowHeaders: ["x-jwt-assertion", "Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+        maxAge: 84900
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -720,4 +731,80 @@ service http:InterceptableService / on new http:Listener(9090) {
         ];
         return defaultMailsToNotify;
     }
+
+    # Submit the sabbatical leave application request.
+    #
+    # + ctx - Request context
+    # + payload - Sabbatical leave application payload
+    # + return - Success response if the application is submitted successfully, otherwise an error response
+    resource function post sabbatical\-leave/apply(http:RequestContext ctx, SabbaticalLeaveApplicationPayload payload)
+        // call the validation function here before proceeding
+        // write a db query to insert the sabbatical leave record to the leave_submissions table and also to the lead_approvals table.
+        // once that is successful, 1. send an email to the lead + sabbatical application group notifying about the sabbatical leave application request.
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+        return <http:Ok>{
+            body: {
+                message: "Sabbatical leave application submitted successfully"
+            }
+        };
+    }
+
+    # Approve / Reject the sabbatical leave application request.
+    #
+    # + ctx - Request context
+    # + applicantEmail - Email of the applicant whose sabbatical leave application is to be approved/rejected
+    # + return - Success response if the application is approved/rejected successfully, otherwise an error response
+    resource function post sabbatical\-leave/approve(http:RequestContext ctx, string applicantEmail, boolean isApproved, string applicationId) returns http:Ok {
+        // update the leave_app db sabbatical_leave_application table with the approval/rejection status
+        // write a db query file with query.
+        // write a db_functions file with the function to call the query.
+        // if isApproved is true, update the specific application status to 'APPROVED' and,
+        // 1. produce and email to the applicant & sabbatical application group notifying about the approval.
+        // 2. set the google calendar event for the sabbatical leave period.
+
+        return <http:Ok>{
+            body: {
+                message: "Sabbatical leave application submitted successfully"
+            }
+        };
+    }
+
+    # Get sabbatical leave sabbatical leave applications history for a lead.
+    # + ctx - Request context
+    # + payload - Array of approval statuses to filter (APPROVED, REJECTED, PENDING)
+    # + return - List of sabbatical leave applications
+    resource function post sabbatical\-leave/approval\-status(http:RequestContext ctx, LeaveApprovalStatusPayload payload)
+        returns database:LeaveApprovalStatus[]|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        io:println("Lead email: " + email);
+
+        database:LeaveApprovalStatus[]|error result = database:getLeaveApprovalStatusList(email, payload.status);
+        string errMsg = "Error occurred while fetching sabbatical leave approval status records";
+        if result is error {
+            log:printError(errMsg, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        return result;
+    }
+
+    # Validate the sabbatical leave application request.
+    # + ctx - Request context
+    # + applicantMail - Email of the applicant
+    # + return - Success response if the application is valid, otherwise an error response  
+    resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx, string applicantMail, string lastSabbaticalLeaveDate)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+        // verify if the employment start date < 3 years || sabbatical leave last date < 3 years.
+        // return a boolean accordingly.   
+        return <http:Ok>{
+            body: {
+                message: "Sabbatical leave application is valid"
+            }
+        };
+    }
+
 }
