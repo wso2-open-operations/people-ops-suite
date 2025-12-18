@@ -26,12 +26,12 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
 
   return (
     <Typography
-      variant="h5"
+      // variant="h1"
       textAlign={{ xs: "center", md: "left" }}
       sx={{
         color: theme.palette.text.primary,
         fontWeight: "600",
-        fontSize: theme.typography.h4.fontSize,
+        fontSize: theme.typography.h5.fontSize,
       }}
     >
       <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
