@@ -22,7 +22,6 @@ const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
-      // headers.set("Authorization", `Bearer${ACCESS_TOKEN}`);
       headers.set("x-jwt-assertion", ACCESS_TOKEN);
     }
   },
