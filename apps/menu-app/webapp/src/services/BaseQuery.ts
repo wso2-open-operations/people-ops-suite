@@ -19,9 +19,11 @@ import { Mutex } from "async-mutex";
 
 import { SERVICE_BASE_URL } from "../config/config";
 
-let ACCESS_TOKEN: string;
-let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
-let LOGOUT_CALLBACK: () => void;
+let ACCESS_TOKEN: string = "";
+let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }> = async () => ({
+  accessToken: "",
+});
+let LOGOUT_CALLBACK: () => void = () => {};
 
 export const setTokens = (
   accessToken: string,
