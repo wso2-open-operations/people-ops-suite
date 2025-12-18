@@ -69,7 +69,7 @@ export const baseQueryWithReauth: BaseQueryFn<
  */
 export const baseQueryWithRetry = retry(
   async (args: string | FetchArgs, api, extraOptions) => {
-    const result = await baseQuery(args, api, extraOptions);
+    const result = await baseQueryWithReauth(args, api, extraOptions);
 
     if (result.error) {
       if (result.error.status !== 401) {
