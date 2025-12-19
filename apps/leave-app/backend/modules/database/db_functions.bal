@@ -101,3 +101,43 @@ public isolated function getLeaveApprovalStatusList(string leadEmail, string[] a
     return from LeaveApprovalStatus leaveApproval in resultStream
         select leaveApproval;
 }
+
+# Get Leave Approver Email by Leave Approval ID.
+#
+# + approvalId - Leave approval ID
+# + return - Email of the leave approver or an error on failure
+public isolated function getLeaveApproverEmailById(string approvalId) returns string|error {
+
+    sql:ParameterizedQuery sqlQuery = getLeaveApproverEmailByIdQuery(approvalId);
+    string|error leaveApproverEmail = check leaveDbClient->queryRow(sqlQuery);
+    if leaveApproverEmail is sql:NoRowsError {
+        return error("No leave approver found for the given approval ID");
+    }
+    return leaveApproverEmail;
+}
+
+# Get leave submitter email by the leave approval id.
+#
+# + approvalId - Leave approval ID
+# + return - Email of the leave submitter
+public isolated function getLeaveSubmitterEmailByApprovalId(string approvalId)
+    returns string|error {
+
+    sql:ParameterizedQuery sqlQuery = getLeaveSubmitterEmailByApprovalIdQuery(approvalId);
+    string|error leaveSubmitterEmail = check leaveDbClient->queryRow(sqlQuery);
+    if leaveSubmitterEmail is sql:NoRowsError {
+        return error("No leave submission found for the given approval ID");
+    }
+    return leaveSubmitterEmail;
+}
+
+# Update leave approval status for a sabbatical leave application.
+#
+# + applicationId - ID of the sabbatical leave application
+# + isApproved - Approval status to be set (APPROVED, REJECTED)
+# + return - Nil on success, error on failure
+public isolated function setLeaveApprovalStatus(string applicationId, boolean isApproved)
+    returns sql:ExecutionResult|error {
+    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(isApproved ? APPROVED : REJECTED, applicationId);
+    return check leaveDbClient->execute(sqlQuery);
+}
