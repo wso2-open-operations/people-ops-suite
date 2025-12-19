@@ -26,6 +26,7 @@ import ballerina/time;
 configurable string[] defaultRecipients = [];
 configurable string emailGroupToNotify = ?;
 configurable boolean isSabbaticalLeaveEnabled = ?;
+configurable string functionalLeadMailToRestrictSabbaticalLeaveNotifications = ?;
 
 # Checks if a passed string is an empty.
 #
