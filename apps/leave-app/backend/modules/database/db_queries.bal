@@ -146,7 +146,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
     return insertQuery;
 }
 
-# Query to get sabbatical leave approval status records for leads.
+# Query to get sabbatical leave approval status records (for leads).
 #
 # + leadEmail - Email of the lead
 # + status - List of approval statuses to filter (APPROVED, REJECTED, PENDING)
@@ -166,3 +166,53 @@ isolated function getLeaveApprovalStatusListQuery(string leadEmail, string[] sta
 
     return query;
 }
+
+# Query to get Leave Approver Email by Leave Approval ID.
+#
+# + approvalId - Leave approval ID
+# + return - Query to get leave approver email
+isolated function getLeaveApproverEmailByIdQuery(string approvalId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            approver_email
+        FROM leave_approval
+        WHERE id = ${approvalId}
+    `;
+    return query;
+}
+
+# Query to approve or reject a sabbatical leave application (for leads).
+#
+# + approvalStatus - Status of the leave to be set (APPROVED, REJECTED)
+# + applicationId - ID of the sabbatical leave approval record from leave_approval table
+# + return - Update query to approve or reject sabbatical leave application
+isolated function approveLeaveApplicationQuery(ApprovalStatus approvalStatus, string applicationId)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = `
+        UPDATE leave_approval
+        SET approval_status = ${approvalStatus}
+        WHERE id = ${applicationId}
+    `;
+
+    return query;
+}
+
+# Query to get leave submission applicant email by approval ID.
+# 
+# + approvalId - ID of the leave approval record
+# + return - Query to get leave submission applicant email
+isolated function getLeaveSubmittorEmailByApprovalIdQuery(string approvalId)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery query = `
+        SELECT 
+            ls.email,
+        FROM leave_submissions ls
+        INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
+        WHERE la.id = ${approvalId}
+    `;
+
+    return query;
+}
+
