@@ -36,3 +36,10 @@ public enum OrderBy {
     ASC,
     DESC
 }
+
+# Approval status.
+public enum ApprovalStatus {
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+    PENDING = "PENDING"
+}
