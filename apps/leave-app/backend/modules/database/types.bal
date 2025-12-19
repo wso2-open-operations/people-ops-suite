@@ -260,8 +260,6 @@ public type LeaveResponse record {|
     string? emailSubject = ();
 |};
 
-# Parameters for leave approval status.
-
 # Leave approval status response.
 public type LeaveApprovalStatus record {|
     # Leave approval status id
