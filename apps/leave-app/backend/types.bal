@@ -212,11 +212,11 @@ public type UserInfo record {|
     # Is lead or not
     boolean? isLead;
 |};
+
 public type LeaveApprovalStatusPayload record {|
     # Approval status (PENDING/APPROVED/REJECTED)
     string[] status;
 |};
-
 
 # Sabbatical leave application payload record.
 public type SabbaticalLeaveApplicationPayload record {|
@@ -232,4 +232,12 @@ public type SabbaticalLeaveApplicationPayload record {|
 public type AppConfig record {|
     # Is sabbatical leave enabled or not
     boolean isSabbaticalLeaveEnabled;
+|};
+
+# Leave approval payload.
+public type LeaveApprovalPayload record {|
+    # Boolean for approval.
+    boolean isApproved;
+    # Leave approval application ID (References leave_approval table ID).  
+    string approvalStatusId;
 |};
