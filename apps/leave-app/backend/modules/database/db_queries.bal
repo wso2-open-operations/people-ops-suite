@@ -188,7 +188,6 @@ isolated function getLeaveApproverEmailByIdQuery(string approvalId) returns sql:
 # + return - Update query to approve or reject sabbatical leave application
 isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, string applicationId)
     returns sql:ParameterizedQuery {
-
     sql:ParameterizedQuery query = `
         UPDATE leave_approval
         SET approval_status = ${approvalStatus}
@@ -198,16 +197,17 @@ isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, str
     return query;
 }
 
-# Query to get leave submission applicant email by approval ID.
-# 
+# Query to get leave submission info by leave approval ID.
+#
 # + approvalId - ID of the leave approval record
-# + return - Query to get leave submission applicant email
-isolated function getLeaveSubmitterEmailByApprovalIdQuery(string approvalId)
+# + return - Query to get leave submission info
+isolated function getLeaveSubmissionInfoByApprovalIdQuery(string approvalId)
     returns sql:ParameterizedQuery {
-
     sql:ParameterizedQuery query = `
         SELECT 
             ls.email,
+            ls.start_date,
+            ls.end_date,
         FROM leave_submissions ls
         INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
         WHERE la.id = ${approvalId}

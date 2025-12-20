@@ -26,7 +26,6 @@ final mysql:Client leaveDbClient = check initializeLeaveClient();
 # + offset - Offset value
 # + return - List of Leaves or an error on failure
 public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? offset = ()) returns Leave[]|error {
-
     sql:ParameterizedQuery sqlQuery = getLeavesQuery(filter, getValidatedLimit('limit), getValidatedOffset(offset));
     stream<Leave, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
     return from Leave leave in resultStream
@@ -38,7 +37,6 @@ public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? of
 # + id - Leave ID
 # + return - Requested leave or an error on failure
 public isolated function getLeave(int id) returns Leave|error? {
-
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
     sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE id = ${id}`);
     Leave|error leave = leaveDbClient->queryRow(finalQuery);
@@ -59,7 +57,6 @@ public isolated function getLeave(int id) returns Leave|error? {
 # + location - Employee location
 # + return - The inserted Leave record if successful; otherwise, an error
 public isolated function insertLeave(LeaveInput input, float numDaysForLeave, string location) returns Leave|error {
-
     sql:ExecutionResult|error result = leaveDbClient->execute(insertLeaveQuery(input, numDaysForLeave, location));
     if result is error {
         return error("Error occurred while inserting leave!", result);
@@ -80,7 +77,6 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
 # + id - Leave ID  
 # + return - Returns nil on success, error on failure
 public isolated function cancelLeave(int id) returns error? {
-
     sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET active = 0 WHERE id = ${id}`;
     sql:ExecutionResult|sql:Error result = leaveDbClient->execute(sqlQuery);
     if result is error {
@@ -95,7 +91,6 @@ public isolated function cancelLeave(int id) returns error? {
 # + return - List of LeaveApprovalStatus records or an error on failure
 public isolated function getLeaveApprovalStatusList(string leadEmail, string[] approvalStatus)
     returns LeaveApprovalStatus[]|error {
-
     sql:ParameterizedQuery sqlQuery = getLeaveApprovalStatusListQuery(leadEmail, approvalStatus);
     stream<LeaveApprovalStatus, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
     return from LeaveApprovalStatus leaveApproval in resultStream
@@ -107,7 +102,6 @@ public isolated function getLeaveApprovalStatusList(string leadEmail, string[] a
 # + approvalId - Leave approval ID
 # + return - Email of the leave approver or an error on failure
 public isolated function getLeaveApproverEmailById(string approvalId) returns string|error {
-
     sql:ParameterizedQuery sqlQuery = getLeaveApproverEmailByIdQuery(approvalId);
     string|error leaveApproverEmail = check leaveDbClient->queryRow(sqlQuery);
     if leaveApproverEmail is sql:NoRowsError {
@@ -116,15 +110,14 @@ public isolated function getLeaveApproverEmailById(string approvalId) returns st
     return leaveApproverEmail;
 }
 
-# Get leave submitter email by the leave approval id.
+# Get leave submission info by the leave approval id.
 #
 # + approvalId - Leave approval ID
-# + return - Email of the leave submitter
-public isolated function getLeaveSubmitterEmailByApprovalId(string approvalId)
-    returns string|error {
-
-    sql:ParameterizedQuery sqlQuery = getLeaveSubmitterEmailByApprovalIdQuery(approvalId);
-    string|error leaveSubmitterEmail = check leaveDbClient->queryRow(sqlQuery);
+# + return - Email of the leave submission info
+public isolated function getLeaveSubmissionInfoByApprovalId(string approvalId)
+    returns LeaveSubmissionInfo|error {
+    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(approvalId);
+    LeaveSubmissionInfo|error leaveSubmitterEmail = check leaveDbClient->queryRow(sqlQuery);
     if leaveSubmitterEmail is sql:NoRowsError {
         return error("No leave submission found for the given approval ID");
     }
