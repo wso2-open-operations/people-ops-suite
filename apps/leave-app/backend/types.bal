@@ -241,3 +241,10 @@ public type LeaveApprovalPayload record {|
     # Leave approval application ID (References leave_approval table ID).  
     string approvalStatusId;
 |};
+
+public type SabbaticalLeaveResponse record {|
+    string startDate;
+    string endDate;
+    string id;
+    string? location;
+|};
