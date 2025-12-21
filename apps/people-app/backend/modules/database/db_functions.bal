@@ -145,6 +145,15 @@ public isolated function getOffices() returns Office[]|error {
         select office;
 }
 
+# Get employment types.
+#
+# + return - Employment types
+public isolated function getEmploymentTypes() returns EmploymentType[]|error {
+    stream<EmploymentType, error?> employmentTypeStream = databaseClient->query(getEmploymentTypesQuery());
+    return from EmploymentType employmentType in employmentTypeStream
+        select employmentType;
+}
+
 # Add new employee.
 #
 # + payload - Add employee payload
