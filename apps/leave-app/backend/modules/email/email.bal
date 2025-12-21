@@ -50,7 +50,7 @@ public isolated function processEmailNotification(string alertHeader, string sub
                 <p>${body.get("CONTENT")}</p>
                 <p>Regards,</p>
                 <p>WSO2 Leave App.</p>
-                <p>***This is a system-generated email***</p>
+                <p><i>***This is a system-generated email***</i></p>
             </body>
         </html>
     `;
