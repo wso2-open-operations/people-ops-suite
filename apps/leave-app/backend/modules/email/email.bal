@@ -33,7 +33,7 @@ final string appName = isDebug ? APP_NAME_DEV : APP_NAME;
 # + body - Email body
 # + recipients - Email recipients
 # + return - Error if sending the email fails
-isolated function processEmailNotification(string alertHeader, string subject, map<string> body, string[] recipients) returns error? {
+public isolated function processEmailNotification(string alertHeader, string subject, map<string> body, string[] recipients) returns error? {
 
     if !emailNotificationsEnabled {
         log:printInfo("Email notifications are disabled. Skipping the email alert.");
@@ -46,7 +46,11 @@ isolated function processEmailNotification(string alertHeader, string subject, m
     string htmlContent = string `
         <html>
             <body>
+                <p>Hi All,</p>
                 <p>${body.get("CONTENT")}</p>
+                <p>Regards,</p>
+                <p>WSO2 Leave App.</p>
+                <p>***This is a system-generated email***</p>
             </body>
         </html>
     `;
@@ -56,7 +60,7 @@ isolated function processEmailNotification(string alertHeader, string subject, m
 
     json payload = {
         template: encodedTemplate, // Send base64-encoded HTML
-        "from": emailServiceConfig.'emailFrom,
+        "from": emailServiceConfig.emailFrom,
         to: to,
         subject
     };
@@ -192,16 +196,12 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
     string body = !isCancel ?
         (string `
             <p>
-                Hi all,
-                <br/>
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave (${isMorningHalf ? "first" : "second"} half) on ${date}.
             <p>
         `)
         :
         (string `
             <p>
-                Hi all,
-                <br/>
                 Please note that ${employeeName} has cancelled the half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
             <p>
         `);
@@ -229,16 +229,12 @@ isolated function generateContentForOneDayLeave(string employeeName, boolean isC
     string body = !isCancel ?
         (string `
             <p>
-                Hi all,
-                <br />
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave on ${date}.
             <p>
         `)
         :
         (string `
             <p>
-                Hi all,
-                <br />
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
             <p>
         `);
@@ -266,16 +262,12 @@ isolated function generateContentForMultipleDaysLeave(string employeeName, boole
     string body = !isCancel ?
         (string `
             <p>
-                Hi all,
-                <br />
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave from ${fromDate} to ${toDate}.
             <p>
         `)
         :
         (string `
             <p>
-                Hi all,
-                <br />
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied from ${fromDate} to ${toDate}.
             <p>
         `);
