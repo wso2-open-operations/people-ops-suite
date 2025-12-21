@@ -186,9 +186,6 @@ export default function ReviewStep() {
         fetchDesignations({ careerFunctionId: values.careerFunctionId })
       );
     }
-    if (values.employmentTypeId && values.employmentTypeId !== 0) {
-      dispatch(fetchEmploymentTypes());
-    }
   }, [
     dispatch,
     values.businessUnitId,
