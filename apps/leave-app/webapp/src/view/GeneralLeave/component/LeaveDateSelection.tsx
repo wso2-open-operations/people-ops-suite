@@ -155,7 +155,7 @@ export default function LeaveDateSelection({
       >
         <DatePicker
           label="From"
-          sx={{ minWidth: "10%" }}
+          sx={{ minWidth: "10%"}}
           value={startDate}
           onChange={handleStartDateChange}
           format="DD/MM/YY"
