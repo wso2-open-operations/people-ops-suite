@@ -13,7 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/sql;
+import ballerina/uuid;
 import ballerinax/mysql;
 
 // Initializing Db client for leave database
@@ -133,4 +135,39 @@ public isolated function setLeaveApprovalStatus(string applicationId, boolean is
     returns sql:ExecutionResult|error {
     sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(isApproved ? APPROVED : REJECTED, applicationId);
     return check leaveDbClient->execute(sqlQuery);
+}
+
+# Get the end date of the last sabbatical leave for an employee.
+#
+# + employeeEmail - Email of the employee
+# + return - End date of the last sabbatical leave or an error on failure
+public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
+    returns string|error {
+    sql:ParameterizedQuery sqlQuery = getLastSabbaticalLeaveEndDateQuery(employeeEmail);
+    string|error lastSabbaticalEndDate = check leaveDbClient->queryRow(sqlQuery);
+    if lastSabbaticalEndDate is sql:NoRowsError {
+        return "";
+    }
+    return lastSabbaticalEndDate;
+}
+
+# Create Sabbatical Leave database records.
+#
+# + leaveInput - Leave submission details
+# + days - Number of days for the leave
+# + location - Employee location
+# + leadEmail - Reporting lead email
+# + return - The inserted Leave record if successful; or, an error on failure
+public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, float days, string location,
+        string leadEmail)
+    returns string|error {
+    Leave|error leaveSubmission = insertLeave(leaveInput, days, location);
+    if leaveSubmission is error {
+        return error("Error occurred while creating leave submission record.", leaveSubmission);
+    }
+    string leaveApprovalStatusID = uuid:createType4AsString();
+    sql:ExecutionResult|error result = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
+            leaveSubmission.id, leaveInput.email, leadEmail));
+
+    return leaveApprovalStatusID;
 }
