@@ -253,3 +253,21 @@ public type SabbaticalLeaveResponse record {|
     # Location. 
     string? location;
 |};
+
+# Sabbatical Leave Eligibility.
+public type SabbaticalLeaveEligibility record {|
+    # Employment start date
+    string employmentStartDate;
+    # Last sabbatical leave end date
+    string lastSabbaticalLeaveEndDate;
+|};
+
+# Sabbatical Leave Application Request payload.
+public type SabbaticalLeaveApplicationRequest record {|
+    # Leave start date
+    string startDate;
+    # Leave end date
+    string endDate;
+    # Additional comment
+    string additionalComment = "";
+|};
