@@ -273,3 +273,13 @@ public type LeaveApprovalStatus record {|
     # Submission note
     string submitNote;
 |};
+
+# Leave submission info.
+public type LeaveSubmissionInfo record {|
+    # Email of the leave submitter
+    string email;
+    # Leave start date
+    string startDate;
+    # Leave end date
+    string endDate;
+|};
