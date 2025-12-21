@@ -19,7 +19,6 @@ import leave_service.email;
 import leave_service.employee;
 
 import ballerina/http;
-import ballerina/io;
 import ballerina/log;
 import ballerina/sql;
 import ballerina/time;
@@ -771,7 +770,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if !<boolean>employeeDetails.lead {
-            string errMsg = "The current user is not a lead. Unauthorized access to approve/reject sabbatical leave application";
+            string errMsg = "The current user is not a lead. Unauthorized access to approve/reject sabbatical " +
+            "leave application";
             log:printError(errMsg);
             return <http:Unauthorized>{
                 body: {
@@ -782,7 +782,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Get the lead info from the database and check if the approver is the relevant lead then proceed
         string|error approverEmail = database:getLeaveApproverEmailById(payload.approvalStatusId);
         if approverEmail is error {
-            string errMsg = "Error occurred while fetching sabbatical leave approver email";
+            string errMsg = "Error occurred while fetching sabbatical leave approver email.";
             log:printError(errMsg, approverEmail);
             return <http:InternalServerError>{
                 body: {
@@ -799,7 +799,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        sql:ExecutionResult|error result = database:setLeaveApprovalStatus(payload.approvalStatusId, payload.isApproved);
+        sql:ExecutionResult|error result = database:setLeaveApprovalStatus(payload.approvalStatusId,
+                payload.isApproved);
         if result is error {
             string errMsg = "Error occurred while updating sabbatical leave approval status";
             log:printError(errMsg, result);
@@ -809,28 +810,34 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // Send email notification to the the relevant parties
-        if payload.isApproved {
-            string[] recipientsList = [];
-            recipientsList.push(email);
-            string functionalLeadEmail = <string>employeeDetails.leadEmail;
-            if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications {
-                recipientsList.push(functionalLeadEmail);
-            }
-            io:print(recipientsList.toString());
-
-            string subject = APPROVED_EMAIL_SUBJECT + " " + email;
-            error? notificationResult = email:processEmailNotification("", subject, {}, recipientsList);
-            if notificationResult is error {
-                log:printError("Failed to process sabbatical approval notification", notificationResult);
-            }
-
+        database:LeaveSubmissionInfo|error leaveSubmissionInfo = database:getLeaveSubmissionInfoByApprovalId(
+                payload.approvalStatusId);
+        if leaveSubmissionInfo is error {
+            string errMsg = "Error occurred while fetching sabbatical leave submission info.";
+            log:printError(errMsg, leaveSubmissionInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
         }
-        // 2. set the google calendar event for the sabbatical leave period.
-
+        string[] recipientsList = [];
+        recipientsList.push(leaveSubmissionInfo.email); // applicant email
+        recipientsList.push(approverEmail); // reporting lead email (approver)
+        string functionalLeadEmail = <string>employeeDetails.leadEmail; // functional lead email
+        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications {
+            recipientsList.push(functionalLeadEmail);
+        }
+        error? notificationResult = processSabbaticalLeaveApprovalNotification(payload.isApproved,
+                leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate, leaveSubmissionInfo.endDate,
+                payload.approvalStatusId,
+                recipientsList);
+        if notificationResult is error {
+            log:printError("Failed to process sabbatical leave approval notification", notificationResult);
+        }
         return <http:Ok>{
             body: {
-                message: "Sabbatical leave application submitted successfully"
+                message: "Sabbatical leave approval / rejection processed successfully"
             }
         };
     }
@@ -863,6 +870,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx, string applicantMail, string lastSabbaticalLeaveDate)
         returns http:Ok|http:BadRequest|http:InternalServerError {
         // verify if the employment start date < 3 years || sabbatical leave last date < 3 years.
+        // verify if number of days is less than or equal to 42 days.
         // return a boolean accordingly.   
         return <http:Ok>{
             body: {
