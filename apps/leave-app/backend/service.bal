@@ -732,22 +732,105 @@ service http:InterceptableService / on new http:Listener(9090) {
         return defaultMailsToNotify;
     }
 
+    # Check eligibility for user to apply for sabbatical leave.
+    #
+    # + ctx - Request context
+    # + return - Success response if the application is valid, otherwise an error response  
+    resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx)
+        returns http:Ok|http:BadRequest|http:InternalServerError {
+        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        Employee & readonly|error employeeDetails = employee:getEmployee(email);
+        if employeeDetails is error {
+            string errMsg = "Error occurred while fetching employee details";
+            log:printError(errMsg, employeeDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        string|error lastSabbaticalLeaveEndDate = database:getLastSabbaticalLeaveEndDate(email);
+        if lastSabbaticalLeaveEndDate is error {
+            string errMsg = "Error occurred while fetching last sabbatical leave end date";
+            log:printError(errMsg, lastSabbaticalLeaveEndDate);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
+        boolean isEligible = checkEligibilityForSabbaticalApplication(<string>employeeDetails.startDate,
+                lastSabbaticalLeaveEndDate);
+        return <http:Ok>{
+            body: {
+                isEligible: isEligible
+            }
+        };
+    }
+
     # Submit the sabbatical leave application request.
     #
     # + ctx - Request context
     # + payload - Sabbatical leave application payload
     # + return - Success response if the application is submitted successfully, otherwise an error response
     resource function post sabbatical\-leave/apply(http:RequestContext ctx, SabbaticalLeaveApplicationPayload payload)
-        // validate the 6 weeks date payload
-        // call the validation function here before proceeding
+    returns http:Ok|http:BadRequest|http:InternalServerError|http:Unauthorized {
+        authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if authorization:checkPermissions(authorization:authorizedRoles.internRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "Interns are not allowed to apply for sabbatical leave."
+                }
+            };
+        }
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "Only employees are allowed to apply for sabbatical leave."
+                }
+            };
+        }
+        Employee & readonly|error employeeDetails = employee:getEmployee(email);
+        if employeeDetails is error {
+            string errMsg = "Error occurred while fetching employee details";
+            log:printError(errMsg, employeeDetails);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        string|error lastSabbaticalLeaveEndDate = database:getLastSabbaticalLeaveEndDate(email);
+        if lastSabbaticalLeaveEndDate is error {
+            string errMsg = "Error occurred while fetching last sabbatical leave end date";
+            log:printError(errMsg, lastSabbaticalLeaveEndDate);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        boolean isEligible = checkEligibilityForSabbaticalApplication(<string>employeeDetails.startDate,
+                lastSabbaticalLeaveEndDate);
+        if !isEligible {
+            return <http:Unauthorized>{
+                body: {
+                    message: "Employee is not eligible to apply for sabbatical leave."
+                }
+            };
+        }
+        if (payload.startDate - payload.endDate > 42) {
+            return <http:BadRequest>{
+                body: {
+                    message: "Sabbatical leave duration cannot exceed 6 weeks (42 days)."
+                }
+            };
+        }
+        processSabbaticalLeaveApplicationRequest(email, employeeDetails.leadEmail, payload.startDate, payload.endDate)
+
         // write a db query to insert the sabbatical leave record to the leave_submissions table and also to the lead_approvals table.
         // once that is successful, 1. send an email to the lead + sabbatical application group notifying about the sabbatical leave application request.
-        returns http:Ok|http:BadRequest|http:InternalServerError {
-        return <http:Ok>{
-            body: {
-                message: "Sabbatical leave application submitted successfully"
-            }
-        };
     }
 
     # Approve / Reject the sabbatical leave application request.
@@ -822,6 +905,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         string[] recipientsList = [];
+        recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
         recipientsList.push(leaveSubmissionInfo.email); // applicant email
         recipientsList.push(approverEmail); // reporting lead email (approver)
         string functionalLeadEmail = <string>employeeDetails.leadEmail; // functional lead email
@@ -861,22 +945,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return result;
-    }
-
-    # Validate the sabbatical leave application request.
-    # + ctx - Request context
-    # + applicantMail - Email of the applicant
-    # + return - Success response if the application is valid, otherwise an error response  
-    resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx, string applicantMail, string lastSabbaticalLeaveDate)
-        returns http:Ok|http:BadRequest|http:InternalServerError {
-        // verify if the employment start date < 3 years || sabbatical leave last date < 3 years.
-        // verify if number of days is less than or equal to 42 days.
-        // return a boolean accordingly.   
-        return <http:Ok>{
-            body: {
-                message: "Sabbatical leave application is valid"
-            }
-        };
     }
 
 }
