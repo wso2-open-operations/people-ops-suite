@@ -111,7 +111,9 @@ const FieldInput = ({
       disabled={isSavingChanges}
       error={getIn(touched, name) && Boolean(getIn(errors, name))}
       helperText={
-        getIn(touched, name) && getIn(errors, name) ? String(getIn(errors, name)) : undefined
+        getIn(touched, name) && getIn(errors, name)
+          ? String(getIn(errors, name))
+          : undefined
       }
       variant="outlined"
       InputProps={{ style: { fontSize: 15 } }}
@@ -471,16 +473,6 @@ export default function Me() {
                   </Typography>
                 </Grid>
               </Grid>
-              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Work Phone Number
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.workPhoneNumber || "-"}
-                  </Typography>
-                </Grid>
-              </Grid>
             </Box>
           ) : (
             <Typography color="text.secondary">
@@ -545,17 +537,8 @@ export default function Me() {
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Last Name" value={values.lastName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly
-                        label="Name with Initials"
-                        value={values.nameWithInitials}
-                      />
-                    </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Full Name" value={values.fullName} />
-                    </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>

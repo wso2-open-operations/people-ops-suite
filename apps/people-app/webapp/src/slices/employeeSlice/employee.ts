@@ -33,7 +33,6 @@ interface Employee {
   epf: string;
   employmentLocation: string;
   workLocation: string;
-  workPhoneNumber: string | null;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails: string | null;
@@ -45,7 +44,7 @@ interface Employee {
   office: string;
   businessUnit: string;
   team: string;
-  subTeam: string;
+  subTeam: string | null;
   unit: string | null;
 }
 
@@ -59,11 +58,10 @@ export interface EmployeeBasicInfo {
 
 export type CreatePersonalInfoPayload = {
   nicOrPassport: string;
-  fullName: string;
-  nameWithInitials?: string;
   firstName?: string;
   lastName?: string;
   title?: string;
+  gender?: string;
   dob?: string;
   age?: number;
   personalEmail?: string;
@@ -87,7 +85,6 @@ export type CreateEmployeePayload = {
   employmentLocation: string;
   workLocation: string;
   workEmail: string;
-  workPhoneNumber?: string;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string[];
@@ -122,7 +119,7 @@ export interface ContinuousServiceRecordInfo {
   office: string;
   businessUnit: string;
   team: string;
-  subTeam: string;
+  subTeam: string | null;
   unit?: string | null;
 }
 
@@ -159,7 +156,7 @@ export const fetchEmployee = createAsyncThunk(
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching employee information.";
+          "An unknown error occurred while fetching employee information.";
 
       dispatch(
         enqueueSnackbarMessage({
@@ -186,7 +183,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employees' basic information"
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching employees' basic information.";
+          "An unknown error occurred while fetching employees' basic information.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
@@ -219,7 +216,7 @@ export const createEmployee = createAsyncThunk(
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.addEmployee
           : error.response?.data?.message ||
-            "Failed to create employee. Please try again.";
+          "Failed to create employee. Please try again.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
@@ -236,8 +233,7 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
   async (workEmail: string, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        `${
-          AppConfig.serviceUrls.continuousServiceRecord
+        `${AppConfig.serviceUrls.continuousServiceRecord
         }?workEmail=${encodeURIComponent(workEmail)}`
       );
       return response.data as ContinuousServiceRecordInfo[];
@@ -247,7 +243,7 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
         status === HttpStatusCode.InternalServerError
           ? "Error fetching continuous service record"
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching continuous service record";
+          "An unknown error occurred while fetching continuous service record";
 
       dispatch(
         enqueueSnackbarMessage({

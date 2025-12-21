@@ -64,6 +64,11 @@ export interface Office {
   workingLocations: string[];
 }
 
+export interface EmploymentType {
+  id: number;
+  name: string;
+}
+
 export interface OrganizationState {
   state: State;
   stateMessage: string | null;
@@ -75,6 +80,7 @@ export interface OrganizationState {
   careerFunctions: CareerFunction[];
   designations: Designation[];
   offices: Office[];
+  employmentTypes: EmploymentType[];
 }
 
 const initialState: OrganizationState = {
@@ -88,6 +94,7 @@ const initialState: OrganizationState = {
   careerFunctions: [],
   designations: [],
   offices: [],
+  employmentTypes: [],
 };
 
 interface FetchParams {
@@ -324,6 +331,36 @@ export const fetchOffices = createAsyncThunk(
   }
 );
 
+// Fetch Employment Types
+export const fetchEmploymentTypes = createAsyncThunk(
+  "organization/fetchEmploymentTypes",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.employmentTypes}`
+      );
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: employment types should be an array");
+      }
+      return resp.data as EmploymentType[];
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching employment types"
+          : error.response?.data?.message ||
+            error.message ||
+            "An unknown error occurred while fetching employment types.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        })
+      );
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
 export const organizationSlice = createSlice({
   name: "organization",
   initialState,
@@ -342,6 +379,7 @@ export const organizationSlice = createSlice({
       state.careerFunctions = [];
       state.designations = [];
       state.offices = [];
+      state.employmentTypes = [];
     },
   },
   extraReducers: (builder) => {
@@ -454,6 +492,22 @@ export const organizationSlice = createSlice({
         state.errorMessage = null;
       })
       .addCase(fetchOffices.rejected, (state, action) => {
+        state.state = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
+            .addCase(fetchEmploymentTypes.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching employment types...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchEmploymentTypes.fulfilled, (state, action) => {
+        state.employmentTypes = action.payload;
+        state.state = State.success;
+        state.stateMessage = "Employment types fetched successfully";
+        state.errorMessage = null;
+      })
+      .addCase(fetchEmploymentTypes.rejected, (state, action) => {
         state.state = State.failed;
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
