@@ -206,10 +206,9 @@ isolated function getLeaveSubmissionInfoByApprovalIdQuery(string approvalId)
     sql:ParameterizedQuery query = `
         SELECT 
             ls.email,
-            ls.start_date,
-            ls.end_date,
-        FROM leave_submissions ls
-        INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
+            ls.start_date as startDate,
+            ls.end_date as endDate
+        FROM leave_submissions ls INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
         WHERE la.id = ${approvalId}
     `;
 
