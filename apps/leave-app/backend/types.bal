@@ -242,9 +242,14 @@ public type LeaveApprovalPayload record {|
     string approvalStatusId;
 |};
 
+# Sabbatical Leave Response.
 public type SabbaticalLeaveResponse record {|
+    # Start date.
     string startDate;
+    # End date.
     string endDate;
+    # Leave ID.
     string id;
+    # Location. 
     string? location;
 |};
