@@ -65,5 +65,3 @@ final string:RegExp & readonly REGEX_DATE_YYYY_MM_DD_T_HH_MM_SS = re `^\d{4}-\d{
 final string:RegExp & readonly REGEX_DATE_YYYY_MM_DD_T_HH_MM_SS_SSS = re `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z`;
 final string:RegExp & readonly REGEX_EMPTY_STRING = re `^\s*$`;
 public final string:RegExp WSO2_EMAIL_PATTERN = re `^[a-zA-Z0-9._%+-]+@wso2\.com$`;
-
-public const APPROVED_EMAIL_SUBJECT = "Sabbatical Leave Application Approved -";
