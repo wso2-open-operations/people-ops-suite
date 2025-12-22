@@ -145,11 +145,11 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
     returns string|error {
     sql:ParameterizedQuery sqlQuery = getLastSabbaticalLeaveEndDateQuery(employeeEmail);
     string|error lastSabbaticalEndDate = leaveDbClient->queryRow(sqlQuery);
-    // format timestamp to date string YYYY-MM-DD
     if lastSabbaticalEndDate is error {
         return "";
 
     }
+    // format timestamp to date string YYYY-MM-DD
     string formattedDate = (<string>lastSabbaticalEndDate).toString().substring(0, 10);
     return formattedDate;
 }

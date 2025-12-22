@@ -743,9 +743,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-
-        // boolean|error isEligible = checkEligibilityForSabbaticalApplication("2023-12-31",
-        //         lastSabbaticalLeaveEndDate);
         boolean|error isEligible = checkEligibilityForSabbaticalApplication(<string>employeeDetails.startDate,
                 lastSabbaticalLeaveEndDate);
 
