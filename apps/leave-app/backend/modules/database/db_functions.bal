@@ -144,11 +144,14 @@ public isolated function setLeaveApprovalStatus(string applicationId, boolean is
 public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
     returns string|error {
     sql:ParameterizedQuery sqlQuery = getLastSabbaticalLeaveEndDateQuery(employeeEmail);
-    string|error lastSabbaticalEndDate = check leaveDbClient->queryRow(sqlQuery);
-    if lastSabbaticalEndDate is sql:NoRowsError {
+    string|error lastSabbaticalEndDate = leaveDbClient->queryRow(sqlQuery);
+    // format timestamp to date string YYYY-MM-DD
+    if lastSabbaticalEndDate is error {
         return "";
+
     }
-    return lastSabbaticalEndDate;
+    string formattedDate = (<string>lastSabbaticalEndDate).toString().substring(0, 10);
+    return formattedDate;
 }
 
 # Create Sabbatical Leave database records.
@@ -167,7 +170,7 @@ public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, floa
     }
     string leaveApprovalStatusID = uuid:createType4AsString();
     sql:ExecutionResult|error result = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
-            leaveSubmission.id, leaveInput.email, leadEmail));
+            leaveSubmission.id, leadEmail));
 
     return leaveApprovalStatusID;
 }
