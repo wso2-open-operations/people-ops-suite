@@ -1115,15 +1115,6 @@ export default function JobInfoStep() {
           </Grid>
         </Grid>
       </Box>
-
-      <Box>
-        <SectionHeader
-          icon={icons.phone}
-          title="Phone"
-          headerBoxSx={headerBoxSx}
-          iconBoxSx={iconBoxSx}
-        />
-      </Box>
     </Box>
   );
 }
