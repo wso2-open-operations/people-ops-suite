@@ -215,7 +215,7 @@ isolated function getLeaveSubmissionInfoByApprovalIdQuery(string approvalId)
     return query;
 }
 
-# Get the end date of the last approved sabbatical leave for an employee.
+# Query to get the end date of the last approved sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee
 # + return - Query to get the end date of the last sabbatical leave
@@ -231,7 +231,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
     return query;
 }
 
-# Insert leave approval record for a sabbatical leave application.
+# Query to insert leave approval record for a sabbatical leave application.
 #
 # + id - Leave approval ID
 # + leavesSubmissionId - Leave submission ID
