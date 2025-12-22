@@ -213,6 +213,7 @@ public type UserInfo record {|
     boolean? isLead;
 |};
 
+# Leave approval status payload.
 public type LeaveApprovalStatusPayload record {|
     # Approval status (PENDING/APPROVED/REJECTED)
     string[] status;
