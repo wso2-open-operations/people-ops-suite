@@ -28,16 +28,6 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
-// dont push service config
-@http:ServiceConfig {
-    cors: {
-        allowOrigins: ["*"],
-        allowCredentials: false,
-        allowHeaders: ["x-jwt-assertion", "Authorization", "Content-Type"],
-        allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
-        maxAge: 84900
-    }
-}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -635,7 +625,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.adminRoles, groups);
             Employee[] employees;
-            
+
             employees = check employee:getEmployees(
                     {
                         location: payload.location,
