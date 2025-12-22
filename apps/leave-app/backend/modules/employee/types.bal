@@ -56,6 +56,8 @@ public type EmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
+    # Employee is active or not
+    boolean isActive = true;
 |};
 
 # GraphQL Employee filter record.
@@ -74,6 +76,8 @@ type GraphQLEmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
+    # Employee is active or not
+    boolean isActive = true;
 |};
 
 # GraphQL single employee response.
