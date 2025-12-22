@@ -215,7 +215,7 @@ isolated function getLeaveSubmissionInfoByApprovalIdQuery(string approvalId)
     return query;
 }
 
-# Get the end date of the last sabbatical leave for an employee.
+# Get the end date of the last approved sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee
 # + return - Query to get the end date of the last sabbatical leave
@@ -235,24 +235,21 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
 #
 # + id - Leave approval ID
 # + leavesSubmissionId - Leave submission ID
-# + applicantEmail - Email of the applicant
 # + approverEmail - Email of the approver
 # + return - Insert query to add leave approval record  
-isolated function insertLeaveApprovalQuery(string id, int leavesSubmissionId, string applicantEmail,
-        string approverEmail) returns sql:ParameterizedQuery {
+isolated function insertLeaveApprovalQuery(string id, int leavesSubmissionId, string approverEmail)
+returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
             INSERT INTO leave_approval (
                 id,
                 leave_submission_id,
-                applicant_email,
                 approver_email,
-                approver_comment,
+                comment,
                 approval_status,
-                created_date
+                created_at
             ) VALUES (
                 ${id},
                 ${leavesSubmissionId},
-                ${applicantEmail},
                 ${approverEmail},
                 'NO COMMENT',
                 'PENDING',
