@@ -455,10 +455,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + leadEmail - Manager email to filter the employees
     # + return - List of employee records
     resource function get employees(http:RequestContext ctx, string? location, string? businessUnit, string? team,
-            string? unit, string[]? employeeStatuses, string? leadEmail) returns Employee[]|http:InternalServerError {
+            string? unit, string[]? employeeStatuses, string? leadEmail)
+            returns MinimalEmployeeInfo[]|http:InternalServerError {
 
         do {
-            Employee[] & readonly employees = check employee:getEmployees(
+            Employee[] employees = check employee:getEmployees(
                     {
                         location,
                         businessUnit,
@@ -469,19 +470,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
             );
 
-            Employee[] employeesToReturn = from Employee employee in employees
+            MinimalEmployeeInfo[] employeesToReturn = from Employee employee in employees
                 select {
-                    employeeId: employee.employeeId,
-                    firstName: employee.firstName,
-                    lastName: employee.lastName,
+                    firstName: employee.firstName ?: "",
+                    lastName: employee.lastName ?: "",
                     workEmail: employee.workEmail,
-                    employeeThumbnail: employee.employeeThumbnail,
-                    location: employee.location,
-                    leadEmail: employee.leadEmail,
-                    jobRole: employee.jobRole,
-                    startDate: employee.startDate,
-                    finalDayOfEmployment: employee.finalDayOfEmployment,
-                    lead: employee.lead
+                    employeeThumbnail: employee.employeeThumbnail ?: ""
                 };
 
             return employeesToReturn;
@@ -640,8 +634,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
 
             boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.adminRoles, groups);
-            Employee[] & readonly employees;
-
+            Employee[] employees;
+            
             employees = check employee:getEmployees(
                     {
                         location: payload.location,
