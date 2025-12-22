@@ -561,10 +561,3 @@ public isolated function validateDateRange(string startDate, string endDate) ret
         return error(err.message());
     }
 }
-
-# Get mandatory email group to notify.
-#
-# + return - return value description
-public isolated function getEmailGroupsToNotify() returns string {
-    return emailGroupToNotify;
-}
