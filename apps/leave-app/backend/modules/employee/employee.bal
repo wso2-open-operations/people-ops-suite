@@ -15,6 +15,7 @@
 // under the License.
 import ballerina/cache;
 import ballerina/graphql;
+import ballerina/log;
 
 isolated cache:Cache hrisEmployeeCache = new (
     'defaultMaxAge = CACHE_DEFAULT_MAX_AGE,
@@ -68,8 +69,7 @@ public isolated function getEmployee(string? email)
 #
 # + filters - Filter object containing the filter criteria for the query
 # + return - Return an array of Employee entity or error
-public isolated function getEmployees(EmployeeFilter filters = {}) returns readonly & Employee[]|error {
-
+public isolated function getEmployees(EmployeeFilter filters = {}) returns Employee[]|error {
     GraphQLEmployeeFilter gqlFilter = {
         location: filters.location,
         businessUnit: filters.businessUnit,
@@ -77,12 +77,13 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns reado
         employeeStatus: filters.status,
         managerEmail: filters.leadEmail,
         employmentType: filters.employmentType,
-        lead: filters.lead
+        lead: filters.lead,
+        isActive: true
     };
 
     string document = string `
-        query getEmployees($filter: EmployeeFilter!) {
-            employees(filter: $filter) {
+        query getEmployees($filter: EmployeeFilter!, $limit: Int, $offset: Int) {
+            employees(filter: $filter, limit: $limit, offset: $offset) {
                 employeeId
                 firstName
                 lastName
@@ -98,14 +99,28 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns reado
         }
     `;
 
-    MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(document, {filter: gqlFilter});
+    Employee[] employees = [];
+    boolean fetchMore = true;
+    int offset = 0;
+    int defaultLimit = 100;
 
-    if response is graphql:ClientError {
-        return error(ERR_MSG_EMPLOYEES_RETRIEVAL_FAILED, response);
+    while fetchMore {
+        MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(
+            document,
+            {filter: gqlFilter, 'limit: defaultLimit, offset: offset}
+        );
+        if response is graphql:ClientError {
+            string customError = "An error occurred while retrieving employee data!";
+            log:printError(customError, response);
+            return error(customError, response);
+        }
+        EmployeeResponse[] batch = response.data.employees;
+        employees.push(...from EmployeeResponse empResp in batch
+            select toEmployee(empResp));
+        fetchMore = batch.length() > 0;
+        offset += defaultLimit;
     }
-
-    return from EmployeeResponse empResp in response.data.employees
-        select toEmployee(empResp);
+    return employees;
 }
 
 # Get the location of an employee based on their email address using GraphQL.
