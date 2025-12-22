@@ -180,6 +180,18 @@ public type Employee record {|
     *employee:Employee;
 |};
 
+# Minimal Employee information.
+public type MinimalEmployeeInfo record {|
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Work email
+    string workEmail;
+    # Employee thumbnail
+    string employeeThumbnail;
+|};
+
 # Leaves report content.
 public type ReportContent map<map<float>>;
 
