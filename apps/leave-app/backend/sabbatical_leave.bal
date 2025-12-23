@@ -85,10 +85,12 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 # + leaveStartDate - Leave start date
 # + leaveEndDate - Leave end date
 # + approvalStatusId - Leave approval status ID
+# + location - Employee location
 # + recipientsList - List of email recipients
 # + return - Error if any
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
-        string leaveStartDate, string leaveEndDate, string approvalStatusId, string[] recipientsList) returns error? {
+        string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
+    returns error? {
     io:print("Email recipients list: ", recipientsList.toString());
 
     string subject = "Sabbatical Leave Application " + (isApproved ? "Approved - " : "Rejected - ") + applicantEmail;
@@ -112,7 +114,7 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
         id: calendarEventId,
         startDate: leaveStartDate.substring(0, 10),
         endDate: leaveEndDate.substring(0, 10),
-        location: "Sri Lanka"
+        location: location
     };
     createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
     return;

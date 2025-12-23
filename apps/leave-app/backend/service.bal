@@ -968,10 +968,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications {
             recipientsList.push(functionalLeadEmail);
         }
+
+        Employee|error applicantInfo = employee:getEmployee(leaveSubmissionInfo.email);
+        if applicantInfo is error {
+            string errMsg = "Error occurred while fetching sabbatical leave applicant details.";
+            log:printError(errMsg, applicantInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
         error? notificationResult = processSabbaticalLeaveApprovalNotification(payload.isApproved,
                 leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate, leaveSubmissionInfo.endDate,
-                payload.approvalStatusId,
-                recipientsList);
+                payload.approvalStatusId,  <string>applicantInfo.location, recipientsList);
         if notificationResult is error {
             log:printError("Failed to process sabbatical leave approval notification", notificationResult);
         }
