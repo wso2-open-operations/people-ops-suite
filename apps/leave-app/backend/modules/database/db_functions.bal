@@ -115,7 +115,7 @@ public isolated function getLeaveApproverEmailById(string approvalId) returns st
 # Get leave submission info by the leave approval id.
 #
 # + approvalId - Leave approval ID
-# + return - Email of the leave submission info
+# + return - Leave submission info or an error on failure
 public isolated function getLeaveSubmissionInfoByApprovalId(string approvalId)
     returns LeaveSubmissionInfo|error {
     sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(approvalId);
