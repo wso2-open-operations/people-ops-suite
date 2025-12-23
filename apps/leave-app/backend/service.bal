@@ -900,7 +900,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         Employee & readonly|error employeeDetails = employee:getEmployee(email);
         if employeeDetails is error {
-            string errMsg = "Error occurred while fetching reporting lead details";
+            string errMsg = "Error occurred while fetching employee details";
             log:printError(errMsg, employeeDetails);
             return <http:InternalServerError>{
                 body: {
