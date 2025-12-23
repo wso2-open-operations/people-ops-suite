@@ -154,13 +154,13 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
     return formattedDate;
 }
 
-# Create Sabbatical Leave database records.
+# Create Sabbatical Leave database record.
 #
 # + leaveInput - Leave submission details
 # + days - Number of days for the leave
 # + location - Employee location
 # + leadEmail - Reporting lead email
-# + return - The inserted Leave record if successful; or, an error on failure
+# + return - The leave approval status ID if successful; otherwise, an error
 public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, float days, string location,
         string leadEmail)
     returns string|error {
