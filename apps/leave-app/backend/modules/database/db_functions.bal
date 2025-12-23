@@ -119,11 +119,11 @@ public isolated function getLeaveApproverEmailById(string approvalId) returns st
 public isolated function getLeaveSubmissionInfoByApprovalId(string approvalId)
     returns LeaveSubmissionInfo|error {
     sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(approvalId);
-    LeaveSubmissionInfo|error leaveSubmitterEmail = check leaveDbClient->queryRow(sqlQuery);
-    if leaveSubmitterEmail is sql:NoRowsError {
+    LeaveSubmissionInfo|error leaveSubmissionInfo = check leaveDbClient->queryRow(sqlQuery);
+    if leaveSubmissionInfo is sql:NoRowsError {
         return error("No leave submission found for the given approval ID");
     }
-    return leaveSubmitterEmail;
+    return leaveSubmissionInfo;
 }
 
 # Update leave approval status for a sabbatical leave application.
