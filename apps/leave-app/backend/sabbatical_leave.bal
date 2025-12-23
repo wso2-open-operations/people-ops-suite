@@ -177,8 +177,7 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
     }
     // Eligibility: Employed for more than 3 years and last sabbatical leave taken more than 3 years ago
     if daysSinceEmployment is int && daysSinceLastSabbaticalLeave is int {
-        if ((daysSinceEmployment > 1095 && daysSinceLastSabbaticalLeave > 1095) || (daysSinceEmployment > 1095 &&
-        lastSabbaticalLeaveEndDate == "")) {
+        if (daysSinceEmployment > 1095 && daysSinceLastSabbaticalLeave > 1095) {
             return true;
         }
 
