@@ -236,7 +236,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
 # + id - Leave approval ID
 # + leavesSubmissionId - Leave submission ID
 # + approverEmail - Email of the approver
-# + return - Insert query to add leave approval record  
+# + return - Insert query to add leave approval record
 isolated function insertLeaveApprovalQuery(string id, int leavesSubmissionId, string approverEmail)
 returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
