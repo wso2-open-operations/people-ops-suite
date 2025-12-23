@@ -252,7 +252,7 @@ returns sql:ParameterizedQuery {
                 ${leavesSubmissionId},
                 ${approverEmail},
                 'NO COMMENT',
-                'PENDING',
+                ${PENDING},
                 NOW()
             )
             `;
