@@ -26,7 +26,6 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
 
   return (
     <Typography
-      // variant="h1"
       textAlign={{ xs: "center", md: "left" }}
       sx={{
         color: theme.palette.text.primary,
