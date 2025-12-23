@@ -992,7 +992,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Get sabbatical leave sabbatical leave applications history for a lead.
+    # Get sabbatical leave applications history for a lead.
     # + ctx - Request context
     # + payload - Array of approval statuses to filter (APPROVED, REJECTED, PENDING)
     # + return - List of sabbatical leave applications

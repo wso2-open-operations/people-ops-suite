@@ -17,7 +17,6 @@ import leave_service.calendar_events;
 import leave_service.database;
 import leave_service.email;
 
-import ballerina/io;
 import ballerina/log;
 import ballerina/time;
 
@@ -91,8 +90,6 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
         string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
     returns error? {
-    io:print("Email recipients list: ", recipientsList.toString());
-
     string subject = "Sabbatical Leave Application " + (isApproved ? "Approved - " : "Rejected - ") + applicantEmail;
     string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
@@ -170,7 +167,7 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
     int|error daysSinceEmployment = check getDateDiffInDays(nowStr, employmentStartDate);
     int|error daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
     if daysSinceLastSabbaticalLeave is error {
-        io:print("Days since last sabbatical leave is empty.");
+        log:printInfo("Days since last sabbatical leave is empty.");
     }
     if daysSinceEmployment is int {
         if lastSabbaticalLeaveEndDate == "" && daysSinceEmployment > 1095 {
