@@ -840,18 +840,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        Employee & readonly|error empInfo = employee:getEmployee(email);
-        if empInfo is error {
-            string errMsg = "Error occurred while fetching reporting lead details";
-            log:printError(errMsg, empInfo);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
 
-        Employee & readonly|error reportingLead = employee:getEmployee(empInfo.leadEmail);
+        Employee & readonly|error reportingLead = employee:getEmployee(employeeDetails.leadEmail);
         if reportingLead is error {
             string errMsg = "Error occurred while fetching reporting lead details";
             log:printError(errMsg, reportingLead);
@@ -865,13 +855,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         string[] recipientsList = [];
         recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
         recipientsList.push(email); // applicant email
-        recipientsList.push(<string>empInfo.leadEmail); // reporting lead email (approver)
+        recipientsList.push(<string>employeeDetails.leadEmail); // reporting lead email (approver)
         string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
         if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
             recipientsList.push(functionalLeadEmail);
         }
         error? response = processSabbaticalLeaveApplicationRequest(email, <string>employeeDetails.leadEmail,
-                <string>empInfo.location, <float>differenceInDays, payload.startDate, payload.endDate, recipientsList);
+                <string>employeeDetails.location, <float>differenceInDays, payload.startDate, payload.endDate,
+                recipientsList);
 
         if response is error {
             string errMsg = "Error occurred while processing sabbatical leave application request";
@@ -981,7 +972,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         error? notificationResult = processSabbaticalLeaveApprovalNotification(payload.isApproved,
                 leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate, leaveSubmissionInfo.endDate,
-                payload.approvalStatusId,  <string>applicantInfo.location, recipientsList);
+                payload.approvalStatusId, <string>applicantInfo.location, recipientsList);
         if notificationResult is error {
             log:printError("Failed to process sabbatical leave approval notification", notificationResult);
         }
