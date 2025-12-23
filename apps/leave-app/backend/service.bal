@@ -866,8 +866,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
         recipientsList.push(email); // applicant email
         recipientsList.push(<string>empInfo.leadEmail); // reporting lead email (approver)
-        string functionalLeadEmail = <string>reportingLead.leadEmail; // functional lead email
-        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications {
+        string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
+        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
             recipientsList.push(functionalLeadEmail);
         }
         error? response = processSabbaticalLeaveApplicationRequest(email, <string>employeeDetails.leadEmail,
@@ -929,7 +929,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        if approverEmail !== email {
+        if approverEmail.toLowerAscii() !== email.toLowerAscii() {
             string errMsg = "The current user is not authorized to approve/reject this sabbatical leave application";
             log:printError(errMsg);
             return <http:Unauthorized>{
@@ -964,8 +964,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
         recipientsList.push(leaveSubmissionInfo.email); // applicant email
         recipientsList.push(approverEmail); // reporting lead email (approver)
-        string functionalLeadEmail = <string>employeeDetails.leadEmail; // functional lead email
-        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications {
+        string functionalLeadEmail = (<string>employeeDetails.leadEmail).toLowerAscii(); // functional lead email
+        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
             recipientsList.push(functionalLeadEmail);
         }
 
