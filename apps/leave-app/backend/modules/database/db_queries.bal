@@ -224,7 +224,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
         SELECT 
             end_date
         FROM leave_submissions ls inner join leave_approval la on ls.id = la.leave_submission_id
-        WHERE ls.email = ${employeeEmail} AND ls.leave_type = 'sabbatical' AND la.approval_status = 'APPROVED'
+        WHERE ls.email = ${employeeEmail} AND ls.leave_type = ${SABBATICAL_LEAVE} AND la.approval_status = ${APPROVED}
         ORDER BY end_date DESC
         LIMIT 1
     `;
