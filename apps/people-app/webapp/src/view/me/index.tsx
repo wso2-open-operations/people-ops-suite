@@ -169,6 +169,7 @@ export default function Me() {
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
     emergencyContacts: array()
+      .nullable()
       .of(
         object().shape({
           name: string()
@@ -191,7 +192,6 @@ export default function Me() {
             ),
         })
       )
-      .min(1, "At least one emergency contact is required")
       .max(4, "Maximum 4 emergency contacts allowed"),
   });
 
