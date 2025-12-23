@@ -546,6 +546,9 @@ export default function Me() {
                       <ReadOnly label="Date of Birth" value={values.dob} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="Gender" value={values.gender} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly
                         label="Nationality"
                         value={values.nationality}
