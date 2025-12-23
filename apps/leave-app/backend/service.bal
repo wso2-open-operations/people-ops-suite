@@ -857,7 +857,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         recipientsList.push(email); // applicant email
         recipientsList.push(<string>employeeDetails.leadEmail); // reporting lead email (approver)
         string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
-        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
+        if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
             recipientsList.push(functionalLeadEmail);
         }
         error? response = processSabbaticalLeaveApplicationRequest(email, <string>employeeDetails.leadEmail,

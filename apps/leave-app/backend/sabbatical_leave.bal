@@ -90,11 +90,10 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
         string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
     returns error? {
-    string subject = "Sabbatical Leave Application " + (isApproved ? "Approved - " : "Rejected - ") + applicantEmail;
+    string subject = (isApproved ? "[APPROVED]" : "[REJECTED]") + " Sabbatical Leave Application " + applicantEmail;
     string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
-    ".<br/><br/> Approval Status Tracking ID: " + approvalStatusId + "<br/>Requested Leave Start Date: " +
-    leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate;
+    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate;
 
     map<string> emailContent = {"CONTENT": emailBody};
     error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
@@ -139,12 +138,16 @@ isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail
         emailRecipients: recipientsList,
         isMorningLeave: ()
     };
-    string approvalStatusId = check database:createSabbaticalLeaveRecord(leaveInput, numberOfDays, location, leadEmail);
-    string subject = "New Sabbatical Leave Application - " + applicantEmail;
-    string emailBody = "A new Sabbatical leave application has been submitted by " + applicantEmail +
-    ".<br/><br/> Approval Status Tracking ID: " + approvalStatusId + "<br/>Requested Leave Start Date: " +
-    leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Authorized Reporting Lead: " +
-    leadEmail + "<br/><br/> The above stated reporting lead is required to review the application and" +
+    string|error approvalStatusId = database:createSabbaticalLeaveRecord(leaveInput, numberOfDays, location,
+            leadEmail);
+    if approvalStatusId is error {
+        return error("Error occurred while creating sabbatical leave record.", approvalStatusId);
+    }
+    string subject = "Sabbatical Leave Application - " + applicantEmail;
+    string emailBody = "A Sabbatical leave application has been submitted by " + applicantEmail +
+    ".<br/><br/>" + "Requested Leave Start Date: " +
+    leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
+    leadEmail + "<br/><br/> The reporting lead is required to review the application and" +
     " approve / reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
 
     map<string> emailContent = {"CONTENT": emailBody};
