@@ -920,7 +920,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        if approverEmail.toLowerAscii() !== email.toLowerAscii() {
+        if approverEmail.toLowerAscii() != email.toLowerAscii() {
             string errMsg = "The current user is not authorized to approve/reject this sabbatical leave application";
             log:printError(errMsg);
             return <http:Unauthorized>{
@@ -956,7 +956,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         recipientsList.push(leaveSubmissionInfo.email); // applicant email
         recipientsList.push(approverEmail); // reporting lead email (approver)
         string functionalLeadEmail = (<string>employeeDetails.leadEmail).toLowerAscii(); // functional lead email
-        if functionalLeadEmail !== functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
+        if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
             recipientsList.push(functionalLeadEmail);
         }
 
