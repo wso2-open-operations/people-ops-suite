@@ -955,9 +955,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
         recipientsList.push(leaveSubmissionInfo.email); // applicant email
         recipientsList.push(approverEmail); // reporting lead email (approver)
-        string functionalLeadEmail = (<string>employeeDetails.leadEmail).toLowerAscii(); // functional lead email
-        if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
-            recipientsList.push(functionalLeadEmail);
+        if employeeDetails.leadEmail is () {
+            log:printInfo("Functional Lead info is not available. Skipped notification for the functional lead.");
+        }
+        if employeeDetails.leadEmail is string
+        {
+            string functionalLeadEmail = (<string>employeeDetails.leadEmail).toLowerAscii(); // functional lead email
+            if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
+                recipientsList.push(functionalLeadEmail);
+            }
         }
 
         Employee|error applicantInfo = employee:getEmployee(leaveSubmissionInfo.email);
