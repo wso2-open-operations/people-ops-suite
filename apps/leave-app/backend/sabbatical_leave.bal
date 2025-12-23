@@ -167,9 +167,6 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
 
     time:Utc nowUTC = time:utcNow();
     string nowStr = time:utcToString(nowUTC).substring(0, 10);
-    log:printInfo("employmentStartDate: " + employmentStartDate);
-    log:printInfo("lastSabbaticalLeaveEndDate: " + lastSabbaticalLeaveEndDate);
-    log:printInfo("UTC Now string: " + nowStr);
     int|error daysSinceEmployment = check getDateDiffInDays(nowStr, employmentStartDate);
     int|error daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
     if daysSinceLastSabbaticalLeave is error {
