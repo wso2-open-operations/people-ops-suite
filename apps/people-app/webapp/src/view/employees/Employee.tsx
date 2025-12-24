@@ -280,10 +280,7 @@ export default function Employees() {
                 designationId: values.designationId,
                 officeId: values.officeId,
                 teamId: values.teamId,
-                subTeamId:
-                  values.subTeamId && values.subTeamId > 0
-                    ? values.subTeamId
-                    : undefined,
+                subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId:
                   values.unitId && values.unitId > 0

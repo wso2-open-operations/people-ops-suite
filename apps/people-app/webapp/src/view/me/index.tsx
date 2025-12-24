@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType } from "@/types/types";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
@@ -134,8 +134,18 @@ export default function Me() {
     (state) => state.employeePersonalInfo
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  const initialHasEmergencyContactsRef = useRef<boolean>(
+    !!personalInfo?.emergencyContacts?.length
+  );
+
   const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
-    useState(false);
+    useState<boolean>(initialHasEmergencyContactsRef.current);
+
+  useEffect(() => {
+    const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;
+    initialHasEmergencyContactsRef.current = has;
+    setShouldRequireEmergencyContacts(has);
+  }, [personalInfo]);
 
   const personalInfoSchema = object().shape({
     personalEmail: string()
@@ -247,7 +257,12 @@ export default function Me() {
       "Discard Changes",
       "Are you sure you want to discard all unsaved changes? This action cannot be undone.",
       ConfirmationType.discard,
-      () => resetForm(),
+      () => {
+        resetForm();
+        setShouldRequireEmergencyContacts(
+          initialHasEmergencyContactsRef.current
+        );
+      },
       "Discard",
       "Keep Changes"
     );
@@ -900,10 +915,7 @@ export default function Me() {
                           variant="outlined"
                           color="primary"
                           onClick={() => {
-                            handleDiscardChanges(() => {
-                              resetForm();
-                              setShouldRequireEmergencyContacts(false);
-                            });
+                            handleDiscardChanges(resetForm);
                           }}
                           disabled={isSavingChanges || !dirty}
                         >

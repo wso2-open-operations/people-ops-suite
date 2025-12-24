@@ -441,7 +441,7 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? country = ();
     # Emergency contacts
-    EmergencyContact[] emergencyContacts;
+    EmergencyContact[]? emergencyContacts = ();
 |};
 
 # [Database] Insert type for vehicle.

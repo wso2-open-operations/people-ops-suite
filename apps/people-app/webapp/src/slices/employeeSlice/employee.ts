@@ -97,7 +97,7 @@ export type CreateEmployeePayload = {
   designationId: number;
   officeId: number;
   teamId: number;
-  subTeamId?: number;
+  subTeamId: number;
   businessUnitId: number;
   unitId?: number;
   continuousServiceRecord?: string | null;
