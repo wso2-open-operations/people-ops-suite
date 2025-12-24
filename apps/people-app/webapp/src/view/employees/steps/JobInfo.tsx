@@ -80,8 +80,8 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .required("Team is required")
     .min(1, "Select a valid team"),
   subTeamId: Yup.number()
-    .transform((value) => (value === 0 ? null : value))
-    .nullable(),
+    .required("Sub Team is required")
+    .min(1, "Select a valid sub team"),
   unitId: Yup.number()
     .transform((value) => (value === 0 ? null : value))
     .nullable(),
@@ -679,6 +679,7 @@ export default function JobInfoStep() {
             <TextField
               select
               fullWidth
+              required
               label="Sub Team"
               name="subTeamId"
               value={values.subTeamId || ""}

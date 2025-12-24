@@ -340,7 +340,9 @@ export const fetchEmploymentTypes = createAsyncThunk(
         `${AppConfig.serviceUrls.employmentTypes}`
       );
       if (!Array.isArray(resp.data)) {
-        throw new Error("Invalid response: employment types should be an array");
+        throw new Error(
+          "Invalid response: employment types should be an array"
+        );
       }
       return resp.data as EmploymentType[];
     } catch (error: any) {
@@ -496,7 +498,7 @@ export const organizationSlice = createSlice({
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
       })
-            .addCase(fetchEmploymentTypes.pending, (state) => {
+      .addCase(fetchEmploymentTypes.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching employment types...";
         state.errorMessage = null;

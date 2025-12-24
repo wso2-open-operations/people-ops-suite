@@ -134,6 +134,8 @@ export default function Me() {
     (state) => state.employeePersonalInfo
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
+    useState(false);
 
   const personalInfoSchema = object().shape({
     personalEmail: string()
@@ -168,31 +170,58 @@ export default function Me() {
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
-    emergencyContacts: array()
-      .nullable()
-      .of(
-        object().shape({
-          name: string()
-            .required("Name is required")
-            .max(100, "Name must be at most 100 characters"),
-          relationship: string()
-            .required("Relationship is required")
-            .max(50, "Relationship must be at most 50 characters"),
-          telephone: string()
-            .required("Telephone is required")
-            .matches(
-              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid telephone number format"
-            ),
-          mobile: string()
-            .required("Mobile is required")
-            .matches(
-              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid mobile number format"
-            ),
-        })
-      )
-      .max(4, "Maximum 4 emergency contacts allowed"),
+    emergencyContacts: shouldRequireEmergencyContacts
+      ? array()
+          .required("At least one emergency contact is required")
+          .min(1, "At least one emergency contact is required")
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(
+            object().shape({
+              name: string()
+                .required("Name is required")
+                .max(100, "Name must be at most 100 characters"),
+              relationship: string()
+                .required("Relationship is required")
+                .max(50, "Relationship must be at most 50 characters"),
+              telephone: string()
+                .required("Telephone is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid telephone number format"
+                ),
+              mobile: string()
+                .required("Mobile is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid mobile number format"
+                ),
+            })
+          )
+      : array()
+          .nullable()
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(
+            object().shape({
+              name: string()
+                .required("Name is required")
+                .max(100, "Name must be at most 100 characters"),
+              relationship: string()
+                .required("Relationship is required")
+                .max(50, "Relationship must be at most 50 characters"),
+              telephone: string()
+                .required("Telephone is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid telephone number format"
+                ),
+              mobile: string()
+                .required("Mobile is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid mobile number format"
+                ),
+            })
+          ),
   });
 
   useEffect(() => {
@@ -802,7 +831,7 @@ export default function Me() {
                                             disabled={
                                               isSavingChanges ||
                                               (values.emergencyContacts
-                                                ?.length ?? 0) <= 1
+                                                ?.length ?? 0) === 1
                                             }
                                             sx={{ flexShrink: 0 }}
                                           >
@@ -820,14 +849,15 @@ export default function Me() {
                               color="secondary"
                               startIcon={<AddCircleOutlineIcon />}
                               sx={{ textTransform: "none" }}
-                              onClick={() =>
+                              onClick={() => {
                                 push({
                                   name: "",
                                   relationship: "",
                                   telephone: "",
                                   mobile: "",
-                                })
-                              }
+                                });
+                                setShouldRequireEmergencyContacts(true);
+                              }}
                               disabled={
                                 isSavingChanges ||
                                 (values.emergencyContacts?.length ?? 0) >= 4
@@ -869,7 +899,12 @@ export default function Me() {
                           sx={{ textTransform: "none" }}
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleDiscardChanges(resetForm)}
+                          onClick={() => {
+                            handleDiscardChanges(() => {
+                              resetForm();
+                              setShouldRequireEmergencyContacts(false);
+                            });
+                          }}
                           disabled={isSavingChanges || !dirty}
                         >
                           Discard Changes
