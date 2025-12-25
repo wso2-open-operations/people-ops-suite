@@ -36,7 +36,7 @@ export default function ApplyTab() {
           pb="1rem"
         >
           <Title firstWord="Sabbatical" secondWord="Leave Application" borderEnabled={false} />
-          <Alert>Eligible to Apply</Alert>
+          <Alert variant="outlined">Eligible to Apply</Alert>
         </Stack>
         <Stack
           flexDirection={{ xs: "column", md: "row" }}

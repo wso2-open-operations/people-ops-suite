@@ -14,7 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { CircleCheckBig, History, NotebookPen } from "lucide-react";
+import EditDocumentIcon from "@mui/icons-material/EditDocument";
+import HistoryIcon from "@mui/icons-material/History";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
 
 import { useEffect, useState } from "react";
 
@@ -60,19 +62,19 @@ export default function SabbaticalLeave() {
           {
             tabTitle: "Apply",
             tabPath: "apply",
-            icon: <NotebookPen />,
+            icon: <EditDocumentIcon />,
             page: <ApplyTab />,
           },
           {
             tabTitle: "Approve Leave",
             tabPath: "approve-leave",
-            icon: <CircleCheckBig />,
+            icon: <HowToRegIcon />,
             page: <ApproveLeaveTab />,
           },
           {
             tabTitle: "Approval History",
             tabPath: "approval-history",
-            icon: <History />,
+            icon: <HistoryIcon />,
             page: <ApprovalHistoryTab />,
           },
         ]}
