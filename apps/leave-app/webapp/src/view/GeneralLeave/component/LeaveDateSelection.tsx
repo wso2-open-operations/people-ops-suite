@@ -14,10 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { Alert, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
-import { Info } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -132,12 +132,11 @@ export default function LeaveDateSelection({
     if (endDate.isBefore(startDate)) return "Invalid date range";
     if (daysSelected === 0) return "Invalid selection";
     if (workingDaysSelected < 1) return "No working days selected";
-    return "Valid Leave Request";
+    return "Valid date selection";
   };
 
   const status = getStatus();
-  const isValidSelection = status === "Valid Leave Request";
-
+  const isValidSelection = status === "Valid date selection";
   return (
     <Stack
       direction="column"
@@ -145,24 +144,26 @@ export default function LeaveDateSelection({
       width={{ md: "40%" }}
       gap={{ xs: "1rem" }}
     >
-      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-        Select Date(s)
-      </Typography>
-      {isValidating && <CircularProgress size={30} />}
+      <Stack direction="row" justifyContent="space-between">
+        <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+          Date Selection
+        </Typography>
+        {isValidating && <CircularProgress size={20} />}
+      </Stack>
       <Stack
         direction="row"
         spacing={1.5}
         justifyContent={{ xs: "space-evenly", md: "space-between" }}
       >
         <DatePicker
-          label="From"
+          label="Start Date"
           sx={{ minWidth: "10%" }}
           value={startDate}
           onChange={handleStartDateChange}
           disablePast
         />
         <DatePicker
-          label="To"
+          label="End Date"
           sx={{ minWidth: "10%" }}
           value={endDate}
           onChange={handleEndDateChange}
@@ -185,28 +186,22 @@ export default function LeaveDateSelection({
           </Typography>
         </Stack>
       </Stack>
-      <Box
-        width="70%"
-        marginX="auto"
+      <Alert
+        icon={<InfoOutlinedIcon fontSize="small" />}
+        severity={isValidSelection ? "success" : "warning"}
+        variant="outlined"
         sx={{
+          boxSizing: "border-box",
           display: "flex",
+          width: "100%",
           justifyContent: "center",
-          alignItems: "center",
-          gap: "0.5rem",
-          backgroundColor: isValidSelection
-            ? theme.palette.primary.main
-            : theme.palette.warning.main,
-          color: isValidSelection
-            ? theme.palette.primary.contrastText
-            : theme.palette.warning.contrastText,
+          px: 2,
+          py: 0.5,
           borderRadius: "0.4rem",
-          py: "0.5rem",
-          px: "2rem",
         }}
       >
-        <Info />
-        <Typography variant="body2">Status: {status}</Typography>
-      </Box>
+        <Typography variant="body2">{status}</Typography>
+      </Alert>
     </Stack>
   );
 }

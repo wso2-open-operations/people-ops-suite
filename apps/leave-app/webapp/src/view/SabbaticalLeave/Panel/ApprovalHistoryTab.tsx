@@ -24,7 +24,7 @@ import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
 export default function ApprovalHistoryTab() {
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Approval" secondWord="History (For Reporting Leads)" />
+      <Title firstWord="Approval" secondWord="History" />
       <ApprovalHistoryTable rows={[]} />
     </Stack>
   );

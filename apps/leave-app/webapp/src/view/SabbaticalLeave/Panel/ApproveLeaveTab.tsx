@@ -24,7 +24,7 @@ import ApproveLeaveTable from "../component/ApproveLeaveTable";
 export default function ApproveLeaveTab() {
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Approve" secondWord="Leave (For Reporting Leads)" />
+      <Title firstWord="Leave" secondWord="Approval / Rejection" />
       <ApproveLeaveTable rows={[]} />
     </Stack>
   );
