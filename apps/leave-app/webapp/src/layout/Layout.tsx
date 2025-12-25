@@ -69,7 +69,7 @@ export default function Layout() {
           flexDirection: "column",
           minHeight: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.surface.primary.active,
+          backgroundColor: theme.palette.background.default,
         }}
       >
         <Box
@@ -79,7 +79,7 @@ export default function Layout() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: theme.palette.surface.primary.active,
+            backgroundColor: theme.palette.background.default,
             zIndex: -1,
           }}
         />
