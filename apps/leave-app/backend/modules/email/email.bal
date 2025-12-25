@@ -46,9 +46,7 @@ public isolated function processEmailNotification(string alertHeader, string sub
     string htmlContent = string `
         <html>
             <body>
-                <p>Hi All,</p>
                 <p>${body.get("CONTENT")}</p>
-                <p>Regards,<br/>WSO2 Leave App.</p>
                 <p><i>***This is a system-generated email***</i></p>
             </body>
         </html>

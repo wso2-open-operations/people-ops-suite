@@ -233,6 +233,8 @@ public type LeaveApprovalStatusPayload record {|
 
 # Sabbatical leave application payload record.
 public type SabbaticalLeaveApplicationPayload record {|
+    # Last sabbatical leave end date
+    string lastSabbaticalLeaveEndDate;
     # Leave start date
     string startDate = "";
     # Leave end date
