@@ -84,6 +84,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get application configurations.
+    # 
     # + return - Application configurations or Internal Server Error
     resource function get app\-config() returns AppConfig|http:InternalServerError {
         AppConfig|error appConfig = {
