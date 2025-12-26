@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType } from "@/types/types";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
@@ -111,7 +111,9 @@ const FieldInput = ({
       disabled={isSavingChanges}
       error={getIn(touched, name) && Boolean(getIn(errors, name))}
       helperText={
-        getIn(touched, name) && getIn(errors, name) ? String(getIn(errors, name)) : undefined
+        getIn(touched, name) && getIn(errors, name)
+          ? String(getIn(errors, name))
+          : undefined
       }
       variant="outlined"
       InputProps={{ style: { fontSize: 15 } }}
@@ -132,6 +134,18 @@ export default function Me() {
     (state) => state.employeePersonalInfo
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  const initialHasEmergencyContactsRef = useRef<boolean>(
+    !!personalInfo?.emergencyContacts?.length
+  );
+
+  const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
+    useState<boolean>(initialHasEmergencyContactsRef.current);
+
+  useEffect(() => {
+    const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;
+    initialHasEmergencyContactsRef.current = has;
+    setShouldRequireEmergencyContacts(has);
+  }, [personalInfo]);
 
   const personalInfoSchema = object().shape({
     personalEmail: string()
@@ -166,31 +180,58 @@ export default function Me() {
     postalCode: string()
       .nullable()
       .max(20, "Postal code must be at most 20 characters"),
-    emergencyContacts: array()
-      .of(
-        object().shape({
-          name: string()
-            .required("Name is required")
-            .max(100, "Name must be at most 100 characters"),
-          relationship: string()
-            .required("Relationship is required")
-            .max(50, "Relationship must be at most 50 characters"),
-          telephone: string()
-            .required("Telephone is required")
-            .matches(
-              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid telephone number format"
-            ),
-          mobile: string()
-            .required("Mobile is required")
-            .matches(
-              /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid mobile number format"
-            ),
-        })
-      )
-      .min(1, "At least one emergency contact is required")
-      .max(4, "Maximum 4 emergency contacts allowed"),
+    emergencyContacts: shouldRequireEmergencyContacts
+      ? array()
+          .required("At least one emergency contact is required")
+          .min(1, "At least one emergency contact is required")
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(
+            object().shape({
+              name: string()
+                .required("Name is required")
+                .max(100, "Name must be at most 100 characters"),
+              relationship: string()
+                .required("Relationship is required")
+                .max(50, "Relationship must be at most 50 characters"),
+              telephone: string()
+                .required("Telephone is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid telephone number format"
+                ),
+              mobile: string()
+                .required("Mobile is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid mobile number format"
+                ),
+            })
+          )
+      : array()
+          .nullable()
+          .max(4, "Maximum 4 emergency contacts allowed")
+          .of(
+            object().shape({
+              name: string()
+                .required("Name is required")
+                .max(100, "Name must be at most 100 characters"),
+              relationship: string()
+                .required("Relationship is required")
+                .max(50, "Relationship must be at most 50 characters"),
+              telephone: string()
+                .required("Telephone is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid telephone number format"
+                ),
+              mobile: string()
+                .required("Mobile is required")
+                .matches(
+                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+                  "Invalid mobile number format"
+                ),
+            })
+          ),
   });
 
   useEffect(() => {
@@ -216,7 +257,12 @@ export default function Me() {
       "Discard Changes",
       "Are you sure you want to discard all unsaved changes? This action cannot be undone.",
       ConfirmationType.discard,
-      () => resetForm(),
+      () => {
+        resetForm();
+        setShouldRequireEmergencyContacts(
+          initialHasEmergencyContactsRef.current
+        );
+      },
       "Discard",
       "Keep Changes"
     );
@@ -471,16 +517,6 @@ export default function Me() {
                   </Typography>
                 </Grid>
               </Grid>
-              <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Work Phone Number
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.workPhoneNumber || "-"}
-                  </Typography>
-                </Grid>
-              </Grid>
             </Box>
           ) : (
             <Typography color="text.secondary">
@@ -545,22 +581,16 @@ export default function Me() {
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Last Name" value={values.lastName} />
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly
-                        label="Name with Initials"
-                        value={values.nameWithInitials}
-                      />
-                    </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Full Name" value={values.fullName} />
-                    </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="NIC" value={values.nicOrPassport} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Date of Birth" value={values.dob} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="Gender" value={values.gender} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly
@@ -816,7 +846,7 @@ export default function Me() {
                                             disabled={
                                               isSavingChanges ||
                                               (values.emergencyContacts
-                                                ?.length ?? 0) <= 1
+                                                ?.length ?? 0) === 1
                                             }
                                             sx={{ flexShrink: 0 }}
                                           >
@@ -834,14 +864,15 @@ export default function Me() {
                               color="secondary"
                               startIcon={<AddCircleOutlineIcon />}
                               sx={{ textTransform: "none" }}
-                              onClick={() =>
+                              onClick={() => {
                                 push({
                                   name: "",
                                   relationship: "",
                                   telephone: "",
                                   mobile: "",
-                                })
-                              }
+                                });
+                                setShouldRequireEmergencyContacts(true);
+                              }}
                               disabled={
                                 isSavingChanges ||
                                 (values.emergencyContacts?.length ?? 0) >= 4
@@ -883,7 +914,9 @@ export default function Me() {
                           sx={{ textTransform: "none" }}
                           variant="outlined"
                           color="primary"
-                          onClick={() => handleDiscardChanges(resetForm)}
+                          onClick={() => {
+                            handleDiscardChanges(resetForm);
+                          }}
                           disabled={isSavingChanges || !dirty}
                         >
                           Discard Changes

@@ -83,8 +83,6 @@ public type Employee record {|
     string employmentLocation;
     # Work location
     string workLocation;
-    # Work phone number
-    string? workPhoneNumber;
     # Start date
     string startDate;
     # Manager email
@@ -124,12 +122,6 @@ public type EmployeePersonalInfo record {|
     # National Identity Card number
     @sql:Column {name: "nic_or_passport"}
     string? nicOrPassport;
-    # Full name of the person
-    @sql:Column {name: "full_name"}
-    string fullName;
-    # Name with initials
-    @sql:Column {name: "name_with_initials"}
-    string? nameWithInitials;
     # First name
     string? firstName;
     # Last name
@@ -138,6 +130,8 @@ public type EmployeePersonalInfo record {|
     string? title;
     # Date of birth
     string? dob;
+    # Gender of the person
+    string? gender;
     # Personal email address
     @sql:Column {name: "personal_email"}
     string? personalEmail;
@@ -167,7 +161,7 @@ public type EmployeePersonalInfo record {|
     string? nationality;
     # Emergency contacts
     @sql:Column {name: "emergency_contacts"}
-    json emergencyContacts;
+    json? emergencyContacts;
 |};
 
 # Continuous service record information.
@@ -274,6 +268,14 @@ public type Office record {|
     json workingLocations;
 |};
 
+# Employment type.
+public type EmploymentType record {|
+    # ID of the employment type
+    int id;
+    # Name of the employment type
+    string name;
+|};
+
 # Search employee personal information payload.
 public type SearchEmployeePersonalInfoPayload record {|
     # National Identity Card number or Passport
@@ -296,12 +298,6 @@ public type EmergencyContact record {|
 public type CreatePersonalInfoPayload record {|
     # National Identity Card number or Passport
     string nicOrPassport;
-    # Full name of the person
-    @constraint:String {maxLength: 255}
-    string fullName;
-    # Name with initials
-    @constraint:String {maxLength: 150}
-    string? nameWithInitials = ();
     # First name
     @constraint:String {maxLength: 100}
     string? firstName = ();
@@ -314,6 +310,9 @@ public type CreatePersonalInfoPayload record {|
     # Date of birth
     @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
     string? dob = ();
+    # Gender of the person
+    @constraint:String {maxLength: 20}
+    string? gender = ();
     # Personal email address
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
@@ -345,7 +344,7 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? nationality = ();
     # Emergency contacts
-    EmergencyContact[] emergencyContacts;
+    EmergencyContact[]? emergencyContacts = ();
 |};
 
 # Create employee payload.
@@ -368,9 +367,6 @@ public type CreateEmployeePayload record {|
     # Work email of the user
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string workEmail;
-    # Work phone number
-    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
-    string? workPhoneNumber = ();
     # Start date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string startDate;
@@ -445,8 +441,7 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? country = ();
     # Emergency contacts
-    @constraint:Array {minLength: 1, maxLength: 4}
-    EmergencyContact[] emergencyContacts;
+    EmergencyContact[]? emergencyContacts = ();
 |};
 
 # [Database] Insert type for vehicle.

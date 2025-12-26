@@ -265,7 +265,6 @@ export default function Employees() {
                 employmentLocation: values.employmentLocation,
                 workLocation: values.workLocation,
                 workEmail: values.workEmail,
-                workPhoneNumber: values.workPhoneNumber || undefined,
                 startDate: values.startDate,
                 managerEmail: values.managerEmail,
                 additionalManagerEmails: values.additionalManagerEmail?.length
@@ -281,26 +280,22 @@ export default function Employees() {
                 designationId: values.designationId,
                 officeId: values.officeId,
                 teamId: values.teamId,
-                subTeamId:
-                  values.subTeamId && values.subTeamId > 0
-                    ? values.subTeamId
-                    : undefined,
+                subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId:
                   values.unitId && values.unitId > 0
                     ? values.unitId
                     : undefined,
-                continuousServiceRecord:
-                  values.continuousServiceRecord || undefined,
+                ...(values.isRelocation && values.continuousServiceRecord
+                  ? { continuousServiceRecord: values.continuousServiceRecord }
+                  : {}),
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
-                  fullName: values.personalInfo.fullName,
-                  nameWithInitials:
-                    values.personalInfo.nameWithInitials || undefined,
                   firstName: values.personalInfo.firstName || undefined,
                   lastName: values.personalInfo.lastName || undefined,
                   title: values.personalInfo.title || undefined,
                   dob: values.personalInfo.dob || undefined,
+                  gender: values.personalInfo.gender || undefined,
                   personalEmail: values.personalInfo.personalEmail || undefined,
                   personalPhone: values.personalInfo.personalPhone || undefined,
                   residentNumber:

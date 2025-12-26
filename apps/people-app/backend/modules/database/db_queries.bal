@@ -55,7 +55,6 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.epf AS epf,
         c.location AS employmentLocation,
         e.work_location AS workLocation,
-        e.work_phone_number AS workPhoneNumber,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
         e.additional_manager_emails AS additionalManagerEmails,
@@ -108,6 +107,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         u.name AS unit
     FROM
         employee e
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
         INNER JOIN company c ON c.id = o.company_id
@@ -116,7 +116,9 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         LEFT JOIN sub_team st ON e.sub_team_id = st.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.work_email = ${workEmail};`;
+        e.work_email = ${workEmail}
+        AND et.is_active = 1
+        AND et.name IN ('Permanent');`;
 
 # Search employee personal information.
 #
@@ -128,12 +130,11 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
         SELECT 
             p.id AS id,
             nic_or_passport,
-            full_name,
-            name_with_initials,
             p.first_name AS firstName,
             p.last_name AS lastName,
             title,
             dob,
+            gender,
             personal_email,
             personal_phone,
             resident_number,
@@ -161,12 +162,11 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
     `SELECT 
         p.id AS id,
         nic_or_passport,
-        full_name,
-        name_with_initials,
         p.first_name AS firstName,
         p.last_name AS lastName,
         title,
         dob,
+        gender,
         personal_email,
         personal_phone,
         resident_number,
@@ -280,6 +280,15 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
         working_locations
     FROM office;`;
 
+# Get employment types query.
+#
+# + return - Employment types query
+isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+    FROM employment_type;`;
+
 # Add employee personal information query.
 #
 # + payload - Create personal info payload
@@ -290,12 +299,11 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
     `INSERT INTO personal_info
         (
             nic_or_passport,
-            full_name,
-            name_with_initials,
             first_name,
             last_name,
             title,
             dob,
+            gender,
             personal_email,
             personal_phone,
             resident_number,
@@ -313,12 +321,11 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
     VALUES
         (
             ${payload.nicOrPassport},
-            ${payload.fullName},
-            ${payload.nameWithInitials},
             ${payload.firstName},
             ${payload.lastName},
             ${payload.title},
             ${payload.dob},
+            ${payload.gender},
             ${payload.personalEmail},
             ${payload.personalPhone},
             ${payload.residentNumber},
@@ -350,7 +357,6 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             employment_location,
             work_location,
             work_email,
-            work_phone_number,
             start_date,
             secondary_job_title,
             manager_email,
@@ -379,7 +385,6 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.employmentLocation},
             ${payload.workLocation},
             ${payload.workEmail},
-            ${payload.workPhoneNumber},
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.managerEmail},

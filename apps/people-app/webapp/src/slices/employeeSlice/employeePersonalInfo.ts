@@ -26,12 +26,11 @@ import { EmergencyContact } from "@/types/types";
 export interface EmployeePersonalInfo {
   id: number | null;
   nicOrPassport: string | null;
-  fullName: string;
-  nameWithInitials: string | null;
   firstName: string | null;
   lastName: string | null;
   title: string | null;
   dob: string | null;
+  gender: string | null;
   personalEmail: string | null;
   personalPhone: string | null;
   residentNumber: string | null;

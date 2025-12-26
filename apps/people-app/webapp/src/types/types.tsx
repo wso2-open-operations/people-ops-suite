@@ -44,12 +44,11 @@ export interface EmergencyContact {
 export interface CreateEmployeeFormValues {
   personalInfo: {
     nicOrPassport: string;
-    fullName: string;
-    nameWithInitials: string;
     firstName: string;
     lastName: string;
     title: string;
     dob: string | null;
+    gender: string;
     age: number | null;
     personalEmail: string | null;
     personalPhone: string | null;
@@ -76,10 +75,10 @@ export interface CreateEmployeeFormValues {
   startDate: string;
   probationEndDate: string | null;
   agreementEndDate: string | null;
+  isRelocation: boolean;
   continuousServiceRecord?: string | null;
   managerEmail: string;
   additionalManagerEmail: string[];
-  workPhoneNumber: string;
   careerFunctionId: number;
   designationId: number;
   secondaryJobTitle: string;
@@ -88,12 +87,11 @@ export interface CreateEmployeeFormValues {
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   personalInfo: {
     nicOrPassport: "",
-    fullName: "",
-    nameWithInitials: "",
     firstName: "",
     lastName: "",
     title: "",
     dob: null,
+    gender: "",
     age: null,
     personalEmail: null,
     personalPhone: null,
@@ -105,14 +103,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     postalCode: null,
     country: null,
     nationality: "",
-    emergencyContacts: [
-      {
-        name: "",
-        relationship: "",
-        telephone: "",
-        mobile: "",
-      },
-    ],
+    emergencyContacts: [],
   },
   workEmail: "",
   epf: "",
@@ -127,10 +118,10 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   startDate: "",
   probationEndDate: null,
   agreementEndDate: null,
+  isRelocation: false,
   continuousServiceRecord: null,
   managerEmail: "",
   additionalManagerEmail: [],
-  workPhoneNumber: "",
   careerFunctionId: 0,
   designationId: 0,
   secondaryJobTitle: "",
