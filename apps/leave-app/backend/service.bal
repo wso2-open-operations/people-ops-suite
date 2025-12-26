@@ -86,7 +86,28 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get application configurations.
     #
     # + return - Application configurations or Internal Server Error
-    resource function get app\-config() returns AppConfig|http:InternalServerError {
+    resource function get app\-config(http:RequestContext ctx)
+        returns AppConfig|http:InternalServerError|http:Unauthorized {
+
+        readonly & authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            string errMsg = "Error occurred while decoding user info from token";
+            log:printError(errMsg, userInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, userInfo.groups) {
+            string errMsg = "Only employees are allowed to access application configurations.";
+            return <http:Unauthorized>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+
         AppConfig|error appConfig = {
             isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled
         };
