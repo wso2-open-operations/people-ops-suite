@@ -806,6 +806,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         string lastSabbaticalLeaveEndDateResult = "";
+        lastSabbaticalLeaveEndDateResult = lastSabbaticalLeaveEndDate;
         if lastSabbaticalLeaveEndDate == "" {
             lastSabbaticalLeaveEndDateResult = payload.lastSabbaticalLeaveEndDate;
         }
