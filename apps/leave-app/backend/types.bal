@@ -182,14 +182,7 @@ public type Employee record {|
 
 # Minimal Employee information.
 public type MinimalEmployeeInfo record {|
-    # First name
-    string firstName;
-    # Last name
-    string lastName;
-    # Work email
-    string workEmail;
-    # Employee thumbnail
-    string employeeThumbnail;
+   *employee:MinimalEmployeeInfo;
 |};
 
 # Leaves report content.
