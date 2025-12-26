@@ -124,6 +124,18 @@ public type Employee record {|
     boolean? lead;
 |};
 
+# Minimal Employee information.
+public type MinimalEmployeeInfo record {|
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Work email
+    string workEmail;
+    # Employee thumbnail
+    string employeeThumbnail;
+|};
+
 # Mandatory mails to be notified when submitting a leave.
 public type MandatoryMails record {|
     # Email address / group to be notified
