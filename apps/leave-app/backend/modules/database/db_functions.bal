@@ -162,15 +162,19 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
 # + leadEmail - Reporting lead email
 # + return - The leave approval status ID if successful; otherwise, an error
 public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, float days, string location,
-        string leadEmail)
-    returns string|error {
-    Leave|error leaveSubmission = insertLeave(leaveInput, days, location);
-    if leaveSubmission is error {
-        return error("Error occurred while creating leave submission record.", leaveSubmission);
-    }
-    string leaveApprovalStatusID = uuid:createType4AsString();
-    sql:ExecutionResult|error result = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
-            leaveSubmission.id, leadEmail));
+        string leadEmail) returns string|error {
 
+    string leaveApprovalStatusID = uuid:createType4AsString();
+    transaction {
+        Leave|error leaveSubmission = insertLeave(leaveInput, days, location);
+
+        if leaveSubmission is Leave {
+            sql:ExecutionResult|error result = leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
+                    leaveSubmission.id, leadEmail));
+
+        }
+
+        check commit;
+    }
     return leaveApprovalStatusID;
 }
