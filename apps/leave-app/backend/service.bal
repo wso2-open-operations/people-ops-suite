@@ -84,7 +84,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get application configurations.
-    # 
+    #
     # + return - Application configurations or Internal Server Error
     resource function get app\-config() returns AppConfig|http:InternalServerError {
         AppConfig|error appConfig = {
@@ -805,8 +805,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        string lastSabbaticalLeaveEndDateResult = "";
+        if lastSabbaticalLeaveEndDate == "" {
+            lastSabbaticalLeaveEndDateResult = payload.lastSabbaticalLeaveEndDate;
+        }
         boolean|error isEligible = checkEligibilityForSabbaticalApplication(<string>employeeDetails.startDate,
-                lastSabbaticalLeaveEndDate);
+                lastSabbaticalLeaveEndDateResult);
         if isEligible is error {
             string errMsg = "Error occurred while checking eligibility for sabbatical leave application";
             log:printError(errMsg, isEligible);
