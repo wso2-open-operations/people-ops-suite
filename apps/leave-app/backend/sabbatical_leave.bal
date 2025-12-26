@@ -173,14 +173,15 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
         log:printInfo("Days since last sabbatical leave is empty.");
     }
     if daysSinceEmployment is int {
-        if lastSabbaticalLeaveEndDate == "" && daysSinceEmployment > 1095 {
+        if lastSabbaticalLeaveEndDate == "" && daysSinceEmployment > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT {
             return true;
         }
 
     }
     // Eligibility: Employed for more than 3 years and last sabbatical leave taken more than 3 years ago
     if daysSinceEmployment is int && daysSinceLastSabbaticalLeave is int {
-        if (daysSinceEmployment > 1095 && daysSinceLastSabbaticalLeave > 1095) {
+        if (daysSinceEmployment > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT &&
+        daysSinceLastSabbaticalLeave > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT) {
             return true;
         }
 

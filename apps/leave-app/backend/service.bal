@@ -838,7 +838,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         // Sabbatical leave duration cannot exceed 6 weeks (42 days)
-        if (differenceInDays > 42) {
+        if (differenceInDays > SABBATICAL_LEAVE_APPLICATION_MAX_DAY_COUNT) {
             return <http:BadRequest>{
                 body: {
                     message: "Sabbatical leave duration cannot exceed 6 weeks (42 days)."
