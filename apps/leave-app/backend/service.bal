@@ -1027,7 +1027,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - List of sabbatical leave applications
     resource function post sabbatical\-leave/approval\-status(http:RequestContext ctx,
             LeaveApprovalStatusPayload payload)
-        returns database:LeaveApprovalStatus[]|http:InternalServerError|http:Unauthorized {
+        returns LeaveApprovalStatusResponse|http:InternalServerError|http:Unauthorized {
 
         authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
         Employee & readonly|error empInfo = employee:getEmployee(email);
@@ -1051,17 +1051,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:LeaveApprovalStatus[]|error result = database:getLeaveApprovalStatusList(email, payload.status);
-        string errMsg = "Error occurred while fetching sabbatical leave approval status records";
-        if result is error {
-            log:printError(errMsg, result);
+        database:LeaveApprovalStatus[]|error approvalList = database:getLeaveApprovalStatusList(email, payload.status);
+        if approvalList is error {
+            string errMsg = "Error occurred while fetching sabbatical leave approval status records";
+            log:printError(errMsg, approvalList);
             return <http:InternalServerError>{
                 body: {
                     message: errMsg
                 }
             };
         }
-        return result;
+        string|error subordinatePercentageOnSabbaticalLeave = getSubordinateCountOnSabbaticalLeaveAsAPercentage(email);
+        if subordinatePercentageOnSabbaticalLeave is error {
+            string errMsg = "Error occurred while calculating subordinate on sabbatical leave percentage";
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        LeaveApprovalStatusResponse status = {
+            percentageOfEmployeesOnSabbaticalLeave: subordinatePercentageOnSabbaticalLeave,
+            leaveApprovalStatusList: approvalList
+        };
+        return status;
     }
-
 }
