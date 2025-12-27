@@ -46,7 +46,7 @@ export default function LeaveDateSelection({
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
-    if (end.isBefore(start)) return 0;
+    if (end.isBefore(start, "day")) return 0;
     return end.diff(start, "day") + 1;
   };
 
@@ -57,18 +57,11 @@ export default function LeaveDateSelection({
   }, [daysSelected, onDaysChange]);
 
   useEffect(() => {
-    const today = dayjs();
+    const today = dayjs().startOf("day");
     setStartDate(today);
     setEndDate(today);
     onDatesChange(today, today);
     validateDates(today, today);
-  }, []);
-
-  useEffect(() => {
-    if (startDate && endDate) {
-      validateDates(startDate, endDate);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Validate dates and fetch working days from API
@@ -79,7 +72,7 @@ export default function LeaveDateSelection({
       return;
     }
 
-    if (end.isBefore(start)) {
+    if (end.isBefore(start, "day")) {
       setWorkingDaysSelected(0);
       onWorkingDaysChange(0);
       return;
@@ -135,7 +128,7 @@ export default function LeaveDateSelection({
   // Determine status based on selection
   const getStatus = () => {
     if (!startDate || !endDate) return "Please select dates";
-    if (endDate.isBefore(startDate)) return "Invalid date range";
+    if (endDate.isBefore(startDate, "day")) return "Invalid date range";
     if (daysSelected === 0) return "Invalid selection";
     if (workingDaysSelected < 1) return "No working days selected";
     return "Valid date selection";
