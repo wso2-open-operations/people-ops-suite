@@ -85,6 +85,13 @@ export interface DefaultMail {
   email: string;
   thumbnail: string;
 }
+
+// Default mail response type.
+export interface DefaultMailResponse {
+  mandatoryMails: DefaultMail[];
+  optionalMails: DefaultMail[];
+}
+
 // Leave submission type.
 export interface LeaveSubmissionRequest {
   periodType: "one" | "multiple" | "half";
