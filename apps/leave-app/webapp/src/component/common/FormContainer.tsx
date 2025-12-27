@@ -30,7 +30,7 @@ export const FormContainer: React.FC<Props> = ({ children }) => {
       direction="column"
       width="100%"
       margin="auto"
-      gap="2rem"
+      gap="2.5rem"
       padding="1.5rem"
       borderRadius="0.5rem"
       border={`1px solid ${theme.palette.divider}`}

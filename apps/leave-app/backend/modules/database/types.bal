@@ -259,3 +259,27 @@ public type LeaveResponse record {|
     # Subject of email notification
     string? emailSubject = ();
 |};
+
+# Leave approval status response.
+public type LeaveApprovalStatus record {|
+    # Leave approval status id
+    string id;
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Approval status
+    string approvalStatus;
+    # Submission note
+    string submitNote;
+|};
+
+# Leave submission info.
+public type LeaveSubmissionInfo record {|
+    # Email of the leave submitter
+    string email;
+    # Leave start date
+    string startDate;
+    # Leave end date
+    string endDate;
+|};
