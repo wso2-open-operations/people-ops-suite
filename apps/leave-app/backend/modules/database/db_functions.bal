@@ -166,15 +166,18 @@ public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, floa
 
     string leaveApprovalStatusID = uuid:createType4AsString();
     transaction {
-        Leave|error leaveSubmission = insertLeave(leaveInput, days, location);
-
-        if leaveSubmission is Leave {
-            sql:ExecutionResult|error result = leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
-                    leaveSubmission.id, leadEmail));
-
-        }
-
+        Leave leaveSubmission = check insertLeave(leaveInput, days, location);
+        sql:ExecutionResult result = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
+                leaveSubmission.id, leadEmail));
         check commit;
     }
     return leaveApprovalStatusID;
+}
+
+# Get subordinate count who are on sabbatical leave under a specific lead.
+#
+# + leadEmail - Email of the lead
+# + return - subordinate count or an error on failure
+public isolated function getSubordinateCountOnSabbaticalLeave(string leadEmail) returns int|error {
+    return check leaveDbClient->queryRow(getSubordinateCountOnSabbaticalLeaveQuery(leadEmail));
 }
