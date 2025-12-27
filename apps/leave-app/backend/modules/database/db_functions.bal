@@ -86,7 +86,7 @@ public isolated function cancelLeave(int id) returns error? {
     }
 }
 
-# Get Leave Approval Status records for leads.
+# Get sabbatical leave approval status records for leads.
 #
 # + leadEmail - Email of the lead
 # + approvalStatus - List of approval statuses to filter (APPROVED, REJECTED, PENDING)
@@ -99,7 +99,7 @@ public isolated function getLeaveApprovalStatusList(string leadEmail, string[] a
         select leaveApproval;
 }
 
-# Get Leave Approver Email by Leave Approval ID.
+# Get sabbatical leave approver Email by Leave Approval ID.
 #
 # + approvalId - Leave approval ID
 # + return - Email of the leave approver or an error on failure
@@ -112,7 +112,7 @@ public isolated function getLeaveApproverEmailById(string approvalId) returns st
     return leaveApproverEmail;
 }
 
-# Get leave submission info by the leave approval id.
+# Get sabbatical leave submission info by the leave approval id.
 #
 # + approvalId - Leave approval ID
 # + return - Leave submission info or an error on failure
