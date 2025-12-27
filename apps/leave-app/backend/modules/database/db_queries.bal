@@ -258,3 +258,18 @@ returns sql:ParameterizedQuery {
             `;
     return query;
 }
+
+# Query to get subordinates count on sabbatical leave.
+#
+# + leadEmail - Email of the lead
+# + return - Select query to get count of subordinates on sabbatical leave
+isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT COUNT(la.id)
+        FROM leave_approval la INNER JOIN leave_submissions ls ON la.leave_submission_id = ls.id 
+        WHERE
+        la.approver_email = ${leadEmail} AND la.approval_status = ${APPROVED} AND
+        ls.leave_type = ${SABBATICAL_LEAVE} AND ls.start_date <= UTC_TIMESTAMP() AND ls.end_date >= UTC_TIMESTAMP()
+    `;
+    return query;
+}
