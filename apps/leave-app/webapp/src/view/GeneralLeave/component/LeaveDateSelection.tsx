@@ -17,7 +17,7 @@
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Alert, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 import { useEffect, useState } from "react";
 
@@ -57,8 +57,11 @@ export default function LeaveDateSelection({
   }, [daysSelected, onDaysChange]);
 
   useEffect(() => {
-    onDatesChange(startDate, endDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const today = dayjs();
+    setStartDate(today);
+    setEndDate(today);
+    onDatesChange(today, today);
+    validateDates(today, today);
   }, []);
 
   useEffect(() => {
@@ -85,12 +88,15 @@ export default function LeaveDateSelection({
     setIsValidating(true);
     try {
       const totalDays = calculateTotalDays(start, end);
-      const response = await validateLeaveRequest({
-        periodType: getPeriodType(totalDays),
-        startDate: formatDateForApi(start),
-        endDate: formatDateForApi(end),
-        isMorningLeave: null,
-      }, true);
+      const response = await validateLeaveRequest(
+        {
+          periodType: getPeriodType(totalDays),
+          startDate: formatDateForApi(start),
+          endDate: formatDateForApi(end),
+          isMorningLeave: null,
+        },
+        true,
+      );
 
       setWorkingDaysSelected(response.workingDays);
       onWorkingDaysChange(response.workingDays);
