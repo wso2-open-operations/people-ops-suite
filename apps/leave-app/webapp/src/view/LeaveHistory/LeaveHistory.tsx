@@ -13,20 +13,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, CircularProgress, Stack } from "@mui/material";
+import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { getLeaveHistory } from "@root/src/services/leaveService";
+import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { SingleLeaveHistory } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
 export default function LeaveHistory() {
+  const { enqueueSnackbar } = useSnackbar();
   const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const userInfo = useSelector(selectUser);
@@ -60,6 +63,17 @@ export default function LeaveHistory() {
     return { month, day };
   };
 
+  const handleDeleteLeave = async (id: string) => {
+    try {
+      await cancelLeaveRequest(Number(id));
+      setLeaves((prevLeaves) => prevLeaves.filter((leave) => leave.id !== id));
+      enqueueSnackbar("Leave cancelled successfully", { variant: "success" });
+    } catch (err) {
+      console.error("Failed to delete leave", err);
+      enqueueSnackbar("Failed to cancel leave", { variant: "error" });
+    }
+  };
+
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
       <Title firstWord="Leave" secondWord="History" />
@@ -78,6 +92,7 @@ export default function LeaveHistory() {
               status="approved"
               month={month}
               day={day}
+              onDelete={handleDeleteLeave}
             />
           );
         })}
