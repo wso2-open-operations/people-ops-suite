@@ -85,7 +85,7 @@ type SingleEmployeeResponse record {|
     # Response data wrapper
     record {|
         # Employee data
-        EmployeeResponse employee;
+        EmployeeResponse? employee;
     |} data;
 |};
 
@@ -136,12 +136,20 @@ public type MinimalEmployeeInfo record {|
     string employeeThumbnail;
 |};
 
-# Mandatory mails to be notified when submitting a leave.
-public type MandatoryMails record {|
+# Default mails to be notified when submitting a leave.
+public type DefaultMail record {|
     # Email address / group to be notified
     string email;
     # Thumbnail image of the email address / group
     string thumbnail = "";
+|};
+
+# Default mail response type.
+public type DefaultMailResponse record {|
+    # Mandatory mails to be notified
+    DefaultMail[] mandatoryMails;
+    # Optional mails to be notified
+    DefaultMail[] optionalMails;
 |};
 
 # Employee response type.
