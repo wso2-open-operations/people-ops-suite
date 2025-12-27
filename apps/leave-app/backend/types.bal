@@ -182,7 +182,7 @@ public type Employee record {|
 
 # Minimal Employee information.
 public type MinimalEmployeeInfo record {|
-   *employee:MinimalEmployeeInfo;
+    *employee:MinimalEmployeeInfo;
 |};
 
 # Leaves report content.
@@ -221,7 +221,15 @@ public type UserInfo record {|
 # Leave approval status payload.
 public type LeaveApprovalStatusPayload record {|
     # Approval status (PENDING/APPROVED/REJECTED)
-    string[] status;
+    database:ApprovalStatus[] status;
+|};
+
+# Leave approval status response.
+public type LeaveApprovalStatusResponse record {|
+    # Employees as a percentage on sabbatical leave under the specific lead
+    string percentageOfEmployeesOnSabbaticalLeave;
+    # List of leave approval status of employees under the specific lead
+    database:LeaveApprovalStatus[] leaveApprovalStatusList;
 |};
 
 # Sabbatical leave application payload record.
