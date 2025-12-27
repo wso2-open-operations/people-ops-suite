@@ -14,18 +14,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack } from "@mui/material";
+import { Alert, Stack, useTheme } from "@mui/material";
+
+import { useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
-import ApproveLeaveTable from "../component/ApproveLeaveTable";
+import ApproveLeaveTable, { EmployeeApprovalData } from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
+  const theme = useTheme();
+  const [percentageOnSabbaticalLeave, setPercentageOnSabbaticalLeave] = useState("0%");
+  const mockEmployeeApprovalData: EmployeeApprovalData[] = [];
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Leave" secondWord="Approval / Rejection" />
-      <ApproveLeaveTable rows={[]} />
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        borderBottom={`1px solid ${theme.palette.divider}`}
+        pb="1rem"
+      >
+        <Title firstWord="Leave" secondWord="Approval / Rejection" borderEnabled={false} />
+        <Alert variant="outlined" severity="warning">
+          {percentageOnSabbaticalLeave} of the team is on sabbatical leave
+        </Alert>
+      </Stack>
+      <ApproveLeaveTable rows={mockEmployeeApprovalData} />
     </Stack>
   );
 }
