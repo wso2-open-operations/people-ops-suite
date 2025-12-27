@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
@@ -21,11 +20,21 @@ import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 
 import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
 
+export interface ApprovalHistoryData {
+  id: number;
+  email: string;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+}
+
+export const approvalHistoryData: ApprovalHistoryData[] = [];
+
 export default function ApprovalHistoryTab() {
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="Approval" secondWord="History" />
-      <ApprovalHistoryTable rows={[]} />
+      <ApprovalHistoryTable rows={approvalHistoryData} />
     </Stack>
   );
 }
