@@ -130,6 +130,7 @@ public isolated function getAllEmailRecipientsForUser(string email, string[] use
 
     readonly & Employee employee = check employee:getEmployee(email);
     recipientMap[<string>employee.leadEmail] = true;
+    recipientMap[emailGroupToNotify] = true;
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
     }
@@ -570,7 +571,7 @@ isolated function getOptionalMailsToNotify(string leaveApplicantEmail) returns e
     employee:DefaultMail[] optionalMailsToNotify = [];
     string mails = check database:getEmailNotificationRecipientList(leaveApplicantEmail);
     string[] mailsList = mails.length() > 0 ? regex:split(mails, ",") : [];
-    
+
     foreach string mail in mailsList {
         string thumbnail = "";
         employee:Employee|error empInfo = employee:getEmployee(mail);
