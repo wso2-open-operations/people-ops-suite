@@ -297,6 +297,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             payload.calendarEventId = calendarEventId;
             input.emailSubject = emailContentForLeave.subject;
             input.calendarEventId = calendarEventId;
+            input.emailRecipients = allRecipientsForUser;
 
             LeaveDetails|error leave = insertLeaveToDatabase(input, isValidationOnlyMode, jwt);
             if leave is error {
