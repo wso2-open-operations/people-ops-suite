@@ -27,7 +27,16 @@ import ballerina/time;
     label: "Leave Backend Service",
     id: "people-ops/leave-application"
 }
-
+// dont push service config
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["*"],
+        allowCredentials: false,
+        allowHeaders: ["x-jwt-assertion", "Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"],
+        maxAge: 84900
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -698,8 +707,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + return - Mandatory email addresses for leave notifications or Internal Server Error
-    resource function get defaultMails(http:RequestContext ctx)
-        returns employee:MandatoryMails[]|http:InternalServerError {
+    resource function get default\-mails(http:RequestContext ctx)
+        returns employee:DefaultMailResponse|http:InternalServerError {
 
         authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
         employee:Employee & readonly|error empInfo = employee:getEmployee(email);
@@ -727,16 +736,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        employee:MandatoryMails[] defaultMailsToNotify = [
-            {
-                email: empLead.workEmail,
-                thumbnail: empLead.employeeThumbnail ?: ""
-            },
-            {
-                email: emailGroupToNotify,
-                thumbnail: ""
-            }
-        ];
+        employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(email);
+        if optionalMailsToNotify is error {
+            string errorMsg = "Error occurred while fetching optional mails to notify";
+            log:printError(errorMsg, optionalMailsToNotify);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
+        }
+        employee:DefaultMailResponse defaultMailsToNotify = {
+            mandatoryMails: [
+                {
+                    email: empLead.workEmail,
+                    thumbnail: empLead.employeeThumbnail ?: ""
+                },
+                {
+                    email: emailGroupToNotify,
+                    thumbnail: ""
+                }
+            ],
+            optionalMails: optionalMailsToNotify
+        };
         return defaultMailsToNotify;
     }
 
