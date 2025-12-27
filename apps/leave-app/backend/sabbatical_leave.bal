@@ -16,6 +16,7 @@
 import leave_service.calendar_events;
 import leave_service.database;
 import leave_service.email;
+import leave_service.employee;
 
 import ballerina/log;
 import ballerina/time;
@@ -202,3 +203,26 @@ isolated function getDateDiffInDays(string endDate, string startDate) returns in
 
     return <int>(diffSeconds / 86400);
 }
+
+# Get subordinate count for a specific lead.
+#
+# + leadEmail - email of the reporting lead
+# + return - subordinate count as an integer or an error on failure
+isolated function getSubordinateCount(string leadEmail) returns int|error {
+    Employee[] employees = check employee:getEmployees({leadEmail: leadEmail});
+    return employees.length();
+}
+
+# Get percentage of subordinates on sabbatical leave.
+#
+# + leadEmail - email of the reporting lead
+# + return - percentage of subordinates on sabbatical leave or an error     
+isolated function getSubordinateCountOnSabbaticalLeaveAsAPercentage(string leadEmail) returns string|error {
+    int subordinateCount = check getSubordinateCount(leadEmail);
+    if subordinateCount == 0 {
+        return "0%"; // early return to prevent division by zero
+    }
+    int subordinateOnSabbaticalLeaveCount = check database:getSubordinateCountOnSabbaticalLeave(leadEmail);
+    return ((subordinateOnSabbaticalLeaveCount / subordinateCount) * 100).toString() + "%";
+}
+
