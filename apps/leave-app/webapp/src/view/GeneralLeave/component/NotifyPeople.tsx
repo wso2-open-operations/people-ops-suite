@@ -29,7 +29,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { fetchEmployees, getDefaultMails } from "@root/src/services/leaveService";
-import { DefaultMail, Employee } from "@root/src/types/types";
+import { DefaultMail, DefaultMailResponse, Employee } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
@@ -54,9 +54,11 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
       try {
         setLoading(true);
         const employees = await fetchEmployees();
-        const defaultMails = await getDefaultMails();
+        const defaultMails: DefaultMailResponse = await getDefaultMails();
+        const mandatoryMails = defaultMails.mandatoryMails;
+        const optionalMails = defaultMails.optionalMails;
 
-        const fixedEmailList = defaultMails.map((mail: DefaultMail) => mail.email);
+        const fixedEmailList = mandatoryMails.map((mail: DefaultMail) => mail.email);
         setFixedEmails(fixedEmailList);
 
         const employeeOptions = employees.map((employee: Employee) => ({
@@ -66,8 +68,8 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
           isFixed: fixedEmailList.includes(employee.workEmail),
         }));
 
-        // Add default mails that are not in employee list
-        const missingFixedOptions = defaultMails
+        // Add mandatory mails that are not in employee list
+        const missingMandatoryOptions = mandatoryMails
           .filter((mail: DefaultMail) => !employeeOptions.find((opt) => opt.email === mail.email))
           .map((mail: DefaultMail) => ({
             label: mail.email,
@@ -76,7 +78,28 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
             isFixed: true,
           }));
 
-        setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
+        // Add optional mails that are not in employee list
+        const missingOptionalOptions = optionalMails
+          .filter(
+            (mail: DefaultMail) =>
+              !employeeOptions.find((opt) => opt.email === mail.email) &&
+              !missingMandatoryOptions.find((opt) => opt.email === mail.email),
+          )
+          .map((mail: DefaultMail) => ({
+            label: mail.email,
+            email: mail.email,
+            thumbnail: mail.thumbnail || null,
+            isFixed: false,
+          }));
+
+        setEmployeeOptions([
+          ...employeeOptions,
+          ...missingMandatoryOptions,
+          ...missingOptionalOptions,
+        ]);
+
+        const optionalEmailList = optionalMails.map((mail: DefaultMail) => mail.email);
+        onEmailsChange([...fixedEmailList, ...optionalEmailList]);
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setEmployeeOptions([]);
@@ -86,11 +109,16 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
     };
 
     loadData();
-  }, [onEmailsChange]);
+  }, []);
 
-  const selectedOptions = employeeOptions.filter(
-    (opt) => opt.isFixed || selectedEmails.includes(opt.email),
-  );
+  const selectedOptions = employeeOptions
+    .filter((opt) => opt.isFixed || selectedEmails.includes(opt.email))
+    .sort((a, b) => {
+      // Add mandatory mails first, then optional mails
+      if (a.isFixed && !b.isFixed) return -1;
+      if (!a.isFixed && b.isFixed) return 1;
+      return 0;
+    });
 
   return (
     <Stack gap="1rem">
