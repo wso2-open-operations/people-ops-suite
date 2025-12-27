@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
@@ -87,6 +88,17 @@ export const submitLeaveRequest = async (
     `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${false}`,
     request,
   );
+
+  return response.data;
+};
+
+/**
+ * Cancel a leave request.
+ */
+export const cancelLeaveRequest = async (id: number): Promise<DefaultMail[]> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);
 
   return response.data;
 };
