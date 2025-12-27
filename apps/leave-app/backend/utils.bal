@@ -561,3 +561,29 @@ public isolated function validateDateRange(string startDate, string endDate) ret
         return error(err.message());
     }
 }
+
+# Get list of optional mails to notify when submitting a general leave.
+#
+# + leaveApplicantEmail - Email of the leave applicant
+# + return - List of optional mails to notify
+isolated function getOptionalMailsToNotify(string leaveApplicantEmail) returns employee:DefaultMail[]|error {
+    employee:DefaultMail[] optionalMailsToNotify = [];
+    string mails = check database:getEmailNotificationRecipientList(leaveApplicantEmail);
+    string[] mailsList = mails.length() > 0 ? regex:split(mails, ",") : [];
+    
+    foreach string mail in mailsList {
+        string thumbnail = "";
+        employee:Employee|error empInfo = employee:getEmployee(mail);
+        if empInfo is error {
+            log:printWarn(string `Failed to fetch employee info for email: ${mail}`, empInfo);
+        }
+        if empInfo is employee:Employee {
+            thumbnail = <string>empInfo.employeeThumbnail;
+        }
+        optionalMailsToNotify.push({
+            email: mail,
+            thumbnail: thumbnail
+        });
+    }
+    return optionalMailsToNotify;
+}
