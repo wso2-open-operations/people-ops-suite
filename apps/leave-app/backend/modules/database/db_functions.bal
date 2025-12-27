@@ -181,3 +181,11 @@ public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, floa
 public isolated function getSubordinateCountOnSabbaticalLeave(string leadEmail) returns int|error {
     return check leaveDbClient->queryRow(getSubordinateCountOnSabbaticalLeaveQuery(leadEmail));
 }
+
+# Get most recent email notification recipient list (general leave) for a leave applicant.
+#
+# + applicantEmail - Email of the leave applicant
+# + return - Select query to get email notification list
+public isolated function getEmailNotificationRecipientList(string applicantEmail) returns string|error {
+    return check leaveDbClient->queryRow(getEmailNotificationRecipientListQuery(applicantEmail));
+};

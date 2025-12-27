@@ -272,3 +272,18 @@ isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) re
     `;
     return query;
 }
+
+# Query to get most recent email notification recipient list (general leave) for a leave applicant.
+#
+# + applicantEmail - Email of the leave applicant
+# + return - Select query to get email notification list
+isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT copy_email_list
+        FROM leave_submissions
+        WHERE email = ${applicantEmail} AND leave_type <> ${SABBATICAL_LEAVE}
+        ORDER BY created_date DESC
+        LIMIT 1
+    `;
+    return query;
+};
