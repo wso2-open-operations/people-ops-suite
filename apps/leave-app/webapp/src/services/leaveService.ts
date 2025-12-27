@@ -84,7 +84,7 @@ export const submitLeaveRequest = async (
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveSubmissionResponse>(
-    AppConfig.serviceUrls.leaves,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${false}`,
     request,
   );
 
