@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
@@ -38,11 +37,12 @@ import { APIService } from "@root/src/utils/apiService";
  */
 export const validateLeaveRequest = async (
   request: LeaveValidationRequest,
+  isValidationOnlyMode: boolean,
 ): Promise<LeaveValidationResponse> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveValidationResponse>(
-    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=true`,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${isValidationOnlyMode}`,
     request,
   );
 

@@ -90,7 +90,7 @@ export default function LeaveDateSelection({
         startDate: formatDateForApi(start),
         endDate: formatDateForApi(end),
         isMorningLeave: null,
-      });
+      }, true);
 
       setWorkingDaysSelected(response.workingDays);
       onWorkingDaysChange(response.workingDays);
