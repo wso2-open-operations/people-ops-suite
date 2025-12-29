@@ -17,6 +17,8 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
+  ApprovalStatusRequest,
+  ApprovalStatusResponse,
   DayType,
   DefaultMail,
   DefaultMailResponse,
@@ -131,6 +133,24 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
 
   const response = await apiInstance.post<LeadReportResponse>(
     AppConfig.serviceUrls.leadReport,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Get leave approval status list of subordinates.
+ * @param request - request payload
+ * @returns Promise with approval status response
+ */
+export const getApprovalStatusList = async (
+  request: ApprovalStatusRequest,
+): Promise<ApprovalStatusResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<ApprovalStatusResponse>(
+    AppConfig.serviceUrls.approvalStatusList,
     request,
   );
 
