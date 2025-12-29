@@ -41,6 +41,12 @@ export enum DayType {
   multiple = "multiple",
 }
 
+export enum ApprovalStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
 export interface RouteDetail {
   path: string;
   allowRoles?: string[];
@@ -167,6 +173,28 @@ export interface LeadReportResponse {
     sabbatical?: number;
   };
 }
+
+// Single approval status item.
+export interface ApprovalStatusItem {
+  id: string;
+  email: string;
+  startDate: string;
+  endDate: string;
+  approvalStatus: ApprovalStatus;
+  submitNote: string;
+}
+
+// Approval status request payload.
+export interface ApprovalStatusRequest {
+  status: ApprovalStatus[];
+}
+
+// Approval status response payload.
+export interface ApprovalStatusResponse {
+  percentageOfEmployeesOnSabbaticalLeave: string;
+  leaveApprovalStatusList: ApprovalStatusItem[];
+}
+
 // App config response type.
 export interface AppConfigResponse {
   isSabbaticalLeaveEnabled: boolean;
