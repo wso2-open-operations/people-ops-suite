@@ -17,14 +17,9 @@
 import { Box, Button, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-export interface EmployeeApprovalData {
-  id: number;
-  email: string;
-  startDate: Date;
-  endDate: Date;
-}
+import { ApprovalStatusItem } from "@root/src/types/types";
 
-export default function ApproveLeaveTable({ rows }: { rows: EmployeeApprovalData[] }) {
+export default function ApproveLeaveTable({ rows }: { rows: ApprovalStatusItem[] }) {
   const theme = useTheme();
   const columns: GridColDef[] = [
     {
@@ -37,24 +32,27 @@ export default function ApproveLeaveTable({ rows }: { rows: EmployeeApprovalData
     {
       field: "startDate",
       headerName: "Start Date",
-      type: "date",
+      type: "string",
       flex: 1,
       editable: false,
     },
     {
       field: "endDate",
       headerName: "End Date",
-      type: "date",
+      type: "string",
       flex: 1,
       editable: false,
     },
     {
       field: "approval",
       headerName: "Approval",
+      type: "actions",
       flex: 1,
       editable: false,
       align: "center",
       headerAlign: "center",
+      sortable: false,
+      filterable: false,
       renderCell: (params) => (
         <Box
           display="flex"
