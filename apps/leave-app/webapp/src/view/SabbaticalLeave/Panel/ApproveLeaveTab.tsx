@@ -16,17 +16,18 @@
 
 import { Alert, Stack, useTheme } from "@mui/material";
 
-import { useState } from "react";
-
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { useApprovalHistoryData } from "@root/src/hooks/hooks";
+import { ApprovalStatus } from "@root/src/types/types";
 
-import ApproveLeaveTable, { EmployeeApprovalData } from "../component/ApproveLeaveTable";
+import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
   const theme = useTheme();
-  const [percentageOnSabbaticalLeave, setPercentageOnSabbaticalLeave] = useState("0%");
-  const mockEmployeeApprovalData: EmployeeApprovalData[] = [];
+  // fetch the approval history data.
+  const { data } = useApprovalHistoryData([ApprovalStatus.PENDING]);
+
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Stack
@@ -38,10 +39,10 @@ export default function ApproveLeaveTab() {
       >
         <Title firstWord="Leave" secondWord="Approval / Rejection" borderEnabled={false} />
         <Alert variant="outlined" severity="warning">
-          {percentageOnSabbaticalLeave} of the team is on sabbatical leave
+          {data.percentageOfEmployeesOnSabbaticalLeave} of the team is on sabbatical leave
         </Alert>
       </Stack>
-      <ApproveLeaveTable rows={mockEmployeeApprovalData} />
+      <ApproveLeaveTable rows={data.leaveApprovalStatusList} />
     </Stack>
   );
 }
