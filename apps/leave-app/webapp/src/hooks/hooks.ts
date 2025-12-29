@@ -44,7 +44,7 @@ export function useApprovalHistoryData(statuses: ApprovalStatus[]) {
     };
 
     fetchApprovalStatusList();
-  }, [statuses]);
+  }, []);
 
   return { data, loading, error };
 }
