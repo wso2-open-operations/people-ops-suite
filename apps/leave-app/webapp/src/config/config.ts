@@ -45,11 +45,13 @@ export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 
 export const AppConfig = {
   serviceUrls: {
-    contacts: ServiceBaseUrl + "/contacts",
     userInfo: ServiceBaseUrl + "/user-info",
     employees: ServiceBaseUrl + "/employees",
     appConfig: ServiceBaseUrl + "/app-config",
-    collections: ServiceBaseUrl + "/collections",
+    approvalStatusList: ServiceBaseUrl + "/sabbatical-leave/approval-status",
+    approveSabbaticalLeave: ServiceBaseUrl + "/sabbatical-leave/approve",
+    applySabbaticalLeave: ServiceBaseUrl + "/sabbatical-leave/apply",
+    validateSabbaticalLeave: ServiceBaseUrl + "/sabbatical-leave/apply/validate",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
     defaultMails: ServiceBaseUrl + "/default-mails",
