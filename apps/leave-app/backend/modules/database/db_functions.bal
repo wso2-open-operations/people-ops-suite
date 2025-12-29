@@ -95,8 +95,15 @@ public isolated function getLeaveApprovalStatusList(string leadEmail, string[] a
     returns LeaveApprovalStatus[]|error {
     sql:ParameterizedQuery sqlQuery = getLeaveApprovalStatusListQuery(leadEmail, approvalStatus);
     stream<LeaveApprovalStatus, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
-    return from LeaveApprovalStatus leaveApproval in resultStream
-        select leaveApproval;
+    return check from LeaveApprovalStatus leaveApproval in resultStream
+        select {
+            id: leaveApproval.id,
+            email: leaveApproval.email,
+            startDate: leaveApproval.startDate.substring(0, 10),
+            endDate: leaveApproval.endDate.substring(0, 10),
+            submitNote: leaveApproval.submitNote,
+            approvalStatus: leaveApproval.approvalStatus
+        };
 }
 
 # Get sabbatical leave approver Email by Leave Approval ID.
