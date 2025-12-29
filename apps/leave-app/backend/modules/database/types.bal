@@ -264,6 +264,8 @@ public type LeaveResponse record {|
 public type LeaveApprovalStatus record {|
     # Leave approval status id
     string id;
+    # Applicant email
+    string email;
     # Start date
     string startDate;
     # End date

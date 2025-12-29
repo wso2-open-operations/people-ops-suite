@@ -156,6 +156,7 @@ isolated function getLeaveApprovalStatusListQuery(string leadEmail, string[] sta
         SELECT 
             la.id as id,
             la.approval_status as approvalStatus,
+            ls.email as email,
             ls.start_date as startDate,
             ls.end_date as endDate,
             ls.submit_note as submitNote
