@@ -1,0 +1,15 @@
+# General
+node_modules/
+.DS_Store
+.env
+
+# React / Frontend
+dist/
+build/
+.eslintcache
+
+# Ballerina / Backend
+target/
+bin/
+.ballerina/
+ballerina-internal.log
