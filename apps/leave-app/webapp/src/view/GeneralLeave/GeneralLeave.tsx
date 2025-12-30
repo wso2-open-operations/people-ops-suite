@@ -38,6 +38,7 @@ export default function GeneralLeave() {
   const [selectedLeaveType, setSelectedLeaveType] = useState<string>("casual");
   const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
   const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
+  const [mandatoryEmails, setMandatoryEmails] = useState<string[]>([]);
   const [comment, setComment] = useState("");
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,6 +81,11 @@ export default function GeneralLeave() {
         isMorningLeave = selectedDayPortion === "first";
       }
 
+      // Filter out mandatory emails from the recipients list for the API call
+      const filteredEmailRecipients = emailRecipients.filter(
+        (email) => !mandatoryEmails.includes(email),
+      );
+
       const payload = {
         periodType,
         startDate: formatDateForApi(startDate),
@@ -87,7 +93,7 @@ export default function GeneralLeave() {
         isMorningLeave,
         comment,
         leaveType: selectedLeaveType,
-        emailRecipients,
+        emailRecipients: filteredEmailRecipients,
         isPublicComment,
       };
 
@@ -139,7 +145,11 @@ export default function GeneralLeave() {
             onDayPortionChange={setSelectedDayPortion}
           />
         </Stack>
-        <NotifyPeople selectedEmails={emailRecipients} onEmailsChange={setEmailRecipients} />
+        <NotifyPeople
+          selectedEmails={emailRecipients}
+          onEmailsChange={setEmailRecipients}
+          onMandatoryEmailsChange={setMandatoryEmails}
+        />
         <AdditionalComment
           comment={comment}
           onCommentChange={setComment}

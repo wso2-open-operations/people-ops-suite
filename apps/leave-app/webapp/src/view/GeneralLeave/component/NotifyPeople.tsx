@@ -41,9 +41,14 @@ interface EmployeeOption {
 interface NotifyPeopleProps {
   selectedEmails: string[];
   onEmailsChange: (emails: string[]) => void;
+  onMandatoryEmailsChange: (emails: string[]) => void;
 }
 
-export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyPeopleProps) {
+export default function NotifyPeople({
+  selectedEmails,
+  onEmailsChange,
+  onMandatoryEmailsChange,
+}: NotifyPeopleProps) {
   const theme = useTheme();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +65,7 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
 
         const fixedEmailList = mandatoryMails.map((mail: DefaultMail) => mail.email);
         setFixedEmails(fixedEmailList);
+        onMandatoryEmailsChange(fixedEmailList);
 
         const employeeOptions = employees.map((employee: Employee) => ({
           label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
