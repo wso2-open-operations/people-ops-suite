@@ -91,7 +91,7 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
         string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
     returns error? {
-    string subject = (isApproved ? "[APPROVED]" : "[REJECTED]") + " Sabbatical Leave Application - " + applicantEmail;
+    string subject = "Sabbatical Leave Application - " + applicantEmail;
     string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
     ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate;
