@@ -195,6 +195,35 @@ export interface ApprovalStatusResponse {
   leaveApprovalStatusList: ApprovalStatusItem[];
 }
 
+// Approval request payload.
+export interface ApprovalRequest {
+  isApproved: boolean;
+  approvalStatusId: string;
+}
+
+// Approval response payload.
+export interface ApprovalResponse {
+  message: string;
+}
+
+// Eligibility response type.
+export interface EligibilityResponse {
+  isEligible: boolean;
+}
+
+// Sabbatical application request type.
+export interface SabbaticalApplicationRequest {
+  lastSabbaticalLeaveEndDate: string;
+  startDate: string;
+  endDate: string;
+  additionalComment: string;
+}
+
+// Sabbatical application response type.
+export interface SabbaticalApplicationResponse {
+  message: string;
+}
+
 // App config response type.
 export interface AppConfigResponse {
   isSabbaticalLeaveEnabled: boolean;
