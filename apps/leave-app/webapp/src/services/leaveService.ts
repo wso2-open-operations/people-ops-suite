@@ -17,11 +17,14 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
+  ApprovalRequest,
+  ApprovalResponse,
   ApprovalStatusRequest,
   ApprovalStatusResponse,
   DayType,
   DefaultMail,
   DefaultMailResponse,
+  EligibilityResponse,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -31,6 +34,8 @@ import {
   LeaveSubmissionResponse,
   LeaveValidationRequest,
   LeaveValidationResponse,
+  SabbaticalApplicationRequest,
+  SabbaticalApplicationResponse,
 } from "@root/src/types/types";
 import { APIService } from "@root/src/utils/apiService";
 
@@ -151,6 +156,54 @@ export const getApprovalStatusList = async (
 
   const response = await apiInstance.post<ApprovalStatusResponse>(
     AppConfig.serviceUrls.approvalStatusList,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Approve or reject sabbatical leave requests.
+ * @param request - request payload
+ * @returns Promise with approval response
+ */
+export const approveLeave = async (request: ApprovalRequest): Promise<ApprovalResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<ApprovalResponse>(
+    AppConfig.serviceUrls.approveSabbaticalLeave,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Check eligibility for sabbatical leave requests.
+ * @returns Promise with eligibility response
+ */
+export const checkEligibilityForSabbaticalLeave = async (): Promise<EligibilityResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<EligibilityResponse>(
+    AppConfig.serviceUrls.validateSabbaticalLeave,
+  );
+
+  return response.data;
+};
+
+/**
+ * Submit a sabbatical leave request.
+ * @param request - request payload
+ * @returns Promise with approval response
+ */
+export const submitSabbaticalLeaveRequest = async (
+  request: SabbaticalApplicationRequest,
+): Promise<SabbaticalApplicationResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<SabbaticalApplicationResponse>(
+    AppConfig.serviceUrls.applySabbaticalLeave,
     request,
   );
 
