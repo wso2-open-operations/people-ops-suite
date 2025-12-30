@@ -29,22 +29,26 @@ export function useApprovalHistoryData(statuses: ApprovalStatus[]) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  useEffect(() => {
-    const fetchApprovalStatusList = async () => {
-      try {
-        setLoading(true);
-        const response = await getApprovalStatusList({ status: statuses });
-        setData(response);
-      } catch (err) {
-        console.error("Failed to fetch approval status list", err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchApprovalStatusList = async () => {
+    try {
+      setLoading(true);
+      const response = await getApprovalStatusList({ status: statuses });
+      setData(response);
+    } catch (err) {
+      console.error("Failed to fetch approval status list", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchApprovalStatusList();
   }, []);
 
-  return { data, loading, error };
+  const refetch = () => {
+    fetchApprovalStatusList();
+  };
+
+  return { data, loading, error, refetch };
 }

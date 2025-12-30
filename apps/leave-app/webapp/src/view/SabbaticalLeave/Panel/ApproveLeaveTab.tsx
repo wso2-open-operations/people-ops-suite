@@ -26,7 +26,7 @@ import ApproveLeaveTable from "../component/ApproveLeaveTable";
 export default function ApproveLeaveTab() {
   const theme = useTheme();
   // fetch the approval history data.
-  const { data } = useApprovalHistoryData([ApprovalStatus.PENDING]);
+  const { data, refetch } = useApprovalHistoryData([ApprovalStatus.PENDING]);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -42,7 +42,7 @@ export default function ApproveLeaveTab() {
           {data.percentageOfEmployeesOnSabbaticalLeave} of the team is on sabbatical leave
         </Alert>
       </Stack>
-      <ApproveLeaveTable rows={data.leaveApprovalStatusList} />
+      <ApproveLeaveTable rows={data.leaveApprovalStatusList} onRefresh={refetch} />
     </Stack>
   );
 }
