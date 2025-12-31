@@ -94,7 +94,8 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
     string subject = "Sabbatical Leave Application - " + applicantEmail;
     string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
-    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate;
+    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate.substring(0, 10) +
+    " <br/>Requested Leave End Date: " + leaveEndDate.substring(0, 10);
 
     map<string> emailContent = {"CONTENT": emailBody};
     error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
