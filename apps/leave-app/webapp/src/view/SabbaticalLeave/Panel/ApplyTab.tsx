@@ -156,6 +156,7 @@ export default function ApplyTab() {
             label="Employment Start date"
             sx={{ flex: "1" }}
             value={dayjs(eligibilityPayload?.employmentStartDate)}
+            format="YYYY-MM-DD"
             disabled
           />
           <DatePicker
@@ -166,7 +167,8 @@ export default function ApplyTab() {
                 ? dayjs(eligibilityPayload.lastSabbaticalLeaveEndDate)
                 : null
             }
-            disabled={!sabbaticalEndDateFieldEditable}
+            format="YYYY-MM-DD"
+            disabled={sabbaticalEndDateFieldEditable}
           />
         </Stack>
         {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
@@ -182,12 +184,16 @@ export default function ApplyTab() {
                 sx={{ flex: "1" }}
                 value={leaveStartDate}
                 onChange={(newValue) => setLeaveStartDate(newValue)}
+                format="YYYY-MM-DD"
+                disablePast
               />
               <DatePicker
                 label="Leave request end date*"
                 sx={{ flex: "1" }}
                 value={leaveEndDate}
                 onChange={(newValue) => setLeaveEndDate(newValue)}
+                format="YYYY-MM-DD"
+                disablePast
               />
             </Stack>
             <Stack gap="0.8rem">

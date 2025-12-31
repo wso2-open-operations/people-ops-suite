@@ -159,6 +159,7 @@ export default function LeaveDateSelection({
           sx={{ minWidth: "10%" }}
           value={startDate}
           onChange={handleStartDateChange}
+          format="YYYY-MM-DD"
           disablePast
         />
         <DatePicker
@@ -167,6 +168,7 @@ export default function LeaveDateSelection({
           value={endDate}
           onChange={handleEndDateChange}
           minDate={startDate || undefined}
+          format="YYYY-MM-DD"
           disablePast
         />
       </Stack>
