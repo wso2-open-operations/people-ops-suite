@@ -208,6 +208,8 @@ export interface ApprovalResponse {
 
 // Eligibility response type.
 export interface EligibilityResponse {
+  employmentStartDate: string;
+  lastSabbaticalLeaveEndDate: string;
   isEligible: boolean;
 }
 
