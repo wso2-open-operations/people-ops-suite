@@ -759,7 +759,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Success response if the application is valid, otherwise an error response  
     resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx)
-        returns http:Ok|http:BadRequest|http:InternalServerError {
+        returns SabbaticalLeaveEligibilityResponse|http:BadRequest|http:InternalServerError {
         authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
         Employee & readonly|error employeeDetails = employee:getEmployee(email);
         if employeeDetails is error {
@@ -793,10 +793,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return <http:Ok>{
-            body: {
-                isEligible: isEligible
-            }
+        return <SabbaticalLeaveEligibilityResponse>{
+            employmentStartDate: <string>employeeDetails.startDate,
+            lastSabbaticalLeaveEndDate: lastSabbaticalLeaveEndDate,
+            isEligible: isEligible
         };
     }
 
@@ -1038,6 +1038,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     # Get sabbatical leave applications history for a lead.
+    #
     # + ctx - Request context
     # + payload - Array of approval statuses to filter (APPROVED, REJECTED, PENDING)
     # + return - List of sabbatical leave applications
