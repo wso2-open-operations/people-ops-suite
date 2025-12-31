@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
 
 import { useEffect, useState } from "react";
@@ -40,6 +41,8 @@ import {
 } from "@root/src/services/leaveService";
 import { EligibilityResponse } from "@root/src/types/types";
 
+dayjs.extend(utc);
+
 export default function ApplyTab() {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -53,6 +56,7 @@ export default function ApplyTab() {
   const [errorMessage] = useState<string>(
     "Your employment start date & last sabbatical leave end date (If exists) are required to be less than 3 years to be eligible to apply for sabbatical leave.",
   );
+  const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
   const [additionalComment, setAdditionalComment] = useState<string>("");
@@ -66,6 +70,9 @@ export default function ApplyTab() {
       try {
         const eligibilityResponse: EligibilityResponse = await checkEligibilityForSabbaticalLeave();
         setEligibilityPayload(eligibilityResponse);
+        if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
+          setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
+        }
         if (
           eligibilityResponse?.lastSabbaticalLeaveEndDate.length > 0 &&
           eligibilityResponse.isEligible
@@ -101,6 +108,19 @@ export default function ApplyTab() {
       return;
     }
 
+    // Validate last sabbatical leave end date (must be at least 3 years from today)
+    if (lastSabbaticalLeaveEndDate) {
+      const todayUtc = dayjs.utc().startOf("day");
+      const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day");
+      if (diffDays < 1095) {
+        enqueueSnackbar(
+          "The last sabbatical leave end date should be at least 3 years from today.",
+          { variant: "error" },
+        );
+        return;
+      }
+    }
+
     if (!managerApprovalChecked || !policyReadChecked || !resignationAcknowledgeChecked) {
       enqueueSnackbar("Please acknowledge all the required checkboxes", { variant: "error" });
       return;
@@ -108,8 +128,10 @@ export default function ApplyTab() {
 
     try {
       setIsSubmitting(true);
-      const lastSabbaticalDate = eligibilityPayload?.lastSabbaticalLeaveEndDate || "";
-      await submitSabbaticalLeaveRequest({
+      const lastSabbaticalDate = lastSabbaticalLeaveEndDate
+        ? lastSabbaticalLeaveEndDate.format("YYYY-MM-DD")
+        : "";
+      const response = await submitSabbaticalLeaveRequest({
         lastSabbaticalLeaveEndDate: lastSabbaticalDate,
         startDate: leaveStartDate.format("YYYY-MM-DD"),
         endDate: leaveEndDate.format("YYYY-MM-DD"),
@@ -124,9 +146,13 @@ export default function ApplyTab() {
       setManagerApprovalChecked(false);
       setPolicyReadChecked(false);
       setResignationAcknowledgeChecked(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit sabbatical leave request", error);
-      enqueueSnackbar("Failed to submit sabbatical leave request", { variant: "error" });
+      if (error?.response?.data?.message) {
+        enqueueSnackbar(error.response.data.message, { variant: "error" });
+      } else {
+        enqueueSnackbar("Failed to submit sabbatical leave request", { variant: "error" });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -162,11 +188,8 @@ export default function ApplyTab() {
           <DatePicker
             label="Last sabbatical leave end date"
             sx={{ flex: "1" }}
-            value={
-              eligibilityPayload?.lastSabbaticalLeaveEndDate
-                ? dayjs(eligibilityPayload.lastSabbaticalLeaveEndDate)
-                : null
-            }
+            value={lastSabbaticalLeaveEndDate}
+            onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
             format="YYYY-MM-DD"
             disabled={sabbaticalEndDateFieldEditable}
           />
