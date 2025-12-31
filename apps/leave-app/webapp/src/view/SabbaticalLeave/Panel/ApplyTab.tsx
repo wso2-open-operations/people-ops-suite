@@ -14,17 +14,124 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Alert, Box, Stack, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs, { Dayjs } from "dayjs";
+import { useSnackbar } from "notistack";
 
-import CheckBox from "@root/src/component/common/CheckBox";
+import { useEffect, useState } from "react";
+
 import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import {
+  checkEligibilityForSabbaticalLeave,
+  submitSabbaticalLeaveRequest,
+} from "@root/src/services/leaveService";
+import { EligibilityResponse } from "@root/src/types/types";
 
 export default function ApplyTab() {
   const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
+
+  const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
+    isEligible: false,
+    employmentStartDate: "",
+    lastSabbaticalLeaveEndDate: dayjs().toISOString(),
+  });
+  const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
+  const [errorMessage] = useState<string>(
+    "Your employment start date & last sabbatical leave end date (If exists) are required to be less than 3 years to be eligible to apply for sabbatical leave.",
+  );
+  const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
+  const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
+  const [additionalComment, setAdditionalComment] = useState<string>("");
+  const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
+  const [policyReadChecked, setPolicyReadChecked] = useState(false);
+  const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      try {
+        const eligibilityResponse: EligibilityResponse = await checkEligibilityForSabbaticalLeave();
+        setEligibilityPayload(eligibilityResponse);
+        if (
+          eligibilityResponse?.lastSabbaticalLeaveEndDate.length > 0 &&
+          eligibilityResponse.isEligible
+        ) {
+          setSabbaticalEndDateFieldEditable(true);
+        }
+      } catch (error) {
+        console.error("Failed to check eligibility for sabbatical leave", error);
+      }
+    };
+    checkEligibility();
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!leaveStartDate || !leaveEndDate) {
+      enqueueSnackbar("Please select both start and end dates", { variant: "error" });
+      return;
+    }
+
+    if (leaveEndDate.isBefore(leaveStartDate)) {
+      enqueueSnackbar("End date must be after start date", { variant: "error" });
+      return;
+    }
+
+    const daysDifference = leaveEndDate.diff(leaveStartDate, "day") + 1;
+    if (daysDifference > 42) {
+      enqueueSnackbar(
+        "Sabbatical leave duration should be less than or equal to 6 weeks (42 days)",
+        {
+          variant: "error",
+        },
+      );
+      return;
+    }
+
+    if (!managerApprovalChecked || !policyReadChecked || !resignationAcknowledgeChecked) {
+      enqueueSnackbar("Please acknowledge all the required checkboxes", { variant: "error" });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const lastSabbaticalDate = eligibilityPayload?.lastSabbaticalLeaveEndDate || "";
+      await submitSabbaticalLeaveRequest({
+        lastSabbaticalLeaveEndDate: lastSabbaticalDate,
+        startDate: leaveStartDate.format("YYYY-MM-DD"),
+        endDate: leaveEndDate.format("YYYY-MM-DD"),
+        additionalComment: additionalComment,
+      });
+
+      enqueueSnackbar("Sabbatical leave request submitted successfully", { variant: "success" });
+
+      setLeaveStartDate(null);
+      setLeaveEndDate(null);
+      setAdditionalComment("");
+      setManagerApprovalChecked(false);
+      setPolicyReadChecked(false);
+      setResignationAcknowledgeChecked(false);
+    } catch (error) {
+      console.error("Failed to submit sabbatical leave request", error);
+      enqueueSnackbar("Failed to submit sabbatical leave request", { variant: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Stack gap="1rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <FormContainer>
@@ -36,35 +143,126 @@ export default function ApplyTab() {
           pb="1rem"
         >
           <Title firstWord="Sabbatical" secondWord="Leave Application" borderEnabled={false} />
-          <Alert variant="outlined">Eligible to Apply</Alert>
+          <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
+            {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
+          </Alert>
         </Stack>
         <Stack
           flexDirection={{ xs: "column", md: "row" }}
           gap="2rem"
           justifyContent="space-between"
         >
-          <DatePicker label="Employment Start date" sx={{ flex: "1" }} />
-          <DatePicker label="Last sabbatical leave end date" sx={{ flex: "1" }} />
+          <DatePicker
+            label="Employment Start date"
+            sx={{ flex: "1" }}
+            value={dayjs(eligibilityPayload?.employmentStartDate)}
+            disabled
+          />
+          <DatePicker
+            label="Last sabbatical leave end date"
+            sx={{ flex: "1" }}
+            value={
+              eligibilityPayload?.lastSabbaticalLeaveEndDate
+                ? dayjs(eligibilityPayload.lastSabbaticalLeaveEndDate)
+                : null
+            }
+            disabled={!sabbaticalEndDateFieldEditable}
+          />
         </Stack>
+        {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
+        {eligibilityPayload?.isEligible && (
+          <>
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              gap="2rem"
+              justifyContent="space-between"
+            >
+              <DatePicker
+                label="Leave request start date*"
+                sx={{ flex: "1" }}
+                value={leaveStartDate}
+                onChange={(newValue) => setLeaveStartDate(newValue)}
+              />
+              <DatePicker
+                label="Leave request end date*"
+                sx={{ flex: "1" }}
+                value={leaveEndDate}
+                onChange={(newValue) => setLeaveEndDate(newValue)}
+              />
+            </Stack>
+            <Stack gap="0.8rem">
+              <Typography sx={{ color: theme.palette.text.primary }}>
+                Additional Comments:
+              </Typography>
+              <TextField
+                label="Add a comment..."
+                multiline
+                minRows={1}
+                fullWidth
+                variant="outlined"
+                value={additionalComment}
+                onChange={(e) => setAdditionalComment(e.target.value)}
+              />
+            </Stack>
+            <Stack gap="0.5rem">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={managerApprovalChecked}
+                    onChange={(e) => setManagerApprovalChecked(e.target.checked)}
+                  />
+                }
+                label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval."
+                sx={{
+                  color: theme.palette.text.primary,
+                  "& .MuiFormControlLabel-label": {
+                    color: theme.palette.text.primary,
+                    fontSize: theme.typography.body2.fontSize,
+                  },
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={policyReadChecked}
+                    onChange={(e) => setPolicyReadChecked(e.target.checked)}
+                  />
+                }
+                label="I have read and understood the terms of the Sabbatical Leave Policy."
+                sx={{
+                  color: theme.palette.text.primary,
+                  "& .MuiFormControlLabel-label": {
+                    color: theme.palette.text.primary,
+                    fontSize: theme.typography.body2.fontSize,
+                  },
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={resignationAcknowledgeChecked}
+                    onChange={(e) => setResignationAcknowledgeChecked(e.target.checked)}
+                  />
+                }
+                label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period."
+                sx={{
+                  color: theme.palette.text.primary,
+                  "& .MuiFormControlLabel-label": {
+                    color: theme.palette.text.primary,
+                    fontSize: theme.typography.body2.fontSize,
+                  },
+                }}
+              />
+            </Stack>
 
-        <Stack direction={{ xs: "column", md: "row" }} gap="2rem" justifyContent="space-between">
-          <DatePicker label="Leave request start date" sx={{ flex: "1" }} />
-          <DatePicker label="Leave request end date" sx={{ flex: "1" }} />
-        </Stack>
-
-        <Stack gap="0.8rem">
-          <Typography sx={{ color: theme.palette.text.primary }}>Additional Comments:</Typography>
-          <TextField label="Add a comment..." multiline minRows={1} fullWidth variant="outlined" />
-        </Stack>
-        <Stack gap="0.5rem">
-          <CheckBox label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval." />
-          <CheckBox label="I have read and understood the terms of the Sabbatical Leave Policy." />
-          <CheckBox label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period." />
-        </Stack>
-
-        <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
-          <CustomButton label="Apply" />
-        </Box>
+            <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
+              <CustomButton label="Apply" onClick={handleSubmit} disabled={isSubmitting} />
+            </Box>
+          </>
+        )}
       </FormContainer>
     </Stack>
   );
