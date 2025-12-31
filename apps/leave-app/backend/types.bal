@@ -260,30 +260,22 @@ public type LeaveApprovalPayload record {|
 
 # Sabbatical Leave Response.
 public type SabbaticalLeaveResponse record {|
-    # Start date.
+    # Start date
     string startDate;
-    # End date.
+    # End date
     string endDate;
-    # Leave ID.
+    # Leave ID
     string id;
-    # Location. 
+    # Location.
     string? location;
 |};
 
-# Sabbatical Leave Eligibility.
-public type SabbaticalLeaveEligibility record {|
+# Sabbatical Leave Eligibility Response.
+public type SabbaticalLeaveEligibilityResponse record {|
     # Employment start date
     string employmentStartDate;
     # Last sabbatical leave end date
     string lastSabbaticalLeaveEndDate;
-|};
-
-# Sabbatical Leave Application Request payload.
-public type SabbaticalLeaveApplicationRequest record {|
-    # Leave start date
-    string startDate;
-    # Leave end date
-    string endDate;
-    # Additional comment
-    string additionalComment = "";
+    # Is eligible for sabbatical leave
+    boolean isEligible;
 |};
