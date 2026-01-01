@@ -910,7 +910,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         error? response = processSabbaticalLeaveApplicationRequest(email, <string>employeeDetails.leadEmail,
                 <string>employeeDetails.location, <float>differenceInDays, payload.startDate, payload.endDate,
-                recipientsList);
+                payload.additionalComment, recipientsList);
 
         if response is error {
             string errMsg = "Error occurred while processing sabbatical leave application request";
@@ -1025,7 +1025,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         error? notificationResult = processSabbaticalLeaveApprovalNotification(payload.isApproved,
-                leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate, leaveSubmissionInfo.endDate,
+                leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate.substring(0, 10),
+                leaveSubmissionInfo.endDate.substring(0, 10),
                 payload.approvalStatusId, <string>applicantInfo.location, recipientsList);
         if notificationResult is error {
             log:printError("Failed to process sabbatical leave approval notification", notificationResult);
