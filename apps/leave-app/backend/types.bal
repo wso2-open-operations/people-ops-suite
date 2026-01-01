@@ -68,33 +68,6 @@ public type LeavePolicy record {|
     float? casual?;
 |};
 
-# Form data.
-public type FormData record {|
-    # List of email recipients
-    string[] emailRecipients = [];
-    # List of lead emails
-    string[] leadEmails;
-    # Whether the employee is a lead
-    boolean isLead = false;
-    # Location of employee
-    string? location = ();
-    # Legally entitled leaves
-    LeavePolicy legallyEntitledLeave?;
-    # Leave report content
-    ReportContent leaveReportContent = {};
-    # List of leave types
-    record {|
-        string key;
-        string value;
-    |}[] leaveTypes = [
-        {'key: "casual", value: "Other leave (Casual, Sick, etc.)"},
-        {'key: "annual", value: "Annual leave/PTO"},
-        {'key: "paternity", value: "Paternity leave"},
-        {'key: "maternity", value: "Maternity leave"},
-        {'key: "lieu", value: "Lieu leave"}
-    ];
-|};
-
 # Leave.
 public type Leave record {|
     # Leave ID

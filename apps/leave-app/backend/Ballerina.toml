@@ -2,7 +2,7 @@
 org = "wso2"
 name = "leave_service"
 version = "1.0.0"
-distribution = "2201.9.4"
+distribution = "2201.9.8"
 
 [build-options]
 observabilityIncluded = true
