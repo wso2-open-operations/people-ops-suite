@@ -17,12 +17,14 @@
 import EditDocumentIcon from "@mui/icons-material/EditDocument";
 import HistoryIcon from "@mui/icons-material/History";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
+import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
-import TabsPage from "@root/src/layout/pages/TabsPage";
+import TabsPage, { TabProps } from "@root/src/layout/pages/TabsPage";
 import { getAppConfig } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
 import { AppConfigResponse } from "@root/src/types/types";
 import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
@@ -33,6 +35,15 @@ import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
 export default function SabbaticalLeave() {
   const [sabbaticalFeatureEnabled, setSabbaticalFeatureEnabled] = useState<boolean>(false);
   const [sabbaticalPolicyUrl, setSabbaticalPolicyUrl] = useState<string>("");
+  const [tabs, setTabs] = useState<TabProps[]>([
+    {
+      tabTitle: "Apply",
+      tabPath: "apply",
+      icon: <EditDocumentIcon />,
+      page: <ApplyTab sabbaticalPolicyUrl={sabbaticalPolicyUrl} />,
+    },
+  ]);
+  const userInfo = useSelector(selectUser);
   // Fetch app configs for sabbatical leave feature.
   useEffect(() => {
     const fetchSabbaticalLeaveFeatureStatus = async () => {
@@ -40,6 +51,25 @@ export default function SabbaticalLeave() {
         const appConfig: AppConfigResponse = await getAppConfig();
         setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
         setSabbaticalPolicyUrl(appConfig.sabbaticalLeavePolicyUrl);
+
+        // Set approval tabs for leads only
+        if (!userInfo?.isLead) {
+          const leadTabs: TabProps[] = [
+            {
+              tabTitle: "Approve Leave",
+              tabPath: "approve-leave",
+              icon: <HowToRegIcon />,
+              page: <ApproveLeaveTab />,
+            },
+            {
+              tabTitle: "Approval History",
+              tabPath: "approval-history",
+              icon: <HistoryIcon />,
+              page: <ApprovalHistoryTab />,
+            },
+          ];
+          setTabs((prevTabs) => [...prevTabs, ...leadTabs]);
+        }
       } catch (error) {
         console.error("Error fetching app config:", error);
       }
@@ -58,29 +88,7 @@ export default function SabbaticalLeave() {
   }
   return (
     <>
-      <TabsPage
-        title="Sabbatical Leave"
-        tabsPage={[
-          {
-            tabTitle: "Apply",
-            tabPath: "apply",
-            icon: <EditDocumentIcon />,
-            page: <ApplyTab sabbaticalPolicyUrl={sabbaticalPolicyUrl} />,
-          },
-          {
-            tabTitle: "Approve Leave",
-            tabPath: "approve-leave",
-            icon: <HowToRegIcon />,
-            page: <ApproveLeaveTab />,
-          },
-          {
-            tabTitle: "Approval History",
-            tabPath: "approval-history",
-            icon: <HistoryIcon />,
-            page: <ApprovalHistoryTab />,
-          },
-        ]}
-      />
+      <TabsPage title="Sabbatical Leave" tabsPage={tabs} />
     </>
   );
 }
