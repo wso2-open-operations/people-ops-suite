@@ -215,6 +215,7 @@ export default function ApplyTab() {
               <DatePicker
                 label="Last sabbatical leave end date"
                 sx={{ flex: "1" }}
+                minDate={dayjs(eligibilityPayload?.employmentStartDate)}
                 value={lastSabbaticalLeaveEndDate}
                 onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                 format="YYYY-MM-DD"
