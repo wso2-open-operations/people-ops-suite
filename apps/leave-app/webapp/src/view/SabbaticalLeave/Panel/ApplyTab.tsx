@@ -17,8 +17,14 @@
 import {
   Alert,
   Box,
+  Button,
   Checkbox,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControlLabel,
   Stack,
   TextField,
@@ -29,6 +35,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
+import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
@@ -40,6 +47,7 @@ import {
   checkEligibilityForSabbaticalLeave,
   submitSabbaticalLeaveRequest,
 } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
 import { EligibilityResponse } from "@root/src/types/types";
 
 dayjs.extend(utc);
@@ -47,6 +55,7 @@ dayjs.extend(utc);
 export default function ApplyTab() {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const userInfo = useSelector(selectUser);
 
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
     isEligible: false,
@@ -66,6 +75,7 @@ export default function ApplyTab() {
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkEligibility = async () => {
@@ -78,7 +88,7 @@ export default function ApplyTab() {
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
         }
         if (
-          eligibilityResponse?.lastSabbaticalLeaveEndDate.length == 10 &&
+          eligibilityResponse?.lastSabbaticalLeaveEndDate.length == 0 &&
           eligibilityResponse.isEligible
         ) {
           setSabbaticalEndDateFieldEditable(true);
@@ -90,7 +100,7 @@ export default function ApplyTab() {
     checkEligibility();
   }, []);
 
-  const handleSubmit = async () => {
+  const handleOpenDialog = () => {
     if (!leaveStartDate || !leaveEndDate) {
       enqueueSnackbar("Please select both start and end dates", { variant: "error" });
       return;
@@ -130,6 +140,14 @@ export default function ApplyTab() {
       return;
     }
 
+    setDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+  };
+
+  const handleConfirmSubmit = async () => {
     try {
       setIsSubmitting(true);
       const lastSabbaticalDate = lastSabbaticalLeaveEndDate
@@ -137,11 +155,12 @@ export default function ApplyTab() {
         : "";
       const response = await submitSabbaticalLeaveRequest({
         lastSabbaticalLeaveEndDate: lastSabbaticalDate,
-        startDate: leaveStartDate.format("YYYY-MM-DD"),
-        endDate: leaveEndDate.format("YYYY-MM-DD"),
+        startDate: leaveStartDate!.format("YYYY-MM-DD"),
+        endDate: leaveEndDate!.format("YYYY-MM-DD"),
         additionalComment: additionalComment,
       });
 
+      handleCloseDialog();
       enqueueSnackbar("Sabbatical leave request submitted successfully", { variant: "success" });
 
       setLeaveStartDate(null);
@@ -296,13 +315,50 @@ export default function ApplyTab() {
                 </Stack>
 
                 <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
-                  <CustomButton label="Apply" onClick={handleSubmit} disabled={isSubmitting} />
+                  <CustomButton label="Apply" onClick={handleOpenDialog} disabled={isSubmitting} />
                 </Box>
               </>
             )}
           </FormContainer>
         </Stack>
       )}
+
+      {/* Confirmation Dialog */}
+      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Confirm Sabbatical Leave Application</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to submit your sabbatical leave request for the period from{" "}
+            {leaveStartDate?.format("YYYY-MM-DD")} to {leaveEndDate?.format("YYYY-MM-DD")}?
+            <br />
+            <br />
+            Your request will be sent to your reporting lead
+            {userInfo?.leadEmail ? (
+              <>
+                {" "}
+                <strong>{userInfo.leadEmail}</strong>
+              </>
+            ) : (
+              ""
+            )}{" "}
+            for approval.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleCloseDialog} disabled={isSubmitting} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmSubmit}
+            disabled={isSubmitting}
+            variant="contained"
+            color="primary"
+            startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : null}
+          >
+            {isSubmitting ? "Submitting..." : "Confirm"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
