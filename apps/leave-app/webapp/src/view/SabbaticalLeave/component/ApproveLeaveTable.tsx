@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import {
   Box,
   Button,
@@ -143,6 +145,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         >
           <Button
             onClick={() => handleOpenDialog(params.row, true)}
+            startIcon={<CheckCircleOutlineIcon />}
             sx={{
               backgroundColor: theme.palette.primary.main,
               color: "white",
@@ -154,11 +157,12 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
           </Button>
           <Button
             onClick={() => handleOpenDialog(params.row, false)}
+            startIcon={<CancelOutlinedIcon />}
             sx={{
-              backgroundColor: theme.palette.error.main,
-              color: "white",
+              color: theme.palette.error.main,
               width: "40%",
-              ":hover": { backgroundColor: theme.palette.error.light },
+              border: `1px solid ${theme.palette.error.main}`,
+              ":hover": { backgroundColor: theme.palette.error.light, color: "white" },
             }}
           >
             Reject
