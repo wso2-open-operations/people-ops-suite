@@ -32,12 +32,14 @@ import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
 export default function SabbaticalLeave() {
   const [sabbaticalFeatureEnabled, setSabbaticalFeatureEnabled] = useState<boolean>(false);
-  // Fetch app config to check if sabbatical leave feature is enabled
+  const [sabbaticalPolicyUrl, setSabbaticalPolicyUrl] = useState<string>("");
+  // Fetch app configs for sabbatical leave feature.
   useEffect(() => {
     const fetchSabbaticalLeaveFeatureStatus = async () => {
       try {
         const appConfig: AppConfigResponse = await getAppConfig();
         setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
+        setSabbaticalPolicyUrl(appConfig.sabbaticalLeavePolicyUrl);
       } catch (error) {
         console.error("Error fetching app config:", error);
       }
@@ -63,7 +65,7 @@ export default function SabbaticalLeave() {
             tabTitle: "Apply",
             tabPath: "apply",
             icon: <EditDocumentIcon />,
-            page: <ApplyTab />,
+            page: <ApplyTab sabbaticalPolicyUrl={sabbaticalPolicyUrl} />,
           },
           {
             tabTitle: "Approve Leave",

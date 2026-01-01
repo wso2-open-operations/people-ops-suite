@@ -26,6 +26,7 @@ import {
   DialogContentText,
   DialogTitle,
   FormControlLabel,
+  Link,
   Stack,
   TextField,
   Typography,
@@ -52,7 +53,7 @@ import { EligibilityResponse } from "@root/src/types/types";
 
 dayjs.extend(utc);
 
-export default function ApplyTab() {
+export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl: string }) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const userInfo = useSelector(selectUser);
@@ -288,7 +289,20 @@ export default function ApplyTab() {
                         onChange={(e) => setPolicyReadChecked(e.target.checked)}
                       />
                     }
-                    label="I have read and understood the terms of the Sabbatical Leave Policy."
+                    label={
+                      <>
+                        I have read and understood the terms of the{" "}
+                        <Link
+                          href={sabbaticalPolicyUrl}
+                          target="_blank"
+                          rel="noopener"
+                          underline="hover"
+                        >
+                          Sabbatical Leave Policy
+                        </Link>
+                        .
+                      </>
+                    }
                     sx={{
                       color: theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
