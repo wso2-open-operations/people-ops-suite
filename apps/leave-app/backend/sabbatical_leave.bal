@@ -19,6 +19,7 @@ import leave_service.email;
 import leave_service.employee;
 
 import ballerina/log;
+import ballerina/sql;
 import ballerina/time;
 
 configurable string sabbaticalEmailGroupToNotify = ?;
@@ -91,11 +92,12 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
         string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
     returns error? {
-    string subject = "Sabbatical Leave Application - " + applicantEmail;
+    string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
+    + ")";
     string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
-    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate.substring(0, 10) +
-    " <br/>Requested Leave End Date: " + leaveEndDate.substring(0, 10);
+    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
+    " <br/>Requested Leave End Date: " + leaveEndDate;
 
     map<string> emailContent = {"CONTENT": emailBody};
     error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
@@ -110,11 +112,16 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
     string calendarEventId = createUuidForCalendarEvent();
     SabbaticalLeaveResponse leaveResponse = {
         id: calendarEventId,
-        startDate: leaveStartDate.substring(0, 10),
-        endDate: leaveEndDate.substring(0, 10),
+        startDate: leaveStartDate,
+        endDate: leaveEndDate,
         location: location
     };
     createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
+    sql:ExecutionResult|error calendarEventResult = check database:setCalendarEventIdForSabbaticalLeave(
+            approvalStatusId, calendarEventId);
+    if calendarEventResult is error {
+        log:printError("Failed to set calendar event ID for sabbatical leave in database", calendarEventResult);
+    }
     return;
 }
 
@@ -126,17 +133,23 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
 # + numberOfDays - Number of days for the leave
 # + leaveStartDate - Leave start date
 # + leaveEndDate - Leave end date
+# + comment - Additional comment
 # + recipientsList - List of email recipients
 # + return - Error if any
 isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail, string leadEmail, string location,
-        float numberOfDays, string leaveStartDate, string leaveEndDate, string[] recipientsList) returns error? {
+        float numberOfDays, string leaveStartDate, string leaveEndDate, string comment, string[] recipientsList)
+        returns error? {
 
+    string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
+    + ")";
     LeaveInput leaveInput = {
         startDate: leaveStartDate,
         endDate: leaveEndDate,
         leaveType: database:SABBATICAL_LEAVE,
         periodType: "multiple",
         email: applicantEmail,
+        comment: comment,
+        emailSubject: subject,
         emailRecipients: recipientsList,
         isMorningLeave: ()
     };
@@ -145,7 +158,6 @@ isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail
     if approvalStatusId is error {
         return error("Error occurred while creating sabbatical leave record.", approvalStatusId);
     }
-    string subject = "Sabbatical Leave Application - " + applicantEmail;
     string emailBody = "A Sabbatical leave application has been submitted by " + applicantEmail +
     ".<br/><br/>" + "Requested Leave Start Date: " +
     leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
