@@ -64,7 +64,7 @@ export default function ApplyTab() {
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
   const [errorMessage] = useState<string>(
-    "Your employment start date & last sabbatical leave end date (If exists) are required to be less than 3 years to be eligible to apply for sabbatical leave.",
+    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to be eligible to apply for sabbatical leave.",
   );
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
@@ -125,7 +125,7 @@ export default function ApplyTab() {
     // Validate last sabbatical leave end date (must be at least 3 years from today)
     if (lastSabbaticalLeaveEndDate) {
       const todayUtc = dayjs.utc().startOf("day");
-      const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day");
+      const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
       if (diffDays < 1095) {
         enqueueSnackbar(
           "The last sabbatical leave end date should be at least 3 years from today.",
@@ -220,6 +220,7 @@ export default function ApplyTab() {
                 onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                 format="YYYY-MM-DD"
                 disabled={!sabbaticalEndDateFieldEditable}
+                disableFuture
               />
             </Stack>
             {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
