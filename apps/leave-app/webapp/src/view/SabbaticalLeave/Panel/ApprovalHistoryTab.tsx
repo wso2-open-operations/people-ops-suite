@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack } from "@mui/material";
+import { CircularProgress, Stack } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
@@ -24,12 +24,19 @@ import ApprovalHistoryTable from "@root/src/view/SabbaticalLeave/component/Appro
 
 export default function ApprovalHistoryTab() {
   // fetch the approval history data.
-  const { data } = useApprovalHistoryData([ApprovalStatus.APPROVED, ApprovalStatus.REJECTED]);
+  const { data, loading } = useApprovalHistoryData([
+    ApprovalStatus.APPROVED,
+    ApprovalStatus.REJECTED,
+  ]);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="Approval" secondWord="History" />
-      <ApprovalHistoryTable rows={data.leaveApprovalStatusList} />
+      {loading ? (
+        <CircularProgress size={30} />
+      ) : (
+        <ApprovalHistoryTable rows={data.leaveApprovalStatusList} />
+      )}
     </Stack>
   );
 }

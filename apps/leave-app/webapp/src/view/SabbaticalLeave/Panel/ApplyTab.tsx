@@ -18,6 +18,7 @@ import {
   Alert,
   Box,
   Checkbox,
+  CircularProgress,
   FormControlLabel,
   Stack,
   TextField,
@@ -64,17 +65,20 @@ export default function ApplyTab() {
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const checkEligibility = async () => {
       try {
+        setIsLoading(true);
         const eligibilityResponse: EligibilityResponse = await checkEligibilityForSabbaticalLeave();
+        setIsLoading(false);
         setEligibilityPayload(eligibilityResponse);
         if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
         }
         if (
-          eligibilityResponse?.lastSabbaticalLeaveEndDate.length > 0 &&
+          eligibilityResponse?.lastSabbaticalLeaveEndDate.length == 10 &&
           eligibilityResponse.isEligible
         ) {
           setSabbaticalEndDateFieldEditable(true);
@@ -159,140 +163,146 @@ export default function ApplyTab() {
   };
 
   return (
-    <Stack gap="1rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <FormContainer>
-        <Stack
-          direction={{ md: "row" }}
-          justifyContent="space-between"
-          alignItems="center"
-          borderBottom={`1px solid ${theme.palette.divider}`}
-          pb="1rem"
-        >
-          <Title firstWord="Sabbatical" secondWord="Leave Application" borderEnabled={false} />
-          <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
-            {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
-          </Alert>
-        </Stack>
-        <Stack
-          flexDirection={{ xs: "column", md: "row" }}
-          gap="2rem"
-          justifyContent="space-between"
-        >
-          <DatePicker
-            label="Employment Start date"
-            sx={{ flex: "1" }}
-            value={dayjs(eligibilityPayload?.employmentStartDate)}
-            format="YYYY-MM-DD"
-            disabled
-          />
-          <DatePicker
-            label="Last sabbatical leave end date"
-            sx={{ flex: "1" }}
-            value={lastSabbaticalLeaveEndDate}
-            onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
-            format="YYYY-MM-DD"
-            disabled={sabbaticalEndDateFieldEditable}
-          />
-        </Stack>
-        {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
-        {eligibilityPayload?.isEligible && (
-          <>
+    <>
+      {isLoading ? (
+        <CircularProgress size={30} />
+      ) : (
+        <Stack gap="1rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+          <FormContainer>
             <Stack
-              direction={{ xs: "column", md: "row" }}
+              direction={{ md: "row" }}
+              justifyContent="space-between"
+              alignItems="center"
+              borderBottom={`1px solid ${theme.palette.divider}`}
+              pb="1rem"
+            >
+              <Title firstWord="Sabbatical" secondWord="Leave Application" borderEnabled={false} />
+              <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
+                {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
+              </Alert>
+            </Stack>
+            <Stack
+              flexDirection={{ xs: "column", md: "row" }}
               gap="2rem"
               justifyContent="space-between"
             >
               <DatePicker
-                label="Leave request start date*"
+                label="Employment Start date"
                 sx={{ flex: "1" }}
-                value={leaveStartDate}
-                onChange={(newValue) => setLeaveStartDate(newValue)}
+                value={dayjs(eligibilityPayload?.employmentStartDate)}
                 format="YYYY-MM-DD"
-                disablePast
+                disabled
               />
               <DatePicker
-                label="Leave request end date*"
+                label="Last sabbatical leave end date"
                 sx={{ flex: "1" }}
-                value={leaveEndDate}
-                onChange={(newValue) => setLeaveEndDate(newValue)}
+                value={lastSabbaticalLeaveEndDate}
+                onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                 format="YYYY-MM-DD"
-                disablePast
+                disabled={!sabbaticalEndDateFieldEditable}
               />
             </Stack>
-            <Stack gap="0.8rem">
-              <Typography sx={{ color: theme.palette.text.primary }}>
-                Additional Comments:
-              </Typography>
-              <TextField
-                label="Add a comment..."
-                multiline
-                minRows={1}
-                fullWidth
-                variant="outlined"
-                value={additionalComment}
-                onChange={(e) => setAdditionalComment(e.target.value)}
-              />
-            </Stack>
-            <Stack gap="0.5rem">
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    color="primary"
-                    checked={managerApprovalChecked}
-                    onChange={(e) => setManagerApprovalChecked(e.target.checked)}
+            {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
+            {eligibilityPayload?.isEligible && (
+              <>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  gap="2rem"
+                  justifyContent="space-between"
+                >
+                  <DatePicker
+                    label="Leave request start date*"
+                    sx={{ flex: "1" }}
+                    value={leaveStartDate}
+                    onChange={(newValue) => setLeaveStartDate(newValue)}
+                    format="YYYY-MM-DD"
+                    disablePast
                   />
-                }
-                label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval."
-                sx={{
-                  color: theme.palette.text.primary,
-                  "& .MuiFormControlLabel-label": {
-                    color: theme.palette.text.primary,
-                    fontSize: theme.typography.body2.fontSize,
-                  },
-                }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    color="primary"
-                    checked={policyReadChecked}
-                    onChange={(e) => setPolicyReadChecked(e.target.checked)}
+                  <DatePicker
+                    label="Leave request end date*"
+                    sx={{ flex: "1" }}
+                    value={leaveEndDate}
+                    onChange={(newValue) => setLeaveEndDate(newValue)}
+                    format="YYYY-MM-DD"
+                    disablePast
                   />
-                }
-                label="I have read and understood the terms of the Sabbatical Leave Policy."
-                sx={{
-                  color: theme.palette.text.primary,
-                  "& .MuiFormControlLabel-label": {
-                    color: theme.palette.text.primary,
-                    fontSize: theme.typography.body2.fontSize,
-                  },
-                }}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    color="primary"
-                    checked={resignationAcknowledgeChecked}
-                    onChange={(e) => setResignationAcknowledgeChecked(e.target.checked)}
+                </Stack>
+                <Stack gap="0.8rem">
+                  <Typography sx={{ color: theme.palette.text.primary }}>
+                    Additional Comments:
+                  </Typography>
+                  <TextField
+                    label="Add a comment..."
+                    multiline
+                    minRows={1}
+                    fullWidth
+                    variant="outlined"
+                    value={additionalComment}
+                    onChange={(e) => setAdditionalComment(e.target.value)}
                   />
-                }
-                label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period."
-                sx={{
-                  color: theme.palette.text.primary,
-                  "& .MuiFormControlLabel-label": {
-                    color: theme.palette.text.primary,
-                    fontSize: theme.typography.body2.fontSize,
-                  },
-                }}
-              />
-            </Stack>
+                </Stack>
+                <Stack gap="0.5rem">
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color="primary"
+                        checked={managerApprovalChecked}
+                        onChange={(e) => setManagerApprovalChecked(e.target.checked)}
+                      />
+                    }
+                    label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval."
+                    sx={{
+                      color: theme.palette.text.primary,
+                      "& .MuiFormControlLabel-label": {
+                        color: theme.palette.text.primary,
+                        fontSize: theme.typography.body2.fontSize,
+                      },
+                    }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color="primary"
+                        checked={policyReadChecked}
+                        onChange={(e) => setPolicyReadChecked(e.target.checked)}
+                      />
+                    }
+                    label="I have read and understood the terms of the Sabbatical Leave Policy."
+                    sx={{
+                      color: theme.palette.text.primary,
+                      "& .MuiFormControlLabel-label": {
+                        color: theme.palette.text.primary,
+                        fontSize: theme.typography.body2.fontSize,
+                      },
+                    }}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color="primary"
+                        checked={resignationAcknowledgeChecked}
+                        onChange={(e) => setResignationAcknowledgeChecked(e.target.checked)}
+                      />
+                    }
+                    label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period."
+                    sx={{
+                      color: theme.palette.text.primary,
+                      "& .MuiFormControlLabel-label": {
+                        color: theme.palette.text.primary,
+                        fontSize: theme.typography.body2.fontSize,
+                      },
+                    }}
+                  />
+                </Stack>
 
-            <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
-              <CustomButton label="Apply" onClick={handleSubmit} disabled={isSubmitting} />
-            </Box>
-          </>
-        )}
-      </FormContainer>
-    </Stack>
+                <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>
+                  <CustomButton label="Apply" onClick={handleSubmit} disabled={isSubmitting} />
+                </Box>
+              </>
+            )}
+          </FormContainer>
+        </Stack>
+      )}
+    </>
   );
 }
