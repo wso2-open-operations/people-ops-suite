@@ -110,7 +110,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         AppConfig|error appConfig = {
-            isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled
+            isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled,
+            sabbaticalLeavePolicyUrl: sabbaticalLeavePolicyUrl
         };
         if appConfig is error {
             string errMsg = "Error occurred while fetching application configurations";
