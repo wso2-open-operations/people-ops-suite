@@ -39,7 +39,7 @@ export default function ApproveLeaveTab() {
       >
         <Title firstWord="Leave" secondWord="Approval / Rejection" borderEnabled={false} />
         <Alert variant="outlined" severity="warning">
-          {data.percentageOfEmployeesOnSabbaticalLeave} of the team is on sabbatical leave
+          {data.percentageOfEmployeesOnSabbaticalLeave} of your subordinates are on sabbatical leave
         </Alert>
       </Stack>
       {loading ? (
