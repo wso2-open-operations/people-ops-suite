@@ -702,9 +702,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Mandatory email addresses for leave notifications or Internal Server Error
     resource function get default\-mails(http:RequestContext ctx)
-        returns employee:DefaultMailResponse|http:InternalServerError {
+        returns employee:DefaultMailResponse|http:Unauthorized|http:InternalServerError {
 
-        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "You are not authorized to access this resource."
+                }
+            };
+        }
+
         employee:Employee & readonly|error empInfo = employee:getEmployee(email);
         if empInfo is error {
             string errorMsg = "Error occurred while fetching employee info";
@@ -761,8 +769,16 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Success response if the application is valid, otherwise an error response  
     resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx)
-        returns SabbaticalLeaveEligibilityResponse|http:BadRequest|http:InternalServerError {
-        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        returns SabbaticalLeaveEligibilityResponse|http:BadRequest|http:Unauthorized|http:InternalServerError {
+        authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "You are not authorized to access this resource."
+                }
+            };
+        }
         Employee & readonly|error employeeDetails = employee:getEmployee(email);
         if employeeDetails is error {
             string errMsg = "Error occurred while fetching employee details";
@@ -937,7 +953,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Success response if the application is approved/rejected successfully, otherwise an error response
     resource function post sabbatical\-leave/approve(http:RequestContext ctx, LeaveApprovalPayload payload)
         returns http:Ok|http:InternalServerError|http:Unauthorized {
-        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "You are not authorized to access this resource."
+                }
+            };
+        }
 
         Employee & readonly|error employeeDetails = employee:getEmployee(email);
         if employeeDetails is error {
@@ -951,7 +974,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if !<boolean>employeeDetails.lead {
             string errMsg = "The current user is not a lead. Unauthorized access to approve/reject sabbatical " +
-            "leave application";
+            "leave application.";
             log:printError(errMsg);
             return <http:Unauthorized>{
                 body: {
@@ -1049,7 +1072,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             LeaveApprovalStatusPayload payload)
         returns LeaveApprovalStatusResponse|http:InternalServerError|http:Unauthorized {
 
-        authorization:CustomJwtPayload|error {email} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
+            return <http:Unauthorized>{
+                body: {
+                    message: "You are not authorized to access this resource."
+                }
+            };
+        }
         Employee & readonly|error empInfo = employee:getEmployee(email);
         if empInfo is error {
             string errMsg = "Error occurred while fetching employee details";
