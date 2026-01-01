@@ -53,7 +53,7 @@ export default function SabbaticalLeave() {
         setSabbaticalPolicyUrl(appConfig.sabbaticalLeavePolicyUrl);
 
         // Set approval tabs for leads only
-        if (!userInfo?.isLead) {
+        if (userInfo?.isLead) {
           const leadTabs: TabProps[] = [
             {
               tabTitle: "Approve Leave",
