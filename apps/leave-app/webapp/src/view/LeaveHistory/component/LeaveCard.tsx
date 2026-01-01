@@ -74,7 +74,7 @@ export default function LeaveCard({
                 fontWeight: 600,
               }}
             >
-              {type}
+              {type.toLocaleUpperCase()} LEAVE
             </Typography>
 
             <Stack direction="row" gap="1rem" alignItems="center">
@@ -158,27 +158,28 @@ export default function LeaveCard({
               </Stack>
             </Stack>
           </Stack>
-
-          <Button
-            size="small"
-            onClick={() => onDelete?.(id)}
-            disabled={isCancelDisabled()}
-            startIcon={<CloseIcon fontSize="small" />}
-            sx={{
-              color: isCancelDisabled() ? theme.palette.text.disabled : theme.palette.error.main,
-              textTransform: "none",
-              fontWeight: 500,
-              "&:hover": {
-                backgroundColor: theme.palette.error.light,
-                color: theme.palette.error.dark,
-              },
-              "&.Mui-disabled": {
-                color: theme.palette.text.disabled,
-              },
-            }}
-          >
-            Cancel
-          </Button>
+          {!(type === "sabbatical") && (
+            <Button
+              size="small"
+              onClick={() => onDelete?.(id)}
+              disabled={isCancelDisabled()}
+              startIcon={<CloseIcon fontSize="small" />}
+              sx={{
+                color: isCancelDisabled() ? theme.palette.text.disabled : theme.palette.error.main,
+                textTransform: "none",
+                fontWeight: 500,
+                "&:hover": {
+                  backgroundColor: theme.palette.error.light,
+                  color: theme.palette.error.dark,
+                },
+                "&.Mui-disabled": {
+                  color: theme.palette.text.disabled,
+                },
+              }}
+            >
+              Cancel
+            </Button>
+          )}
         </Stack>
       </CardContent>
     </Card>

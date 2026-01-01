@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, CircularProgress, Stack } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
@@ -85,7 +84,7 @@ export default function LeaveHistory() {
             <LeaveCard
               key={leave.id}
               id={leave.id}
-              type={`${leave.leaveType.toUpperCase()} LEAVE`}
+              type={`${leave.leaveType}`}
               startDate={leave.startDate.substring(0, 10)}
               endDate={leave.endDate.substring(0, 10)}
               duration={`${leave.numberOfDays} days`}
