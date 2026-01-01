@@ -20,29 +20,29 @@ import ballerina/sql;
 # + return - Select query
 isolated function getCommonLeaveQuery() returns sql:ParameterizedQuery => `
     SELECT 
-        id, 
-        email, 
-        leave_type,
-        leave_period_type,
-        copy_email_list,
-        notify_everyone,
-        submit_note,
-        cancel_note,
-        created_date,
-        updated_date,
-        email_id,
-        email_subject,
-        active,
-        start_date,
-        end_date,
-        start_half,
-        end_half,
-        canceled_date,
-        num_days,
-        public_submit_note,
-        calendar_event_id,
-        location
-    FROM leave_app.leave_submissions
+        ls.id, 
+        ls.email, 
+        ls.leave_type,
+        ls.leave_period_type,
+        ls.copy_email_list,
+        ls.notify_everyone,
+        ls.submit_note,
+        ls.cancel_note,
+        ls.created_date,
+        ls.updated_date,
+        ls.email_id,
+        ls.email_subject,
+        ls.active,
+        ls.start_date,
+        ls.end_date,
+        ls.start_half,
+        ls.end_half,
+        ls.canceled_date,
+        ls.num_days,
+        ls.public_submit_note,
+        ls.calendar_event_id,
+        ls.location
+    FROM leave_app.leave_submissions ls LEFT JOIN leave_app.leave_approval la ON ls.id = la.leave_submission_id
 `;
 
 # Query to fetch leaves from the database.
@@ -57,37 +57,41 @@ isolated function getLeavesQuery(LeaveFilter filter, int? 'limit = (), int? offs
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
 
     sql:ParameterizedQuery[] filterQueries = [];
+    // Include only approved sabbatical leaves
+    filterQueries.push(` (ls.leave_type <> ${SABBATICAL_LEAVE} OR (ls.leave_type = 'SABBATICAL' AND 
+    la.approval_status = 'APPROVED') ) `);
 
     string[]? emails = filter?.emails;
     if emails is string[] && emails.length() > 0 {
-        filterQueries.push(sql:queryConcat(`email IN (`, sql:arrayFlattenQuery(emails), `)`));
+        filterQueries.push(sql:queryConcat(`ls.email IN (`, sql:arrayFlattenQuery(emails), `)`));
     }
     string? startDate = filter?.startDate;
     string? endDate = filter?.endDate;
     if startDate is string && endDate is string {
-        filterQueries.push(`((start_date BETWEEN ${startDate} AND ${endDate}) 
-            OR (end_date BETWEEN ${startDate} AND ${endDate}) 
-            OR (start_date < ${startDate} AND end_date > ${endDate}))`);
+        filterQueries.push(`((ls.start_date BETWEEN ${startDate} AND ${endDate}) 
+            OR (ls.end_date BETWEEN ${startDate} AND ${endDate}) 
+            OR (ls.start_date < ${startDate} AND ls.end_date > ${endDate}))`);
     } else if startDate is string {
         filterQueries.push(
-            `(start_date >= ${startDate} OR (end_date >= ${startDate} AND start_date < ${startDate}))`
+            `(ls.start_date >= ${startDate} OR (ls.end_date >= ${startDate} AND ls.start_date < ${startDate}))`
         );
     } else if endDate is string {
-        filterQueries.push(`(end_date <= ${endDate} OR (start_date <= ${endDate} AND end_date > ${endDate}))`);
+        filterQueries.push(`(ls.end_date <= ${endDate} OR (ls.start_date <= ${endDate} AND ls.end_date > ${endDate}))`);
     }
 
     if filter?.isActive is boolean {
-        filterQueries.push(`active = ${filter?.isActive}`);
+        boolean isActive = <boolean>filter?.isActive;
+        filterQueries.push(`ls.active = ${isActive ? 1 : 0}`);
     }
 
     string[]? leaveTypes = filter?.leaveTypes;
     if leaveTypes is string[] && leaveTypes.length() != 0 {
-        filterQueries.push(sql:queryConcat(`leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
+        filterQueries.push(sql:queryConcat(`ls.leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
     }
 
     sql:ParameterizedQuery sqlQuery = buildSqlQuery(mainQuery, filterQueries);
     sql:ParameterizedQuery orderBy = filter?.orderBy == ASC ? `ASC` : `DESC`;
-    return sql:queryConcat(sqlQuery, ` ORDER BY created_date `, orderBy,
+    return sql:queryConcat(sqlQuery, ` ORDER BY ls.created_date `, orderBy,
             ` LIMIT ${'limit ?: MAXIMUM_LIMIT_VALUE} OFFSET ${offset ?: 0}`);
 }
 

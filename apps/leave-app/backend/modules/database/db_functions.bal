@@ -40,7 +40,7 @@ public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? of
 # + return - Requested leave or an error on failure
 public isolated function getLeave(int id) returns Leave|error? {
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE id = ${id}`);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE ls.id = ${id}`);
     Leave|error leave = leaveDbClient->queryRow(finalQuery);
     if leave is sql:NoRowsError {
         return ();
