@@ -208,6 +208,8 @@ public type UserInfo record {|
     string? lastName;
     # Work email
     string? workEmail;
+    # Lead email
+    string? leadEmail;
     # Employee thumbnail
     string? employeeThumbnail;
     # Job role

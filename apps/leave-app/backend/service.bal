@@ -61,6 +61,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 firstName: empInfo.firstName,
                 lastName: empInfo.lastName,
                 workEmail: empInfo.workEmail,
+                leadEmail: empInfo.leadEmail,
                 employeeThumbnail: empInfo.employeeThumbnail,
                 jobRole: empInfo.jobRole,
                 privileges: privileges,
