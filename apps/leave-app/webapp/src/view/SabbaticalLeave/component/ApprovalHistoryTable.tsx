@@ -90,7 +90,7 @@ export default function ApprovalHistoryTable({ rows }: { rows: ApprovalStatusIte
               color: chipProps.borderColor,
               borderColor: chipProps.borderColor,
               backgroundColor: "transparent",
-              borderRadius: "0.5rem",
+              borderRadius: "2rem",
               fontSize: theme.typography.caption.fontSize,
               fontWeight: 700,
               width: "10rem",
