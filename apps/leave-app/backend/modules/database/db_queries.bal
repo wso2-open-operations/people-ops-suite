@@ -134,7 +134,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             ${input.emailSubject},
             1,
             ${input.startDate},
-            ${input.endDate},
+            TIMESTAMP(${input.endDate}, '23:59:00'),
             ${isMorningLeave is boolean ? !isMorningLeave : ()},
             ${numberOfDays},
             ${input?.isPublicComment ?: false},
@@ -288,3 +288,19 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
     `;
     return query;
 };
+
+# Query to set the calendar event ID for a sabbatical leave record.
+#
+# + approvalStatusId - Leave approval status ID
+# + calendarEventId - Calendar event ID
+# + return - Update query to set calendar event ID
+isolated function setSabbaticalLeaveCalendarEventIdQuery(string approvalStatusId, string calendarEventId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        UPDATE leave_submissions ls
+        INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
+        SET ls.calendar_event_id = ${calendarEventId}
+        WHERE la.id = ${approvalStatusId}
+    `;
+    return query;
+}

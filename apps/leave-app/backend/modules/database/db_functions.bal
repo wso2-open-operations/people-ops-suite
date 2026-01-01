@@ -192,7 +192,17 @@ public isolated function getSubordinateCountOnSabbaticalLeave(string leadEmail) 
 # Get most recent email notification recipient list (general leave) for a leave applicant.
 #
 # + applicantEmail - Email of the leave applicant
-# + return - Select query to get email notification list
+# + return - List of email recipients as a string, or an error on failure
 public isolated function getEmailNotificationRecipientList(string applicantEmail) returns string|error {
     return check leaveDbClient->queryRow(getEmailNotificationRecipientListQuery(applicantEmail));
 };
+
+# Set calendar event ID for an approved sabbatical leave application.
+#
+# + leaveApprovalId - Leave approval status ID  
+# + calendarEventId - Calendar event ID
+# + return - SQL execution result or an error on failure
+public isolated function setCalendarEventIdForSabbaticalLeave(string leaveApprovalId, string calendarEventId)
+    returns sql:ExecutionResult|error {
+    return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveApprovalId, calendarEventId));
+}
