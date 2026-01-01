@@ -214,7 +214,7 @@ isolated function getDateDiffInDays(string endDate, string startDate) returns in
 
     time:Seconds diffSeconds = time:utcDiffSeconds(utc1, utc2);
 
-    return <int>(diffSeconds / 86400);
+    return <int>(diffSeconds / 86400) + 1;
 }
 
 # Get subordinate count for a specific lead.
