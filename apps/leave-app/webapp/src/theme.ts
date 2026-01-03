@@ -423,6 +423,10 @@ export const themeSettings = (mode: PaletteMode) => {
         light: "#81c784",
         dark: "#388e3c",
       },
+      background: {
+        default: mode === "dark" ? colors.surface.primary.active : colors.neutral.white,
+        paper: mode === "dark" ? colors.surface.primary.hover : colors.neutral.white,
+      },
       // Custom palette extensions - preserve all color shades
       neutral: colors.neutral,
       primaryShades: colors.primary,

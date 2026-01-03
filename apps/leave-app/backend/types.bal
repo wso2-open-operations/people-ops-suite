@@ -180,6 +180,11 @@ public type Employee record {|
     *employee:Employee;
 |};
 
+# Minimal Employee information.
+public type MinimalEmployeeInfo record {|
+    *employee:MinimalEmployeeInfo;
+|};
+
 # Leaves report content.
 public type ReportContent map<map<float>>;
 
@@ -203,6 +208,8 @@ public type UserInfo record {|
     string? lastName;
     # Work email
     string? workEmail;
+    # Lead email
+    string? leadEmail;
     # Employee thumbnail
     string? employeeThumbnail;
     # Job role
@@ -213,8 +220,66 @@ public type UserInfo record {|
     boolean? isLead;
 |};
 
+# Leave approval status payload.
+public type LeaveApprovalStatusPayload record {|
+    # Approval status (PENDING/APPROVED/REJECTED)
+    database:ApprovalStatus[] status;
+|};
+
+# Leave approval status response.
+public type LeaveApprovalStatusResponse record {|
+    # Employees as a percentage on sabbatical leave under the specific lead
+    string percentageOfEmployeesOnSabbaticalLeave;
+    # List of leave approval status of employees under the specific lead
+    database:LeaveApprovalStatus[] leaveApprovalStatusList;
+|};
+
+# Sabbatical leave application payload record.
+public type SabbaticalLeaveApplicationPayload record {|
+    # Last sabbatical leave end date
+    string lastSabbaticalLeaveEndDate;
+    # Leave start date
+    string startDate = "";
+    # Leave end date
+    string endDate = "";
+    # Additional comment
+    string additionalComment = "";
+|};
+
 # Application configurations.
 public type AppConfig record {|
     # Is sabbatical leave enabled or not
     boolean isSabbaticalLeaveEnabled;
+    # Sabbatical leave policy URL
+    string sabbaticalLeavePolicyUrl;
+|};
+
+# Leave approval payload.
+public type LeaveApprovalPayload record {|
+    # Boolean for approval.
+    boolean isApproved;
+    # Leave approval application ID (References leave_approval table ID).  
+    string approvalStatusId;
+|};
+
+# Sabbatical Leave Response.
+public type SabbaticalLeaveResponse record {|
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Leave ID
+    string id;
+    # Location.
+    string? location;
+|};
+
+# Sabbatical Leave Eligibility Response.
+public type SabbaticalLeaveEligibilityResponse record {|
+    # Employment start date
+    string employmentStartDate;
+    # Last sabbatical leave end date
+    string lastSabbaticalLeaveEndDate;
+    # Is eligible for sabbatical leave
+    boolean isEligible;
 |};
