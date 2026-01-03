@@ -319,7 +319,7 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
                         onChange={(e) => setResignationAcknowledgeChecked(e.target.checked)}
                       />
                     }
-                    label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period."
+                    label="I acknowledge that I cannot voluntarily resign from my employment for 6 months after completing sabbatical leave. If I do, I will be required to reimburse an amount equivalent to the salary paid to me during the sabbatical period."
                     sx={{
                       color: theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
