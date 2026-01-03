@@ -41,7 +41,6 @@ public final map<string> & readonly TIMEZONE_OFFSET_MAP = {
 };
 public const SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT = 1095; // 3 years
 public const SABBATICAL_LEAVE_APPLICATION_MAX_DAY_COUNT = 42; // 6 weeks
- 
 // Errors
 public const ERR_MSG_EFFECTIVE_DAYS_FAILED = "Error when getting effective days!";
 public const ERR_MSG_EMPLOYEE_LOCATION_RETRIEVAL_FAILED = "Error occurred while retrieving employee location!";
