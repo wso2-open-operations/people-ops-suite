@@ -174,7 +174,7 @@ public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, floa
     string leaveApprovalStatusID = uuid:createType4AsString();
     transaction {
         Leave leaveSubmission = check insertLeave(leaveInput, days, location);
-        sql:ExecutionResult result = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
+        _ = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
                 leaveSubmission.id, leadEmail));
         check commit;
     }
