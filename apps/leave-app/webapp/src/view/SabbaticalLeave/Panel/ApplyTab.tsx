@@ -65,8 +65,8 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
   const errorMessage: string =
-    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to" 
-    + " be eligible to apply for sabbatical leave.";
+    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to" +
+    " be eligible to apply for sabbatical leave.";
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
@@ -83,7 +83,6 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
       try {
         setIsLoading(true);
         const eligibilityResponse: EligibilityResponse = await checkEligibilityForSabbaticalLeave();
-        setIsLoading(false);
         setEligibilityPayload(eligibilityResponse);
         if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
@@ -96,6 +95,8 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
         }
       } catch (error) {
         console.error("Failed to check eligibility for sabbatical leave", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     checkEligibility();
