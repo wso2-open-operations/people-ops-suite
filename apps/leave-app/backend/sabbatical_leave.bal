@@ -236,6 +236,6 @@ isolated function getSubordinateCountOnSabbaticalLeaveAsAPercentage(string leadE
         return "0%"; // early return to prevent division by zero
     }
     int subordinateOnSabbaticalLeaveCount = check database:getSubordinateCountOnSabbaticalLeave(leadEmail);
-    return ((subordinateOnSabbaticalLeaveCount / subordinateCount) * 100).toString() + "%";
+    return ((<float>subordinateOnSabbaticalLeaveCount / <float>subordinateCount) * 100).toString() + "%";
 }
 
