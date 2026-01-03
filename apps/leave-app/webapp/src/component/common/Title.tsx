@@ -32,7 +32,6 @@ export default function Title({ firstWord, secondWord, borderEnabled = true }: T
         color: theme.palette.text.primary,
         fontWeight: "600",
         pb: borderEnabled ? "1rem" : 0,
-        fontSize: theme.typography.h5.fontSize,
         borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
       }}
     >
