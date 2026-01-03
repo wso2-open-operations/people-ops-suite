@@ -67,8 +67,8 @@ export default function SabbaticalLeave() {
               page: <ApprovalHistoryTab />,
             },
           );
-          setTabs(baseTabs);
         }
+        setTabs(baseTabs);
       } catch (error) {
         console.error("Error fetching app config:", error);
       }
