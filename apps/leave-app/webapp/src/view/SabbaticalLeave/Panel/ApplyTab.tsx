@@ -89,7 +89,7 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
         }
         if (
-          eligibilityResponse?.lastSabbaticalLeaveEndDate.length == 0 &&
+          eligibilityResponse?.lastSabbaticalLeaveEndDate.length === 0 &&
           eligibilityResponse.isEligible
         ) {
           setSabbaticalEndDateFieldEditable(true);
