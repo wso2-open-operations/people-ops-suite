@@ -862,6 +862,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         string lastSabbaticalLeaveEndDateResult = "";
         lastSabbaticalLeaveEndDateResult = lastSabbaticalLeaveEndDate;
+        // If the database does not have the last sabbatical leave end date, use the one provided in the request payload     
         if lastSabbaticalLeaveEndDate == "" {
             lastSabbaticalLeaveEndDateResult = payload.lastSabbaticalLeaveEndDate;
         }
