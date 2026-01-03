@@ -742,11 +742,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         if optionalMailsToNotify is error {
             string errorMsg = "Error occurred while fetching optional mails to notify";
             log:printError(errorMsg, optionalMailsToNotify);
-            return <http:InternalServerError>{
-                body: {
-                    message: errorMsg
-                }
-            };
         }
         employee:DefaultMailResponse defaultMailsToNotify = {
             mandatoryMails: [
@@ -759,7 +754,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     thumbnail: ""
                 }
             ],
-            optionalMails: optionalMailsToNotify
+            optionalMails: optionalMailsToNotify is employee:DefaultMail[]? optionalMailsToNotify : []
         };
         return defaultMailsToNotify;
     }
