@@ -119,7 +119,7 @@ export interface LeaveSubmissionResponse {
 
 // Leave history response for a single leave.
 export interface SingleLeaveHistory {
-  id: string;
+  id: number;
   email: string;
   leaveType: string;
   periodType: string;

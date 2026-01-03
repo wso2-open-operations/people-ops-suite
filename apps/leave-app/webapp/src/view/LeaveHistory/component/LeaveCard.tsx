@@ -18,7 +18,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Box, Button, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 
 export interface LeaveCardProps {
-  id: string;
+  id: number;
   type: string;
   startDate: string;
   endDate: string;
@@ -26,7 +26,7 @@ export interface LeaveCardProps {
   status: "approved" | "pending" | "rejected";
   month: string;
   day: string;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: number) => void;
 }
 
 export default function LeaveCard({

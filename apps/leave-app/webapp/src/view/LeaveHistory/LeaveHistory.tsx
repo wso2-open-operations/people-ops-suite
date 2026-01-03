@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, CircularProgress, Stack } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
@@ -62,9 +63,9 @@ export default function LeaveHistory() {
     return { month, day };
   };
 
-  const handleDeleteLeave = async (id: string) => {
+  const handleDeleteLeave = async (id: number) => {
     try {
-      await cancelLeaveRequest(Number(id));
+      await cancelLeaveRequest(id);
       setLeaves((prevLeaves) => prevLeaves.filter((leave) => leave.id !== id));
       enqueueSnackbar("Leave cancelled successfully", { variant: "success" });
     } catch (err) {
