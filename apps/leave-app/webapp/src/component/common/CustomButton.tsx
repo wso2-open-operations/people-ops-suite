@@ -15,6 +15,7 @@
 // under the License.
 
 import { Button } from "@mui/material";
+import CheckCircleIcon from '@mui/icons-material/CheckCircleOutline';
 
 interface CustomButtonProps {
   label: string;
@@ -30,6 +31,7 @@ export default function CustomButton({ label, onClick, disabled }: CustomButtonP
       onClick={onClick}
       disabled={disabled}
       sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
+      startIcon={<CheckCircleIcon />}
     >
       {label}
     </Button>

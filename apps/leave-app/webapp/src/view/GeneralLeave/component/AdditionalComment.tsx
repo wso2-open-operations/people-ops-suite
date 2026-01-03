@@ -13,13 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
 import { getDefaultMails } from "@root/src/services/leaveService";
-import { DefaultMail } from "@root/src/types/types";
+import { DefaultMailResponse } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
   comment: string;
@@ -44,7 +45,10 @@ export default function AdditionalComment({
     onPublicCommentChange(event.target.checked);
   };
 
-  const [defaultMails, setDefaultMails] = useState<DefaultMail[]>([]);
+  const [defaultMails, setDefaultMails] = useState<DefaultMailResponse>({
+    mandatoryMails: [],
+    optionalMails: [],
+  });
 
   useEffect(() => {
     const fetchDefaultMails = async () => {
@@ -59,7 +63,7 @@ export default function AdditionalComment({
     fetchDefaultMails();
   }, []);
 
-  const EmailGroupToNotify = defaultMails[1]?.email || "";
+  const EmailGroupToNotify = defaultMails.mandatoryMails[1]?.email || "";
   return (
     <Stack gap="1rem">
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>

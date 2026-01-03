@@ -57,7 +57,7 @@ export default function LeaveSelectionIcon({
       <Box
         className="icon-box"
         borderRadius="0.5rem"
-        border="2px solid"
+        border="1px solid"
         width="3rem"
         height="3rem"
         display="flex"
