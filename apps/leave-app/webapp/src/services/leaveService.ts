@@ -103,7 +103,7 @@ export const submitLeaveRequest = async (
 /**
  * Cancel a leave request.
  */
-export const cancelLeaveRequest = async (id: number): Promise<DefaultMail[]> => {
+export const cancelLeaveRequest = async (id: number): Promise<void> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);

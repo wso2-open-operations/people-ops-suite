@@ -129,7 +129,7 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
       const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
       if (diffDays < 1095) {
         enqueueSnackbar(
-          "The last sabbatical leave end date should be at least 3 years from today.",
+          "The last sabbatical leave end date should be at least 3 years before today.",
           { variant: "error" },
         );
         return;
