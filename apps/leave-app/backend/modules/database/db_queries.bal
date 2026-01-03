@@ -58,8 +58,8 @@ isolated function getLeavesQuery(LeaveFilter filter, int? 'limit = (), int? offs
 
     sql:ParameterizedQuery[] filterQueries = [];
     // Include only approved sabbatical leaves
-    filterQueries.push(` (ls.leave_type <> ${SABBATICAL_LEAVE} OR (ls.leave_type = 'SABBATICAL' AND 
-    la.approval_status = 'APPROVED') ) `);
+    filterQueries.push(` (ls.leave_type <> ${SABBATICAL_LEAVE} OR (ls.leave_type = ${SABBATICAL_LEAVE} AND 
+    la.approval_status = ${APPROVED}) ) `);
 
     string[]? emails = filter?.emails;
     if emails is string[] && emails.length() > 0 {
