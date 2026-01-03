@@ -37,8 +37,8 @@ export enum ConfirmationType {
 }
 
 export enum DayType {
-  one = "one",
-  multiple = "multiple",
+  ONE = "one",
+  MULTIPLE = "multiple",
 }
 
 export enum ApprovalStatus {
