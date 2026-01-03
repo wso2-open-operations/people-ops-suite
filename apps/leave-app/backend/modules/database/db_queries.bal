@@ -227,7 +227,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
     sql:ParameterizedQuery query = `
         SELECT 
             end_date
-        FROM leave_submissions ls inner join leave_approval la on ls.id = la.leave_submission_id
+        FROM leave_submissions ls INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
         WHERE ls.email = ${employeeEmail} AND ls.leave_type = ${SABBATICAL_LEAVE} AND la.approval_status = ${APPROVED}
         ORDER BY end_date DESC
         LIMIT 1
