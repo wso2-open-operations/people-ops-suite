@@ -64,9 +64,9 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
-  const [errorMessage] = useState<string>(
-    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to be eligible to apply for sabbatical leave.",
-  );
+  const errorMessage: string =
+    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to" 
+    + " be eligible to apply for sabbatical leave.";
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
