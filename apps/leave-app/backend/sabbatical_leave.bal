@@ -222,8 +222,8 @@ isolated function getDateDiffInDays(string endDate, string startDate) returns in
 # + leadEmail - email of the reporting lead
 # + return - subordinate count as an integer or an error on failure
 isolated function getSubordinateCount(string leadEmail) returns int|error {
-    Employee[] employees = check employee:getEmployees({leadEmail: leadEmail});
-    return employees.length();
+    Employee employee = check employee:getEmployee(leadEmail);
+    return employee.subordinateCount;
 }
 
 # Get percentage of subordinates on sabbatical leave.

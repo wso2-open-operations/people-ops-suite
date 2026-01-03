@@ -122,6 +122,8 @@ public type Employee record {|
     string? finalDayOfEmployment;
     # Employee is a lead or not
     boolean? lead;
+    # Subordinate count of the employee
+    int subordinateCount;
 |};
 
 # Minimal Employee information.

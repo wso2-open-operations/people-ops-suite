@@ -47,6 +47,7 @@ public isolated function getEmployee(string? email)
                 managerEmail
                 finalDayOfEmployment
                 lead
+                subordinateCount
             }
         }
     `;
