@@ -537,7 +537,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 jobRole: employee.jobRole,
                 startDate: employee.startDate,
                 finalDayOfEmployment: employee.finalDayOfEmployment,
-                lead: employee.lead
+                lead: employee.lead,
+                subordinateCount: employee.subordinateCount
             };
 
         } on fail error internalErr {
