@@ -32,7 +32,7 @@ type ChoreoApp record {|
 # + emailFrom - Email sender
 public type EmailServiceConfig record {|
     string baseUrl;
-    string 'emailFrom;
+    string emailFrom;
 |};
 
 # Email notification details record.
