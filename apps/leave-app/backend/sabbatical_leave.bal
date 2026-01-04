@@ -184,7 +184,7 @@ isolated function checkEligibilityForSabbaticalApplication(string employmentStar
     int|error daysSinceEmployment = check getDateDiffInDays(nowStr, employmentStartDate);
     int|error daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
     if daysSinceLastSabbaticalLeave is error {
-        log:printInfo("Days since last sabbatical leave is empty.");
+        log:printDebug("Days since last sabbatical leave is empty.");
     }
     if daysSinceEmployment is int {
         if lastSabbaticalLeaveEndDate == "" && daysSinceEmployment > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT {

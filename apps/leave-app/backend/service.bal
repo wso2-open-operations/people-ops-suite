@@ -111,7 +111,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         AppConfig|error appConfig = {
             isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled,
-            sabbaticalLeavePolicyUrl: sabbaticalLeavePolicyUrl
+            sabbaticalLeavePolicyUrl: sabbaticalLeavePolicyUrl,
+            sabbaticalLeaveUserGuideUrl: sabbaticalLeaveUserGuideUrl
         };
         if appConfig is error {
             string errMsg = "Error occurred while fetching application configurations";
@@ -755,7 +756,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     thumbnail: ""
                 }
             ],
-            optionalMails: optionalMailsToNotify is employee:DefaultMail[]? optionalMailsToNotify : []
+            optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
         };
         return defaultMailsToNotify;
     }

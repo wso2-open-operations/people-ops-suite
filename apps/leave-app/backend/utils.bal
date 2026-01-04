@@ -27,6 +27,7 @@ configurable string[] defaultRecipients = [];
 configurable string emailGroupToNotify = ?;
 configurable boolean isSabbaticalLeaveEnabled = ?;
 configurable string sabbaticalLeavePolicyUrl = ?;
+configurable string sabbaticalLeaveUserGuideUrl = ?;
 configurable string functionalLeadMailToRestrictSabbaticalLeaveNotifications = ?;
 
 # Checks if a passed string is an empty.

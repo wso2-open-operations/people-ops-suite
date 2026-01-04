@@ -252,6 +252,8 @@ public type AppConfig record {|
     boolean isSabbaticalLeaveEnabled;
     # Sabbatical leave policy URL
     string sabbaticalLeavePolicyUrl;
+    # Sabbatical leave user guide URL
+    string sabbaticalLeaveUserGuideUrl;
 |};
 
 # Leave approval payload.
