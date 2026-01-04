@@ -193,10 +193,16 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
     string body = !isCancel ?
         (string `
             <p>
+                Hi All,
+                <br/>
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave (${isMorningHalf ? "first" : "second"} half) on ${date}.
             <p>
         `)
         :
+        (string `
+            <p>
+                Hi All,
+                <br/>
         (string `
             <p>
                 Please note that ${employeeName} has cancelled the half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
@@ -226,12 +232,16 @@ isolated function generateContentForOneDayLeave(string employeeName, boolean isC
     string body = !isCancel ?
         (string `
             <p>
+                Hi All,
+                <br/>
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave on ${date}.
             <p>
         `)
         :
         (string `
             <p>
+                Hi All,
+                <br/>
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
             <p>
         `);
@@ -259,12 +269,16 @@ isolated function generateContentForMultipleDaysLeave(string employeeName, boole
     string body = !isCancel ?
         (string `
             <p>
+                Hi All,
+                <br/>
                 Please note that ${employeeName} ${isPastLeave ? "was" : "will be"} on ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave from ${fromDate} to ${toDate}.
             <p>
         `)
         :
         (string `
             <p>
+                Hi All,
+                <br/>
                 Please note that ${employeeName} has cancelled the ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied from ${fromDate} to ${toDate}.
             <p>
         `);
