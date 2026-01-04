@@ -48,7 +48,12 @@ export default function SabbaticalLeave() {
             tabTitle: "Apply",
             tabPath: "apply",
             icon: <EditDocumentIcon />,
-            page: <ApplyTab sabbaticalPolicyUrl={appConfig.sabbaticalLeavePolicyUrl} />,
+            page: (
+              <ApplyTab
+                sabbaticalPolicyUrl={appConfig.sabbaticalLeavePolicyUrl}
+                sabbaticalUserGuideUrl={appConfig.sabbaticalLeaveUserGuideUrl}
+              />
+            ),
           },
         ];
         // Set approval tabs for leads only

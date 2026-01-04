@@ -51,9 +51,14 @@ import {
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { EligibilityResponse } from "@root/src/types/types";
 
+interface ApplyTabProps {
+  sabbaticalPolicyUrl: string;
+  sabbaticalUserGuideUrl: string;
+}
+
 dayjs.extend(utc);
 
-export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl: string }) {
+export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const userInfo = useSelector(selectUser);
@@ -198,9 +203,19 @@ export default function ApplyTab({ sabbaticalPolicyUrl }: { sabbaticalPolicyUrl:
               pb="1rem"
             >
               <Title firstWord="Sabbatical" secondWord="Leave Application" borderEnabled={false} />
-              <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
-                {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
-              </Alert>
+              <Stack direction="row" gap="1rem" justifyContent="center" alignItems="center">
+                <Link
+                  href={sabbaticalUserGuideUrl}
+                  target="_blank"
+                  rel="noopener"
+                  underline="hover"
+                >
+                  User Guide
+                </Link>
+                <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
+                  {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
+                </Alert>
+              </Stack>
             </Stack>
             <Stack
               flexDirection={{ xs: "column", md: "row" }}

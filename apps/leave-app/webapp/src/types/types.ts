@@ -230,4 +230,5 @@ export interface SabbaticalApplicationResponse {
 export interface AppConfigResponse {
   isSabbaticalLeaveEnabled: boolean;
   sabbaticalLeavePolicyUrl: string;
+  sabbaticalLeaveUserGuideUrl: string;
 }
