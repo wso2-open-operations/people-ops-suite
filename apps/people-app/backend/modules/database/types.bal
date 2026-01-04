@@ -140,6 +140,48 @@ public type Employee record {|
     int subordinateCount;
 |};
 
+# Filter for getting employees.
+public type GetEmployeesFilter record {|
+    # Title
+    string? title = ();
+    # First name
+    string? firstName = ();
+    # Last name
+    string? lastName = ();
+    # National Identity Card number or Passport
+    int|string? nicOrPassport = ();
+    # Date of birth
+    string? dateOfBirth = ();
+    # Gender
+    string? gender = ();
+    # Nationality
+    string? nationality = ();
+    # Personal email
+    string? personalEmail = ();
+    # Personal phone number
+    string? personalPhone = ();
+    # Resident phone number
+    string? residentPhone = ();
+    # City
+    string? city = ();
+    # Country
+    string? country = ();
+    # Business unit
+    string? businessUnit = ();
+    # Team
+    string? team = ();
+    # Sub-team
+    string? subTeam = ();
+    # Designation
+    string? designation = ();
+    # Employment type
+    string? employmentType = ();
+    # Page number
+    int? page = ();
+    # Records per page
+    int? perPage = ();
+|};
+
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
     # Primary key ID

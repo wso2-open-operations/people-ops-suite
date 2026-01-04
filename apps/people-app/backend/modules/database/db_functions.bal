@@ -42,6 +42,16 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
+# Fetch employees with filters.
+# 
+# + filter - Get employees filter payload
+# + return - List of employees or error
+public isolated function getEmployees(GetEmployeesFilter filter) returns Employee[]|error {
+    stream<Employee, error?> employeeStream = databaseClient->query(getEmployeesQuery(filter));
+    return from Employee employee in employeeStream
+        select employee;
+}
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee

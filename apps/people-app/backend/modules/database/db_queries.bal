@@ -108,6 +108,77 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
     WHERE
         e.employee_id = ${employeeId};`;
 
+# Fetch employees with filters.
+# 
+# + filter - Get employees filter payload
+# + return - Parameterized query for fetching employees
+isolated function getEmployeesQuery(GetEmployeesFilter filter) returns sql:ParameterizedQuery {
+
+    int page = filter.page ?: 1;
+    int perPage = filter.perPage ?: 20;
+    int offset = (page - 1) * perPage;
+
+    return `
+        SELECT
+            e.id AS employeeId,
+            e.first_name AS firstName,
+            e.last_name AS lastName,
+            e.work_email AS workEmail,
+            e.employee_thumbnail AS employeeThumbnail,
+            e.epf AS epf,
+            e.employment_location AS employmentLocation,
+            e.work_location AS workLocation,
+            e.start_date AS startDate,
+            e.manager_email AS managerEmail,
+            e.additional_manager_emails AS additionalManagerEmails,
+            e.employee_status AS employeeStatus,
+            e.continuous_service_record AS continuousServiceRecord,
+            e.probation_end_date AS probationEndDate,
+            e.agreement_end_date AS agreementEndDate,
+            et.name AS employmentType,
+            d.designation AS designation,
+            e.secondary_job_title AS secondaryJobTitle,
+            o.name AS office,
+            bu.name AS businessUnit,
+            t.name AS team,
+            st.name AS subTeam,
+            u.name AS unit
+
+        FROM 
+            employee e
+            INNER JOIN personal_info pi    ON pi.id = e.personal_info_id
+            INNER  JOIN employment_type et ON et.id = e.employment_type_id
+            INNER JOIN designation d       ON d.id = e.designation_id
+            INNER JOIN office o            ON o.id = e.office_id
+            INNER JOIN business_unit bu    ON bu.id = e.business_unit_id
+            INNER JOIN team t              ON t.id = e.team_id
+            INNER  JOIN sub_team st        ON st.id = e.sub_team_id
+            LEFT  JOIN unit u              ON u.id = e.unit_id
+        WHERE
+            (${filter.title} IS NULL OR pi.title = ${filter.title})
+        AND (${filter.firstName} IS NULL OR e.first_name LIKE CONCAT('%', ${filter.firstName}, '%'))
+        AND (${filter.lastName}  IS NULL OR e.last_name  LIKE CONCAT('%', ${filter.lastName},  '%'))
+        AND (${filter.nicOrPassport} IS NULL OR pi.nic_or_passport = ${filter.nicOrPassport})
+        AND (${filter.dateOfBirth} IS NULL OR pi.dob = ${filter.dateOfBirth})
+        AND (${filter.gender} IS NULL OR pi.gender = ${filter.gender})
+        AND (${filter.nationality} IS NULL OR pi.nationality = ${filter.nationality})
+        AND (${filter.personalEmail} IS NULL OR pi.personal_email = ${filter.personalEmail})
+        AND (${filter.personalPhone} IS NULL OR pi.personal_phone = ${filter.personalPhone})
+        AND (${filter.residentPhone} IS NULL OR pi.resident_number = ${filter.residentPhone})
+        AND (${filter.city} IS NULL OR pi.city = ${filter.city})
+        AND (${filter.country} IS NULL OR pi.country = ${filter.country})
+        AND (${filter.businessUnit} IS NULL OR bu.name = ${filter.businessUnit})
+        AND (${filter.team} IS NULL OR t.name = ${filter.team})
+        AND (${filter.subTeam} IS NULL OR st.name = ${filter.subTeam})
+        AND (${filter.designation} IS NULL OR d.designation = ${filter.designation})
+        AND (${filter.employmentType} IS NULL OR et.name = ${filter.employmentType})
+
+        ORDER BY e.id ASC
+        LIMIT ${perPage} OFFSET ${offset}
+    `;
+};
+
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee

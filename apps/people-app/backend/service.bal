@@ -172,12 +172,34 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
+    # Fetch employees based on filters.
+    # 
+    # + filter - Get employees filter payload
+    # + return - List of employees or error response
+    resource function post employees/list(database:GetEmployeesFilter filter) 
+        returns http:Ok|http:InternalServerError|http:Forbidden {
+
+        database:Employee[]|error employees = database:getEmployees(filter);
+        if employees is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, employees);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return <http:Ok>{
+            body: employees
+        };
+    }
+
     # Fetch continuous service record by work email.
     #
     # + workEmail - Work email of the employee
     # + return - Employee ID and continuous service record or error response
     resource function get continuous\-service\-records(http:RequestContext ctx, string workEmail)
-        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {
+        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {       
 
         if workEmail.trim().length() == 0 {
             string customErr = "Work email is a mandatory query parameter";
