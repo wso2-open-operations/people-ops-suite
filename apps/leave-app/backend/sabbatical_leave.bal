@@ -94,7 +94,7 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
     returns error? {
     string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
     + ")";
-    string emailBody = "The Sabbatical leave application of " + applicantEmail + " has been " +
+    string emailBody = "The sabbatical leave application of " + applicantEmail + " has been " +
     (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
     ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
     " <br/>Requested Leave End Date: " + leaveEndDate;
@@ -158,11 +158,11 @@ isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail
     if approvalStatusId is error {
         return error("Error occurred while creating sabbatical leave record.", approvalStatusId);
     }
-    string emailBody = "A Sabbatical leave application has been submitted by " + applicantEmail +
+    string emailBody = "A sabbatical leave application has been submitted by " + applicantEmail +
     ".<br/><br/>" + "Requested Leave Start Date: " +
     leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
-    leadEmail + "<br/><br/> The reporting lead is required to review the application and" +
-    " approve / reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
+    leadEmail + "<br/><br/> The reporting lead is required to review and" +
+    " approve or reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
 
     map<string> emailContent = {"CONTENT": emailBody};
     error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
