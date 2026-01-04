@@ -203,8 +203,6 @@ isolated function generateContentForHalfDayLeave(string employeeName, boolean is
             <p>
                 Hi All,
                 <br/>
-        (string `
-            <p>
                 Please note that ${employeeName} has cancelled the half-day ${leaveType is database:LIEU_LEAVE ? string `${database:LIEU_LEAVE} ` : ""}leave applied for ${date}.
             <p>
         `);
