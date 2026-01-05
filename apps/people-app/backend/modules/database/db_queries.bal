@@ -79,7 +79,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
-        INNER JOIN unit u ON e.unit_id = u.id
+        LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
         e.id = ${id};`;
 
