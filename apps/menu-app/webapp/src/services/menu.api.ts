@@ -26,8 +26,8 @@ interface FeedbackRequest {
 }
 
 const transformMetaData = (data: RawMetaData): MetaData => ({
-  title: data.title.trim() === "" ? null : data.title,
-  description: data.description.trim() === "" ? null : data.description,
+  title: data.title.trim() === "" ? null : data.title.trim(),
+  description: data.description.trim() === "" ? null : data.description.trim(),
 });
 
 const transformMenuResponse = (response: RawMenu): Menu => ({
