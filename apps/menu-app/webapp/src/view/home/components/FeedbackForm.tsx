@@ -55,7 +55,7 @@ const FeedbackForm = (props: FeedbackForm) => {
 
   const isFeedbackTime = now >= startTime && now <= endTime;
 
-  if (isFeedbackTime) {
+  if (!isFeedbackTime) {
     return (
       <Typography
         variant="body1"
