@@ -34,7 +34,7 @@ export default function Layout() {
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
 
