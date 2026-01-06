@@ -104,7 +104,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     );
 
     setTokens(idToken, refreshToken, appSignOut);
-    await triggerGetUserInfo();
+
+    const userInfoResult = await triggerGetUserInfo();
+    if (userInfoResult?.isError) {
+      console.error("Failed to fetch user info:", userInfoResult.error);
+      dispatch(setAuthError());
+    }
 
     await dispatch(loadPrivileges());
   };
@@ -179,7 +184,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
-        return <PreLoader isLoading message="Loading ..." />;
+        return <PreLoader isLoading message="Authenticating ..." />;
 
       case AppState.Authenticating:
         return <PreLoader isLoading message="Loading User Info ..." />;
