@@ -73,7 +73,7 @@ export default function MenuCard(props: MenuCardProps) {
           gap: "16px",
           borderRadius: "12px",
           border: `1px solid ${theme.palette.customBorder.territory.active}`,
-          background: theme.palette.surface.territory,
+          background: theme.palette.surface.secondary.active,
           boxShadow: "none",
         }}
       >
@@ -114,7 +114,7 @@ export default function MenuCard(props: MenuCardProps) {
               fontSize: "14px",
             }}
           >
-            {mealTimeRanges[mealType]}
+            {mealTimeRanges[mealType.toLocaleLowerCase()]}
           </Typography>
         </Box>
 
