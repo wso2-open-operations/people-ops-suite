@@ -97,7 +97,7 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
         leaveType: check input.leaveType.cloneWithType(),
         endDate: input.endDate,
         id: 0,
-        isActive: false,
+        status: CANCELLED,
         periodType: check input.periodType.cloneWithType(),
         startDate: input.startDate,
         email: input.email,
@@ -224,7 +224,6 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         email,
         startDate,
         endDate,
-        isActive,
         leaveType,
         periodType,
         createdDate,
@@ -270,7 +269,7 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         id,
         startDate: getTimestampFromDateString(startDate),
         endDate: getTimestampFromDateString(endDate),
-        isActive: isActive ?: false,
+        status: CANCELLED,
         leaveType: entityLeaveType,
         email,
         periodType: entityLeavePeriodType,
@@ -293,7 +292,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
                     endDate: leaveDetails.endDate,
                     leaveType: leaveDetails.leaveType,
                     periodType: leaveDetails.periodType,
-                    isMorningLeave: leaveDetails.isMorningLeave
+                    isMorningLeave: leaveDetails.isMorningLeave,
+                    status: ()
                 },
                 token
             );
@@ -464,7 +464,6 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
         email,
         startDate,
         endDate,
-        isActive,
         leaveType,
         periodType,
         createdDate,
@@ -473,7 +472,9 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
         numberOfDays,
         location,
         emailId,
-        emailSubject
+        emailSubject,
+        status,
+        approverEmail
     } = leave;
     database:LeaveType entityLeaveType;
     database:LeavePeriodType entityLeavePeriodType;
@@ -514,7 +515,8 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
                     endDate,
                     leaveType: entityLeaveType,
                     periodType: entityLeavePeriodType,
-                    isMorningLeave
+                    isMorningLeave,
+                    status: ()
                 }, token);
 
         if effectiveDays is error {
@@ -525,23 +527,24 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
     }
     database:LeaveDay[] & readonly readonlyEffectiveLeaveDaysFromLeave = effectiveLeaveDaysFromLeave.cloneReadOnly();
 
-    return {
-        id,
-        startDate,
-        endDate,
-        isActive: isActive ?: false,
+    return <LeaveResponse>{
+        id: id,
+        startDate: startDate,
+        endDate: endDate,
+        status: status is Status ? <Status>status : (),
         leaveType: entityLeaveType,
         periodType: entityLeavePeriodType,
-        isMorningLeave,
-        email,
+        isMorningLeave: isMorningLeave,
+        email: email,
         createdDate: createdDate is string ? getTimestampFromDateString(createdDate) : "",
         emailRecipients: readonlyEmailRecipients,
         effectiveDays: readonlyEffectiveLeaveDaysFromLeave,
-        calendarEventId,
+        calendarEventId: calendarEventId,
         numberOfDays: numberOfDays ?: 0.0,
-        location,
-        emailId,
-        emailSubject
+        location: location,
+        emailId: emailId,
+        emailSubject: emailSubject,
+        approverEmail: approverEmail
     };
 }
 

@@ -76,8 +76,8 @@ public type Leave record {|
     string startDate;
     # End date of the leave
     string endDate;
-    # Whether the leave is active
-    boolean isActive;
+    # Leave Status
+    Status status;
     # Type of the leave
     string leaveType;
     # Period type of the leave
@@ -125,8 +125,6 @@ public type LeaveDetails record {|
     *LeaveInput;
     # Leave ID
     int id;
-    # Is leave active
-    boolean isActive;
     # Created date
     string createdDate;
     # Effective days
@@ -216,8 +214,16 @@ public type UserInfo record {|
     string? jobRole;
     # Privileges
     int[] privileges;
+    # Employment start date
+    string? employmentStartDate;
     # Is lead or not
     boolean? isLead;
+    # Is eligible for sabbatical leave or not
+    boolean isSabbaticalLeaveEligible = false;
+    # Last sabbatical leave end date
+    string? lastSabbaticalLeaveEndDate;
+    # Subordinate percentage on sabbatical leave
+    string? subordinatePercentageOnSabbaticalLeave = ();
 |};
 
 # Leave approval status payload.
@@ -236,8 +242,6 @@ public type LeaveApprovalStatusResponse record {|
 
 # Sabbatical leave application payload record.
 public type SabbaticalLeaveApplicationPayload record {|
-    # Last sabbatical leave end date
-    string lastSabbaticalLeaveEndDate;
     # Leave start date
     string startDate = "";
     # Leave end date
@@ -254,14 +258,6 @@ public type AppConfig record {|
     string sabbaticalLeavePolicyUrl;
     # Sabbatical leave user guide URL
     string sabbaticalLeaveUserGuideUrl;
-|};
-
-# Leave approval payload.
-public type LeaveApprovalPayload record {|
-    # Boolean for approval.
-    boolean isApproved;
-    # Leave approval application ID (References leave_approval table ID).  
-    string approvalStatusId;
 |};
 
 # Sabbatical Leave Response.
@@ -285,3 +281,18 @@ public type SabbaticalLeaveEligibilityResponse record {|
     # Is eligible for sabbatical leave
     boolean isEligible;
 |};
+
+# APPROVE/REJECT Action enum.
+public enum Action {
+    APPROVE = "APPROVE",
+    REJECT = "REJECT"
+};
+
+# Status of the leave.
+public enum Status {
+    PENDING = "PENDING",
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+    CANCELLED = "CANCELLED"
+}
+

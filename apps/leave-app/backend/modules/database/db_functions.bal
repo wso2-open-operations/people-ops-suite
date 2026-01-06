@@ -15,7 +15,6 @@
 // under the License.
 
 import ballerina/sql;
-import ballerina/uuid;
 import ballerinax/mysql;
 
 // Initializing Db client for leave database
@@ -40,7 +39,7 @@ public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? of
 # + return - Requested leave or an error on failure
 public isolated function getLeave(int id) returns Leave|error? {
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE ls.id = ${id}`);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE id = ${id}`);
     Leave|error leave = leaveDbClient->queryRow(finalQuery);
     if leave is sql:NoRowsError {
         return ();
@@ -79,53 +78,33 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
 # + id - Leave ID  
 # + return - Returns nil on success, error on failure
 public isolated function cancelLeave(int id) returns error? {
-    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET active = 0 WHERE id = ${id}`;
+    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET status = ${CANCELLED} WHERE id = ${id}`;
     sql:ExecutionResult|sql:Error result = leaveDbClient->execute(sqlQuery);
     if result is error {
         return error("Error occurred while cancelling leave!", result);
     }
 }
 
-# Get sabbatical leave approval status records for leads.
-#
-# + leadEmail - Email of the lead
-# + approvalStatus - List of approval statuses to filter (APPROVED, REJECTED, PENDING)
-# + return - List of LeaveApprovalStatus records or an error on failure
-public isolated function getLeaveApprovalStatusList(string leadEmail, string[] approvalStatus)
-    returns LeaveApprovalStatus[]|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveApprovalStatusListQuery(leadEmail, approvalStatus);
-    stream<LeaveApprovalStatus, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
-    return check from LeaveApprovalStatus leaveApproval in resultStream
-        select {
-            id: leaveApproval.id,
-            email: leaveApproval.email,
-            startDate: leaveApproval.startDate.substring(0, 10),
-            endDate: leaveApproval.endDate.substring(0, 10),
-            submitNote: leaveApproval.submitNote,
-            approvalStatus: leaveApproval.approvalStatus
-        };
-}
-
 # Get sabbatical leave approver Email by Leave Approval ID.
 #
-# + approvalId - Leave approval ID
+# + leaveId - Leave ID
 # + return - Email of the leave approver or an error on failure
-public isolated function getLeaveApproverEmailById(string approvalId) returns string|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveApproverEmailByIdQuery(approvalId);
+public isolated function getLeaveApproverEmailById(int leaveId) returns string|error {
+    sql:ParameterizedQuery sqlQuery = getLeaveApproverEmailByIdQuery(leaveId);
     string|error leaveApproverEmail = check leaveDbClient->queryRow(sqlQuery);
     if leaveApproverEmail is sql:NoRowsError {
-        return error("No leave approver found for the given approval ID");
+        return error("No leave approver found for the given leave ID");
     }
     return leaveApproverEmail;
 }
 
-# Get sabbatical leave submission info by the leave approval id.
+# Get leave submission info by the leave ID.
 #
-# + approvalId - Leave approval ID
+# + leaveId - Leave ID
 # + return - Leave submission info or an error on failure
-public isolated function getLeaveSubmissionInfoByApprovalId(string approvalId)
+public isolated function getLeaveSubmissionInfoByApprovalId(int leaveId)
     returns LeaveSubmissionInfo|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(approvalId);
+    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(leaveId);
     LeaveSubmissionInfo|error leaveSubmissionInfo = check leaveDbClient->queryRow(sqlQuery);
     if leaveSubmissionInfo is sql:NoRowsError {
         return error("No leave submission found for the given approval ID");
@@ -135,12 +114,12 @@ public isolated function getLeaveSubmissionInfoByApprovalId(string approvalId)
 
 # Update leave approval status for a sabbatical leave application.
 #
-# + applicationId - ID of the sabbatical leave application
+# + leaveId - ID of the sabbatical leave application
 # + isApproved - Approval status to be set (APPROVED, REJECTED)
 # + return - Nil on success, error on failure
-public isolated function setLeaveApprovalStatus(string applicationId, boolean isApproved)
+public isolated function setLeaveApprovalStatus(int leaveId, boolean isApproved)
     returns sql:ExecutionResult|error {
-    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(isApproved ? APPROVED : REJECTED, applicationId);
+    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(isApproved ? APPROVED : REJECTED, leaveId);
     return check leaveDbClient->execute(sqlQuery);
 }
 
@@ -169,16 +148,11 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
 # + leadEmail - Reporting lead email
 # + return - The leave approval status ID if successful; otherwise, an error
 public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, float days, string location,
-        string leadEmail) returns string|error {
+        string leadEmail) returns int|error {
 
-    string leaveApprovalStatusID = uuid:createType4AsString();
-    transaction {
-        Leave leaveSubmission = check insertLeave(leaveInput, days, location);
-        _ = check leaveDbClient->execute(insertLeaveApprovalQuery(leaveApprovalStatusID,
-                leaveSubmission.id, leadEmail));
-        check commit;
-    }
-    return leaveApprovalStatusID;
+    Leave leaveSubmission = check insertLeave(leaveInput, days, location);
+
+    return leaveSubmission.id;
 }
 
 # Get subordinate count who are on sabbatical leave under a specific lead.
@@ -199,10 +173,10 @@ public isolated function getEmailNotificationRecipientList(string applicantEmail
 
 # Set calendar event ID for an approved sabbatical leave application.
 #
-# + leaveApprovalId - Leave approval status ID  
+# + leaveId - Leave ID  
 # + calendarEventId - Calendar event ID
 # + return - SQL execution result or an error on failure
-public isolated function setCalendarEventIdForSabbaticalLeave(string leaveApprovalId, string calendarEventId)
+public isolated function setCalendarEventIdForSabbaticalLeave(int leaveId, string calendarEventId)
     returns sql:ExecutionResult|error {
-    return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveApprovalId, calendarEventId));
+    return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveId, calendarEventId));
 }

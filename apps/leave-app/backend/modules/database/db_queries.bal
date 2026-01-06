@@ -20,29 +20,30 @@ import ballerina/sql;
 # + return - Select query
 isolated function getCommonLeaveQuery() returns sql:ParameterizedQuery => `
     SELECT 
-        ls.id, 
-        ls.email, 
-        ls.leave_type,
-        ls.leave_period_type,
-        ls.copy_email_list,
-        ls.notify_everyone,
-        ls.submit_note,
-        ls.cancel_note,
-        ls.created_date,
-        ls.updated_date,
-        ls.email_id,
-        ls.email_subject,
-        ls.active,
-        ls.start_date,
-        ls.end_date,
-        ls.start_half,
-        ls.end_half,
-        ls.canceled_date,
-        ls.num_days,
-        ls.public_submit_note,
-        ls.calendar_event_id,
-        ls.location
-    FROM leave_app.leave_submissions ls LEFT JOIN leave_app.leave_approval la ON ls.id = la.leave_submission_id
+        id, 
+        email, 
+        leave_type,
+        leave_period_type,
+        copy_email_list,
+        notify_everyone,
+        submit_note,
+        cancel_note,
+        created_date,
+        updated_date,
+        email_id,
+        email_subject,
+        start_date,
+        end_date,
+        start_half,
+        end_half,
+        canceled_date,
+        num_days,
+        public_submit_note,
+        calendar_event_id,
+        location,
+        status,
+        approver_email
+    FROM leave_app.leave_submissions
 `;
 
 # Query to fetch leaves from the database.
@@ -57,41 +58,41 @@ isolated function getLeavesQuery(LeaveFilter filter, int? 'limit = (), int? offs
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
 
     sql:ParameterizedQuery[] filterQueries = [];
-    // Include only approved sabbatical leaves
-    filterQueries.push(` (ls.leave_type <> ${SABBATICAL_LEAVE} OR (ls.leave_type = ${SABBATICAL_LEAVE} AND 
-    la.approval_status = ${APPROVED}) ) `);
 
     string[]? emails = filter?.emails;
     if emails is string[] && emails.length() > 0 {
-        filterQueries.push(sql:queryConcat(`ls.email IN (`, sql:arrayFlattenQuery(emails), `)`));
+        filterQueries.push(sql:queryConcat(`email IN (`, sql:arrayFlattenQuery(emails), `)`));
     }
     string? startDate = filter?.startDate;
     string? endDate = filter?.endDate;
     if startDate is string && endDate is string {
-        filterQueries.push(`((ls.start_date BETWEEN ${startDate} AND ${endDate}) 
-            OR (ls.end_date BETWEEN ${startDate} AND ${endDate}) 
-            OR (ls.start_date < ${startDate} AND ls.end_date > ${endDate}))`);
+        filterQueries.push(`((start_date BETWEEN ${startDate} AND ${endDate}) 
+            OR (end_date BETWEEN ${startDate} AND ${endDate}) 
+            OR (start_date < ${startDate} AND end_date > ${endDate}))`);
     } else if startDate is string {
         filterQueries.push(
-            `(ls.start_date >= ${startDate} OR (ls.end_date >= ${startDate} AND ls.start_date < ${startDate}))`
+            `(start_date >= ${startDate} OR (end_date >= ${startDate} AND start_date < ${startDate}))`
         );
     } else if endDate is string {
-        filterQueries.push(`(ls.end_date <= ${endDate} OR (ls.start_date <= ${endDate} AND ls.end_date > ${endDate}))`);
+        filterQueries.push(`(end_date <= ${endDate} OR (start_date <= ${endDate} AND end_date > ${endDate}))`);
     }
 
-    if filter?.isActive is boolean {
-        boolean isActive = <boolean>filter?.isActive;
-        filterQueries.push(`ls.active = ${isActive ? 1 : 0}`);
+    if filter?.approverEmail is string {
+        filterQueries.push(sql:queryConcat(` approver_email = ${filter?.approverEmail} `));
     }
-
+    Status[]? statuses = filter?.statuses;
+    if statuses is Status[] && statuses.length() > 0 {
+        filterQueries.push(sql:queryConcat(` status IN (`, sql:arrayFlattenQuery(statuses), `) `));
+    }
+    
     string[]? leaveTypes = filter?.leaveTypes;
     if leaveTypes is string[] && leaveTypes.length() != 0 {
-        filterQueries.push(sql:queryConcat(`ls.leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
+        filterQueries.push(sql:queryConcat(`leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
     }
 
     sql:ParameterizedQuery sqlQuery = buildSqlQuery(mainQuery, filterQueries);
     sql:ParameterizedQuery orderBy = filter?.orderBy == ASC ? `ASC` : `DESC`;
-    return sql:queryConcat(sqlQuery, ` ORDER BY ls.created_date `, orderBy,
+    return sql:queryConcat(sqlQuery, ` ORDER BY created_date `, orderBy,
             ` LIMIT ${'limit ?: MAXIMUM_LIMIT_VALUE} OFFSET ${offset ?: 0}`);
 }
 
@@ -117,14 +118,16 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             created_date,
             email_id,
             email_subject,
-            active,
+            status,
+            approver_email,
             start_date,
             end_date,
             start_half,
             num_days,
             public_submit_note,
             calendar_event_id,
-            location
+            location,
+            active
         ) VALUES (
             ${input.email},
             ${input.leaveType},
@@ -136,14 +139,16 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             NOW(),
             ${input.emailId ?: ""},
             ${input.emailSubject},
-            1,
+            ${input.status},
+            ${input.approverEmail},
             TIMESTAMP(${input.startDate}, ${isMorningLeave is boolean ? (isMorningLeave ? "00:00:00" : "13:00:00") : "00:00:00"}),
             TIMESTAMP(${input.endDate}, ${isMorningLeave is boolean ? (isMorningLeave ? "13:00:00" : "23:59:00") : "23:59:00"}),
             ${isMorningLeave is boolean ? !isMorningLeave : ()},
             ${numberOfDays},
             ${input?.isPublicComment ?: false},
             ${input?.calendarEventId},
-            ${location})
+            ${location},
+            '1')
     `;
 
     return insertQuery;
@@ -158,62 +163,63 @@ isolated function getLeaveApprovalStatusListQuery(string leadEmail, string[] sta
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = sql:queryConcat(`
         SELECT 
-            la.id as id,
-            la.approval_status as approvalStatus,
-            ls.email as email,
-            ls.start_date as startDate,
-            ls.end_date as endDate,
-            ls.submit_note as submitNote
-        FROM leave_approval la INNER JOIN leave_submissions ls ON la.leave_submission_id = ls.id
-        WHERE la.approver_email = ${leadEmail} AND la.approval_status IN (`,
+            id as id,
+            status as approvalStatus,
+            email as email,
+            start_date as startDate,
+            end_date as endDate,
+            submit_note as submitNote
+        FROM leave_submissions WHERE approver_email = ${leadEmail} AND status IN (`,
             sql:arrayFlattenQuery(status), `)`);
 
     return query;
 }
 
-# Query to get Leave Approver Email by Leave Approval ID.
+# Query to get Leave Approver Email by Leave ID.
 #
-# + approvalId - Leave approval ID
+# + leaveId - Leave ID
 # + return - Query to get leave approver email
-isolated function getLeaveApproverEmailByIdQuery(string approvalId) returns sql:ParameterizedQuery {
+isolated function getLeaveApproverEmailByIdQuery(int leaveId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT 
             approver_email
-        FROM leave_approval
-        WHERE id = ${approvalId}
+        FROM leave_submissions
+        WHERE id = ${leaveId}
     `;
     return query;
 }
 
-# Query to approve or reject a sabbatical leave application (for leads).
+# Query to approve or reject a  leave application (for leads).
 #
 # + approvalStatus - Status of the leave to be set (APPROVED, REJECTED)
-# + applicationId - ID of the sabbatical leave approval record from leave_approval table
-# + return - Update query to approve or reject sabbatical leave application
-isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, string applicationId)
+# + leaveId - ID of the leave record 
+# + return - Update query to approve or reject leave application
+isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int leaveId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        UPDATE leave_approval
-        SET approval_status = ${approvalStatus}
-        WHERE id = ${applicationId}
+        UPDATE
+            leave_submissions
+        SET
+            status = ${approvalStatus}
+        WHERE 
+            id = ${leaveId}
     `;
 
     return query;
 }
 
-# Query to get leave submission info by leave approval ID.
+# Query to get leave submission info by leave ID.
 #
-# + approvalId - ID of the leave approval record
+# + leaveId - ID of the leave record
 # + return - Query to get leave submission info
-isolated function getLeaveSubmissionInfoByApprovalIdQuery(string approvalId)
+isolated function getLeaveSubmissionInfoByApprovalIdQuery(int leaveId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT 
-            ls.email,
-            ls.start_date as startDate,
-            ls.end_date as endDate
-        FROM leave_submissions ls INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
-        WHERE la.id = ${approvalId}
+            email,
+            start_date as startDate,
+            end_date as endDate
+        FROM leave_submissions WHERE id = ${leaveId}
     `;
 
     return query;
@@ -227,39 +233,11 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
     sql:ParameterizedQuery query = `
         SELECT 
             end_date
-        FROM leave_submissions ls INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
-        WHERE ls.email = ${employeeEmail} AND ls.leave_type = ${SABBATICAL_LEAVE} AND la.approval_status = ${APPROVED}
+        FROM leave_submissions
+        WHERE email = ${employeeEmail} AND leave_type = ${SABBATICAL_LEAVE} AND status = ${APPROVED}
         ORDER BY end_date DESC
         LIMIT 1
     `;
-    return query;
-}
-
-# Query to insert leave approval record for a sabbatical leave application.
-#
-# + id - Leave approval ID
-# + leavesSubmissionId - Leave submission ID
-# + approverEmail - Email of the approver
-# + return - Insert query to add leave approval record
-isolated function insertLeaveApprovalQuery(string id, int leavesSubmissionId, string approverEmail)
-returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-            INSERT INTO leave_approval (
-                id,
-                leave_submission_id,
-                approver_email,
-                comment,
-                approval_status,
-                created_at
-            ) VALUES (
-                ${id},
-                ${leavesSubmissionId},
-                ${approverEmail},
-                'NO COMMENT',
-                ${PENDING},
-                NOW()
-            )
-            `;
     return query;
 }
 
@@ -269,11 +247,13 @@ returns sql:ParameterizedQuery {
 # + return - Select query to get count of subordinates on sabbatical leave
 isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT COUNT(la.id)
-        FROM leave_approval la INNER JOIN leave_submissions ls ON la.leave_submission_id = ls.id 
+        SELECT 
+            COUNT(id)
+        FROM 
+            leave_submissions
         WHERE
-        la.approver_email = ${leadEmail} AND la.approval_status = ${APPROVED} AND
-        ls.leave_type = ${SABBATICAL_LEAVE} AND ls.start_date <= UTC_TIMESTAMP() AND ls.end_date >= UTC_TIMESTAMP()
+            approver_email = ${leadEmail} AND status = ${APPROVED} AND leave_type = ${SABBATICAL_LEAVE} AND
+            start_date <= UTC_TIMESTAMP() AND end_date >= UTC_TIMESTAMP()
     `;
     return query;
 }
@@ -284,10 +264,14 @@ isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) re
 # + return - Select query to get email notification list
 isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        SELECT copy_email_list
-        FROM leave_submissions
-        WHERE email = ${applicantEmail} AND leave_type <> ${SABBATICAL_LEAVE}
-        ORDER BY created_date DESC
+        SELECT
+            copy_email_list
+        FROM
+            leave_submissions
+        WHERE 
+            email = ${applicantEmail} AND leave_type <> ${SABBATICAL_LEAVE}
+        ORDER BY
+            created_date DESC
         LIMIT 1
     `;
     return query;
@@ -295,16 +279,15 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
 
 # Query to set the calendar event ID for a sabbatical leave record.
 #
-# + approvalStatusId - Leave approval status ID
+# + leaveId - Leave ID
 # + calendarEventId - Calendar event ID
 # + return - Update query to set calendar event ID
-isolated function setSabbaticalLeaveCalendarEventIdQuery(string approvalStatusId, string calendarEventId)
+isolated function setSabbaticalLeaveCalendarEventIdQuery(int leaveId, string calendarEventId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
-        UPDATE leave_submissions ls
-        INNER JOIN leave_approval la ON ls.id = la.leave_submission_id
-        SET ls.calendar_event_id = ${calendarEventId}
-        WHERE la.id = ${approvalStatusId}
+        UPDATE leave_submissions
+        SET calendar_event_id = ${calendarEventId}
+        WHERE id = ${leaveId}
     `;
     return query;
 }

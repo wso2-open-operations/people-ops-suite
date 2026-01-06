@@ -85,12 +85,12 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 # + leadEmail - Reporting lead email
 # + leaveStartDate - Leave start date
 # + leaveEndDate - Leave end date
-# + approvalStatusId - Leave approval status ID
+# + leaveId - Leave ID
 # + location - Employee location
 # + recipientsList - List of email recipients
 # + return - Error if any
 isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
-        string leaveStartDate, string leaveEndDate, string approvalStatusId, string location, string[] recipientsList)
+        string leaveStartDate, string leaveEndDate, int leaveId, string location, string[] recipientsList)
     returns error? {
     string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
     + ")";
@@ -118,7 +118,7 @@ isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved,
     };
     createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
     sql:ExecutionResult|error calendarEventResult = check database:setCalendarEventIdForSabbaticalLeave(
-            approvalStatusId, calendarEventId);
+            leaveId, calendarEventId);
     if calendarEventResult is error {
         log:printError("Failed to set calendar event ID for sabbatical leave in database", calendarEventResult);
     }
@@ -151,9 +151,11 @@ isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail
         comment: comment,
         emailSubject: subject,
         emailRecipients: recipientsList,
-        isMorningLeave: ()
+        isMorningLeave: (),
+        status: PENDING,
+        approverEmail: leadEmail
     };
-    string|error approvalStatusId = database:createSabbaticalLeaveRecord(leaveInput, numberOfDays, location,
+    int|error approvalStatusId = database:createSabbaticalLeaveRecord(leaveInput, numberOfDays, location,
             leadEmail);
     if approvalStatusId is error {
         return error("Error occurred while creating sabbatical leave record.", approvalStatusId);
