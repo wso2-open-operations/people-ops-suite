@@ -703,7 +703,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + return - Mandatory email addresses for leave notifications or Internal Server Error
-    resource function get default\-mails(http:RequestContext ctx)
+    resource function get leaves/default\-mails(http:RequestContext ctx)
         returns employee:DefaultMailResponse|http:Unauthorized|http:InternalServerError {
 
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -765,7 +765,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + return - Success response if the application is valid, otherwise an error response  
-    resource function post sabbatical\-leave/apply/validate(http:RequestContext ctx)
+    resource function post leaves/sabbatical/validate(http:RequestContext ctx)
         returns SabbaticalLeaveEligibilityResponse|http:BadRequest|http:Unauthorized|http:InternalServerError {
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
 
@@ -820,7 +820,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + payload - Sabbatical leave application payload
     # + return - Success response if the application is submitted successfully, otherwise an error response
-    resource function post sabbatical\-leave/apply(http:RequestContext ctx, SabbaticalLeaveApplicationPayload payload)
+    resource function post leaves/sabbatical/apply(http:RequestContext ctx, SabbaticalLeaveApplicationPayload payload)
     returns http:Ok|http:BadRequest|http:InternalServerError|http:Unauthorized {
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
         if authorization:checkPermissions(authorization:authorizedRoles.internRoles, groups) {
@@ -949,7 +949,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + payload - LeaveApprovalPayload request payload containing the approval status and approval id 
     # + return - Success response if the application is approved/rejected successfully, otherwise an error response
-    resource function post sabbatical\-leave/approve(http:RequestContext ctx, LeaveApprovalPayload payload)
+    resource function post leaves/sabbatical/approve(http:RequestContext ctx, LeaveApprovalPayload payload)
         returns http:Ok|http:InternalServerError|http:Unauthorized {
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
         if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
@@ -1066,7 +1066,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + payload - Array of approval statuses to filter (APPROVED, REJECTED, PENDING)
     # + return - List of sabbatical leave applications
-    resource function post sabbatical\-leave/approval\-status(http:RequestContext ctx,
+    resource function post leaves/sabbatical/approve/history(http:RequestContext ctx,
             LeaveApprovalStatusPayload payload)
         returns LeaveApprovalStatusResponse|http:InternalServerError|http:Unauthorized {
 
