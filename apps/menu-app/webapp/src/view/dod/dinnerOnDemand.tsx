@@ -99,7 +99,7 @@ export default function DinnerOnDemand() {
   });
 
   const isFormDisabled =
-    formik.isSubmitting || !formik.dirty || !formik.values.mealOption || isDodTimeActive;
+    formik.isSubmitting || !formik.dirty || !formik.values.mealOption || !isDodTimeActive;
 
   const handleOpenCancelDialog = () => {
     setIsCancelDialogOpen(true);
