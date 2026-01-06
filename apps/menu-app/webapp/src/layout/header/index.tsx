@@ -30,10 +30,8 @@ const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-  
-  const user = useAppSelector((state) => 
-    userApi.endpoints.getUserInfo.select()(state)?.data
-  );
+
+  const user = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state)?.data);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -47,7 +45,7 @@ const Header = () => {
     <Box
       sx={{
         zIndex: 10,
-        backgroundColor: theme.palette.surface.territory.active,
+        backgroundColor: theme.palette.surface.secondary.active,
         boxShadow: theme.shadows[4],
       }}
     >
