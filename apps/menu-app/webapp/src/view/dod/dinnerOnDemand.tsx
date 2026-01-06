@@ -93,7 +93,7 @@ export default function DinnerOnDemand() {
 
         await submitDinner(submitPayload);
       } catch (error) {
-        console.error("Failed to submit feedback:", error);
+        console.error("Failed to submit dinner request:", error);
       }
     },
   });
