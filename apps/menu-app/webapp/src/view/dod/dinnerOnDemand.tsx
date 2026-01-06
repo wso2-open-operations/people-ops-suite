@@ -155,7 +155,7 @@ export default function DinnerOnDemand() {
                     backgroundColor:
                       formik.values.mealOption === meal.value
                         ? theme.palette.fill.secondary_light.active
-                        : theme.palette.surface.territory.active,
+                        : theme.palette.surface.secondary.active,
                     "&:hover": {
                       border:
                         formik.values.mealOption !== meal.value
