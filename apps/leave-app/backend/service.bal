@@ -193,7 +193,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            if email != userInfo.email {
+            if email != userInfo.email && approverEmail != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
                         authorization:authorizedRoles.adminRoles);
                 if !validateForSingleRole {
@@ -962,7 +962,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        if <boolean>employeeDetails.lead {
+        if !<boolean>employeeDetails.lead {
             string errMsg = "The current user is not a lead. Unauthorized access to approve/reject sabbatical " +
             "leave application.";
             log:printError(errMsg);
