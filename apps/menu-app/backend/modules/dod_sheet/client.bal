@@ -8,7 +8,7 @@ import ballerinax/googleapis.sheets as sheets;
 
 configurable DodSheet dodSheetClientConfig = ?;
 
-public final sheets:ConnectionConfig sheetsConfig = {
+final sheets:ConnectionConfig sheetsConfig = {
     auth: {
         clientId: dodSheetClientConfig.clientId,
         clientSecret: dodSheetClientConfig.clientSecret,
