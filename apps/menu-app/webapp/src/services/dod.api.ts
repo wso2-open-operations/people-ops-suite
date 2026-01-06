@@ -16,6 +16,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import { DinnerRequest } from "@/types/types";
 import { AppConfig } from "@config/config";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 import { baseQueryWithRetry } from "./BaseQuery";
 
@@ -35,6 +36,24 @@ export const dodApi = createApi({
         body: dinnerRequest,
       }),
       invalidatesTags: ["DinnerRequest"],
+      async onQueryStarted(_payload, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: `${_payload.mealOption} Dinner ordered successfully!`,
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Failed order dinner, Try again...",
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
     deleteDinnerRequest: builder.mutation<void, void>({
       query: () => ({
@@ -42,6 +61,24 @@ export const dodApi = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["DinnerRequest"],
+      async onQueryStarted(_payload, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Dinner request delete successfully",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Failed to delete dinner request, Try again...",
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
   }),
 });
