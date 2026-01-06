@@ -44,12 +44,48 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 
 # Fetch employees with filters.
 # 
-# + filter - Get employees filter payload
+# + params - Get employees filter payload
 # + return - List of employees or error
-public isolated function getEmployees(GetEmployeesFilter filter) returns Employee[]|error {
-    stream<Employee, error?> employeeStream = databaseClient->query(getEmployeesQuery(filter));
-    return from Employee employee in employeeStream
-        select employee;
+public isolated function getEmployees(EmployeeSearchParameters params) returns EmployeeFilterResult|error {
+    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(params));
+
+    int totalCount = 0;
+    Employee[] employees = [];
+
+    check from EmployeeRecord employeeRecord in resultStream
+        do {
+            totalCount = employeeRecord.totalCount;
+
+            Employee employee = {
+                employeeId: employeeRecord.employeeId,
+                firstName: employeeRecord.firstName,
+                lastName: employeeRecord.lastName,
+                workEmail: employeeRecord.workEmail,
+                employeeThumbnail: employeeRecord.employeeThumbnail,
+                epf: employeeRecord.epf,
+                employmentLocation: employeeRecord.employmentLocation,
+                workLocation: employeeRecord.workLocation,
+                startDate: employeeRecord.startDate,
+                managerEmail: employeeRecord.managerEmail,
+                additionalManagerEmails: employeeRecord.additionalManagerEmails,
+                employeeStatus: employeeRecord.employeeStatus,
+                continuousServiceRecord: employeeRecord.continuousServiceRecord,
+                probationEndDate: employeeRecord.probationEndDate,
+                agreementEndDate: employeeRecord.agreementEndDate,
+                employmentType: employeeRecord.employmentType,
+                designation: employeeRecord.designation,
+                secondaryJobTitle: employeeRecord.secondaryJobTitle,
+                office: employeeRecord.office,
+                businessUnit: employeeRecord.businessUnit,
+                team: employeeRecord.team,
+                subTeam: employeeRecord.subTeam,
+                unit: employeeRecord.unit
+            };
+
+            employees.push(employee);
+        };
+
+    return { employees: employees, totalCount: totalCount };
 }
 
 # Fetch continuous service record by work email.

@@ -110,12 +110,12 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 
 # Fetch employees with filters.
 # 
-# + filter - Get employees filter payload
+# + params - Get employees filter payload
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(GetEmployeesFilter filter) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql:ParameterizedQuery {
 
-    int page = filter.page ?: 1;
-    int perPage = filter.perPage ?: 20;
+    int page = params.page ?: 1;
+    int perPage = params.perPage ?: 20;
     int offset = (page - 1) * perPage;
 
     return `
@@ -142,36 +142,38 @@ isolated function getEmployeesQuery(GetEmployeesFilter filter) returns sql:Param
             bu.name AS businessUnit,
             t.name AS team,
             st.name AS subTeam,
-            u.name AS unit
+            u.name AS unit,
+            COUNT(*) OVER() AS totalCount
 
         FROM 
             employee e
-            INNER JOIN personal_info pi    ON pi.id = e.personal_info_id
-            INNER  JOIN employment_type et ON et.id = e.employment_type_id
-            INNER JOIN designation d       ON d.id = e.designation_id
-            INNER JOIN office o            ON o.id = e.office_id
-            INNER JOIN business_unit bu    ON bu.id = e.business_unit_id
-            INNER JOIN team t              ON t.id = e.team_id
-            INNER  JOIN sub_team st        ON st.id = e.sub_team_id
-            LEFT  JOIN unit u              ON u.id = e.unit_id
+            INNER JOIN personal_info pi ON pi.id = e.personal_info_id
+            INNER JOIN employment_type et ON et.id = e.employment_type_id
+            INNER JOIN designation d ON d.id = e.designation_id
+            INNER JOIN office o ON o.id = e.office_id
+            INNER JOIN business_unit bu ON bu.id = e.business_unit_id
+            INNER JOIN team t ON t.id = e.team_id
+            INNER JOIN sub_team st ON st.id = e.sub_team_id
+            LEFT JOIN unit u ON u.id = e.unit_id
         WHERE
-            (${filter.title} IS NULL OR pi.title = ${filter.title})
-        AND (${filter.firstName} IS NULL OR e.first_name LIKE CONCAT('%', ${filter.firstName}, '%'))
-        AND (${filter.lastName}  IS NULL OR e.last_name  LIKE CONCAT('%', ${filter.lastName},  '%'))
-        AND (${filter.nicOrPassport} IS NULL OR pi.nic_or_passport = ${filter.nicOrPassport})
-        AND (${filter.dateOfBirth} IS NULL OR pi.dob = ${filter.dateOfBirth})
-        AND (${filter.gender} IS NULL OR pi.gender = ${filter.gender})
-        AND (${filter.nationality} IS NULL OR pi.nationality = ${filter.nationality})
-        AND (${filter.personalEmail} IS NULL OR pi.personal_email = ${filter.personalEmail})
-        AND (${filter.personalPhone} IS NULL OR pi.personal_phone = ${filter.personalPhone})
-        AND (${filter.residentPhone} IS NULL OR pi.resident_number = ${filter.residentPhone})
-        AND (${filter.city} IS NULL OR pi.city = ${filter.city})
-        AND (${filter.country} IS NULL OR pi.country = ${filter.country})
-        AND (${filter.businessUnit} IS NULL OR bu.name = ${filter.businessUnit})
-        AND (${filter.team} IS NULL OR t.name = ${filter.team})
-        AND (${filter.subTeam} IS NULL OR st.name = ${filter.subTeam})
-        AND (${filter.designation} IS NULL OR d.designation = ${filter.designation})
-        AND (${filter.employmentType} IS NULL OR et.name = ${filter.employmentType})
+            (${params.title} IS NULL OR pi.title = ${params.title})
+        AND (${params.firstName} IS NULL OR e.first_name LIKE CONCAT('%', ${params.firstName}, '%'))
+        AND (${params.lastName}  IS NULL OR e.last_name  LIKE CONCAT('%', ${params.lastName},  '%'))
+        AND (${params.nicOrPassport} IS NULL OR pi.nic_or_passport LIKE CONCAT('%', ${params.nicOrPassport}, '%'))
+        AND (${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})
+        AND (${params.gender} IS NULL OR pi.gender = ${params.gender})
+        AND (${params.nationality} IS NULL OR pi.nationality = ${params.nationality})
+        AND (${params.personalEmail} IS NULL OR pi.personal_email LIKE CONCAT('%', ${params.personalEmail}, '%'))
+        AND (${params.personalPhone} IS NULL OR pi.personal_phone LIKE CONCAT('%', ${params.personalPhone}, '%'))
+        AND (${params.residentPhone} IS NULL OR pi.resident_number LIKE CONCAT('%', ${params.residentPhone}, '%'))
+        AND (${params.city} IS NULL OR pi.city = ${params.city})
+        AND (${params.country} IS NULL OR pi.country = ${params.country})
+        AND (${params.businessUnit} IS NULL OR bu.name = ${params.businessUnit})
+        AND (${params.team} IS NULL OR t.name = ${params.team})
+        AND (${params.subTeam} IS NULL OR st.name = ${params.subTeam})
+        AND (${params.designation} IS NULL OR d.designation = ${params.designation})
+        AND (${params.employmentType} IS NULL OR et.name = ${params.employmentType})
+        AND (${params.unit} IS NULL OR u.name = ${params.unit})
 
         ORDER BY e.id ASC
         LIMIT ${perPage} OFFSET ${offset}

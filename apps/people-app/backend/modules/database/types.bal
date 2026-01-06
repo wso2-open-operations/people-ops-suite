@@ -141,7 +141,7 @@ public type Employee record {|
 |};
 
 # Filter for getting employees.
-public type GetEmployeesFilter record {|
+public type EmployeeSearchParameters record {|
     # Title
     string? title = ();
     # First name
@@ -176,10 +176,27 @@ public type GetEmployeesFilter record {|
     string? designation = ();
     # Employment type
     string? employmentType = ();
+    # Unit
+    string? unit = ();
     # Page number
     int? page = ();
     # Records per page
     int? perPage = ();
+|};
+
+# Employee record with total count.
+public type EmployeeRecord record {|
+    *Employee;
+    # Total count of matching employees
+    int totalCount;
+|};
+
+# Filtered employees list with total count.
+public type EmployeeFilterResult record {|
+    # List of filtered employees
+    Employee[] employees;
+    # Total count of matching employees
+    int totalCount;
 |};
 
 # Personal information of an employee.
