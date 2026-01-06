@@ -66,7 +66,7 @@ export const dodApi = createApi({
           await queryFulfilled;
           dispatch(
             enqueueSnackbarMessage({
-              message: "Dinner request delete successfully",
+              message: "Dinner request deleted successfully",
               type: "success",
             }),
           );
