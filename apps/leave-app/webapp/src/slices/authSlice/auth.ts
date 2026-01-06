@@ -59,9 +59,14 @@ export interface UserInfoInterface {
   firstName: string;
   lastName: string;
   workEmail: string;
+  leadEmail: string;
   employeeThumbnail: string | null;
   jobRole: string;
   isLead: boolean;
+  employmentStartDate: string;
+  isSabbaticalLeaveEligible: boolean;
+  lastSabbaticalLeaveEndDate: string;
+  subordinatePercentageOnSabbaticalLeave: number | null;
   privileges: number[];
 }
 

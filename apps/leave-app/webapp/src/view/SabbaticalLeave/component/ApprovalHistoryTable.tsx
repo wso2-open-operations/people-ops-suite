@@ -17,15 +17,9 @@
 import { Box, Chip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-export interface EmployeeLeaveData {
-  id: number;
-  email: string;
-  startDate: Date;
-  endDate: Date;
-  status: string;
-}
+import { ApprovalStatusItem } from "@root/src/types/types";
 
-export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData[] }) {
+export default function ApprovalHistoryTable({ rows }: { rows: ApprovalStatusItem[] }) {
   const theme = useTheme();
 
   const columns: GridColDef[] = [
@@ -39,19 +33,19 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
     {
       field: "startDate",
       headerName: "Start Date",
-      type: "date",
+      type: "string",
       flex: 1,
       editable: false,
     },
     {
       field: "endDate",
       headerName: "End Date",
-      type: "date",
+      type: "string",
       flex: 1,
       editable: false,
     },
     {
-      field: "status",
+      field: "approvalStatus",
       headerName: "Status",
       type: "string",
       flex: 1,
@@ -96,7 +90,7 @@ export default function ApprovalHistoryTable({ rows }: { rows: EmployeeLeaveData
               color: chipProps.borderColor,
               borderColor: chipProps.borderColor,
               backgroundColor: "transparent",
-              borderRadius: "0.5rem",
+              borderRadius: "2rem",
               fontSize: theme.typography.caption.fontSize,
               fontWeight: 700,
               width: "10rem",

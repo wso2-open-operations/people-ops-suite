@@ -14,18 +14,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack } from "@mui/material";
+import { Alert, CircularProgress, Stack, useTheme } from "@mui/material";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { useApprovalHistoryData } from "@root/src/hooks/hooks";
+import { ApprovalStatus } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
+  const theme = useTheme();
+  // fetch the approval history data.
+  const { data, loading, refetch } = useApprovalHistoryData([ApprovalStatus.PENDING]);
+
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Approve" secondWord="Leave (For Reporting Leads)" />
-      <ApproveLeaveTable rows={[]} />
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        borderBottom={`1px solid ${theme.palette.divider}`}
+        pb="1rem"
+      >
+        <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
+        <Alert variant="outlined" severity="warning">
+          {data.percentageOfEmployeesOnSabbaticalLeave} of your subordinates are on sabbatical leave
+        </Alert>
+      </Stack>
+      {loading ? (
+        <CircularProgress size={30} />
+      ) : (
+        <ApproveLeaveTable rows={data.leaveApprovalStatusList} onRefresh={refetch} />
+      )}
     </Stack>
   );
 }

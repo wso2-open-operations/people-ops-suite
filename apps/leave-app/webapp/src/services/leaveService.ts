@@ -17,8 +17,13 @@
 import { AppConfig } from "@root/src/config/config";
 import {
   AppConfigResponse,
+  ApprovalRequest,
+  ApprovalResponse,
+  ApprovalStatusRequest,
+  ApprovalStatusResponse,
   DayType,
-  DefaultMail,
+  DefaultMailResponse,
+  EligibilityResponse,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -28,6 +33,8 @@ import {
   LeaveSubmissionResponse,
   LeaveValidationRequest,
   LeaveValidationResponse,
+  SabbaticalApplicationRequest,
+  SabbaticalApplicationResponse,
 } from "@root/src/types/types";
 import { APIService } from "@root/src/utils/apiService";
 
@@ -38,11 +45,12 @@ import { APIService } from "@root/src/utils/apiService";
  */
 export const validateLeaveRequest = async (
   request: LeaveValidationRequest,
+  isValidationOnlyMode: boolean,
 ): Promise<LeaveValidationResponse> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveValidationResponse>(
-    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=true`,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${isValidationOnlyMode}`,
     request,
   );
 
@@ -65,10 +73,10 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
  * Fetch default mail recipients from the backend.
  * @returns Promise with array of default mails
  */
-export const getDefaultMails = async (): Promise<DefaultMail[]> => {
+export const getDefaultMails = async (): Promise<DefaultMailResponse> => {
   const apiInstance = APIService.getInstance();
 
-  const response = await apiInstance.get<DefaultMail[]>(AppConfig.serviceUrls.defaultMails);
+  const response = await apiInstance.get<DefaultMailResponse>(AppConfig.serviceUrls.defaultMails);
 
   return response.data;
 };
@@ -84,9 +92,20 @@ export const submitLeaveRequest = async (
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveSubmissionResponse>(
-    AppConfig.serviceUrls.leaves,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${false}`,
     request,
   );
+
+  return response.data;
+};
+
+/**
+ * Cancel a leave request.
+ */
+export const cancelLeaveRequest = async (id: number) => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);
 
   return response.data;
 };
@@ -125,6 +144,58 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
 };
 
 /**
+ * Get leave approval status list of subordinates.
+ * @param request - request payload
+ * @returns Promise with approval status response
+ */
+export const getApprovalStatusList = async (
+  request: ApprovalStatusRequest,
+): Promise<ApprovalStatusResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<ApprovalStatusResponse>(
+    AppConfig.serviceUrls.approvalStatusList,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Approve or reject sabbatical leave requests.
+ * @param request - request payload
+ * @returns Promise with approval response
+ */
+export const approveLeave = async (request: ApprovalRequest): Promise<ApprovalResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<ApprovalResponse>(
+    AppConfig.serviceUrls.approveSabbaticalLeave,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Submit a sabbatical leave request.
+ * @param request - request payload
+ * @returns Promise with approval response
+ */
+export const submitSabbaticalLeaveRequest = async (
+  request: SabbaticalApplicationRequest,
+): Promise<SabbaticalApplicationResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<SabbaticalApplicationResponse>(
+    AppConfig.serviceUrls.applySabbaticalLeave,
+    request,
+  );
+
+  return response.data;
+};
+
+/**
  * Get the application configurations.
  * @returns application configuration data
  */
@@ -150,6 +221,6 @@ export const formatDateForApi = (date: any): string => {
  * @param daysCount - Number of days selected
  * @returns Period type "one" or "multiple"
  */
-export const getPeriodType = (daysCount: number): DayType.one | DayType.multiple => {
-  return daysCount === 1 ? DayType.one : DayType.multiple;
+export const getPeriodType = (daysCount: number): DayType.ONE | DayType.MULTIPLE => {
+  return daysCount === 1 ? DayType.ONE : DayType.MULTIPLE;
 };

@@ -27,7 +27,7 @@ interface TabsPageProps {
   tabsPage: TabProps[];
 }
 
-interface TabProps {
+export interface TabProps {
   tabTitle: string;
   tabPath: string;
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;

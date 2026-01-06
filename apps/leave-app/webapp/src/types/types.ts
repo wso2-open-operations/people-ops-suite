@@ -37,8 +37,14 @@ export enum ConfirmationType {
 }
 
 export enum DayType {
-  one = "one",
-  multiple = "multiple",
+  ONE = "one",
+  MULTIPLE = "multiple",
+}
+
+export enum ApprovalStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
 }
 
 export interface RouteDetail {
@@ -85,6 +91,13 @@ export interface DefaultMail {
   email: string;
   thumbnail: string;
 }
+
+// Default mail response type.
+export interface DefaultMailResponse {
+  mandatoryMails: DefaultMail[];
+  optionalMails: DefaultMail[];
+}
+
 // Leave submission type.
 export interface LeaveSubmissionRequest {
   periodType: "one" | "multiple" | "half";
@@ -106,7 +119,7 @@ export interface LeaveSubmissionResponse {
 
 // Leave history response for a single leave.
 export interface SingleLeaveHistory {
-  id: string;
+  id: number;
   email: string;
   leaveType: string;
   periodType: string;
@@ -160,7 +173,62 @@ export interface LeadReportResponse {
     sabbatical?: number;
   };
 }
+
+// Single approval status item.
+export interface ApprovalStatusItem {
+  id: string;
+  email: string;
+  startDate: string;
+  endDate: string;
+  approvalStatus: ApprovalStatus;
+  submitNote: string;
+}
+
+// Approval status request payload.
+export interface ApprovalStatusRequest {
+  status: ApprovalStatus[];
+}
+
+// Approval status response payload.
+export interface ApprovalStatusResponse {
+  percentageOfEmployeesOnSabbaticalLeave: string;
+  leaveApprovalStatusList: ApprovalStatusItem[];
+}
+
+// Approval request payload.
+export interface ApprovalRequest {
+  isApproved: boolean;
+  approvalStatusId: string;
+}
+
+// Approval response payload.
+export interface ApprovalResponse {
+  message: string;
+}
+
+// Eligibility response type.
+export interface EligibilityResponse {
+  employmentStartDate: string;
+  lastSabbaticalLeaveEndDate: string;
+  isEligible: boolean;
+}
+
+// Sabbatical application request type.
+export interface SabbaticalApplicationRequest {
+  lastSabbaticalLeaveEndDate: string;
+  startDate: string;
+  endDate: string;
+  additionalComment: string;
+}
+
+// Sabbatical application response type.
+export interface SabbaticalApplicationResponse {
+  message: string;
+}
+
 // App config response type.
 export interface AppConfigResponse {
   isSabbaticalLeaveEnabled: boolean;
+  sabbaticalLeavePolicyUrl: string;
+  sabbaticalLeaveUserGuideUrl: string;
 }
