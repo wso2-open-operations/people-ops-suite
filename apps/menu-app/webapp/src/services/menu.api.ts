@@ -3,6 +3,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 
 import type { Menu, MetaData, RawMenu, RawMetaData } from "@/types/types";
 
+import { enqueueSnackbarMessage } from "../slices/commonSlice/common";
 import { baseQueryWithRetry } from "./BaseQuery";
 
 interface FeedbackRequest {
@@ -40,6 +41,25 @@ export const menuApi = createApi({
         method: "POST",
         body: feedback,
       }),
+      invalidatesTags: ["Menu"],
+      async onQueryStarted(_payload, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Meal feedback submitted successfully",
+              type: "success",
+            }),
+          );
+        } catch (error: any) {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "Failed submit meal feedback",
+              type: "error",
+            }),
+          );
+        }
+      },
     }),
   }),
 });
