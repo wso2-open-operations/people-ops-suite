@@ -232,6 +232,7 @@ export default function DinnerOnDemand() {
                   <Box
                     component="span"
                     onClick={handleOpenCancelDialog}
+                    role="button"
                     sx={{
                       color: "#CC5500",
                       cursor: "pointer",
