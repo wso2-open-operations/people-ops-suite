@@ -1,235 +1,203 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
 
 import React, { useContext, useEffect, useState } from "react";
-
 import { useIdleTimer } from "react-idle-timer";
-
-import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
-import ErrorHandler from "@component/common/ErrorHandler";
-import PreLoader from "@component/common/PreLoader";
-import StatusWithAction from "@component/ui/StatusWithAction";
 import { Button } from "@mui/material";
+import { ApiService } from "@utils/apiService";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
-import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { getUserInfo } from "@slices/userSlice/user";
-import { APIService } from "@utils/apiService";
+
+import { useAuthContext, BasicUserInfo, SecureApp } from "@asgardeo/auth-react";
+
+import {
+  setUserAuthData,
+  loadPrivileges,
+  loadEmployeeInfo,
+} from "@slices/authSlice";
+
+import { useAppDispatch } from "../slices/store";
+import LoginView from "@components/ui/LoginView";
+import PreLoader from "@components/common/PreLoader";
+import { fetchEmployees } from "@slices/metaSlice";
 
 type AuthContextType = {
+  revokeToken: () => void;
   appSignIn: () => void;
   appSignOut: () => void;
+  user: BasicUserInfo | null;
 };
-const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
+
+type AppAuthProviderProps = {
+  children: React.ReactNode;
+};
 
 const timeout = 1800_000;
 const promptBeforeIdle = 4_000;
 
-const AppAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [idlePromptOpen, setIdlePromptOpen] = useState(false);
-  const [ui, setUI] = useState<"loading" | "active" | "logout" | "error">(
+const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
+
+const AppAuthProvider = (props: AppAuthProviderProps) => {
+  const [user, setUser] = useState<BasicUserInfo | null>(null);
+  const [open, setOpen] = useState<boolean>(false);
+  const [appState, setAppState] = useState<"logout" | "active" | "loading">(
     "loading"
   );
 
   const dispatch = useAppDispatch();
-  const auth = useAppSelector((state: RootState) => state.auth);
-  const userInfo = useAppSelector((state: RootState) => state.user);
 
-  const {
-    signIn,
-    signOut,
-    getDecodedIDToken,
-    getBasicUserInfo,
-    refreshAccessToken,
-    isAuthenticated,
-    getIDToken,
-    state: asg,
-  } = useAuthContext();
+  const onPrompt = () => {
+    appState === "active" && setOpen(true);
+  };
 
-  useIdleTimer({
+  const { getRemainingTime, activate } = useIdleTimer({
+    onPrompt,
     timeout,
     promptBeforeIdle,
     throttle: 500,
-    onPrompt: () => ui === "active" && setIdlePromptOpen(true),
   });
 
-  const handleContinue = () => setIdlePromptOpen(false);
+  const {
+    signOut,
+    getDecodedIDToken,
+    getAccessToken,
+    getBasicUserInfo,
+    revokeAccessToken,
+    refreshAccessToken,
+    isAuthenticated,
+    state,
+  } = useAuthContext();
 
-  const refreshToken = () =>
-    new Promise<{ idToken: string }>(async (resolve, reject) => {
-      try {
-        if (await isAuthenticated()) {
-          resolve({ idToken: await getIDToken() });
-        } else {
-          await refreshAccessToken();
-          resolve({ idToken: await getIDToken() });
-        }
-      } catch (e) {
-        reject(e);
-        appSignOut();
+  const refreshToken = () => {
+    return new Promise<{ idToken: string }>(async (resolve) => {
+      const userIsAuthenticated = await isAuthenticated();
+      if (userIsAuthenticated) {
+        resolve({ idToken: await getAccessToken() });
+      } else {
+        refreshAccessToken()
+          .then(async (res) => {
+            const accessToken = await getAccessToken();
+            resolve({ idToken: accessToken });
+          })
+          .catch((error) => {
+            appSignOut();
+          });
       }
     });
+  };
 
   useEffect(() => {
-    let cancelled = false;
+    var appStatus = localStorage.getItem("internal-app-state");
 
-    const bootstrap = async () => {
-      if (asg.isLoading) return;
-      if (localStorage.getItem("people-app-state") === "logout") {
-        setUI("logout");
-        return;
-      }
-
-      if (!localStorage.getItem("people-app-redirect-url")) {
-        localStorage.setItem(
-          "people-app-redirect-url",
-          window.location.href.replace(window.location.origin, "")
-        );
-      }
-
-      if (!asg.isAuthenticated) {
-        await signIn();
-        return;
-      }
-
-      try {
-        const [basic, idToken, decoded] = await Promise.all([
-          getBasicUserInfo(),
-          getIDToken(),
-          getDecodedIDToken(),
-        ]);
-        if (cancelled) return;
-
-        dispatch(
-          setUserAuthData({ userInfo: basic, idToken, decodedIdToken: decoded })
-        );
-        new APIService(idToken, refreshToken);
-        await dispatch(getUserInfo()).unwrap();
-        await dispatch(loadPrivileges()).unwrap();
-
-        if (!cancelled) setUI("active");
-      } catch (err: unknown) {
-        console.error("Failed to logging in :", err);
-
-        const status = (err as any)?.response?.status ?? (err as any)?.status;
-        if (status === 401 || status === 403) {
-          if (!cancelled) {
-            localStorage.removeItem("people-app-state");
-            await signIn();
-          }
-          return;
-        }
-
-        try {
-          const stillAuth = await isAuthenticated();
-          if (!stillAuth) {
-            await signIn();
-            return;
-          }
-        } catch {
-          await signIn();
-          return;
-        }
-
-        if (!cancelled) setUI("error");
-      }
-    };
-
-    bootstrap();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    asg.isAuthenticated,
-    asg.isLoading,
-    signIn,
-    dispatch,
-    getBasicUserInfo,
-    getIDToken,
-    getDecodedIDToken,
-    isAuthenticated,
-  ]);
-
-  useEffect(() => {
-    if (ui === "active" && !asg.isAuthenticated) {
-      signIn();
+    if (!localStorage.getItem("internal-app-redirect-url")) {
+      localStorage.setItem(
+        "internal-app-redirect-url",
+        window.location.href.replace(window.location.origin, "")
+      );
     }
-  }, [ui, asg.isAuthenticated, signIn]);
+
+    if (appStatus && appStatus === "logout") {
+      setAppState("logout");
+    } else {
+      setAppState("active");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (appState === "active") {
+      if (state.isAuthenticated) {
+        Promise.all([
+          getBasicUserInfo(),
+          getAccessToken(),
+          getDecodedIDToken(),
+        ]).then(async ([userInfo, accessToken, decodedIdToken]) => {
+          dispatch(
+            setUserAuthData({
+              userInfo: userInfo,
+              accessToken: accessToken,
+              decodedIdToken: decodedIdToken,
+            })
+          );
+
+          setUser(userInfo);
+          new ApiService(accessToken, refreshToken, dispatch);
+          dispatch(loadPrivileges());
+          if (userInfo?.email) {
+            dispatch(loadEmployeeInfo(userInfo.email));
+          }
+          dispatch(fetchEmployees());
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appState, state.isAuthenticated]);
+
+  const revokeToken = () => {
+    revokeAccessToken();
+  };
 
   const appSignOut = async () => {
-    setUI("loading");
-    localStorage.setItem("people-app-state", "logout");
+    setAppState("loading");
+    localStorage.setItem("internal-app-state", "logout");
+    revokeToken();
     await signOut();
-    setUI("logout");
+    setAppState("logout");
   };
 
-  const appSignIn = () => {
-    localStorage.setItem("people-app-state", "active");
-    window.location.reload();
+  const appSignIn = async () => {
+    setAppState("active");
+    localStorage.setItem("internal-app-state", "active");
   };
 
-  if (ui === "loading") {
-    if (!asg.isAuthenticated && !asg.isLoading) {
-      return null;
-    }
-    return <PreLoader isLoading={true} message={auth.statusMessage || ""} />;
-  }
-
-  if (ui === "logout") {
-    return <StatusWithAction action={appSignIn} />;
-  }
-
-  if (ui === "error") {
-    const msg =
-      userInfo.errorMessage ||
-      auth.statusMessage ||
-      "You are not authorized to access this application.";
-    return <ErrorHandler message={msg} />;
-  }
+  const authContext: AuthContextType = {
+    revokeToken: revokeToken,
+    appSignIn: appSignIn,
+    appSignOut: appSignOut,
+    user: user,
+  };
 
   return (
     <>
-      <Dialog
-        open={idlePromptOpen}
-        onClose={handleContinue}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">
-          {"Are you still there?"}
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            It looks like you've been inactive for a while. Would you like to
-            continue?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleContinue}>Continue</Button>
-          <Button onClick={() => appSignOut()}>Logout</Button>
-        </DialogActions>
-      </Dialog>
-
-      <AuthContext.Provider value={{ appSignIn, appSignOut }}>
-        <SecureApp>{children}</SecureApp>
-      </AuthContext.Provider>
+      {appState === "loading" ? (
+        <PreLoader isLoading={true} message="" />
+      ) : (
+        <>
+          <Dialog
+            open={open}
+            onClose={() => setOpen(false)}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Are you still there?"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                It looks like you've been inactive for a while. Would you like
+                to continue?
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpen(false)}>Continue</Button>
+              <Button onClick={() => appSignOut()}>Logout</Button>
+            </DialogActions>
+          </Dialog>
+          {appState === "active" ? (
+            <AuthContext.Provider value={authContext}>
+              <SecureApp>{props.children}</SecureApp>
+            </AuthContext.Provider>
+          ) : (
+            <LoginView action={() => appSignIn()} />
+          )}
+        </>
+      )}
     </>
   );
 };
