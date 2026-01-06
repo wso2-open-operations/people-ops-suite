@@ -45,7 +45,7 @@ const Sidebar = (props: SidebarProps) => {
   const handleClick = (idx: number) => {
     setNavState((prev) => ({
       ...prev,
-      expanded: prev.expanded === idx ? null : idx,
+      active: prev.active === idx ? null : idx,
     }));
   };
 
@@ -160,8 +160,8 @@ const Sidebar = (props: SidebarProps) => {
                 width: props.open ? "100%" : "fit-content",
               }}
             >
-              {allRoutes.map(
-                (route, idx) =>
+              {allRoutes.map((route, idx) => {
+                return (
                   !route.bottomNav && (
                     <Box
                       key={idx}
@@ -175,14 +175,13 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === idx}
-                        isHovered={navState.hovered === idx}
-                        isExpanded={navState.expanded === idx}
+                        isActive={navState.active === null ? idx === 0 : navState.active === idx}
                         onClick={() => handleClick(idx)}
                       />
                     </Box>
-                  ),
-              )}
+                  )
+                );
+              })}
             </Stack>
 
             {/* Spacer */}
@@ -214,7 +213,6 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: theme.palette.neutral["1700"],
                 }}
               />
 

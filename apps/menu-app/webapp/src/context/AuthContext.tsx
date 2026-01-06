@@ -22,11 +22,10 @@ import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
-import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
-import { useAppDispatch } from "@slices/store";
-
 import { setTokens } from "@services/BaseQuery";
 import { useLazyGetUserInfoQuery } from "@services/user.api";
+import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
+import { useAppDispatch } from "@slices/store";
 
 type AuthContextType = {
   appSignIn: () => void;

@@ -19,11 +19,9 @@ import { Mutex } from "async-mutex";
 
 import { SERVICE_BASE_URL } from "../config/config";
 
-let ACCESS_TOKEN: string = "";
-let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }> = async () => ({
-  accessToken: "",
-});
-let LOGOUT_CALLBACK: () => void = () => {};
+let ACCESS_TOKEN: string;
+let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
+let LOGOUT_CALLBACK: () => void;
 
 export const setTokens = (
   accessToken: string,
@@ -39,17 +37,17 @@ const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
-      headers.set("Authorization", `Bearer${ACCESS_TOKEN}`);
+      headers.set("x-jwt-assertion", ACCESS_TOKEN);
     }
   },
 });
 
 const mutex = new Mutex();
-const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
-  args,
-  api,
-  extraOptions,
-) => {
+export const baseQueryWithReauth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
   if (result.error && result.error.status === 401) {
@@ -80,10 +78,23 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   return result;
 };
 
-/**
+/*
  * Base query with retry logic and automatic token refresh
  * Retries failed requests up to 3 times
  */
-export const baseQueryWithRetry = retry(baseQueryWithReauth, {
-  maxRetries: 3,
-});
+export const baseQueryWithRetry = retry(
+  async (args: string | FetchArgs, api, extraOptions) => {
+    const result = await baseQueryWithReauth(args, api, extraOptions);
+
+    if (result.error) {
+      if (result.error.status !== 401) {
+        retry.fail(result.error, result.meta);
+      }
+    }
+
+    return result;
+  },
+  {
+    maxRetries: 3,
+  },
+);
