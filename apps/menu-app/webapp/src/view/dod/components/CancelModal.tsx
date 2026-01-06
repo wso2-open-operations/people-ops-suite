@@ -19,8 +19,6 @@ import { useState } from "react";
 
 import infoIcon from "@assets/images/info-icon.svg";
 import { useDeleteDinnerRequestMutation } from "@root/src/services/dod.api";
-import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
-import { useAppDispatch } from "@root/src/slices/store";
 
 interface CancelModalProps {
   handleCloseModal: () => void;
@@ -31,8 +29,7 @@ export default function CancelModal(props: CancelModalProps) {
   const { isCancelDialogOpen, handleCloseModal } = props;
 
   const theme = useTheme();
-  const dispatch = useAppDispatch();
-  const [deleteDinnerRequest, { isError }] = useDeleteDinnerRequestMutation();
+  const [deleteDinnerRequest] = useDeleteDinnerRequestMutation();
 
   const [isSubmitting, setIsSubmitting] = useState<Boolean>(false);
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,18 +38,6 @@ export default function CancelModal(props: CancelModalProps) {
     setIsSubmitting(true);
     try {
       await deleteDinnerRequest();
-
-      const messageType = isError ? "error" : "success";
-      const message = isError
-        ? "Error occurred when deleting Order..."
-        : "Successfully deleted Order";
-
-      dispatch(
-        enqueueSnackbarMessage({
-          message,
-          type: messageType,
-        }),
-      );
 
       handleCloseModal();
       await wait(100);
