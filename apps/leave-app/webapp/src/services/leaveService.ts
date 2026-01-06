@@ -22,7 +22,6 @@ import {
   ApprovalStatusRequest,
   ApprovalStatusResponse,
   DayType,
-  DefaultMail,
   DefaultMailResponse,
   EligibilityResponse,
   Employee,
