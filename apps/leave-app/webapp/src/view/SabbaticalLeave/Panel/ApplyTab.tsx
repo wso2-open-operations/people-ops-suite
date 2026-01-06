@@ -45,7 +45,6 @@ import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import {
-  checkEligibilityForSabbaticalLeave,
   submitSabbaticalLeaveRequest,
 } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
@@ -87,7 +86,11 @@ export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }
     const checkEligibility = async () => {
       try {
         setIsLoading(true);
-        const eligibilityResponse: EligibilityResponse = await checkEligibilityForSabbaticalLeave();
+        const eligibilityResponse: EligibilityResponse = {
+          employmentStartDate: userInfo?.employmentStartDate || "",
+          lastSabbaticalLeaveEndDate: userInfo?.lastSabbaticalLeaveEndDate || "",
+          isEligible: userInfo?.isSabbaticalLeaveEligible || false,
+        };
         setEligibilityPayload(eligibilityResponse);
         if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));

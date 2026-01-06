@@ -51,7 +51,6 @@ export const AppConfig = {
     approvalStatusList: ServiceBaseUrl + "/leaves/sabbatical/approve/history",
     approveSabbaticalLeave: ServiceBaseUrl + "/leaves/sabbatical/approve",
     applySabbaticalLeave: ServiceBaseUrl + "/leaves/sabbatical/apply",
-    validateSabbaticalLeave: ServiceBaseUrl + "/leaves/sabbatical/validate",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
     defaultMails: ServiceBaseUrl + "/leaves/default-mails",

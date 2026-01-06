@@ -178,20 +178,6 @@ export const approveLeave = async (request: ApprovalRequest): Promise<ApprovalRe
 };
 
 /**
- * Check eligibility for sabbatical leave requests.
- * @returns Promise with eligibility response
- */
-export const checkEligibilityForSabbaticalLeave = async (): Promise<EligibilityResponse> => {
-  const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.post<EligibilityResponse>(
-    AppConfig.serviceUrls.validateSabbaticalLeave,
-  );
-
-  return response.data;
-};
-
-/**
  * Submit a sabbatical leave request.
  * @param request - request payload
  * @returns Promise with approval response
