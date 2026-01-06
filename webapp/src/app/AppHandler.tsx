@@ -14,15 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
-import ErrorHandler from "@component/common/ErrorHandler";
-import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import Error from "@layout/pages/404";
+import PreLoader from "@component/common/PreLoader";
+import { getActiveRoutesV2, routes } from "@src/route";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState, useAppSelector } from "@slices/store";
-import { getActiveRoutesV2, routes } from "@src/route";
+import ErrorHandler from "@component/common/ErrorHandler";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 const AppHandler = () => {
   const auth = useAppSelector((state: RootState) => state.auth);
@@ -37,18 +36,10 @@ const AppHandler = () => {
 
   return (
     <>
-      {auth.status === "loading" && (
-        <PreLoader isLoading={true} message={auth.statusMessage} />
-      )}
-      {auth.status === "success" && auth.mode === "active" && (
-        <RouterProvider router={router} />
-      )}
-      {auth.status === "success" && auth.mode === "maintenance" && (
-        <MaintenancePage />
-      )}
-      {auth.status === "failed" && (
-        <ErrorHandler message={auth.statusMessage} />
-      )}
+      {auth.status === "loading" && <PreLoader isLoading={true} message={auth.statusMessage} />}
+      {auth.status === "success" && auth.mode === "active" && <RouterProvider router={router} />}
+      {auth.status === "success" && auth.mode === "maintenance" && <MaintenancePage />}
+      {auth.status === "failed" && <ErrorHandler message={auth.statusMessage} />}
     </>
   );
 };

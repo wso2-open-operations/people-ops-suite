@@ -12,8 +12,8 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-import people.people;
+// under the License.
+import par.entity;
 
 # Represents the response structure for retrieving user information.
 public type UserInfoResponse record {|
@@ -48,7 +48,7 @@ public type AppConfig record {|
 |};
 
 type UserInfo record {
-    *people:Employee;
+    *entity:Employee;
     # Array of privileges assigned to the user
     int[] privileges;
 };

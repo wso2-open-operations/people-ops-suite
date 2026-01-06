@@ -1,6 +1,6 @@
 [package]
 org = "wso2_open_operations"
-name = "people"
+name = "par"
 version = "0.1.0"
 distribution = "2201.12.7"
 

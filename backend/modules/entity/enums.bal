@@ -12,11 +12,17 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
+// under the License. 
 
-import ReactDOM from "react-dom/client";
-import "@src/index.css";
-import App from "@src/App";
+# List of employee statuses.
+public enum EmployeeStatus {
+    Active,
+    Marked\ leaver
+};
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(<App />);
+# Employment types.
+public enum EmploymentType {
+    PERMANENT,
+    CONSULTANCY,
+    PART\ TIME\ CONSULTANCY
+};

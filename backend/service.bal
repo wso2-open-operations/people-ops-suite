@@ -12,15 +12,12 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-import people.people;
-
+// under the License.
+import par.authorization;
+import par.entity;
 import ballerina/cache;
-import ballerina/http;
 import ballerina/log;
-import people.authorization;
-
-public configurable AppConfig appConfig = ?;
+import ballerina/http;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -60,16 +57,11 @@ service http:InterceptableService / on new http:Listener(9094) {
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor(), new ErrorInterceptor()];
 
-    # Retrieve application configurations.
-    #
-    # + return - Application configuration object or error
-    resource function get app\-config() returns AppConfig => appConfig;
-
     # Fetch user information of the logged in users.
     #
     # + ctx - Request object
     # + return - User information | Error
-    resource function get user\-info(http:RequestContext ctx) returns http:InternalServerError|UserInfo|UserInfoResponse|error {
+    resource function get user\-info(http:RequestContext ctx) returns UserInfoResponse|http:InternalServerError {
 
         // User information header.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -90,22 +82,13 @@ service http:InterceptableService / on new http:Listener(9094) {
         }
 
         // Fetch the user information from the people service.
-        people:Employee|error? employee = check people:fetchEmployeesBasicInfo(userInfo.email);
-        if employee is error {
+        entity:Employee|error loggedInUser = entity:fetchEmployeesBasicInfo(userInfo.email);
+        if loggedInUser is error {
             string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
-            log:printError(customError, employee);
+            log:printError(customError, loggedInUser);
             return <http:InternalServerError>{
                 body: {
                     message: customError
-                }
-            };
-        }
-        
-        if employee is () {
-            log:printError(string `No employee information found for the user: ${userInfo.email}`);
-            return <http:InternalServerError>{
-                body: {
-                    message: "No information found for the user!"
                 }
             };
         }
@@ -118,11 +101,11 @@ service http:InterceptableService / on new http:Listener(9094) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
         }
-        if authorization:checkPermissions([authorization:authorizedRoles.LEAD_ROLE], userInfo.groups){
+        if authorization:checkPermissions([authorization:authorizedRoles.LEAD_ROLE], userInfo.groups) {
             privileges.push(authorization:LEAD_PRIVILEGE);
         }
 
-        UserInfo userInfoResponse = {...employee, privileges};
+        UserInfoResponse userInfoResponse = {...loggedInUser, privileges};
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {

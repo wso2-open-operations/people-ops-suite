@@ -12,11 +12,19 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License.
+// under the License. 
 
-import ReactDOM from "react-dom/client";
-import "@src/index.css";
-import App from "@src/App";
+# client retry configuration for max retry attempts.
+public const int RETRY_COUNT = 3;
 
-const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-root.render(<App />);
+# client retry configuration for wait interval in seconds.
+public const decimal RETRY_INTERVAL = 3.0;
+
+# client retry configuration for interval increment in seconds.
+public const float RETRY_BACKOFF_FACTOR = 2.0;
+
+# client retry configuration for maximum wait interval in seconds.
+public const decimal RETRY_MAX_INTERVAL = 20.0;
+
+# Default limit for the entity.
+public const int DEFAULT_LIMIT = 100;

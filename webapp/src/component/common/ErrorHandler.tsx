@@ -14,9 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import StateWithImage from "@component/ui/StateWithImage";
-import { Box, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import { Container, Box } from "@mui/material";
+import StateWithImage from "@component/ui/StateWithImage";
 
 interface ErrorHandlerProps {
   message: string | null;
