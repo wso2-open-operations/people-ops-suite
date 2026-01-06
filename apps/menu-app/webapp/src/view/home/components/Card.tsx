@@ -126,7 +126,7 @@ export default function MenuCard(props: MenuCardProps) {
             minHeight: "60px",
           }}
         >
-          {mealData.description}
+          {mealData.description ?? ""}
         </Typography>
 
         <Box
