@@ -60,8 +60,8 @@ export default function SabbaticalLeave() {
         if (userInfo?.isLead) {
           baseTabs.push(
             {
-              tabTitle: "Approve Leave",
-              tabPath: "approve-leave",
+              tabTitle: "Leave Approval",
+              tabPath: "leave-approval",
               icon: <HowToRegIcon />,
               page: <ApproveLeaveTab />,
             },

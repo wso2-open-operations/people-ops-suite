@@ -37,7 +37,7 @@ export default function ApproveLeaveTab() {
         borderBottom={`1px solid ${theme.palette.divider}`}
         pb="1rem"
       >
-        <Title firstWord="Leave" secondWord="Approval / Rejection" borderEnabled={false} />
+        <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
         <Alert variant="outlined" severity="warning">
           {data.percentageOfEmployeesOnSabbaticalLeave} of your subordinates are on sabbatical leave
         </Alert>
