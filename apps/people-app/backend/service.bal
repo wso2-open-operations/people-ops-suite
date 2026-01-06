@@ -174,12 +174,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch employees based on filters.
     # 
-    # + filter - Get employees filter payload
+    # + params - Get employees filter payload
     # + return - List of employees or error response
-    resource function post employees/list(database:GetEmployeesFilter filter) 
+    resource function post employees/search(database:EmployeeSearchParameters params) 
         returns http:Ok|http:InternalServerError|http:Forbidden {
 
-        database:Employee[]|error employees = database:getEmployees(filter);
+        database:EmployeeFilterResult|error employees = database:getEmployees(params);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
