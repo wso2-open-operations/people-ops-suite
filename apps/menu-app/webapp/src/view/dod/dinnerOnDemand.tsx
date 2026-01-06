@@ -23,14 +23,13 @@ import { DinnerRequest, MealOption } from "@/types/types";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import PreLoader from "@root/src/component/common/PreLoader";
-import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 import {
   useDeleteDinnerRequestMutation,
   useGetDinnerRequestQuery,
   useSubmitDinnerRequestMutation,
 } from "@services/dod.api";
 import { userApi } from "@services/user.api";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useAppSelector } from "@slices/store";
 
 import CancelModal from "./components/CancelModal";
 
@@ -50,7 +49,6 @@ export default function DinnerOnDemand() {
   const usersState = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state));
   const user = usersState.data;
 
-  const dispatch = useAppDispatch();
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
 
   const isDodTimeActive = useMemo(() => {
@@ -89,22 +87,8 @@ export default function DinnerOnDemand() {
         }
 
         await submitDinner(submitPayload);
-
-        dispatch(
-          enqueueSnackbarMessage({
-            message: `${values?.mealOption} dinner ordered successfully!`,
-            type: "success",
-          }),
-        );
       } catch (error) {
         console.error("Failed to submit feedback:", error);
-
-        dispatch(
-          enqueueSnackbarMessage({
-            message: "Failed to submit dinner request. Please try again.",
-            type: "error",
-          }),
-        );
       }
     },
   });
