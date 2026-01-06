@@ -83,7 +83,12 @@ export default function DinnerOnDemand() {
         };
 
         if (orderPlaced) {
-          await deleteDinner();
+          try {
+            await deleteDinner().unwrap();
+          } catch (deleteError) {
+            console.error("Failed to delete dinner request:", deleteError);
+            return;
+          }
         }
 
         await submitDinner(submitPayload);
