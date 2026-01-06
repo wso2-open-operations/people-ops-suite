@@ -49,7 +49,7 @@ export const dodApi = createApi({
         } catch (error: any) {
           dispatch(
             enqueueSnackbarMessage({
-              message: "Failed order dinner, Try again...",
+              message: "Failed to order dinner. Try again...",
               type: "error",
             }),
           );
