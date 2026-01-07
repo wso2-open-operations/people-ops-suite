@@ -144,7 +144,7 @@ export default function DinnerOnDemand() {
               {mealOptionsBox.map((meal) => (
                 <Box
                   key={meal.value}
-                  onClick={() => formik.setFieldValue("mealOption", meal.value)}
+                  onClick={() => !isFormDisabled && formik.setFieldValue("mealOption", meal.value)}
                   sx={{
                     display: "flex",
                     justifyContent: "space-between",
@@ -167,6 +167,9 @@ export default function DinnerOnDemand() {
                           ? `1px solid ${theme.palette.customBorder.primary.active}`
                           : undefined,
                     },
+                    opacity: isFormDisabled ? 0.5 : 1,
+                    cursor: isFormDisabled ? "not-allowed" : "pointer",
+                    pointerEvents: isFormDisabled ? "none" : "auto",
                   }}
                 >
                   <Typography variant="body1">{meal.label}</Typography>
