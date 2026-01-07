@@ -64,7 +64,7 @@ public isolated function calculateLeaveDetails(LeaveInput input, string token)
     }
 
     database:Leave[]|error overlappingDbLeaves = database:getLeaves(
-                filter = {emails: [email], startDate, endDate, isActive: true}
+                filter = {emails: [email], startDate, endDate, statuses: [APPROVED]}
         );
     if overlappingDbLeaves is error {
         return error(overlappingDbLeaves.message(), overlappingDbLeaves);
@@ -335,7 +335,7 @@ isolated function getUserCalendarInformation(string email, string startDate, str
         database:Leave[]|error leaves = database:getLeaves(
                 {
                     emails,
-                    isActive: true,
+                    statuses: [APPROVED],
                     startDate,
                     endDate,
                     orderBy: database:DESC
@@ -355,7 +355,7 @@ isolated function getUserCalendarInformation(string email, string startDate, str
                 leaveType: leaveResponse.leaveType,
                 isMorningLeave: leaveResponse.isMorningLeave,
                 numberOfDays: leaveResponse.numberOfDays,
-                isActive: leaveResponse.isActive,
+                status: <Status>leaveResponse.status,
                 periodType: leaveResponse.periodType,
                 email: leaveResponse.email,
                 isCancelAllowed: checkIfLeaveAllowedToCancel(leaveResponse),
@@ -409,7 +409,7 @@ isolated function getPolicyAdjustedLeaveCounts(readonly & Employee employee, str
     string startDate = getStartDateOfYear(year = year);
     string endDate = getEndDateOfYear(year = year);
 
-    database:Leave[]|error leaves = database:getLeaves({emails: [email], isActive: true, startDate, endDate});
+    database:Leave[]|error leaves = database:getLeaves({emails: [email], statuses: [APPROVED], startDate, endDate});
     if leaves is error {
         return error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
     }

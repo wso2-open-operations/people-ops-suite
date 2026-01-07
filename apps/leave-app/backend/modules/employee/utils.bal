@@ -30,6 +30,7 @@ public isolated function toEmployee(EmployeeResponse response) returns readonly 
         jobRole: response?.jobRole,
         leadEmail: response.managerEmail ?: response?.leadEmail,
         finalDayOfEmployment: response.finalDayOfEmployment,
-        lead: response.lead
+        lead: response.lead,
+        subordinateCount: response?.subordinateCount ?: 0
     };
 }
