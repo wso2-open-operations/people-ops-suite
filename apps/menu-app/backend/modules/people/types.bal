@@ -44,7 +44,7 @@ public type Employee record {|
     # Team of the employee
     string? team;
     # Department of the employee
-    string department?;
+    string department;
     # Employee manager email
     string managerEmail;
 |};
