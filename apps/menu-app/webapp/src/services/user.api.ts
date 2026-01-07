@@ -13,11 +13,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { createApi } from "@reduxjs/toolkit/query/react";
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Page Two</div>
-    </div>
-  );
-}
+import { UserInfoInterface } from "@/types/types";
+import { AppConfig } from "@config/config";
+
+import { baseQueryWithRetry } from "./BaseQuery";
+
+export const userApi = createApi({
+  reducerPath: "userApi",
+  baseQuery: baseQueryWithRetry,
+  tagTypes: ["User"],
+  endpoints: (builder) => ({
+    getUserInfo: builder.query<UserInfoInterface, void>({
+      query: () => AppConfig.serviceUrls.userInfo,
+      providesTags: ["User"],
+    }),
+  }),
+});
+
+export const { useGetUserInfoQuery, useLazyGetUserInfoQuery } = userApi;
