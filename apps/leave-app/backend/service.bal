@@ -20,7 +20,6 @@ import leave_service.employee;
 
 import ballerina/http;
 import ballerina/log;
-import ballerina/sql;
 import ballerina/time;
 
 @display {
@@ -492,10 +491,26 @@ service http:InterceptableService / on new http:Listener(9090) {
                     cancelledLeaveDetails.emailRecipients,
                     jwt
             );
-            _ = start email:sendLeaveNotification(
-                    generateContentForLeave.cloneReadOnly(),
-                    allRecipientsForUser.cloneReadOnly()
-            );
+            if cancelledLeaveDetails.leaveType == database:SABBATICAL_LEAVE {
+                // Send email in the sabbatical leave format
+                error? cancellationResult = processSabbaticalLeaveRequests(CANCEL, email,
+                        <string>cancelledLeaveDetails.approverEmail, cancelledLeaveDetails.startDate,
+                        cancelledLeaveDetails.endDate, <string>cancelledLeaveDetails.location);
+                if cancellationResult is error {
+                    log:printError("Failed to process sabbatical leave cancellation notification", cancellationResult);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Error occurred while cancelling sabbatical leave!"
+                        }
+                    };
+                }
+            } else {
+                // Send email in the regular format for non-sabbatical leaves
+                _ = start email:sendLeaveNotification(
+                        generateContentForLeave.cloneReadOnly(),
+                        allRecipientsForUser.cloneReadOnly()
+                );
+            }
 
             if cancelledLeaveDetails.calendarEventId is () {
                 log:printError(string `Calendar event ID is not available for leave with ID: ${leaveId}.`);
@@ -899,33 +914,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        Employee & readonly|error reportingLead = employee:getEmployee(employeeDetails.leadEmail);
-        if reportingLead is error {
-            string errMsg = "Error occurred while fetching reporting lead details";
-            log:printError(errMsg, reportingLead);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
-
-        string[] recipientsList = [];
-        recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
-        recipientsList.push(email); // applicant email
-        recipientsList.push(<string>employeeDetails.leadEmail); // reporting lead email (approver)
-        if reportingLead.leadEmail is () {
-            log:printInfo("Functional Lead info is not available. Skipped notification for the functional lead.");
-        }
-        if reportingLead.leadEmail is string {
-            string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
-            if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
-                recipientsList.push(functionalLeadEmail);
-            }
-        }
-        error? response = processSabbaticalLeaveApplicationRequest(email, <string>employeeDetails.leadEmail,
-                <string>employeeDetails.location, <float>differenceInDays, payload.startDate, payload.endDate,
-                payload.additionalComment, recipientsList);
+        error? response = processSabbaticalLeaveRequests(APPLY, email, <string>employeeDetails.leadEmail,
+                payload.startDate, payload.endDate, <string>employeeDetails.location,
+                payload.additionalComment, <float>differenceInDays);
 
         if response is error {
             string errMsg = "Error occurred while processing sabbatical leave application request";
@@ -998,19 +989,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        boolean isApproved = action == APPROVE ? true : false;
-        sql:ExecutionResult|error result = database:setLeaveApprovalStatus(id,
-                isApproved);
-        if result is error {
-            string errMsg = "Error occurred while updating sabbatical leave approval status";
-            log:printError(errMsg, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: errMsg
-                }
-            };
-        }
-        database:LeaveSubmissionInfo|error leaveSubmissionInfo = database:getLeaveSubmissionInfoByApprovalId(id);
+        database:LeaveSubmissionInfo|error leaveSubmissionInfo = database:getLeaveSubmissionInfoById(id);
         if leaveSubmissionInfo is error {
             string errMsg = "Error occurred while fetching sabbatical leave submission info.";
             log:printError(errMsg, leaveSubmissionInfo);
@@ -1019,20 +998,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: errMsg
                 }
             };
-        }
-        string[] recipientsList = [];
-        recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
-        recipientsList.push(leaveSubmissionInfo.email); // applicant email
-        recipientsList.push(approverEmail); // reporting lead email (approver)
-        if employeeDetails.leadEmail is () {
-            log:printInfo("Functional Lead info is not available. Skipped notification for the functional lead.");
-        }
-        if employeeDetails.leadEmail is string
-        {
-            string functionalLeadEmail = (<string>employeeDetails.leadEmail).toLowerAscii(); // functional lead email
-            if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
-                recipientsList.push(functionalLeadEmail);
-            }
         }
 
         Employee|error applicantInfo = employee:getEmployee(leaveSubmissionInfo.email);
@@ -1045,12 +1010,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        error? notificationResult = processSabbaticalLeaveApprovalNotification(action == APPROVE ? true : false,
+        error? approvalResult = processSabbaticalLeaveRequests(action,
                 leaveSubmissionInfo.email, approverEmail, leaveSubmissionInfo.startDate.substring(0, 10),
-                leaveSubmissionInfo.endDate.substring(0, 10),
-                id, <string>applicantInfo.location, recipientsList);
-        if notificationResult is error {
-            log:printError("Failed to process sabbatical leave approval notification", notificationResult);
+                leaveSubmissionInfo.endDate.substring(0, 10), <string>applicantInfo.location, leaveId = id);
+        if approvalResult is error {
+            log:printError("Failed to process sabbatical leave approval notification", approvalResult);
         }
         return <http:Ok>{
             body: {

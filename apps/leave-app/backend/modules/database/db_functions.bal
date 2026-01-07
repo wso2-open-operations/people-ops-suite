@@ -102,9 +102,9 @@ public isolated function getLeaveApproverEmailById(int leaveId) returns string|e
 #
 # + leaveId - Leave ID
 # + return - Leave submission info or an error on failure
-public isolated function getLeaveSubmissionInfoByApprovalId(int leaveId)
+public isolated function getLeaveSubmissionInfoById(int leaveId)
     returns LeaveSubmissionInfo|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByApprovalIdQuery(leaveId);
+    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByIdQuery(leaveId);
     LeaveSubmissionInfo|error leaveSubmissionInfo = check leaveDbClient->queryRow(sqlQuery);
     if leaveSubmissionInfo is sql:NoRowsError {
         return error("No leave submission found for the given approval ID");
@@ -112,14 +112,14 @@ public isolated function getLeaveSubmissionInfoByApprovalId(int leaveId)
     return leaveSubmissionInfo;
 }
 
-# Update leave approval status for a sabbatical leave application.
+# Update leave status for a sabbatical leave application.
 #
 # + leaveId - ID of the sabbatical leave application
-# + isApproved - Approval status to be set (APPROVED, REJECTED)
+# + approvalStatus - Approval status to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + return - Nil on success, error on failure
-public isolated function setLeaveApprovalStatus(int leaveId, boolean isApproved)
+public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStatus)
     returns sql:ExecutionResult|error {
-    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(isApproved ? APPROVED : REJECTED, leaveId);
+    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(approvalStatus, leaveId);
     return check leaveDbClient->execute(sqlQuery);
 }
 
@@ -138,21 +138,6 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
     // format timestamp to date string YYYY-MM-DD
     string formattedDate = (<string>lastSabbaticalEndDate).toString().substring(0, 10);
     return formattedDate;
-}
-
-# Create Sabbatical Leave database record.
-#
-# + leaveInput - Leave submission details
-# + days - Number of days for the leave
-# + location - Employee location
-# + leadEmail - Reporting lead email
-# + return - The leave approval status ID if successful; otherwise, an error
-public isolated function createSabbaticalLeaveRecord(LeaveInput leaveInput, float days, string location,
-        string leadEmail) returns int|error {
-
-    Leave leaveSubmission = check insertLeave(leaveInput, days, location);
-
-    return leaveSubmission.id;
 }
 
 # Get subordinate count who are on sabbatical leave under a specific lead.

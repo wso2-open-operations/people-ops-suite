@@ -288,6 +288,14 @@ public enum Action {
     REJECT = "REJECT"
 };
 
+# Sabbatical leave actions.
+public enum SabbaticalAction {
+    APPROVE = "APPROVE",
+    REJECT = "REJECT",
+    APPLY = "APPLY",
+    CANCEL = "CANCEL"
+}
+
 # Status of the leave.
 public enum Status {
     PENDING = "PENDING",

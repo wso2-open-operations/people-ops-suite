@@ -212,7 +212,7 @@ isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int
 #
 # + leaveId - ID of the leave record
 # + return - Query to get leave submission info
-isolated function getLeaveSubmissionInfoByApprovalIdQuery(int leaveId)
+isolated function getLeaveSubmissionInfoByIdQuery(int leaveId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT 

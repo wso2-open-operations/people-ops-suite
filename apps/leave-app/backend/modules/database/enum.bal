@@ -42,5 +42,6 @@ public enum OrderBy {
 public enum ApprovalStatus {
     APPROVED = "APPROVED",
     REJECTED = "REJECTED",
-    PENDING = "PENDING"
+    PENDING = "PENDING",
+    CANCELLED = "CANCELLED"
 }

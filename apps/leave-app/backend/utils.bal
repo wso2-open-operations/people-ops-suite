@@ -233,7 +233,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         numberOfDays,
         location,
         emailId,
-        emailSubject
+        emailSubject,
+        approverEmail
     } = dbLeave;
     database:LeaveType entityLeaveType;
     database:LeavePeriodType entityLeavePeriodType;
@@ -280,7 +281,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         emailId,
         numberOfDays,
         location: location is string && location.length() > 0 ? location : empLocation,
-        emailSubject
+        emailSubject,
+        approverEmail
     };
 
     if fetchEffectiveDays {

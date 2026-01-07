@@ -19,7 +19,6 @@ import leave_service.email;
 import leave_service.employee;
 
 import ballerina/log;
-import ballerina/sql;
 import ballerina/time;
 
 configurable string sabbaticalEmailGroupToNotify = ?;
@@ -78,99 +77,113 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
     }
 }
 
-# Process sabbatical leave approval notifications (Email & Calendar).
+# Process sabbatical leaves based on actions.
 #
-# + isApproved - Is leave approved or not
+# + action - Sabbatical leave action (APPROVE, REJECT, APPLY, CANCEL)
 # + applicantEmail - Applicant email
 # + leadEmail - Reporting lead email
 # + leaveStartDate - Leave start date
 # + leaveEndDate - Leave end date
 # + leaveId - Leave ID
 # + location - Employee location
-# + recipientsList - List of email recipients
+# + comment - Additional comment
+# + numberOfDays - Number of days for the leave
 # + return - Error if any
-isolated function processSabbaticalLeaveApprovalNotification(boolean isApproved, string applicantEmail, string leadEmail,
-        string leaveStartDate, string leaveEndDate, int leaveId, string location, string[] recipientsList)
+isolated function processSabbaticalLeaveRequests(SabbaticalAction action, string applicantEmail, string leadEmail,
+        string leaveStartDate, string leaveEndDate, string location,
+        string? comment = (), float? numberOfDays = (), int? leaveId = ())
     returns error? {
-    string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
+
+    string[] recipientsList = check getRecipientsForSabbaticalNotifications(applicantEmail, leadEmail);
+    string emailSubject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " +
+    leaveEndDate
     + ")";
-    string emailBody = "The sabbatical leave application of " + applicantEmail + " has been " +
-    (isApproved ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
-    ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
-    " <br/>Requested Leave End Date: " + leaveEndDate;
+    string emailBody = "";
+
+    match (action) {
+        APPROVE => {
+            emailBody = "The sabbatical leave application of " + applicantEmail + " has been " +
+            (action == APPROVE ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
+            ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
+            " <br/>Requested Leave End Date: " + leaveEndDate;
+            _ = check database:setLeaveStatus(<int>leaveId, APPROVED);
+            // Create calendar event for approved sabbatical leave
+            string calendarEventId = createUuidForCalendarEvent();
+            SabbaticalLeaveResponse leaveResponse = {
+                id: calendarEventId,
+                startDate: leaveStartDate,
+                endDate: leaveEndDate,
+                location: location
+            };
+            createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
+            _ = check database:setCalendarEventIdForSabbaticalLeave(
+                    <int>leaveId, calendarEventId);
+        }
+        REJECT => {
+            emailBody = "The sabbatical leave application of " + applicantEmail + " has been rejected by the reporting" +
+            " lead: " + leadEmail + ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
+            " <br/>Requested Leave End Date: " + leaveEndDate;
+            _ = check database:setLeaveStatus(<int>leaveId, REJECTED);
+        }
+        CANCEL => {
+            emailBody = "The sabbatical leave application of " + applicantEmail + " has been cancelled by the" +
+            " applicant.<br/><br/>" +
+            "Requested Leave Start Date: " + leaveStartDate +
+            " <br/>Requested Leave End Date: " + leaveEndDate;
+        }
+        APPLY => {
+            LeaveInput leaveInput = {
+                startDate: leaveStartDate,
+                endDate: leaveEndDate,
+                leaveType: database:SABBATICAL_LEAVE,
+                periodType: "multiple",
+                email: applicantEmail,
+                comment: comment,
+                emailSubject: emailSubject,
+                emailRecipients: recipientsList,
+                isMorningLeave: (),
+                status: PENDING,
+                approverEmail: leadEmail
+            };
+            _ = check database:insertLeave(leaveInput, numberOfDays ?: 0.0, location);
+            emailBody = "A sabbatical leave application has been submitted by " + applicantEmail +
+            ".<br/><br/>" + "Requested Leave Start Date: " +
+            leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
+            leadEmail + "<br/><br/> The reporting lead is required to review and" +
+            " approve or reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
+        }
+    }
 
     map<string> emailContent = {"CONTENT": emailBody};
-    error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
+    error? notificationResult = email:processEmailNotification("", emailSubject, emailContent, recipientsList);
     if (notificationResult is error) {
         log:printError("Failed to process sabbatical approval notification", notificationResult);
     }
-
-    if !isApproved {
-        return;
-    }
-
-    string calendarEventId = createUuidForCalendarEvent();
-    SabbaticalLeaveResponse leaveResponse = {
-        id: calendarEventId,
-        startDate: leaveStartDate,
-        endDate: leaveEndDate,
-        location: location
-    };
-    createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
-    sql:ExecutionResult|error calendarEventResult = check database:setCalendarEventIdForSabbaticalLeave(
-            leaveId, calendarEventId);
-    if calendarEventResult is error {
-        log:printError("Failed to set calendar event ID for sabbatical leave in database", calendarEventResult);
-    }
-    return;
 }
 
-# Process sabbatical leave application requests.
-#
+# Get recipients for sabbatical leave notifications.
 # + applicantEmail - Applicant email
 # + leadEmail - Reporting lead email
-# + location - Employee location
-# + numberOfDays - Number of days for the leave
-# + leaveStartDate - Leave start date
-# + leaveEndDate - Leave end date
-# + comment - Additional comment
-# + recipientsList - List of email recipients
-# + return - Error if any
-isolated function processSabbaticalLeaveApplicationRequest(string applicantEmail, string leadEmail, string location,
-        float numberOfDays, string leaveStartDate, string leaveEndDate, string comment, string[] recipientsList)
-        returns error? {
+# + return - List of recipient emails or an error
+isolated function getRecipientsForSabbaticalNotifications(string applicantEmail, string leadEmail)
+    returns string[]|error {
+    Employee reportingLead = check employee:getEmployee(leadEmail);
 
-    string subject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " + leaveEndDate
-    + ")";
-    LeaveInput leaveInput = {
-        startDate: leaveStartDate,
-        endDate: leaveEndDate,
-        leaveType: database:SABBATICAL_LEAVE,
-        periodType: "multiple",
-        email: applicantEmail,
-        comment: comment,
-        emailSubject: subject,
-        emailRecipients: recipientsList,
-        isMorningLeave: (),
-        status: PENDING,
-        approverEmail: leadEmail
-    };
-    int|error approvalStatusId = database:createSabbaticalLeaveRecord(leaveInput, numberOfDays, location,
-            leadEmail);
-    if approvalStatusId is error {
-        return error("Error occurred while creating sabbatical leave record.", approvalStatusId);
+    string[] recipientsList = [];
+    recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
+    recipientsList.push(applicantEmail); // applicant email
+    recipientsList.push(leadEmail); // reporting lead email (approver)
+    if reportingLead.leadEmail is () {
+        log:printInfo("Functional Lead info is not available. Skipped notification for the functional lead.");
     }
-    string emailBody = "A sabbatical leave application has been submitted by " + applicantEmail +
-    ".<br/><br/>" + "Requested Leave Start Date: " +
-    leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
-    leadEmail + "<br/><br/> The reporting lead is required to review and" +
-    " approve or reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
+    if reportingLead.leadEmail is string {
+        string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
+        if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
+            recipientsList.push(functionalLeadEmail);
+        }
+    }
 
-    map<string> emailContent = {"CONTENT": emailBody};
-    error? notificationResult = email:processEmailNotification("", subject, emailContent, recipientsList);
-    if (notificationResult is error) {
-        log:printError("Failed to process sabbatical application notification", notificationResult);
-    }
+    return recipientsList;
 }
 
 # Check eligibility criteria for sabbatical leave applications.
