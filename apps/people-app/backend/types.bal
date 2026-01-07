@@ -17,6 +17,22 @@ import people.database;
 
 import ballerina/constraint;
 
+# Represents the response structure for retrieving user information.
+public type UserInfoResponse record {|
+    # Id of the employee
+    string employeeId;
+    # Email of the employee
+    string workEmail;
+    # First name of the employee
+    string firstName;
+    # Last name of the employee
+    string lastName;
+    # Thumbnail of the employee
+    string? employeeThumbnail;
+    # User Privileges
+    int[] privileges;
+|};
+
 // # Payload for adding a vehicle.
 type NewVehicle record {|
     # Registration number of the vehicle
