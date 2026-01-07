@@ -37,7 +37,7 @@ const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
-      headers.set("x-jwt-assertion", ACCESS_TOKEN);
+      headers.set("Authorization", `Bearer ${ACCESS_TOKEN}`);
     }
   },
 });
@@ -87,7 +87,7 @@ export const baseQueryWithRetry = retry(
     const result = await baseQueryWithReauth(args, api, extraOptions);
 
     if (result.error) {
-      if (result.error.status !== 401) {
+      if (result.error.status !== 401 && result.error.status !== 400) {
         retry.fail(result.error, result.meta);
       }
     }
@@ -96,5 +96,9 @@ export const baseQueryWithRetry = retry(
   },
   {
     maxRetries: 3,
+    backoff: async (attempt: number = 0, maxRetries: number = 3) => {
+      const delay = Math.min(1000 * 2 ** attempt, 10000);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    },
   },
 );
