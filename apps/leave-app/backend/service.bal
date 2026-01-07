@@ -494,8 +494,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             if cancelledLeaveDetails.leaveType == database:SABBATICAL_LEAVE {
                 // Send email in the sabbatical leave format
                 error? cancellationResult = processSabbaticalLeaveRequests(CANCEL, email,
-                        <string>cancelledLeaveDetails.approverEmail, cancelledLeaveDetails.startDate,
-                        cancelledLeaveDetails.endDate, <string>cancelledLeaveDetails.location);
+                        <string>cancelledLeaveDetails.approverEmail, cancelledLeaveDetails.startDate.substring(0,10),
+                        cancelledLeaveDetails.endDate.substring(0,10), <string>cancelledLeaveDetails.location);
                 if cancellationResult is error {
                     log:printError("Failed to process sabbatical leave cancellation notification", cancellationResult);
                     return <http:InternalServerError>{
