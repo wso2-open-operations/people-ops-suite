@@ -178,8 +178,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + statuses - Statuses to filter the leaves
     # + return - List of leaves
     resource function get leaves(http:RequestContext ctx, string? email = (), string? startDate = (),
-            string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (), Status[] statuses = [],
-            int? 'limit = (), int? offset = 0
+            string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (),
+            Status[] statuses = [], int? 'limit = (), int? offset = 0
     ) returns FetchedLeavesRecord|http:Forbidden|http:InternalServerError|http:BadRequest {
 
         if email is string && !email.matches(WSO2_EMAIL_PATTERN) {
@@ -193,18 +193,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-            if email != userInfo.email && approverEmail != userInfo.email {
-                boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
-                if !validateForSingleRole {
-                    log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource 
+            boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
+                    authorization:authorizedRoles.employeeRoles);
+            if !validateForSingleRole {
+                log:printWarn(string `The user ${userInfo.email} was not privileged to access the resource 
                         /leaves with email=${email.toString()}`);
-                    return <http:Forbidden>{
-                        body: {
-                            message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
-                        }
-                    };
-                }
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                    }
+                };
+            }
+            // Restrict employees to view only view their own leaves
+            if email is string && email != userInfo.email {
+                return <http:Forbidden>{
+                    body: {
+                        message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
+                    }
+                };
             }
 
             string[]? emails = (email is string) ? [email] : ();
