@@ -16,6 +16,8 @@
 import { Box, Button, Typography, useTheme } from "@mui/material";
 import { useFormik } from "formik";
 import { FishIcon } from "lucide-react";
+import { Ham } from "lucide-react";
+import { LeafyGreen } from "lucide-react";
 
 import { useMemo, useState } from "react";
 
@@ -34,9 +36,9 @@ import { useAppSelector } from "@slices/store";
 import CancelModal from "./components/CancelModal";
 
 const mealOptionsBox = [
-  { value: "Chicken", label: "Chicken", icon: <FishIcon /> },
+  { value: "Chicken", label: "Chicken", icon: <Ham /> },
   { value: "Fish", label: "Fish", icon: <FishIcon /> },
-  { value: "Vegetarian", label: "Vegetarian", icon: <FishIcon /> },
+  { value: "Vegetarian", label: "Vegetarian", icon: <LeafyGreen /> },
 ];
 
 export default function DinnerOnDemand() {
