@@ -33,7 +33,7 @@ final sheets:ConnectionConfig menuSheetsConfig = {
 
 public final sheets:Client menuSpreadsheetClient = check new (menuSheetsConfig);
 
-# Create Google Sheets client for dod app
+# Create Google Sheets client for dod app.
 configurable DodSheet dodSheetClientConfig = ?;
 
 final sheets:ConnectionConfig dodSheetsConfig = {
