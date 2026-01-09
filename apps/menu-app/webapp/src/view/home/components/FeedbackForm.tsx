@@ -66,7 +66,7 @@ const FeedbackForm = (props: FeedbackForm) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on today <strong>{date}</strong> from
+        Feedback is anonymous and accepted only on today <strong>({date})</strong> from
         <strong> 12:00PM - 04:15PM</strong>
       </Typography>
     );
