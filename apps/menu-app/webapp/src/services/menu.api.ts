@@ -68,7 +68,7 @@ export const menuApi = createApi({
         } catch (error: any) {
           dispatch(
             enqueueSnackbarMessage({
-              message: "Failed to submit meal feedback",
+              message: "Failed to submit meal feedback. Try again...",
               type: "error",
             }),
           );
