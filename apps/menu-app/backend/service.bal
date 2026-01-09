@@ -7,8 +7,7 @@
 
 import menu_app.authentication;
 import menu_app.database;
-import menu_app.menu_sheet as menu;
-import menu_app.dod_sheet as dod;
+import menu_app.sheets; 
 import menu_app.people;
 
 import ballerina/cache;
@@ -95,7 +94,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     function init() {
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
         }
@@ -115,7 +114,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Menu items or error response
     isolated resource function get menu() returns http:InternalServerError|Menu {
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
             return <http:InternalServerError>{
@@ -131,7 +130,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     isolated resource function post feedback(Feedback feedback)
         returns http:InternalServerError|http:BadRequest|http:Created {
 
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             string customErr = "Error retrieving menu data when getting vendor for the feedback";
             log:printError(customErr, menu);
@@ -164,7 +163,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error feedbackId = menu:addFeedback(feedback, menu.lunch.title);
+        int|error feedbackId = sheets:addFeedback(feedback, menu.lunch.title);
         if feedbackId is error {
             string customErr = "Error occurred while inserting the lunch feedback";
             log:printError(customErr, feedbackId);
@@ -238,7 +237,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? sheetResult = dod:insertDinnerRequest(payload, userEmail);
+        error? sheetResult = sheets:insertDinnerRequest(payload, userEmail);
 
         if sheetResult is error {
             log:printError(DINNER_REQUEST_SHEET_ERROR, sheetResult, sheetResult.stackTrace());
@@ -271,7 +270,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? sheetResult = dod:cancelDinnerRequest(userEmail);
+        error? sheetResult = sheets:cancelDinnerRequest(userEmail);
 
         if sheetResult is error {
             log:printError(DINNER_REQUEST_CANCELLED_ERROR, sheetResult, sheetResult.stackTrace());
