@@ -1,14 +1,22 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import menu_app.authentication;
 import menu_app.database;
-import menu_app.menu_sheet as menu;
-import menu_app.dod_sheet as dod;
+import menu_app.sheets;
 import menu_app.people;
 
 import ballerina/cache;
@@ -95,7 +103,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     function init() {
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
         }
@@ -115,7 +123,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Menu items or error response
     isolated resource function get menu() returns http:InternalServerError|Menu {
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             log:printError("Error retrieving menu data", menu);
             return <http:InternalServerError>{
@@ -131,7 +139,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     isolated resource function post feedback(Feedback feedback)
         returns http:InternalServerError|http:BadRequest|http:Created {
 
-        Menu|error menu = menu:getMenu();
+        Menu|error menu = sheets:getMenu();
         if menu is error {
             string customErr = "Error retrieving menu data when getting vendor for the feedback";
             log:printError(customErr, menu);
@@ -164,7 +172,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error feedbackId = menu:addFeedback(feedback, menu.lunch.title);
+        int|error feedbackId = sheets:addFeedback(feedback, menu.lunch.title);
         if feedbackId is error {
             string customErr = "Error occurred while inserting the lunch feedback";
             log:printError(customErr, feedbackId);
@@ -238,7 +246,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? sheetResult = dod:insertDinnerRequest(payload, userEmail);
+        error? sheetResult = sheets:insertDinnerRequest(payload, userEmail);
 
         if sheetResult is error {
             log:printError(DINNER_REQUEST_SHEET_ERROR, sheetResult, sheetResult.stackTrace());
@@ -271,7 +279,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? sheetResult = dod:cancelDinnerRequest(userEmail);
+        error? sheetResult = sheets:cancelDinnerRequest(userEmail);
 
         if sheetResult is error {
             log:printError(DINNER_REQUEST_CANCELLED_ERROR, sheetResult, sheetResult.stackTrace());

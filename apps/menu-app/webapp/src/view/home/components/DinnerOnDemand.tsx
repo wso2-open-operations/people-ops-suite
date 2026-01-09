@@ -33,7 +33,7 @@ import {
 import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
 
-import CancelModal from "./components/CancelModal";
+import CancelModal from "./CancelModal";
 
 const mealOptionsBox = [
   { value: "Chicken", label: "Chicken", icon: <Ham /> },
@@ -100,8 +100,7 @@ export default function DinnerOnDemand() {
     },
   });
 
-  const isFormDisabled =
-    formik.isSubmitting || !formik.dirty || !formik.values.mealOption || !isDodTimeActive;
+  const isFormDisabled = formik.isSubmitting || !isDodTimeActive;
 
   const handleOpenCancelDialog = () => {
     setIsCancelDialogOpen(true);
@@ -125,7 +124,7 @@ export default function DinnerOnDemand() {
 
   return (
     <>
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
           Dinner On Demand
         </Typography>
