@@ -20,7 +20,7 @@ import PreLoader from "@component/common/PreLoader";
 import { useGetMenuQuery } from "@services/menu.api";
 
 import MenuCard from "./components/Card";
-import DinnerOnDemand from "./components/dinnerOnDemand";
+import DinnerOnDemand from "./components/DinnerOnDemand";
 
 export default function Home() {
   const { data, isLoading, isError } = useGetMenuQuery();
