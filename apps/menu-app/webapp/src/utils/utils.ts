@@ -23,3 +23,16 @@ function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
     return b.includes(element);
   });
 }
+
+export const formatMenuData = (dateString: string | undefined) => {
+  if (!dateString) return;
+
+  const date = new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return date;
+};
