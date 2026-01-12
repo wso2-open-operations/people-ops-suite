@@ -6,30 +6,37 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 import ballerina/sql;
 
-# Insert new dinner request to database.
-# 
-# + employee - Employee data
-# + dinnerRequest - Dinner request data
+# Upsert dinner request (insert or update if exists).
+#
 # + email - Employee email
+# + dinnerRequest - Dinner request data
+# + employee - Employee data
 # + return - SQL parameterized query
-isolated function insertDinnerRequestQuery(DinnerRequest dinnerRequest, string email, Employee employee) 
+isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
     returns sql:ParameterizedQuery =>
-    
-    `INSERT INTO dinner_bookings (
-        email, 
-        meal_option, 
-        date,
-        department,
-        team,
-        manager_email
-    ) VALUES (
-        ${email}, 
-        ${dinnerRequest.mealOption}, 
-        ${dinnerRequest.date}, 
-        ${employee.department?: null}, 
-        ${employee.team?: null},
-        ${employee.managerEmail}
-    )`;
+    `
+        INSERT INTO dinner_bookings (
+            email, 
+            meal_option, 
+            date,
+            department,
+            team,
+            manager_email,
+            is_active
+        ) VALUES (
+            ${email}, 
+            ${dinnerRequest.mealOption}, 
+            ${dinnerRequest.date}, 
+            ${employee.department?: null}, 
+            ${employee.team?: null},
+            ${employee.managerEmail},
+            1
+        )
+        ON DUPLICATE KEY UPDATE
+            meal_option = VALUES(meal_option),
+            is_active = 1,
+            _timestamp = CURRENT_TIMESTAMP
+    `;
 
 # Cancel dinner request.
 #
@@ -37,10 +44,9 @@ isolated function insertDinnerRequestQuery(DinnerRequest dinnerRequest, string e
 # + return - SQL parameterized query
 isolated function cancelDinnerRequestQuery(string email) returns sql:ParameterizedQuery =>
     `   
-        DELETE FROM 
-            dinner_bookings 
-        WHERE 
-            email = ${email}
+        UPDATE dinner_bookings 
+        SET is_active = 0
+        WHERE email = ${email} AND is_active = 1 AND date >= CURRENT_DATE
     `;
 
 # Retrieve dinner request by email.
