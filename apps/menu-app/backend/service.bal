@@ -196,7 +196,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         DinnerRequest|error? dinnerRequest = database:getDinnerRequestByEmail(userEmail);
         if dinnerRequest is () {
-            string message = string`${DINNER_REQUEST_NOT_AVAILABLE} for  ${userEmail}.`;
+            string message = string`${DINNER_REQUEST_NOT_AVAILABLE} for ${userEmail}.`;
             log:printInfo(message);
             return <http:Ok>{
                 body: {message: message}
