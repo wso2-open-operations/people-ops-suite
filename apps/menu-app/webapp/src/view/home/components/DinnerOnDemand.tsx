@@ -46,7 +46,6 @@ export default function DinnerOnDemand() {
 
   const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
   const [submitDinner] = useSubmitDinnerRequestMutation();
-  const [deleteDinner] = useDeleteDinnerRequestMutation();
 
   const usersState = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state));
   const user = usersState.data;
@@ -83,15 +82,6 @@ export default function DinnerOnDemand() {
           team: user.team,
           managerEmail: user.managerEmail,
         };
-
-        if (orderPlaced) {
-          try {
-            await deleteDinner().unwrap();
-          } catch (deleteError) {
-            console.error("Failed to delete dinner request:", deleteError);
-            return;
-          }
-        }
 
         await submitDinner(submitPayload);
       } catch (error) {
