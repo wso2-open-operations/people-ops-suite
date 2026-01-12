@@ -78,7 +78,7 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
 # + id - Leave ID  
 # + return - Returns nil on success, error on failure
 public isolated function cancelLeave(int id) returns error? {
-    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET status = ${CANCELLED} WHERE id = ${id}`;
+    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET status = ${CANCELLED}, active = 0 WHERE id = ${id}`;
     sql:ExecutionResult|sql:Error result = leaveDbClient->execute(sqlQuery);
     if result is error {
         return error("Error occurred while cancelling leave!", result);
@@ -128,15 +128,16 @@ public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStat
 # + employeeEmail - Email of the employee
 # + return - End date of the last sabbatical leave or an error on failure
 public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
-    returns string|error {
-    sql:ParameterizedQuery sqlQuery = getLastSabbaticalLeaveEndDateQuery(employeeEmail);
-    string|error lastSabbaticalEndDate = leaveDbClient->queryRow(sqlQuery);
+    returns string?|error {
+    string|error lastSabbaticalEndDate = leaveDbClient->queryRow(getLastSabbaticalLeaveEndDateQuery(employeeEmail));
+    if lastSabbaticalEndDate is sql:NoRowsError {
+        return ();
+    }
     if lastSabbaticalEndDate is error {
-        return "";
-
+        return error("Error occurred while retrieving last sabbatical leave end date", lastSabbaticalEndDate);
     }
     // format timestamp to date string YYYY-MM-DD
-    string formattedDate = (<string>lastSabbaticalEndDate).toString().substring(0, 10);
+    string formattedDate = (lastSabbaticalEndDate).toString().substring(0, 10);
     return formattedDate;
 }
 
