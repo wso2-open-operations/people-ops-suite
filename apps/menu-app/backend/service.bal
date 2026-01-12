@@ -234,7 +234,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         } on fail error transactionError {
             log:printError(string `Failed to place dinner order for ${userEmail} on ${payload.date}.`, 
                 transactionError, transactionError.stackTrace());
-                
+
             return <http:InternalServerError>{
                 body: {message: INTERNAL_ERROR}
             };
@@ -245,7 +245,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Dinner request success response or error response
     resource function delete dinner(http:RequestContext ctx) 
-        returns http:BadRequest|http:InternalServerError|http:Created {
+        returns http:BadRequest|http:InternalServerError|http:Ok {
 
         string|http:BadRequest userEmail = authentication:getUserEmailFromRequestContext(ctx);
         if userEmail is http:BadRequest {
@@ -275,7 +275,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             check sheets:cancelDinnerRequest(userEmail);
             check commit;
 
-            return <http:Created>{
+            return <http:Ok>{
                 body: {message: string`${DINNER_REQUEST_CANCELLED} for date ${dinnerRequestResult.date}`}
             };
         } on fail error transactionError {
