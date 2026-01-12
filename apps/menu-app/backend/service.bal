@@ -196,8 +196,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         DinnerRequest|error? dinnerRequest = database:getDinnerRequestByEmail(userEmail);
         if dinnerRequest is () {
+            string errorMessage = string`${DINNER_REQUEST_NOT_AVAILABLE} for  ${userEmail}. There is nothing to cancel.`;
+            log:printError(errorMessage);
             return <http:Ok>{
-                body: {message: DINNER_REQUEST_NOT_AVAILABLE}
+                body: {message: errorMessage}
             };
         }
 
@@ -224,39 +226,33 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         DinnerRequest|error? dinnerRequestResult = database:getDinnerRequestByEmail(userEmail);
         if dinnerRequestResult is error {
-            log:printError(DINNER_REQUEST_RETRIEVAL_ERROR, dinnerRequestResult, dinnerRequestResult.stackTrace());
+            log:printError(string `${DINNER_REQUEST_ERROR} for user ${userEmail}`, dinnerRequestResult, dinnerRequestResult.stackTrace());
             return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_RETRIEVAL_ERROR}
+                body: {message: DINNER_REQUEST_ERROR}
             };
         }
 
         if dinnerRequestResult is DinnerRequest {
-            return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_ALREADY_EXISTS}
+            log:printError(string`Duplicate dinner request attempt by ${userEmail} for date ${payload.date}`);
+            return <http:BadRequest>{
+                body: {message:  string`${DINNER_REQUEST_ALREADY_EXISTS} for ${payload.date}.`}
             };
         }
 
-        error? result = database:insertDinnerRequest(payload, userEmail);
-
-        if result is error {
-            log:printError(DINNER_REQUEST_ERROR, result, result.stackTrace());
+        transaction {
+            check database:insertDinnerRequest(payload, userEmail);
+            check sheets:insertDinnerRequest(payload, userEmail);
+            check commit;
+            
+            return <http:Created>{
+                body: {message: DINNER_REQUEST_SUCCESS}
+            };
+        } on fail error transactionError {
+            log:printError(string `Failed to place dinner order for ${userEmail} on ${payload.date}.`, transactionError, transactionError.stackTrace());
             return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_ERROR}
+                body: {message: INTERNAL_ERROR}
             };
         }
-
-        error? sheetResult = sheets:insertDinnerRequest(payload, userEmail);
-
-        if sheetResult is error {
-            log:printError(DINNER_REQUEST_SHEET_ERROR, sheetResult, sheetResult.stackTrace());
-            return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_ERROR}
-            };
-        }
-
-        return <http:Created>{
-            body: {message: DINNER_REQUEST_SUCCESS}
-        };
     }
 
     # Cancel dinner requests.
@@ -270,26 +266,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             return userEmail;
         }
 
-        error? result = database:cancelDinnerRequest(userEmail);
-        if result is error {
-            log:printError(DINNER_REQUEST_CANCELLED_ERROR, result, result.stackTrace());
+        DinnerRequest|error? dinnerRequestResult = database:getDinnerRequestByEmail(userEmail);
+        if dinnerRequestResult is error {
+            log:printError(string `${DINNER_REQUEST_ERROR} for user ${userEmail}`, dinnerRequestResult, dinnerRequestResult.stackTrace());
+            return <http:InternalServerError>{
+                body: {message: DINNER_REQUEST_ERROR}
+            };
+        }
+
+        if dinnerRequestResult is () {
+            string errorMessage = string`${DINNER_REQUEST_NOT_AVAILABLE} for ${userEmail}. There is nothing to cancel.`;
+            log:printError(errorMessage);
+            return <http:BadRequest>{
+                body: {message: errorMessage}
+            };
+        }
+
+        transaction {
+            check database:cancelDinnerRequest(userEmail);
+            check sheets:cancelDinnerRequest(userEmail);
+            check commit;
+
+            return <http:Created>{
+                body: {message: string`${DINNER_REQUEST_CANCELLED} for date ${dinnerRequestResult.date}`}
+            };
+        } on fail error transactionError {
+            log:printError(string`${DINNER_REQUEST_CANCELLED_ERROR} for ${userEmail}`, transactionError, transactionError.stackTrace());
             return <http:InternalServerError>{
                 body: {message: DINNER_REQUEST_CANCELLED_ERROR}
             };
         }
-
-        error? sheetResult = sheets:cancelDinnerRequest(userEmail);
-
-        if sheetResult is error {
-            log:printError(DINNER_REQUEST_CANCELLED_ERROR, sheetResult, sheetResult.stackTrace());
-            return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_CANCELLED_ERROR}
-            };
-        }
-
-        return <http:Created>{
-            body: {message: DINNER_REQUEST_CANCELLED}
-        };
     }
 
 }
