@@ -169,7 +169,7 @@ public type LeaveCalculationPayload record {|
     # Whether the leave is a morning leave
     boolean? isMorningLeave = ();
     # Period type of the leave
-    LeavePeriodType periodType;
+    LeavePeriodType periodType = MULTIPLE_DAYS_LEAVE;
 |};
 
 # Leave day record.
