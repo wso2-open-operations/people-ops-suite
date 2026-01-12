@@ -566,10 +566,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Cancel a leave.
     #
-    # + leaveId - Leave ID
+    # + id - Leave ID
     # + ctx - Request context
     # + return - Cancelled leave on success, otherwise an error response
-    resource function delete leaves/[int id](http:RequestContext ctx)  // change to id
+    resource function delete leaves/[int id](http:RequestContext ctx)
         returns http:Ok|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         do {
