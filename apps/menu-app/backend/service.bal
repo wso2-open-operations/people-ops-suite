@@ -232,7 +232,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: DINNER_REQUEST_SUCCESS}
             };
         } on fail error transactionError {
-            log:printError(string `Failed to place dinner order for ${userEmail} on ${payload.date}.`, transactionError, transactionError.stackTrace());
+            log:printError(string `Failed to place dinner order for ${userEmail} on ${payload.date}.`, 
+                transactionError, transactionError.stackTrace());
+                
             return <http:InternalServerError>{
                 body: {message: INTERNAL_ERROR}
             };
@@ -252,7 +254,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         DinnerRequest|error? dinnerRequestResult = database:getDinnerRequestByEmail(userEmail);
         if dinnerRequestResult is error {
-            log:printError(string `${DINNER_REQUEST_ERROR} for user ${userEmail}`, dinnerRequestResult, dinnerRequestResult.stackTrace());
+            log:printError(string `${DINNER_REQUEST_ERROR} for user ${userEmail}`, dinnerRequestResult, 
+                dinnerRequestResult.stackTrace());
+
             return <http:InternalServerError>{
                 body: {message: DINNER_REQUEST_ERROR}
             };
@@ -275,7 +279,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: string`${DINNER_REQUEST_CANCELLED} for date ${dinnerRequestResult.date}`}
             };
         } on fail error transactionError {
-            log:printError(string`${DINNER_REQUEST_CANCELLED_ERROR} for ${userEmail}`, transactionError, transactionError.stackTrace());
+            log:printError(string`${DINNER_REQUEST_CANCELLED_ERROR} for ${userEmail}`, transactionError, 
+                transactionError.stackTrace());
+
             return <http:InternalServerError>{
                 body: {message: DINNER_REQUEST_CANCELLED_ERROR}
             };
