@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 import { HomeIcon } from "lucide-react";
-import { CircleQuestionMark } from "lucide-react";
 import type { RouteObject } from "react-router-dom";
 
 import React from "react";
@@ -32,14 +31,6 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-  },
-  {
-    path: "/help",
-    text: "Help & Support",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    bottomNav: true,
   },
 ];
 
