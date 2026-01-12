@@ -76,7 +76,7 @@ public type Feedback record {|
     Meal meal = LUNCH;
 |};
 
-# <eta information.
+# Meta information.
 public type MetaInfo record {|
     # Start time for lunch feedback
     time:TimeOfDay lunchFeedbackStartTime;
