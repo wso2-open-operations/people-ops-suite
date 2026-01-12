@@ -218,10 +218,8 @@ public type UserInfo record {|
     string? employmentStartDate;
     # Is lead or not
     boolean? isLead;
-    # Is eligible for sabbatical leave or not
-    boolean isSabbaticalLeaveEligible = false;
-    # Last sabbatical leave end date
-    string? lastSabbaticalLeaveEndDate;
+    # Cached email notifications list
+    employee:DefaultMailResponse cachedEmails;
     # Subordinate percentage on sabbatical leave
     string? subordinatePercentageOnSabbaticalLeave = ();
 |};
@@ -240,14 +238,26 @@ public type LeaveApprovalStatusResponse record {|
     database:LeaveApprovalStatus[] leaveApprovalStatusList;
 |};
 
-# Sabbatical leave application payload record.
-public type SabbaticalLeaveApplicationPayload record {|
+# Sabbatical leave Process Payload.
+public type SabbaticalProcessPayload record {|
+    # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)
+    SabbaticalAction action;
+    # Applicant email
+    string applicantEmail;
+    # Approver email
+    string approverEmail;
     # Leave start date
-    string startDate = "";
+    string leaveStartDate;
     # Leave end date
-    string endDate = "";
-    # Additional comment
-    string additionalComment = "";
+    string leaveEndDate;
+    # Location
+    string? location = ();
+    # Comment
+    string? comment = ();
+    # Number of days
+    float? numberOfDays = ();
+    # Leave ID
+    int? leaveId = ();
 |};
 
 # Application configurations.
@@ -284,9 +294,9 @@ public type SabbaticalLeaveEligibilityResponse record {|
 
 # APPROVE/REJECT Action enum.
 public enum Action {
-    APPROVE = "APPROVE",
-    REJECT = "REJECT"
-};
+    APPROVE_ACTION = "approve",
+    REJECT_ACTION = "reject"
+}
 
 # Sabbatical leave actions.
 public enum SabbaticalAction {
