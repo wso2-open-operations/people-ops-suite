@@ -255,7 +255,11 @@ export default function DinnerOnDemand() {
             <Button
               type="submit"
               variant="contained"
-              disabled={isFormDisabled}
+              disabled={
+                isFormDisabled ||
+                !formik.values.mealOption ||
+                (orderPlaced && formik.values.mealOption === mealOptionsDefault)
+              }
               sx={{
                 px: 2,
                 py: 1,
