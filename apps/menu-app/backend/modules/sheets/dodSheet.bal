@@ -43,7 +43,7 @@ public isolated function upsertDinnerRequest(DinnerRequest payload, string email
     int? targetRow = ();
     
     foreach (int|string|decimal)[] row in range.values {
-        if row[0].toString() == payload.date && row[4].toString() == email {
+        if row.length() >= 4 && row[0].toString() == payload.date && row[4].toString() == email {
             targetRow = rowIndex;
             break;
         }
