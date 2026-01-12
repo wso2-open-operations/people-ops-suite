@@ -15,6 +15,7 @@
 // under the License.
 import ballerina/http;
 import ballerina/lang.regexp;
+import ballerina/mime;
 import ballerina/time;
 
 # Get Civil date from a string in ISO 8601 format. This date will be timezone independent.
@@ -158,7 +159,7 @@ public isolated function getValidEmailRecipientsFromList(string[] emailsList) re
 #
 # + subject - Email subject
 # + return - Prefixed email subject
-isolated function getPrefixedEmailSubject(string subject) returns string => string `${subject}`;
+isolated function getPrefixedEmailSubject(string subject) returns string => string `[Leave App] ${subject}`;
 
 # Validate if the given email is a WSO2 email address (has wso2.com or ws02.com domains).
 #
@@ -166,3 +167,18 @@ isolated function getPrefixedEmailSubject(string subject) returns string => stri
 # + return - true or false
 public isolated function isWso2Email(string email) returns boolean =>
     regexp:isFullMatch(REGEX_EMAIL_DOMAIN, email.toLowerAscii());
+
+# Bind values to the email template and encode.
+#
+# + content - Email content  
+# + keyValPairs - Key value pairs
+# + return - Email content
+public isolated function bindKeyValues(string content, map<string> keyValPairs) returns string|error {
+    string bindContent = keyValPairs.entries().reduce(
+        isolated function(string accumulation, [string, string] keyVal) returns string {
+        string:RegExp r = re `<!-- \[${keyVal[0].toUpperAscii()}\] -->`;
+        return r.replaceAll(accumulation, keyVal[1]);
+    },
+    content);
+    return mime:base64Encode(bindContent).ensureType();
+}
