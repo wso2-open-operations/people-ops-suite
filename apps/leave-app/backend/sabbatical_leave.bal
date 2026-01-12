@@ -21,7 +21,7 @@ import leave_service.employee;
 import ballerina/log;
 import ballerina/time;
 
-configurable string sabbaticalEmailGroupToNotify = ?;
+configurable string[] sabbaticalMailGroups = ?;
 configurable string sabbaticalLeaveApprovalUrl = ?;
 
 # Create sabbatical leave event in calendar.
@@ -79,33 +79,28 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 
 # Process sabbatical leaves based on actions.
 #
-# + action - Sabbatical leave action (APPROVE, REJECT, APPLY, CANCEL)
-# + applicantEmail - Applicant email
-# + leadEmail - Reporting lead email
-# + leaveStartDate - Leave start date
-# + leaveEndDate - Leave end date
-# + leaveId - Leave ID
-# + location - Employee location
-# + comment - Additional comment
-# + numberOfDays - Number of days for the leave
+# + payload - Sabbatical leave request process payload
 # + return - Error if any
-isolated function processSabbaticalLeaveRequests(SabbaticalAction action, string applicantEmail, string leadEmail,
-        string leaveStartDate, string leaveEndDate, string location,
-        string? comment = (), float? numberOfDays = (), int? leaveId = ())
+function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
     returns error? {
-
-    string[] recipientsList = check getRecipientsForSabbaticalNotifications(applicantEmail, leadEmail);
-    string emailSubject = "Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate + " - " +
-    leaveEndDate
-    + ")";
+    var {action, applicantEmail, approverEmail, leaveStartDate, leaveEndDate, leaveId, location, comment, numberOfDays}
+    = payload;
+    string[] recipientsList = check getRecipientsForSabbaticalNotifications(applicantEmail, approverEmail);
+    string emailSubject = "[Leave App] Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate +
+    " - " + leaveEndDate + ")";
     string emailBody = "";
-
+    string year = time:utcToCivil(time:utcNow()).year.toString();
+    string|error template = "";
     match (action) {
         APPROVE => {
-            emailBody = "The sabbatical leave application of " + applicantEmail + " has been " +
-            (action == APPROVE ? "approved" : "rejected") + " by the reporting lead: " + leadEmail +
-            ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
-            " <br/>Requested Leave End Date: " + leaveEndDate;
+            template = email:bindKeyValues(email:sabbaticalApprovalTemplate, {
+                                                                                 "APPLICANT_EMAIL": applicantEmail,
+                                                                                 "LEAD_EMAIL": approverEmail,
+                                                                                 "LEAVE_START_DATE": leaveStartDate,
+                                                                                 "LEAVE_END_DATE": leaveEndDate,
+                                                                                 "YEAR": year,
+                                                                                 "STATUS": "Approved"
+                                                                             });
             _ = check database:setLeaveStatus(<int>leaveId, APPROVED);
             // Create calendar event for approved sabbatical leave
             string calendarEventId = createUuidForCalendarEvent();
@@ -117,45 +112,63 @@ isolated function processSabbaticalLeaveRequests(SabbaticalAction action, string
             };
             createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
             _ = check database:setCalendarEventIdForSabbaticalLeave(
-                    <int>leaveId, calendarEventId);
+                    <int>payload.leaveId, calendarEventId);
         }
         REJECT => {
-            emailBody = "The sabbatical leave application of " + applicantEmail + " has been rejected by the reporting" +
-            " lead: " + leadEmail + ".<br/><br/>" + "Requested Leave Start Date: " + leaveStartDate +
-            " <br/>Requested Leave End Date: " + leaveEndDate;
+            template = email:bindKeyValues(email:sabbaticalApprovalTemplate, {
+                                                                                 "APPLICANT_EMAIL": applicantEmail,
+                                                                                 "LEAD_EMAIL": approverEmail,
+                                                                                 "LEAVE_START_DATE": leaveStartDate,
+                                                                                 "LEAVE_END_DATE": leaveEndDate,
+                                                                                 "YEAR": year,
+                                                                                 "STATUS": "Rejected"
+                                                                             });
             _ = check database:setLeaveStatus(<int>leaveId, REJECTED);
         }
         CANCEL => {
-            emailBody = "The sabbatical leave application of " + applicantEmail + " has been cancelled by the" +
-            " applicant.<br/><br/>" +
-            "Requested Leave Start Date: " + leaveStartDate +
-            " <br/>Requested Leave End Date: " + leaveEndDate;
+            template = email:bindKeyValues(email:sabbaticalCancellationTemplate, {
+                                                                                     "APPLICANT_EMAIL": applicantEmail,
+                                                                                     "LEAVE_START_DATE": leaveStartDate,
+                                                                                     "LEAVE_END_DATE": leaveEndDate,
+                                                                                     "YEAR": year
+                                                                                 });
         }
         APPLY => {
             LeaveInput leaveInput = {
                 startDate: leaveStartDate,
                 endDate: leaveEndDate,
                 leaveType: database:SABBATICAL_LEAVE,
-                periodType: "multiple",
+                periodType: database:MULTIPLE_DAYS_LEAVE,
                 email: applicantEmail,
                 comment: comment,
                 emailSubject: emailSubject,
                 emailRecipients: recipientsList,
                 isMorningLeave: (),
                 status: PENDING,
-                approverEmail: leadEmail
+                approverEmail: approverEmail
             };
-            _ = check database:insertLeave(leaveInput, numberOfDays ?: 0.0, location);
-            emailBody = "A sabbatical leave application has been submitted by " + applicantEmail +
-            ".<br/><br/>" + "Requested Leave Start Date: " +
-            leaveStartDate + " <br/>Requested Leave End Date: " + leaveEndDate + "<br/>Reporting Lead: " +
-            leadEmail + "<br/><br/> The reporting lead is required to review and" +
-            " approve or reject this application via the Leave App (" + sabbaticalLeaveApprovalUrl + ").";
+            template = email:bindKeyValues(email:sabbaticalApplicationTemplate, {
+                                                                                    "APPLICANT_EMAIL": applicantEmail,
+                                                                                    "LEAD_EMAIL": approverEmail,
+                                                                                    "LEAVE_START_DATE": leaveStartDate,
+                                                                                    "LEAVE_END_DATE": leaveEndDate,
+                                                                                    "YEAR": year,
+                                                                                    "LEAVE_APP_URL":
+                                                                                    sabbaticalLeaveApprovalUrl
+                                                                                });
+            if location is string {
+                _ = check database:insertLeave(leaveInput, numberOfDays ?: 0.0, location);
+            }
         }
     }
 
     map<string> emailContent = {"CONTENT": emailBody};
-    error? notificationResult = email:processEmailNotification("", emailSubject, emailContent, recipientsList);
+    if template is error {
+        log:printError("Failed to bind key values to sabbatical leave template", template);
+        return;
+    }
+    error? notificationResult = email:processEmailNotification("", emailSubject, emailContent, recipientsList,
+            template);
     if (notificationResult is error) {
         log:printError("Failed to process sabbatical approval notification", notificationResult);
     }
@@ -165,12 +178,15 @@ isolated function processSabbaticalLeaveRequests(SabbaticalAction action, string
 # + applicantEmail - Applicant email
 # + leadEmail - Reporting lead email
 # + return - List of recipient emails or an error
-isolated function getRecipientsForSabbaticalNotifications(string applicantEmail, string leadEmail)
+function getRecipientsForSabbaticalNotifications(string applicantEmail, string leadEmail)
     returns string[]|error {
     Employee reportingLead = check employee:getEmployee(leadEmail);
 
     string[] recipientsList = [];
-    recipientsList.push(sabbaticalEmailGroupToNotify); // sabbatical email group
+    foreach string mailGroup in sabbaticalMailGroups {
+        recipientsList.push(mailGroup);
+
+    }
     recipientsList.push(applicantEmail); // applicant email
     recipientsList.push(leadEmail); // reporting lead email (approver)
     if reportingLead.leadEmail is () {
@@ -178,7 +194,14 @@ isolated function getRecipientsForSabbaticalNotifications(string applicantEmail,
     }
     if reportingLead.leadEmail is string {
         string functionalLeadEmail = (<string>reportingLead.leadEmail).toLowerAscii(); // functional lead email
-        if functionalLeadEmail != functionalLeadMailToRestrictSabbaticalLeaveNotifications.toLowerAscii() {
+        boolean isOptedOut = false;
+        foreach string optOutMail in sabbaticalFunctionalLeadOptOutMails {
+            if functionalLeadEmail == optOutMail.toLowerAscii() {
+                isOptedOut = true;
+                break;
+            }
+        }
+        if (!isOptedOut) {
             recipientsList.push(functionalLeadEmail);
         }
     }
@@ -192,25 +215,25 @@ isolated function getRecipientsForSabbaticalNotifications(string applicantEmail,
 # + lastSabbaticalLeaveEndDate - Last sabbatical leave end date
 # + return - Error if not eligible
 isolated function checkEligibilityForSabbaticalApplication(string employmentStartDate,
-        string lastSabbaticalLeaveEndDate) returns boolean|error {
+        string? lastSabbaticalLeaveEndDate) returns boolean|error {
 
     time:Utc nowUTC = time:utcNow();
     string nowStr = time:utcToString(nowUTC).substring(0, 10);
     int|error daysSinceEmployment = check getDateDiffInDays(nowStr, employmentStartDate);
-    int|error daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
-    if daysSinceLastSabbaticalLeave is error {
-        log:printDebug("Days since last sabbatical leave is empty.");
+    int|error daysSinceLastSabbaticalLeave = 0;
+    if lastSabbaticalLeaveEndDate is string {
+        daysSinceLastSabbaticalLeave = getDateDiffInDays(nowStr, lastSabbaticalLeaveEndDate);
     }
     if daysSinceEmployment is int {
-        if lastSabbaticalLeaveEndDate == "" && daysSinceEmployment > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT {
+        if lastSabbaticalLeaveEndDate == () && daysSinceEmployment > sabbaticalLeaveEligibilityDuration {
             return true;
         }
 
     }
     // Eligibility: Employed for more than 3 years and last sabbatical leave taken more than 3 years ago
     if daysSinceEmployment is int && daysSinceLastSabbaticalLeave is int {
-        if (daysSinceEmployment > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT &&
-        daysSinceLastSabbaticalLeave > SABBATICAL_LEAVE_MIN_ELIGIBILITY_DAY_COUNT) {
+        if (daysSinceEmployment > sabbaticalLeaveEligibilityDuration &&
+        daysSinceLastSabbaticalLeave > sabbaticalLeaveEligibilityDuration) {
             return true;
         }
 
