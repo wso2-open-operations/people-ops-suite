@@ -29,14 +29,14 @@ public isolated function getDinnerRequests() returns DinnerRequest[]|error {
 # + dinnerRequest - Dinner request payload
 # + email - Employee email
 # + return - Success result
-public isolated function insertDinnerRequest(DinnerRequest dinnerRequest, string email) returns sql:ExecutionResult|error {
-    return databaseClient->execute(insertDinnerRequestQuery(dinnerRequest, email ,check people:fetchEmployee(email)));
+public isolated function insertDinnerRequest(DinnerRequest dinnerRequest, string email) returns error? {
+    _ = check databaseClient->execute(upsertDinnerRequestQuery(email, dinnerRequest, check people:fetchEmployee(email)));
 }
 
 # Cancel dinner request.
 #
 # + email - Dinner request email
 # + return - Success result
-public isolated function cancelDinnerRequest(string email) returns sql:ExecutionResult|error {
-    return databaseClient->execute(cancelDinnerRequestQuery(email));
+public isolated function cancelDinnerRequest(string email) returns error? {
+    _ = check databaseClient->execute(cancelDinnerRequestQuery(email));
 }
