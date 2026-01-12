@@ -19,7 +19,9 @@ import * as Yup from "yup";
 
 import { useState } from "react";
 
-import { useSubmitFeedbackMutation } from "@root/src/services/menu.api";
+import { menuApi, useSubmitFeedbackMutation } from "@root/src/services/menu.api";
+import { useAppSelector } from "@root/src/slices/store";
+import { formatMenuData } from "@root/src/utils/utils";
 
 interface FeedbackForm {
   handleCloseFeedback: () => void;
@@ -28,6 +30,7 @@ interface FeedbackForm {
 const FeedbackForm = (props: FeedbackForm) => {
   const { handleCloseFeedback } = props;
   const [submitFeedback] = useSubmitFeedbackMutation();
+  const menu = useAppSelector((state) => menuApi.endpoints.getMenu.select()(state)?.data);
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -43,12 +46,7 @@ const FeedbackForm = (props: FeedbackForm) => {
       .required("Feedback is required"),
   });
 
-  const date = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = formatMenuData(menu?.date);
 
   const theme = useTheme();
 
@@ -81,7 +79,7 @@ const FeedbackForm = (props: FeedbackForm) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on today <strong>({date})</strong> from
+        Feedback is anonymous and accepted only on <strong>{date}</strong> from
         <strong> 12:00PM - 04:15PM</strong>
       </Typography>
     );
