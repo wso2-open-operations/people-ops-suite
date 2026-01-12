@@ -25,12 +25,10 @@ public const CANNOT_RETRIEVE_EMAIL = "Cannot retrieve email from the jwt Id toke
 public const X_JWT_ASSERTION = "x-jwt-assertion";
 
 public const INTERNAL_ERROR = "Something went wrong. Unable to process your dinner order at this time. If this issue persists please contact the internal apps team";
-public const INTERNAL_UPDATE_ERROR = "Something went wrong. Unable to update your dinner order at this time. If this issue persists please contact the internal apps team";
 public const DINNER_REQUEST_ALREADY_EXISTS = "You have already placed a dinner request.";
 public const DINNER_REQUEST_NOT_AVAILABLE = "No dinner request has been made.";
 public const DINNER_REQUEST_ERROR = "Unable to verify existing dinner request. Please try again later.";
 public const DINNER_REQUEST_SUCCESS = "Dinner request made successfully.";
-public const DINNER_REQUEST_UPDATED = "Dinner request updated successfully.";
 public const DINNER_REQUEST_CANCELLED = "Your dinner order has been successfully cancelled.";
 public const DINNER_REQUEST_CANCELLED_ERROR = "Failed to cancel dinner request.";
 public const DINNER_REQUEST_RETRIEVAL_ERROR = "Error retrieving dinner request for employee.";
