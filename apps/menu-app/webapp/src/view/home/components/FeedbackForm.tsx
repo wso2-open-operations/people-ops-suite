@@ -46,7 +46,7 @@ const FeedbackForm = (props: FeedbackForm) => {
       .required("Feedback is required"),
   });
 
-  const date = formatMenuData(menu?.date);
+  const date = formatMenuData(menu?.date) ?? "";
 
   const theme = useTheme();
 
