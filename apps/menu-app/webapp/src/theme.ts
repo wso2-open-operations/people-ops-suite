@@ -621,17 +621,17 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiButton: {
         styleOverrides: {
           root: {
-            textTransform: "none",
+            textTransform: "none" as const,
             borderRadius: 8,
             fontWeight: 500,
           },
           contained: {
             backgroundColor: colors.fill.primary.clicked,
             color: colors.text.brand.p2.active,
-            boxShadow: "none",
+            boxShadow: "none" as const,
             "&:hover": {
               backgroundColor: colors.fill.primary.hover,
-              boxShadow: "none",
+              boxShadow: "none" as const,
             },
             "&:active": {
               backgroundColor: colors.fill.primary.active,
@@ -662,11 +662,11 @@ export const themeSettings = (mode: PaletteMode) => {
             style: {
               padding: "8px 16px",
               backgroundColor: colors.fill.primary.active,
-              boxShadow: "none",
+              boxShadow: "none" as const,
               width: "fit-content",
               "&:hover": {
                 backgroundColor: colors.fill.primary.hover,
-                boxShadow: "none",
+                boxShadow: "none" as const,
               },
               "&.Mui-disabled": {
                 backgroundColor: colors.fill.primary.disabled,
@@ -767,7 +767,7 @@ export const themeSettings = (mode: PaletteMode) => {
       MuiTooltip: {
         defaultProps: {
           arrow: true,
-          placement: "right",
+          placement: "right" as const,
         },
         styleOverrides: {
           tooltip: {
