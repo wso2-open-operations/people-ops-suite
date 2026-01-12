@@ -196,10 +196,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         DinnerRequest|error? dinnerRequest = database:getDinnerRequestByEmail(userEmail);
         if dinnerRequest is () {
-            string errorMessage = string`${DINNER_REQUEST_NOT_AVAILABLE} for  ${userEmail}. There is nothing to cancel.`;
-            log:printError(errorMessage);
+            string message = string`${DINNER_REQUEST_NOT_AVAILABLE} for  ${userEmail}.`;
+            log:printInfo(message);
             return <http:Ok>{
-                body: {message: errorMessage}
+                body: {message: message}
             };
         }
 
@@ -212,7 +212,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return dinnerRequest;
     }
 
-    # Insert dinner requests.
+    # Upsert dinner requests.
     #
     # + payload - Dinner request data (email, date, meal option)
     # + return - Dinner request success response or error response
@@ -224,24 +224,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             return userEmail;
         }
 
-        DinnerRequest|error? dinnerRequestResult = database:getDinnerRequestByEmail(userEmail);
-        if dinnerRequestResult is error {
-            log:printError(string `${DINNER_REQUEST_ERROR} for user ${userEmail}`, dinnerRequestResult, dinnerRequestResult.stackTrace());
-            return <http:InternalServerError>{
-                body: {message: DINNER_REQUEST_ERROR}
-            };
-        }
-
-        if dinnerRequestResult is DinnerRequest {
-            log:printError(string`Duplicate dinner request attempt by ${userEmail} for date ${payload.date}`);
-            return <http:BadRequest>{
-                body: {message:  string`${DINNER_REQUEST_ALREADY_EXISTS} for ${payload.date}.`}
-            };
-        }
-
         transaction {
-            check database:insertDinnerRequest(payload, userEmail);
-            check sheets:insertDinnerRequest(payload, userEmail);
+            check database:upsertDinnerRequest(payload, userEmail);
+            check sheets:upsertDinnerRequest(payload, userEmail);
             check commit;
             
             return <http:Created>{
@@ -297,5 +282,4 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
     }
-
 }
