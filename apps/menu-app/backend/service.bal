@@ -22,7 +22,6 @@ import menu_app.people;
 import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
-import ballerina/sql;
 import ballerina/time;
 
 configurable time:TimeOfDay lunchFeedbackStartTime = {hour: 12, minute: 0, second: 0};
@@ -237,7 +236,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        sql:ExecutionResult|error result = database:insertDinnerRequest(payload, userEmail);
+        error? result = database:insertDinnerRequest(payload, userEmail);
 
         if result is error {
             log:printError(DINNER_REQUEST_ERROR, result, result.stackTrace());
@@ -271,7 +270,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return userEmail;
         }
 
-        sql:ExecutionResult|error result = database:cancelDinnerRequest(userEmail);
+        error? result = database:cancelDinnerRequest(userEmail);
         if result is error {
             log:printError(DINNER_REQUEST_CANCELLED_ERROR, result, result.stackTrace());
             return <http:InternalServerError>{
