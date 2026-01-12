@@ -25,11 +25,7 @@ import { DinnerRequest, MealOption } from "@/types/types";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import PreLoader from "@root/src/component/common/PreLoader";
-import {
-  useDeleteDinnerRequestMutation,
-  useGetDinnerRequestQuery,
-  useSubmitDinnerRequestMutation,
-} from "@services/dod.api";
+import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
 import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
 
