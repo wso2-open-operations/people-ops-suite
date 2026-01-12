@@ -32,8 +32,10 @@ final string appName = isDebug ? APP_NAME_DEV : APP_NAME;
 # + subject - Email subject
 # + body - Email body
 # + recipients - Email recipients
+# + template - Email template (Base64 encoded HTML content).
 # + return - Error if sending the email fails
-public isolated function processEmailNotification(string alertHeader, string subject, map<string> body, string[] recipients) returns error? {
+public isolated function processEmailNotification(string alertHeader, string subject, map<string> body,
+        string[] recipients, string? template = ()) returns error? {
 
     if !emailNotificationsEnabled {
         log:printInfo("Email notifications are disabled. Skipping the email alert.");
@@ -53,11 +55,16 @@ public isolated function processEmailNotification(string alertHeader, string sub
     `;
 
     // Base64 encode the HTML content
-    string encodedTemplate = htmlContent.toBytes().toBase64();
+    string encodedTemplate;
+    if template is () {
+        encodedTemplate = htmlContent.toBytes().toBase64();
+    } else {
+        encodedTemplate = template;
+    }
 
     json payload = {
-        template: encodedTemplate, // Send base64-encoded HTML
-        "from": emailServiceConfig.emailFrom,
+        template: encodedTemplate,
+        'from: emailServiceConfig.emailFrom,
         to: to,
         subject
     };
