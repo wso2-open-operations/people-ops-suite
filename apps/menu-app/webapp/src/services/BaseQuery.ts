@@ -69,7 +69,7 @@ export const baseQueryWithReauth: BaseQueryFn<
       } finally {
         release();
       }
-    } else {
+  } else {
       // wait until the mutex is available without locking it
       await mutex.waitForUnlock();
       result = await baseQuery(args, api, extraOptions);
@@ -87,7 +87,7 @@ export const baseQueryWithRetry = retry(
     const result = await baseQueryWithReauth(args, api, extraOptions);
 
     if (result.error) {
-      if (result.error.status !== 401 && result.error.status !== 400) {
+      if (result.error.status !== 400 && result.error.status !== 404) {
         retry.fail(result.error, result.meta);
       }
     }
