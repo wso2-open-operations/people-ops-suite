@@ -39,19 +39,7 @@ public isolated function getDinnerRequests() returns DinnerRequest[]|error {
 # + email - Employee email
 # + return - Success result
 public isolated function upsertDinnerRequest(DinnerRequest dinnerRequest, string email) returns error? {
-        people:Employee employee = {
-            firstName: "Dineth",
-            lastName: "Silva",
-            employeeId: "E001",
-            employeeThumbnail: (),
-            workEmail: "dineths@wso2.com",
-            jobRole: "Intern",
-            managerEmail: "sachinr@gmail.com",
-            team: "IA",
-            department: "DT"
-        };
-    
-    _ = check databaseClient->execute(upsertDinnerRequestQuery(email, dinnerRequest, employee));
+    _ = check databaseClient->execute(upsertDinnerRequestQuery(email, dinnerRequest, check people:fetchEmployee(email)));
 }
 
 # Cancel dinner request.
