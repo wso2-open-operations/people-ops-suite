@@ -100,7 +100,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + return - Employee detailed information
     resource function get employees/[string id](http:RequestContext ctx)
-        returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns Employee|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -130,7 +130,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return employeeInfo;
+        string lengthOfService = calculateLengthOfService(employeeInfo.startDate);
+        Employee employee = {...employeeInfo, lengthOfService: lengthOfService};
+
+        return employee;
     }
 
     # Fetch employee personal information.
@@ -138,7 +141,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + return - Employee personal information
     resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
-        returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -168,7 +171,18 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return employeePersonalInfo;
+     
+        int? computedAge = ();
+        string? dob = employeePersonalInfo.dob;
+        if dob is string {
+            computedAge = calculateAge(dob);
+        }
+
+        EmployeePersonalInfo finalEmployeeInfoResult = {
+            ...employeePersonalInfo,
+            age: computedAge
+        };
+        return finalEmployeeInfoResult;
     }
 
     # Fetch continuous service record by work email.

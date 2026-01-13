@@ -30,3 +30,20 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
+
+# Employee information.
+public type Employee record {|
+    *database:Employee;
+    # Computed field: duration since the employee's start date
+    string lengthOfService;
+    # Computed field: number of subordinates this employee manages
+    int subordinateCount?;
+
+|};
+
+# Personal information of an employee.
+public type EmployeePersonalInfo record {|
+    *database:EmployeePersonalInfo;
+    # Computed field: age of the employee
+    int? age;
+|};
