@@ -45,7 +45,10 @@ import {
   Button,
   TextField,
   Tooltip,
+  Chip,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SaveIcon from "@mui/icons-material/Save";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -122,6 +125,36 @@ const FieldInput = ({
     />
   );
 };
+
+export const getEmployeeStatusChipStyles =
+  (status?: string) => (theme: Theme) => {
+    const normalized = (status ?? "").trim().toLowerCase();
+    const isActive = normalized === "active";
+
+    const mainColor = isActive
+      ? theme.palette.success.main
+      : theme.palette.error.main;
+
+    return {
+      borderRadius: 999,
+      height: 24,
+      fontWeight: 600,
+      px: 0,
+      color: mainColor,
+      borderColor: alpha(mainColor, 0.45),
+      backgroundColor: alpha(
+        mainColor,
+        theme.palette.mode === "dark" ? 0.14 : 0.1
+      ),
+      "& .MuiChip-label": {
+        px: 0.75,
+        py: 0,
+        fontSize: 12,
+        lineHeight: 1,
+        textTransform: "capitalize",
+      },
+    };
+  };
 
 export default function Me() {
   const dispatch = useAppDispatch();
@@ -460,17 +493,63 @@ export default function Me() {
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employment Type
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.employmentType || "-"}
-                  </Typography>
+
+                  <Box sx={{ mt: 1 }}>
+                    {employee.employmentType ? (
+                      <Chip
+                        label={employee.employmentType}
+                        size="small"
+                        variant="outlined"
+                        sx={(theme) => ({
+                          borderRadius: 999,
+                          height: 24,
+                          fontWeight: 600,
+                          px: 0,
+                          color: theme.palette.secondary.contrastText,
+                          borderColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            0.45
+                          ),
+                          backgroundColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            theme.palette.mode === "dark" ? 0.14 : 0.1
+                          ),
+                          "& .MuiChip-label": {
+                            px: 0.75,
+                            py: 0,
+                            fontSize: 12,
+                            lineHeight: 1,
+                          },
+                        })}
+                      />
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        -
+                      </Typography>
+                    )}
+                  </Box>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Status
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.employeeStatus || "-"}
-                  </Typography>
+
+                  <Box sx={{ mt: 1 }}>
+                    {employee.employeeStatus ? (
+                      <Chip
+                        label={employee.employeeStatus}
+                        size="small"
+                        variant="outlined"
+                        sx={getEmployeeStatusChipStyles(
+                          employee.employeeStatus
+                        )}
+                      />
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        -
+                      </Typography>
+                    )}
+                  </Box>
                 </Grid>
               </Grid>
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
@@ -480,6 +559,14 @@ export default function Me() {
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.startDate || "-"}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Length of Service
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.lengthOfService || "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -514,6 +601,14 @@ export default function Me() {
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.additionalManagerEmails || "-"}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    Subordinate Count
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    {employee.subordinateCount ?? "-"}
                   </Typography>
                 </Grid>
               </Grid>
@@ -588,6 +683,9 @@ export default function Me() {
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Date of Birth" value={values.dob} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="Age" value={values.age} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Gender" value={values.gender} />
