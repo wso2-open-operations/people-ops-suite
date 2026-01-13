@@ -22,8 +22,7 @@ import ballerina/sql;
 # + employee - Employee data
 # + return - SQL parameterized query
 isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
-    returns sql:ParameterizedQuery =>
-    `
+    returns sql:ParameterizedQuery => `
         INSERT INTO dinner_bookings (
             email, 
             meal_option, 
@@ -51,48 +50,45 @@ isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerReq
 #
 # + email - Dinner request email
 # + return - SQL parameterized query
-isolated function cancelDinnerRequestQuery(string email) returns sql:ParameterizedQuery =>
-    `   
-        UPDATE dinner_bookings 
-        SET is_active = 0
-        WHERE email = ${email} AND is_active = 1 AND date >= CURRENT_DATE
-    `;
+isolated function cancelDinnerRequestQuery(string email) returns sql:ParameterizedQuery => `   
+    UPDATE dinner_bookings 
+    SET is_active = 0
+    WHERE email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
+`;
 
 # Retrieve dinner request by email.
 #
 # + email - Employee email
 # + return - SQL parameterized query
-isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery =>
-    `
-        SELECT 
-            id,
-            meal_option,
-            date,
-            department,
-            team,
-            manager_email,
-            _timestamp
-        FROM 
-            dinner_bookings 
-        WHERE 
-            email = ${email} AND is_active = 1 AND date >= CURRENT_DATE
-    `;
+isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery => `
+    SELECT 
+        id,
+        meal_option,
+        date,
+        department,
+        team,
+        manager_email,
+        _timestamp
+    FROM 
+        dinner_bookings 
+    WHERE 
+        email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
+`;
 
 # Retrieve all dinner requests.
 # 
 # + return - SQL parameterized query
-isolated function getAllDinnerRequestsQuery() returns sql:ParameterizedQuery => 
-    `
-        SELECT 
-            email,
-            meal_option,
-            date,
-            department,
-            team,
-            manager_email,
-            _timestamp
-        FROM 
-            dinner_bookings 
-        WHERE 
-            is_active = 1 AND date >= CURRENT_DATE;
-    `;
+isolated function getAllDinnerRequestsQuery() returns sql:ParameterizedQuery => `
+    SELECT 
+        email,
+        meal_option,
+        date,
+        department,
+        team,
+        manager_email,
+        _timestamp
+    FROM 
+        dinner_bookings 
+    WHERE 
+        is_active = 1 AND date >= CURRENT_DATE;
+`;
