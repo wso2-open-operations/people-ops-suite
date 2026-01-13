@@ -171,9 +171,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return {
-            isSabbaticalLeaveEnabled: isSabbaticalLeaveEnabled,
-            sabbaticalLeavePolicyUrl: sabbaticalLeavePolicyUrl,
-            sabbaticalLeaveUserGuideUrl: sabbaticalLeaveUserGuideUrl
+            isSabbaticalLeaveEnabled,
+            sabbaticalLeavePolicyUrl,
+            sabbaticalLeaveUserGuideUrl,
+            sabbaticalLeaveEligibilityDuration,
+            sabbaticalLeaveMaxApplicationDuration
         };
     }
 

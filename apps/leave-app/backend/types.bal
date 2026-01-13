@@ -268,6 +268,10 @@ public type AppConfig record {|
     string sabbaticalLeavePolicyUrl;
     # Sabbatical leave user guide URL
     string sabbaticalLeaveUserGuideUrl;
+    # Sabbatical leave eligibility duration in days
+    int sabbaticalLeaveEligibilityDuration;
+    # Sabbatical leave maximum application duration in days
+    int sabbaticalLeaveMaxApplicationDuration;
 |};
 
 # Sabbatical Leave Response.
