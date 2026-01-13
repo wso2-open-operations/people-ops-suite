@@ -46,8 +46,8 @@ interface Employee {
   team: string;
   subTeam: string | null;
   unit: string | null;
-  lengthOfService?: string | null;
-  subordinateCount?: number | null;
+  lengthOfService?: string;
+  subordinateCount?: number;
 }
 
 export interface EmployeeBasicInfo {
