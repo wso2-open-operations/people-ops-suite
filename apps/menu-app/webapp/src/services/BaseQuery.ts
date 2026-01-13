@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -37,7 +37,7 @@ const baseQuery = fetchBaseQuery({
   baseUrl: SERVICE_BASE_URL,
   prepareHeaders: (headers) => {
     if (ACCESS_TOKEN) {
-      headers.set("Authorization", `Bearer ${ACCESS_TOKEN}`);
+      headers.set("x-jwt-assertion", ACCESS_TOKEN);
     }
   },
 });
@@ -69,7 +69,7 @@ export const baseQueryWithReauth: BaseQueryFn<
       } finally {
         release();
       }
-  } else {
+    } else {
       // wait until the mutex is available without locking it
       await mutex.waitForUnlock();
       result = await baseQuery(args, api, extraOptions);

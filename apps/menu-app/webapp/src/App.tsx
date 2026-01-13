@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -23,8 +23,8 @@ import { createContext, useEffect, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
-import { store } from "@slices/store";
 import { themeSettings } from "@root/src/theme";
+import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
 
 import "./index.css";
