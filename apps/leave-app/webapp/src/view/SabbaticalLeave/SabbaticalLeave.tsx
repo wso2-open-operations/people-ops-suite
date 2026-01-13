@@ -41,6 +41,12 @@ export default function SabbaticalLeave() {
     const fetchSabbaticalLeaveFeatureStatus = async () => {
       try {
         const appConfig: AppConfigResponse = await getAppConfig();
+        const {
+          sabbaticalLeavePolicyUrl,
+          sabbaticalLeaveUserGuideUrl,
+          sabbaticalLeaveEligibilityDuration,
+          sabbaticalLeaveMaxApplicationDuration,
+        } = appConfig;
         setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
 
         const baseTabs: TabProps[] = [
@@ -50,8 +56,10 @@ export default function SabbaticalLeave() {
             icon: <EditDocumentIcon />,
             page: (
               <ApplyTab
-                sabbaticalPolicyUrl={appConfig.sabbaticalLeavePolicyUrl}
-                sabbaticalUserGuideUrl={appConfig.sabbaticalLeaveUserGuideUrl}
+                sabbaticalPolicyUrl={sabbaticalLeavePolicyUrl}
+                sabbaticalUserGuideUrl={sabbaticalLeaveUserGuideUrl}
+                sabbaticalLeaveEligibilityDuration={sabbaticalLeaveEligibilityDuration}
+                sabbaticalLeaveMaxApplicationDuration={sabbaticalLeaveMaxApplicationDuration}
               />
             ),
           },

@@ -24,7 +24,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { SingleLeaveHistory } from "@root/src/types/types";
+import { ApprovalStatus, SingleLeaveHistory } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
@@ -40,9 +40,9 @@ export default function LeaveHistory() {
 
       try {
         const response = await getLeaveHistory({
-          isActive: true,
           email: userInfo?.workEmail || "",
           startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
+          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
         });
 
         setLeaves(response.leaves);
