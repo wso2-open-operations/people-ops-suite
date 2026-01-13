@@ -66,10 +66,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         people:Employee|error? employee = people:fetchEmployee(userInfo.email);
         if employee is error {
-            string customError = string `Error occurred while fetching user information for user : ${userInfo.email}`;
-            log:printError(customError, employee);
+            string customError = string `Error occurred while fetching user information`;
+            log:printError(string `${customError} for user : ${userInfo.email}`, employee);
             return <http:InternalServerError>{
-                body: customError
+                body: {
+                    message: customError
+                }
             };
         }
 
