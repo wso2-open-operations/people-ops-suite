@@ -44,20 +44,31 @@ import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import {
-  submitSabbaticalLeaveRequest,
-} from "@root/src/services/leaveService";
+import { getLeaveHistory, submitLeaveRequest } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { EligibilityResponse } from "@root/src/types/types";
+import {
+  ApprovalStatus,
+  EligibilityResponse,
+  LeaveHistoryResponse,
+  LeaveType,
+  OrderBy,
+} from "@root/src/types/types";
 
 interface ApplyTabProps {
   sabbaticalPolicyUrl: string;
   sabbaticalUserGuideUrl: string;
+  sabbaticalLeaveEligibilityDuration: number;
+  sabbaticalLeaveMaxApplicationDuration: number;
 }
 
 dayjs.extend(utc);
 
-export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }: ApplyTabProps) {
+export default function ApplyTab({
+  sabbaticalPolicyUrl,
+  sabbaticalUserGuideUrl,
+  sabbaticalLeaveEligibilityDuration,
+  sabbaticalLeaveMaxApplicationDuration,
+}: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const userInfo = useSelector(selectUser);
@@ -86,11 +97,38 @@ export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }
     const checkEligibility = async () => {
       try {
         setIsLoading(true);
+        const lastSabbaticalLeaveDetails: LeaveHistoryResponse = await getLeaveHistory({
+          email: userInfo?.workEmail || "",
+          leaveCategory: [LeaveType.SABBATICAL],
+          statuses: [ApprovalStatus.APPROVED],
+          orderBy: OrderBy.DESC,
+          limit: 1,
+        });
+
+        const lastSabbaticalLeaveEndDate = lastSabbaticalLeaveDetails?.leaves[0]?.endDate;
+        const todayUtc = dayjs.utc().startOf("day");
+
+        const lastSabbaticalLeaveDiff =
+          todayUtc.diff(dayjs(lastSabbaticalLeaveEndDate).startOf("day"), "day") - 1;
+        const employmentStartDateDiff =
+          todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
+
+        let isEligible: boolean = false;
+        if (employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration) {
+          isEligible = true;
+          if (lastSabbaticalLeaveEndDate) {
+            if (lastSabbaticalLeaveDiff < sabbaticalLeaveEligibilityDuration) {
+              isEligible = false;
+            }
+          }
+        }
+
         const eligibilityResponse: EligibilityResponse = {
           employmentStartDate: userInfo?.employmentStartDate || "",
-          lastSabbaticalLeaveEndDate: userInfo?.lastSabbaticalLeaveEndDate || "",
-          isEligible: userInfo?.isSabbaticalLeaveEligible || false,
+          lastSabbaticalLeaveEndDate: lastSabbaticalLeaveEndDate || "",
+          isEligible: isEligible,
         };
+
         setEligibilityPayload(eligibilityResponse);
         if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
           setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
@@ -122,9 +160,9 @@ export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }
     }
 
     const daysDifference = leaveEndDate.diff(leaveStartDate, "day") + 1;
-    if (daysDifference > 42) {
+    if (daysDifference > sabbaticalLeaveMaxApplicationDuration) {
       enqueueSnackbar(
-        "Sabbatical leave duration should be less than or equal to 6 weeks (42 days)",
+        `Sabbatical leave duration should be less than or equal to ${sabbaticalLeaveMaxApplicationDuration} days`,
         {
           variant: "error",
         },
@@ -136,9 +174,9 @@ export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }
     if (lastSabbaticalLeaveEndDate) {
       const todayUtc = dayjs.utc().startOf("day");
       const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
-      if (diffDays < 1095) {
+      if (diffDays < sabbaticalLeaveEligibilityDuration) {
         enqueueSnackbar(
-          "The last sabbatical leave end date should be at least 3 years before today.",
+          `The last sabbatical leave end date should be at least ${sabbaticalLeaveEligibilityDuration / 365} years before today.`,
           { variant: "error" },
         );
         return;
@@ -160,14 +198,11 @@ export default function ApplyTab({ sabbaticalPolicyUrl, sabbaticalUserGuideUrl }
   const handleConfirmSubmit = async () => {
     try {
       setIsSubmitting(true);
-      const lastSabbaticalDate = lastSabbaticalLeaveEndDate
-        ? lastSabbaticalLeaveEndDate.format("YYYY-MM-DD")
-        : "";
-      const response = await submitSabbaticalLeaveRequest({
-        lastSabbaticalLeaveEndDate: lastSabbaticalDate,
+      const response = await submitLeaveRequest({
+        leaveType: LeaveType.SABBATICAL,
         startDate: leaveStartDate!.format("YYYY-MM-DD"),
         endDate: leaveEndDate!.format("YYYY-MM-DD"),
-        additionalComment: additionalComment,
+        comment: additionalComment,
       });
 
       handleCloseDialog();
