@@ -31,13 +31,13 @@ export default function CancelModal(props: CancelModalProps) {
   const theme = useTheme();
   const [deleteDinnerRequest] = useDeleteDinnerRequestMutation();
 
-  const [isSubmitting, setIsSubmitting] = useState<Boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const handleDeleteDinnerRequest = async () => {
     setIsSubmitting(true);
     try {
-      await deleteDinnerRequest();
+      await deleteDinnerRequest().unwrap();
 
       handleCloseModal();
       await wait(100);
@@ -102,6 +102,7 @@ export default function CancelModal(props: CancelModalProps) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             <Button
               onClick={handleCloseModal}
+              disabled={isSubmitting}
               sx={{
                 width: "100%",
                 py: 1,

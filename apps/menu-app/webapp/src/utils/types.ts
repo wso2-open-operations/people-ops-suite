@@ -13,10 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
-import { Role } from "@slices/authSlice/auth";
+import { Role } from "@/types/types";
 
 export type stateType = "failed" | "success" | "loading" | "idle";
 

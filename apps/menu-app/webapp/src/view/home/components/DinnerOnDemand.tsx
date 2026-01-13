@@ -25,11 +25,7 @@ import { DinnerRequest, MealOption } from "@/types/types";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import PreLoader from "@root/src/component/common/PreLoader";
-import {
-  useDeleteDinnerRequestMutation,
-  useGetDinnerRequestQuery,
-  useSubmitDinnerRequestMutation,
-} from "@services/dod.api";
+import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
 import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
 
@@ -46,7 +42,6 @@ export default function DinnerOnDemand() {
 
   const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
   const [submitDinner] = useSubmitDinnerRequestMutation();
-  const [deleteDinner] = useDeleteDinnerRequestMutation();
 
   const usersState = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state));
   const user = usersState.data;
@@ -83,15 +78,6 @@ export default function DinnerOnDemand() {
           team: user.team,
           managerEmail: user.managerEmail,
         };
-
-        if (orderPlaced) {
-          try {
-            await deleteDinner().unwrap();
-          } catch (deleteError) {
-            console.error("Failed to delete dinner request:", deleteError);
-            return;
-          }
-        }
 
         await submitDinner(submitPayload);
       } catch (error) {
@@ -255,7 +241,11 @@ export default function DinnerOnDemand() {
             <Button
               type="submit"
               variant="contained"
-              disabled={isFormDisabled}
+              disabled={
+                isFormDisabled ||
+                !formik.values.mealOption ||
+                (orderPlaced && formik.values.mealOption === mealOptionsDefault)
+              }
               sx={{
                 px: 2,
                 py: 1,

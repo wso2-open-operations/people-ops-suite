@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerinax/googleapis.sheets as sheets;
+import ballerina/log;
 
 # Insert dinner requests by email to sheet.
 #
@@ -26,8 +27,82 @@ public isolated function insertDinnerRequest(DinnerRequest payload, string email
         dodSheetClientConfig.sheetName});
 }
 
-# Cancel dinner requests by email to sheet.
+# Upsert dinner request - update if exists, insert if new.
 #
+# + payload - Employee dinner request data containing date, meal option, etc.
+# + email - Employee email to match against existing records
+# + return - Error if operation fails, null on success
+public isolated function upsertDinnerRequest(DinnerRequest payload, string email) returns error? {
+    sheets:Range range = check dodSpreadsheetClient->getRange(
+        dodSheetClientConfig.sheetId,
+        dodSheetClientConfig.sheetName, 
+        "A:E"
+    );
+
+    int rowIndex = 0;
+    int? targetRow = ();
+    
+    foreach (int|string|decimal)[] row in range.values {
+        if row.length() >= 4 && row[0].toString() == payload.date && row[4].toString() == email {
+            targetRow = rowIndex;
+            break;
+        }
+        rowIndex += 1;
+    }
+
+    if targetRow is int {
+        string actualRow = "D" + (targetRow + 1).toString();
+
+        sheets:Cell|error receivedCell = dodSpreadsheetClient->getCell(
+            dodSheetClientConfig.sheetId,
+            dodSheetClientConfig.sheetName, 
+            actualRow
+        );
+
+        if receivedCell is error {
+            string errorMessage = "Error when retrieving cell for targeted row";
+            log:printError(string `${errorMessage} for targeted row: ${actualRow}`, receivedCell);
+            return error(errorMessage);
+        }
+
+        error? setCell = dodSpreadsheetClient->setCell(
+            dodSheetClientConfig.sheetId,
+            dodSheetClientConfig.sheetName, 
+            actualRow,
+            payload.mealOption
+        );
+
+        if setCell is error {
+            string errorMessage = "Error when setting updated cell value";
+            log:printError(string `${errorMessage} for targeted row: ${actualRow}`, setCell);
+            return error(errorMessage);
+        }
+        
+        log:printInfo("Successfully updated meal option to: " + payload.mealOption);
+    } 
+    else {
+        log:printWarn("No match found, appending new row");
+        
+        string[] values = [payload.date, payload.team ?: "null", payload.managerEmail, payload.mealOption, email];
+        
+        sheets:ValueRange|error appendedValue = dodSpreadsheetClient->appendValue(
+            dodSheetClientConfig.sheetId, 
+            values, 
+            <sheets:A1Range>{sheetName: dodSheetClientConfig.sheetName}
+        );
+
+        if appendedValue is error {
+            string errorMessage = "Error when appending cell value";
+            log:printError(errorMessage, appendedValue);
+            return error(errorMessage);
+        }
+        
+        log:printInfo("Successfully appended new row" + appendedValue.toString());
+    }
+}
+
+# Cancel dinner requests by email to sheet.
+# 
 # + email - Employee email
 # + return - Error || Null
 public isolated function cancelDinnerRequest(string email) returns error? {
@@ -38,7 +113,7 @@ public isolated function cancelDinnerRequest(string email) returns error? {
         dodSheetClientConfig.sheetRange
     );
     foreach (int|string|decimal)[] row in range.values {
-        if row[0] == email {
+        if row.length() > 4 && row[0] == email {
             _ = check dodSpreadsheetClient->deleteRows(dodSheetClientConfig.sheetId, dodSheetClientConfig.worksheetId, index, 1);
         }
         index += 1;

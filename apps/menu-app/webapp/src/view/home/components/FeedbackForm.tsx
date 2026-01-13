@@ -1,10 +1,27 @@
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import { Box, Button, TextField, Typography, useTheme } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
 import { useState } from "react";
 
-import { useSubmitFeedbackMutation } from "@root/src/services/menu.api";
+import { menuApi, useSubmitFeedbackMutation } from "@root/src/services/menu.api";
+import { useAppSelector } from "@root/src/slices/store";
+import { formatMenuData } from "@root/src/utils/utils";
 
 interface FeedbackForm {
   handleCloseFeedback: () => void;
@@ -13,6 +30,7 @@ interface FeedbackForm {
 const FeedbackForm = (props: FeedbackForm) => {
   const { handleCloseFeedback } = props;
   const [submitFeedback] = useSubmitFeedbackMutation();
+  const menu = useAppSelector((state) => menuApi.endpoints.getMenu.select()(state)?.data);
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -28,12 +46,7 @@ const FeedbackForm = (props: FeedbackForm) => {
       .required("Feedback is required"),
   });
 
-  const date = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = formatMenuData(menu?.date) ?? "";
 
   const theme = useTheme();
 
@@ -66,7 +79,7 @@ const FeedbackForm = (props: FeedbackForm) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on today <strong>({date})</strong> from
+        Feedback is anonymous and accepted only on <strong>{date}</strong> from
         <strong> 12:00PM - 04:15PM</strong>
       </Typography>
     );

@@ -140,5 +140,5 @@ export interface DinnerRequest {
   department: string;
   team?: string;
   managerEmail: string;
-  timeStamp?: string;
+  timestamp?: string;
 }
