@@ -113,7 +113,7 @@ public isolated function cancelDinnerRequest(string email) returns error? {
         dodSheetClientConfig.sheetRange
     );
     foreach (int|string|decimal)[] row in range.values {
-        if row.length() > 4 && row[0] == email {
+        if row[0] == email {
             _ = check dodSpreadsheetClient->deleteRows(dodSheetClientConfig.sheetId, dodSheetClientConfig.worksheetId, index, 1);
         }
         index += 1;
