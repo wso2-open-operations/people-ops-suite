@@ -17,9 +17,9 @@
 import { Box, Chip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { ApprovalStatusItem } from "@root/src/types/types";
+import { SingleLeaveHistory } from "@root/src/types/types";
 
-export default function ApprovalHistoryTable({ rows }: { rows: ApprovalStatusItem[] }) {
+export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistory[] }) {
   const theme = useTheme();
 
   const columns: GridColDef[] = [
@@ -36,6 +36,7 @@ export default function ApprovalHistoryTable({ rows }: { rows: ApprovalStatusIte
       type: "string",
       flex: 1,
       editable: false,
+      renderCell: (params) => <span>{String(params.row?.startDate ?? "").substring(0, 10)}</span>,
     },
     {
       field: "endDate",
@@ -43,9 +44,10 @@ export default function ApprovalHistoryTable({ rows }: { rows: ApprovalStatusIte
       type: "string",
       flex: 1,
       editable: false,
+      renderCell: (params) => <span>{String(params.row?.endDate ?? "").substring(0, 10)}</span>,
     },
     {
-      field: "approvalStatus",
+      field: "status",
       headerName: "Status",
       type: "string",
       flex: 1,

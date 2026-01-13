@@ -33,20 +33,19 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 
 import { approveLeave } from "@root/src/services/leaveService";
-import { ApprovalStatusItem } from "@root/src/types/types";
+import { Action, SingleLeaveHistory } from "@root/src/types/types";
 
 interface ApproveLeaveTableProps {
-  rows: ApprovalStatusItem[];
-  onRefresh: () => void;
+  rows: SingleLeaveHistory[];
 }
 
 interface ConfirmationDialogState {
   open: boolean;
   isApproval: boolean;
-  leaveItem: ApprovalStatusItem | null;
+  leaveItem: SingleLeaveHistory | null;
 }
 
-export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTableProps) {
+export default function ApproveLeaveTable({ rows }: ApproveLeaveTableProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [dialogState, setDialogState] = useState<ConfirmationDialogState>({
@@ -56,7 +55,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleOpenDialog = (item: ApprovalStatusItem, isApproval: boolean) => {
+  const handleOpenDialog = (item: SingleLeaveHistory, isApproval: boolean) => {
     setDialogState({
       open: true,
       isApproval,
@@ -77,10 +76,10 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
 
     setIsSubmitting(true);
     try {
-      await approveLeave({
-        isApproved: dialogState.isApproval,
-        approvalStatusId: dialogState.leaveItem.id,
-      });
+      await approveLeave(
+        String(dialogState.leaveItem.id),
+        dialogState.isApproval ? Action.APPROVE : Action.REJECT,
+      );
       handleCloseDialog();
       enqueueSnackbar(
         dialogState.isApproval
@@ -88,7 +87,6 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
           : "Leave request rejected successfully",
         { variant: "success" },
       );
-      onRefresh();
     } catch (error) {
       console.error("Failed to process leave request:", error);
       enqueueSnackbar(
@@ -116,6 +114,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
       type: "string",
       flex: 1,
       editable: false,
+      renderCell: (params) => <span>{String(params.row?.startDate ?? "").substring(0, 10)}</span>,
     },
     {
       field: "endDate",
@@ -123,6 +122,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
       type: "string",
       flex: 1,
       editable: false,
+      renderCell: (params) => <span>{String(params.row?.endDate ?? "").substring(0, 10)}</span>,
     },
     {
       field: "approval",

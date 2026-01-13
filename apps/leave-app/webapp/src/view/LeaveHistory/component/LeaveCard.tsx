@@ -158,28 +158,26 @@ export default function LeaveCard({
               </Stack>
             </Stack>
           </Stack>
-          {!(type === "sabbatical") && (
-            <Button
-              size="small"
-              onClick={() => onDelete?.(id)}
-              disabled={isCancelDisabled()}
-              startIcon={<CloseIcon fontSize="small" />}
-              sx={{
-                color: isCancelDisabled() ? theme.palette.text.disabled : theme.palette.error.main,
-                textTransform: "none",
-                fontWeight: 500,
-                "&:hover": {
-                  backgroundColor: theme.palette.error.light,
-                  color: theme.palette.error.dark,
-                },
-                "&.Mui-disabled": {
-                  color: theme.palette.text.disabled,
-                },
-              }}
-            >
-              Cancel
-            </Button>
-          )}
+          <Button
+            size="small"
+            onClick={() => onDelete?.(id)}
+            disabled={isCancelDisabled()}
+            startIcon={<CloseIcon fontSize="small" />}
+            sx={{
+              color: isCancelDisabled() ? theme.palette.text.disabled : theme.palette.error.main,
+              textTransform: "none",
+              fontWeight: 500,
+              "&:hover": {
+                backgroundColor: theme.palette.error.light,
+                color: theme.palette.error.dark,
+              },
+              "&.Mui-disabled": {
+                color: theme.palette.text.disabled,
+              },
+            }}
+          >
+            Cancel
+          </Button>
         </Stack>
       </CardContent>
     </Card>
