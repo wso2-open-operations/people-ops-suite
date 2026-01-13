@@ -13,35 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-
-import { Role } from "@/types/types";
 
 export type stateType = "failed" | "success" | "loading" | "idle";
-
-export interface AuthState {
-  status: State;
-  mode: "active" | "maintenance";
-  statusMessage: string | null;
-  isAuthenticated: boolean;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: DecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-export interface AuthData {
-  userInfo: BasicUserInfo;
-  decodedIdToken: DecodedIDTokenPayload;
-}
-
-export interface Employee {
-  workEmail: string;
-  firstName: string;
-  lastName: string;
-  jobBand: number;
-  employeeThumbnail: string;
-}
-
 export interface Header {
   title: string;
   size: number;
