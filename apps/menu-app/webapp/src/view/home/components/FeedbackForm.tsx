@@ -19,9 +19,10 @@ import * as Yup from "yup";
 
 import { useState } from "react";
 
-import { menuApi, useSubmitFeedbackMutation } from "@root/src/services/menu.api";
-import { useAppSelector } from "@root/src/slices/store";
-import { formatMenuData } from "@root/src/utils/utils";
+import { menuApi, useSubmitFeedbackMutation } from "@services/menu.api";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { formatMenuData } from "@utils/utils";
 
 interface FeedbackForm {
   handleCloseFeedback: () => void;
@@ -29,8 +30,11 @@ interface FeedbackForm {
 
 const FeedbackForm = (props: FeedbackForm) => {
   const { handleCloseFeedback } = props;
+
+  const theme = useTheme();
   const [submitFeedback] = useSubmitFeedbackMutation();
   const menu = useAppSelector((state) => menuApi.endpoints.getMenu.select()(state)?.data);
+  const dispatch = useAppDispatch();
 
   const [isFocused, setIsFocused] = useState(false);
 
@@ -48,8 +52,6 @@ const FeedbackForm = (props: FeedbackForm) => {
 
   const date = formatMenuData(menu?.date) ?? "";
 
-  const theme = useTheme();
-
   const formik = useFormik({
     initialValues: { message: "" },
     validationSchema,
@@ -60,6 +62,12 @@ const FeedbackForm = (props: FeedbackForm) => {
         handleCloseFeedback();
       } catch (error) {
         console.error("Failed to submit feedback:", error);
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "Failed to submit meal feedback. Try again...",
+            type: "error",
+          }),
+        );
       } finally {
         setSubmitting(false);
       }
