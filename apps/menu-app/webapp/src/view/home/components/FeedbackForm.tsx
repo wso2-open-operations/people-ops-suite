@@ -148,6 +148,7 @@ const FeedbackForm = (props: FeedbackForm) => {
           variant="outlined"
           onClick={() => {
             formik.resetForm();
+            handleCloseFeedback();
           }}
           disabled={formik.isSubmitting}
         >
