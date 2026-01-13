@@ -98,9 +98,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
-            if empInfo.leadEmail is () {
-                return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
-            }
             if optionalMailsToNotify is error {
                 string errorMsg = "Error occurred while fetching optional mails to notify";
                 log:printError(errorMsg, optionalMailsToNotify);
