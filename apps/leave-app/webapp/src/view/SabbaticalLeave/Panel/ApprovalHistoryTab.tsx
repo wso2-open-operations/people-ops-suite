@@ -15,19 +15,39 @@
 // under the License.
 
 import { CircularProgress, Stack } from "@mui/material";
+import { useSelector } from "react-redux";
+
+import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { useApprovalHistoryData } from "@root/src/hooks/hooks";
-import { ApprovalStatus } from "@root/src/types/types";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { ApprovalStatus, LeaveHistoryResponse } from "@root/src/types/types";
 import ApprovalHistoryTable from "@root/src/view/SabbaticalLeave/component/ApprovalHistoryTable";
 
 export default function ApprovalHistoryTab() {
+  const userInfo = useSelector(selectUser);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [approvalHistory, setApprovalHistory] = useState<LeaveHistoryResponse>();
   // fetch the approval history data.
-  const { data, loading } = useApprovalHistoryData([
-    ApprovalStatus.APPROVED,
-    ApprovalStatus.REJECTED,
-  ]);
+  useEffect(() => {
+    const fetchApprovalHistory = async () => {
+      setLoading(true);
+      try {
+        const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
+          approverEmail: userInfo?.workEmail || "",
+          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.REJECTED],
+        });
+        setApprovalHistory(approvalHistory);
+      } catch (error) {
+        console.error("Failed to fetch approval history", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApprovalHistory();
+  }, []);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -35,7 +55,7 @@ export default function ApprovalHistoryTab() {
       {loading ? (
         <CircularProgress size={30} />
       ) : (
-        <ApprovalHistoryTable rows={data.leaveApprovalStatusList} />
+        <ApprovalHistoryTable rows={approvalHistory?.leaves ?? []} />
       )}
     </Stack>
   );
