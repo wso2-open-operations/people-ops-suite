@@ -136,7 +136,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Add feedback to a sheet.
     #
-    # + return - Successful feedback or en error
+    # + return - Successful feedback or an error
     isolated resource function post feedback(Feedback feedback)
         returns http:InternalServerError|http:BadRequest|http:Created {
 
