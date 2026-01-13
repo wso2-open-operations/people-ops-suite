@@ -588,7 +588,7 @@ isolated function getOptionalMailsToNotify(string leaveApplicantEmail) returns e
             log:printWarn(string `Failed to fetch employee info for email: ${mail}`, empInfo);
         }
         if empInfo is employee:Employee {
-            thumbnail = <string>empInfo.employeeThumbnail;
+            thumbnail = empInfo.employeeThumbnail ?: "";
         }
         optionalMailsToNotify.push({
             email: mail,
