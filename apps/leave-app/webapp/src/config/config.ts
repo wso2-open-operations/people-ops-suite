@@ -48,11 +48,7 @@ export const AppConfig = {
     userInfo: ServiceBaseUrl + "/user-info",
     employees: ServiceBaseUrl + "/employees",
     appConfig: ServiceBaseUrl + "/app-config",
-    approvalStatusList: ServiceBaseUrl + "/leaves/sabbatical/approve/history",
-    approveSabbaticalLeave: ServiceBaseUrl + "/leaves/sabbatical/approve",
-    applySabbaticalLeave: ServiceBaseUrl + "/leaves/sabbatical/apply",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
-    defaultMails: ServiceBaseUrl + "/leaves/default-mails",
   },
 };

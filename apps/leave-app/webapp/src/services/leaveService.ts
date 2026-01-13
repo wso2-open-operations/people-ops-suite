@@ -16,14 +16,10 @@
 
 import { AppConfig } from "@root/src/config/config";
 import {
+  Action,
   AppConfigResponse,
-  ApprovalRequest,
   ApprovalResponse,
-  ApprovalStatusRequest,
-  ApprovalStatusResponse,
   DayType,
-  DefaultMailResponse,
-  EligibilityResponse,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -31,10 +27,9 @@ import {
   LeaveHistoryResponse,
   LeaveSubmissionRequest,
   LeaveSubmissionResponse,
+  LeaveType,
   LeaveValidationRequest,
   LeaveValidationResponse,
-  SabbaticalApplicationRequest,
-  SabbaticalApplicationResponse,
 } from "@root/src/types/types";
 import { APIService } from "@root/src/utils/apiService";
 
@@ -65,18 +60,6 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.get<Employee[]>(AppConfig.serviceUrls.employees);
-
-  return response.data;
-};
-
-/**
- * Fetch default mail recipients from the backend.
- * @returns Promise with array of default mails
- */
-export const getDefaultMails = async (): Promise<DefaultMailResponse> => {
-  const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.get<DefaultMailResponse>(AppConfig.serviceUrls.defaultMails);
 
   return response.data;
 };
@@ -119,10 +102,61 @@ export const getLeaveHistory = async (
   params: LeaveHistoryQueryParam,
 ): Promise<LeaveHistoryResponse> => {
   const apiInstance = APIService.getInstance();
+  const {
+    email,
+    approverEmail,
+    startDate,
+    endDate,
+    statuses,
+    leaveCategory,
+    orderBy,
+    limit,
+    offset,
+  } = params;
+
+  // Build query parameters
+  const queryParts: string[] = [];
+
+  if (email !== undefined && email !== null && email !== "") {
+    queryParts.push(`email=${email}`);
+  }
+  if (approverEmail !== undefined && approverEmail !== null && approverEmail !== "") {
+    queryParts.push(`approverEmail=${encodeURIComponent(approverEmail)}`);
+  }
+  if (startDate) {
+    queryParts.push(`startDate=${encodeURIComponent(startDate)}`);
+  }
+  if (endDate) {
+    queryParts.push(`endDate=${encodeURIComponent(endDate)}`);
+  }
+
+  // Build array parameters
+  if (Array.isArray(statuses) && statuses.length > 0) {
+    statuses.forEach((status) => queryParts.push(`statuses=${encodeURIComponent(String(status))}`));
+  }
+  if (Array.isArray(leaveCategory) && leaveCategory.length > 0) {
+    leaveCategory.forEach((category) =>
+      queryParts.push(`leaveCategory=${encodeURIComponent(String(category))}`),
+    );
+  }
+
+  if (orderBy) {
+    queryParts.push(`orderBy=${encodeURIComponent(String(orderBy))}`);
+  }
+  if (limit !== undefined && limit !== null) {
+    queryParts.push(`limit=${encodeURIComponent(String(limit))}`);
+  }
+  if (offset !== undefined && offset !== null) {
+    queryParts.push(`offset=${encodeURIComponent(String(offset))}`);
+  }
+
+  const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
 
   const response = await apiInstance.get<LeaveHistoryResponse>(
-    `${AppConfig.serviceUrls.leaves}?isActive=${params.isActive}&email=${params.email}&startDate=${params.startDate}`,
+    `${AppConfig.serviceUrls.leaves}${queryString}`,
   );
+
+  console.log(`Query string: ${AppConfig.serviceUrls.leaves}${queryString}`);
 
   return response.data;
 };
@@ -144,52 +178,15 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
 };
 
 /**
- * Get leave approval status list of subordinates.
- * @param request - request payload
- * @returns Promise with approval status response
- */
-export const getApprovalStatusList = async (
-  request: ApprovalStatusRequest,
-): Promise<ApprovalStatusResponse> => {
-  const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.post<ApprovalStatusResponse>(
-    AppConfig.serviceUrls.approvalStatusList,
-    request,
-  );
-
-  return response.data;
-};
-
-/**
  * Approve or reject sabbatical leave requests.
  * @param request - request payload
  * @returns Promise with approval response
  */
-export const approveLeave = async (request: ApprovalRequest): Promise<ApprovalResponse> => {
+export const approveLeave = async (id: string, action: Action): Promise<ApprovalResponse> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<ApprovalResponse>(
-    AppConfig.serviceUrls.approveSabbaticalLeave,
-    request,
-  );
-
-  return response.data;
-};
-
-/**
- * Submit a sabbatical leave request.
- * @param request - request payload
- * @returns Promise with approval response
- */
-export const submitSabbaticalLeaveRequest = async (
-  request: SabbaticalApplicationRequest,
-): Promise<SabbaticalApplicationResponse> => {
-  const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.post<SabbaticalApplicationResponse>(
-    AppConfig.serviceUrls.applySabbaticalLeave,
-    request,
+    `${AppConfig.serviceUrls.leaves}/${id}/${action}`,
   );
 
   return response.data;
