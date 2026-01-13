@@ -99,7 +99,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "LEAVE_START_DATE": leaveStartDate,
                                                                                  "LEAVE_END_DATE": leaveEndDate,
                                                                                  "YEAR": year,
-                                                                                 "STATUS": "Approved"
+                                                                                 "STATUS": "approved"
                                                                              });
             _ = check database:setLeaveStatus(<int>leaveId, APPROVED);
             // Create calendar event for approved sabbatical leave
@@ -121,7 +121,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "LEAVE_START_DATE": leaveStartDate,
                                                                                  "LEAVE_END_DATE": leaveEndDate,
                                                                                  "YEAR": year,
-                                                                                 "STATUS": "Rejected"
+                                                                                 "STATUS": "rejected"
                                                                              });
             _ = check database:setLeaveStatus(<int>leaveId, REJECTED);
         }

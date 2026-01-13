@@ -907,7 +907,7 @@ public final string sabbaticalApprovalTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              The following sabbatical leave application of <!-- [APPLICANT_EMAIL] --> has been 
+                              The sabbatical leave application of <!-- [APPLICANT_EMAIL] --> has been 
                               <!-- [STATUS] --> by the reporting lead: <!-- [LEAD_EMAIL] -->.
                             </p>
                             <!-- 
@@ -2353,7 +2353,7 @@ public final string sabbaticalApplicationTemplate = string `
                             >
                               The reporting lead is required to review and
                               approve or reject this application via the <a href="<!-- [LEAVE_APP_URL] -->"> Leave
-                              App </a>
+                              App</a>.
                             </p>
 
                             <p
@@ -3663,7 +3663,7 @@ public final string sabbaticalCancellationTemplate = string `
                               "
                             >
                               The sabbatical leave application has been cancelled by the applicant:
-                              <!-- [APPLICANT_EMAIL] -->
+                              <!-- [APPLICANT_EMAIL] -->.
                             </p>
                             <!-- 
                             <p
