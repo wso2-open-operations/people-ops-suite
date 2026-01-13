@@ -131,9 +131,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         string lengthOfService = calculateLengthOfService(employeeInfo.startDate);
-        Employee employee = {...employeeInfo, lengthOfService: lengthOfService};
 
-        return employee;
+        return {...employeeInfo, lengthOfService};    
     }
 
     # Fetch employee personal information.
@@ -172,17 +171,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
      
-        int? computedAge = ();
+        int? age = ();
         string? dob = employeePersonalInfo.dob;
         if dob is string {
-            computedAge = calculateAge(dob);
+            age = calculateAge(dob);
         }
 
-        EmployeePersonalInfo finalEmployeeInfoResult = {
-            ...employeePersonalInfo,
-            age: computedAge
-        };
-        return finalEmployeeInfoResult;
+        return {...employeePersonalInfo, age };
     }
 
     # Fetch continuous service record by work email.
