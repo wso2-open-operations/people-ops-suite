@@ -15,12 +15,13 @@
 // under the License.
 
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
+import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
-import { getDefaultMails } from "@root/src/services/leaveService";
-import { DefaultMailResponse } from "@root/src/types/types";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { CachedMail } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
   comment: string;
@@ -45,23 +46,18 @@ export default function AdditionalComment({
     onPublicCommentChange(event.target.checked);
   };
 
-  const [defaultMails, setDefaultMails] = useState<DefaultMailResponse>({
+  const [defaultMails, setDefaultMails] = useState<CachedMail>({
     mandatoryMails: [],
     optionalMails: [],
   });
 
-  useEffect(() => {
-    const fetchDefaultMails = async () => {
-      try {
-        const mails = await getDefaultMails();
-        setDefaultMails(mails);
-      } catch (error) {
-        console.error("Error fetching default mails:", error);
-      }
-    };
+  const userInfo = useSelector(selectUser);
 
-    fetchDefaultMails();
-  }, []);
+  useEffect(() => {
+    if (userInfo?.cachedEmails) {
+      setDefaultMails(userInfo.cachedEmails);
+    }
+  }, [userInfo]);
 
   const EmailGroupToNotify = defaultMails.mandatoryMails[1]?.email || "";
   return (
