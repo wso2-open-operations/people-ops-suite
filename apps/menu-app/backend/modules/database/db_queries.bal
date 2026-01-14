@@ -1,9 +1,18 @@
-// Copyright (c) 2023, WSO2 LLC. (http://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import ballerina/sql;
 
 # Upsert dinner request (insert or update if exists).
@@ -13,8 +22,7 @@ import ballerina/sql;
 # + employee - Employee data
 # + return - SQL parameterized query
 isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
-    returns sql:ParameterizedQuery =>
-    `
+    returns sql:ParameterizedQuery => `
         INSERT INTO dinner_bookings (
             email, 
             meal_option, 
@@ -42,48 +50,45 @@ isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerReq
 #
 # + email - Dinner request email
 # + return - SQL parameterized query
-isolated function cancelDinnerRequestQuery(string email) returns sql:ParameterizedQuery =>
-    `   
-        UPDATE dinner_bookings 
-        SET is_active = 0
-        WHERE email = ${email} AND is_active = 1 AND date >= CURRENT_DATE
-    `;
+isolated function cancelDinnerRequestQuery(string email) returns sql:ParameterizedQuery => `   
+    UPDATE dinner_bookings 
+    SET is_active = 0
+    WHERE email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
+`;
 
 # Retrieve dinner request by email.
 #
 # + email - Employee email
 # + return - SQL parameterized query
-isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery =>
-    `
-        SELECT 
-            id,
-            meal_option,
-            date,
-            department,
-            team,
-            manager_email,
-            _timestamp
-        FROM 
-            dinner_bookings 
-        WHERE 
-            email = ${email} AND is_active = 1 AND date >= CURRENT_DATE
-    `;
+isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery => `
+    SELECT 
+        id,
+        meal_option,
+        date,
+        department,
+        team,
+        manager_email,
+        _timestamp
+    FROM 
+        dinner_bookings 
+    WHERE 
+        email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
+`;
 
 # Retrieve all dinner requests.
 # 
 # + return - SQL parameterized query
-isolated function getAllDinnerRequestsQuery() returns sql:ParameterizedQuery => 
-    `
-        SELECT 
-            email,
-            meal_option,
-            date,
-            department,
-            team,
-            manager_email,
-            _timestamp
-        FROM 
-            dinner_bookings 
-        WHERE 
-            is_active = 1 AND date >= CURRENT_DATE;
-    `;
+isolated function getAllDinnerRequestsQuery() returns sql:ParameterizedQuery => `
+    SELECT 
+        email,
+        meal_option,
+        date,
+        department,
+        team,
+        manager_email,
+        _timestamp
+    FROM 
+        dinner_bookings 
+    WHERE 
+        is_active = 1 AND date >= CURRENT_DATE;
+`;
