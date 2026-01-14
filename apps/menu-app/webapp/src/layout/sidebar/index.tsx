@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Divider, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -37,6 +37,8 @@ const Sidebar = (props: SidebarProps) => {
   const path = useLocation();
 
   const theme = useTheme();
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Check if a route is active
   const checkIsActive = (route: RouteDetail): boolean => {
@@ -155,73 +157,75 @@ const Sidebar = (props: SidebarProps) => {
             <Box sx={{ flexGrow: 1 }} />
 
             {/* Footer Controls */}
-            <Stack
-              direction="column"
-              gap={1}
-              sx={{
-                paddingBottom: "20px",
-                alignItems: "center",
-              }}
-            >
-              {allRoutes.map((route, idx) => {
-                return (
-                  route.bottomNav && (
-                    <Box
-                      key={idx}
-                      sx={{
-                        width: props.open ? "100%" : "fit-content",
-                        cursor: props.open ? "pointer" : "default",
-                      }}
-                    >
-                      <SidebarNavItem
-                        route={route}
-                        open={props.open}
-                        isActive={checkIsActive(route)}
-                      />
-                    </Box>
-                  )
-                );
-              })}
-
-              {/* Theme Toggle */}
-              {renderControlButton(
-                colorMode.mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
-                colorMode.toggleColorMode,
-                colorMode.mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
-              )}
-
-              {/* Sidebar Toggle */}
-              {renderControlButton(
-                !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
-                props.handleDrawer,
-                props.open ? "Collapse Sidebar" : "Expand Sidebar",
-              )}
-
-              <Divider
+            {!isMobile && (
+              <Stack
+                direction="column"
+                gap={1}
                 sx={{
-                  width: "100%",
-                  backgroundColor: theme.palette.customBorder.primary.active,
+                  paddingBottom: "20px",
+                  alignItems: "center",
                 }}
-              />
+              >
+                {allRoutes.map((route, idx) => {
+                  return (
+                    route.bottomNav && (
+                      <Box
+                        key={idx}
+                        sx={{
+                          width: props.open ? "100%" : "fit-content",
+                          cursor: props.open ? "pointer" : "default",
+                        }}
+                      >
+                        <SidebarNavItem
+                          route={route}
+                          open={props.open}
+                          isActive={checkIsActive(route)}
+                        />
+                      </Box>
+                    )
+                  );
+                })}
 
-              {/* Version Info */}
-              {renderControlButton(
-                <Typography
-                  variant="body2"
+                {/* Theme Toggle */}
+                {renderControlButton(
+                  colorMode.mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
+                  colorMode.toggleColorMode,
+                  colorMode.mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
+                )}
+
+                {/* Sidebar Toggle */}
+                {renderControlButton(
+                  !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
+                  props.handleDrawer,
+                  props.open ? "Collapse Sidebar" : "Expand Sidebar",
+                )}
+
+                <Divider
                   sx={{
-                    whiteSpace: "nowrap",
-                    color: "inherit",
                     width: "100%",
+                    backgroundColor: theme.palette.customBorder.primary.active,
                   }}
-                >
-                  {props.open
-                    ? `v${pJson.version} | © ${currentYear} WSO2 LLC`
-                    : `v${pJson.version.split(".")[0]}`}
-                </Typography>,
-                undefined,
-                `Version ${pJson.version}`,
-              )}
-            </Stack>
+                />
+
+                {/* Version Info */}
+                {renderControlButton(
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      whiteSpace: "nowrap",
+                      color: "inherit",
+                      width: "100%",
+                    }}
+                  >
+                    {props.open
+                      ? `v${pJson.version} | © ${currentYear} WSO2 LLC`
+                      : `v${pJson.version.split(".")[0]}`}
+                  </Typography>,
+                  undefined,
+                  `Version ${pJson.version}`,
+                )}
+              </Stack>
+            )}
           </Box>
         );
       }}
