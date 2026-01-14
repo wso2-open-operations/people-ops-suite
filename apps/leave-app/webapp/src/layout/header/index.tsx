@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
@@ -50,7 +51,7 @@ const Header = () => {
       <Toolbar
         variant="dense"
         sx={{
-          paddingY: 0.3,
+          py: "0.5rem",
           display: "flex",
           gap: 0.5,
           "&.MuiToolbar-root": {
@@ -82,6 +83,7 @@ const Header = () => {
             variant="h5"
             sx={{
               color: theme.palette.customText.primary.p1.active,
+              fontWeight: "600",
             }}
           >
             {APP_NAME}
@@ -97,8 +99,8 @@ const Header = () => {
                   <Avatar
                     onClick={handleOpenUserMenu}
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: "2.5rem",
+                      height: "2.5rem",
                       border: 1,
                       borderColor: theme.palette.customBorder.territory.active,
                     }}
