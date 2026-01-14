@@ -117,6 +117,8 @@ export default function Layout() {
                         currentPath={location.pathname}
                         open={open}
                         handleDrawer={() => setOpen(!open)}
+                        mode={colorMode.mode}
+                        onThemeToggle={colorMode.toggleColorMode}
                       />
                     </Box>
                   </>
@@ -127,6 +129,8 @@ export default function Layout() {
                       currentPath={location.pathname}
                       open={open}
                       handleDrawer={() => setOpen(!open)}
+                      mode={colorMode.mode}
+                      onThemeToggle={colorMode.toggleColorMode}
                     />
                   </Box>
                 )}
