@@ -18,6 +18,7 @@ import { lazy } from "react";
 
 const me = lazy(() => import("@view/me"));
 const employeeOnboarding = lazy(() => import("@view/employees/employeeOnboarding/employeeOnboarding"));
+const employeesList = lazy(() => import("@root/src/view/employees/employeesView/EmployeesView"))
 const help = lazy(() => import("@view/help/help"));
 const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
 const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
@@ -25,6 +26,7 @@ const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdi
 export const View = {
   me,
   employeeOnboarding,
+  employeesList,
   employeeDetails,
   employeeEdit,
   help,

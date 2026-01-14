@@ -52,14 +52,31 @@ export const routes: RouteObjectWithRole[] = [
     text: "Me",
     icon: React.createElement(AccountCircleIcon),
     element: React.createElement(View.me),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/onboarding",
-    text: "Onboarding",
+    path: "/employees",
+    text: "Employees",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.employeeOnboarding),
     allowRoles: [Role.ADMIN],
+    children:[
+      {
+        path: "/employees/view",
+        text: "Employees",
+        icon: React.createElement(GroupsIcon),
+        element: React.createElement(View.employeesList),    
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/employees/onboarding",
+        text: "Onboarding",
+        icon: React.createElement(GroupsIcon),
+        element: React.createElement(View.employees),
+        allowRoles: [Role.ADMIN],
+      },
+      
+    ]
   },
   // Todo: Uncomment when help view is ready
   // {

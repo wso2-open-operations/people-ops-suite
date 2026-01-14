@@ -63,6 +63,7 @@ export const AppConfig = {
     employmentTypes: SERVICE_BASE_URL + "/employment-types",
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     employees: SERVICE_BASE_URL + "/employees",
+    searchEmployees: SERVICE_BASE_URL + "/employees/search",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
   },
 };
