@@ -638,7 +638,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     jwt
             );
             if cancelledLeaveDetails.leaveType == database:SABBATICAL_LEAVE {
-                string|null approverEmail = cancelledLeaveDetails.approverEmail;
+                string? approverEmail = cancelledLeaveDetails.approverEmail;
                 // process cancellation for the sabbatical leaves
                 if approverEmail is () {
                     string errMsg = string `Approver email is not available for leave with ID: ${id}.`;

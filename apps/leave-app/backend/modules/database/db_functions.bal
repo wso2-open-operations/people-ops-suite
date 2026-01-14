@@ -94,7 +94,7 @@ public isolated function getLeaveSubmissionInfoById(int leaveId)
     sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByIdQuery(leaveId);
     LeaveSubmissionInfo|error leaveSubmissionInfo = leaveDbClient->queryRow(sqlQuery);
     if leaveSubmissionInfo is sql:NoRowsError {
-        return error("No leave submission found for the given approval ID");
+        return error("No leave submission found for the given ID");
     }
     return leaveSubmissionInfo;
 }

@@ -261,7 +261,7 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
         LIMIT 1
     `;
     return query;
-};
+}
 
 # Query to set the calendar event ID for a sabbatical leave record.
 #
