@@ -151,6 +151,7 @@ export default function Layout() {
                     onMenuClick={() => setOpen(!open)}
                     onThemeToggle={colorMode.toggleColorMode}
                     open={open}
+                    mode={colorMode.mode}
                   />
                 )}
               </Box>
