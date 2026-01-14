@@ -7,7 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 interface MobileBottomBarProps {
   onMenuClick: () => void;
   onThemeToggle: () => void;
-  isDarkMode?: boolean;
+  mode: string;
   open: boolean;
 }
 
@@ -15,16 +15,13 @@ export default function MobileBottomBar({
   onMenuClick,
   onThemeToggle,
   open,
+  mode,
 }: MobileBottomBarProps) {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isHomePage = location.pathname === "/" || location.pathname === "/home";
-
-  const colorMode = theme.palette.mode;
-
-  console.log("Open : ", open);
 
   return (
     <AppBar
@@ -120,7 +117,7 @@ export default function MobileBottomBar({
               (theme.palette as any).customText?.primary?.p1?.active || theme.palette.text.primary,
           }}
         >
-          {colorMode === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+          {mode === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </IconButton>
 
         {/* Menu Button */}
