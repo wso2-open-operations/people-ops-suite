@@ -156,8 +156,6 @@ export const getLeaveHistory = async (
     `${AppConfig.serviceUrls.leaves}${queryString}`,
   );
 
-  console.log(`Query string: ${AppConfig.serviceUrls.leaves}${queryString}`);
-
   return response.data;
 };
 
