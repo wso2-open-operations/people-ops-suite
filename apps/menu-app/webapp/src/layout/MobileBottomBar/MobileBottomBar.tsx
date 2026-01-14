@@ -1,3 +1,4 @@
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
 import { AppBar, Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Home, Moon, Sun } from "lucide-react";
@@ -7,9 +8,14 @@ interface MobileBottomBarProps {
   onMenuClick: () => void;
   onThemeToggle: () => void;
   isDarkMode?: boolean;
+  open: boolean;
 }
 
-export default function MobileBottomBar({ onMenuClick, onThemeToggle }: MobileBottomBarProps) {
+export default function MobileBottomBar({
+  onMenuClick,
+  onThemeToggle,
+  open,
+}: MobileBottomBarProps) {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,6 +23,8 @@ export default function MobileBottomBar({ onMenuClick, onThemeToggle }: MobileBo
   const isHomePage = location.pathname === "/" || location.pathname === "/home";
 
   const colorMode = theme.palette.mode;
+
+  console.log("Open : ", open);
 
   return (
     <AppBar
@@ -126,7 +134,11 @@ export default function MobileBottomBar({ onMenuClick, onThemeToggle }: MobileBo
               (theme.palette as any).customText?.primary?.p1?.active || theme.palette.text.primary,
           }}
         >
-          <MenuIcon sx={{ fontSize: "20px" }} />
+          {open ? (
+            <CloseOutlinedIcon sx={{ fontSize: "20px" }} />
+          ) : (
+            <MenuIcon sx={{ fontSize: "20px" }} />
+          )}
         </IconButton>
       </Box>
     </AppBar>
