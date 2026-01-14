@@ -388,7 +388,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
                 // Sabbatical leave duration cannot exceed the maximum allowed duration
                 if (differenceInDays > sabbaticalLeaveMaxApplicationDuration) {
-                    string errMsg = "Sabbatical leave duration cannot exceed 6 weeks (42 days).";
+                    string errMsg = string `Sabbatical leave duration cannot exceed 
+                    ${sabbaticalLeaveMaxApplicationDuration / 7} weeks (${sabbaticalLeaveMaxApplicationDuration} days).`;
                     return <http:BadRequest>{
                         body: {
                             message: errMsg
@@ -650,7 +651,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
                 error? cancellationResult = processSabbaticalLeaveRequest({
                                                                               action: CANCEL,
-                                                                              applicantEmail: email,
+                                                                              applicantEmail:
+                                                                            cancelledLeaveDetails.email,
                                                                               approverEmail,
                                                                               leaveStartDate:
                                                                             cancelledLeaveDetails.
@@ -940,7 +942,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Success response if the application is approved/rejected successfully, otherwise an error response
     resource function post leaves/[int id]/[Action action](http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden {
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
         authorization:CustomJwtPayload|error {email, groups} = ctx.getWithType(authorization:HEADER_USER_INFO);
         if !authorization:checkPermissions(authorization:authorizedRoles.employeeRoles, groups) {
             return <http:Forbidden>{
@@ -1004,7 +1006,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if actionToProcess is () {
             string errMsg = "Invalid action for sabbatical leave approval/rejection.";
             log:printError(errMsg);
-            return <http:InternalServerError>{
+            return <http:BadRequest>{
                 body: {
                     message: errMsg
                 }
