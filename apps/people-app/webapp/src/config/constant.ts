@@ -30,6 +30,8 @@ export const SnackMessage = {
   warning: {},
 };
 
+export const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10];
+
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
 export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
