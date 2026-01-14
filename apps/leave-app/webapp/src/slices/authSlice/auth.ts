@@ -65,7 +65,7 @@ export interface UserInfoInterface {
   jobRole: string;
   isLead: boolean;
   employmentStartDate: string;
-  subordinatePercentageOnSabbaticalLeave: number | null;
+  subordinatePercentageOnSabbaticalLeave: string | null;
   privileges: number[];
   cachedEmails: CachedMail;
 }
