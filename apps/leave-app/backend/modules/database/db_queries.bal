@@ -175,20 +175,6 @@ isolated function getLeaveApprovalStatusListQuery(string leadEmail, string[] sta
     return query;
 }
 
-# Query to get Leave Approver Email by Leave ID.
-#
-# + leaveId - Leave ID
-# + return - Query to get leave approver email
-isolated function getLeaveApproverEmailByIdQuery(int leaveId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        SELECT 
-            approver_email
-        FROM leave_submissions
-        WHERE id = ${leaveId}
-    `;
-    return query;
-}
-
 # Query to approve or reject a  leave application (for leads).
 #
 # + approvalStatus - Status of the leave to be set (APPROVED, REJECTED)

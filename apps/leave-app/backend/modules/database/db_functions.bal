@@ -85,19 +85,6 @@ public isolated function cancelLeave(int id) returns error? {
     }
 }
 
-# Get sabbatical leave approver Email by Leave Approval ID.
-#
-# + leaveId - Leave ID
-# + return - Email of the leave approver or an error on failure
-public isolated function getLeaveApproverEmailById(int leaveId) returns string|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveApproverEmailByIdQuery(leaveId);
-    string|error leaveApproverEmail = check leaveDbClient->queryRow(sqlQuery);
-    if leaveApproverEmail is sql:NoRowsError {
-        return error("No leave approver found for the given leave ID");
-    }
-    return leaveApproverEmail;
-}
-
 # Get leave submission info by the leave ID.
 #
 # + leaveId - Leave ID
