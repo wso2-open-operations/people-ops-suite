@@ -21,6 +21,7 @@ import ballerina/http;
 import ballerina/lang.regexp;
 import ballerina/log;
 import ballerina/regex;
+import ballerina/sql;
 import ballerina/time;
 
 configurable string[] defaultRecipients = [];
@@ -578,7 +579,13 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 # + return - List of optional mails to notify
 isolated function getOptionalMailsToNotify(string leaveApplicantEmail) returns employee:DefaultMail[]|error {
     employee:DefaultMail[] optionalMailsToNotify = [];
-    string mails = check database:getEmailNotificationRecipientList(leaveApplicantEmail);
+    string|error mails = database:getEmailNotificationRecipientList(leaveApplicantEmail);
+    if mails is sql:NoRowsError {
+        return optionalMailsToNotify;
+    }
+    if mails is error {
+        return mails;
+    }
     string[] mailsList = mails.length() > 0 ? regex:split(mails, ",") : [];
 
     foreach string mail in mailsList {

@@ -84,7 +84,7 @@ isolated function getLeavesQuery(LeaveFilter filter, int? 'limit = (), int? offs
     if statuses is Status[] && statuses.length() > 0 {
         filterQueries.push(sql:queryConcat(` status IN (`, sql:arrayFlattenQuery(statuses), `) `));
     }
-    
+
     string[]? leaveTypes = filter?.leaveTypes;
     if leaveTypes is string[] && leaveTypes.length() != 0 {
         filterQueries.push(sql:queryConcat(`leave_type IN (`, sql:arrayFlattenQuery(leaveTypes), `)`));
@@ -148,7 +148,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             ${input?.isPublicComment ?: false},
             ${input?.calendarEventId},
             ${location},
-            '1')
+            1 )
     `;
 
     return insertQuery;

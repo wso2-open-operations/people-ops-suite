@@ -92,7 +92,7 @@ public isolated function cancelLeave(int id) returns error? {
 public isolated function getLeaveSubmissionInfoById(int leaveId)
     returns LeaveSubmissionInfo|error {
     sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByIdQuery(leaveId);
-    LeaveSubmissionInfo|error leaveSubmissionInfo = check leaveDbClient->queryRow(sqlQuery);
+    LeaveSubmissionInfo|error leaveSubmissionInfo = leaveDbClient->queryRow(sqlQuery);
     if leaveSubmissionInfo is sql:NoRowsError {
         return error("No leave submission found for the given approval ID");
     }
