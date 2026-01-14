@@ -39,7 +39,7 @@ export default function Layout() {
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -136,7 +136,7 @@ export default function Layout() {
                   sx={{
                     flex: 1,
                     padding: theme.spacing(3),
-                    paddingBottom: "18px",
+                    paddingBottom: isMobile ? "80px" : "18px",
                     overflowY: "auto",
                   }}
                 >
@@ -150,6 +150,7 @@ export default function Layout() {
                   <MobileBottomBar
                     onMenuClick={() => setOpen(!open)}
                     onThemeToggle={colorMode.toggleColorMode}
+                    open={open}
                   />
                 )}
               </Box>
