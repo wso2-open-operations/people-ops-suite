@@ -14,19 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import {
-  Avatar,
-  Grid,
-  Paper,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import CallIcon from "@mui/icons-material/Call";
+import { Avatar, Grid, Paper, Skeleton, Stack, Typography, useTheme } from "@mui/material";
 
 const SkeletonCard = () => {
+  const theme = useTheme();
   return (
     <Paper
       variant="outlined"
@@ -39,10 +33,7 @@ const SkeletonCard = () => {
       }}
     >
       <Stack flexDirection={"column"} sx={{ width: "100%" }}>
-        <Stack
-          flexDirection={"row"}
-          sx={{ m: 0, width: "100%", alignItems: "center" }}
-        >
+        <Stack flexDirection={"row"} sx={{ m: 0, width: "100%", alignItems: "center" }}>
           <Stack flexDirection={"row"} sx={{ alignItems: "center" }}>
             <Skeleton variant="circular">
               <Avatar sx={{ width: 70, height: 70 }} />
@@ -56,7 +47,7 @@ const SkeletonCard = () => {
                 <EmailIcon
                   sx={{
                     color: "primary.dark",
-                    fontSize: 13,
+                    fontSize: theme.typography.caption.fontSize,
                   }}
                 />
                 <Typography variant="body2" color="primary.dark">
@@ -67,7 +58,7 @@ const SkeletonCard = () => {
                 <CallIcon
                   sx={{
                     color: "secondary.dark",
-                    fontSize: 13,
+                    fontSize: theme.typography.caption.fontSize,
                   }}
                 />
                 <Typography variant="body2" color="secondary.dark">
@@ -78,7 +69,7 @@ const SkeletonCard = () => {
                 <LocationOnIcon
                   sx={{
                     color: "secondary.dark",
-                    fontSize: 13,
+                    fontSize: theme.typography.caption.fontSize,
                   }}
                 />
                 <Typography variant="body2" color="secondary.dark">
@@ -98,28 +89,11 @@ const SkeletonCard = () => {
               <Skeleton variant="circular" />
               <Skeleton variant="circular" />
             </Stack>
-            <Grid
-              container
-              flexDirection={"row"}
-              sx={{ width: "auto", ml: "auto", mr: 1 }}
-              gap={2}
-            >
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
+            <Grid container flexDirection={"row"} sx={{ width: "auto", ml: "auto", mr: 1 }} gap={2}>
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
             </Grid>
           </Stack>
         </Stack>

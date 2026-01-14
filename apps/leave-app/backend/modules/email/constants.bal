@@ -14,10 +14,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export default function Home() {
-  return (
-    <div>
-      <div>Home</div>
-    </div>
-  );
-}
+public const ALERT_HEADER = "Leave Submission/Cancellation";
+public const APP_NAME_DEV = "Leave Backend Service (Development)";
+public const APP_NAME = "Leave Backend Service";
+
+// Regex
+final string:RegExp & readonly REGEX_DATE_YYYY_MM_DD = re `^\d{4}-\d{2}-\d{2}`;
+final string:RegExp & readonly REGEX_EMAIL_DOMAIN = re `^[a-zA-Z][a-zA-Z0-9_\-\.]+@ws[o|0]2\.com$`;
+
+const JANUARY = 1;
+const FEBRUARY = 2;
+const MARCH = 3;
+const APRIL = 4;
+const MAY = 5;
+const JUNE = 6;
+const JULY = 7;
+const AUGUST = 8;
+const SEPTEMBER = 9;
+const OCTOBER = 10;
+const NOVEMBER = 11;
+const DECEMBER = 12;
