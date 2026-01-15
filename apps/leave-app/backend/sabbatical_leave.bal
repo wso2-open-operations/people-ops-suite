@@ -31,22 +31,24 @@ configurable string sabbaticalLeaveApprovalUrl = ?;
 # + calendarEventId - Calendar event ID
 isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalLeaveResponse leave,
         string calendarEventId) {
-    SabbaticalLeaveResponse {id, startDate, endDate, location} = leave;
+    SabbaticalLeaveResponse {id, startDate, endDate} = leave;
     string startDateString = getDateStringFromTimestamp(startDate);
     string endDateString = getDateStringFromTimestamp(endDate);
 
-    string timeZoneOffset = "+00:00";
-    if location is string && TIMEZONE_OFFSET_MAP.hasKey(location) {
-        timeZoneOffset = TIMEZONE_OFFSET_MAP.get(location);
+    calendar_events:Time startTime = {
+        date: string `${startDateString}`
+    };
+    string endDateForEvent = endDateString;
+    string|error nextDayResult = getNextDay(endDateString);
+    if nextDayResult is string {
+        endDateForEvent = nextDayResult;
+    } else {
+        log:printError(string `Failed to compute next day for end date ${endDateString},
+        using endDateString as fallback`, nextDayResult);
     }
 
-    calendar_events:Time startTime = {
-        dateTime: string `${startDateString}T00:00:00.000`,
-        timeZone: string `GMT${timeZoneOffset}`
-    };
     calendar_events:Time endTime = {
-        dateTime: string `${endDateString}T23:59:00.000`,
-        timeZone: string `GMT${timeZoneOffset}`
+        date: endDateForEvent
     };
 
     string summary = "On Sabbatical Leave";
@@ -282,3 +284,12 @@ isolated function getSubordinateCountOnSabbaticalLeaveAsAPercentage(string leadE
     return ((<float>subordinateOnSabbaticalLeaveCount / <float>subordinateCount) * 100).toString() + "%";
 }
 
+# Get the next day from a given date string.
+#
+# + dateString - Date string in yyyy-mm-dd format
+# + return - Next day in yyyy-mm-dd format or error
+isolated function getNextDay(string dateString) returns string|error {
+    time:Utc utc = check time:utcFromString(dateString + "T00:00:00Z");
+    time:Utc nextDay = time:utcAddSeconds(utc, 86400); // Add 24 hours
+    return time:utcToString(nextDay).substring(0, 10);
+}
