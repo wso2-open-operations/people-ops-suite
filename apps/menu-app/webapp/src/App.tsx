@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -23,8 +23,8 @@ import { createContext, useEffect, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
-import { store } from "@slices/store";
 import { themeSettings } from "@root/src/theme";
+import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
 
 import "./index.css";
@@ -38,7 +38,7 @@ function App() {
   document.title = APP_NAME;
   const processLocalThemeMode = (): ThemeMode => {
     try {
-      const savedTheme = localStorage.getItem("internal-app-theme");
+      const savedTheme = localStorage.getItem("menu-app-theme");
       if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
         return savedTheme;
       }
@@ -46,7 +46,7 @@ function App() {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
 
-      localStorage.setItem("internal-app-theme", systemTheme);
+      localStorage.setItem("menu-app-theme", systemTheme);
       return systemTheme;
     } catch (err) {
       console.error("Theme detection failed, defaulting to light mode.", err);
@@ -65,7 +65,7 @@ function App() {
       toggleColorMode: () => {
         const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
         // Update localStorage
-        localStorage.setItem("internal-app-theme", newMode);
+        localStorage.setItem("menu-app-theme", newMode);
         // Update state
         setMode(newMode);
         // Apply the data-theme attribute to the document element
