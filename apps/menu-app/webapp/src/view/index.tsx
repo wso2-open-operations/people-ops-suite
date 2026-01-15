@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -15,14 +15,8 @@
 // under the License.
 import { lazy } from "react";
 
-const help = lazy(() => import("@view/help/help"));
-const nestedPage = lazy(() => import("@root/src/view/nested-page/NestedPage"));
-const pageTwo = lazy(() => import("@view/page-two/PageTwo"));
-const home = lazy(() => import("@view/home/Home"));
+const home = lazy(() => import("@view/home/home"));
 
 export const View = {
-  help,
-  nestedPage,
-  pageTwo,
-  home
+  home,
 };

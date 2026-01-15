@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -17,21 +17,32 @@ import { configureStore } from "@reduxjs/toolkit";
 import { enableMapSet } from "immer";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
+import { configApi } from "@services/config.api";
+import { dodApi } from "@services/dod.api";
+import { menuApi } from "@services/menu.api";
+import { userApi } from "@services/user.api";
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
-import appConfigReducer from "@slices/configSlice/config";
-import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
-    user: userReducer,
     common: commonReducer,
-    appConfig: appConfigReducer,
+
+    // RTK Query API reducers
+    [menuApi.reducerPath]: menuApi.reducer,
+    [userApi.reducerPath]: userApi.reducer,
+    [configApi.reducerPath]: configApi.reducer,
+    [dodApi.reducerPath]: dodApi.reducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware()
+      .concat(menuApi.middleware)
+      .concat(userApi.middleware)
+      .concat(configApi.middleware)
+      .concat(dodApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

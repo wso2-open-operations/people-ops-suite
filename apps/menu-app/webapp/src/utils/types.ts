@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,35 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-
-import { Role } from "@slices/authSlice/auth";
-
 export type stateType = "failed" | "success" | "loading" | "idle";
-
-export interface AuthState {
-  status: State;
-  mode: "active" | "maintenance";
-  statusMessage: string | null;
-  isAuthenticated: boolean;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: DecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-export interface AuthData {
-  userInfo: BasicUserInfo;
-  decodedIdToken: DecodedIDTokenPayload;
-}
-
-export interface Employee {
-  workEmail: string;
-  firstName: string;
-  lastName: string;
-  jobBand: number;
-  employeeThumbnail: string;
-}
-
 export interface Header {
   title: string;
   size: number;

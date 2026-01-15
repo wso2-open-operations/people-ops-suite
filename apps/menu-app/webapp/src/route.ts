@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,12 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 import { HomeIcon } from "lucide-react";
-import { CircleQuestionMark } from "lucide-react";
 import type { RouteObject } from "react-router-dom";
 
 import React from "react";
 
-import { Role } from "@slices/authSlice/auth";
+import { Role } from "@/types/types";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
 
@@ -32,60 +31,6 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-  },
-  {
-    path: "/help",
-    text: "Help & Support",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    bottomNav: true,
-  },
-  {
-    path: "/page",
-    text: "Page 1",
-    icon: React.createElement(CircleQuestionMark),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-    ],
-  },
-
-  {
-    path: "/page-two",
-    text: "Page 2",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.pageTwo),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-    ],
   },
 ];
 
