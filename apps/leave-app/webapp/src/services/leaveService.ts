@@ -86,10 +86,7 @@ export const submitLeaveRequest = async (
  */
 export const cancelLeaveRequest = async (id: number) => {
   const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);
-
-  return response.data;
+  await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);
 };
 
 /**
