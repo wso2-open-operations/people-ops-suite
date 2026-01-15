@@ -915,8 +915,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             final database:Leave[]|error leaves = database:getLeaves(
-                    {emails, statuses: (), startDate: payload.startDate, endDate: payload.endDate}
-            );
+                    {
+                        emails,
+                        startDate: payload.startDate,
+                        endDate: payload.endDate,
+                        statuses: [database:APPROVED]
+                    }
+                    );
             if leaves is error {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
