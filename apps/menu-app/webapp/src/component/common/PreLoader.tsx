@@ -84,7 +84,12 @@ const PreLoader = (props: PreLoaderProps) => {
           >
             <Typography
               variant="h6"
-              sx={{ color: alpha("#FFFFFF", 0.9), height: "24px", lineHeight: "24px" }}
+              sx={{
+                color: alpha("#FFFFFF", 0.9),
+                height: "24px",
+                lineHeight: "24px",
+                fontWeight: 600,
+              }}
             >
               {loadingMsg[0]}
             </Typography>
@@ -97,7 +102,12 @@ const PreLoader = (props: PreLoaderProps) => {
             {/* Duplicate of first element to create seamless loop */}
             <Typography
               variant="h6"
-              sx={{ color: alpha("#FFFFFF", 0.9), height: "24px", lineHeight: "24px" }}
+              sx={{
+                color: alpha("#FFFFFF", 0.9),
+                height: "24px",
+                lineHeight: "24px",
+                fontWeight: 600,
+              }}
             >
               {loadingMsg[0]}
             </Typography>
