@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import {
   Alert,
   Box,
@@ -79,9 +78,7 @@ export default function ApplyTab({
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
-  const errorMessage: string =
-    "Your employment start date & last sabbatical leave end date (If exists) are required to be greater than 3 years to" +
-    " be eligible to apply for sabbatical leave.";
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
@@ -92,6 +89,8 @@ export default function ApplyTab({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isEligible, setIsEligible] = useState(true);
+  const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
 
   useEffect(() => {
     const checkEligibility = async () => {
@@ -105,28 +104,51 @@ export default function ApplyTab({
           limit: 1,
         });
 
-        const lastSabbaticalLeaveEndDate = lastSabbaticalLeaveDetails?.leaves[0]?.endDate;
+        const lastLeaveEndDate = lastSabbaticalLeaveDetails?.leaves[0]?.endDate;
         const todayUtc = dayjs.utc().startOf("day");
 
-        const lastSabbaticalLeaveDiff =
-          todayUtc.diff(dayjs(lastSabbaticalLeaveEndDate).startOf("day"), "day") - 1;
         const employmentStartDateDiff =
           todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
+        const lastSabbaticalLeaveDiff = lastLeaveEndDate
+          ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
+          : null;
 
-        let isEligible: boolean = false;
-        if (employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration) {
-          isEligible = true;
-          if (lastSabbaticalLeaveEndDate) {
-            if (lastSabbaticalLeaveDiff < sabbaticalLeaveEligibilityDuration) {
-              isEligible = false;
-            }
-          }
+        // Check eligibility conditions
+        const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
+        const isSabbaticalLeaveEligible =
+          lastSabbaticalLeaveDiff === null ||
+          lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
+
+        let eligible = true;
+        let errorMsg = "";
+
+        if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
+          eligible = false;
+          errorMsg =
+            "You are ineligible for the following reasons: (1) You must be employed for at least 3 years, and (2) Your last sabbatical leave was taken within the past 3 years.";
+        } else if (!isEmploymentEligible) {
+          eligible = false;
+          errorMsg =
+            "You must be employed for at least 3 years to be eligible for sabbatical leave.";
+          setCanRenderSabbaticalFormField(false);
+        } else if (!isSabbaticalLeaveEligible) {
+          eligible = false;
+          errorMsg =
+            "Your last sabbatical leave was taken within the past 3 years, making you ineligible.";
+        }
+
+        if (!eligible) {
+          setIsEligible(false);
+          setErrorMessage(errorMsg);
+        } else {
+          setIsEligible(true);
+          setErrorMessage("");
         }
 
         const eligibilityResponse: EligibilityResponse = {
           employmentStartDate: userInfo?.employmentStartDate || "",
-          lastSabbaticalLeaveEndDate: lastSabbaticalLeaveEndDate || "",
-          isEligible: isEligible,
+          lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
+          isEligible: eligible,
         };
 
         setEligibilityPayload(eligibilityResponse);
@@ -147,6 +169,38 @@ export default function ApplyTab({
     };
     checkEligibility();
   }, []);
+
+  // Validate last sabbatical leave end date whenever it changes
+  useEffect(() => {
+    if (!sabbaticalEndDateFieldEditable || !lastSabbaticalLeaveEndDate) {
+      return;
+    }
+
+    const todayUtc = dayjs.utc().startOf("day");
+    const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
+
+    if (diffDays < sabbaticalLeaveEligibilityDuration) {
+      setIsEligible(false);
+      setErrorMessage(
+        "Your last sabbatical leave was taken within the past 3 years, making you ineligible.",
+      );
+      setEligibilityPayload((prev) => ({
+        ...prev,
+        isEligible: false,
+      }));
+    } else {
+      setIsEligible(true);
+      setErrorMessage("");
+      setEligibilityPayload((prev) => ({
+        ...prev,
+        isEligible: true,
+      }));
+    }
+  }, [
+    lastSabbaticalLeaveEndDate,
+    sabbaticalEndDateFieldEditable,
+    sabbaticalLeaveEligibilityDuration,
+  ]);
 
   const handleOpenDialog = () => {
     if (!leaveStartDate || !leaveEndDate) {
@@ -198,11 +252,17 @@ export default function ApplyTab({
   const handleConfirmSubmit = async () => {
     try {
       setIsSubmitting(true);
+
+      // Append last sabbatical leave end date to comment
+      const commentWithDate = lastSabbaticalLeaveEndDate
+        ? `${additionalComment} **** Last Sabbatical Leave End Date: ${lastSabbaticalLeaveEndDate.format("YYYY-MM-DD")} ****`
+        : additionalComment;
+
       const response = await submitLeaveRequest({
         leaveType: LeaveType.SABBATICAL,
         startDate: leaveStartDate!.format("YYYY-MM-DD"),
         endDate: leaveEndDate!.format("YYYY-MM-DD"),
-        comment: additionalComment,
+        comment: commentWithDate,
       });
 
       handleCloseDialog();
@@ -250,9 +310,6 @@ export default function ApplyTab({
                 >
                   User Guide
                 </Link>
-                <Alert severity={eligibilityPayload?.isEligible ? "success" : "warning"}>
-                  {eligibilityPayload?.isEligible ? "Eligible" : "Not Eligible"}
-                </Alert>
               </Stack>
             </Stack>
             <Stack
@@ -267,18 +324,23 @@ export default function ApplyTab({
                 format="YYYY-MM-DD"
                 disabled
               />
-              <DatePicker
-                label="Last sabbatical leave end date"
-                sx={{ flex: "1" }}
-                minDate={dayjs(eligibilityPayload?.employmentStartDate)}
-                value={lastSabbaticalLeaveEndDate}
-                onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
-                format="YYYY-MM-DD"
-                disabled={!sabbaticalEndDateFieldEditable}
-                disableFuture
-              />
+              {canRenderSabbaticalFormField && (
+                <DatePicker
+                  label="Last sabbatical leave end date"
+                  sx={{ flex: 1 }}
+                  maxDate={dayjs().subtract(sabbaticalLeaveEligibilityDuration / 365, "year")}
+                  value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
+                  onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
+                  disabled={!sabbaticalEndDateFieldEditable}
+                  disableFuture
+                />
+              )}
             </Stack>
-            {!eligibilityPayload?.isEligible && <Alert severity="warning">{errorMessage}</Alert>}
+            {!eligibilityPayload?.isEligible && (
+              <Alert variant="outlined" severity="warning">
+                {errorMessage}
+              </Alert>
+            )}
             {eligibilityPayload?.isEligible && (
               <>
                 <Stack
