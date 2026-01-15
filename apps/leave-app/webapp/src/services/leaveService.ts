@@ -27,7 +27,6 @@ import {
   LeaveHistoryResponse,
   LeaveSubmissionRequest,
   LeaveSubmissionResponse,
-  LeaveType,
   LeaveValidationRequest,
   LeaveValidationResponse,
 } from "@root/src/types/types";
