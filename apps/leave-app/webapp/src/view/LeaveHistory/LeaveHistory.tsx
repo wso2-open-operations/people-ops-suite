@@ -24,7 +24,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ApprovalStatus, SingleLeaveHistory } from "@root/src/types/types";
+import { ApprovalStatus, OrderBy, SingleLeaveHistory } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
@@ -43,6 +43,7 @@ export default function LeaveHistory() {
           email: userInfo?.workEmail || "",
           startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
           statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
+          orderBy: OrderBy.DESC
         });
 
         setLeaves(response.leaves);
@@ -76,7 +77,7 @@ export default function LeaveHistory() {
 
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
-      <Title firstWord="Leave" secondWord="History" />
+      <Title firstWord="Leave" secondWord="History (Current Year)" />
       <Box gap="2rem" display="grid" gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr 1fr" }}>
         {loading && <CircularProgress size={30} />}
         {leaves.map((leave) => {
