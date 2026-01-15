@@ -575,17 +575,32 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 
 # Get list of optional mails to notify when submitting a general leave.
 #
-# + leaveApplicantEmail - Email of the leave applicant
+# + email - Email of the leave applicant
 # + return - List of optional mails to notify
-isolated function getOptionalMailsToNotify(string leaveApplicantEmail) returns employee:DefaultMail[]|error {
+isolated function getOptionalMailsToNotify(string email) returns employee:DefaultMail[]|error {
+    database:Leave[]|error lastLeave = database:getLeaves({
+                                                              emails: [email],
+                                                              statuses: [database:APPROVED],
+                                                              orderBy: database:DESC,
+                                                              leaveTypes: [
+                                                                  database:CASUAL_LEAVE,
+                                                                  database:ANNUAL_LEAVE,
+                                                                  database:MATERNITY_LEAVE,
+                                                                  database:PATERNITY_LEAVE
+                                                              ]
+                                                          }, 1);
+
+    if lastLeave is sql:NoRowsError {
+        return [];
+    }
+    if lastLeave is error {
+        return lastLeave;
+    }
+    string? mails = lastLeave[0].copyEmailList;
+    if mails is () || mails == "" {
+        return [];
+    }
     employee:DefaultMail[] optionalMailsToNotify = [];
-    string|error mails = database:getEmailNotificationRecipientList(leaveApplicantEmail);
-    if mails is sql:NoRowsError {
-        return optionalMailsToNotify;
-    }
-    if mails is error {
-        return mails;
-    }
     string[] mailsList = mails.length() > 0 ? regex:split(mails, ",") : [];
 
     foreach string mail in mailsList {
