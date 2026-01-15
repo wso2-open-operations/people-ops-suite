@@ -85,20 +85,6 @@ public isolated function cancelLeave(int id) returns error? {
     }
 }
 
-# Get leave submission info by the leave ID.
-#
-# + leaveId - Leave ID
-# + return - Leave submission info or an error on failure
-public isolated function getLeaveSubmissionInfoById(int leaveId)
-    returns LeaveSubmissionInfo|error {
-    sql:ParameterizedQuery sqlQuery = getLeaveSubmissionInfoByIdQuery(leaveId);
-    LeaveSubmissionInfo|error leaveSubmissionInfo = leaveDbClient->queryRow(sqlQuery);
-    if leaveSubmissionInfo is sql:NoRowsError {
-        return error("No leave submission found for the given ID");
-    }
-    return leaveSubmissionInfo;
-}
-
 # Update leave status for a sabbatical leave application.
 #
 # + leaveId - ID of the sabbatical leave application

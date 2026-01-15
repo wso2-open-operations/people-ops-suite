@@ -194,23 +194,6 @@ isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int
     return query;
 }
 
-# Query to get leave submission info by leave ID.
-#
-# + leaveId - ID of the leave record
-# + return - Query to get leave submission info
-isolated function getLeaveSubmissionInfoByIdQuery(int leaveId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        SELECT 
-            email,
-            start_date as startDate,
-            end_date as endDate
-        FROM leave_submissions WHERE id = ${leaveId}
-    `;
-
-    return query;
-}
-
 # Query to get the end date of the last approved sabbatical leave for an employee.
 #
 # + employeeEmail - Email of the employee

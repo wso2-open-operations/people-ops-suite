@@ -287,16 +287,6 @@ public type LeaveApprovalStatus record {|
     string submitNote;
 |};
 
-# Leave submission info.
-public type LeaveSubmissionInfo record {|
-    # Email of the leave submitter
-    string email;
-    # Leave start date
-    string startDate;
-    # Leave end date
-    string endDate;
-|};
-
 # Status of the leave.
 public enum Status {
     PENDING = "PENDING",
