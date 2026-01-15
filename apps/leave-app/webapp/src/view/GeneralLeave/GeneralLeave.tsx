@@ -92,7 +92,7 @@ export default function GeneralLeave() {
         endDate: formatDateForApi(endDate),
         isMorningLeave,
         comment,
-        leaveType: selectedLeaveType,
+        leaveType: selectedLeaveType as any,
         emailRecipients: filteredEmailRecipients,
         isPublicComment,
       };
@@ -106,7 +106,6 @@ export default function GeneralLeave() {
       setEndDate(null);
       setSelectedLeaveType("casual");
       setSelectedDayPortion(null);
-      setEmailRecipients([]);
       setComment("");
       setIsPublicComment(false);
     } catch (error: any) {
