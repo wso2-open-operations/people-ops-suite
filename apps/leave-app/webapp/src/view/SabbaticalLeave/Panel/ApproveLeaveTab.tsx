@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Alert, CircularProgress, Stack, useTheme } from "@mui/material";
 import { useSelector } from "react-redux";
 
@@ -32,24 +31,24 @@ export default function ApproveLeaveTab() {
   const userInfo = useSelector(selectUser);
   const [loading, setLoading] = useState<boolean>(false);
   const [approvalHistory, setApprovalHistory] = useState<LeaveHistoryResponse>();
-  // fetch the approval history data.
+  const fetchApprovalHistory = async () => {
+    setLoading(true);
+    try {
+      const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
+        approverEmail: userInfo?.workEmail || "",
+        statuses: [ApprovalStatus.PENDING],
+      });
+      setApprovalHistory(approvalHistory);
+    } catch (error) {
+      console.error("Failed to fetch approval history", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchApprovalHistory = async () => {
-      setLoading(true);
-      try {
-        const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
-          approverEmail: userInfo?.workEmail || "",
-          statuses: [ApprovalStatus.PENDING],
-        });
-        setApprovalHistory(approvalHistory);
-      } catch (error) {
-        console.error("Failed to fetch approval history", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchApprovalHistory();
-  }, []);
+  }, [userInfo?.workEmail]);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -69,7 +68,7 @@ export default function ApproveLeaveTab() {
       {loading ? (
         <CircularProgress size={30} />
       ) : (
-        <ApproveLeaveTable rows={approvalHistory?.leaves ?? []} />
+        <ApproveLeaveTable rows={approvalHistory?.leaves ?? []} onRefresh={fetchApprovalHistory} />
       )}
     </Stack>
   );
