@@ -43,7 +43,7 @@ isolated function getCommonLeaveQuery() returns sql:ParameterizedQuery => `
         location,
         status,
         approver_email
-    FROM leave_app.leave_submissions
+    FROM leave_submissions
 `;
 
 # Query to fetch leaves from the database.
@@ -107,7 +107,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
 
     boolean? isMorningLeave = input.isMorningLeave;
     sql:ParameterizedQuery insertQuery = `
-        INSERT INTO leave_app.leave_submissions (
+        INSERT INTO leave_submissions (
             email,
             leave_type,
             leave_period_type,
@@ -152,27 +152,6 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
     `;
 
     return insertQuery;
-}
-
-# Query to get sabbatical leave approval status records (for leads).
-#
-# + leadEmail - Email of the lead
-# + status - List of approval statuses to filter (APPROVED, REJECTED, PENDING)
-# + return - Select query to get sabbatical leave approval status
-isolated function getLeaveApprovalStatusListQuery(string leadEmail, string[] status)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = sql:queryConcat(`
-        SELECT 
-            id as id,
-            status as approvalStatus,
-            email as email,
-            start_date as startDate,
-            end_date as endDate,
-            submit_note as submitNote
-        FROM leave_submissions WHERE approver_email = ${leadEmail} AND status IN (`,
-            sql:arrayFlattenQuery(status), `)`);
-
-    return query;
 }
 
 # Query to approve or reject a  leave application (for leads).
