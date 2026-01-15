@@ -83,7 +83,8 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 # + return - Error if any
 function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
     returns error? {
-    var {action, applicantEmail, approverEmail, leaveStartDate, leaveEndDate, leaveId, location, comment, numberOfDays}
+    var {action, applicantEmail, approverEmail, leaveStartDate, leaveEndDate, leaveId, location, comment, numberOfDays
+    }
     = payload;
     string[] recipientsList = check getRecipientsForSabbaticalNotifications(applicantEmail, approverEmail);
     string emailSubject = "[Leave App] Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate +
@@ -147,11 +148,15 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                 status: PENDING,
                 approverEmail: approverEmail
             };
+
             template = email:bindKeyValues(email:sabbaticalApplicationTemplate, {
                                                                                     "APPLICANT_EMAIL": applicantEmail,
                                                                                     "LEAD_EMAIL": approverEmail,
                                                                                     "LEAVE_START_DATE": leaveStartDate,
                                                                                     "LEAVE_END_DATE": leaveEndDate,
+                                                                                    "ADDITIONAL_COMMENT":
+                                                                                        (comment is () || comment is "")
+                                                                                        ? "N/A" : comment,
                                                                                     "YEAR": year,
                                                                                     "LEAVE_APP_URL":
                                                                                     sabbaticalLeaveApprovalUrl

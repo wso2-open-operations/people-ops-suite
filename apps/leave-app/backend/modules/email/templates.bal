@@ -2331,6 +2331,20 @@ public final string sabbaticalApplicationTemplate = string `
                                   "
                                 >
                                   <strong
+                                    >Additional Comment: </strong>
+                                  <!-- [ADDITIONAL_COMMENT] -->
+                                </p>
+                              </li>
+                              <li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong
                                     >Reporting Lead: </strong
                                   >
                                   <!-- [LEAD_EMAIL] -->
