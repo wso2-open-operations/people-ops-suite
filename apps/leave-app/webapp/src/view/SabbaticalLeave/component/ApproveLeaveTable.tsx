@@ -37,6 +37,7 @@ import { Action, SingleLeaveHistory } from "@root/src/types/types";
 
 interface ApproveLeaveTableProps {
   rows: SingleLeaveHistory[];
+  onRefresh?: () => void;
 }
 
 interface ConfirmationDialogState {
@@ -45,7 +46,7 @@ interface ConfirmationDialogState {
   leaveItem: SingleLeaveHistory | null;
 }
 
-export default function ApproveLeaveTable({ rows }: ApproveLeaveTableProps) {
+export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTableProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [dialogState, setDialogState] = useState<ConfirmationDialogState>({
@@ -87,6 +88,7 @@ export default function ApproveLeaveTable({ rows }: ApproveLeaveTableProps) {
           : "Leave request rejected successfully",
         { variant: "success" },
       );
+      onRefresh?.();
     } catch (error) {
       console.error("Failed to process leave request:", error);
       enqueueSnackbar(
