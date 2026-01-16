@@ -43,7 +43,7 @@ export default function LeaveHistory() {
           email: userInfo?.workEmail || "",
           startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
           statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
-          orderBy: OrderBy.DESC
+          orderBy: OrderBy.DESC,
         });
 
         setLeaves(response.leaves);
@@ -78,7 +78,11 @@ export default function LeaveHistory() {
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
       <Title firstWord="Leave" secondWord="History (Current Year)" />
-      <Box gap="2rem" display="grid" gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr 1fr" }}>
+      <Box
+        gap="2rem"
+        display="grid"
+        gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
+      >
         {loading && <CircularProgress size={30} />}
         {leaves.map((leave) => {
           const { month, day } = getMonthAndDay(leave.startDate);
