@@ -15,7 +15,24 @@
 // under the License.
 
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Button, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
+import { useState } from "react";
 
 export interface LeaveCardProps {
   id: number;
@@ -40,6 +57,20 @@ export default function LeaveCard({
   onDelete,
 }: LeaveCardProps) {
   const theme = useTheme();
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete?.(id);
+    setOpenDialog(false);
+  };
 
   const isCancelDisabled = () => {
     const today = new Date();
@@ -67,15 +98,46 @@ export default function LeaveCard({
       <CardContent sx={{ p: "1.25rem" }}>
         <Stack direction="row" spacing="1rem" alignItems="center">
           <Stack spacing="1rem" flex={1}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: theme.palette.text.primary,
-                fontWeight: 600,
-              }}
-            >
-              {type.toLocaleUpperCase()} LEAVE
-            </Typography>
+            <Stack direction="row" justifyContent="space-between">
+              <Typography
+                variant="body2"
+                sx={{
+                  color: theme.palette.text.primary,
+                  fontWeight: 600,
+                }}
+              >
+                {type.toLocaleUpperCase()} LEAVE
+              </Typography>
+              <Tooltip title="Cancel" arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={handleOpenDialog}
+                    disabled={isCancelDisabled()}
+                    sx={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "4px",
+                      color: isCancelDisabled()
+                        ? theme.palette.text.disabled
+                        : theme.palette.common.white,
+                      backgroundColor: isCancelDisabled()
+                        ? theme.palette.action.disabledBackground
+                        : theme.palette.error.main,
+                      "&:hover": {
+                        backgroundColor: theme.palette.error.dark,
+                      },
+                      "&.Mui-disabled": {
+                        backgroundColor: theme.palette.action.disabledBackground,
+                        color: theme.palette.text.disabled,
+                      },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
 
             <Stack direction="row" gap="1rem" alignItems="center">
               {/* Mini Calendar */}
@@ -158,28 +220,31 @@ export default function LeaveCard({
               </Stack>
             </Stack>
           </Stack>
-          <Button
-            size="small"
-            onClick={() => onDelete?.(id)}
-            disabled={isCancelDisabled()}
-            startIcon={<CloseIcon fontSize="small" />}
-            sx={{
-              color: isCancelDisabled() ? theme.palette.text.disabled : theme.palette.error.main,
-              textTransform: "none",
-              fontWeight: 500,
-              "&:hover": {
-                backgroundColor: theme.palette.error.light,
-                color: theme.palette.error.dark,
-              },
-              "&.Mui-disabled": {
-                color: theme.palette.text.disabled,
-              },
-            }}
-          >
-            Cancel
-          </Button>
         </Stack>
       </CardContent>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Cancel Leave Request</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to cancel this leave request? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            No, Keep It
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+            Yes, Cancel Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }
