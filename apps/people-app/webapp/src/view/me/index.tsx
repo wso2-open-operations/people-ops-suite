@@ -566,7 +566,9 @@ export default function Me() {
                     Length of Service
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.lengthOfService || "-"}
+                    {employee.lengthOfService
+                      ? `${employee.lengthOfService.years}y ${employee.lengthOfService.months}m`
+                      : "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>

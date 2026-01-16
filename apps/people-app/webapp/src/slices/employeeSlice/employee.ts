@@ -23,6 +23,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
+export interface ServiceLength {
+  years: number;
+  months: number;
+}
+
 interface Employee {
   employeeId: string;
   firstName: string;
@@ -46,8 +51,8 @@ interface Employee {
   team: string;
   subTeam: string | null;
   unit: string | null;
-  lengthOfService?: string;
-  subordinateCount?: number;
+  lengthOfService: ServiceLength;
+  subordinateCount: number;
 }
 
 export interface EmployeeBasicInfo {
@@ -65,7 +70,6 @@ export type CreatePersonalInfoPayload = {
   title?: string;
   gender?: string;
   dob?: string;
-  age?: number;
   personalEmail?: string;
   personalPhone?: string;
   residentNumber?: string;

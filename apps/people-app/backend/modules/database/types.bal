@@ -114,7 +114,7 @@ public type Employee record {|
     # Unit
     string? unit;
     # Computed field: number of subordinates this employee manages
-    int subordinateCount?;
+    int subordinateCount;
 |};
 
 # Personal information of an employee.

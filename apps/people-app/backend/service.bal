@@ -130,7 +130,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        string lengthOfService = calculateLengthOfService(employeeInfo.startDate);
+        ServiceLength lengthOfService = calculateServiceLength(employeeInfo.startDate);
 
         return {...employeeInfo, lengthOfService};    
     }
@@ -171,12 +171,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
      
-        int? age = ();
-        string? dob = employeePersonalInfo.dob;
-        if dob is string {
-            age = calculateAge(dob);
-        }
-
+        int age = calculateAge(employeePersonalInfo.dob ?: "");
+        
         return {...employeePersonalInfo, age };
     }
 

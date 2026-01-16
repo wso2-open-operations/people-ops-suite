@@ -30,7 +30,7 @@ export interface EmployeePersonalInfo {
   lastName: string | null;
   title: string | null;
   dob: string | null;
-  age: number | null;
+  age: number;
   gender: string | null;
   personalEmail: string | null;
   personalPhone: string | null;
