@@ -332,6 +332,7 @@ export default function ApplyTab({
                   value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
                   onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                   disabled={!sabbaticalEndDateFieldEditable}
+                  format="YYYY-MM-DD"
                   disableFuture
                 />
               )}
