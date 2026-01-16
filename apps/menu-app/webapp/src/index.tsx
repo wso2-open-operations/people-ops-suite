@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,11 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { StyledEngineProvider } from "@mui/material/styles";
+import ReactDOM from "react-dom/client";
 
-export default function NestedPage() {
-  return (
-    <div>
-      <div>Page Two</div>
-    </div>
-  );
-}
+import App from "./App";
+
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+root.render(
+  <StyledEngineProvider injectFirst>
+    <App />
+  </StyledEngineProvider>,
+);
