@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -23,3 +23,16 @@ function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
     return b.includes(element);
   });
 }
+
+export const formatMenuData = (dateString: string | undefined) => {
+  if (!dateString) return;
+
+  const date = new Date(dateString).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  return date;
+};

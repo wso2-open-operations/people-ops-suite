@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -31,10 +31,10 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const APP_DESC = " Internal App Product Template.";
+export const APP_DESC = " Menu App";
 
-export const redirectUrl = "iapm-marketplace-redirect-url";
+export const redirectUrl = "menu-app-redirect-url";
 
 export const PRIVILEGE_ADMIN = 789;
 
-export const PRIVILEGE_EMPLOYEE = 987
+export const PRIVILEGE_EMPLOYEE = 987;
