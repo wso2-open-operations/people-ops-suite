@@ -83,7 +83,7 @@ public isolated function calculateServiceLength(string startDateStr) returns Ser
 # Calculates the age in completed years for the given date of birth up to today.
 # 
 # + dobStr - Date of birth in `YYYY-MM-DD` format
-# + return - Age in completed years; otherwise `()`
+# + return - Age in completed years (or `0` for invalid input)
 public isolated function calculateAge(string dobStr) returns int {
     time:Date? dob = parsePastOrTodayDate(dobStr);
     if dob is () {
