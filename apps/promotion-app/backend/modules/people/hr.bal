@@ -117,7 +117,7 @@ public isolated function fetchEmployeeHistory(string workEmail) returns Employee
 
     // Null Check.
     if employeeHistory is () {
-        log:printError(`No matching employee found for ${workEmail}`);
+        log:printError(string `No matching employee found for ${workEmail}`);
         return error("No matching employee found for " + workEmail);
     }
 

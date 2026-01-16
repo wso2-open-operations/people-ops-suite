@@ -1,4 +1,3 @@
-import ballerina/lang.array as array;
 // Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
@@ -39,6 +38,24 @@ isolated function buildSqlSelectQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
+
+# use for process user permissions
+#
+# + permissions - user permission string
+# + return - Return Value Description
+public isolated function processPermissions(string? permissions) returns FunctionalLeadAccessLevels|error? {
+
+    // If the permissions string is nil, there's nothing to process; return unit `()`.
+    if permissions is () {
+        return;
+    }
+
+    // Attempt to parse the permission string as JSON.
+    json permissionJSON = check permissions.fromJsonString();
+
+    // Attempt to map the parsed JSON to a strongly-typed `FunctionalLeadAccessLevels` object.
+    return check permissionJSON.cloneWithType(FunctionalLeadAccessLevels);
+};
 
 # Helper function to user has roles.
 #
