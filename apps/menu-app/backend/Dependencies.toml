@@ -473,7 +473,6 @@ modules = [
 	{org = "wso2", packageName = "menu_app", moduleName = "menu_app"},
 	{org = "wso2", packageName = "menu_app", moduleName = "menu_app.authentication"},
 	{org = "wso2", packageName = "menu_app", moduleName = "menu_app.database"},
-	{org = "wso2", packageName = "menu_app", moduleName = "menu_app.menu_sheet"},
 	{org = "wso2", packageName = "menu_app", moduleName = "menu_app.people"},
 	{org = "wso2", packageName = "menu_app", moduleName = "menu_app.sheets"}
 ]

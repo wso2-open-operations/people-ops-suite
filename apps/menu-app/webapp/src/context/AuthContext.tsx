@@ -179,10 +179,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
-        return <PreLoader isLoading message="Authenticating ..." />;
+        return <PreLoader message="Authenticating ..." />;
 
       case AppState.Authenticating:
-        return <PreLoader isLoading message="Loading User Info ..." />;
+        return <PreLoader message="We are getting things ready ..." />;
 
       case AppState.Authenticated:
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
