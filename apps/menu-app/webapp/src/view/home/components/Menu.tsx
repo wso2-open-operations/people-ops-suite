@@ -13,18 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider } from "@mui/material";
+import { Box } from "@mui/material";
 
-import { MicroAppType } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
-import { isMicroApp } from "@config/config";
 import { useGetMenuQuery } from "@services/menu.api";
 
-import DinnerOnDemand from "./components/DinnerOnDemand";
-import Menu from "./components/Menu";
+import MenuCard from "./Card";
 
-export default function Home() {
+export default function Menu() {
   const { data, isLoading, isError } = useGetMenuQuery();
 
   if (isLoading) {
@@ -47,17 +44,23 @@ export default function Home() {
     return <ErrorHandler message={`No menu available on ${date}`} />;
   }
 
-  if (isMicroApp === MicroAppType.Menu) return <Menu />;
-
-  if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
-
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <Menu />
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          md: "repeat(2, 1fr)",
+          lg: "repeat(3, 1fr)",
+        },
+        gap: 2,
+      }}
+    >
+      {Object.entries(meals).map(([mealType, mealData]) => {
+        if (!mealData.title) return null;
 
-      <Divider />
-
-      <DinnerOnDemand />
+        return <MenuCard key={mealType} mealType={mealType} mealData={mealData} />;
+      })}
     </Box>
   );
 }
