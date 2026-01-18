@@ -26,6 +26,7 @@ import { useLazyGetUserInfoQuery } from "@root/src/services/user.api";
 import { setTokens } from "@services/BaseQuery";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
+import { getToken } from "@utils/microapp-bridge";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -209,8 +210,26 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   );
 };
 
+const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
+  useEffect(() => {
+    const getIdToken = async () => {
+      getToken((token) => {
+        if (token) {
+          setTokens(token, null, null);
+        } else {
+          console.log("No token available");
+        }
+      });
+    };
+
+    getIdToken();
+  }, []);
+
+  return <>{props.children}</>;
+};
+
 const useAppAuthContext = (): AuthContextType => useContext(AuthContext);
 
-export { useAppAuthContext };
+export { useAppAuthContext, MicroAppAuthProvider };
 
 export default AppAuthProvider;
