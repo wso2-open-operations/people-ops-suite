@@ -1,4 +1,4 @@
-// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
+import { useAsgardeo } from "@asgardeo/react";
 import { useIdleTimer } from "react-idle-timer";
 
 import React, { useContext, useEffect, useState } from "react";
@@ -22,8 +22,8 @@ import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
+import { useLazyGetUserInfoQuery } from "@root/src/services/user.api";
 import { setTokens } from "@services/BaseQuery";
-import { useLazyGetUserInfoQuery } from "@services/user.api";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 
@@ -80,30 +80,28 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const {
     signIn,
     signOut,
-    getDecodedIDToken,
-    getBasicUserInfo,
-    refreshAccessToken,
-    getIDToken,
-    trySignInSilently,
+    getDecodedIdToken,
+    user,
+    signInSilently,
     getAccessToken,
-    state,
-  } = useAuthContext();
+    isLoading,
+    isSignedIn,
+  } = useAsgardeo();
 
   const setupAuthenticatedUser = async () => {
-    const [userInfo, idToken, decodedIdToken] = await Promise.all([
-      getBasicUserInfo(),
-      getIDToken(),
-      getDecodedIDToken(),
+    const [decodedIdToken, accessToken] = await Promise.all([
+      getDecodedIdToken(),
+      getAccessToken(),
     ]);
 
     dispatch(
       setUserAuthData({
-        userInfo: userInfo,
+        userInfo: user,
         decodedIdToken: decodedIdToken,
       }),
     );
 
-    setTokens(idToken, refreshToken, appSignOut);
+    setTokens(accessToken, refreshToken, appSignOut);
 
     const userInfoResult = await triggerGetUserInfo();
     if (userInfoResult?.isError) {
@@ -121,15 +119,15 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       try {
         setAppState(AppState.Loading);
 
-        if (state.isLoading) return;
+        if (isLoading) return;
 
-        if (state.isAuthenticated) {
+        if (isSignedIn) {
           setAppState(AppState.Authenticating);
           await setupAuthenticatedUser();
 
           if (mounted) setAppState(AppState.Authenticated);
         } else {
-          const silentSignInSuccess = await trySignInSilently();
+          const silentSignInSuccess = await signInSilently();
 
           if (mounted)
             setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
@@ -146,11 +144,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     return () => {
       mounted = false;
     };
-  }, [state.isAuthenticated, state.isLoading]);
+  }, [isSignedIn, isLoading]);
 
   const refreshToken = async (): Promise<{ accessToken: string }> => {
     try {
-      await refreshAccessToken();
       const accessToken = await getAccessToken();
       return { accessToken };
     } catch (error) {
@@ -179,10 +176,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
-        return <PreLoader message="Authenticating ..." />;
+        return <PreLoader isLoading message="Authenticating ..." />;
 
       case AppState.Authenticating:
-        return <PreLoader message="We are getting things ready ..." />;
+        return <PreLoader isLoading message="Loading User Info ..." />;
 
       case AppState.Authenticated:
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
@@ -207,9 +204,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         appSignOut={appSignOut}
       />
 
-      <SecureApp fallback={<PreLoader isLoading message="We are getting things ready ..." />}>
-        {renderContent()}
-      </SecureApp>
+      {renderContent()}
     </>
   );
 };
