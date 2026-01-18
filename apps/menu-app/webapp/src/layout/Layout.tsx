@@ -23,6 +23,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
+import { useMicroApp } from "@hooks/useMicroApp";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
@@ -33,13 +34,14 @@ import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
-  const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
-  const theme = useTheme();
+  const common = useAppSelector((state: RootState) => state.common);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isValidMicroApp = useMicroApp();
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -78,40 +80,53 @@ export default function Layout() {
               }}
             >
               {/* Header */}
-              <Header />
+              {!isValidMicroApp && <Header />}
 
               {/* Main content container */}
               <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
                 {/* Sidebar - Overlay on mobile */}
-                {isMobile ? (
-                  <>
-                    {/* Backdrop when sidebar is open */}
-                    {open && (
+                {!isValidMicroApp &&
+                  (isMobile ? (
+                    <>
+                      {/* Backdrop when sidebar is open */}
+                      {open && (
+                        <Box
+                          onClick={() => setOpen(false)}
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 999,
+                          }}
+                        />
+                      )}
+                      {/* Sidebar overlay */}
                       <Box
-                        onClick={() => setOpen(false)}
                         sx={{
                           position: "absolute",
                           top: 0,
                           left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: "rgba(0, 0, 0, 0.5)",
-                          zIndex: 999,
+                          height: "100%",
+                          zIndex: 1000,
+                          transform: open ? "translateX(0)" : "translateX(-100%)",
+                          transition: "transform 0.3s ease-in-out",
                         }}
-                      />
-                    )}
-                    {/* Sidebar overlay */}
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        height: "100%",
-                        zIndex: 1000,
-                        transform: open ? "translateX(0)" : "translateX(-100%)",
-                        transition: "transform 0.3s ease-in-out",
-                      }}
-                    >
+                      >
+                        <Sidebar
+                          roles={roles}
+                          currentPath={location.pathname}
+                          open={open}
+                          handleDrawer={() => setOpen(!open)}
+                          mode={colorMode.mode}
+                          onThemeToggle={colorMode.toggleColorMode}
+                        />
+                      </Box>
+                    </>
+                  ) : (
+                    <Box sx={{ width: "fit-content", height: "100%" }}>
                       <Sidebar
                         roles={roles}
                         currentPath={location.pathname}
@@ -121,21 +136,7 @@ export default function Layout() {
                         onThemeToggle={colorMode.toggleColorMode}
                       />
                     </Box>
-                  </>
-                ) : (
-                  <Box sx={{ width: "fit-content", height: "100%" }}>
-                    <Sidebar
-                      roles={roles}
-                      currentPath={location.pathname}
-                      open={open}
-                      handleDrawer={() => setOpen(!open)}
-                      mode={colorMode.mode}
-                      onThemeToggle={colorMode.toggleColorMode}
-                    />
-                  </Box>
-                )}
-
-                {/* Main content area */}
+                  ))}
                 <Box
                   sx={{
                     flex: 1,
@@ -148,9 +149,8 @@ export default function Layout() {
                     <Outlet />
                   </Suspense>
                 </Box>
-
                 {/* Mobile Bottom Bar - Only on Mobile */}
-                {isMobile && (
+                {!isValidMicroApp && isMobile && (
                   <MobileBottomBar
                     onMenuClick={() => setOpen(!open)}
                     onThemeToggle={colorMode.toggleColorMode}
