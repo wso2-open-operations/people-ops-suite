@@ -23,6 +23,8 @@ import { createContext, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
+import { MicroAppAuthProvider } from "@context/AuthContext";
+import { useMicroApp } from "@hooks/useMicroApp";
 import { themeSettings } from "@root/src/theme";
 import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
@@ -88,4 +90,22 @@ function WebApp() {
   );
 }
 
-export default WebApp;
+function MicorApp() {
+  return (
+    <Provider store={store}>
+      <ThemeProvider theme={"light"}>
+        <SnackbarProvider maxSnack={3} preventDuplicate>
+          <MicroAppAuthProvider>
+            <AppHandler />
+          </MicroAppAuthProvider>
+        </SnackbarProvider>
+      </ThemeProvider>
+    </Provider>
+  );
+}
+
+export default function App() {
+  const isValidMicroApp = useMicroApp();
+
+  return isValidMicroApp ? <MicorApp /> : <WebApp />;
+}
