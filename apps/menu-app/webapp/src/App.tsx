@@ -14,12 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 import AppHandler from "@app/AppHandler";
-import { AuthProvider } from "@asgardeo/auth-react";
+import { AsgardeoProvider } from "@asgardeo/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
@@ -34,41 +34,35 @@ export const ColorModeContext = createContext({
   toggleColorMode: () => {},
 });
 
-function App() {
-  document.title = APP_NAME;
-  const processLocalThemeMode = (): ThemeMode => {
-    try {
-      const savedTheme = localStorage.getItem("menu-app-theme");
-      if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-        return savedTheme;
-      }
-
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-
-      localStorage.setItem("menu-app-theme", systemTheme);
-      return systemTheme;
-    } catch (err) {
-      console.error("Theme detection failed, defaulting to light mode.", err);
-      return ThemeMode.Light;
+const processLocalThemeMode = (): ThemeMode => {
+  try {
+    const savedTheme = localStorage.getItem("menu-app-theme");
+    if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
+      return savedTheme;
     }
-  };
+
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
+
+    localStorage.setItem("menu-app-theme", systemTheme);
+    return systemTheme;
+  } catch (err) {
+    console.error("Theme detection failed, defaulting to light mode.", err);
+    return ThemeMode.Light;
+  }
+};
+
+function WebApp() {
+  document.title = APP_NAME;
 
   const [mode, setMode] = useState<ThemeMode>(processLocalThemeMode());
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", mode);
-  }, [mode]);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
         const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
-        // Update localStorage
         localStorage.setItem("menu-app-theme", newMode);
-        // Update state
         setMode(newMode);
-        // Apply the data-theme attribute to the document element
         document.documentElement.setAttribute("data-theme", newMode);
       },
     }),
@@ -82,11 +76,11 @@ function App() {
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
-            <AuthProvider config={AsgardeoConfig}>
+            <AsgardeoProvider {...AsgardeoConfig}>
               <AppAuthProvider>
                 <AppHandler />
               </AppAuthProvider>
-            </AuthProvider>
+            </AsgardeoProvider>
           </Provider>
         </ThemeProvider>
       </SnackbarProvider>
@@ -94,4 +88,4 @@ function App() {
   );
 }
 
-export default App;
+export default WebApp;
