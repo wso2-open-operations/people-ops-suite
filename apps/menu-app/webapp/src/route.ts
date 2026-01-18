@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 import { HomeIcon } from "lucide-react";
-import type { RouteObject } from "react-router-dom";
 
 import React from "react";
 
@@ -52,18 +51,6 @@ export const getActiveRoutesV2 = (
   return routesObj;
 };
 
-export const getActiveRoutes = (roles: string[]): RouteObject[] => {
-  const routesObj: RouteObject[] = [];
-  routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-      });
-    }
-  });
-  return routesObj;
-};
-
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
   const routesObj: RouteDetail[] = [];
   routes.forEach((routeObj) => {
@@ -75,27 +62,4 @@ export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
     }
   });
   return routesObj;
-};
-
-interface getActiveParentRoutesProps {
-  routes: RouteObjectWithRole[] | undefined;
-  roles: string[];
-}
-
-export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
-  if (!routes) return [];
-
-  let activeParentPaths: string[] = [];
-
-  routes.forEach((routeObj) => {
-    if (!routeObj.element) return;
-
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      if (routeObj.path) {
-        activeParentPaths.push(routeObj.path);
-      }
-    }
-  });
-
-  return activeParentPaths;
 };
