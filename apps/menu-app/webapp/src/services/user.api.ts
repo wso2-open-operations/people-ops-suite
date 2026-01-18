@@ -15,10 +15,30 @@
 // under the License.
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-import { UserInfoInterface } from "@/types/types";
 import { AppConfig } from "@config/config";
+import { State } from "@slices/authSlice/auth";
 
 import { baseQueryWithRetry } from "./BaseQuery";
+
+export interface UserInfoInterface {
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  workEmail: string;
+  employeeThumbnail: string | null;
+  jobRole: string;
+  privileges: number[];
+  managerEmail: string;
+  department: string;
+  team: string;
+}
+
+export interface UserState {
+  state: State;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  userInfo: UserInfoInterface | null;
+}
 
 export const userApi = createApi({
   reducerPath: "userApi",
