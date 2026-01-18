@@ -13,13 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter, createHashRouter } from "react-router-dom";
 
 import { FC, memo, useMemo } from "react";
 
 import { AppState } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
+import { useMicroApp } from "@hooks/useMicroApp";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
@@ -40,18 +41,21 @@ const AppHandler: FC = () => {
 
   const appState = useMemo(() => getAppState(status, mode), [status, mode]);
 
-  const router = useMemo(
-    () =>
-      createBrowserRouter([
-        {
-          path: "/",
-          element: <Layout />,
-          errorElement: <NotFoundPage />,
-          children: getActiveRoutesV2(routes, roles),
-        },
-      ]),
-    [roles],
+  const appRoutes = useMemo(
+    () => [
+      {
+        path: "/",
+        element: <Layout />,
+        errorElement: <NotFoundPage />,
+        children: getActiveRoutesV2(routes, roles),
+      },
+    ],
+    [roles, routes],
   );
+
+  const isValidMicroApp = useMicroApp();
+
+  const createRouter = isValidMicroApp ? createHashRouter : createBrowserRouter;
 
   const renderApp = () => {
     if (appState === AppState.Loading) {
@@ -66,7 +70,7 @@ const AppHandler: FC = () => {
       return <ErrorHandler message={statusMessage} />;
     }
 
-    return <RouterProvider router={router} />;
+    return <RouterProvider router={createRouter(appRoutes)} />;
   };
 
   return renderApp();
