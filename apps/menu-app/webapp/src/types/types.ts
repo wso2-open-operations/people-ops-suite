@@ -21,6 +21,11 @@ export type NavState = {
   expanded: number | null;
 };
 
+export enum MicroAppType {
+  Menu = "MENU_APP",
+  Dod = "DOD_APP",
+}
+
 export enum AppState {
   Maintenance = "MAINTENANCE",
   Failed = "FAILED",
