@@ -18,7 +18,7 @@ import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
@@ -42,127 +42,126 @@ export default function Layout() {
   const common = useAppSelector((state: RootState) => state.common);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isValidMicroApp = useMicroApp();
+  const colorMode = useContext(ColorModeContext);
 
-  const showSnackbar = useCallback(() => {
+  const snackbarConfig = useMemo(
+    () => ({
+      preventDuplicate: true,
+      anchorOrigin: { horizontal: "right" as const, vertical: "bottom" as const },
+    }),
+    [],
+  );
+
+  useEffect(() => {
     if (common.timestamp !== null) {
       enqueueSnackbar(common.message, {
         variant: common.type,
-        preventDuplicate: true,
-        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+        ...snackbarConfig,
       });
     }
-  }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
-
-  useEffect(() => {
-    showSnackbar();
-  }, [showSnackbar]);
+  }, [common.message, common.type, common.timestamp, enqueueSnackbar, snackbarConfig]);
 
   useEffect(() => {
     const redirectUrl = localStorage.getItem(savedRedirectUrl);
     if (redirectUrl) {
-      navigate(redirectUrl);
+      navigate(redirectUrl, { replace: true });
       localStorage.removeItem(savedRedirectUrl);
     }
   }, [navigate]);
 
+  const sidebar = useMemo(
+    () => (
+      <Sidebar
+        roles={roles}
+        currentPath={location.pathname}
+        open={open}
+        handleDrawer={() => setOpen(!open)}
+        mode={colorMode.mode}
+        onThemeToggle={colorMode.toggleColorMode}
+      />
+    ),
+    [roles, location.pathname, open, colorMode.mode, colorMode.toggleColorMode],
+  );
+
   return (
     <ConfirmationModalContextProvider>
-      <ColorModeContext.Consumer>
-        {(colorMode) => {
-          return (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100vh",
-                width: "100vw",
-                backgroundColor: theme.palette.surface.primary.active,
-              }}
-            >
-              {/* Header */}
-              {!isValidMicroApp && <Header />}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          width: "100vw",
+          backgroundColor: theme.palette.surface.primary.active,
+        }}
+      >
+        {/* Header */}
+        {!isValidMicroApp && <Header />}
 
-              {/* Main content container */}
-              <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
-                {/* Sidebar - Overlay on mobile */}
-                {!isValidMicroApp &&
-                  (isMobile ? (
-                    <>
-                      {/* Backdrop when sidebar is open */}
-                      {open && (
-                        <Box
-                          onClick={() => setOpen(false)}
-                          sx={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            zIndex: 999,
-                          }}
-                        />
-                      )}
-                      {/* Sidebar overlay */}
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          height: "100%",
-                          zIndex: 1000,
-                          transform: open ? "translateX(0)" : "translateX(-100%)",
-                          transition: "transform 0.3s ease-in-out",
-                        }}
-                      >
-                        <Sidebar
-                          roles={roles}
-                          currentPath={location.pathname}
-                          open={open}
-                          handleDrawer={() => setOpen(!open)}
-                          mode={colorMode.mode}
-                          onThemeToggle={colorMode.toggleColorMode}
-                        />
-                      </Box>
-                    </>
-                  ) : (
-                    <Box sx={{ width: "fit-content", height: "100%" }}>
-                      <Sidebar
-                        roles={roles}
-                        currentPath={location.pathname}
-                        open={open}
-                        handleDrawer={() => setOpen(!open)}
-                        mode={colorMode.mode}
-                        onThemeToggle={colorMode.toggleColorMode}
-                      />
-                    </Box>
-                  ))}
-                <Box
-                  sx={{
-                    flex: 1,
-                    padding: theme.spacing(3),
-                    paddingBottom: isMobile ? "80px" : "18px",
-                    overflowY: "auto",
-                  }}
-                >
-                  <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
-                    <Outlet />
-                  </Suspense>
-                </Box>
-                {/* Mobile Bottom Bar - Only on Mobile */}
-                {!isValidMicroApp && isMobile && (
-                  <MobileBottomBar
-                    onMenuClick={() => setOpen(!open)}
-                    onThemeToggle={colorMode.toggleColorMode}
-                    open={open}
-                    mode={colorMode.mode}
+        {/* Main content container */}
+        <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+          {/* Sidebar - show on small screens and hide on MicroApps */}
+          {!isValidMicroApp &&
+            (isMobile ? (
+              <>
+                {/* Backdrop when sidebar is open */}
+                {open && (
+                  <Box
+                    onClick={() => setOpen(false)}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      zIndex: 999,
+                    }}
                   />
                 )}
-              </Box>
-            </Box>
-          );
-        }}
-      </ColorModeContext.Consumer>
+                {/* Sidebar overlay */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    zIndex: 1000,
+                    transform: open ? "translateX(0)" : "translateX(-100%)",
+                    transition: "transform 0.3s ease-in-out",
+                  }}
+                >
+                  {sidebar}
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ width: "fit-content", height: "100%" }}>{sidebar}</Box>
+            ))}
+
+          {/* Page body - Content area */}
+          <Box
+            sx={{
+              flex: 1,
+              padding: theme.spacing(3),
+              paddingBottom: isMobile ? "80px" : "18px",
+              overflowY: "auto",
+            }}
+          >
+            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+              <Outlet />
+            </Suspense>
+          </Box>
+
+          {/* Mobile Bottom Bar - Only on Mobile */}
+          {!isValidMicroApp && isMobile && (
+            <MobileBottomBar
+              onMenuClick={() => setOpen(!open)}
+              onThemeToggle={colorMode.toggleColorMode}
+              open={open}
+              mode={colorMode.mode}
+            />
+          )}
+        </Box>
+      </Box>
     </ConfirmationModalContextProvider>
   );
 }
