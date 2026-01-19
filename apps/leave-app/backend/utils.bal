@@ -580,13 +580,13 @@ public isolated function validateDateRange(string startDate, string endDate) ret
 isolated function getOptionalMailsToNotify(string email) returns employee:DefaultMail[]|error {
     database:Leave[]|error lastLeave = database:getLeaves({
                                                               emails: [email],
-                                                              statuses: [database:APPROVED],
                                                               orderBy: database:DESC,
                                                               leaveTypes: [
                                                                   database:CASUAL_LEAVE,
                                                                   database:ANNUAL_LEAVE,
                                                                   database:MATERNITY_LEAVE,
-                                                                  database:PATERNITY_LEAVE
+                                                                  database:PATERNITY_LEAVE,
+                                                                  database:LIEU_LEAVE
                                                               ]
                                                           }, 1);
 
