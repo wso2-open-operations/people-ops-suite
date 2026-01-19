@@ -65,7 +65,7 @@ export default function SabbaticalLeave() {
           },
         ];
         // Set approval tabs for leads only
-        if (userInfo?.isLead) {
+        if (!userInfo?.isLead) {
           baseTabs.push(
             {
               tabTitle: "Leave Approval",

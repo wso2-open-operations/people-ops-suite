@@ -94,7 +94,7 @@ export default function NotifyPeople({
         setLoading(true);
         const employees = await fetchEmployees();
 
-        const employeeOptionsFromAPI = employees.map((employee) => ({
+        const employeeOptionsFromApi = employees.map((employee) => ({
           label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
           email: employee.workEmail,
           thumbnail: employee.employeeThumbnail,
@@ -106,7 +106,7 @@ export default function NotifyPeople({
 
           return [
             ...prev,
-            ...employeeOptionsFromAPI.filter((opt) => !existingEmails.has(opt.email)),
+            ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email)),
           ];
         });
       } catch (e) {
