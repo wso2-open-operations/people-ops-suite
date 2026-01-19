@@ -91,15 +91,19 @@ function WebApp() {
 }
 
 function MicorApp() {
+  const [mode, setMode] = useState<ThemeMode>(ThemeMode.Light);
+
+  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+
   return (
     <Provider store={store}>
-      <ThemeProvider theme={"light"}>
-        <SnackbarProvider maxSnack={3} preventDuplicate>
+      <SnackbarProvider maxSnack={3} preventDuplicate>
+        <ThemeProvider theme={theme}>
           <MicroAppAuthProvider>
             <AppHandler />
           </MicroAppAuthProvider>
-        </SnackbarProvider>
-      </ThemeProvider>
+        </ThemeProvider>
+      </SnackbarProvider>
     </Provider>
   );
 }
