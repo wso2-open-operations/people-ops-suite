@@ -59,34 +59,6 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   element?: React.ReactNode;
 }
 
-export interface RawMetaData {
-  title: string;
-  description: string;
-}
-
-export interface RawMenu {
-  date: string;
-  breakfast: RawMetaData;
-  juice: RawMetaData;
-  lunch: RawMetaData;
-  dessert: RawMetaData;
-  snack: RawMetaData;
-}
-
-export interface MetaData {
-  title: string | null;
-  description: string | null;
-}
-
-export interface Menu {
-  date: string;
-  breakfast: MetaData;
-  juice: MetaData;
-  lunch: MetaData;
-  dessert: MetaData;
-  snack: MetaData;
-}
-
 export enum MealOption {
   vegetarian = "Vegetarian",
   fish = "Fish",
