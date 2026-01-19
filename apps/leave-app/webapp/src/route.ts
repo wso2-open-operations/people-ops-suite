@@ -13,7 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Briefcase, CalendarX2, FileText, History } from "lucide-react";
+
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import HistoryIcon from "@mui/icons-material/History";
+import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
 import { type RouteObject } from "react-router-dom";
 
 import React from "react";
@@ -37,14 +41,14 @@ export const routes: RouteObjectWithMeta[] = [
   {
     path: "",
     text: "General Leave",
-    icon: React.createElement(Briefcase),
+    icon: React.createElement(WorkHistoryIcon),
     element: React.createElement(GeneralLeave),
     allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
     path: "sabbatical-leave",
     text: "Sabbatical Leave",
-    icon: React.createElement(CalendarX2),
+    icon: React.createElement(EventAvailableIcon),
     element: React.createElement(SabbaticalLeave),
     allowRoles: [Role.EMPLOYEE, Role.LEAD],
     denyRoles: [Role.INTERN],
@@ -52,14 +56,14 @@ export const routes: RouteObjectWithMeta[] = [
   {
     path: "leave-history",
     text: "Leave History",
-    icon: React.createElement(History),
+    icon: React.createElement(HistoryIcon),
     element: React.createElement(LeaveHistory),
     allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
     path: "lead-report",
     text: "Lead Report",
-    icon: React.createElement(FileText),
+    icon: React.createElement(AssignmentIcon),
     element: React.createElement(LeadReport),
     allowRoles: [Role.LEAD],
   },

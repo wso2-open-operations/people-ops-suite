@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { State } from "@/types/types";
+import { CachedMail, State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
@@ -59,10 +60,14 @@ export interface UserInfoInterface {
   firstName: string;
   lastName: string;
   workEmail: string;
+  leadEmail: string;
   employeeThumbnail: string | null;
   jobRole: string;
   isLead: boolean;
+  employmentStartDate: string;
+  subordinatePercentageOnSabbaticalLeave: string | null;
   privileges: number[];
+  cachedEmails: CachedMail;
 }
 
 const initialState: AuthState = {

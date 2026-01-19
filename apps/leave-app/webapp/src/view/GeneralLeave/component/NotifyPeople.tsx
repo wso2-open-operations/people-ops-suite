@@ -18,6 +18,7 @@ import { Email } from "@mui/icons-material";
 import {
   Autocomplete,
   Avatar,
+  Box,
   Chip,
   CircularProgress,
   Stack,
@@ -25,11 +26,13 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
-import { fetchEmployees, getDefaultMails } from "@root/src/services/leaveService";
-import { DefaultMail, Employee } from "@root/src/types/types";
+import { fetchEmployees } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { CachedMail } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
@@ -41,66 +44,109 @@ interface EmployeeOption {
 interface NotifyPeopleProps {
   selectedEmails: string[];
   onEmailsChange: (emails: string[]) => void;
+  onMandatoryEmailsChange: (emails: string[]) => void;
 }
 
-export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyPeopleProps) {
+export default function NotifyPeople({
+  selectedEmails,
+  onEmailsChange,
+  onMandatoryEmailsChange,
+}: NotifyPeopleProps) {
   const theme = useTheme();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [fixedEmails, setFixedEmails] = useState<string[]>([]);
 
+  const defaultMails: CachedMail = useSelector(selectUser)?.cachedEmails || {
+    mandatoryMails: [],
+    optionalMails: [],
+  };
+
   useEffect(() => {
-    const loadData = async () => {
+    const mandatoryOptions = defaultMails.mandatoryMails.map((mail) => ({
+      label: mail.email,
+      email: mail.email,
+      thumbnail: mail.thumbnail || null,
+      isFixed: true,
+    }));
+
+    const optionalOptions = defaultMails.optionalMails
+      .filter((mail) => !defaultMails.mandatoryMails.find((m) => m.email === mail.email))
+      .map((mail) => ({
+        label: mail.email,
+        email: mail.email,
+        thumbnail: mail.thumbnail || null,
+        isFixed: false,
+      }));
+
+    const fixedEmailList = mandatoryOptions.map((m) => m.email);
+
+    setFixedEmails(fixedEmailList);
+    onMandatoryEmailsChange(fixedEmailList);
+    onEmailsChange([...fixedEmailList, ...optionalOptions.map((o) => o.email)]);
+
+    setEmployeeOptions([...mandatoryOptions, ...optionalOptions]);
+  }, []);
+
+  useEffect(() => {
+    const loadEmployees = async () => {
       try {
         setLoading(true);
         const employees = await fetchEmployees();
-        const defaultMails = await getDefaultMails();
 
-        const fixedEmailList = defaultMails.map((mail: DefaultMail) => mail.email);
-        setFixedEmails(fixedEmailList);
-
-        const employeeOptions = employees.map((employee: Employee) => ({
+        const employeeOptionsFromApi = employees.map((employee) => ({
           label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
           email: employee.workEmail,
           thumbnail: employee.employeeThumbnail,
-          isFixed: fixedEmailList.includes(employee.workEmail),
+          isFixed: fixedEmails.includes(employee.workEmail),
         }));
 
-        // Add default mails that are not in employee list
-        const missingFixedOptions = defaultMails
-          .filter((mail: DefaultMail) => !employeeOptions.find((opt) => opt.email === mail.email))
-          .map((mail: DefaultMail) => ({
-            label: mail.email,
-            email: mail.email,
-            thumbnail: mail.thumbnail || null,
-            isFixed: true,
-          }));
+        setEmployeeOptions((prev) => {
+          const existingEmails = new Set(prev.map((o) => o.email));
 
-        setEmployeeOptions([...employeeOptions, ...missingFixedOptions]);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        setEmployeeOptions([]);
+          return [
+            ...prev,
+            ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email)),
+          ];
+        });
+      } catch (e) {
+        console.error("Employee fetch failed", e);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
-  }, [onEmailsChange]);
+    loadEmployees();
+  }, []);
 
-  const selectedOptions = employeeOptions.filter(
-    (opt) => opt.isFixed || selectedEmails.includes(opt.email),
-  );
+  const selectedOptions = employeeOptions
+    .filter((opt) => opt.isFixed || selectedEmails.includes(opt.email))
+    .sort((a, b) => {
+      // Add mandatory mails first, then optional mails
+      if (a.isFixed && !b.isFixed) return -1;
+      if (!a.isFixed && b.isFixed) return 1;
+      return 0;
+    });
 
   return (
     <Stack gap="1rem">
-      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-        Select people/groups to notify (via email)
-      </Typography>
+      <Stack flexDirection="row" alignItems="center" justifyContent="space-between">
+        <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
+          Select people/groups to notify (via email)
+        </Typography>
+        {loading && (
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <CircularProgress size={20} />
+          </Box>
+        )}
+      </Stack>
       <Autocomplete
         multiple
         options={employeeOptions}
         value={selectedOptions}
+        loading={loading}
+        loadingText="Loading employees..."
+        noOptionsText="No employees found"
         onChange={(_, newValue) => {
           // Keep fixed options in value
           const newEmails = [
@@ -111,22 +157,7 @@ export default function NotifyPeople({ selectedEmails, onEmailsChange }: NotifyP
         }}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(option, value) => option.email === value.email}
-        loading={loading}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label="Select emails"
-            InputProps={{
-              ...params.InputProps,
-              endAdornment: (
-                <>
-                  {loading ? <CircularProgress color="inherit" size={20} /> : null}
-                  {params.InputProps.endAdornment}
-                </>
-              ),
-            }}
-          />
-        )}
+        renderInput={(params) => <TextField {...params} label="Select emails" />}
         renderTags={(value, getTagProps) =>
           value.map((option, index) => {
             const ChipAvatar = option.thumbnail ? (
