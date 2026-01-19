@@ -69,7 +69,7 @@ export default function ApplyTab() {
         <Stack gap="0.5rem">
           <CheckBox label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval." />
           <CheckBox label="I have read and understood the terms of the Sabbatical Leave Policy." />
-          <CheckBox label="I acknowledge that I cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period." />
+          <CheckBox label="You cannot voluntarily resign from your employment for 6 months after completing sabbatical leave. If you do, you will be required to reimburse an amount equivalent to the salary paid to you during the sabbatical period. (Acknowledge)" />
         </Stack>
 
         <Box mx={{ xs: "auto", md: "0" }} ml={{ md: "auto" }}>

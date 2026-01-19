@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
@@ -143,7 +142,7 @@ export default function LeaveDateSelection({
       direction="column"
       justifyContent="space-between"
       width={{ md: "40%" }}
-      gap={{ xs: "1rem" }}
+      gap={{xs:"1rem"}}
     >
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Select Date(s)
@@ -156,9 +155,10 @@ export default function LeaveDateSelection({
       >
         <DatePicker
           label="From"
-          sx={{ minWidth: "10%" }}
+          sx={{ minWidth: "10%"}}
           value={startDate}
           onChange={handleStartDateChange}
+          format="DD/MM/YY"
           disablePast
         />
         <DatePicker
@@ -166,6 +166,7 @@ export default function LeaveDateSelection({
           sx={{ minWidth: "10%" }}
           value={endDate}
           onChange={handleEndDateChange}
+          format="DD/MM/YY"
           minDate={startDate || undefined}
           disablePast
         />
@@ -186,8 +187,6 @@ export default function LeaveDateSelection({
         </Stack>
       </Stack>
       <Box
-        width="70%"
-        marginX="auto"
         sx={{
           display: "flex",
           justifyContent: "center",
