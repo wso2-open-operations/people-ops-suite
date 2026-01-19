@@ -90,7 +90,7 @@ function WebApp() {
   );
 }
 
-function MicorApp() {
+function MicroApp() {
   const [mode, setMode] = useState<ThemeMode>(ThemeMode.Light);
 
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
@@ -111,5 +111,5 @@ function MicorApp() {
 export default function App() {
   const isValidMicroApp = useMicroApp();
 
-  return isValidMicroApp ? <MicorApp /> : <WebApp />;
+  return isValidMicroApp ? <MicroApp /> : <WebApp />;
 }
