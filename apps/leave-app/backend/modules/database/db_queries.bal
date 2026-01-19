@@ -158,9 +158,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
 # + status - Status of the leave to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + leaveId - ID of the leave record 
 # + return - Update query to approve or reject leave application
-isolated function setLeaveStatusQuery(Status status, int leaveId)
-    returns sql:ParameterizedQuery =>
-    `
+isolated function setLeaveStatusQuery(Status status, int leaveId) returns sql:ParameterizedQuery => `
         UPDATE
             leave_submissions
         SET
@@ -189,8 +187,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
 #
 # + leadEmail - Email of the lead
 # + return - Select query to get count of subordinates on sabbatical leave
-isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery => `
         SELECT 
             COUNT(id)
         FROM 
@@ -199,15 +196,12 @@ isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) re
             approver_email = ${leadEmail} AND status = ${APPROVED} AND leave_type = ${SABBATICAL_LEAVE} AND
             start_date <= UTC_TIMESTAMP() AND end_date >= UTC_TIMESTAMP()
     `;
-    return query;
-}
 
 # Query to get most recent email notification recipient list (general leave) for a leave applicant.
 #
 # + applicantEmail - Email of the leave applicant
 # + return - Select query to get email notification list
-isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery => `
         SELECT
             copy_email_list
         FROM
@@ -218,8 +212,6 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
             created_date DESC
         LIMIT 1
     `;
-    return query;
-}
 
 # Query to set the calendar event ID for a sabbatical leave record.
 #
@@ -227,8 +219,7 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
 # + calendarEventId - Calendar event ID
 # + return - Update query to set calendar event ID
 isolated function setSabbaticalLeaveCalendarEventIdQuery(int leaveId, string calendarEventId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+    returns sql:ParameterizedQuery => `
         UPDATE 
             leave_submissions
         SET 
@@ -236,5 +227,3 @@ isolated function setSabbaticalLeaveCalendarEventIdQuery(int leaveId, string cal
         WHERE
             id = ${leaveId}
     `;
-    return query;
-}
