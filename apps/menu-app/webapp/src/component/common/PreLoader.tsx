@@ -29,7 +29,6 @@ const PreLoader = (props: PreLoaderProps) => {
 
   const style = {
     height: "150px",
-    transform: "skewX(-5deg)",
   };
 
   return (
