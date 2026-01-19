@@ -102,7 +102,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "LEAVE_START_DATE": leaveStartDate,
                                                                                  "LEAVE_END_DATE": leaveEndDate,
                                                                                  "YEAR": year,
-                                                                                 "STATUS": "Approved"
+                                                                                 "STATUS": "approved"
                                                                              });
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
@@ -127,7 +127,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "LEAVE_START_DATE": leaveStartDate,
                                                                                  "LEAVE_END_DATE": leaveEndDate,
                                                                                  "YEAR": year,
-                                                                                 "STATUS": "Rejected"
+                                                                                 "STATUS": "rejected"
                                                                              });
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
