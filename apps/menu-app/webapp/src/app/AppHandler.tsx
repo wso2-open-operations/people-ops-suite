@@ -42,18 +42,16 @@ const AppHandler: FC = () => {
 
   const appState = useMemo(() => getAppState(status, mode), [status, mode]);
 
-  const children = isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles);
-
   const appRoutes = useMemo(
     () => [
       {
         path: "/",
         element: <Layout />,
         errorElement: <NotFoundPage />,
-        children: children,
+        children: isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles),
       },
     ],
-    [roles, routes],
+    [isValidMicroApp, roles, routes],
   );
 
   const renderApp = () => {
