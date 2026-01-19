@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -27,6 +27,9 @@ import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
+import { ColorModeContext } from "@src/App";
+
+import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -36,6 +39,7 @@ export default function Layout() {
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -61,45 +65,104 @@ export default function Layout() {
 
   return (
     <ConfirmationModalContextProvider>
-      {/* Full screen container */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          width: "100vw",
-          backgroundColor: theme.palette.surface.primary.active,
+      <ColorModeContext.Consumer>
+        {(colorMode) => {
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100vh",
+                width: "100vw",
+                backgroundColor: theme.palette.surface.primary.active,
+              }}
+            >
+              {/* Header */}
+              <Header />
+
+              {/* Main content container */}
+              <Box sx={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+                {/* Sidebar - Overlay on mobile */}
+                {isMobile ? (
+                  <>
+                    {/* Backdrop when sidebar is open */}
+                    {open && (
+                      <Box
+                        onClick={() => setOpen(false)}
+                        sx={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: "rgba(0, 0, 0, 0.5)",
+                          zIndex: 999,
+                        }}
+                      />
+                    )}
+                    {/* Sidebar overlay */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        height: "100%",
+                        zIndex: 1000,
+                        transform: open ? "translateX(0)" : "translateX(-100%)",
+                        transition: "transform 0.3s ease-in-out",
+                      }}
+                    >
+                      <Sidebar
+                        roles={roles}
+                        currentPath={location.pathname}
+                        open={open}
+                        handleDrawer={() => setOpen(!open)}
+                        mode={colorMode.mode}
+                        onThemeToggle={colorMode.toggleColorMode}
+                      />
+                    </Box>
+                  </>
+                ) : (
+                  <Box sx={{ width: "fit-content", height: "100%" }}>
+                    <Sidebar
+                      roles={roles}
+                      currentPath={location.pathname}
+                      open={open}
+                      handleDrawer={() => setOpen(!open)}
+                      mode={colorMode.mode}
+                      onThemeToggle={colorMode.toggleColorMode}
+                    />
+                  </Box>
+                )}
+
+                {/* Main content area */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    padding: theme.spacing(3),
+                    paddingBottom: isMobile ? "80px" : "18px",
+                    overflowY: "auto",
+                  }}
+                >
+                  <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+                    <Outlet />
+                  </Suspense>
+                </Box>
+
+                {/* Mobile Bottom Bar - Only on Mobile */}
+                {isMobile && (
+                  <MobileBottomBar
+                    onMenuClick={() => setOpen(!open)}
+                    onThemeToggle={colorMode.toggleColorMode}
+                    open={open}
+                    mode={colorMode.mode}
+                  />
+                )}
+              </Box>
+            </Box>
+          );
         }}
-      >
-        {/* Header */}
-        <Header />
-
-        {/* Main content container */}
-        <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
-          {/* Sidebar */}
-          <Box sx={{ width: "fit-content", height: "100%" }}>
-            <Sidebar
-              roles={roles}
-              currentPath={location.pathname}
-              open={open}
-              handleDrawer={() => setOpen(!open)}
-            />
-          </Box>
-
-          {/* Main content area */}
-          <Box
-            sx={{
-              flex: 1,
-              height: "100%",
-              padding: theme.spacing(3),
-            }}
-          >
-            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
-              <Outlet />
-            </Suspense>
-          </Box>
-        </Box>
-      </Box>
+      </ColorModeContext.Consumer>
     </ConfirmationModalContextProvider>
   );
 }

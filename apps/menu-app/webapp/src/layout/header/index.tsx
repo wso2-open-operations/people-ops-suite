@@ -13,7 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
@@ -32,6 +41,7 @@ const Header = () => {
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
   const user = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state)?.data);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -110,26 +120,30 @@ const Header = () => {
                     {user.firstName?.charAt(0)}
                   </Avatar>
                 </Tooltip>
-                <Box sx={{ width: "fit-content" }}>
-                  <Typography
-                    noWrap
-                    variant="body1"
-                    sx={{
-                      color: theme.palette.customText.primary.p2.active,
-                    }}
-                  >
-                    {[user.firstName, user.lastName].filter(Boolean).join(" ")}
-                  </Typography>
-                  <Typography
-                    noWrap
-                    variant="body2"
-                    sx={{
-                      color: theme.palette.customText.primary.p3.active,
-                    }}
-                  >
-                    {user.jobRole}
-                  </Typography>
-                </Box>
+
+                {!isMobile && (
+                  <Box sx={{ width: "fit-content" }}>
+                    <Typography
+                      noWrap
+                      variant="body1"
+                      sx={{
+                        color: theme.palette.customText.primary.p2.active,
+                      }}
+                    >
+                      {[user.firstName, user.lastName].filter(Boolean).join(" ")}
+                    </Typography>
+
+                    <Typography
+                      noWrap
+                      variant="body2"
+                      sx={{
+                        color: theme.palette.customText.primary.p3.active,
+                      }}
+                    >
+                      {user.jobRole}
+                    </Typography>
+                  </Box>
+                )}
               </Stack>
 
               <Menu
