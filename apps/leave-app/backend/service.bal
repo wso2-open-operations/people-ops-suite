@@ -148,7 +148,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get application configurations.
     #
     # + return - Application configurations or Internal Server Error
-    resource function get app\-config(http:RequestContext ctx)
+    resource function get app\-configs(http:RequestContext ctx)
         returns AppConfig|http:InternalServerError|http:Unauthorized {
 
         readonly & authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
