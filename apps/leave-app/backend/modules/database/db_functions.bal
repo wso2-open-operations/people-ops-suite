@@ -91,7 +91,8 @@ public isolated function cancelLeave(int id) returns error? {
 # + approvalStatus - Approval status to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + return - Nil on success, error on failure
 public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStatus)
-    returns sql:ExecutionResult|error {
+returns sql:ExecutionResult|error {
+
     sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(approvalStatus, leaveId);
     return check leaveDbClient->execute(sqlQuery);
 }
@@ -100,8 +101,7 @@ public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStat
 #
 # + employeeEmail - Email of the employee
 # + return - End date of the last sabbatical leave or an error on failure
-public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
-    returns string?|error {
+public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail) returns string?|error {
     string|error lastSabbaticalEndDate = leaveDbClient->queryRow(getLastSabbaticalLeaveEndDateQuery(employeeEmail));
     if lastSabbaticalEndDate is sql:NoRowsError {
         return ();
@@ -110,7 +110,7 @@ public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail)
         return error("Error occurred while retrieving last sabbatical leave end date", lastSabbaticalEndDate);
     }
     // format timestamp to date string YYYY-MM-DD
-    string formattedDate = (lastSabbaticalEndDate).toString().substring(0, 10);
+    string formattedDate = lastSabbaticalEndDate.toString().substring(0, 10);
     return formattedDate;
 }
 
@@ -137,5 +137,6 @@ public isolated function getEmailNotificationRecipientList(string applicantEmail
 # + return - SQL execution result or an error on failure
 public isolated function setCalendarEventIdForSabbaticalLeave(int leaveId, string calendarEventId)
     returns sql:ExecutionResult|error {
+        
     return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveId, calendarEventId));
 }

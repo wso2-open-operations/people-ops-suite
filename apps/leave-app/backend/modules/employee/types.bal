@@ -127,7 +127,7 @@ public type Employee record {|
 |};
 
 # Minimal Employee information.
-public type MinimalEmployeeInfo record {|
+public type BasicEmployeeInfo record {|
     # First name
     string firstName;
     # Last name

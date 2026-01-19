@@ -177,8 +177,7 @@ isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int
 #
 # + employeeEmail - Email of the employee
 # + return - Query to get the end date of the last sabbatical leave
-isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) returns sql:ParameterizedQuery => `
         SELECT 
             end_date
         FROM leave_submissions
@@ -186,8 +185,6 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
         ORDER BY end_date DESC
         LIMIT 1
     `;
-    return query;
-}
 
 # Query to get subordinates count on sabbatical leave.
 #

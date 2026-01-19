@@ -189,13 +189,7 @@ function getRecipientsForSabbaticalNotifications(string applicantEmail, string l
     returns string[]|error {
     Employee reportingLead = check employee:getEmployee(leadEmail);
 
-    string[] recipientsList = [];
-    foreach string mailGroup in sabbaticalMailGroups {
-        recipientsList.push(mailGroup);
-
-    }
-    recipientsList.push(applicantEmail); // applicant email
-    recipientsList.push(leadEmail); // reporting lead email (approver)
+    string[] recipientsList = [...sabbaticalMailGroups, applicantEmail, leadEmail];
     if reportingLead.leadEmail is () {
         log:printInfo("Functional Lead info is not available. Skipped notification for the functional lead.");
     }

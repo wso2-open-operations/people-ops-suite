@@ -180,7 +180,7 @@ public type Employee record {|
 
 # Minimal Employee information.
 public type MinimalEmployeeInfo record {|
-    *employee:MinimalEmployeeInfo;
+    *employee:BasicEmployeeInfo;
 |};
 
 # Leaves report content.
@@ -304,17 +304,16 @@ public enum Action {
 
 # Sabbatical leave actions.
 public enum SabbaticalAction {
-    APPROVE = "APPROVE",
-    REJECT = "REJECT",
-    APPLY = "APPLY",
-    CANCEL = "CANCEL"
+    APPROVE,
+    REJECT,
+    APPLY,
+    CANCEL
 }
 
 # Status of the leave.
 public enum Status {
-    PENDING = "PENDING",
-    APPROVED = "APPROVED",
-    REJECTED = "REJECTED",
-    CANCELLED = "CANCELLED"
+    PENDING,
+    APPROVED,
+    REJECTED,
+    CANCELLED
 }
-
