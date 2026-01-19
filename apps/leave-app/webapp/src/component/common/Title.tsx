@@ -19,22 +19,24 @@ import { Typography, useTheme } from "@mui/material";
 interface TitleProps {
   firstWord: string;
   secondWord: string;
+  borderEnabled?: boolean;
 }
 
-export default function Title({ firstWord, secondWord }: TitleProps) {
+export default function Title({ firstWord, secondWord, borderEnabled = true }: TitleProps) {
   const theme = useTheme();
 
   return (
     <Typography
+      variant="h5"
       textAlign={{ xs: "center", md: "left" }}
       sx={{
         color: theme.palette.text.primary,
         fontWeight: "600",
-        fontSize: theme.typography.h5.fontSize,
+        pb: borderEnabled ? "1rem" : 0,
+        borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
       }}
     >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
-      {secondWord}
+      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span> {secondWord}
     </Typography>
   );
 }

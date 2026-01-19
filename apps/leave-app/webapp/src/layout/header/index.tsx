@@ -94,7 +94,7 @@ const Header = () => {
         <Box sx={{ flexGrow: 0 }}>
           {user.userInfo && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
+              <Stack flexDirection={"row-reverse"} alignItems={"center"} gap={1.5}>
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}

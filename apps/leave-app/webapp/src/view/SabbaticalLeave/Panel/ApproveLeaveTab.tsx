@@ -13,19 +13,63 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Alert, CircularProgress, Stack, useTheme } from "@mui/material";
+import { useSelector } from "react-redux";
 
-import { Stack } from "@mui/material";
+import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { ApprovalStatus, LeaveHistoryResponse } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
+  const theme = useTheme();
+  const userInfo = useSelector(selectUser);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [approvalHistory, setApprovalHistory] = useState<LeaveHistoryResponse>();
+  const fetchApprovalHistory = async () => {
+    setLoading(true);
+    try {
+      const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
+        approverEmail: userInfo?.workEmail || "",
+        statuses: [ApprovalStatus.PENDING],
+      });
+      setApprovalHistory(approvalHistory);
+    } catch (error) {
+      console.error("Failed to fetch approval history", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApprovalHistory();
+  }, [userInfo?.workEmail]);
+
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Approve" secondWord="Leave (For Reporting Leads)" />
-      <ApproveLeaveTable rows={[]} />
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        borderBottom={`1px solid ${theme.palette.divider}`}
+        pb="1rem"
+      >
+        <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
+        <Alert variant="outlined" severity="warning">
+          {userInfo?.subordinatePercentageOnSabbaticalLeave ?? "0%"} of your subordinates are on
+          sabbatical leave
+        </Alert>
+      </Stack>
+      {loading ? (
+        <CircularProgress size={30} />
+      ) : (
+        <ApproveLeaveTable rows={approvalHistory?.leaves ?? []} onRefresh={fetchApprovalHistory} />
+      )}
     </Stack>
   );
 }
