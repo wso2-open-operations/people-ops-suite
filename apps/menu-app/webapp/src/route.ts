@@ -33,6 +33,21 @@ export const routes: RouteObjectWithRole[] = [
   },
 ];
 
+export const getAllActiveRoutes = (
+  routes: RouteObjectWithRole[] | undefined,
+): RouteObjectWithRole[] => {
+  const routesObj: RouteObjectWithRole[] = [];
+  if (!routes) return [];
+
+  routes.forEach((routeObj) => {
+    routesObj.push({
+      ...routeObj,
+    });
+  });
+
+  return routesObj;
+};
+
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
   roles: string[],
