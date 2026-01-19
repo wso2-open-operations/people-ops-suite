@@ -54,9 +54,14 @@ const AppHandler: FC = () => {
     [isValidMicroApp, roles, routes],
   );
 
+  const router = useMemo(
+    () => (isValidMicroApp ? createHashRouter(appRoutes) : createBrowserRouter(appRoutes)),
+    [isValidMicroApp],
+  );
+
   const renderApp = () => {
     if (isValidMicroApp) {
-      return <RouterProvider router={createHashRouter(appRoutes)} />;
+      return <RouterProvider router={router} />;
     }
 
     if (appState === AppState.Loading) {
@@ -71,7 +76,7 @@ const AppHandler: FC = () => {
       return <ErrorHandler message={statusMessage} />;
     }
 
-    return <RouterProvider router={createBrowserRouter(appRoutes)} />;
+    return <RouterProvider router={router} />;
   };
 
   return renderApp();
