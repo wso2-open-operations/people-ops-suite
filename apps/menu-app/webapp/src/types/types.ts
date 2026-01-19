@@ -33,11 +33,6 @@ export enum AppState {
   Loading = "LOADING",
 }
 
-export enum Role {
-  ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
-}
-
 export enum ConfirmationType {
   update = "update",
   send = "send",
