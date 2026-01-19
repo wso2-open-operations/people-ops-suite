@@ -171,7 +171,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
      
-        int age = calculateAge(employeePersonalInfo.dob ?: "");
+        int age = calculateAge(employeePersonalInfo.dob);
         
         return {...employeePersonalInfo, age };
     }
