@@ -39,7 +39,7 @@ const mealOptionsBox = [
 export default function DinnerOnDemand() {
   const theme = useTheme();
 
-  const { data: userInfo } = useGetUserInfoQuery();
+  const { data: userInfo, isLoading: isUserLoading } = useGetUserInfoQuery();
   const [submitDinner] = useSubmitDinnerRequestMutation();
   const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
 
@@ -94,6 +94,10 @@ export default function DinnerOnDemand() {
   const handleCloseCancelDialog = () => {
     setIsCancelDialogOpen(false);
   };
+
+  if (isUserLoading) {
+    return <PreLoader isLoading message="Loading user info..." />;
+  }
 
   if (!userInfo) {
     return <ErrorHandler message={"Failed to load user info"} />;
