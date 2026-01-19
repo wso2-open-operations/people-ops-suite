@@ -27,7 +27,7 @@ import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState } from "@slices/store";
 import { useAppSelector } from "@slices/store";
 
-import { getActiveRoutesV2, routes } from "../route";
+import { getActiveRoutesV2, getAllActiveRoutes, routes } from "../route";
 
 const getAppState = (authStatus: string, authMode: string): AppState => {
   if (authMode === AppState.Maintenance) return AppState.Maintenance;
@@ -38,8 +38,11 @@ const getAppState = (authStatus: string, authMode: string): AppState => {
 
 const AppHandler: FC = () => {
   const { status, mode, roles, statusMessage } = useAppSelector((state: RootState) => state.auth);
+  const isValidMicroApp = useMicroApp();
 
   const appState = useMemo(() => getAppState(status, mode), [status, mode]);
+
+  const children = isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles);
 
   const appRoutes = useMemo(
     () => [
@@ -47,17 +50,17 @@ const AppHandler: FC = () => {
         path: "/",
         element: <Layout />,
         errorElement: <NotFoundPage />,
-        children: getActiveRoutesV2(routes, roles),
+        children: children,
       },
     ],
     [roles, routes],
   );
 
-  const isValidMicroApp = useMicroApp();
-
-  const createRouter = isValidMicroApp ? createHashRouter : createBrowserRouter;
-
   const renderApp = () => {
+    if (isValidMicroApp) {
+      return <RouterProvider router={createHashRouter(appRoutes)} />;
+    }
+
     if (appState === AppState.Loading) {
       return <PreLoader isLoading={true} message="We are getting things ready..." />;
     }
@@ -70,7 +73,7 @@ const AppHandler: FC = () => {
       return <ErrorHandler message={statusMessage} />;
     }
 
-    return <RouterProvider router={createRouter(appRoutes)} />;
+    return <RouterProvider router={createBrowserRouter(appRoutes)} />;
   };
 
   return renderApp();
