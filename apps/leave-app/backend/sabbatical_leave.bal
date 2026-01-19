@@ -104,7 +104,10 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "YEAR": year,
                                                                                  "STATUS": "Approved"
                                                                              });
-            _ = check database:setLeaveStatus(<int>leaveId, APPROVED);
+            if leaveId is () {
+                return error("Leave ID is required for REJECT action");
+            }
+            _ = check database:setLeaveStatus(leaveId, APPROVED);
             // Create calendar event for approved sabbatical leave
             string calendarEventId = createUuidForCalendarEvent();
             SabbaticalLeaveResponse leaveResponse = {
@@ -115,7 +118,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
             };
             _ = check createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
             _ = check database:setCalendarEventIdForSabbaticalLeave(
-                    <int>payload.leaveId, calendarEventId);
+                    leaveId, calendarEventId);
         }
         REJECT => {
             template = email:bindKeyValues(email:sabbaticalApprovalTemplate, {
@@ -126,7 +129,10 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                                                                                  "YEAR": year,
                                                                                  "STATUS": "Rejected"
                                                                              });
-            _ = check database:setLeaveStatus(<int>leaveId, REJECTED);
+            if leaveId is () {
+                return error("Leave ID is required for REJECT action");
+            }
+            _ = check database:setLeaveStatus(leaveId, REJECTED);
         }
         CANCEL => {
             template = email:bindKeyValues(email:sabbaticalCancellationTemplate, {
