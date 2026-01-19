@@ -17,13 +17,11 @@ import { Box, Divider } from "@mui/material";
 
 import { MicroAppType } from "@/types/types";
 import { isMicroApp } from "@config/config";
-import { Logger } from "@root/src/utils/microapp-bridge/logger";
 
 import DinnerOnDemand from "./components/DinnerOnDemand";
 import Menu from "./components/Menu";
 
 export default function Home() {
-  Logger.info("Home");
   if (isMicroApp === MicroAppType.Menu) return <Menu />;
 
   if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
