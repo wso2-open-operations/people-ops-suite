@@ -16,37 +16,14 @@
 import { Box, Divider } from "@mui/material";
 
 import { MicroAppType } from "@/types/types";
-import ErrorHandler from "@component/common/ErrorHandler";
-import PreLoader from "@component/common/PreLoader";
 import { isMicroApp } from "@config/config";
-import { useGetMenuQuery } from "@services/menu.api";
+import { Logger } from "@root/src/utils/microapp-bridge/logger";
 
 import DinnerOnDemand from "./components/DinnerOnDemand";
 import Menu from "./components/Menu";
 
 export default function Home() {
-  const { data, isLoading, isError } = useGetMenuQuery();
-
-  if (isLoading) {
-    return <PreLoader isLoading message="Loading menu data" />;
-  }
-
-  if (isError || !data) {
-    return <ErrorHandler message={"oops something went wrong..."} />;
-  }
-
-  const { date, ...meals } = data;
-
-  if (!meals.breakfast.title && !meals.lunch.title) {
-    const date = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-    return <ErrorHandler message={`No menu available on ${date}`} />;
-  }
-
+  Logger.info("Home");
   if (isMicroApp === MicroAppType.Menu) return <Menu />;
 
   if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
