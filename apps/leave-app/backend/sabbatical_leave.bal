@@ -29,22 +29,23 @@ configurable string sabbaticalLeaveApprovalUrl = ?;
 # + email - User email
 # + leave - Sabbatical leave response
 # + calendarEventId - Calendar event ID
+# + return - Error if any
 isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalLeaveResponse leave,
-        string calendarEventId) {
+        string calendarEventId) returns error? {
     SabbaticalLeaveResponse {id, startDate, endDate} = leave;
     string startDateString = getDateStringFromTimestamp(startDate);
     string endDateString = getDateStringFromTimestamp(endDate);
 
     calendar_events:Time startTime = {
-        date: string `${startDateString}`
+        date: startDateString
     };
     string endDateForEvent = endDateString;
     string|error nextDayResult = getNextDay(endDateString);
     if nextDayResult is string {
         endDateForEvent = nextDayResult;
     } else {
-        log:printError(string `Failed to compute next day for end date ${endDateString},
-        using endDateString as fallback`, nextDayResult);
+        log:printError(string `Failed to compute next day for end date ${
+                endDateString}, using endDateString as fallback`, nextDayResult);
     }
 
     calendar_events:Time endTime = {
@@ -85,9 +86,8 @@ isolated function createSabbaticalLeaveEventInCalendar(string email, SabbaticalL
 # + return - Error if any
 function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
     returns error? {
-    var {action, applicantEmail, approverEmail, leaveStartDate, leaveEndDate, leaveId, location, comment, numberOfDays
-    }
-    = payload;
+    var {action, applicantEmail, approverEmail, leaveStartDate, leaveEndDate, leaveId, location, comment,
+    numberOfDays} = payload;
     string[] recipientsList = check getRecipientsForSabbaticalNotifications(applicantEmail, approverEmail);
     string emailSubject = "[Leave App] Sabbatical Leave Application - " + applicantEmail + " (" + leaveStartDate +
     " - " + leaveEndDate + ")";
@@ -113,7 +113,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                 endDate: leaveEndDate,
                 location: location
             };
-            createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
+            _ = check createSabbaticalLeaveEventInCalendar(applicantEmail, leaveResponse, calendarEventId);
             _ = check database:setCalendarEventIdForSabbaticalLeave(
                     <int>payload.leaveId, calendarEventId);
         }
