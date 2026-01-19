@@ -125,10 +125,8 @@ public type EmployeePersonalInfo record {|
     @sql:Column {name: "nic_or_passport"}
     string nicOrPassport;
     # First name
-    @sql:Column {name: "first_name"}
     string firstName;
     # Last name
-    @sql:Column {name: "last_name"}
     string lastName;
     # Title (Mr./Ms./Dr./etc.)
     string title;
