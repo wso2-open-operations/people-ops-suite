@@ -47,7 +47,7 @@ export const AppConfig = {
   serviceUrls: {
     userInfo: ServiceBaseUrl + "/user-info",
     employees: ServiceBaseUrl + "/employees",
-    appConfig: ServiceBaseUrl + "/app-config",
+    appConfig: ServiceBaseUrl + "/app-configs",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
   },
