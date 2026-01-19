@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export type stateType = "failed" | "success" | "loading" | "idle";
 export interface Header {
   title: string;
   size: number;
@@ -24,12 +23,6 @@ export interface Header {
 export enum ThemeMode {
   Light = "light",
   Dark = "dark",
-}
-
-export interface PreLoaderProps {
-  message?: string;
-  hideLogo?: boolean;
-  isLoading?: boolean;
 }
 
 export interface ErrorHandlerProps {
