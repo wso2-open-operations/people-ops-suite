@@ -2,6 +2,7 @@ ALTER TABLE personal_info
   MODIFY COLUMN nic_or_passport VARCHAR(20) NOT NULL,
   MODIFY COLUMN first_name      VARCHAR(100) NOT NULL,
   MODIFY COLUMN last_name       VARCHAR(100) NOT NULL,
-  MODIFY COLUMN title           VARCHAR(20) NOT NULL,
+  MODIFY COLUMN title           VARCHAR(100) NOT NULL,
   MODIFY COLUMN dob             DATE NOT NULL,
   MODIFY COLUMN nationality     VARCHAR(100) NOT NULL;
+  
