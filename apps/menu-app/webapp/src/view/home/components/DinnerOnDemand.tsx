@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useFormik } from "formik";
 import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
@@ -88,6 +88,8 @@ export default function DinnerOnDemand() {
 
   const isFormDisabled = formik.isSubmitting || !isDodTimeActive;
 
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const handleOpenCancelDialog = () => {
     setIsCancelDialogOpen(true);
   };
@@ -125,9 +127,22 @@ export default function DinnerOnDemand() {
           <Box
             component="form"
             onSubmit={formik.handleSubmit}
-            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              width: "100%",
+              boxSizing: "border-box",
+            }}
           >
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                width: "100%",
+                gap: 2,
+              }}
+            >
               {mealOptionsBox.map((meal) => (
                 <Box
                   key={meal.value}
@@ -143,6 +158,7 @@ export default function DinnerOnDemand() {
                     }`,
                     p: 2,
                     borderRadius: 1,
+                    boxSizing: "border-box",
                     color: theme.palette.customText.primary.p2.active,
                     backgroundColor:
                       formik.values.mealOption === meal.value

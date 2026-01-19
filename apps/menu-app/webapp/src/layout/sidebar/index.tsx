@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { Box, Divider, Stack, Tooltip, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
@@ -22,7 +22,6 @@ import { useMemo } from "react";
 import { RouteDetail } from "@/types/types";
 import SidebarNavItem from "@component/layout/SidebarNavItem";
 import pJson from "@root/package.json";
-import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
 
 interface SidebarProps {
@@ -30,13 +29,19 @@ interface SidebarProps {
   handleDrawer: () => void;
   roles: string[];
   currentPath: string;
+  mode: string;
+  onThemeToggle: () => void;
 }
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
   const path = useLocation();
 
+  const { mode, onThemeToggle } = props;
+
   const theme = useTheme();
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Check if a route is active
   const checkIsActive = (route: RouteDetail): boolean => {
@@ -102,130 +107,118 @@ const Sidebar = (props: SidebarProps) => {
     return button;
   };
 
+  const currentYear = new Date().getFullYear();
+
   return (
-    <ColorModeContext.Consumer>
-      {(colorMode) => {
-        const currentYear = new Date().getFullYear();
-
-        return (
-          <Box
-            sx={{
-              height: "100%",
-              paddingY: "16px",
-              paddingX: "12px",
-              backgroundColor: theme.palette.surface.navbar.active,
-              zIndex: 10,
-              display: "flex",
-              flexDirection: "column",
-              width: props.open ? "200px" : "fit-content",
-              overflow: "visible",
-            }}
-          >
-            {/* Navigation List */}
-            <Stack
-              direction="column"
-              gap={1}
-              sx={{
-                overflow: "visible",
-                width: props.open ? "100%" : "fit-content",
-              }}
-            >
-              {allRoutes.map((route, idx) => {
-                return (
-                  !route.bottomNav && (
-                    <Box
-                      key={idx}
-                      sx={{
-                        width: props.open ? "100%" : "fit-content",
-                        cursor: props.open ? "pointer" : "default",
-                      }}
-                    >
-                      <SidebarNavItem
-                        route={route}
-                        open={props.open}
-                        isActive={checkIsActive(route)}
-                      />
-                    </Box>
-                  )
-                );
-              })}
-            </Stack>
-
-            {/* Spacer */}
-            <Box sx={{ flexGrow: 1 }} />
-
-            {/* Footer Controls */}
-            <Stack
-              direction="column"
-              gap={1}
-              sx={{
-                paddingBottom: "20px",
-                alignItems: "center",
-              }}
-            >
-              {allRoutes.map((route, idx) => {
-                return (
-                  route.bottomNav && (
-                    <Box
-                      key={idx}
-                      sx={{
-                        width: props.open ? "100%" : "fit-content",
-                        cursor: props.open ? "pointer" : "default",
-                      }}
-                    >
-                      <SidebarNavItem
-                        route={route}
-                        open={props.open}
-                        isActive={checkIsActive(route)}
-                      />
-                    </Box>
-                  )
-                );
-              })}
-
-              {/* Theme Toggle */}
-              {renderControlButton(
-                colorMode.mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
-                colorMode.toggleColorMode,
-                colorMode.mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
-              )}
-
-              {/* Sidebar Toggle */}
-              {renderControlButton(
-                !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
-                props.handleDrawer,
-                props.open ? "Collapse Sidebar" : "Expand Sidebar",
-              )}
-
-              <Divider
+    <Box
+      sx={{
+        height: "100%",
+        paddingY: "16px",
+        paddingX: "12px",
+        backgroundColor: theme.palette.surface.navbar.active,
+        zIndex: 10,
+        display: "flex",
+        flexDirection: "column",
+        width: props.open ? "200px" : "fit-content",
+        overflow: "visible",
+      }}
+    >
+      {/* Navigation List */}
+      <Stack
+        direction="column"
+        gap={1}
+        sx={{
+          overflow: "visible",
+          width: props.open ? "100%" : "fit-content",
+        }}
+      >
+        {allRoutes.map((route, idx) => {
+          return (
+            !route.bottomNav && (
+              <Box
+                key={idx}
                 sx={{
-                  width: "100%",
-                  backgroundColor: theme.palette.customBorder.primary.active,
+                  width: props.open ? "100%" : "fit-content",
+                  cursor: props.open ? "pointer" : "default",
                 }}
-              />
+              >
+                <SidebarNavItem route={route} open={props.open} isActive={checkIsActive(route)} />
+              </Box>
+            )
+          );
+        })}
+      </Stack>
 
-              {/* Version Info */}
-              {renderControlButton(
-                <Typography
-                  variant="body2"
+      {/* Spacer */}
+      <Box sx={{ flexGrow: 1 }} />
+
+      {/* Footer Controls */}
+      {!isMobile && (
+        <Stack
+          direction="column"
+          gap={1}
+          sx={{
+            paddingBottom: "20px",
+            alignItems: "center",
+          }}
+        >
+          {allRoutes.map((route, idx) => {
+            return (
+              route.bottomNav && (
+                <Box
+                  key={idx}
                   sx={{
-                    whiteSpace: "nowrap",
-                    color: "inherit",
-                    width: "100%",
+                    width: props.open ? "100%" : "fit-content",
+                    cursor: props.open ? "pointer" : "default",
                   }}
                 >
-                  {props.open
-                    ? `v${pJson.version} | © ${currentYear} WSO2 LLC`
-                    : `v${pJson.version.split(".")[0]}`}
-                </Typography>,
-                undefined,
-                `Version ${pJson.version}`,
-              )}
-            </Stack>
-          </Box>
-        );
-      }}
-    </ColorModeContext.Consumer>
+                  <SidebarNavItem route={route} open={props.open} isActive={checkIsActive(route)} />
+                </Box>
+              )
+            );
+          })}
+
+          {/* Theme Toggle */}
+          {renderControlButton(
+            mode === "dark" ? <Sun size={16} /> : <Moon size={16} />,
+            onThemeToggle,
+            mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
+          )}
+
+          {/* Sidebar Toggle */}
+          {renderControlButton(
+            !props.open ? <ChevronRight size={18} /> : <ChevronLeft size={18} />,
+            props.handleDrawer,
+            props.open ? "Collapse Sidebar" : "Expand Sidebar",
+          )}
+
+          <Divider
+            sx={{
+              width: "100%",
+              backgroundColor: theme.palette.customBorder.primary.active,
+            }}
+          />
+
+          {/* Version Info */}
+          {renderControlButton(
+            <Typography
+              variant="body2"
+              sx={{
+                whiteSpace: "nowrap",
+                color: "inherit",
+                width: "100%",
+              }}
+            >
+              {props.open
+                ? `v${pJson.version} | © ${currentYear} WSO2 LLC`
+                : `v${pJson.version.split(".")[0]}`}
+            </Typography>,
+            undefined,
+            `Version ${pJson.version}`,
+          )}
+        </Stack>
+      )}
+    </Box>
   );
 };
 
