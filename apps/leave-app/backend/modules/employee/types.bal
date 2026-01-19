@@ -56,6 +56,8 @@ public type EmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
+    # Employee is active or not
+    boolean isActive = true;
 |};
 
 # GraphQL Employee filter record.
@@ -74,6 +76,8 @@ type GraphQLEmployeeFilter record {|
     string[]? employmentType = ();
     # Employee is a lead or not
     boolean? lead = ();
+    # Employee is active or not
+    boolean isActive = true;
 |};
 
 # GraphQL single employee response.
@@ -81,7 +85,7 @@ type SingleEmployeeResponse record {|
     # Response data wrapper
     record {|
         # Employee data
-        EmployeeResponse employee;
+        EmployeeResponse? employee;
     |} data;
 |};
 
@@ -118,14 +122,36 @@ public type Employee record {|
     string? finalDayOfEmployment;
     # Employee is a lead or not
     boolean? lead;
+    # Subordinate count of the employee
+    int subordinateCount;
 |};
 
-# Mandatory mails to be notified when submitting a leave.
-public type MandatoryMails record {|
+# Minimal Employee information.
+public type BasicEmployeeInfo record {|
+    # First name
+    string firstName;
+    # Last name
+    string lastName;
+    # Work email
+    string workEmail;
+    # Employee thumbnail
+    string employeeThumbnail;
+|};
+
+# Default mails to be notified when submitting a leave.
+public type DefaultMail record {|
     # Email address / group to be notified
     string email;
     # Thumbnail image of the email address / group
     string thumbnail = "";
+|};
+
+# Default mail response type.
+public type DefaultMailResponse record {|
+    # Mandatory mails to be notified
+    DefaultMail[] mandatoryMails;
+    # Optional mails to be notified
+    DefaultMail[] optionalMails;
 |};
 
 # Employee response type.

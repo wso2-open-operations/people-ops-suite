@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/sql;
 import ballerinax/mysql;
 
@@ -26,7 +27,6 @@ final mysql:Client leaveDbClient = check initializeLeaveClient();
 # + offset - Offset value
 # + return - List of Leaves or an error on failure
 public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? offset = ()) returns Leave[]|error {
-
     sql:ParameterizedQuery sqlQuery = getLeavesQuery(filter, getValidatedLimit('limit), getValidatedOffset(offset));
     stream<Leave, sql:Error?> resultStream = leaveDbClient->query(sqlQuery);
     return from Leave leave in resultStream
@@ -38,7 +38,6 @@ public isolated function getLeaves(LeaveFilter filter, int? 'limit = (), int? of
 # + id - Leave ID
 # + return - Requested leave or an error on failure
 public isolated function getLeave(int id) returns Leave|error? {
-
     sql:ParameterizedQuery mainQuery = getCommonLeaveQuery();
     sql:ParameterizedQuery finalQuery = sql:queryConcat(mainQuery, ` WHERE id = ${id}`);
     Leave|error leave = leaveDbClient->queryRow(finalQuery);
@@ -59,7 +58,6 @@ public isolated function getLeave(int id) returns Leave|error? {
 # + location - Employee location
 # + return - The inserted Leave record if successful; otherwise, an error
 public isolated function insertLeave(LeaveInput input, float numDaysForLeave, string location) returns Leave|error {
-
     sql:ExecutionResult|error result = leaveDbClient->execute(insertLeaveQuery(input, numDaysForLeave, location));
     if result is error {
         return error("Error occurred while inserting leave!", result);
@@ -80,10 +78,65 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
 # + id - Leave ID  
 # + return - Returns nil on success, error on failure
 public isolated function cancelLeave(int id) returns error? {
-
-    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET active = 0 WHERE id = ${id}`;
+    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET status = ${CANCELLED}, active = 0 WHERE id = ${id}`;
     sql:ExecutionResult|sql:Error result = leaveDbClient->execute(sqlQuery);
     if result is error {
         return error("Error occurred while cancelling leave!", result);
     }
+}
+
+# Update leave status for a sabbatical leave application.
+#
+# + leaveId - ID of the sabbatical leave application
+# + approvalStatus - Approval status to be set (APPROVED, REJECTED, CANCELLED...etc)
+# + return - Nil on success, error on failure
+public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStatus)
+returns sql:ExecutionResult|error {
+
+    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(approvalStatus, leaveId);
+    return check leaveDbClient->execute(sqlQuery);
+}
+
+# Get the end date of the last sabbatical leave for an employee.
+#
+# + employeeEmail - Email of the employee
+# + return - End date of the last sabbatical leave or an error on failure
+public isolated function getLastSabbaticalLeaveEndDate(string employeeEmail) returns string?|error {
+    string|error lastSabbaticalEndDate = leaveDbClient->queryRow(getLastSabbaticalLeaveEndDateQuery(employeeEmail));
+    if lastSabbaticalEndDate is sql:NoRowsError {
+        return ();
+    }
+    if lastSabbaticalEndDate is error {
+        return error("Error occurred while retrieving last sabbatical leave end date", lastSabbaticalEndDate);
+    }
+    // format timestamp to date string YYYY-MM-DD
+    string formattedDate = lastSabbaticalEndDate.toString().substring(0, 10);
+    return formattedDate;
+}
+
+# Get subordinate count who are on sabbatical leave under a specific lead.
+#
+# + leadEmail - Email of the lead
+# + return - subordinate count or an error on failure
+public isolated function getSubordinateCountOnSabbaticalLeave(string leadEmail) returns int|error {
+    return check leaveDbClient->queryRow(getSubordinateCountOnSabbaticalLeaveQuery(leadEmail));
+}
+
+# Get most recent email notification recipient list (general leave) for a leave applicant.
+#
+# + applicantEmail - Email of the leave applicant
+# + return - List of email recipients as a string, or an error on failure
+public isolated function getEmailNotificationRecipientList(string applicantEmail) returns string|error {
+    return check leaveDbClient->queryRow(getEmailNotificationRecipientListQuery(applicantEmail));
+};
+
+# Set calendar event ID for an approved sabbatical leave application.
+#
+# + leaveId - Leave ID  
+# + calendarEventId - Calendar event ID
+# + return - SQL execution result or an error on failure
+public isolated function setCalendarEventIdForSabbaticalLeave(int leaveId, string calendarEventId)
+    returns sql:ExecutionResult|error {
+        
+    return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveId, calendarEventId));
 }

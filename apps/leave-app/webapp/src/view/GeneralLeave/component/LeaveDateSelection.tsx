@@ -141,7 +141,7 @@ export default function LeaveDateSelection({
       direction="column"
       justifyContent="space-between"
       width={{ md: "40%" }}
-      gap={{ xs: "1rem" }}
+      gap={{xs:"1rem"}}
     >
       <Stack direction="row" justifyContent="space-between">
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>

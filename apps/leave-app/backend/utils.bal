@@ -21,11 +21,17 @@ import ballerina/http;
 import ballerina/lang.regexp;
 import ballerina/log;
 import ballerina/regex;
+import ballerina/sql;
 import ballerina/time;
 
 configurable string[] defaultRecipients = [];
 configurable string emailGroupToNotify = ?;
 configurable boolean isSabbaticalLeaveEnabled = ?;
+configurable string sabbaticalLeavePolicyUrl = ?;
+configurable string sabbaticalLeaveUserGuideUrl = ?;
+configurable int sabbaticalLeaveEligibilityDuration = 1095; // default 3 years
+configurable int sabbaticalLeaveMaxApplicationDuration = 42; // default 6 weeks
+configurable string[] sabbaticalFunctionalLeadOptOutMails = ?;
 
 # Checks if a passed string is an empty.
 #
@@ -94,7 +100,7 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
         leaveType: check input.leaveType.cloneWithType(),
         endDate: input.endDate,
         id: 0,
-        isActive: false,
+        status: CANCELLED,
         periodType: check input.periodType.cloneWithType(),
         startDate: input.startDate,
         email: input.email,
@@ -129,6 +135,7 @@ public isolated function getAllEmailRecipientsForUser(string email, string[] use
 
     readonly & Employee employee = check employee:getEmployee(email);
     recipientMap[<string>employee.leadEmail] = true;
+    recipientMap[emailGroupToNotify] = true;
     foreach string recipient in userAddedRecipients {
         recipientMap[recipient] = true;
     }
@@ -220,7 +227,6 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         email,
         startDate,
         endDate,
-        isActive,
         leaveType,
         periodType,
         createdDate,
@@ -230,7 +236,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         numberOfDays,
         location,
         emailId,
-        emailSubject
+        emailSubject,
+        approverEmail
     } = dbLeave;
     database:LeaveType entityLeaveType;
     database:LeavePeriodType entityLeavePeriodType;
@@ -266,7 +273,7 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         id,
         startDate: getTimestampFromDateString(startDate),
         endDate: getTimestampFromDateString(endDate),
-        isActive: isActive ?: false,
+        status: CANCELLED,
         leaveType: entityLeaveType,
         email,
         periodType: entityLeavePeriodType,
@@ -277,7 +284,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
         emailId,
         numberOfDays,
         location: location is string && location.length() > 0 ? location : empLocation,
-        emailSubject
+        emailSubject,
+        approverEmail
     };
 
     if fetchEffectiveDays {
@@ -289,7 +297,8 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
                     endDate: leaveDetails.endDate,
                     leaveType: leaveDetails.leaveType,
                     periodType: leaveDetails.periodType,
-                    isMorningLeave: leaveDetails.isMorningLeave
+                    isMorningLeave: leaveDetails.isMorningLeave,
+                    status: ()
                 },
                 token
             );
@@ -460,7 +469,6 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
         email,
         startDate,
         endDate,
-        isActive,
         leaveType,
         periodType,
         createdDate,
@@ -469,7 +477,9 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
         numberOfDays,
         location,
         emailId,
-        emailSubject
+        emailSubject,
+        status,
+        approverEmail
     } = leave;
     database:LeaveType entityLeaveType;
     database:LeavePeriodType entityLeavePeriodType;
@@ -510,7 +520,8 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
                     endDate,
                     leaveType: entityLeaveType,
                     periodType: entityLeavePeriodType,
-                    isMorningLeave
+                    isMorningLeave,
+                    status: ()
                 }, token);
 
         if effectiveDays is error {
@@ -521,23 +532,24 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
     }
     database:LeaveDay[] & readonly readonlyEffectiveLeaveDaysFromLeave = effectiveLeaveDaysFromLeave.cloneReadOnly();
 
-    return {
-        id,
-        startDate,
-        endDate,
-        isActive: isActive ?: false,
+    return <LeaveResponse>{
+        id: id,
+        startDate: startDate,
+        endDate: endDate,
+        status: status is Status ? <Status>status : (),
         leaveType: entityLeaveType,
         periodType: entityLeavePeriodType,
-        isMorningLeave,
-        email,
+        isMorningLeave: isMorningLeave,
+        email: email,
         createdDate: createdDate is string ? getTimestampFromDateString(createdDate) : "",
         emailRecipients: readonlyEmailRecipients,
         effectiveDays: readonlyEffectiveLeaveDaysFromLeave,
-        calendarEventId,
+        calendarEventId: calendarEventId,
         numberOfDays: numberOfDays ?: 0.0,
-        location,
-        emailId,
-        emailSubject
+        location: location,
+        emailId: emailId,
+        emailSubject: emailSubject,
+        approverEmail: approverEmail
     };
 }
 
@@ -561,9 +573,49 @@ public isolated function validateDateRange(string startDate, string endDate) ret
     }
 }
 
-# Get mandatory email group to notify.
+# Get list of optional mails to notify when submitting a general leave.
 #
-# + return - return value description
-public isolated function getEmailGroupsToNotify() returns string {
-    return emailGroupToNotify;
+# + email - Email of the leave applicant
+# + return - List of optional mails to notify
+isolated function getOptionalMailsToNotify(string email) returns employee:DefaultMail[]|error {
+    database:Leave[]|error lastLeave = database:getLeaves({
+                                                              emails: [email],
+                                                              statuses: [database:APPROVED],
+                                                              orderBy: database:DESC,
+                                                              leaveTypes: [
+                                                                  database:CASUAL_LEAVE,
+                                                                  database:ANNUAL_LEAVE,
+                                                                  database:MATERNITY_LEAVE,
+                                                                  database:PATERNITY_LEAVE
+                                                              ]
+                                                          }, 1);
+
+    if lastLeave is sql:NoRowsError {
+        return [];
+    }
+    if lastLeave is error {
+        return lastLeave;
+    }
+    string? mails = lastLeave[0].copyEmailList;
+    if mails is () || mails == "" {
+        return [];
+    }
+    employee:DefaultMail[] optionalMailsToNotify = [];
+    string[] mailsList = mails.length() > 0 ? regex:split(mails, ",") : [];
+
+    foreach string mail in mailsList {
+        string thumbnail = "";
+        employee:Employee|error empInfo = employee:getEmployee(mail);
+        if empInfo is error {
+            log:printWarn(string `Failed to fetch employee info for email: ${mail}`, empInfo);
+        }
+        if empInfo is employee:Employee {
+            thumbnail = empInfo.employeeThumbnail ?: "";
+        }
+        optionalMailsToNotify.push({
+            email: mail,
+            thumbnail: thumbnail
+        });
+    }
+    return optionalMailsToNotify;
 }

@@ -76,8 +76,8 @@ public type Leave record {|
     string startDate;
     # End date of the leave
     string endDate;
-    # Whether the leave is active
-    boolean isActive;
+    # Leave Status
+    Status status;
     # Type of the leave
     string leaveType;
     # Period type of the leave
@@ -125,8 +125,6 @@ public type LeaveDetails record {|
     *LeaveInput;
     # Leave ID
     int id;
-    # Is leave active
-    boolean isActive;
     # Created date
     string createdDate;
     # Effective days
@@ -180,6 +178,11 @@ public type Employee record {|
     *employee:Employee;
 |};
 
+# Minimal Employee information.
+public type MinimalEmployeeInfo record {|
+    *employee:BasicEmployeeInfo;
+|};
+
 # Leaves report content.
 public type ReportContent map<map<float>>;
 
@@ -203,18 +206,114 @@ public type UserInfo record {|
     string? lastName;
     # Work email
     string? workEmail;
+    # Lead email
+    string? leadEmail;
     # Employee thumbnail
     string? employeeThumbnail;
     # Job role
     string? jobRole;
     # Privileges
     int[] privileges;
+    # Employment start date
+    string? employmentStartDate;
     # Is lead or not
     boolean? isLead;
+    # Cached email notifications list
+    employee:DefaultMailResponse cachedEmails;
+    # Subordinate percentage on sabbatical leave
+    string? subordinatePercentageOnSabbaticalLeave = ();
+|};
+
+# Leave approval status payload.
+public type LeaveApprovalStatusPayload record {|
+    # Approval status (PENDING/APPROVED/REJECTED)
+    database:ApprovalStatus[] status;
+|};
+
+# Leave approval status response.
+public type LeaveApprovalStatusResponse record {|
+    # Employees as a percentage on sabbatical leave under the specific lead
+    string percentageOfEmployeesOnSabbaticalLeave;
+    # List of leave approval status of employees under the specific lead
+    database:LeaveApprovalStatus[] leaveApprovalStatusList;
+|};
+
+# Sabbatical leave Process Payload.
+public type SabbaticalProcessPayload record {|
+    # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)
+    SabbaticalAction action;
+    # Applicant email
+    string applicantEmail;
+    # Approver email
+    string approverEmail;
+    # Leave start date
+    string leaveStartDate;
+    # Leave end date
+    string leaveEndDate;
+    # Location
+    string? location = ();
+    # Comment
+    string? comment = ();
+    # Number of days
+    float? numberOfDays = ();
+    # Leave ID
+    int? leaveId = ();
 |};
 
 # Application configurations.
 public type AppConfig record {|
     # Is sabbatical leave enabled or not
     boolean isSabbaticalLeaveEnabled;
+    # Sabbatical leave policy URL
+    string sabbaticalLeavePolicyUrl;
+    # Sabbatical leave user guide URL
+    string sabbaticalLeaveUserGuideUrl;
+    # Sabbatical leave eligibility duration in days
+    int sabbaticalLeaveEligibilityDuration;
+    # Sabbatical leave maximum application duration in days
+    int sabbaticalLeaveMaxApplicationDuration;
 |};
+
+# Sabbatical Leave Response.
+public type SabbaticalLeaveResponse record {|
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Leave ID
+    string id;
+    # Location.
+    string? location;
+|};
+
+# Sabbatical Leave Eligibility Response.
+public type SabbaticalLeaveEligibilityResponse record {|
+    # Employment start date
+    string employmentStartDate;
+    # Last sabbatical leave end date
+    string lastSabbaticalLeaveEndDate;
+    # Is eligible for sabbatical leave
+    boolean isEligible;
+|};
+
+# APPROVE/REJECT Action enum.
+public enum Action {
+    APPROVE_ACTION = "approve",
+    REJECT_ACTION = "reject"
+}
+
+# Sabbatical leave actions.
+public enum SabbaticalAction {
+    APPROVE,
+    REJECT,
+    APPLY,
+    CANCEL
+}
+
+# Status of the leave.
+public enum Status {
+    PENDING,
+    APPROVED,
+    REJECTED,
+    CANCELLED
+}
