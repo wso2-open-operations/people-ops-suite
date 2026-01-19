@@ -51,7 +51,7 @@ const AppHandler: FC = () => {
         children: isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles),
       },
     ],
-    [isValidMicroApp, roles, routes],
+    [isValidMicroApp, roles],
   );
 
   const router = useMemo(
