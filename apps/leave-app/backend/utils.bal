@@ -596,6 +596,9 @@ isolated function getOptionalMailsToNotify(string email) returns employee:Defaul
     if lastLeave is error {
         return lastLeave;
     }
+    if lastLeave.length() == 0 {
+        return [];
+    }
     string? mails = lastLeave[0].copyEmailList;
     if mails is () || mails == "" {
         return [];
