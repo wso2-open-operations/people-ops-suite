@@ -22,6 +22,7 @@ import { Provider } from "react-redux";
 import { createContext, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
+import { localStorageTheme } from "@config/constant";
 import AppAuthProvider from "@context/AuthContext";
 import { MicroAppAuthProvider } from "@context/AuthContext";
 import { useMicroApp } from "@hooks/useMicroApp";
@@ -38,7 +39,7 @@ export const ColorModeContext = createContext({
 
 const processLocalThemeMode = (): ThemeMode => {
   try {
-    const savedTheme = localStorage.getItem("menu-app-theme");
+    const savedTheme = localStorage.getItem(localStorageTheme);
     if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
       return savedTheme;
     }
@@ -46,7 +47,7 @@ const processLocalThemeMode = (): ThemeMode => {
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
 
-    localStorage.setItem("menu-app-theme", systemTheme);
+    localStorage.setItem(localStorageTheme, systemTheme);
     return systemTheme;
   } catch (err) {
     console.error("Theme detection failed, defaulting to light mode.", err);
@@ -63,7 +64,7 @@ function WebApp() {
     () => ({
       toggleColorMode: () => {
         const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
-        localStorage.setItem("menu-app-theme", newMode);
+        localStorage.setItem(localStorageTheme, newMode);
         setMode(newMode);
         document.documentElement.setAttribute("data-theme", newMode);
       },
