@@ -56,7 +56,7 @@ const AppHandler: FC = () => {
 
   const router = useMemo(
     () => (isValidMicroApp ? createHashRouter(appRoutes) : createBrowserRouter(appRoutes)),
-    [isValidMicroApp],
+    [isValidMicroApp, appRoutes],
   );
 
   const renderApp = () => {
