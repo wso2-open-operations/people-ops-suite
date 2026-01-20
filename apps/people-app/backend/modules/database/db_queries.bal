@@ -326,12 +326,14 @@ isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
         SELECT
             t.id, t.name
         FROM
-            team t
-        LEFT JOIN 
-            business_unit_team but ON but.team_id = t.id`;
+            team t`;
 
     if buId is int {
-        query = sql:queryConcat(query, ` WHERE but.business_unit_id = ${buId}`);
+        query = sql:queryConcat(query, `
+            LEFT JOIN 
+                business_unit_team but ON but.team_id = t.id
+            WHERE 
+                but.business_unit_id = ${buId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -345,10 +347,13 @@ isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQu
         SELECT
             st.id, st.name
         FROM
-            sub_team st
-        LEFT JOIN business_unit_team_sub_team butst ON butst.sub_team_id = st.id`;
+            sub_team st`;
     if teamId is int {
-        query = sql:queryConcat(query, ` WHERE butst.business_unit_team_id = ${teamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team butst ON butst.sub_team_id = st.id
+            WHERE 
+                butst.business_unit_team_id = ${teamId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -362,10 +367,13 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
         SELECT
             u.id, u.name
         FROM
-            unit u
-        LEFT JOIN business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id`;
+            unit u`;
     if subTeamId is int {
-        query = sql:queryConcat(query, ` WHERE butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
+            WHERE 
+                butstu.business_unit_team_sub_team_id = ${subTeamId}`);
     }
     return sql:queryConcat(query, `;`);
 }
