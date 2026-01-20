@@ -1,3 +1,19 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { Box, useTheme } from "@mui/material";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -6,9 +22,9 @@ import {
   fetchFilteredEmployees,
   Employee,
 } from "@slices/employeeSlice/employee";
-import { SearchForm } from "../searchForm/SearchForm"
-import { State } from "@root/src/types/types";
-import { PAGE_SIZE_OPTIONS } from "@root/src/config/constant";
+import { SearchForm } from "../searchForm/SearchForm";
+import { State } from "@src/types/types";
+import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { useNavigate } from "react-router-dom";
 
 export default function EmployeesTable() {
@@ -78,32 +94,15 @@ export default function EmployeesTable() {
     }
   ];
 
-
   return (
-    <Box
-      sx={{
-        backgroundColor: theme.palette.background.default,
-        borderRadius: 2,
-        mb: 1,
-        boxShadow: 0,
-        mt: 1,
-        pb: 5,
-        border: 1,
-        borderColor: "divider",
-      }}
-    >
       <Box
         sx={{
           display: "flex",
-          flexDirection: "column",
-          p: 5,
+          flexDirection: "column"
         }}
       >
         <Box>
-          <SearchForm
-            page={pagination.page}
-            perPage={pagination.perPage}
-          />
+          <SearchForm page={pagination.page} perPage={pagination.perPage} />
         </Box>
         <Box>
           <DataGrid
@@ -128,6 +127,5 @@ export default function EmployeesTable() {
           />
         </Box>
       </Box>
-    </Box>
   );
 }
