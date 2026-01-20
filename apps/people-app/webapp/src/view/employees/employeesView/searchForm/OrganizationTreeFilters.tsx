@@ -1,3 +1,19 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { Box, TextField, Typography, Autocomplete } from "@mui/material";
 import {
   BusinessUnit,
@@ -6,9 +22,15 @@ import {
   Unit,
 } from "@root/src/slices/organizationSlice/organization";
 
+export type OrganizationSelection = {
+  businessUnit?: string;
+  team?: string;
+  subTeam?: string;
+  unit?: string;
+};
+
 export type OrganizationTreeFiltersProps = {
-  values: any;
-  setFieldValue: (field: string, value: any) => void;
+  value: OrganizationSelection;
   fieldSx: any;
 
   businessUnits: BusinessUnit[];
@@ -16,34 +38,34 @@ export type OrganizationTreeFiltersProps = {
   subTeams: SubTeam[];
   units: Unit[];
 
-  onSelectBusinessUnit: (buId?: number) => void;
-  onSelectTeam: (teamId?: number) => void;
-  onSelectSubTeam: (subTeamId?: number) => void;
+  onChangeBusinessUnit: (selected: BusinessUnit | null) => void;
+  onChangeTeam: (selected: Team | null) => void;
+  onChangeSubTeam: (selected: SubTeam | null) => void;
+  onChangeUnit: (selected: Unit | null) => void;
 };
 
 export function OrganizationTreeFilters({
-  values,
-  setFieldValue,
+  value,
   fieldSx,
   businessUnits,
   teams,
   subTeams,
   units,
-  onSelectBusinessUnit,
-  onSelectTeam,
-  onSelectSubTeam,
+  onChangeBusinessUnit,
+  onChangeTeam,
+  onChangeSubTeam,
+  onChangeUnit,
 }: OrganizationTreeFiltersProps) {
-
   const treeItemSx = {
     position: "relative",
     pl: 3,
-    // py: 1,
+    py: 0.5,
     // horizontal connector
     "&::before": {
       content: '""',
       position: "absolute",
       top: "24px",
-      left: "8px",
+      left: "12px",
       width: "12px",
       height: "1px",
       bgcolor: "text.disabled",
@@ -53,7 +75,7 @@ export function OrganizationTreeFilters({
       content: '""',
       position: "absolute",
       top: 0,
-      left: "8px",
+      left: "12px",
       width: "1px",
       height: "24px",
       bgcolor: "text.disabled",
@@ -61,22 +83,17 @@ export function OrganizationTreeFilters({
   };
 
   return (
-    <Box sx={{
+    <Box
+      sx={{
         border: 1,
         borderColor: "divider",
         borderRadius: 1,
         p: 2,
-        // display: "inline-block",
-        width: "fit-content"
-    }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          mb: 1,
-        }}
-      >
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           Organization
         </Typography>
@@ -87,96 +104,49 @@ export function OrganizationTreeFilters({
 
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
-          {/* Business Unit */}
           <Autocomplete<BusinessUnit, false, false, false>
             options={businessUnits}
             getOptionLabel={(o) => o.name}
-            value={
-              businessUnits.find((b) => b.name === values.businessUnit) ?? null
-            }
-            onChange={(_, selected) => {
-              setFieldValue("businessUnit", selected?.name);
-              // Reset dependent fields
-              setFieldValue("team", undefined);
-              setFieldValue("subTeam", undefined);
-              setFieldValue("unit", undefined);
-              onSelectBusinessUnit(selected?.id);
-            }}
+            value={businessUnits.find((b) => b.name === value.businessUnit) ?? null}
+            onChange={(_, selected) => onChangeBusinessUnit(selected)}
             renderInput={(params) => (
-              <TextField
-                {...params}
-                size="small"
-                label="Business Unit"
-                sx={{...fieldSx, width: 400}}
-              />
+              <TextField {...params} size="small" label="Business Unit" sx={fieldSx} fullWidth />
             )}
           />
-          {/* Team */}
-          <Box sx={{ pl: 2 }}>
+
+          <Box sx={{ pl: 1.5 }}>
             <Box sx={treeItemSx}>
               <Autocomplete<Team, false, false, false>
                 options={teams}
                 getOptionLabel={(o) => o.name}
-                value={teams.find((t) => t.name === values.team) ?? null}
-                onChange={(_, selected) => {
-                  setFieldValue("team", selected?.name);
-                  // Reset dependent fields
-                  setFieldValue("subTeam", undefined);
-                  setFieldValue("unit", undefined);
-                  onSelectTeam(selected?.id);
-                }}
+                value={teams.find((t) => t.name === value.team) ?? null}
+                onChange={(_, selected) => onChangeTeam(selected)}
                 renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    label="Team"
-                    sx={{...fieldSx, width: 400, mt: 1}}
-                  />
+                  <TextField {...params} size="small" label="Team" sx={fieldSx} fullWidth />
                 )}
               />
-              {/* Sub Team */}
-              <Box sx={{ pl: 2 }}>
+
+              <Box sx={{ pl: 1.5 }}>
                 <Box sx={treeItemSx}>
                   <Autocomplete<SubTeam, false, false, false>
                     options={subTeams}
                     getOptionLabel={(o) => o.name}
-                    value={
-                      subTeams.find((st) => st.name === values.subTeam) ?? null
-                    }
-                    onChange={(_, selected) => {
-                      setFieldValue("subTeam", selected?.name);
-                      // Reset dependent field
-                      setFieldValue("unit", undefined);
-                      onSelectSubTeam(selected?.id);
-                    }}
+                    value={subTeams.find((st) => st.name === value.subTeam) ?? null}
+                    onChange={(_, selected) => onChangeSubTeam(selected)}
                     renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        label="Sub Team"
-                        sx={{...fieldSx, width: 400, mt: 1}}
-                      />
+                      <TextField {...params} size="small" label="Sub Team" sx={fieldSx} fullWidth />
                     )}
                   />
-                  {/* Unit */}
-                  <Box sx={{ pl: 2 }}>
+
+                  <Box sx={{ pl: 1.5 }}>
                     <Box sx={treeItemSx}>
                       <Autocomplete<Unit, false, false, false>
                         options={units}
                         getOptionLabel={(o) => o.name}
-                        value={
-                          units.find((u) => u.name === values.unit) ?? null
-                        }
-                        onChange={(_, selected) => {
-                          setFieldValue("unit", selected?.name);
-                        }}
+                        value={units.find((u) => u.name === value.unit) ?? null}
+                        onChange={(_, selected) => onChangeUnit(selected)}
                         renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            size="small"
-                            label="Unit"
-                            sx={{...fieldSx, width: 400, mt: 1}}
-                          />
+                          <TextField {...params} size="small" label="Unit" sx={fieldSx} fullWidth />
                         )}
                       />
                     </Box>
