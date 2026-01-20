@@ -224,20 +224,6 @@ public type UserInfo record {|
     string? subordinatePercentageOnSabbaticalLeave = ();
 |};
 
-# Leave approval status payload.
-public type LeaveApprovalStatusPayload record {|
-    # Approval status (PENDING/APPROVED/REJECTED)
-    database:ApprovalStatus[] status;
-|};
-
-# Leave approval status response.
-public type LeaveApprovalStatusResponse record {|
-    # Employees as a percentage on sabbatical leave under the specific lead
-    string percentageOfEmployeesOnSabbaticalLeave;
-    # List of leave approval status of employees under the specific lead
-    database:LeaveApprovalStatus[] leaveApprovalStatusList;
-|};
-
 # Sabbatical leave Process Payload.
 public type SabbaticalProcessPayload record {|
     # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)

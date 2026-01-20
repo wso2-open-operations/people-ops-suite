@@ -270,27 +270,3 @@ public type LeaveResponse record {|
     # approver email
     string? approverEmail = ();
 |};
-
-# Leave approval status response.
-public type LeaveApprovalStatus record {|
-    # Leave approval status id
-    string id;
-    # Applicant email
-    string email;
-    # Start date
-    string startDate;
-    # End date
-    string endDate;
-    # Approval status
-    string approvalStatus;
-    # Submission note
-    string submitNote;
-|};
-
-# Status of the leave.
-public enum Status {
-    PENDING = "PENDING",
-    APPROVED = "APPROVED",
-    REJECTED = "REJECTED",
-    CANCELLED = "CANCELLED"
-}
