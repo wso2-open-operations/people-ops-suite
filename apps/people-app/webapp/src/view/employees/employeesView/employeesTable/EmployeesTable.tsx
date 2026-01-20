@@ -28,7 +28,6 @@ import { PAGE_SIZE_OPTIONS } from "@config/constant";
 import { useNavigate } from "react-router-dom";
 
 export default function EmployeesTable() {
-  const theme = useTheme();
   const dispatch = useAppDispatch();
   const employeeState = useAppSelector((state) => state.employee);
   const navigate = useNavigate();
