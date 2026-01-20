@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, LinearProgress, Typography, alpha } from "@mui/material";
+import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 import Lottie from "lottie-react";
 
-import animatedLogo from "@assets/animations/animation-logo-dark.json";
+import animatedLogoLight from "@assets/animations/animation-light.json";
+import animatedLogoDark from "@assets/animations/animation-logo-dark.json";
 import { APP_NAME } from "@root/src/config/config";
 
 interface PreLoaderProps {
@@ -26,6 +27,9 @@ interface PreLoaderProps {
 
 const PreLoader = (props: PreLoaderProps) => {
   const loadingMsg = [APP_NAME, props.message];
+  const theme = useTheme();
+
+  const logo = theme.palette.mode === "light" ? animatedLogoLight : animatedLogoDark;
 
   const style = {
     height: "150px",
@@ -40,10 +44,10 @@ const PreLoader = (props: PreLoaderProps) => {
         alignItems: "center",
         height: "100vh",
         width: "100%",
-        backgroundColor: "#1a1a1a",
+        backgroundColor: theme.palette.surface.primary.active,
       }}
     >
-      <Lottie animationData={animatedLogo} style={style} />
+      <Lottie animationData={logo} style={style} />
 
       {props.message && props.isLoading && (
         <LinearProgress
@@ -51,10 +55,6 @@ const PreLoader = (props: PreLoaderProps) => {
             position: "relative",
             top: -16,
             width: "150px",
-            backgroundColor: alpha("#4C2300", 1),
-            "& .MuiLinearProgress-bar": {
-              backgroundColor: "#EB6A00",
-            },
           }}
         />
       )}
@@ -73,28 +73,32 @@ const PreLoader = (props: PreLoaderProps) => {
             sx={{
               display: "flex",
               flexDirection: "column",
-              animation: "vertical-marquee 5s cubic-bezier(0.76, 0, 0.24, 1) infinite",
+              animation: "vertical-marquee 2s cubic-bezier(0.76, 0, 0.24, 1) infinite",
               "@keyframes vertical-marquee": {
-                "0%, 35%": { transform: "translateY(0%)" },
-                "50%, 85%": { transform: "translateY(-33.33%)" },
+                "0%, 30%": { transform: "translateY(0%)" },
+                "50%, 80%": { transform: "translateY(-33.33%)" },
                 "100%": { transform: "translateY(-66.66%)" },
               },
             }}
           >
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
-                color: alpha("#FFFFFF", 0.9),
+                color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
-                fontWeight: 600,
+                fontWeight: 500,
               }}
             >
               {loadingMsg[0]}
             </Typography>
             <Typography
               variant="h6"
-              sx={{ color: alpha("#FFFFFF", 0.9), height: "24px", lineHeight: "24px" }}
+              sx={{
+                color: theme.palette.customText.primary.p2.active,
+                height: "24px",
+                lineHeight: "24px",
+              }}
             >
               {loadingMsg[1]}
             </Typography>
@@ -102,7 +106,7 @@ const PreLoader = (props: PreLoaderProps) => {
             <Typography
               variant="h6"
               sx={{
-                color: alpha("#FFFFFF", 0.9),
+                color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
                 fontWeight: 600,
