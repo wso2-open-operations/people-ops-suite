@@ -22,8 +22,8 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
+  Admin = "ADMIN",
+  Employee = "EMPLOYEE",
 }
 
 export enum State {
@@ -96,10 +96,10 @@ export const loadPrivileges = createAsyncThunk(
     const roles: Role[] = [];
 
     if (userPrivileges.includes(PRIVILEGE_ADMIN)) {
-      roles.push(Role.ADMIN);
+      roles.push(Role.Admin);
     }
     if (userPrivileges.includes(PRIVILEGE_EMPLOYEE)) {
-      roles.push(Role.EMPLOYEE);
+      roles.push(Role.Employee);
     }
 
     if (roles.length === 0) {

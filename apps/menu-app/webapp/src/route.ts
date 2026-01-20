@@ -29,7 +29,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Home",
     icon: React.createElement(HomeIcon),
     element: React.createElement(View.home),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.Admin, Role.Employee],
   },
 ];
 
