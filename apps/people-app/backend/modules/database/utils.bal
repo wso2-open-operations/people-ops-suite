@@ -131,6 +131,10 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.personal_phone)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.city)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.country)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
         )
     `;
 }

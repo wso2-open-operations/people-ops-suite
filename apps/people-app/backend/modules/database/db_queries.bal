@@ -163,8 +163,6 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     filters.push(`(${params.gender} IS NULL OR pi.gender = ${params.gender})`);
     filters.push(`(${params.nationality} IS NULL OR pi.nationality = ${params.nationality})`);
     filters.push(`(${params.residentPhone} IS NULL OR pi.resident_number LIKE CONCAT('%', ${params.residentPhone}, '%'))`);
-    filters.push(`(${params.city} IS NULL OR pi.city = ${params.city})`);
-    filters.push(`(${params.country} IS NULL OR pi.country = ${params.country})`);
     filters.push(`(${params.businessUnit} IS NULL OR bu.name = ${params.businessUnit})`);
     filters.push(`(${params.team} IS NULL OR t.name = ${params.team})`);
     filters.push(`(${params.subTeam} IS NULL OR st.name = ${params.subTeam})`);
