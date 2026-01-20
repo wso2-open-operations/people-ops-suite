@@ -29,8 +29,8 @@ import { useAppDispatch } from "@slices/store";
 import { getToken } from "@utils/microapp-bridge";
 
 type AuthContextType = {
-  appSignIn: () => void;
-  appSignOut: () => void;
+  appSignIn: () => Promise<void>;
+  appSignOut: () => Promise<void>;
 };
 
 enum AppState {

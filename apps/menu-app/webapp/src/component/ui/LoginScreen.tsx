@@ -85,10 +85,10 @@ const LoginScreen = () => {
                   variant="contained"
                   color="primary"
                   sx={{ fontWeight: "bold" }}
-                  onClick={() => {
-                    appSignOut();
+                  onClick={async () => {
+                    await appSignOut();
 
-                    appSignIn();
+                    await appSignIn();
                   }}
                 >
                   LOG IN
