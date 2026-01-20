@@ -61,8 +61,10 @@ public type LeaveFilter record {|
     string? periodType?;
     # Email addresses of employees
     string[]? emails?;
-    # Is leave active
-    boolean? isActive?;
+    # Status of leaves
+    Status[]? statuses?;
+    # Approver email
+    string? approverEmail?;
     # Order by Ascending or Descending
     OrderBy? orderBy?;
 |};
@@ -105,9 +107,6 @@ public type Leave record {|
     # Email subject
     @sql:Column {name: "email_subject"}
     string? emailSubject;
-    # Leave is active
-    @sql:Column {name: "active"}
-    boolean? isActive;
     # Leave start date
     @sql:Column {name: "start_date"}
     string startDate;
@@ -135,6 +134,12 @@ public type Leave record {|
     # Employee location
     @sql:Column {name: "location"}
     string? location;
+    # Status 
+    @sql:Column {name: "status"}
+    Status? status;
+    # Approver email
+    @sql:Column {name: "approver_email"}
+    string? approverEmail;
 |};
 
 # Day record.
@@ -164,7 +169,7 @@ public type LeaveCalculationPayload record {|
     # Whether the leave is a morning leave
     boolean? isMorningLeave = ();
     # Period type of the leave
-    LeavePeriodType periodType;
+    LeavePeriodType periodType = MULTIPLE_DAYS_LEAVE;
 |};
 
 # Leave day record.
@@ -205,6 +210,10 @@ public type LeaveInput record {|
     string? emailId = ();
     # Subject of email notification
     string? emailSubject = ();
+    # Leave status
+    Status? status;
+    # Approver email
+    string? approverEmail = ();
 |};
 
 # Payload for leave creation.
@@ -232,8 +241,8 @@ public type LeaveResponse record {|
     string startDate;
     # End date
     string endDate;
-    # Is leave active
-    boolean isActive;
+    # leave status
+    Status? status;
     # Leave type
     string leaveType;
     # Leave period type
@@ -258,4 +267,30 @@ public type LeaveResponse record {|
     string? emailId = ();
     # Subject of email notification
     string? emailSubject = ();
+    # approver email
+    string? approverEmail = ();
 |};
+
+# Leave approval status response.
+public type LeaveApprovalStatus record {|
+    # Leave approval status id
+    string id;
+    # Applicant email
+    string email;
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Approval status
+    string approvalStatus;
+    # Submission note
+    string submitNote;
+|};
+
+# Status of the leave.
+public enum Status {
+    PENDING = "PENDING",
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+    CANCELLED = "CANCELLED"
+}

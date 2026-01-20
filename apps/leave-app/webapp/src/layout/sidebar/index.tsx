@@ -79,7 +79,7 @@ const Sidebar = (props: SidebarProps) => {
           background: "none",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: props.open ? "flex-start" : "center",
           gap: theme.spacing(1),
           color: theme.palette.customNavigation.text,
           transition: "all 0.2s ease-in-out",
@@ -194,7 +194,7 @@ const Sidebar = (props: SidebarProps) => {
               gap={1}
               sx={{
                 paddingBottom: "20px",
-                alignItems: "center",
+                alignItems: "flex-start",
               }}
             >
               {/* Theme Toggle */}

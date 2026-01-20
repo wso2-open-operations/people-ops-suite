@@ -14,10 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
+
+import { useState } from "react";
 
 export interface LeaveCardProps {
-  id: string;
+  id: number;
   type: string;
   startDate: string;
   endDate: string;
@@ -25,17 +43,43 @@ export interface LeaveCardProps {
   status: "approved" | "pending" | "rejected";
   month: string;
   day: string;
+  onDelete?: (id: number) => void;
 }
 
 export default function LeaveCard({
+  id,
   duration,
   type,
   startDate,
   endDate,
   month,
   day,
+  onDelete,
 }: LeaveCardProps) {
   const theme = useTheme();
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete?.(id);
+    setOpenDialog(false);
+  };
+
+  const isCancelDisabled = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const leaveStart = new Date(startDate);
+    leaveStart.setHours(0, 0, 0, 0);
+    const diffInDays = (leaveStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+    return diffInDays < 1;
+  };
 
   return (
     <Card
@@ -51,100 +95,156 @@ export default function LeaveCard({
         },
       }}
     >
-      <CardContent sx={{ p: "1.25rem", width: "fit-content" }}>
-        <Stack spacing="1rem">
-          <Typography
-            variant="body2"
-            sx={{
-              color: theme.palette.text.primary,
-              fontWeight: 600,
-            }}
-          >
-            {type}
-          </Typography>
-
-          <Stack direction="row" gap="1rem" alignItems="center">
-            {/* Mini Calendar */}
-            <Box
-              sx={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "8px",
-                border: `2px solid ${theme.palette.primary.main}`,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                flexShrink: 0,
-              }}
-            >
-              {/* Month header */}
-              <Box
-                sx={{
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  textAlign: "center",
-                  py: "2px",
-                  flex: "0 0 auto",
-                }}
-              >
-                <Typography
-                  variant="overline"
-                  sx={{
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  {month}
-                </Typography>
-              </Box>
-
-              {/* Date */}
-              <Box
-                sx={{
-                  backgroundColor: theme.palette.background.paper,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flex: 1,
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    color: theme.palette.text.primary,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                  }}
-                >
-                  {day}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Leave Details */}
-            <Stack spacing="4px" flex={1}>
+      <CardContent sx={{ p: "1.25rem" }}>
+        <Stack direction="row" spacing="1rem" alignItems="center">
+          <Stack spacing="1rem" flex={1}>
+            <Stack direction="row" justifyContent="space-between">
               <Typography
                 variant="body2"
                 sx={{
                   color: theme.palette.text.primary,
-                  fontWeight: 500,
+                  fontWeight: 600,
                 }}
               >
-                {startDate} - {endDate}
+                {type.toLocaleUpperCase()} LEAVE
               </Typography>
-              <Typography
-                variant="caption"
+              <Tooltip title="Cancel" arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={handleOpenDialog}
+                    disabled={isCancelDisabled()}
+                    sx={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "4px",
+                      color: isCancelDisabled()
+                        ? theme.palette.text.disabled
+                        : theme.palette.common.white,
+                      backgroundColor: isCancelDisabled()
+                        ? theme.palette.action.disabledBackground
+                        : theme.palette.error.main,
+                      "&:hover": {
+                        backgroundColor: theme.palette.error.dark,
+                      },
+                      "&.Mui-disabled": {
+                        backgroundColor: theme.palette.action.disabledBackground,
+                        color: theme.palette.text.disabled,
+                      },
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
+
+            <Stack direction="row" gap="1rem" alignItems="center">
+              {/* Mini Calendar */}
+              <Box
                 sx={{
-                  color: theme.palette.text.secondary,
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "8px",
+                  border: `2px solid ${theme.palette.primary.main}`,
+                  display: "flex",
+                  flexDirection: "column",
+                  overflow: "hidden",
+                  flexShrink: 0,
                 }}
               >
-                {duration}
-              </Typography>
+                {/* Month header */}
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
+                    textAlign: "center",
+                    py: "2px",
+                    flex: "0 0 auto",
+                  }}
+                >
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {month}
+                  </Typography>
+                </Box>
+
+                {/* Date */}
+                <Box
+                  sx={{
+                    backgroundColor: theme.palette.background.paper,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: 1,
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      color: theme.palette.text.primary,
+                      fontWeight: 700,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {day}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Leave Details */}
+              <Stack spacing="4px" flex={1}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: theme.palette.text.primary,
+                    fontWeight: 500,
+                  }}
+                >
+                  {startDate} - {endDate}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                  }}
+                >
+                  {duration}
+                </Typography>
+              </Stack>
             </Stack>
           </Stack>
         </Stack>
       </CardContent>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Cancel Leave Request</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to cancel this leave request? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            No, Keep It
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
+            Yes, Cancel Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

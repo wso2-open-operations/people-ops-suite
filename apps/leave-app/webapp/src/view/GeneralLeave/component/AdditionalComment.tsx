@@ -13,13 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
+import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
-import { getDefaultMails } from "@root/src/services/leaveService";
-import { DefaultMail } from "@root/src/types/types";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { CachedMail } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
   comment: string;
@@ -44,22 +46,20 @@ export default function AdditionalComment({
     onPublicCommentChange(event.target.checked);
   };
 
-  const [defaultMails, setDefaultMails] = useState<DefaultMail[]>([]);
+  const [defaultMails, setDefaultMails] = useState<CachedMail>({
+    mandatoryMails: [],
+    optionalMails: [],
+  });
+
+  const userInfo = useSelector(selectUser);
 
   useEffect(() => {
-    const fetchDefaultMails = async () => {
-      try {
-        const mails = await getDefaultMails();
-        setDefaultMails(mails);
-      } catch (error) {
-        console.error("Error fetching default mails:", error);
-      }
-    };
+    if (userInfo?.cachedEmails) {
+      setDefaultMails(userInfo.cachedEmails);
+    }
+  }, [userInfo]);
 
-    fetchDefaultMails();
-  }, []);
-
-  const EmailGroupToNotify = defaultMails[1]?.email || "";
+  const EmailGroupToNotify = defaultMails.mandatoryMails[1]?.email || "";
   return (
     <Stack gap="1rem">
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>

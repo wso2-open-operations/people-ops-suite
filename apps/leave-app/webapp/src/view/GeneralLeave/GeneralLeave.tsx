@@ -15,18 +15,18 @@
 // under the License.
 
 import { Stack } from "@mui/material";
-import { useState } from "react";
-import { useSnackbar } from "notistack";
 import { Dayjs } from "dayjs";
+import { useSnackbar } from "notistack";
+import { useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
-import { submitLeaveRequest, formatDateForApi } from "@root/src/services/leaveService";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
@@ -37,6 +37,7 @@ export default function GeneralLeave() {
   const [selectedLeaveType, setSelectedLeaveType] = useState<string>("casual");
   const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
   const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
+  const [mandatoryEmails, setMandatoryEmails] = useState<string[]>([]);
   const [comment, setComment] = useState("");
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,7 +50,9 @@ export default function GeneralLeave() {
     }
 
     if (workingDays <= 0) {
-      enqueueSnackbar("Working days must be at least 1 to submit a leave request", { variant: "error" });
+      enqueueSnackbar("Working days must be at least 1 to submit a leave request", {
+        variant: "error",
+      });
       return;
     }
 
@@ -77,14 +80,19 @@ export default function GeneralLeave() {
         isMorningLeave = selectedDayPortion === "first";
       }
 
+      // Filter out mandatory emails from the recipients list for the API call
+      const filteredEmailRecipients = emailRecipients.filter(
+        (email) => !mandatoryEmails.includes(email),
+      );
+
       const payload = {
         periodType,
         startDate: formatDateForApi(startDate),
         endDate: formatDateForApi(endDate),
         isMorningLeave,
         comment,
-        leaveType: selectedLeaveType,
-        emailRecipients,
+        leaveType: selectedLeaveType as any,
+        emailRecipients: filteredEmailRecipients,
         isPublicComment,
       };
 
@@ -97,12 +105,12 @@ export default function GeneralLeave() {
       setEndDate(null);
       setSelectedLeaveType("casual");
       setSelectedDayPortion(null);
-      setEmailRecipients([]);
       setComment("");
       setIsPublicComment(false);
     } catch (error: any) {
       console.error("Error submitting leave request:", error);
-      const errorMessage = error?.response?.data?.message || "Failed to submit leave request. Please try again.";
+      const errorMessage =
+        error?.response?.data?.message || "Failed to submit leave request. Please try again.";
       enqueueSnackbar(errorMessage, { variant: "error" });
     } finally {
       setIsSubmitting(false);
@@ -111,15 +119,15 @@ export default function GeneralLeave() {
 
   return (
     <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="General" secondWord="Leave Submission" />
       <FormContainer>
+        <Title firstWord="General" secondWord="Leave Submission" />
         <Stack
           direction={{ xs: "column", md: "row" }}
           width="100%"
           justifyContent={{ md: "space-between" }}
           gap={{ xs: "1.5rem" }}
         >
-          <LeaveDateSelection 
+          <LeaveDateSelection
             onDaysChange={setDaysSelected}
             onDatesChange={(start, end) => {
               setStartDate(start);
@@ -127,7 +135,7 @@ export default function GeneralLeave() {
             }}
             onWorkingDaysChange={setWorkingDays}
           />
-          <LeaveSelection 
+          <LeaveSelection
             daysSelected={daysSelected}
             selectedLeaveType={selectedLeaveType}
             onLeaveTypeChange={setSelectedLeaveType}
@@ -135,11 +143,12 @@ export default function GeneralLeave() {
             onDayPortionChange={setSelectedDayPortion}
           />
         </Stack>
-        <NotifyPeople 
+        <NotifyPeople
           selectedEmails={emailRecipients}
           onEmailsChange={setEmailRecipients}
+          onMandatoryEmailsChange={setMandatoryEmails}
         />
-        <AdditionalComment 
+        <AdditionalComment
           comment={comment}
           onCommentChange={setComment}
           isPublicComment={isPublicComment}

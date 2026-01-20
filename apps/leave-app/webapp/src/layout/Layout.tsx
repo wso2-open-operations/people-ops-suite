@@ -34,7 +34,7 @@ export default function Layout() {
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
 
@@ -69,7 +69,7 @@ export default function Layout() {
           flexDirection: "column",
           minHeight: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.surface.primary.active,
+          backgroundColor: theme.palette.background.default,
         }}
       >
         <Box
@@ -79,7 +79,7 @@ export default function Layout() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: theme.palette.surface.primary.active,
+            backgroundColor: theme.palette.background.default,
             zIndex: -1,
           }}
         />

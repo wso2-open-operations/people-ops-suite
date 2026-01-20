@@ -28,11 +28,20 @@ public enum LeaveType {
     ANNUAL_LEAVE = "annual",
     LIEU_LEAVE = "lieu",
     MATERNITY_LEAVE = "maternity",
-    PATERNITY_LEAVE = "paternity"
+    PATERNITY_LEAVE = "paternity",
+    SABBATICAL_LEAVE = "sabbatical"
 }
 
 # Order by.
 public enum OrderBy {
     ASC,
     DESC
+}
+
+# Approval status.
+public enum ApprovalStatus {
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED",
+    PENDING = "PENDING",
+    CANCELLED = "CANCELLED"
 }

@@ -19,9 +19,10 @@ import { Typography, useTheme } from "@mui/material";
 interface TitleProps {
   firstWord: string;
   secondWord: string;
+  borderEnabled?: boolean;
 }
 
-export default function Title({ firstWord, secondWord }: TitleProps) {
+export default function Title({ firstWord, secondWord, borderEnabled = true }: TitleProps) {
   const theme = useTheme();
 
   return (
@@ -31,11 +32,11 @@ export default function Title({ firstWord, secondWord }: TitleProps) {
       sx={{
         color: theme.palette.text.primary,
         fontWeight: "600",
-        fontSize: theme.typography.h4.fontSize,
+        pb: borderEnabled ? "1rem" : 0,
+        borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
       }}
     >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}
-      {secondWord}
+      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span> {secondWord}
     </Typography>
   );
 }

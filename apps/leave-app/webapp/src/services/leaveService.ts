@@ -16,9 +16,10 @@
 
 import { AppConfig } from "@root/src/config/config";
 import {
+  Action,
   AppConfigResponse,
+  ApprovalResponse,
   DayType,
-  DefaultMail,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -38,11 +39,12 @@ import { APIService } from "@root/src/utils/apiService";
  */
 export const validateLeaveRequest = async (
   request: LeaveValidationRequest,
+  isValidationOnlyMode: boolean,
 ): Promise<LeaveValidationResponse> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveValidationResponse>(
-    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=true`,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${isValidationOnlyMode}`,
     request,
   );
 
@@ -62,18 +64,6 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
 };
 
 /**
- * Fetch default mail recipients from the backend.
- * @returns Promise with array of default mails
- */
-export const getDefaultMails = async (): Promise<DefaultMail[]> => {
-  const apiInstance = APIService.getInstance();
-
-  const response = await apiInstance.get<DefaultMail[]>(AppConfig.serviceUrls.defaultMails);
-
-  return response.data;
-};
-
-/**
  * Submit a leave request.
  * @param request - Leave submission request payload
  * @returns Promise with submission response
@@ -84,11 +74,19 @@ export const submitLeaveRequest = async (
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.post<LeaveSubmissionResponse>(
-    AppConfig.serviceUrls.leaves,
+    `${AppConfig.serviceUrls.leaves}?isValidationOnlyMode=${false}`,
     request,
   );
 
   return response.data;
+};
+
+/**
+ * Cancel a leave request.
+ */
+export const cancelLeaveRequest = async (id: number) => {
+  const apiInstance = APIService.getInstance();
+  await apiInstance.delete(`${AppConfig.serviceUrls.leaves}/${id}`);
 };
 
 /**
@@ -100,9 +98,58 @@ export const getLeaveHistory = async (
   params: LeaveHistoryQueryParam,
 ): Promise<LeaveHistoryResponse> => {
   const apiInstance = APIService.getInstance();
+  const {
+    email,
+    approverEmail,
+    startDate,
+    endDate,
+    statuses,
+    leaveCategory,
+    orderBy,
+    limit,
+    offset,
+  } = params;
+
+  // Build query parameters
+  const queryParts: string[] = [];
+
+  if (email !== undefined && email !== null && email !== "") {
+    queryParts.push(`email=${email}`);
+  }
+  if (approverEmail !== undefined && approverEmail !== null && approverEmail !== "") {
+    queryParts.push(`approverEmail=${encodeURIComponent(approverEmail)}`);
+  }
+  if (startDate) {
+    queryParts.push(`startDate=${encodeURIComponent(startDate)}`);
+  }
+  if (endDate) {
+    queryParts.push(`endDate=${encodeURIComponent(endDate)}`);
+  }
+
+  // Build array parameters
+  if (Array.isArray(statuses) && statuses.length > 0) {
+    statuses.forEach((status) => queryParts.push(`statuses=${encodeURIComponent(String(status))}`));
+  }
+  if (Array.isArray(leaveCategory) && leaveCategory.length > 0) {
+    leaveCategory.forEach((category) =>
+      queryParts.push(`leaveCategory=${encodeURIComponent(String(category))}`),
+    );
+  }
+
+  if (orderBy) {
+    queryParts.push(`orderBy=${encodeURIComponent(String(orderBy))}`);
+  }
+  if (limit !== undefined && limit !== null) {
+    queryParts.push(`limit=${encodeURIComponent(String(limit))}`);
+  }
+  if (offset !== undefined && offset !== null) {
+    queryParts.push(`offset=${encodeURIComponent(String(offset))}`);
+  }
+
+  const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
 
   const response = await apiInstance.get<LeaveHistoryResponse>(
-    `${AppConfig.serviceUrls.leaves}?isActive=${params.isActive}&email=${params.email}&startDate=${params.startDate}`,
+    `${AppConfig.serviceUrls.leaves}${queryString}`,
   );
 
   return response.data;
@@ -119,6 +166,21 @@ export const getLeadReport = async (request: LeadReportRequest): Promise<LeadRep
   const response = await apiInstance.post<LeadReportResponse>(
     AppConfig.serviceUrls.leadReport,
     request,
+  );
+
+  return response.data;
+};
+
+/**
+ * Approve or reject sabbatical leave requests.
+ * @param request - request payload
+ * @returns Promise with approval response
+ */
+export const approveLeave = async (id: string, action: Action): Promise<ApprovalResponse> => {
+  const apiInstance = APIService.getInstance();
+
+  const response = await apiInstance.post<ApprovalResponse>(
+    `${AppConfig.serviceUrls.leaves}/${id}/${action}`,
   );
 
   return response.data;
@@ -150,6 +212,6 @@ export const formatDateForApi = (date: any): string => {
  * @param daysCount - Number of days selected
  * @returns Period type "one" or "multiple"
  */
-export const getPeriodType = (daysCount: number): DayType.one | DayType.multiple => {
-  return daysCount === 1 ? DayType.one : DayType.multiple;
+export const getPeriodType = (daysCount: number): DayType.ONE | DayType.MULTIPLE => {
+  return daysCount === 1 ? DayType.ONE : DayType.MULTIPLE;
 };

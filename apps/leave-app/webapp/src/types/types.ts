@@ -37,8 +37,8 @@ export enum ConfirmationType {
 }
 
 export enum DayType {
-  one = "one",
-  multiple = "multiple",
+  ONE = "one",
+  MULTIPLE = "multiple",
 }
 
 export interface RouteDetail {
@@ -56,6 +56,35 @@ export type RouteObjectWithRole = RouteObject & {
   allowRoles?: string[];
   denyRoles?: string[];
 };
+
+// Leave approval status.
+export enum ApprovalStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+// Leave type.
+export enum LeaveType {
+  CASUAL = "casual",
+  ANNUAL = "annual",
+  SABBATICAL = "sabbatical",
+  MATERNITY = "maternity",
+  PATERNITY = "paternity",
+  LIEU = "lieu",
+}
+
+// Leave Approval action.
+export enum Action {
+  APPROVE = "approve",
+  REJECT = "reject",
+}
+
+// Sorting order.
+export enum OrderBy {
+  ASC = "ASC",
+  DESC = "DESC",
+}
 
 // Leave validation types.
 export interface LeaveValidationRequest {
@@ -85,16 +114,23 @@ export interface DefaultMail {
   email: string;
   thumbnail: string;
 }
+
+// Default mail response type.
+export interface CachedMail {
+  mandatoryMails: DefaultMail[];
+  optionalMails: DefaultMail[];
+}
+
 // Leave submission type.
 export interface LeaveSubmissionRequest {
-  periodType: "one" | "multiple" | "half";
+  periodType?: "one" | "multiple" | "half";
   startDate: string;
   endDate: string;
-  isMorningLeave: boolean | null;
+  isMorningLeave?: boolean | null;
   comment: string;
-  leaveType: string;
-  emailRecipients: string[];
-  isPublicComment: boolean;
+  leaveType: LeaveType;
+  emailRecipients?: string[];
+  isPublicComment?: boolean;
 }
 
 // Leave submission response type.
@@ -106,7 +142,7 @@ export interface LeaveSubmissionResponse {
 
 // Leave history response for a single leave.
 export interface SingleLeaveHistory {
-  id: string;
+  id: number;
   email: string;
   leaveType: string;
   periodType: string;
@@ -137,9 +173,15 @@ export interface LeaveHistoryResponse {
 
 // Query parameters for leave history request.
 export interface LeaveHistoryQueryParam {
-  isActive: boolean;
-  email: string;
-  startDate: string;
+  email?: string;
+  startDate?: string;
+  endDate?: string;
+  approverEmail?: string;
+  leaveCategory?: LeaveType[];
+  statuses?: ApprovalStatus[];
+  limit?: number;
+  offset?: number;
+  orderBy?: OrderBy;
 }
 
 // Lead report request type.
@@ -160,7 +202,53 @@ export interface LeadReportResponse {
     sabbatical?: number;
   };
 }
+
+// Single approval status item.
+export interface ApprovalStatusItem {
+  id: string;
+  email: string;
+  startDate: string;
+  endDate: string;
+  approvalStatus: ApprovalStatus;
+  submitNote: string;
+}
+
+// Approval request payload.
+export interface ApprovalRequest {
+  isApproved: boolean;
+  leaveId: string;
+}
+
+// Approval response payload.
+export interface ApprovalResponse {
+  message: string;
+}
+
+// Eligibility response type.
+export interface EligibilityResponse {
+  employmentStartDate: string;
+  lastSabbaticalLeaveEndDate: string;
+  isEligible: boolean;
+}
+
+// Sabbatical application request type.
+export interface SabbaticalApplicationRequest {
+  lastSabbaticalLeaveEndDate: string;
+  startDate: string;
+  endDate: string;
+  additionalComment: string;
+}
+
+// Sabbatical application response type.
+export interface SabbaticalApplicationResponse {
+  message: string;
+}
+
 // App config response type.
 export interface AppConfigResponse {
   isSabbaticalLeaveEnabled: boolean;
+  sabbaticalLeavePolicyUrl: string;
+  sabbaticalLeaveUserGuideUrl: string;
+  sabbaticalLeaveEligibilityDuration: number;
+  sabbaticalLeaveMaxApplicationDuration: number;
 }

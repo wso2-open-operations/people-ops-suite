@@ -23,31 +23,37 @@ interface DatePillProps {
   disabled?: boolean;
 }
 
-export default function DatePill({ partOfDay, isSelected = false, onClick, disabled = false }: DatePillProps) {
+export default function DatePill({
+  partOfDay,
+  isSelected = false,
+  onClick,
+  disabled = false,
+}: DatePillProps) {
   const theme = useTheme();
-  
+
   return (
     <Box
       py={1}
       width={1}
       borderRadius="0.5rem"
       textAlign="center"
-      border="2px solid"
+      border="1px solid"
       maxWidth="20rem"
       onClick={onClick}
       sx={{
         borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
         backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
-        cursor: disabled ? "not-allowed" : (onClick ? "pointer" : "default"),
+        cursor: disabled ? "not-allowed" : onClick ? "pointer" : "default",
         opacity: disabled ? 0.5 : 1,
         transition: "all 0.2s ease",
-        "&:hover": (onClick && !disabled)
-          ? {
-              borderColor: theme.palette.primary.main,
-              transform: "translateY(-1px)",
-              boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
-            }
-          : {},
+        "&:hover":
+          onClick && !disabled
+            ? {
+                borderColor: theme.palette.primary.main,
+                transform: "translateY(-1px)",
+                boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
+              }
+            : {},
         "&:active": onClick
           ? {
               transform: "translateY(0)",

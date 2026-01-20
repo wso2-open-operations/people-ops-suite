@@ -14,18 +14,49 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Stack } from "@mui/material";
+import { CircularProgress, Stack } from "@mui/material";
+import { useSelector } from "react-redux";
+
+import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-
-import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { ApprovalStatus, LeaveHistoryResponse } from "@root/src/types/types";
+import ApprovalHistoryTable from "@root/src/view/SabbaticalLeave/component/ApprovalHistoryTable";
 
 export default function ApprovalHistoryTab() {
+  const userInfo = useSelector(selectUser);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [approvalHistory, setApprovalHistory] = useState<LeaveHistoryResponse>();
+  // fetch the approval history data.
+  useEffect(() => {
+    const fetchApprovalHistory = async () => {
+      setLoading(true);
+      try {
+        const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
+          approverEmail: userInfo?.workEmail || "",
+          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.REJECTED],
+        });
+        setApprovalHistory(approvalHistory);
+      } catch (error) {
+        console.error("Failed to fetch approval history", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApprovalHistory();
+  }, []);
+
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <Title firstWord="Approval" secondWord="History (For Reporting Leads)" />
-      <ApprovalHistoryTable rows={[]} />
+      <Title firstWord="Approval" secondWord="History" />
+      {loading ? (
+        <CircularProgress size={30} />
+      ) : (
+        <ApprovalHistoryTable rows={approvalHistory?.leaves ?? []} />
+      )}
     </Stack>
   );
 }
