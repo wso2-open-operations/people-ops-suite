@@ -85,6 +85,7 @@ export type FilteredEmployeesResponse = {
 };
 
 export type EmployeeFilterAttributes = {
+  searchString?: string;
   title?: string;
   firstName?: string;
   lastName?: string;
