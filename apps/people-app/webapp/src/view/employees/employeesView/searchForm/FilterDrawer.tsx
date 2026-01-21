@@ -235,14 +235,16 @@ export function FilterDrawer({
           </Box>
         </Box>
 
-        <Box sx={{
-        px: 2,
-        py: 1.5,
-        borderTop: 1,
-        borderColor: "divider",
-        display: "flex",
-        justifyContent: "flex-end",
-      }}>
+        <Box
+          sx={{
+            px: 2,
+            py: 1.5,
+            borderTop: 1,
+            borderColor: "divider",
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
           <Button
             variant="outlined"
             color="secondary"
