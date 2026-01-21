@@ -77,9 +77,6 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
   useEffect(() => {
     dispatch(fetchEmploymentTypes());
     dispatch(fetchDesignations({}));
-    dispatch(fetchTeams({}));
-    dispatch(fetchSubTeams({}));
-    dispatch(fetchUnits({}));
     dispatch(fetchBusinessUnits());
   }, [dispatch]);
 

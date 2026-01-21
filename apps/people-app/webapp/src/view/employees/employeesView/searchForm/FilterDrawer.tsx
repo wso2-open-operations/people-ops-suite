@@ -71,7 +71,7 @@ export function FilterDrawer({
   designations,
   employmentTypes,
 }: FilterDrawerProps) {
-    
+
   const dispatch = useAppDispatch();
 
   return (
@@ -222,9 +222,7 @@ export function FilterDrawer({
                     label="Employment Type"
                     value={filter.employmentType ?? ""}
                     onChange={(e) =>
-                      updateFilter({
-                        employmentType: e.target.value || undefined,
-                      })
+                      updateFilter({ employmentType: e.target.value || undefined })
                     }
                     sx={fieldSx}
                   >
