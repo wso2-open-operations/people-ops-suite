@@ -23,11 +23,6 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
-export interface ServiceLength {
-  years: number;
-  months: number;
-}
-
 interface Employee {
   employeeId: string;
   firstName: string;
