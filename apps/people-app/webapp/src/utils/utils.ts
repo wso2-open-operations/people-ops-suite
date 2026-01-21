@@ -91,11 +91,10 @@ export const calculateServiceLength = (
   if (!start || isAfter(start, now)) return null;
 
   const totalMonths = differenceInMonths(now, start);
-  const safeMonths = totalMonths < 0 ? 0 : totalMonths;
 
   return {
-    years: Math.floor(safeMonths / 12),
-    months: safeMonths % 12,
+    years: Math.floor(totalMonths / 12),
+    months: totalMonths % 12,
   };
 };
 
@@ -106,9 +105,8 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
   if (years === 0 && months === 0) return "Less than 1 month";
 
   if (years > 0 && months > 0) {
-    return `${years} ${years === 1 ? "year" : "years"} ${months} ${
-      months === 1 ? "month" : "months"
-    }`;
+    return `${years} ${years === 1 ? "year" : "years"} ${months} ${months === 1 ? "month" : "months"
+      }`;
   }
 
   if (years > 0) return `${years} ${years === 1 ? "year" : "years"}`;
