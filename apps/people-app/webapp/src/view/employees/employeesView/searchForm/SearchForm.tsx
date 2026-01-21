@@ -52,7 +52,6 @@ type ChipItem = {
 };
 
 export function SearchForm({ page, perPage }: SearchFormProps) {
-
   const dispatch = useAppDispatch();
   const employeeState = useAppSelector((state) => state.employee);
   const filter = employeeState.employeeFilter as EmployeeFilterAttributes;
@@ -96,10 +95,10 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
           ...patch,
           page: 1,
           perPage,
-        } as EmployeeFilterAttributes)
+        } as EmployeeFilterAttributes),
       );
     },
-    [dispatch, filter, perPage]
+    [dispatch, filter, perPage],
   );
 
   const clearAll = () => {
@@ -109,7 +108,7 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
         page: 1,
         perPage,
         searchString: "",
-      } as EmployeeFilterAttributes)
+      } as EmployeeFilterAttributes),
     );
   };
 
@@ -122,7 +121,7 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
 
     if (filter.searchString) {
       add("searchString", `Search: ${filter.searchString}`, () =>
-        updateFilter({ searchString: "" })
+        updateFilter({ searchString: "" }),
       );
     }
     if (filter.businessUnit) {
@@ -132,42 +131,42 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
           team: undefined,
           subTeam: undefined,
           unit: undefined,
-        })
+        }),
       );
     }
     if (filter.team) {
       add("team", `Team: ${filter.team}`, () =>
-        updateFilter({ team: undefined, subTeam: undefined, unit: undefined })
+        updateFilter({ team: undefined, subTeam: undefined, unit: undefined }),
       );
     }
     if (filter.subTeam) {
       add("subTeam", `Sub Team: ${filter.subTeam}`, () =>
-        updateFilter({ subTeam: undefined, unit: undefined })
+        updateFilter({ subTeam: undefined, unit: undefined }),
       );
     }
     if (filter.unit) {
       add("unit", `Unit: ${filter.unit}`, () =>
-        updateFilter({ unit: undefined })
+        updateFilter({ unit: undefined }),
       );
     }
     if (filter.gender) {
       add("gender", `Gender: ${filter.gender}`, () =>
-        updateFilter({ gender: undefined })
+        updateFilter({ gender: undefined }),
       );
     }
     if (filter.country) {
       add("country", `Country: ${filter.country}`, () =>
-        updateFilter({ country: undefined })
+        updateFilter({ country: undefined }),
       );
     }
     if (filter.designation) {
       add("designation", `Designation: ${filter.designation}`, () =>
-        updateFilter({ designation: undefined })
+        updateFilter({ designation: undefined }),
       );
     }
     if (filter.employmentType) {
       add("employmentType", `Employment Type: ${filter.employmentType}`, () =>
-        updateFilter({ employmentType: undefined })
+        updateFilter({ employmentType: undefined }),
       );
     }
     return items;
@@ -176,7 +175,15 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
   return (
     <Box sx={{ mb: 2 }}>
       {/* Search */}
-      <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", gap: 2, width: "100%" }}>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 2,
+          width: "100%",
+        }}
+      >
         <Box sx={{ flex: 1, width: "100%" }}>
           <TextField
             size="small"

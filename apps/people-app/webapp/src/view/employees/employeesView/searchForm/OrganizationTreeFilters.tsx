@@ -83,21 +83,14 @@ export function OrganizationTreeFilters({
   };
 
   return (
-    <
-      Box
+    <Box
       sx={{
-        // border: 1,
-        // borderColor: "divider",
-        // borderRadius: 1,
-        // p: 2,
         width: "100%",
         height: "100%",
       }}
     >
       <Grid container direction="column">
-        <Typography variant="subtitle1">
-          Organization
-        </Typography>
+        <Typography variant="subtitle1">Organization</Typography>
       </Grid>
 
       <Box sx={{ pl: 0.5 }}>
@@ -105,19 +98,22 @@ export function OrganizationTreeFilters({
           <Autocomplete<BusinessUnit, false, false, false>
             options={businessUnits}
             getOptionLabel={(o) => o.name}
-            value={businessUnits.find((b) => b.name === value.businessUnit) ?? null}
+            value={
+              businessUnits.find((b) => b.name === value.businessUnit) ?? null
+            }
             onChange={(_, selected) => onChangeBusinessUnit(selected)}
             renderInput={(params) => (
-              <TextField {...params} size="small" label="Business Unit" sx={fieldSx} fullWidth />
+              <TextField
+                {...params}
+                size="small"
+                label="Business Unit"
+                sx={fieldSx}
+                fullWidth
+              />
             )}
-            // sx={{
-            //   mt: 1.5,
-            // }}
           />
 
-          <Box 
-          // sx={{ pl: 1.5 }}
-          >
+          <Box>
             <Box sx={treeItemSx}>
               <Autocomplete<Team, false, false, false>
                 options={teams}
@@ -126,28 +122,38 @@ export function OrganizationTreeFilters({
                 onChange={(_, selected) => onChangeTeam(selected)}
                 disabled={!value.businessUnit}
                 renderInput={(params) => (
-                  <TextField {...params} size="small" label="Team" sx={fieldSx} fullWidth />
+                  <TextField
+                    {...params}
+                    size="small"
+                    label="Team"
+                    sx={fieldSx}
+                    fullWidth
+                  />
                 )}
               />
 
-              <Box 
-              // sx={{ pl: 1.5 }}
-              >
+              <Box>
                 <Box sx={treeItemSx}>
                   <Autocomplete<SubTeam, false, false, false>
                     options={subTeams}
                     getOptionLabel={(o) => o.name}
-                    value={subTeams.find((st) => st.name === value.subTeam) ?? null}
+                    value={
+                      subTeams.find((st) => st.name === value.subTeam) ?? null
+                    }
                     onChange={(_, selected) => onChangeSubTeam(selected)}
                     disabled={!value.team}
                     renderInput={(params) => (
-                      <TextField {...params} size="small" label="Sub Team" sx={fieldSx} fullWidth />
+                      <TextField
+                        {...params}
+                        size="small"
+                        label="Sub Team"
+                        sx={fieldSx}
+                        fullWidth
+                      />
                     )}
                   />
 
-                  <Box 
-                  // sx={{ pl: 1.5 }}
-                  >
+                  <Box>
                     <Box sx={treeItemSx}>
                       <Autocomplete<Unit, false, false, false>
                         options={units}
@@ -156,7 +162,13 @@ export function OrganizationTreeFilters({
                         onChange={(_, selected) => onChangeUnit(selected)}
                         disabled={!value.subTeam}
                         renderInput={(params) => (
-                          <TextField {...params} size="small" label="Unit" sx={fieldSx} fullWidth />
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Unit"
+                            sx={fieldSx}
+                            fullWidth
+                          />
                         )}
                       />
                     </Box>
