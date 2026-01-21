@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, TextField, Typography, Autocomplete } from "@mui/material";
+import { Box, TextField, Typography, Autocomplete, Grid } from "@mui/material";
 import {
   BusinessUnit,
   Team,
@@ -59,12 +59,12 @@ export function OrganizationTreeFilters({
   const treeItemSx = {
     position: "relative",
     pl: 3,
-    py: 0.5,
+    pt: 2,
     // horizontal connector
     "&::before": {
       content: '""',
       position: "absolute",
-      top: "24px",
+      top: "36px",
       left: "12px",
       width: "12px",
       height: "1px",
@@ -77,30 +77,28 @@ export function OrganizationTreeFilters({
       top: 0,
       left: "12px",
       width: "1px",
-      height: "24px",
+      height: "36px",
       bgcolor: "text.disabled",
     },
   };
 
   return (
-    <Box
+    <
+      Box
       sx={{
-        border: 1,
-        borderColor: "divider",
-        borderRadius: 1,
-        p: 2,
+        // border: 1,
+        // borderColor: "divider",
+        // borderRadius: 1,
+        // p: 2,
         width: "100%",
         height: "100%",
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+      <Grid container direction="column">
+        <Typography variant="subtitle1">
           Organization
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          (Business Unit → Team → Sub Team → Unit)
-        </Typography>
-      </Box>
+      </Grid>
 
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
@@ -112,9 +110,14 @@ export function OrganizationTreeFilters({
             renderInput={(params) => (
               <TextField {...params} size="small" label="Business Unit" sx={fieldSx} fullWidth />
             )}
+            // sx={{
+            //   mt: 1.5,
+            // }}
           />
 
-          <Box sx={{ pl: 1.5 }}>
+          <Box 
+          // sx={{ pl: 1.5 }}
+          >
             <Box sx={treeItemSx}>
               <Autocomplete<Team, false, false, false>
                 options={teams}
@@ -127,7 +130,9 @@ export function OrganizationTreeFilters({
                 )}
               />
 
-              <Box sx={{ pl: 1.5 }}>
+              <Box 
+              // sx={{ pl: 1.5 }}
+              >
                 <Box sx={treeItemSx}>
                   <Autocomplete<SubTeam, false, false, false>
                     options={subTeams}
@@ -140,7 +145,9 @@ export function OrganizationTreeFilters({
                     )}
                   />
 
-                  <Box sx={{ pl: 1.5 }}>
+                  <Box 
+                  // sx={{ pl: 1.5 }}
+                  >
                     <Box sx={treeItemSx}>
                       <Autocomplete<Unit, false, false, false>
                         options={units}

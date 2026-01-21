@@ -14,6 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Countries, EmployeeGenders } from "@config/constant";
+import { FilterAltOutlined } from "@mui/icons-material";
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
@@ -24,11 +28,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import type { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
 import { setEmployeeFilter } from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
@@ -38,10 +38,10 @@ import {
   fetchTeams,
   fetchUnits,
 } from "@slices/organizationSlice/organization";
-import type { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
-import { FilterDrawer } from "./FilterDrawer";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect } from "./FilterChipSelect";
-import { Countries, EmployeeGenders } from "@config/constant";
+import { FilterDrawer } from "./FilterDrawer";
 
 type SearchFormProps = { page: number; perPage: number };
 
@@ -175,87 +175,68 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
 
   return (
     <Box sx={{ mb: 2 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Typography
-          variant="h5"
-          sx={(theme) => ({ color: theme.palette.text.secondary })}
-        >
-          Search Employees
-        </Typography>
-
-        <Button
-          variant="text"
-          startIcon={
-            <TuneOutlinedIcon
-              sx={{ color: (theme) => theme.palette.secondary.contrastText }}
-            />
-          }
-          onClick={() => setDrawerOpen(true)}
-          sx={{ minWidth: "120px" }}
-        >
-          <Typography
-            variant="h6"
-            sx={{ color: (theme) => theme.palette.secondary.contrastText }}
-          >
-            Filters
-          </Typography>
-        </Button>
-      </Box>
-
       {/* Search */}
-      <Box sx={{ mt: 1 }}>
-        <TextField
-          size="small"
-          fullWidth
-          id="searchString"
-          name="searchString"
-          label=""
-          value={searchText}
-          sx={fieldSx}
-          onChange={(e) => {
-            const value = e.target.value;
+      <Box sx={{ mt: 2, display: "flex", justifyContent: "space-between", gap: 2, width: "100%" }}>
+        <Box sx={{ flex: 1, width: "100%" }}>
+          <TextField
+            size="small"
+            fullWidth
+            id="searchString"
+            name="searchString"
+            label="Search Employees"
+            value={searchText}
+            sx={fieldSx}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchText(value);
+              if (debounceRef.current) window.clearTimeout(debounceRef.current);
+              debounceRef.current = window.setTimeout(() => {
+                updateFilter({ searchString: value });
+              }, 500);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="Clear search"
+                    edge="end"
+                    size="small"
+                    disabled={!searchText}
+                    onClick={() => {
+                      if (debounceRef.current)
+                        window.clearTimeout(debounceRef.current);
+                      setSearchText("");
+                      updateFilter({ searchString: "" });
+                    }}
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<FilterAltOutlined />}
+          onClick={() => setDrawerOpen(true)}
+          sx={{
+            color: (theme) => theme.palette.secondary.contrastText,
+            borderColor: (theme) => theme.palette.secondary.contrastText,
 
-            setSearchText(value);
-
-            if (debounceRef.current) window.clearTimeout(debounceRef.current);
-
-            debounceRef.current = window.setTimeout(() => {
-              updateFilter({ searchString: value });
-            }, 500);
+            "&:hover": {
+              borderColor: (theme) => theme.palette.secondary.contrastText,
+              backgroundColor: "#ff730022",
+            },
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="Clear search"
-                  edge="end"
-                  size="small"
-                  disabled={!searchText}
-                  onClick={() => {
-                    if (debounceRef.current)
-                      window.clearTimeout(debounceRef.current);
-
-                    setSearchText("");
-                    updateFilter({ searchString: "" });
-                  }}
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+        >
+          Filters
+        </Button>
       </Box>
 
       {/* Chips */}
