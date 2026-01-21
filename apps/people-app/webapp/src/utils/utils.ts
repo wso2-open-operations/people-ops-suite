@@ -15,6 +15,7 @@
 // under the License.
 
 import { ServiceLength } from "../types/types";
+import { DATE_FMT } from "../config/constant";
 import {
   differenceInMonths,
   differenceInYears,
@@ -65,8 +66,6 @@ export const markAllFieldsTouched = (errors: any) => {
   return touched;
 };
 
-const DATE_FMT = "yyyy-MM-dd";
-
 const parseStrictYyyyMmDd = (s: string): Date | null => {
   const v = s.trim();
   if (!isMatch(v, DATE_FMT)) return null;
@@ -75,7 +74,10 @@ const parseStrictYyyyMmDd = (s: string): Date | null => {
   return isValid(d) ? d : null;
 };
 
-export const calculateAge = (dob: string, now: Date = new Date()): number | null => {
+export const calculateAge = (
+  dob: string,
+  now: Date = new Date(),
+): number | null => {
   const d = parseStrictYyyyMmDd(dob);
   if (!d || isAfter(d, now)) return null;
   return differenceInYears(now, d);
@@ -83,7 +85,7 @@ export const calculateAge = (dob: string, now: Date = new Date()): number | null
 
 export const calculateServiceLength = (
   startDate: string,
-  now: Date = new Date()
+  now: Date = new Date(),
 ): ServiceLength | null => {
   const start = parseStrictYyyyMmDd(startDate);
   if (!start || isAfter(start, now)) return null;

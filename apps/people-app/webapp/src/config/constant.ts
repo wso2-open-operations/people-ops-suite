@@ -287,3 +287,5 @@ export const Countries = [
   "Zambia",
   "Zimbabwe",
 ];
+
+export const DATE_FMT = "yyyy-MM-dd";
