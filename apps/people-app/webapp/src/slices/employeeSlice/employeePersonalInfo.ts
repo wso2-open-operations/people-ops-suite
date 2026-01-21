@@ -30,7 +30,6 @@ export interface EmployeePersonalInfo {
   lastName: string;
   title: string;
   dob: string;
-  age: number;
   gender: string;
   personalEmail: string | null;
   personalPhone: string | null;

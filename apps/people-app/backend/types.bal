@@ -31,24 +31,3 @@ type NewVehicle record {|
     database:VehicleTypes vehicleType;
 |};
 
-# Length of service in years and months.
-public type ServiceLength record {|
-    # Completed years of service
-    int years;
-    # Completed months of service
-    int months;
-|};
-
-# Employee information.
-public type Employee record {|
-    *database:Employee;
-    # Computed field: duration since the employee's start date
-    ServiceLength lengthOfService;
-|};
-
-# Personal information of an employee.
-public type EmployeePersonalInfo record {|
-    *database:EmployeePersonalInfo;
-    # Computed field: age of the employee
-    int age;
-|};

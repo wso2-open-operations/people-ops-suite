@@ -55,6 +55,11 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import IconButton from "@mui/material/IconButton";
+import {
+  calculateServiceLength,
+  calculateAge,
+  formatServiceLength,
+} from "@root/src/utils/utils";
 
 const ReadOnly = ({
   label,
@@ -144,7 +149,7 @@ export const getEmployeeStatusChipStyles =
       borderColor: alpha(mainColor, 0.45),
       backgroundColor: alpha(
         mainColor,
-        theme.palette.mode === "dark" ? 0.14 : 0.1
+        theme.palette.mode === "dark" ? 0.14 : 0.1,
       ),
       "& .MuiChip-label": {
         px: 0.75,
@@ -161,18 +166,26 @@ export default function Me() {
   const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
   const { employee, state: employeeState } = useAppSelector(
-    (state) => state.employee
+    (state) => state.employee,
   );
   const { personalInfo, state: personalInfoState } = useAppSelector(
-    (state) => state.employeePersonalInfo
+    (state) => state.employeePersonalInfo,
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
   const initialHasEmergencyContactsRef = useRef<boolean>(
-    !!personalInfo?.emergencyContacts?.length
+    !!personalInfo?.emergencyContacts?.length,
   );
 
   const [shouldRequireEmergencyContacts, setShouldRequireEmergencyContacts] =
     useState<boolean>(initialHasEmergencyContactsRef.current);
+
+  const serviceLength = employee?.startDate
+    ? calculateServiceLength(employee.startDate)
+    : null;
+
+  const serviceText = formatServiceLength(serviceLength);
+
+  const age = personalInfo?.dob ? calculateAge(personalInfo.dob) : null;
 
   useEffect(() => {
     const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;
@@ -189,13 +202,13 @@ export default function Me() {
       .nullable()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid personal phone number format"
+        "Invalid personal phone number format",
       ),
     residentNumber: string()
       .nullable()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid resident number format"
+        "Invalid resident number format",
       ),
     addressLine1: string()
       .nullable()
@@ -230,15 +243,15 @@ export default function Me() {
                 .required("Telephone is required")
                 .matches(
                   /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid telephone number format"
+                  "Invalid telephone number format",
                 ),
               mobile: string()
                 .required("Mobile is required")
                 .matches(
                   /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid mobile number format"
+                  "Invalid mobile number format",
                 ),
-            })
+            }),
           )
       : array()
           .nullable()
@@ -255,15 +268,15 @@ export default function Me() {
                 .required("Telephone is required")
                 .matches(
                   /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid telephone number format"
+                  "Invalid telephone number format",
                 ),
               mobile: string()
                 .required("Mobile is required")
                 .matches(
                   /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid mobile number format"
+                  "Invalid mobile number format",
                 ),
-            })
+            }),
           ),
   });
 
@@ -281,7 +294,7 @@ export default function Me() {
       ConfirmationType.update,
       () => savePersonalInfo(values),
       "Save",
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -293,11 +306,11 @@ export default function Me() {
       () => {
         resetForm();
         setShouldRequireEmergencyContacts(
-          initialHasEmergencyContactsRef.current
+          initialHasEmergencyContactsRef.current,
         );
       },
       "Discard",
-      "Keep Changes"
+      "Keep Changes",
     );
   };
 
@@ -320,7 +333,7 @@ export default function Me() {
               relationship: contact.relationship,
               telephone: contact.telephone,
               mobile: contact.mobile,
-            })
+            }),
           ),
         };
         setSavingChanges(true);
@@ -328,7 +341,7 @@ export default function Me() {
           updateEmployeePersonalInfo({
             employeeId: employee.employeeId,
             data: dataToSave,
-          })
+          }),
         ).finally(() => {
           setSavingChanges(false);
         });
@@ -508,11 +521,11 @@ export default function Me() {
                           color: theme.palette.secondary.contrastText,
                           borderColor: alpha(
                             theme.palette.secondary.contrastText,
-                            0.45
+                            0.45,
                           ),
                           backgroundColor: alpha(
                             theme.palette.secondary.contrastText,
-                            theme.palette.mode === "dark" ? 0.14 : 0.1
+                            theme.palette.mode === "dark" ? 0.14 : 0.1,
                           ),
                           "& .MuiChip-label": {
                             px: 0.75,
@@ -541,7 +554,7 @@ export default function Me() {
                         size="small"
                         variant="outlined"
                         sx={getEmployeeStatusChipStyles(
-                          employee.employeeStatus
+                          employee.employeeStatus,
                         )}
                       />
                     ) : (
@@ -566,9 +579,7 @@ export default function Me() {
                     Length of Service
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.lengthOfService
-                      ? `${employee.lengthOfService.years}y ${employee.lengthOfService.months}m`
-                      : "-"}
+                    {serviceText}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -687,7 +698,7 @@ export default function Me() {
                       <ReadOnly label="Date of Birth" value={values.dob} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <ReadOnly label="Age" value={values.age} />
+                      <ReadOnly label="Age" value={age ?? "-"} />
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Gender" value={values.gender} />

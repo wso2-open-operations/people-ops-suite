@@ -51,7 +51,6 @@ interface Employee {
   team: string;
   subTeam: string | null;
   unit: string | null;
-  lengthOfService: ServiceLength;
   subordinateCount: number;
 }
 

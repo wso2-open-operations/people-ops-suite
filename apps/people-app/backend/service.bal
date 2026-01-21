@@ -100,7 +100,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + return - Employee detailed information
     resource function get employees/[string id](http:RequestContext ctx)
-        returns Employee|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -130,9 +130,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        ServiceLength lengthOfService = calculateServiceLength(employeeInfo.startDate);
 
-        return {...employeeInfo, lengthOfService};    
+        return employeeInfo;    
     }
 
     # Fetch employee personal information.
@@ -140,7 +139,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + return - Employee personal information
     resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
-        returns EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -170,10 +169,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-     
-        int age = calculateAge(employeePersonalInfo.dob);
-        
-        return {...employeePersonalInfo, age };
+        return employeePersonalInfo;
     }
 
     # Fetch continuous service record by work email.
