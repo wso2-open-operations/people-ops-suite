@@ -121,6 +121,7 @@ export function OrganizationTreeFilters({
                 getOptionLabel={(o) => o.name}
                 value={teams.find((t) => t.name === value.team) ?? null}
                 onChange={(_, selected) => onChangeTeam(selected)}
+                disabled={!value.businessUnit}
                 renderInput={(params) => (
                   <TextField {...params} size="small" label="Team" sx={fieldSx} fullWidth />
                 )}
@@ -133,6 +134,7 @@ export function OrganizationTreeFilters({
                     getOptionLabel={(o) => o.name}
                     value={subTeams.find((st) => st.name === value.subTeam) ?? null}
                     onChange={(_, selected) => onChangeSubTeam(selected)}
+                    disabled={!value.team}
                     renderInput={(params) => (
                       <TextField {...params} size="small" label="Sub Team" sx={fieldSx} fullWidth />
                     )}
@@ -145,6 +147,7 @@ export function OrganizationTreeFilters({
                         getOptionLabel={(o) => o.name}
                         value={units.find((u) => u.name === value.unit) ?? null}
                         onChange={(_, selected) => onChangeUnit(selected)}
+                        disabled={!value.subTeam}
                         renderInput={(params) => (
                           <TextField {...params} size="small" label="Unit" sx={fieldSx} fullWidth />
                         )}
