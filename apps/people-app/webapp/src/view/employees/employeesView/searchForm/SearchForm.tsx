@@ -21,7 +21,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   InputAdornment,
   Stack,
@@ -235,7 +234,7 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
           sx={{
             color: (theme) => theme.palette.secondary.contrastText,
             borderColor: (theme) => theme.palette.secondary.contrastText,
-
+            textTransform: "none",
             "&:hover": {
               borderColor: (theme) => theme.palette.secondary.contrastText,
               backgroundColor: "#ff730022",
@@ -251,23 +250,11 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
         <Box sx={{ mt: 1 }}>
           <Stack
             direction="row"
-            spacing={1}
+            spacing={2}
             useFlexGap
             flexWrap="wrap"
             alignItems="center"
           >
-            {/* Search chip (plain) */}
-            {filter.searchString && (
-              <Chip
-                size="small"
-                label={`Search: ${filter.searchString}`}
-                onDelete={() => {
-                  setSearchText("");
-                  updateFilter({ searchString: "" });
-                }}
-              />
-            )}
-
             {/* Dropdown chips */}
             {filter.businessUnit && (
               <FilterChipSelect
@@ -391,13 +378,14 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
               />
             )}
 
-            <Box sx={{ flex: 1 }} />
             <Button
               variant="text"
               onClick={clearAll}
-              sx={{ whiteSpace: "nowrap" }}
+              sx={{ textTransform: "none" }}
             >
-              Clear all
+              <Typography variant="subtitle2" color="secondary">
+                Clear filters
+              </Typography>
             </Button>
           </Stack>
         </Box>

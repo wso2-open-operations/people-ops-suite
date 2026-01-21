@@ -14,11 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, TextField, Typography, Autocomplete, Grid } from "@mui/material";
+import { Autocomplete, Box, Grid, TextField, Typography } from "@mui/material";
 import {
   BusinessUnit,
-  Team,
   SubTeam,
+  Team,
   Unit,
 } from "@root/src/slices/organizationSlice/organization";
 
@@ -90,7 +90,9 @@ export function OrganizationTreeFilters({
       }}
     >
       <Grid container direction="column">
-        <Typography variant="subtitle1">Organization</Typography>
+        <Typography variant="subtitle1" color="primary">
+          Organization
+        </Typography>
       </Grid>
 
       <Box sx={{ pl: 0.5 }}>

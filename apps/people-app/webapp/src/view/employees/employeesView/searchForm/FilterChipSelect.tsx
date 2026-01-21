@@ -14,7 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Chip, Menu, MenuItem } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import {
+  Box,
+  Chip,
+  Menu,
+  MenuItem,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { useMemo, useState } from "react";
 
 type FilterChipSelectProps<T> = {
@@ -34,17 +42,48 @@ export function FilterChipSelect<T>({
   onChange,
   onClear,
 }: FilterChipSelectProps<T>) {
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
-  const chipLabel = useMemo(() => `${label}: ${value}`, [label, value]);
+  const chipText = useMemo(() => {
+    return (
+      <>
+        <Typography variant="subtitle2" noWrap sx={{
+          ml:0.5,
+          mr: 1
+        }}>
+          {`${label}: ${value}`}
+        </Typography>
+      </>
+    );
+  }, [label, value]);
 
   return (
     <>
       <Chip
         size="small"
-        label={chipLabel}
+        label={chipText}
+        clickable
         onClick={(e) => setAnchorEl(e.currentTarget)}
+        deleteIcon={
+          <Box
+            sx={{
+              height: 24,
+              width: 24,
+              ml: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderLeft: `1px solid ${theme.palette.divider}`,
+              borderRadius: 15,
+              borderTopLeftRadius: 1,
+              borderBottomLeftRadius: 1,
+            }}
+          >
+            <CloseIcon fontSize="small" sx={{ height: 12 }}/>
+          </Box>
+        }
         onDelete={onClear}
         variant="outlined"
       />
@@ -53,7 +92,9 @@ export function FilterChipSelect<T>({
         anchorEl={anchorEl}
         open={open}
         onClose={() => setAnchorEl(null)}
-        PaperProps={{ sx: { maxHeight: 360 } }}
+        slotProps={{
+          paper: { sx: { maxHeight: 360, minWidth: 240 } },
+        }}
       >
         {options.map((o, idx) => {
           const optionLabel = getLabel(o);
