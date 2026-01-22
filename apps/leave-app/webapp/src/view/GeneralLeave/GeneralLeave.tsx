@@ -43,15 +43,18 @@ export default function GeneralLeave() {
   const [comment, setComment] = useState("");
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateError, setDateError] = useState(false);
 
   const handleSubmit = async () => {
-    // Validation
+    setDateError(false);
     if (!startDate || !endDate) {
+      setDateError(true);
       enqueueSnackbar("Please select start and end dates", { variant: "error" });
       return;
     }
 
     if (workingDays <= 0) {
+      setDateError(true);
       enqueueSnackbar("Working days must be at least 1 to submit a leave request", {
         variant: "error",
       });
@@ -146,6 +149,8 @@ export default function GeneralLeave() {
               setEndDate(end);
             }}
             onWorkingDaysChange={setWorkingDays}
+            hasError={dateError}
+            onErrorClear={() => setDateError(false)}
           />
           <LeaveSelection
             daysSelected={daysSelected}

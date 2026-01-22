@@ -92,6 +92,11 @@ export default function ApplyTab({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isEligible, setIsEligible] = useState(true);
   const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
+  const [startDateError, setStartDateError] = useState(false);
+  const [endDateError, setEndDateError] = useState(false);
+  const [managerApprovalError, setManagerApprovalError] = useState(false);
+  const [policyReadError, setPolicyReadError] = useState(false);
+  const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
 
   useEffect(() => {
     const checkEligibility = async () => {
@@ -205,6 +210,19 @@ export default function ApplyTab({
   ]);
 
   const handleOpenDialog = () => {
+    setStartDateError(false);
+    setEndDateError(false);
+    setManagerApprovalError(false);
+    setPolicyReadError(false);
+    setResignationAcknowledgeError(false);
+
+    if (!leaveStartDate) {
+      setStartDateError(true);
+    }
+    if (!leaveEndDate) {
+      setEndDateError(true);
+    }
+
     if (!leaveStartDate || !leaveEndDate) {
       enqueueSnackbar("Please select both start and end dates", { variant: "error" });
       return;
@@ -237,6 +255,16 @@ export default function ApplyTab({
         );
         return;
       }
+    }
+
+    if (!managerApprovalChecked) {
+      setManagerApprovalError(true);
+    }
+    if (!policyReadChecked) {
+      setPolicyReadError(true);
+    }
+    if (!resignationAcknowledgeChecked) {
+      setResignationAcknowledgeError(true);
     }
 
     if (!managerApprovalChecked || !policyReadChecked || !resignationAcknowledgeChecked) {
@@ -357,17 +385,35 @@ export default function ApplyTab({
                     label="Leave request start date*"
                     sx={{ flex: "1" }}
                     value={leaveStartDate}
-                    onChange={(newValue) => setLeaveStartDate(newValue)}
+                    onChange={(newValue) => {
+                      setLeaveStartDate(newValue);
+                      setStartDateError(false);
+                    }}
                     format="YYYY-MM-DD"
                     disablePast
+                    slotProps={{
+                      textField: {
+                        error: startDateError,
+                        helperText: startDateError ? "Start date is required" : "",
+                      },
+                    }}
                   />
                   <DatePicker
                     label="Leave request end date*"
                     sx={{ flex: "1" }}
                     value={leaveEndDate}
-                    onChange={(newValue) => setLeaveEndDate(newValue)}
+                    onChange={(newValue) => {
+                      setLeaveEndDate(newValue);
+                      setEndDateError(false);
+                    }}
                     format="YYYY-MM-DD"
                     disablePast
+                    slotProps={{
+                      textField: {
+                        error: endDateError,
+                        helperText: endDateError ? "End date is required" : "",
+                      },
+                    }}
                   />
                 </Stack>
                 <Stack gap="0.8rem">
@@ -388,16 +434,23 @@ export default function ApplyTab({
                   <FormControlLabel
                     control={
                       <Checkbox
-                        color="primary"
+                        color={managerApprovalError ? "error" : "primary"}
                         checked={managerApprovalChecked}
-                        onChange={(e) => setManagerApprovalChecked(e.target.checked)}
+                        onChange={(e) => {
+                          setManagerApprovalChecked(e.target.checked);
+                          setManagerApprovalError(false);
+                        }}
                       />
                     }
                     label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval."
                     sx={{
-                      color: theme.palette.text.primary,
+                      color: managerApprovalError
+                        ? theme.palette.error.main
+                        : theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
-                        color: theme.palette.text.primary,
+                        color: managerApprovalError
+                          ? theme.palette.error.main
+                          : theme.palette.text.primary,
                         fontSize: theme.typography.body2.fontSize,
                       },
                     }}
@@ -405,9 +458,12 @@ export default function ApplyTab({
                   <FormControlLabel
                     control={
                       <Checkbox
-                        color="primary"
+                        color={policyReadError ? "error" : "primary"}
                         checked={policyReadChecked}
-                        onChange={(e) => setPolicyReadChecked(e.target.checked)}
+                        onChange={(e) => {
+                          setPolicyReadChecked(e.target.checked);
+                          setPolicyReadError(false);
+                        }}
                       />
                     }
                     label={
@@ -425,9 +481,13 @@ export default function ApplyTab({
                       </>
                     }
                     sx={{
-                      color: theme.palette.text.primary,
+                      color: policyReadError
+                        ? theme.palette.error.main
+                        : theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
-                        color: theme.palette.text.primary,
+                        color: policyReadError
+                          ? theme.palette.error.main
+                          : theme.palette.text.primary,
                         fontSize: theme.typography.body2.fontSize,
                       },
                     }}
@@ -435,16 +495,23 @@ export default function ApplyTab({
                   <FormControlLabel
                     control={
                       <Checkbox
-                        color="primary"
+                        color={resignationAcknowledgeError ? "error" : "primary"}
                         checked={resignationAcknowledgeChecked}
-                        onChange={(e) => setResignationAcknowledgeChecked(e.target.checked)}
+                        onChange={(e) => {
+                          setResignationAcknowledgeChecked(e.target.checked);
+                          setResignationAcknowledgeError(false);
+                        }}
                       />
                     }
                     label="I acknowledge that I cannot voluntarily resign from my employment for 6 months after completing sabbatical leave. If I do, I will be required to reimburse an amount equivalent to the salary paid to me during the sabbatical period."
                     sx={{
-                      color: theme.palette.text.primary,
+                      color: resignationAcknowledgeError
+                        ? theme.palette.error.main
+                        : theme.palette.text.primary,
                       "& .MuiFormControlLabel-label": {
-                        color: theme.palette.text.primary,
+                        color: resignationAcknowledgeError
+                          ? theme.palette.error.main
+                          : theme.palette.text.primary,
                         fontSize: theme.typography.body2.fontSize,
                       },
                     }}

@@ -33,6 +33,8 @@ interface LeaveDateSelectionProps {
   onDatesChange: (startDate: Dayjs | null, endDate: Dayjs | null) => void;
   onWorkingDaysChange: (workingDays: number) => void;
   selectedDayPortion?: DayPortion | null;
+  hasError?: boolean;
+  onErrorClear?: () => void;
 }
 
 export default function LeaveDateSelection({
@@ -40,6 +42,8 @@ export default function LeaveDateSelection({
   onDatesChange,
   onWorkingDaysChange,
   selectedDayPortion,
+  hasError = false,
+  onErrorClear,
 }: LeaveDateSelectionProps) {
   const theme = useTheme();
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -196,18 +200,34 @@ export default function LeaveDateSelection({
           label="Start Date"
           sx={{ minWidth: "10%" }}
           value={startDate}
-          onChange={handleStartDateChange}
+          onChange={(newValue) => {
+            handleStartDateChange(newValue);
+            onErrorClear?.();
+          }}
           format="YYYY-MM-DD"
           disablePast
+          slotProps={{
+            textField: {
+              error: hasError,
+            },
+          }}
         />
         <DatePicker
           label="End Date"
           sx={{ minWidth: "10%" }}
           value={endDate}
-          onChange={handleEndDateChange}
+          onChange={(newValue) => {
+            handleEndDateChange(newValue);
+            onErrorClear?.();
+          }}
           minDate={startDate || undefined}
           format="YYYY-MM-DD"
           disablePast
+          slotProps={{
+            textField: {
+              error: hasError,
+            },
+          }}
         />
       </Stack>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
