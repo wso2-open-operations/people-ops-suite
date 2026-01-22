@@ -291,7 +291,9 @@ export default function ApplyTab({
   return (
     <>
       {isLoading ? (
-        <CircularProgress size={30} />
+        <Stack alignItems="center" justifyContent="center" minHeight="200px">
+          <CircularProgress size={30} />
+        </Stack>
       ) : (
         <Stack gap="1rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
           <FormContainer>

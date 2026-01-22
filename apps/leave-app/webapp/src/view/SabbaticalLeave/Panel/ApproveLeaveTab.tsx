@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Alert, CircularProgress, Stack, useTheme } from "@mui/material";
 import { useSelector } from "react-redux";
 
@@ -66,7 +67,9 @@ export default function ApproveLeaveTab() {
         </Alert>
       </Stack>
       {loading ? (
-        <CircularProgress size={30} />
+        <Stack alignItems="center" justifyContent="center" minHeight="200px">
+          <CircularProgress size={30} />
+        </Stack>
       ) : (
         <ApproveLeaveTable rows={approvalHistory?.leaves ?? []} onRefresh={fetchApprovalHistory} />
       )}

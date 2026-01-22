@@ -53,7 +53,9 @@ export default function ApprovalHistoryTab() {
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <Title firstWord="Approval" secondWord="History" />
       {loading ? (
-        <CircularProgress size={30} />
+        <Stack alignItems="center" justifyContent="center" minHeight="200px">
+          <CircularProgress size={30} />
+        </Stack>
       ) : (
         <ApprovalHistoryTable rows={approvalHistory?.leaves ?? []} />
       )}
