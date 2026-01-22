@@ -168,6 +168,12 @@ export default function LeaveDateSelection({
 
   const status = getStatus();
   const isValidSelection = status === "Valid date selection";
+
+  const displayDaysSelected =
+    selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND
+      ? workingDaysSelected
+      : daysSelected;
+
   return (
     <Stack
       direction="column"
@@ -212,7 +218,7 @@ export default function LeaveDateSelection({
           marginTop="2rem"
         >
           <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
-            Days selected: {daysSelected}
+            Days selected: {displayDaysSelected}
           </Typography>
           <Typography variant="subtitle1" sx={{ color: theme.palette.text.secondary }}>
             Working days selected: {workingDaysSelected}
