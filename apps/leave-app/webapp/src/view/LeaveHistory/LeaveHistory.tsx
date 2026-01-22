@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress, Stack } from "@mui/material";
+import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 
@@ -84,6 +84,7 @@ export default function LeaveHistory() {
         gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
       >
         {loading && <CircularProgress size={30} />}
+        {!loading && leaves.length == 0 && <Typography>No leave history available.</Typography>}
         {leaves.map((leave) => {
           const { month, day } = getMonthAndDay(leave.startDate);
           return (
