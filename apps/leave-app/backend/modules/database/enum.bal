@@ -38,8 +38,8 @@ public enum OrderBy {
     DESC
 }
 
-# Approval status.
-public enum ApprovalStatus {
+# Leave status.
+public enum Status {
     APPROVED = "APPROVED",
     REJECTED = "REJECTED",
     PENDING = "PENDING",

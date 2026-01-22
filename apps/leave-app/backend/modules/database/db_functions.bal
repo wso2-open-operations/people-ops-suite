@@ -78,8 +78,7 @@ public isolated function insertLeave(LeaveInput input, float numDaysForLeave, st
 # + id - Leave ID  
 # + return - Returns nil on success, error on failure
 public isolated function cancelLeave(int id) returns error? {
-    sql:ParameterizedQuery sqlQuery = `UPDATE leave_submissions SET status = ${CANCELLED}, active = 0 WHERE id = ${id}`;
-    sql:ExecutionResult|sql:Error result = leaveDbClient->execute(sqlQuery);
+    sql:ExecutionResult|sql:Error result = leaveDbClient->execute(setLeaveStatusQuery(CANCELLED, id));
     if result is error {
         return error("Error occurred while cancelling leave!", result);
     }
@@ -90,10 +89,10 @@ public isolated function cancelLeave(int id) returns error? {
 # + leaveId - ID of the sabbatical leave application
 # + approvalStatus - Approval status to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + return - Nil on success, error on failure
-public isolated function setLeaveStatus(int leaveId, ApprovalStatus approvalStatus)
+public isolated function setLeaveStatus(int leaveId, Status approvalStatus)
 returns sql:ExecutionResult|error {
 
-    sql:ParameterizedQuery sqlQuery = setLeaveApprovalStatusQuery(approvalStatus, leaveId);
+    sql:ParameterizedQuery sqlQuery = setLeaveStatusQuery(approvalStatus, leaveId);
     return check leaveDbClient->execute(sqlQuery);
 }
 
@@ -137,6 +136,6 @@ public isolated function getEmailNotificationRecipientList(string applicantEmail
 # + return - SQL execution result or an error on failure
 public isolated function setCalendarEventIdForSabbaticalLeave(int leaveId, string calendarEventId)
     returns sql:ExecutionResult|error {
-        
+
     return check leaveDbClient->execute(setSabbaticalLeaveCalendarEventIdQuery(leaveId, calendarEventId));
 }

@@ -126,8 +126,7 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             num_days,
             public_submit_note,
             calendar_event_id,
-            location,
-            active
+            location
         ) VALUES (
             ${input.email},
             ${input.leaveType},
@@ -147,31 +146,26 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
             ${numberOfDays},
             ${input?.isPublicComment ?: false},
             ${input?.calendarEventId},
-            ${location},
-            1 )
+            ${location} 
+            )
     `;
 
     return insertQuery;
 }
 
-# Query to approve or reject a  leave application (for leads).
+# Set the status of a leave application.
 #
-# + approvalStatus - Status of the leave to be set (APPROVED, REJECTED)
+# + status - Status of the leave to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + leaveId - ID of the leave record 
 # + return - Update query to approve or reject leave application
-isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int leaveId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function setLeaveStatusQuery(Status status, int leaveId) returns sql:ParameterizedQuery => `
         UPDATE
             leave_submissions
         SET
-            status = ${approvalStatus}
+            status = ${status}
         WHERE 
             id = ${leaveId}
     `;
-
-    return query;
-}
 
 # Query to get the end date of the last approved sabbatical leave for an employee.
 #
@@ -180,9 +174,12 @@ isolated function setLeaveApprovalStatusQuery(ApprovalStatus approvalStatus, int
 isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) returns sql:ParameterizedQuery => `
         SELECT 
             end_date
-        FROM leave_submissions
-        WHERE email = ${employeeEmail} AND leave_type = ${SABBATICAL_LEAVE} AND status = ${APPROVED}
-        ORDER BY end_date DESC
+        FROM 
+            leave_submissions
+        WHERE 
+            email = ${employeeEmail} AND leave_type = ${SABBATICAL_LEAVE} AND status = ${APPROVED}
+        ORDER BY 
+            end_date DESC
         LIMIT 1
     `;
 
@@ -190,8 +187,7 @@ isolated function getLastSabbaticalLeaveEndDateQuery(string employeeEmail) retur
 #
 # + leadEmail - Email of the lead
 # + return - Select query to get count of subordinates on sabbatical leave
-isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) returns sql:ParameterizedQuery => `
         SELECT 
             COUNT(id)
         FROM 
@@ -200,15 +196,12 @@ isolated function getSubordinateCountOnSabbaticalLeaveQuery(string leadEmail) re
             approver_email = ${leadEmail} AND status = ${APPROVED} AND leave_type = ${SABBATICAL_LEAVE} AND
             start_date <= UTC_TIMESTAMP() AND end_date >= UTC_TIMESTAMP()
     `;
-    return query;
-}
 
 # Query to get most recent email notification recipient list (general leave) for a leave applicant.
 #
 # + applicantEmail - Email of the leave applicant
 # + return - Select query to get email notification list
-isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
+isolated function getEmailNotificationRecipientListQuery(string applicantEmail) returns sql:ParameterizedQuery => `
         SELECT
             copy_email_list
         FROM
@@ -219,8 +212,6 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
             created_date DESC
         LIMIT 1
     `;
-    return query;
-}
 
 # Query to set the calendar event ID for a sabbatical leave record.
 #
@@ -228,11 +219,11 @@ isolated function getEmailNotificationRecipientListQuery(string applicantEmail) 
 # + calendarEventId - Calendar event ID
 # + return - Update query to set calendar event ID
 isolated function setSabbaticalLeaveCalendarEventIdQuery(int leaveId, string calendarEventId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        UPDATE leave_submissions
-        SET calendar_event_id = ${calendarEventId}
-        WHERE id = ${leaveId}
+    returns sql:ParameterizedQuery => `
+        UPDATE 
+            leave_submissions
+        SET 
+            calendar_event_id = ${calendarEventId}
+        WHERE
+            id = ${leaveId}
     `;
-    return query;
-}
