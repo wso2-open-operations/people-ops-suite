@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { RouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -36,9 +35,22 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
-export enum DayType {
+export enum PeriodType {
   ONE = "one",
   MULTIPLE = "multiple",
+  HALF = "half",
+}
+
+export enum DayPortion {
+  FULL = "full",
+  FIRST = "first",
+  SECOND = "second",
+}
+
+export enum DayPortionLabel {
+  FULL = "Full Day",
+  FIRST = "First Half",
+  SECOND = "Second Half",
 }
 
 export interface RouteDetail {
@@ -74,6 +86,14 @@ export enum LeaveType {
   LIEU = "lieu",
 }
 
+export enum LeaveLabel {
+  CASUAL = "Casual/Annual",
+  MATERNITY = "Maternity",
+  PATERNITY = "Paternity",
+  LIEU = "Lieu",
+  SABBATICAL = "Sabbatical",
+}
+
 // Leave Approval action.
 export enum Action {
   APPROVE = "approve",
@@ -88,7 +108,7 @@ export enum OrderBy {
 
 // Leave validation types.
 export interface LeaveValidationRequest {
-  periodType: "one" | "multiple";
+  periodType: PeriodType;
   startDate: string;
   endDate: string;
   isMorningLeave: boolean | null;
@@ -123,7 +143,7 @@ export interface CachedMail {
 
 // Leave submission type.
 export interface LeaveSubmissionRequest {
-  periodType?: "one" | "multiple" | "half";
+  periodType?: PeriodType;
   startDate: string;
   endDate: string;
   isMorningLeave?: boolean | null;
@@ -144,8 +164,8 @@ export interface LeaveSubmissionResponse {
 export interface SingleLeaveHistory {
   id: number;
   email: string;
-  leaveType: string;
-  periodType: string;
+  leaveType: LeaveType;
+  periodType: PeriodType;
   copyEmailList: string;
   notifyEveryone: boolean;
   submitComment: string;
