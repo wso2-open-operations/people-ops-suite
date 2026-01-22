@@ -32,6 +32,7 @@ export default function LeaveHistory() {
   const { enqueueSnackbar } = useSnackbar();
   const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [currentYear] = useState<number>(new Date().getFullYear());
   const userInfo = useSelector(selectUser);
 
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function LeaveHistory() {
       try {
         const response = await getLeaveHistory({
           email: userInfo?.workEmail || "",
-          startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
+          startDate: `${currentYear}-01-01`, // first day of the current year
           statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
           orderBy: OrderBy.DESC,
         });
@@ -55,7 +56,7 @@ export default function LeaveHistory() {
     };
 
     fetchLeaveHistory();
-  }, []);
+  }, [currentYear]);
 
   const getMonthAndDay = (dateString: string) => {
     const date = new Date(dateString);
@@ -77,31 +78,44 @@ export default function LeaveHistory() {
 
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
-      <Title firstWord="Leave" secondWord="History (Current Year)" />
+      <Title firstWord="Leave" secondWord={`History (${currentYear})`} />
       <Box
         gap="2rem"
         display="grid"
         gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
+        minHeight="200px"
       >
-        {loading && <CircularProgress size={30} />}
+        {loading && (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            width="100%"
+            gridColumn="1 / -1"
+            minHeight="200px"
+          >
+            <CircularProgress size={30} />
+          </Box>
+        )}
         {!loading && leaves.length == 0 && <Typography>No leave history available.</Typography>}
-        {leaves.map((leave) => {
-          const { month, day } = getMonthAndDay(leave.startDate);
-          return (
-            <LeaveCard
-              key={leave.id}
-              id={leave.id}
-              type={`${leave.leaveType}`}
-              startDate={leave.startDate.substring(0, 10)}
-              endDate={leave.endDate.substring(0, 10)}
-              duration={`${leave.numberOfDays} days`}
-              status="approved"
-              month={month}
-              day={day}
-              onDelete={handleDeleteLeave}
-            />
-          );
-        })}
+        {!loading &&
+          leaves.map((leave) => {
+            const { month, day } = getMonthAndDay(leave.startDate);
+            return (
+              <LeaveCard
+                key={leave.id}
+                id={leave.id}
+                type={`${leave.leaveType}`}
+                startDate={leave.startDate.substring(0, 10)}
+                endDate={leave.endDate.substring(0, 10)}
+                duration={`${leave.numberOfDays} days`}
+                status="approved"
+                month={month}
+                day={day}
+                onDelete={handleDeleteLeave}
+              />
+            );
+          })}
       </Box>
     </Stack>
   );
