@@ -24,7 +24,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ApprovalStatus, OrderBy, SingleLeaveHistory } from "@root/src/types/types";
+import { OrderBy, SingleLeaveHistory, Status } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
@@ -43,7 +43,7 @@ export default function LeaveHistory() {
         const response = await getLeaveHistory({
           email: userInfo?.workEmail || "",
           startDate: `${currentYear}-01-01`, // first day of the current year
-          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
+          statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
         });
 

@@ -23,7 +23,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ApprovalStatus, LeaveHistoryResponse } from "@root/src/types/types";
+import { LeaveHistoryResponse, Status } from "@root/src/types/types";
 import ApprovalHistoryTable from "@root/src/view/SabbaticalLeave/component/ApprovalHistoryTable";
 
 export default function ApprovalHistoryTab() {
@@ -37,7 +37,7 @@ export default function ApprovalHistoryTab() {
       try {
         const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
           approverEmail: userInfo?.workEmail || "",
-          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.REJECTED],
+          statuses: [Status.APPROVED, Status.REJECTED],
         });
         setApprovalHistory(approvalHistory);
       } catch (error) {

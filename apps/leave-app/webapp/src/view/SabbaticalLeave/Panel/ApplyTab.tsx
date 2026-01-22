@@ -47,11 +47,11 @@ import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { getLeaveHistory, submitLeaveRequest } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import {
-  ApprovalStatus,
   EligibilityResponse,
   LeaveHistoryResponse,
   LeaveType,
   OrderBy,
+  Status,
 } from "@root/src/types/types";
 
 interface ApplyTabProps {
@@ -106,7 +106,7 @@ export default function ApplyTab({
         const lastSabbaticalLeaveDetails: LeaveHistoryResponse = await getLeaveHistory({
           email: userInfo?.workEmail || "",
           leaveCategory: [LeaveType.SABBATICAL],
-          statuses: [ApprovalStatus.APPROVED],
+          statuses: [Status.APPROVED],
           orderBy: OrderBy.DESC,
           limit: 1,
         });

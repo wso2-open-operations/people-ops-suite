@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import type { RouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -70,7 +71,7 @@ export type RouteObjectWithRole = RouteObject & {
 };
 
 // Leave approval status.
-export enum ApprovalStatus {
+export enum Status {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
@@ -198,7 +199,7 @@ export interface LeaveHistoryQueryParam {
   endDate?: string;
   approverEmail?: string;
   leaveCategory?: LeaveType[];
-  statuses?: ApprovalStatus[];
+  statuses?: Status[];
   limit?: number;
   offset?: number;
   orderBy?: OrderBy;
@@ -221,22 +222,6 @@ export interface LeadReportResponse {
     paternity?: number;
     sabbatical?: number;
   };
-}
-
-// Single approval status item.
-export interface ApprovalStatusItem {
-  id: string;
-  email: string;
-  startDate: string;
-  endDate: string;
-  approvalStatus: ApprovalStatus;
-  submitNote: string;
-}
-
-// Approval request payload.
-export interface ApprovalRequest {
-  isApproved: boolean;
-  leaveId: string;
 }
 
 // Approval response payload.
