@@ -20,15 +20,19 @@ import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
 import { Stack, Typography, useTheme } from "@mui/material";
 
+import { useEffect } from "react";
+
+import { DayPortion, DayPortionLabel, LeaveLabel, LeaveType } from "@root/src/types/types";
+
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
 
 interface LeaveSelectionProps {
   daysSelected: number;
-  selectedLeaveType: string;
-  onLeaveTypeChange: (leaveType: string) => void;
-  selectedDayPortion: string | null;
-  onDayPortionChange: (dayPortion: string | null) => void;
+  selectedLeaveType: LeaveType;
+  onLeaveTypeChange: (leaveType: LeaveType) => void;
+  selectedDayPortion: DayPortion | null;
+  onDayPortionChange: (dayPortion: DayPortion | null) => void;
 }
 
 export default function LeaveSelection({
@@ -39,18 +43,23 @@ export default function LeaveSelection({
   onDayPortionChange,
 }: LeaveSelectionProps) {
   const theme = useTheme();
-  const isHalfDayDisabled = daysSelected !== 1;
+  const isHalfDayDisabled = daysSelected > 1;
 
-  // Auto-select full day when days > 1
-  if (daysSelected > 1 && selectedDayPortion !== "full") {
-    onDayPortionChange("full");
-  }
 
-  const handleLeaveTypeSelection = (leaveType: string) => {
+  useEffect(() => {
+    if (
+      (daysSelected > 1 || selectedDayPortion === null) &&
+      selectedDayPortion !== DayPortion.FULL
+    ) {
+      onDayPortionChange(DayPortion.FULL);
+    }
+  }, [daysSelected, selectedDayPortion, onDayPortionChange]);
+
+  const handleLeaveTypeSelection = (leaveType: LeaveType) => {
     onLeaveTypeChange(leaveType);
   };
 
-  const handleDayPortionSelection = (dayPortion: string) => {
+  const handleDayPortionSelection = (dayPortion: DayPortion) => {
     if (daysSelected > 1) return; // Prevent changing when days > 1
     onDayPortionChange(dayPortion);
   };
@@ -63,27 +72,27 @@ export default function LeaveSelection({
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <LeaveSelectionIcon
           Icon={WorkOffIcon}
-          label="Casual Leave"
-          isSelected={selectedLeaveType === "casual"}
-          onClick={() => handleLeaveTypeSelection("casual")}
+          label={LeaveLabel.CASUAL}
+          isSelected={selectedLeaveType === LeaveType.CASUAL}
+          onClick={() => handleLeaveTypeSelection(LeaveType.CASUAL)}
         />
         <LeaveSelectionIcon
           Icon={PregnantWomanIcon}
-          label="Maternity"
-          isSelected={selectedLeaveType === "maternity"}
-          onClick={() => handleLeaveTypeSelection("maternity")}
+          label={LeaveLabel.MATERNITY}
+          isSelected={selectedLeaveType === LeaveType.MATERNITY}
+          onClick={() => handleLeaveTypeSelection(LeaveType.MATERNITY)}
         />
         <LeaveSelectionIcon
           Icon={FamilyRestroomIcon}
-          label="Paternity"
-          isSelected={selectedLeaveType === "paternity"}
-          onClick={() => handleLeaveTypeSelection("paternity")}
+          label={LeaveLabel.PATERNITY}
+          isSelected={selectedLeaveType === LeaveType.PATERNITY}
+          onClick={() => handleLeaveTypeSelection(LeaveType.PATERNITY)}
         />
         <LeaveSelectionIcon
           Icon={AccessTimeIcon}
-          label="Lieu"
-          isSelected={selectedLeaveType === "lieu"}
-          onClick={() => handleLeaveTypeSelection("lieu")}
+          label={LeaveLabel.LIEU}
+          isSelected={selectedLeaveType === LeaveType.LIEU}
+          onClick={() => handleLeaveTypeSelection(LeaveType.LIEU)}
         />
       </Stack>
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
@@ -96,20 +105,24 @@ export default function LeaveSelection({
         alignItems="center"
       >
         <DatePill
-          partOfDay="Full Day"
-          isSelected={selectedDayPortion === "full"}
-          onClick={() => handleDayPortionSelection("full")}
+          partOfDay={DayPortionLabel.FULL}
+          isSelected={selectedDayPortion === DayPortion.FULL}
+          onClick={() => handleDayPortionSelection(DayPortion.FULL)}
         />
         <DatePill
-          partOfDay="First Half"
-          isSelected={selectedDayPortion === "first"}
-          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("first")}
+          partOfDay={DayPortionLabel.FIRST}
+          isSelected={selectedDayPortion === DayPortion.FIRST}
+          onClick={
+            isHalfDayDisabled ? undefined : () => handleDayPortionSelection(DayPortion.FIRST)
+          }
           disabled={isHalfDayDisabled}
         />
         <DatePill
-          partOfDay="Second Half"
-          isSelected={selectedDayPortion === "second"}
-          onClick={isHalfDayDisabled ? undefined : () => handleDayPortionSelection("second")}
+          partOfDay={DayPortionLabel.SECOND}
+          isSelected={selectedDayPortion === DayPortion.SECOND}
+          onClick={
+            isHalfDayDisabled ? undefined : () => handleDayPortionSelection(DayPortion.SECOND)
+          }
           disabled={isHalfDayDisabled}
         />
       </Stack>
