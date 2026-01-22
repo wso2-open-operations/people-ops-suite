@@ -217,8 +217,8 @@ export default function NotifyPeople({
             color: theme.palette.primary.main,
           },
           "& .MuiChip-deleteIcon:hover": {
-            cursor: "pointer",
             color: theme.palette.primary.main,
+            cursor: "pointer",
           },
         }}
       />
