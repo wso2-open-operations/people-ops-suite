@@ -5,4 +5,3 @@ ALTER TABLE personal_info
   MODIFY COLUMN title           VARCHAR(100) NOT NULL,
   MODIFY COLUMN dob             DATE NOT NULL,
   MODIFY COLUMN nationality     VARCHAR(100) NOT NULL;
-  
