@@ -113,6 +113,8 @@ public type Employee record {|
     string subTeam;
     # Unit
     string? unit;
+    # Computed field: number of subordinates this employee manages
+    int subordinateCount;
 |};
 
 # Personal information of an employee.
@@ -121,17 +123,17 @@ public type EmployeePersonalInfo record {|
     int id;
     # National Identity Card number
     @sql:Column {name: "nic_or_passport"}
-    string? nicOrPassport;
+    string nicOrPassport;
     # First name
-    string? firstName;
+    string firstName;
     # Last name
-    string? lastName;
+    string lastName;
     # Title (Mr./Ms./Dr./etc.)
-    string? title;
+    string title;
     # Date of birth
-    string? dob;
+    string dob;
     # Gender of the person
-    string? gender;
+    string gender;
     # Personal email address
     @sql:Column {name: "personal_email"}
     string? personalEmail;
@@ -158,7 +160,7 @@ public type EmployeePersonalInfo record {|
     # Country of residence
     string? country;
     # Nationality
-    string? nationality;
+    string nationality;
     # Emergency contacts
     @sql:Column {name: "emergency_contacts"}
     json? emergencyContacts;
@@ -300,19 +302,19 @@ public type CreatePersonalInfoPayload record {|
     string nicOrPassport;
     # First name
     @constraint:String {maxLength: 100}
-    string? firstName = ();
+    string firstName;
     # Last name
     @constraint:String {maxLength: 100}
-    string? lastName = ();
+    string lastName;
     # Title (Mr./Ms./Dr./etc.)
     @constraint:String {maxLength: 20}
-    string? title = ();
+    string title;
     # Date of birth
     @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
-    string? dob = ();
+    string dob;
     # Gender of the person
     @constraint:String {maxLength: 20}
-    string? gender = ();
+    string gender;
     # Personal email address
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
@@ -342,7 +344,7 @@ public type CreatePersonalInfoPayload record {|
     string? country = ();
     # Nationality
     @constraint:String {maxLength: 100}
-    string? nationality = ();
+    string nationality;
     # Emergency contacts
     EmergencyContact[]? emergencyContacts = ();
 |};

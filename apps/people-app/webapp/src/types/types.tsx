@@ -49,7 +49,6 @@ export interface CreateEmployeeFormValues {
     title: string;
     dob: string | null;
     gender: string;
-    age: number | null;
     personalEmail: string | null;
     personalPhone: string | null;
     residentNumber: string | null;
@@ -92,7 +91,6 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     title: "",
     dob: null,
     gender: "",
-    age: null,
     personalEmail: null,
     personalPhone: null,
     residentNumber: null,
@@ -126,3 +124,8 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   designationId: 0,
   secondaryJobTitle: "",
 };
+
+export interface ServiceLength {
+  years: number;
+  months: number;
+}

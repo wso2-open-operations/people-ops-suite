@@ -130,7 +130,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return employeeInfo;
+
+        return employeeInfo;    
     }
 
     # Fetch employee personal information.

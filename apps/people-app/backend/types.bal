@@ -30,3 +30,4 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
+

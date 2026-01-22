@@ -58,6 +58,12 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
         e.additional_manager_emails AS additionalManagerEmails,
+        (
+            SELECT COUNT(1)
+            FROM employee e2
+            WHERE e2.id <> e.id
+              AND e2.manager_email = e.work_email
+        ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
         e.probation_end_date AS probationEndDate,
