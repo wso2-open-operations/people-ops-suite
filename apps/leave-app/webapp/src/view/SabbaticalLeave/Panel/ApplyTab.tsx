@@ -94,6 +94,7 @@ export default function ApplyTab({
   const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
+  const [durationExceedError, setDurationExceedError] = useState(false);
   const [managerApprovalError, setManagerApprovalError] = useState(false);
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
@@ -208,10 +209,28 @@ export default function ApplyTab({
     sabbaticalEndDateFieldEditable,
     sabbaticalLeaveEligibilityDuration,
   ]);
+  // Validate leave dates to be stay within eligibility duration
+  useEffect(() => {
+    if (!leaveStartDate || !leaveEndDate) {
+      setEndDateError(false);
+      setDurationExceedError(false);
+      return;
+    }
+
+    const daysDifference = leaveEndDate.diff(leaveStartDate, "day") + 1;
+    if (daysDifference > sabbaticalLeaveMaxApplicationDuration) {
+      setEndDateError(true);
+      setDurationExceedError(true);
+    } else {
+      setEndDateError(false);
+      setDurationExceedError(false);
+    }
+  }, [leaveStartDate, leaveEndDate, sabbaticalLeaveMaxApplicationDuration]);
 
   const handleOpenDialog = () => {
     setStartDateError(false);
     setEndDateError(false);
+    setDurationExceedError(false);
     setManagerApprovalError(false);
     setPolicyReadError(false);
     setResignationAcknowledgeError(false);
@@ -235,6 +254,8 @@ export default function ApplyTab({
 
     const daysDifference = leaveEndDate.diff(leaveStartDate, "day") + 1;
     if (daysDifference > sabbaticalLeaveMaxApplicationDuration) {
+      setEndDateError(true);
+      setDurationExceedError(true);
       enqueueSnackbar(
         `Sabbatical leave duration should be less than or equal to ${sabbaticalLeaveMaxApplicationDuration} days`,
         {
@@ -388,6 +409,7 @@ export default function ApplyTab({
                     onChange={(newValue) => {
                       setLeaveStartDate(newValue);
                       setStartDateError(false);
+                      setDurationExceedError(false);
                     }}
                     format="YYYY-MM-DD"
                     disablePast
@@ -405,13 +427,18 @@ export default function ApplyTab({
                     onChange={(newValue) => {
                       setLeaveEndDate(newValue);
                       setEndDateError(false);
+                      setDurationExceedError(false);
                     }}
                     format="YYYY-MM-DD"
                     disablePast
                     slotProps={{
                       textField: {
                         error: endDateError,
-                        helperText: endDateError ? "End date is required" : "",
+                        helperText: endDateError
+                          ? durationExceedError
+                            ? `Leave duration must not exceed ${sabbaticalLeaveMaxApplicationDuration} days`
+                            : "End date is required"
+                          : "",
                       },
                     }}
                   />
