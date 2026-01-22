@@ -198,6 +198,14 @@ export default function NotifyPeople({
                 label={option.email}
                 avatar={ChipAvatar}
                 onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+                sx={{
+                  ".MuiChip-root:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                  ".MuiChip-deleteIcon": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
               />
             );
           })
@@ -209,16 +217,6 @@ export default function NotifyPeople({
             fontWeight: 500,
             borderRadius: "6px",
             border: `1px solid ${theme.palette.primary.main}`,
-          },
-          "& .MuiChip-root:hover": {
-            backgroundColor: theme.palette.action.hover,
-          },
-          "& .MuiChip-deleteIcon": {
-            color: theme.palette.primary.main,
-          },
-          "& .MuiChip-deleteIcon:hover": {
-            color: theme.palette.primary.main,
-            cursor: "pointer",
           },
         }}
       />
