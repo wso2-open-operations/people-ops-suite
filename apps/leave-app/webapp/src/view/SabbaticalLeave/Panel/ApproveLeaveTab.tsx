@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Alert, CircularProgress, Stack, useTheme } from "@mui/material";
+import { CircularProgress, Stack, useTheme } from "@mui/material";
 import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
@@ -23,7 +23,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ApprovalStatus, LeaveHistoryResponse } from "@root/src/types/types";
+import { LeaveHistoryResponse, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
@@ -37,7 +37,7 @@ export default function ApproveLeaveTab() {
     try {
       const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
         approverEmail: userInfo?.workEmail || "",
-        statuses: [ApprovalStatus.PENDING],
+        statuses: [Status.PENDING],
       });
       setApprovalHistory(approvalHistory);
     } catch (error) {
@@ -61,10 +61,6 @@ export default function ApproveLeaveTab() {
         pb="1rem"
       >
         <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
-        <Alert variant="outlined" severity="warning">
-          {userInfo?.subordinatePercentageOnSabbaticalLeave ?? "0%"} of your subordinates are on
-          sabbatical leave
-        </Alert>
       </Stack>
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">
