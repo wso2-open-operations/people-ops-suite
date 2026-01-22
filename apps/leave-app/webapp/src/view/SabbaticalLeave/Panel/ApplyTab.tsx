@@ -96,6 +96,7 @@ export default function ApplyTab({
   useEffect(() => {
     const checkEligibility = async () => {
       try {
+        // fetch last sabbatical leave end date
         setIsLoading(true);
         const lastSabbaticalLeaveDetails: LeaveHistoryResponse = await getLeaveHistory({
           email: userInfo?.workEmail || "",
