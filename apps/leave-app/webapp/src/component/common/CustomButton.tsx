@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Button } from "@mui/material";
-import CheckCircleIcon from '@mui/icons-material/CheckCircleOutline';
+import CheckCircleIcon from "@mui/icons-material/CheckCircleOutline";
+import { Button, CircularProgress } from "@mui/material";
 
 interface CustomButtonProps {
   label: string;
@@ -31,7 +31,7 @@ export default function CustomButton({ label, onClick, disabled }: CustomButtonP
       onClick={onClick}
       disabled={disabled}
       sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
-      startIcon={<CheckCircleIcon />}
+      startIcon={disabled ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
     >
       {label}
     </Button>
