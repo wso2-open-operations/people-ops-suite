@@ -26,23 +26,26 @@ import {
   getPeriodType,
   validateLeaveRequest,
 } from "@root/src/services/leaveService";
+import { DayPortion, PeriodType } from "@root/src/types/types";
 
 interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
   onDatesChange: (startDate: Dayjs | null, endDate: Dayjs | null) => void;
   onWorkingDaysChange: (workingDays: number) => void;
+  selectedDayPortion?: DayPortion | null;
 }
 
 export default function LeaveDateSelection({
   onDaysChange,
   onDatesChange,
   onWorkingDaysChange,
+  selectedDayPortion,
 }: LeaveDateSelectionProps) {
   const theme = useTheme();
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
-  const [isValidating, setIsValidating] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [isValidating, setIsValidating] = useState(false);
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
@@ -50,11 +53,18 @@ export default function LeaveDateSelection({
     return end.diff(start, "day") + 1;
   };
 
-  const daysSelected = calculateTotalDays(startDate, endDate);
+  const [daysSelected, setDaysSelected] = useState(calculateTotalDays(startDate, endDate));
 
   useEffect(() => {
     onDaysChange(daysSelected);
   }, [daysSelected, onDaysChange]);
+
+  // Trigger validation when selectedDayPortion changes
+  useEffect(() => {
+    if (startDate && endDate && selectedDayPortion) {
+      validateDates(startDate, endDate);
+    }
+  }, [selectedDayPortion]);
 
   useEffect(() => {
     const today = dayjs().startOf("day");
@@ -66,6 +76,7 @@ export default function LeaveDateSelection({
 
   // Validate dates and fetch working days from API
   const validateDates = async (start: Dayjs | null, end: Dayjs | null) => {
+    setDaysSelected(calculateTotalDays(start, end));
     if (!start || !end) {
       setWorkingDaysSelected(0);
       onWorkingDaysChange(0);
@@ -81,12 +92,33 @@ export default function LeaveDateSelection({
     setIsValidating(true);
     try {
       const totalDays = calculateTotalDays(start, end);
+      let periodType: PeriodType;
+      let isMorningLeave: boolean | null = null;
+
+      switch (selectedDayPortion) {
+        case DayPortion.FULL:
+          periodType = totalDays === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+          isMorningLeave = null;
+          break;
+        case DayPortion.FIRST:
+          periodType = PeriodType.HALF;
+          isMorningLeave = true;
+          break;
+        case DayPortion.SECOND:
+          periodType = PeriodType.HALF;
+          isMorningLeave = false;
+          break;
+        default:
+          periodType = getPeriodType(totalDays);
+          isMorningLeave = null;
+          break;
+      }
       const response = await validateLeaveRequest(
         {
-          periodType: getPeriodType(totalDays),
+          periodType,
           startDate: formatDateForApi(start),
           endDate: formatDateForApi(end),
-          isMorningLeave: null,
+          isMorningLeave,
         },
         true,
       );
@@ -129,8 +161,8 @@ export default function LeaveDateSelection({
   const getStatus = () => {
     if (!startDate || !endDate) return "Please select dates";
     if (endDate.isBefore(startDate, "day")) return "Invalid date range";
-    if (daysSelected === 0) return "Invalid selection";
-    if (workingDaysSelected < 1) return "No working days selected";
+    if (daysSelected <= 0) return "Invalid selection";
+    if (workingDaysSelected <= 0) return "No working days selected";
     return "Valid date selection";
   };
 
@@ -141,7 +173,7 @@ export default function LeaveDateSelection({
       direction="column"
       justifyContent="space-between"
       width={{ md: "40%" }}
-      gap={{xs:"1rem"}}
+      gap={{ xs: "1rem" }}
     >
       <Stack direction="row" justifyContent="space-between">
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
