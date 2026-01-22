@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import leave_service.authorization;
 import leave_service.database;
 import leave_service.email;
@@ -67,21 +68,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            string?|error subordinatePercentageOnSabbaticalLeave = ();
             if (<boolean>empInfo.lead) {
                 privileges.push(authorization:LEAD_PRIVILEGE);
-                // Add lead specific subordinate percentage info
-                subordinatePercentageOnSabbaticalLeave =
-                getSubordinateCountOnSabbaticalLeaveAsAPercentage(userInfo.email);
-                if subordinatePercentageOnSabbaticalLeave is error {
-                    string errMsg = "Error occurred while calculating subordinate on sabbatical leave percentage";
-                    return <http:InternalServerError>{
-                        body: {
-                            message: errMsg
-                        }
-                    };
-                }
-
             }
             // Add optional mails for the form
             if empInfo.leadEmail is () {
@@ -90,7 +78,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
             if empLead is error {
                 string errorMsg = "Error occurred while fetching employee lead info";
-                log:printError(errorMsg);
+                log:printError(errorMsg, empLead);
                 return <http:InternalServerError>{
                     body: {
                         message: errorMsg
@@ -127,8 +115,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.startDate,
-                subordinatePercentageOnSabbaticalLeave: subordinatePercentageOnSabbaticalLeave is string ?
-                    subordinatePercentageOnSabbaticalLeave : (),
+                subordinateCount: empInfo.subordinateCount,
                 cachedEmails: defaultMailsToNotify
             };
 
