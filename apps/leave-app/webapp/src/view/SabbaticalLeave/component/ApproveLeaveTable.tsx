@@ -63,18 +63,22 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
     useState<string>("0%");
   // calculate the subordinate percentage on sabbatical leave during the given period
   const calculateSubordinatePercentage = async (startDate: string, endDate: string) => {
-    const subordinateHistoryOnSabbatical: LeaveHistoryResponse = await getLeaveHistory({
-      startDate: startDate,
-      endDate: endDate,
-      approverEmail: userInfo?.workEmail,
-      leaveCategory: [LeaveType.SABBATICAL],
-      statuses: [Status.APPROVED],
-    });
+    try {
+      const subordinateHistoryOnSabbatical: LeaveHistoryResponse = await getLeaveHistory({
+        startDate: startDate,
+        endDate: endDate,
+        approverEmail: userInfo?.workEmail,
+        leaveCategory: [LeaveType.SABBATICAL],
+        statuses: [Status.APPROVED],
+      });
 
-    if (subordinateCount !== 0 || subordinateCount) {
-      setSubordinateOnSabbaticalPercentage(
-        (subordinateHistoryOnSabbatical.leaves.length / Number(subordinateCount)) * 100 + "%",
-      );
+      if (subordinateCount > 0) {
+        setSubordinateOnSabbaticalPercentage(
+          (subordinateHistoryOnSabbatical.leaves.length / Number(subordinateCount)) * 100 + "%",
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch subordinate sabbatical leave history", error);
     }
   };
   const [dialogState, setDialogState] = useState<ConfirmationDialogState>({
