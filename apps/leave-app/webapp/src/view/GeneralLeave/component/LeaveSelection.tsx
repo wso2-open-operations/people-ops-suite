@@ -43,8 +43,7 @@ export default function LeaveSelection({
   onDayPortionChange,
 }: LeaveSelectionProps) {
   const theme = useTheme();
-  const isHalfDayDisabled = daysSelected > 1;
-
+  const isHalfDayDisabled = daysSelected !== 1;
 
   useEffect(() => {
     if (
