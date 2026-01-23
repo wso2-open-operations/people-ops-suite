@@ -271,19 +271,6 @@ isolated function getSubordinateCount(string leadEmail) returns int|error {
     return employee.subordinateCount;
 }
 
-# Get percentage of subordinates on sabbatical leave.
-#
-# + leadEmail - email of the reporting lead
-# + return - percentage of subordinates on sabbatical leave or an error     
-isolated function getSubordinateCountOnSabbaticalLeaveAsAPercentage(string leadEmail) returns string|error {
-    int subordinateCount = check getSubordinateCount(leadEmail);
-    if subordinateCount == 0 {
-        return "0%"; // early return to prevent division by zero
-    }
-    int subordinateOnSabbaticalLeaveCount = check database:getSubordinateCountOnSabbaticalLeave(leadEmail);
-    return ((<float>subordinateOnSabbaticalLeaveCount / <float>subordinateCount) * 100).toString() + "%";
-}
-
 # Get the next day from a given date string.
 #
 # + dateString - Date string in yyyy-mm-dd format
