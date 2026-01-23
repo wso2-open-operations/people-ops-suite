@@ -77,7 +77,7 @@ isolated function getDinnerRequestByEmailQuery(string email) returns sql:Paramet
         email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
 `;
 
-# Retrieve dinner request by email.
+# Retrieve dinner request by id.
 #
 # + id - Dinner Id
 # + return - SQL parameterized query
