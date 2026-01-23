@@ -234,7 +234,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         <DialogContent>
           <DialogContentText>
             {subordinateOnSabbaticalPercentage} of your subordinates will be on sabbatical leave
-            during this period.{" "}
+            during this period. <br/><br/>
             {dialogState.isApproval
               ? `Are you sure you want to approve the sabbatical leave request for ${dialogState.leaveItem?.email}?`
               : `Are you sure you want to reject the sabbatical leave request for ${dialogState.leaveItem?.email}?`}
