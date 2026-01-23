@@ -1,8 +1,13 @@
 [package]
-org = "wso2_open_operations"
-name = "par"
+org = "wso2"
+name = "par_app"
 version = "0.1.0"
-distribution = "2201.12.7"
+distribution = "2201.8.4"
 
 [build-options]
 observabilityIncluded = true
+
+[[platform.java17.dependency]]
+groupId = "io.ballerina.stdlib"
+artifactId = "persist.sql-native"
+version = "1.2.0"

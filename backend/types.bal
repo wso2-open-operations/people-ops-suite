@@ -13,7 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import par.entity;
+
+
+
 
 # Represents the response structure for retrieving user information.
 public type UserInfoResponse record {|
@@ -33,22 +35,8 @@ public type UserInfoResponse record {|
     int[] privileges;
 |};
 
-# Represent the name and email address of a support team.
-public type SupportTeamEmail record {|
-    # Name of the support team
-    string team;
-    # Email address of the support team
-    string email;
-|};
-
-# List of App Configurations.
+# AppConfig Type
 public type AppConfig record {|
-    # List of support team emails
-    SupportTeamEmail[] supportTeamEmails;
+    # Sample AppConfig
+    string sampleAppConfig;
 |};
-
-type UserInfo record {
-    *entity:Employee;
-    # Array of privileges assigned to the user
-    int[] privileges;
-};
