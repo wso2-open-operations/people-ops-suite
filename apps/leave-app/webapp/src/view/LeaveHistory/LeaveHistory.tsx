@@ -32,6 +32,7 @@ export default function LeaveHistory() {
   const { enqueueSnackbar } = useSnackbar();
   const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cancellingLeaveId, setCancellingLeaveId] = useState<number | null>(null);
   const [currentYear] = useState<number>(new Date().getFullYear());
   const userInfo = useSelector(selectUser);
 
@@ -67,12 +68,15 @@ export default function LeaveHistory() {
 
   const handleDeleteLeave = async (id: number) => {
     try {
+      setCancellingLeaveId(id);
       await cancelLeaveRequest(id);
       setLeaves((prevLeaves) => prevLeaves.filter((leave) => leave.id !== id));
       enqueueSnackbar("Leave cancelled successfully", { variant: "success" });
     } catch (err) {
       console.error("Failed to delete leave", err);
       enqueueSnackbar("Failed to cancel leave", { variant: "error" });
+    } finally {
+      setCancellingLeaveId(null);
     }
   };
 
@@ -97,7 +101,7 @@ export default function LeaveHistory() {
             <CircularProgress size={30} />
           </Box>
         )}
-        {!loading && leaves.length == 0 && <Typography>No leave history available.</Typography>}
+        {!loading && leaves.length === 0 && <Typography>No leave history available.</Typography>}
         {!loading &&
           leaves.map((leave) => {
             const { month, day } = getMonthAndDay(leave.startDate);
@@ -111,6 +115,7 @@ export default function LeaveHistory() {
                 duration={`${leave.numberOfDays} days`}
                 month={month}
                 day={day}
+                cancelling={cancellingLeaveId === leave.id}
                 onDelete={handleDeleteLeave}
               />
             );

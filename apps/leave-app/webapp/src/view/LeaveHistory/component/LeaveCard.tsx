@@ -20,6 +20,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -42,6 +43,7 @@ export interface LeaveCardProps {
   duration: string;
   month: string;
   day: string;
+  cancelling: boolean;
   onDelete?: (id: number) => void;
 }
 
@@ -53,6 +55,7 @@ export default function LeaveCard({
   endDate,
   month,
   day,
+  cancelling,
   onDelete,
 }: LeaveCardProps) {
   const theme = useTheme();
@@ -236,11 +239,18 @@ export default function LeaveCard({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="primary" disabled={cancelling}>
             No, Keep It
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
-            Yes, Cancel Leave
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            startIcon={cancelling ? <CircularProgress size={16} color="inherit" /> : null}
+            disabled={cancelling}
+            autoFocus
+          >
+            {cancelling ? "Cancelling..." : "Yes, Cancel"}
           </Button>
         </DialogActions>
       </Dialog>
