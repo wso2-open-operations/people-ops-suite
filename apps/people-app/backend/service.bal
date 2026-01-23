@@ -532,7 +532,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             stateOrProvince: payload.stateOrProvince,
             postalCode: payload.postalCode,
             country: payload.country,
-            emergencyContacts: payload.emergencyContacts
+            emergencyContacts: payload.emergencyContacts ?: []
         };
     }
 

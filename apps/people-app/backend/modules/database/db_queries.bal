@@ -57,7 +57,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.additional_manager_emails AS additionalManagerEmails,
+        COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         (
             SELECT COUNT(1)
             FROM employee e2
@@ -78,6 +78,14 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         u.name AS unit
     FROM
         employee e
+        LEFT JOIN (
+            SELECT 
+                employee_id,
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                AS additionalManagerEmails
+            FROM employee_additional_managers
+            GROUP BY employee_id
+        ) eam ON eam.employee_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -103,7 +111,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.additional_manager_emails AS additionalManagerEmails,
+        COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         d.designation AS designation,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
@@ -111,8 +119,15 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         t.name AS team,
         st.name AS subTeam,
         u.name AS unit
-    FROM
-        employee e
+    FROM employee e
+        LEFT JOIN (
+            SELECT 
+                employee_id,
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                AS additionalManagerEmails
+            FROM employee_additional_managers
+            GROUP BY employee_id
+        ) eam ON eam.employee_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -182,11 +197,24 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         state_or_province,
         postal_code,
         country,
-        nationality,
-        emergency_contacts
+        nationality
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
+
+# Fetch emergency contacts by personal info id.
+#
+# + personalInfoId - Personal info primary key
+# + return - Query to fetch emergency contacts
+isolated function getEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `SELECT
+        name,
+        relationship,
+        telephone,
+        mobile
+     FROM personal_info_emergency_contacts
+     WHERE personal_info_id = ${personalInfoId}
+     ORDER BY id;`;
 
 # Get business units query.
 # + return - Business units query
@@ -320,7 +348,6 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             postal_code,
             country,
             nationality,
-            emergency_contacts,
             created_by,
             updated_by
         )
@@ -342,7 +369,35 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.postalCode},
             ${payload.country},
             ${payload.nationality},
-            ${payload.emergencyContacts.toJsonString()},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Add emergency contact query.
+#
+# + personalInfoId - Personal info primary key
+# + contact - Emergency contact details
+# + createdBy - Creator of the emergency contact record
+# + return - Emergency contact insert query
+isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info_emergency_contacts
+        (
+            personal_info_id,
+            name,
+            mobile,
+            telephone,
+            relationship,
+            created_by,
+            updated_by
+        )
+     VALUES
+        (
+            ${personalInfoId},
+            ${contact.name},
+            ${contact.mobile},
+            ${contact.telephone},
+            ${contact.relationship},
             ${createdBy},
             ${createdBy}
         );`;
@@ -366,7 +421,6 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             start_date,
             secondary_job_title,
             manager_email,
-            additional_manager_emails,
             employee_status,
             continuous_service_record,
             employee_thumbnail,
@@ -394,7 +448,6 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.managerEmail},
-            ${string:'join(", ", ...payload.additionalManagerEmails)},
             ${payload.employeeStatus},
             ${payload.continuousServiceRecord},
             ${payload.employeeThumbnail},
@@ -408,6 +461,29 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.subTeamId},
             ${payload.businessUnitId},
             ${payload.unitId},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Add employee additional manager query.
+#
+# + employeeId - Employee primary key
+# + additionalManagerEmail - Additional manager email
+# + createdBy - Creator of the additional manager record
+# + return - Additional manager insert query
+isolated function addEmployeeAdditionalManagerQuery(int employeeId, string additionalManagerEmail, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_additional_managers
+        (
+            employee_id,
+            additional_manager_email,
+            created_by,
+            updated_by
+        )
+     VALUES
+        (
+            ${employeeId},
+            ${additionalManagerEmail},
             ${createdBy},
             ${createdBy}
         );`;
