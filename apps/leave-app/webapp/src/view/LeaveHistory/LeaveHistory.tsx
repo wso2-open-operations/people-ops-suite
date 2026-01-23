@@ -109,7 +109,6 @@ export default function LeaveHistory() {
                 startDate={leave.startDate.substring(0, 10)}
                 endDate={leave.endDate.substring(0, 10)}
                 duration={`${leave.numberOfDays} days`}
-                status="approved"
                 month={month}
                 day={day}
                 onDelete={handleDeleteLeave}

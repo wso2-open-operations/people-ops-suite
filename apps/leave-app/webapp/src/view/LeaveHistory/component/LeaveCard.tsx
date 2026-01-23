@@ -40,7 +40,6 @@ export interface LeaveCardProps {
   startDate: string;
   endDate: string;
   duration: string;
-  status: "approved" | "pending" | "rejected";
   month: string;
   day: string;
   onDelete?: (id: number) => void;
