@@ -24,6 +24,7 @@ import ballerina/sql;
 isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
     returns sql:ParameterizedQuery => `
         INSERT INTO dinner_bookings (
+            id,
             email, 
             meal_option, 
             date,
@@ -32,6 +33,7 @@ isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerReq
             manager_email,
             is_active
         ) VALUES (
+            ${dinnerRequest.id},
             ${email}, 
             ${dinnerRequest.mealOption}, 
             ${dinnerRequest.date}, 
@@ -73,6 +75,25 @@ isolated function getDinnerRequestByEmailQuery(string email) returns sql:Paramet
         dinner_bookings 
     WHERE 
         email = ${email} AND is_active = 1 AND date >= CURRENT_DATE 
+`;
+
+# Retrieve dinner request by email.
+#
+# + id - Dinner Id
+# + return - SQL parameterized query
+isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQuery => `
+    SELECT 
+        id,
+        meal_option,
+        date,
+        department,
+        team,
+        manager_email,
+        _timestamp
+    FROM 
+        dinner_bookings 
+    WHERE 
+        id = ${id}
 `;
 
 # Retrieve all dinner requests.
