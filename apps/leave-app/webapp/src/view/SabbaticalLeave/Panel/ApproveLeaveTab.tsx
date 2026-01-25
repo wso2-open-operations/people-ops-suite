@@ -23,7 +23,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { getLeaveHistory } from "@root/src/services/leaveService";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { LeaveHistoryResponse, Status } from "@root/src/types/types";
+import { LeaveHistoryResponse, OrderBy, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
@@ -38,6 +38,7 @@ export default function ApproveLeaveTab() {
       const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
         approverEmail: userInfo?.workEmail || "",
         statuses: [Status.PENDING],
+        orderBy: OrderBy.DESC,
       });
       setApprovalHistory(approvalHistory);
     } catch (error) {
