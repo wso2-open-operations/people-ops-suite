@@ -257,7 +257,7 @@ export default function ApplyTab({
       setEndDateError(true);
       setDurationExceedError(true);
       enqueueSnackbar(
-        `Sabbatical leave duration should be less than or equal to ${sabbaticalLeaveMaxApplicationDuration} days`,
+        `Sabbatical leave duration should be less than or equal to ${sabbaticalLeaveMaxApplicationDuration / 7} weeks`,
         {
           variant: "error",
         },
@@ -436,7 +436,7 @@ export default function ApplyTab({
                         error: endDateError,
                         helperText: endDateError
                           ? durationExceedError
-                            ? `Leave duration must not exceed ${sabbaticalLeaveMaxApplicationDuration} days`
+                            ? `Leave duration must not exceed ${sabbaticalLeaveMaxApplicationDuration / 7} weeks`
                             : "End date is required"
                           : "",
                       },
@@ -469,7 +469,7 @@ export default function ApplyTab({
                         }}
                       />
                     }
-                    label="I confirm that I have discussed my sabbatical leave plans with my manager and have obtained their approval."
+                    label="I confirm that I have discussed my sabbatical leave plans with my lead and have obtained their approval."
                     sx={{
                       color: managerApprovalError
                         ? theme.palette.error.main
