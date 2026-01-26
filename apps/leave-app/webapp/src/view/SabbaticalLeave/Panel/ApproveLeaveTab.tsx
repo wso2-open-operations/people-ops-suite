@@ -15,41 +15,44 @@
 // under the License.
 
 import { CircularProgress, Stack, useTheme } from "@mui/material";
-import { useSelector } from "react-redux";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { getLeaveHistory } from "@root/src/services/leaveService";
+import {
+  fetchLeaveHistory,
+  selectLeaveState,
+  selectLeaves,
+} from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { LeaveHistoryResponse, OrderBy, Status } from "@root/src/types/types";
+import { OrderBy, State, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
 export default function ApproveLeaveTab() {
   const theme = useTheme();
-  const userInfo = useSelector(selectUser);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [approvalHistory, setApprovalHistory] = useState<LeaveHistoryResponse>();
-  const fetchApprovalHistory = async () => {
-    setLoading(true);
-    try {
-      const approvalHistory: LeaveHistoryResponse = await getLeaveHistory({
-        approverEmail: userInfo?.workEmail || "",
-        statuses: [Status.PENDING],
-        orderBy: OrderBy.DESC,
-      });
-      setApprovalHistory(approvalHistory);
-    } catch (error) {
-      console.error("Failed to fetch approval history", error);
-    } finally {
-      setLoading(false);
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector(selectUser);
+  const leaveState = useAppSelector(selectLeaveState);
+  const leaves = useAppSelector(selectLeaves);
+  const loading = leaveState === State.loading;
+
+  const handleRefresh = () => {
+    if (userInfo?.workEmail) {
+      dispatch(
+        fetchLeaveHistory({
+          approverEmail: userInfo.workEmail,
+          statuses: [Status.PENDING],
+          orderBy: OrderBy.DESC,
+        }),
+      );
     }
   };
 
   useEffect(() => {
-    fetchApprovalHistory();
+    handleRefresh();
   }, [userInfo?.workEmail]);
 
   return (
@@ -68,7 +71,7 @@ export default function ApproveLeaveTab() {
           <CircularProgress size={30} />
         </Stack>
       ) : (
-        <ApproveLeaveTable rows={approvalHistory?.leaves ?? []} onRefresh={fetchApprovalHistory} />
+        <ApproveLeaveTable rows={leaves} onRefresh={handleRefresh} />
       )}
     </Stack>
   );

@@ -17,6 +17,7 @@
 export const SnackMessage = {
   success: {
     addCollections: "Successfully added the Collection",
+    cancelLeaveMessage: "Leave cancelled successfully",
   },
   error: {
     fetchCollectionsMessage: "Unable to retrieve list of selected Collections",
@@ -27,6 +28,8 @@ export const SnackMessage = {
     fetchEmployees: "Unable to retrieve list of Employees",
     fetchCustomers: "Unable to retrieve list of Customers",
     fetchAppConfigMessage: "Unable to retrieve app configurations",
+    fetchLeaveHistoryMessage: "Unable to retrieve leave history",
+    cancelLeaveMessage: "Failed to cancel leave",
   },
   warning: {},
 };

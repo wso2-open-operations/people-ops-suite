@@ -15,49 +15,45 @@
 // under the License.
 
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
+import {
+  cancelLeave,
+  fetchLeaveHistory,
+  selectCancellingLeaveId,
+  selectLeaveState,
+  selectLeaves,
+} from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { OrderBy, SingleLeaveHistory, Status } from "@root/src/types/types";
+import { OrderBy, State, Status } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
 export default function LeaveHistory() {
-  const { enqueueSnackbar } = useSnackbar();
-  const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [cancellingLeaveId, setCancellingLeaveId] = useState<number | null>(null);
+  const dispatch = useAppDispatch();
   const [currentYear] = useState<number>(new Date().getFullYear());
-  const userInfo = useSelector(selectUser);
+  const userInfo = useAppSelector(selectUser);
+  const leaveState = useAppSelector(selectLeaveState);
+  const leaves = useAppSelector(selectLeaves);
+  const cancellingLeaveId = useAppSelector(selectCancellingLeaveId);
+  const loading = leaveState === State.loading;
 
   useEffect(() => {
-    const fetchLeaveHistory = async () => {
-      setLoading(true);
-
-      try {
-        const response = await getLeaveHistory({
-          email: userInfo?.workEmail || "",
+    if (userInfo?.workEmail) {
+      dispatch(
+        fetchLeaveHistory({
+          email: userInfo.workEmail,
           startDate: `${currentYear}-01-01`, // first day of the current year
           statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
-        });
-
-        setLeaves(response.leaves);
-      } catch (err) {
-        console.error("Failed to load leave history", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaveHistory();
-  }, [currentYear]);
+        }),
+      );
+    }
+  }, [dispatch, currentYear, userInfo?.workEmail]);
 
   const getMonthAndDay = (dateString: string) => {
     const date = new Date(dateString);
@@ -67,17 +63,7 @@ export default function LeaveHistory() {
   };
 
   const handleDeleteLeave = async (id: number) => {
-    try {
-      setCancellingLeaveId(id);
-      await cancelLeaveRequest(id);
-      setLeaves((prevLeaves) => prevLeaves.filter((leave) => leave.id !== id));
-      enqueueSnackbar("Leave cancelled successfully", { variant: "success" });
-    } catch (err) {
-      console.error("Failed to delete leave", err);
-      enqueueSnackbar("Failed to cancel leave", { variant: "error" });
-    } finally {
-      setCancellingLeaveId(null);
-    }
+    dispatch(cancelLeave(id));
   };
 
   return (

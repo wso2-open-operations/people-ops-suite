@@ -21,6 +21,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
+import leaveReducer from "@slices/leaveSlice/leave";
 import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
@@ -31,6 +32,7 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     appConfig: appConfigReducer,
+    leave: leaveReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });
