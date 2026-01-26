@@ -102,6 +102,10 @@ export default function ApplyTab({
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [sabbaticalEligibilityDurationInYears] = useState(sabbaticalLeaveEligibilityDuration / 365);
+  const [sabbaticalMaxApplicationDurationInWeeks] = useState(
+    sabbaticalLeaveMaxApplicationDuration / 7,
+  );
 
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
@@ -150,16 +154,14 @@ export default function ApplyTab({
 
     if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
       eligible = false;
-      errorMsg =
-        "You are ineligible for the following reasons: (1) You must be employed for at least 3 years, and (2) Your last sabbatical leave was taken within the past 3 years.";
+      errorMsg = `You are ineligible for the following reasons: (1) You must be employed for at least ${sabbaticalEligibilityDurationInYears} years, and (2) Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years.`;
     } else if (!isEmploymentEligible) {
       eligible = false;
-      errorMsg = "You must be employed for at least 3 years to be eligible for sabbatical leave.";
+      errorMsg = `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`;
       setCanRenderSabbaticalFormField(false);
     } else if (!isSabbaticalLeaveEligible) {
       eligible = false;
-      errorMsg =
-        "Your last sabbatical leave was taken within the past 3 years, making you ineligible.";
+      errorMsg = `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`;
     }
 
     if (!eligible) {
@@ -201,7 +203,7 @@ export default function ApplyTab({
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
       setIsEligible(false);
       setErrorMessage(
-        "Your last sabbatical leave was taken within the past 3 years, making you ineligible.",
+        `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`,
       );
       setEligibilityPayload((prev) => ({
         ...prev,
@@ -268,7 +270,7 @@ export default function ApplyTab({
       setEndDateError(true);
       setDurationExceedError(true);
       enqueueSnackbar(
-        `Sabbatical leave duration should be less than or equal to ${sabbaticalLeaveMaxApplicationDuration / 7} weeks`,
+        `Sabbatical leave duration should be less than or equal to ${sabbaticalMaxApplicationDurationInWeeks} weeks`,
         {
           variant: "error",
         },
@@ -276,13 +278,13 @@ export default function ApplyTab({
       return;
     }
 
-    // Validate last sabbatical leave end date (must be at least 3 years from today)
+    // Validate last sabbatical leave end date
     if (lastSabbaticalLeaveEndDate) {
       const todayUtc = dayjs.utc().startOf("day");
       const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
       if (diffDays < sabbaticalLeaveEligibilityDuration) {
         enqueueSnackbar(
-          `The last sabbatical leave end date should be at least ${sabbaticalLeaveEligibilityDuration / 365} years before today.`,
+          `The last sabbatical leave end date should be at least ${sabbaticalEligibilityDurationInYears} years before today.`,
           { variant: "error" },
         );
         return;
@@ -381,7 +383,7 @@ export default function ApplyTab({
                 <DatePicker
                   label="Last sabbatical leave end date"
                   sx={{ flex: 1 }}
-                  maxDate={dayjs().subtract(sabbaticalLeaveEligibilityDuration / 365, "year")}
+                  maxDate={dayjs().subtract(sabbaticalEligibilityDurationInYears, "year")}
                   value={lastSabbaticalLeaveEndDate ? dayjs(lastSabbaticalLeaveEndDate) : null}
                   onChange={(newValue) => setLastSabbaticalLeaveEndDate(newValue)}
                   disabled={!sabbaticalEndDateFieldEditable}
@@ -436,7 +438,7 @@ export default function ApplyTab({
                         error: endDateError,
                         helperText: endDateError
                           ? durationExceedError
-                            ? `Leave duration must not exceed ${sabbaticalLeaveMaxApplicationDuration / 7} weeks`
+                            ? `Leave duration must not exceed ${sabbaticalMaxApplicationDurationInWeeks} weeks`
                             : "End date is required"
                           : "",
                       },
