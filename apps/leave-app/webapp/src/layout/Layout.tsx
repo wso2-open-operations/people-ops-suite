@@ -43,7 +43,7 @@ export default function Layout() {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
-        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+        anchorOrigin: { horizontal: "center", vertical: "bottom" },
       });
     }
   }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
