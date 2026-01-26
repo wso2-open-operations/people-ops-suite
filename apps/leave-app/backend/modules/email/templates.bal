@@ -908,7 +908,7 @@ public final string sabbaticalApprovalTemplate = string `
                               "
                             >
                               The sabbatical leave application of <!-- [APPLICANT_EMAIL] --> has been 
-                              <!-- [STATUS] --> by the reporting lead: <!-- [LEAD_EMAIL] -->.
+                              <!-- [STATUS_DESCRIPTION] --> by the reporting lead: <!-- [LEAD_EMAIL] -->.
                             </p>
                             <!-- 
                             <p
