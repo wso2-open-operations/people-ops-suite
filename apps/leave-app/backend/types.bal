@@ -218,12 +218,11 @@ public type UserInfo record {|
     string? employmentStartDate;
     # Is lead or not
     boolean? isLead;
+    # Subordinate count
+    int subordinateCount;
     # Cached email notifications list
     employee:DefaultMailResponse cachedEmails;
-    # Subordinate percentage on sabbatical leave
-    string? subordinatePercentageOnSabbaticalLeave = ();
 |};
-
 # Sabbatical leave Process Payload.
 public type SabbaticalProcessPayload record {|
     # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)
