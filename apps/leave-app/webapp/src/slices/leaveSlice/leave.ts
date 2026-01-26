@@ -222,6 +222,7 @@ const LeaveSlice = createSlice({
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
+      state.leaves = [];
     },
     removeLeaveFromList(state, action: PayloadAction<number>) {
       state.leaves = state.leaves.filter((leave) => leave.id !== action.payload);
