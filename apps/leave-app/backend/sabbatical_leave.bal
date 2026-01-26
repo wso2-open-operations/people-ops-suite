@@ -97,12 +97,13 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
     match (action) {
         APPROVE => {
             template = email:bindKeyValues(email:sabbaticalApprovalTemplate, {
-                                                                                 "APPLICANT_EMAIL": applicantEmail,
-                                                                                 "LEAD_EMAIL": approverEmail,
-                                                                                 "LEAVE_START_DATE": leaveStartDate,
-                                                                                 "LEAVE_END_DATE": leaveEndDate,
-                                                                                 "YEAR": year,
-                                                                                 "STATUS": "approved"
+                                                                                 APPLICANT_EMAIL: applicantEmail,
+                                                                                 LEAD_EMAIL: approverEmail,
+                                                                                 LEAVE_START_DATE: leaveStartDate,
+                                                                                 LEAVE_END_DATE: leaveEndDate,
+                                                                                 YEAR: year,
+                                                                                 STATUS: "Approved",
+                                                                                 STATUS_DESCRIPTION: "approved"
                                                                              });
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
@@ -122,12 +123,13 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
         }
         REJECT => {
             template = email:bindKeyValues(email:sabbaticalApprovalTemplate, {
-                                                                                 "APPLICANT_EMAIL": applicantEmail,
-                                                                                 "LEAD_EMAIL": approverEmail,
-                                                                                 "LEAVE_START_DATE": leaveStartDate,
-                                                                                 "LEAVE_END_DATE": leaveEndDate,
-                                                                                 "YEAR": year,
-                                                                                 "STATUS": "rejected"
+                                                                                 APPLICANT_EMAIL: applicantEmail,
+                                                                                 LEAD_EMAIL: approverEmail,
+                                                                                 LEAVE_START_DATE: leaveStartDate,
+                                                                                 LEAVE_END_DATE: leaveEndDate,
+                                                                                 YEAR: year,
+                                                                                 STATUS: "Rejected",
+                                                                                 STATUS_DESCRIPTION: "rejected"
                                                                              });
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
@@ -136,10 +138,10 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
         }
         CANCEL => {
             template = email:bindKeyValues(email:sabbaticalCancellationTemplate, {
-                                                                                     "APPLICANT_EMAIL": applicantEmail,
-                                                                                     "LEAVE_START_DATE": leaveStartDate,
-                                                                                     "LEAVE_END_DATE": leaveEndDate,
-                                                                                     "YEAR": year
+                                                                                     APPLICANT_EMAIL: applicantEmail,
+                                                                                     LEAVE_START_DATE: leaveStartDate,
+                                                                                     LEAVE_END_DATE: leaveEndDate,
+                                                                                     YEAR: year
                                                                                  });
         }
         APPLY => {
@@ -158,15 +160,15 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
             };
 
             template = email:bindKeyValues(email:sabbaticalApplicationTemplate, {
-                                                                                    "APPLICANT_EMAIL": applicantEmail,
-                                                                                    "LEAD_EMAIL": approverEmail,
-                                                                                    "LEAVE_START_DATE": leaveStartDate,
-                                                                                    "LEAVE_END_DATE": leaveEndDate,
-                                                                                    "ADDITIONAL_COMMENT":
+                                                                                    APPLICANT_EMAIL: applicantEmail,
+                                                                                    LEAD_EMAIL: approverEmail,
+                                                                                    LEAVE_START_DATE: leaveStartDate,
+                                                                                    LEAVE_END_DATE: leaveEndDate,
+                                                                                    ADDITIONAL_COMMENT:
                                                                                         (comment is () || comment is "")
                                                                                         ? "N/A" : comment,
-                                                                                    "YEAR": year,
-                                                                                    "LEAVE_APP_URL":
+                                                                                    YEAR: year,
+                                                                                    LEAVE_APP_URL:
                                                                                     sabbaticalLeaveApprovalUrl
                                                                                 });
             if location is string {
