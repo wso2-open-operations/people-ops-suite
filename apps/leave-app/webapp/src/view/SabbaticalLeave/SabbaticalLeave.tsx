@@ -17,15 +17,13 @@
 import EditDocumentIcon from "@mui/icons-material/EditDocument";
 import HistoryIcon from "@mui/icons-material/History";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
-import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import TabsPage, { TabProps } from "@root/src/layout/pages/TabsPage";
-import { getAppConfig } from "@root/src/services/leaveService";
+import { RootState, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { AppConfigResponse } from "@root/src/types/types";
 import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
 import ApprovalHistoryTab from "./Panel/ApprovalHistoryTab";
@@ -35,60 +33,54 @@ import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
 export default function SabbaticalLeave() {
   const [sabbaticalFeatureEnabled, setSabbaticalFeatureEnabled] = useState<boolean>(false);
   const [tabs, setTabs] = useState<TabProps[]>([]);
-  const userInfo = useSelector(selectUser);
-  // Fetch app configs for sabbatical leave feature.
+  const userInfo = useAppSelector(selectUser);
+  const { config: appConfig } = useAppSelector((state: RootState) => state.appConfig);
+
   useEffect(() => {
-    const fetchSabbaticalLeaveFeatureStatus = async () => {
-      try {
-        const appConfig: AppConfigResponse = await getAppConfig();
-        const {
-          sabbaticalLeavePolicyUrl,
-          sabbaticalLeaveUserGuideUrl,
-          sabbaticalLeaveEligibilityDuration,
-          sabbaticalLeaveMaxApplicationDuration,
-        } = appConfig;
-        setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
+    if (appConfig) {
+      const {
+        sabbaticalLeavePolicyUrl,
+        sabbaticalLeaveUserGuideUrl,
+        sabbaticalLeaveEligibilityDuration,
+        sabbaticalLeaveMaxApplicationDuration,
+      } = appConfig;
+      setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
 
-        const baseTabs: TabProps[] = [
+      const baseTabs: TabProps[] = [
+        {
+          tabTitle: "Apply",
+          tabPath: "apply",
+          icon: <EditDocumentIcon />,
+          page: (
+            <ApplyTab
+              sabbaticalPolicyUrl={sabbaticalLeavePolicyUrl}
+              sabbaticalUserGuideUrl={sabbaticalLeaveUserGuideUrl}
+              sabbaticalLeaveEligibilityDuration={sabbaticalLeaveEligibilityDuration}
+              sabbaticalLeaveMaxApplicationDuration={sabbaticalLeaveMaxApplicationDuration}
+            />
+          ),
+        },
+      ];
+      // Set approval tabs for leads only
+      if (userInfo?.isLead) {
+        baseTabs.push(
           {
-            tabTitle: "Apply",
-            tabPath: "apply",
-            icon: <EditDocumentIcon />,
-            page: (
-              <ApplyTab
-                sabbaticalPolicyUrl={sabbaticalLeavePolicyUrl}
-                sabbaticalUserGuideUrl={sabbaticalLeaveUserGuideUrl}
-                sabbaticalLeaveEligibilityDuration={sabbaticalLeaveEligibilityDuration}
-                sabbaticalLeaveMaxApplicationDuration={sabbaticalLeaveMaxApplicationDuration}
-              />
-            ),
+            tabTitle: "Leave Approval",
+            tabPath: "leave-approval",
+            icon: <HowToRegIcon />,
+            page: <ApproveLeaveTab />,
           },
-        ];
-        // Set approval tabs for leads only
-        if (userInfo?.isLead) {
-          baseTabs.push(
-            {
-              tabTitle: "Leave Approval",
-              tabPath: "leave-approval",
-              icon: <HowToRegIcon />,
-              page: <ApproveLeaveTab />,
-            },
-            {
-              tabTitle: "Approval History",
-              tabPath: "approval-history",
-              icon: <HistoryIcon />,
-              page: <ApprovalHistoryTab />,
-            },
-          );
-        }
-        setTabs(baseTabs);
-      } catch (error) {
-        console.error("Error fetching app config:", error);
+          {
+            tabTitle: "Approval History",
+            tabPath: "approval-history",
+            icon: <HistoryIcon />,
+            page: <ApprovalHistoryTab />,
+          },
+        );
       }
-    };
-
-    fetchSabbaticalLeaveFeatureStatus();
-  }, []);
+      setTabs(baseTabs);
+    }
+  }, [appConfig, userInfo?.isLead]);
 
   if (!sabbaticalFeatureEnabled) {
     return (

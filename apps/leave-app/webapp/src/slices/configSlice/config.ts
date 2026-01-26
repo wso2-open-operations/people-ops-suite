@@ -17,27 +17,17 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
+import { AppConfigResponse, State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
 
-import { State } from "@/types/types";
-
-interface SupportTeamEmail {
-  team: string;
-  email: string;
-}
-
-interface AppConfigInfo {
-  supportTeamEmails: SupportTeamEmail[];
-}
-
 interface AppConfigState {
   state: State;
   stateMessage: string | null;
   errorMessage: string | null;
-  config: AppConfigInfo | null;
+  config: AppConfigResponse | null;
 }
 
 const initialState: AppConfigState = {
@@ -47,17 +37,11 @@ const initialState: AppConfigState = {
   config: null,
 };
 
-export const fetchAppConfig = createAsyncThunk<
-  AppConfigInfo,
-  void,
-  { rejectValue: string }
->(
+export const fetchAppConfig = createAsyncThunk<AppConfigResponse, void, { rejectValue: string }>(
   "appConfig/fetchAppConfig",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.appConfig,
-      );
+      const response = await APIService.getInstance().get(AppConfig.serviceUrls.appConfig);
       return response.data;
     } catch (err) {
       if (axios.isCancel(err)) {
@@ -111,12 +95,9 @@ const AppConfigSlice = createSlice({
         state.config = action.payload;
       })
       .addCase(fetchAppConfig.rejected, (state, action) => {
-      state.state = State.failed;
-      state.stateMessage = "Failed to fetch application configurations.";
-      state.errorMessage =
-        (action.payload as string | undefined) ??
-        action.error.message ??
-        null;
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch application configurations.";
+        state.errorMessage = (action.payload as string | undefined) ?? action.error.message ?? null;
       });
   },
 });

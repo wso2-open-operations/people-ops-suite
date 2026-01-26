@@ -17,12 +17,14 @@
 import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
+
 import { useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
+import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
@@ -34,22 +36,25 @@ export default function GeneralLeave() {
   const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
-  const [selectedLeaveType, setSelectedLeaveType] = useState<string>("casual");
-  const [selectedDayPortion, setSelectedDayPortion] = useState<string | null>(null);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType>(LeaveType.CASUAL);
+  const [selectedDayPortion, setSelectedDayPortion] = useState<DayPortion | null>(null);
   const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
   const [mandatoryEmails, setMandatoryEmails] = useState<string[]>([]);
   const [comment, setComment] = useState("");
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateError, setDateError] = useState(false);
 
   const handleSubmit = async () => {
-    // Validation
+    setDateError(false);
     if (!startDate || !endDate) {
+      setDateError(true);
       enqueueSnackbar("Please select start and end dates", { variant: "error" });
       return;
     }
 
     if (workingDays <= 0) {
+      setDateError(true);
       enqueueSnackbar("Working days must be at least 1 to submit a leave request", {
         variant: "error",
       });
@@ -70,16 +75,25 @@ export default function GeneralLeave() {
       setIsSubmitting(true);
 
       // Determine periodType based on day portion selection
-      let periodType: "one" | "multiple" | "half";
+      let periodType: PeriodType;
       let isMorningLeave: boolean | null = null;
 
-      if (selectedDayPortion === "full") {
-        periodType = daysSelected === 1 ? "one" : "multiple";
-      } else {
-        periodType = "half";
-        isMorningLeave = selectedDayPortion === "first";
+      switch (selectedDayPortion) {
+        case DayPortion.FULL:
+          periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+          break;
+        case DayPortion.FIRST:
+          periodType = PeriodType.HALF;
+          isMorningLeave = true;
+          break;
+        case DayPortion.SECOND:
+          periodType = PeriodType.HALF;
+          isMorningLeave = false;
+          break;
+        default:
+          periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+          break;
       }
-
       // Filter out mandatory emails from the recipients list for the API call
       const filteredEmailRecipients = emailRecipients.filter(
         (email) => !mandatoryEmails.includes(email),
@@ -103,7 +117,7 @@ export default function GeneralLeave() {
       // Reset form
       setStartDate(null);
       setEndDate(null);
-      setSelectedLeaveType("casual");
+      setSelectedLeaveType(LeaveType.CASUAL);
       setSelectedDayPortion(null);
       setComment("");
       setIsPublicComment(false);
@@ -129,11 +143,14 @@ export default function GeneralLeave() {
         >
           <LeaveDateSelection
             onDaysChange={setDaysSelected}
+            selectedDayPortion={selectedDayPortion}
             onDatesChange={(start, end) => {
               setStartDate(start);
               setEndDate(end);
             }}
             onWorkingDaysChange={setWorkingDays}
+            hasError={dateError}
+            onErrorClear={() => setDateError(false)}
           />
           <LeaveSelection
             daysSelected={daysSelected}

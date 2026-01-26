@@ -26,13 +26,17 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
-import { fetchEmployees } from "@root/src/services/leaveService";
+import {
+  fetchEmployees,
+  selectEmployeeState,
+  selectEmployees,
+} from "@root/src/slices/employeeSlice/employee";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { CachedMail } from "@root/src/types/types";
+import { CachedMail, State } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
@@ -53,11 +57,15 @@ export default function NotifyPeople({
   onMandatoryEmailsChange,
 }: NotifyPeopleProps) {
   const theme = useTheme();
+  const dispatch = useAppDispatch();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [fixedEmails, setFixedEmails] = useState<string[]>([]);
 
-  const defaultMails: CachedMail = useSelector(selectUser)?.cachedEmails || {
+  const employeeState = useAppSelector(selectEmployeeState);
+  const employees = useAppSelector(selectEmployees);
+  const loading = employeeState === State.loading;
+
+  const defaultMails: CachedMail = useAppSelector(selectUser)?.cachedEmails || {
     mandatoryMails: [],
     optionalMails: [],
   };
@@ -89,35 +97,25 @@ export default function NotifyPeople({
   }, []);
 
   useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        setLoading(true);
-        const employees = await fetchEmployees();
+    dispatch(fetchEmployees());
+  }, [dispatch]);
 
-        const employeeOptionsFromApi = employees.map((employee) => ({
-          label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
-          email: employee.workEmail,
-          thumbnail: employee.employeeThumbnail,
-          isFixed: fixedEmails.includes(employee.workEmail),
-        }));
+  useEffect(() => {
+    if (employees.length > 0) {
+      const employeeOptionsFromApi = employees.map((employee) => ({
+        label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
+        email: employee.workEmail,
+        thumbnail: employee.employeeThumbnail,
+        isFixed: fixedEmails.includes(employee.workEmail),
+      }));
 
-        setEmployeeOptions((prev) => {
-          const existingEmails = new Set(prev.map((o) => o.email));
+      setEmployeeOptions((prev) => {
+        const existingEmails = new Set(prev.map((o) => o.email));
 
-          return [
-            ...prev,
-            ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email)),
-          ];
-        });
-      } catch (e) {
-        console.error("Employee fetch failed", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEmployees();
-  }, []);
+        return [...prev, ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email))];
+      });
+    }
+  }, [employees, fixedEmails]);
 
   const selectedOptions = employeeOptions
     .filter((opt) => opt.isFixed || selectedEmails.includes(opt.email))
@@ -198,6 +196,14 @@ export default function NotifyPeople({
                 label={option.email}
                 avatar={ChipAvatar}
                 onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+                sx={{
+                  ".MuiChip-root:hover": {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                  ".MuiChip-deleteIcon": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
               />
             );
           })
@@ -209,15 +215,6 @@ export default function NotifyPeople({
             fontWeight: 500,
             borderRadius: "6px",
             border: `1px solid ${theme.palette.primary.main}`,
-          },
-          "& .MuiChip-root:hover": {
-            backgroundColor: theme.palette.action.hover,
-          },
-          "& .MuiChip-deleteIcon": {
-            color: theme.palette.primary.main,
-          },
-          "& .MuiChip-deleteIcon:hover": {
-            color: theme.palette.primary.dark,
           },
         }}
       />

@@ -21,6 +21,9 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
+import employeeReducer from "@slices/employeeSlice/employee";
+import leadReportReducer from "@slices/leadReportSlice/leadReport";
+import leaveReducer from "@slices/leaveSlice/leave";
 import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
@@ -31,6 +34,9 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     appConfig: appConfigReducer,
+    leave: leaveReducer,
+    employee: employeeReducer,
+    leadReport: leadReportReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });
