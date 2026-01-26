@@ -18,6 +18,10 @@ export const SnackMessage = {
   success: {
     addCollections: "Successfully added the Collection",
     cancelLeaveMessage: "Leave cancelled successfully",
+    submitLeaveMessage: "Leave request submitted successfully",
+    approveLeaveMessage: "Leave request approved successfully",
+    rejectLeaveMessage: "Leave request rejected successfully",
+    fetchLeadReportMessage: "Report fetched successfully",
   },
   error: {
     fetchCollectionsMessage: "Unable to retrieve list of selected Collections",
@@ -30,6 +34,10 @@ export const SnackMessage = {
     fetchAppConfigMessage: "Unable to retrieve app configurations",
     fetchLeaveHistoryMessage: "Unable to retrieve leave history",
     cancelLeaveMessage: "Failed to cancel leave",
+    submitLeaveMessage: "Failed to submit leave request",
+    approveLeaveMessage: "Failed to approve leave request",
+    rejectLeaveMessage: "Failed to reject leave request",
+    fetchLeadReportMessage: "Failed to fetch report",
   },
   warning: {},
 };

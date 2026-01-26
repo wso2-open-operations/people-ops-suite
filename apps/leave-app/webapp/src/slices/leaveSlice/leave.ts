@@ -14,14 +14,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
 
+import {
+  Action,
+  ApprovalResponse,
+  LeaveHistoryQueryParam,
+  LeaveHistoryResponse,
+  LeaveSubmissionRequest,
+  LeaveSubmissionResponse,
+  SingleLeaveHistory,
+  State,
+} from "@/types/types";
 import { SnackMessage } from "@config/constant";
-import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
+import {
+  approveLeave,
+  cancelLeaveRequest,
+  getLeaveHistory,
+  submitLeaveRequest,
+} from "@root/src/services/leaveService";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
-import { LeaveHistoryQueryParam, LeaveHistoryResponse, SingleLeaveHistory, State } from "@/types/types";
 
 interface LeaveState {
   state: State;
@@ -29,6 +43,8 @@ interface LeaveState {
   errorMessage: string | null;
   leaves: SingleLeaveHistory[];
   cancellingLeaveId: number | null;
+  submitState: State;
+  approveState: State;
 }
 
 const initialState: LeaveState = {
@@ -37,6 +53,8 @@ const initialState: LeaveState = {
   errorMessage: null,
   leaves: [],
   cancellingLeaveId: null,
+  submitState: State.idle,
+  approveState: State.idle,
 };
 
 // Async thunk for fetching leave history
@@ -121,6 +139,81 @@ export const cancelLeave = createAsyncThunk<number, number, { rejectValue: strin
   },
 );
 
+// Async thunk for submitting a leave request
+export const submitLeave = createAsyncThunk<
+  LeaveSubmissionResponse,
+  LeaveSubmissionRequest,
+  { rejectValue: string }
+>("leave/submitLeave", async (request, { dispatch, rejectWithValue }) => {
+  try {
+    const response = await submitLeaveRequest(request);
+    dispatch(
+      enqueueSnackbarMessage({
+        message: SnackMessage.success.submitLeaveMessage,
+        type: "success",
+      }),
+    );
+    return response;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        (err.response?.data as { message?: string })?.message ??
+        SnackMessage.error.submitLeaveMessage;
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+    dispatch(
+      enqueueSnackbarMessage({
+        message: SnackMessage.error.submitLeaveMessage,
+        type: "error",
+      }),
+    );
+    return rejectWithValue("Failed to submit leave request.");
+  }
+});
+
+// Async thunk for approving/rejecting a leave
+export const approveLeaveAction = createAsyncThunk<
+  ApprovalResponse & { leaveId: string; action: Action },
+  { leaveId: string; action: Action },
+  { rejectValue: string }
+>("leave/approveLeave", async ({ leaveId, action }, { dispatch, rejectWithValue }) => {
+  try {
+    const response = await approveLeave(leaveId, action);
+    dispatch(
+      enqueueSnackbarMessage({
+        message:
+          action === Action.APPROVE
+            ? SnackMessage.success.approveLeaveMessage
+            : SnackMessage.success.rejectLeaveMessage,
+        type: "success",
+      }),
+    );
+    return { ...response, leaveId, action };
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const errorMessage =
+        (err.response?.data as { message?: string })?.message ??
+        (action === Action.APPROVE
+          ? SnackMessage.error.approveLeaveMessage
+          : SnackMessage.error.rejectLeaveMessage);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+    return rejectWithValue("Failed to process leave request.");
+  }
+});
+
 const LeaveSlice = createSlice({
   name: "leave",
   initialState,
@@ -164,6 +257,31 @@ const LeaveSlice = createSlice({
       .addCase(cancelLeave.rejected, (state) => {
         state.cancellingLeaveId = null;
       });
+
+    // Submit Leave
+    builder
+      .addCase(submitLeave.pending, (state) => {
+        state.submitState = State.loading;
+      })
+      .addCase(submitLeave.fulfilled, (state) => {
+        state.submitState = State.success;
+      })
+      .addCase(submitLeave.rejected, (state) => {
+        state.submitState = State.failed;
+      });
+
+    // Approve/Reject Leave
+    builder
+      .addCase(approveLeaveAction.pending, (state) => {
+        state.approveState = State.loading;
+      })
+      .addCase(approveLeaveAction.fulfilled, (state, action) => {
+        state.approveState = State.success;
+        state.leaves = state.leaves.filter((leave) => leave.id !== Number(action.payload.leaveId));
+      })
+      .addCase(approveLeaveAction.rejected, (state) => {
+        state.approveState = State.failed;
+      });
   },
 });
 
@@ -173,5 +291,7 @@ export const selectLeaveState = (state: RootState) => state.leave.state;
 export const selectLeaves = (state: RootState) => state.leave.leaves;
 export const selectLeaveError = (state: RootState) => state.leave.errorMessage;
 export const selectCancellingLeaveId = (state: RootState) => state.leave.cancellingLeaveId;
+export const selectSubmitState = (state: RootState) => state.leave.submitState;
+export const selectApproveState = (state: RootState) => state.leave.approveState;
 
 export default LeaveSlice.reducer;

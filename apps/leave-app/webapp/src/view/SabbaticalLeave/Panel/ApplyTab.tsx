@@ -36,7 +36,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
@@ -44,15 +43,16 @@ import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { getLeaveHistory, submitLeaveRequest } from "@root/src/services/leaveService";
-import { selectUser } from "@root/src/slices/userSlice/user";
 import {
-  EligibilityResponse,
-  LeaveHistoryResponse,
-  LeaveType,
-  OrderBy,
-  Status,
-} from "@root/src/types/types";
+  fetchLeaveHistory,
+  selectLeaveState,
+  selectLeaves,
+  selectSubmitState,
+  submitLeave,
+} from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import { EligibilityResponse, LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
 interface ApplyTabProps {
   sabbaticalPolicyUrl: string;
@@ -71,7 +71,11 @@ export default function ApplyTab({
 }: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
-  const userInfo = useSelector(selectUser);
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector(selectUser);
+  const leaveState = useAppSelector(selectLeaveState);
+  const leaves = useAppSelector(selectLeaves);
+  const submitState = useAppSelector(selectSubmitState);
 
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
     isEligible: false,
@@ -87,8 +91,6 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isEligible, setIsEligible] = useState(true);
   const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
@@ -99,84 +101,83 @@ export default function ApplyTab({
   const [policyReadError, setPolicyReadError] = useState(false);
   const [resignationAcknowledgeError, setResignationAcknowledgeError] = useState(false);
 
+  const isLoading = leaveState === State.loading;
+  const isSubmitting = submitState === State.loading;
+
   useEffect(() => {
-    const checkEligibility = async () => {
-      try {
-        // fetch last sabbatical leave end date
-        setIsLoading(true);
-        const lastSabbaticalLeaveDetails: LeaveHistoryResponse = await getLeaveHistory({
-          email: userInfo?.workEmail || "",
+    if (userInfo?.workEmail) {
+      dispatch(
+        fetchLeaveHistory({
+          email: userInfo.workEmail,
           leaveCategory: [LeaveType.SABBATICAL],
           statuses: [Status.APPROVED],
           orderBy: OrderBy.DESC,
           limit: 1,
-        });
+        }),
+      );
+    }
+  }, [dispatch, userInfo?.workEmail]);
 
-        const lastLeaveEndDate = lastSabbaticalLeaveDetails?.leaves[0]?.endDate;
-        const todayUtc = dayjs.utc().startOf("day");
+  useEffect(() => {
+    if (leaveState === State.success) {
+      const lastLeaveEndDate = leaves[0]?.endDate;
+      const todayUtc = dayjs.utc().startOf("day");
 
-        const employmentStartDateDiff =
-          todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
-        const lastSabbaticalLeaveDiff = lastLeaveEndDate
-          ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
-          : null;
+      const employmentStartDateDiff =
+        todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
+      const lastSabbaticalLeaveDiff = lastLeaveEndDate
+        ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
+        : null;
 
-        // Check eligibility conditions
-        const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
-        const isSabbaticalLeaveEligible =
-          lastSabbaticalLeaveDiff === null ||
-          lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
+      // Check eligibility conditions
+      const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
+      const isSabbaticalLeaveEligible =
+        lastSabbaticalLeaveDiff === null ||
+        lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
 
-        let eligible = true;
-        let errorMsg = "";
+      let eligible = true;
+      let errorMsg = "";
 
-        if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
-          eligible = false;
-          errorMsg =
-            "You are ineligible for the following reasons: (1) You must be employed for at least 3 years, and (2) Your last sabbatical leave was taken within the past 3 years.";
-        } else if (!isEmploymentEligible) {
-          eligible = false;
-          errorMsg =
-            "You must be employed for at least 3 years to be eligible for sabbatical leave.";
-          setCanRenderSabbaticalFormField(false);
-        } else if (!isSabbaticalLeaveEligible) {
-          eligible = false;
-          errorMsg =
-            "Your last sabbatical leave was taken within the past 3 years, making you ineligible.";
-        }
-
-        if (!eligible) {
-          setIsEligible(false);
-          setErrorMessage(errorMsg);
-        } else {
-          setIsEligible(true);
-          setErrorMessage("");
-        }
-
-        const eligibilityResponse: EligibilityResponse = {
-          employmentStartDate: userInfo?.employmentStartDate || "",
-          lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
-          isEligible: eligible,
-        };
-
-        setEligibilityPayload(eligibilityResponse);
-        if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
-          setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
-        }
-        if (
-          eligibilityResponse?.lastSabbaticalLeaveEndDate.length === 0 &&
-          eligibilityResponse.isEligible
-        ) {
-          setSabbaticalEndDateFieldEditable(true);
-        }
-      } catch (error) {
-        console.error("Failed to check eligibility for sabbatical leave", error);
-      } finally {
-        setIsLoading(false);
+      if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
+        eligible = false;
+        errorMsg =
+          "You are ineligible for the following reasons: (1) You must be employed for at least 3 years, and (2) Your last sabbatical leave was taken within the past 3 years.";
+      } else if (!isEmploymentEligible) {
+        eligible = false;
+        errorMsg = "You must be employed for at least 3 years to be eligible for sabbatical leave.";
+        setCanRenderSabbaticalFormField(false);
+      } else if (!isSabbaticalLeaveEligible) {
+        eligible = false;
+        errorMsg =
+          "Your last sabbatical leave was taken within the past 3 years, making you ineligible.";
       }
-    };
-    checkEligibility();
-  }, []);
+
+      if (!eligible) {
+        setIsEligible(false);
+        setErrorMessage(errorMsg);
+      } else {
+        setIsEligible(true);
+        setErrorMessage("");
+      }
+
+      const eligibilityResponse: EligibilityResponse = {
+        employmentStartDate: userInfo?.employmentStartDate || "",
+        lastSabbaticalLeaveEndDate: lastLeaveEndDate || "",
+        isEligible: eligible,
+      };
+
+      setEligibilityPayload(eligibilityResponse);
+      if (eligibilityResponse?.lastSabbaticalLeaveEndDate) {
+        setLastSabbaticalLeaveEndDate(dayjs(eligibilityResponse.lastSabbaticalLeaveEndDate));
+      }
+      if (
+        eligibilityResponse?.lastSabbaticalLeaveEndDate.length === 0 &&
+        eligibilityResponse.isEligible
+      ) {
+        setSabbaticalEndDateFieldEditable(true);
+      }
+    }
+  }, [leaveState, leaves, userInfo?.employmentStartDate, sabbaticalLeaveEligibilityDuration]);
 
   // Validate last sabbatical leave end date whenever it changes
   useEffect(() => {
@@ -301,39 +302,28 @@ export default function ApplyTab({
   };
 
   const handleConfirmSubmit = async () => {
-    try {
-      setIsSubmitting(true);
+    // Append last sabbatical leave end date to comment
+    const commentWithDate = lastSabbaticalLeaveEndDate
+      ? `${additionalComment} **** Last Sabbatical Leave End Date: ${lastSabbaticalLeaveEndDate.format("YYYY-MM-DD")} ****`
+      : additionalComment;
 
-      // Append last sabbatical leave end date to comment
-      const commentWithDate = lastSabbaticalLeaveEndDate
-        ? `${additionalComment} **** Last Sabbatical Leave End Date: ${lastSabbaticalLeaveEndDate.format("YYYY-MM-DD")} ****`
-        : additionalComment;
-
-      const response = await submitLeaveRequest({
+    const result = await dispatch(
+      submitLeave({
         leaveType: LeaveType.SABBATICAL,
         startDate: leaveStartDate!.format("YYYY-MM-DD"),
         endDate: leaveEndDate!.format("YYYY-MM-DD"),
         comment: commentWithDate,
-      });
+      }),
+    );
 
+    if (submitLeave.fulfilled.match(result)) {
       handleCloseDialog();
-      enqueueSnackbar("Sabbatical leave request submitted successfully", { variant: "success" });
-
       setLeaveStartDate(null);
       setLeaveEndDate(null);
       setAdditionalComment("");
       setManagerApprovalChecked(false);
       setPolicyReadChecked(false);
       setResignationAcknowledgeChecked(false);
-    } catch (error: any) {
-      console.error("Failed to submit sabbatical leave request", error);
-      if (error?.response?.data?.message) {
-        enqueueSnackbar(error.response.data.message, { variant: "error" });
-      } else {
-        enqueueSnackbar("Failed to submit sabbatical leave request", { variant: "error" });
-      }
-    } finally {
-      setIsSubmitting(false);
     }
   };
 

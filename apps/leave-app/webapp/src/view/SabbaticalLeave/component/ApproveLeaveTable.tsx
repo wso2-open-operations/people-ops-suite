@@ -28,18 +28,19 @@ import {
   useTheme,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
 
 import { useEffect, useState } from "react";
 
-import { approveLeave, getLeaveHistory } from "@root/src/services/leaveService";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { approveLeaveAction, selectApproveState } from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import {
   Action,
   LeaveHistoryResponse,
   LeaveType,
   SingleLeaveHistory,
+  State,
   Status,
 } from "@root/src/types/types";
 
@@ -56,8 +57,9 @@ interface ConfirmationDialogState {
 
 export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTableProps) {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
-  const userInfo = useSelector(selectUser);
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector(selectUser);
+  const approveState = useAppSelector(selectApproveState);
   const [subordinateCount] = useState<number>(userInfo?.subordinateCount || 0);
   const [subordinateOnSabbaticalPercentage, setSubordinateOnSabbaticalPercentage] =
     useState<string>("0%");
@@ -86,7 +88,7 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
     isApproval: true,
     leaveItem: null,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = approveState === State.loading;
 
   useEffect(() => {
     if (dialogState.open && dialogState.leaveItem?.startDate && dialogState.leaveItem?.endDate) {
@@ -116,30 +118,16 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
   const handleConfirm = async () => {
     if (!dialogState.leaveItem) return;
 
-    setIsSubmitting(true);
-    try {
-      await approveLeave(
-        String(dialogState.leaveItem.id),
-        dialogState.isApproval ? Action.APPROVE : Action.REJECT,
-      );
+    const result = await dispatch(
+      approveLeaveAction({
+        leaveId: String(dialogState.leaveItem.id),
+        action: dialogState.isApproval ? Action.APPROVE : Action.REJECT,
+      }),
+    );
+
+    if (approveLeaveAction.fulfilled.match(result)) {
       handleCloseDialog();
-      enqueueSnackbar(
-        dialogState.isApproval
-          ? "Leave request approved successfully"
-          : "Leave request rejected successfully",
-        { variant: "success" },
-      );
       onRefresh?.();
-    } catch (error) {
-      console.error("Failed to process leave request:", error);
-      enqueueSnackbar(
-        dialogState.isApproval
-          ? "Failed to approve leave request"
-          : "Failed to reject leave request",
-        { variant: "error" },
-      );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -234,7 +222,8 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         <DialogContent>
           <DialogContentText>
             {subordinateOnSabbaticalPercentage} of your subordinates will be on sabbatical leave
-            during this period. <br/><br/>
+            during this period. <br />
+            <br />
             {dialogState.isApproval
               ? `Are you sure you want to approve the sabbatical leave request for ${dialogState.leaveItem?.email}?`
               : `Are you sure you want to reject the sabbatical leave request for ${dialogState.leaveItem?.email}?`}
