@@ -386,6 +386,7 @@ declare module "@mui/material/styles" {
 export const themeSettings = (mode: PaletteMode) => {
   const colors = tokens(mode);
   const typography = extractTypography();
+  const GLOBAL_LETTER_SPACING = "0px";
 
   return {
     palette: {
@@ -433,66 +434,76 @@ export const themeSettings = (mode: PaletteMode) => {
       customText: colors.text,
     },
     typography: {
+      fontFamily: '"Poppins", sans-serif',
       fontSize: 14,
+      
+      allVariants: {
+        fontFamily: '"Poppins", sans-serif',
+        letterSpacing: GLOBAL_LETTER_SPACING,
+      },
       h1: {
         fontSize: typography.h1.fontSize,
         fontWeight: typography.h1.fontWeight,
         lineHeight: `${typography.h1.lineHeight}px`,
-        letterSpacing: `${typography.h1.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       h2: {
         fontSize: typography.h2.fontSize,
         fontWeight: typography.h2.fontWeight,
         lineHeight: `${typography.h2.lineHeight}px`,
-        letterSpacing: `${typography.h2.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       h3: {
         fontSize: typography.h3.fontSize,
         fontWeight: typography.h3.fontWeight,
         lineHeight: `${typography.h3.lineHeight}px`,
-        letterSpacing: `${typography.h3.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       h4: {
         fontSize: typography.h4.fontSize,
         fontWeight: typography.h4.fontWeight,
         lineHeight: `${typography.h4.lineHeight}px`,
-        letterSpacing: `${typography.h4.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       h5: {
         fontSize: typography.h5.fontSize,
         fontWeight: typography.h5.fontWeight,
         lineHeight: `${typography.h5.lineHeight}px`,
-        letterSpacing: `${typography.h5.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       h6: {
         fontSize: typography.h6.fontSize,
         fontWeight: typography.h6.fontWeight,
         lineHeight: `${typography.h6.lineHeight}px`,
-        letterSpacing: `${typography.h6.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       body1: {
         fontSize: typography.body1.fontSize,
         fontWeight: typography.body1.fontWeight,
         lineHeight: `${typography.body1.lineHeight}px`,
-        letterSpacing: `${typography.body1.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       body2: {
         fontSize: typography.body2.fontSize,
         fontWeight: typography.body2.fontWeight,
         lineHeight: `${typography.body2.lineHeight}px`,
-        letterSpacing: `${typography.body2.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       caption: {
         fontSize: typography.caption.fontSize,
         fontWeight: typography.caption.fontWeight,
         lineHeight: `${typography.caption.lineHeight}px`,
-        letterSpacing: `${typography.caption.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
       overline: {
         fontSize: typography.overline.fontSize,
         fontWeight: typography.overline.fontWeight,
         lineHeight: `${typography.overline.lineHeight}px`,
-        letterSpacing: `${typography.overline.letterSpacing}px`,
+        letterSpacing: GLOBAL_LETTER_SPACING,
+      },
+      button: {
+        fontFamily: '"Poppins", sans-serif',
+        letterSpacing: GLOBAL_LETTER_SPACING,
       },
     },
     components: {
@@ -502,7 +513,7 @@ export const themeSettings = (mode: PaletteMode) => {
             textTransform: "none" as const,
             borderRadius: 8,
             fontWeight: 500,
-            letterSpacing: "0.5px",
+            letterSpacing: GLOBAL_LETTER_SPACING,
           },
           contained: {
             backgroundColor: colors.primary.main,

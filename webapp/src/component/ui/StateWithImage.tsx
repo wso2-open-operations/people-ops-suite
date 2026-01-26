@@ -21,11 +21,12 @@ function StateWithImage(props: { message: string; imageUrl: string; hideImage?: 
       {!props.hideImage && <img alt="logo" width="140" height="auto" src={props.imageUrl}></img>}
 
       <Typography
-        variant="h5"
-        sx={(theme) => ({
-          color: theme.palette.grey[500],
+        variant="body1"
+        sx={{
+          fontWeight: 500,
           textAlign: "center",
-        })}
+          color: "text.primary",
+        }}
       >
         {props.message}
       </Typography>
