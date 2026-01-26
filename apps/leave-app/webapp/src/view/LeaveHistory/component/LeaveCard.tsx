@@ -90,6 +90,7 @@ export default function LeaveCard({
         border: `1px solid ${theme.palette.divider}`,
         alignItems: "center",
         boxShadow: "0 2px 8px rgba(5, 5, 5, 0.08)",
+        height: "fit-content",
         "&:hover": {
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
           transform: "translateY(-2px)",
