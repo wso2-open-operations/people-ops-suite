@@ -29,8 +29,9 @@ export const SnackMessage = {
   },
   warning: {},
 };
-
-export const PAGE_SIZE_OPTIONS = [1, 2, 3, 5, 10];
+export const DEFAULT_PAGE_VALUE = 1;
+export const DEFAULT_PER_PAGE_VALUE = 10;
+export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
