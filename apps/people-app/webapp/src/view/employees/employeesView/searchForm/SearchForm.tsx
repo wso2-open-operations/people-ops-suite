@@ -14,19 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Countries, EmployeeGenders } from "@config/constant";
-import { FilterAltOutlined } from "@mui/icons-material";
+import { Countries, DEFAULT_PAGE_VALUE, DEFAULT_PER_PAGE_VALUE, EmployeeGenders } from "@config/constant";
+import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
+import GroupsIcon from "@mui/icons-material/Groups";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
+  Divider,
+  Grid,
   IconButton,
   InputAdornment,
   Stack,
-  TextField,
+  Tooltip,
   Typography,
+  useTheme
 } from "@mui/material";
+import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
 import { setEmployeeFilter } from "@slices/employeeSlice/employee";
 import {
@@ -42,16 +47,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect } from "./FilterChipSelect";
 import { FilterDrawer } from "./FilterDrawer";
 
-type SearchFormProps = { page: number; perPage: number };
-
 type ChipItem = {
   key: string;
   label: string;
   onDelete: () => void;
 };
 
-export function SearchForm({ page, perPage }: SearchFormProps) {
+export function SearchForm() {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
   const employeeState = useAppSelector((state) => state.employee);
   const filter = employeeState.employeeFilter as EmployeeFilterAttributes;
 
@@ -78,38 +82,60 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
     dispatch(fetchBusinessUnits());
   }, [dispatch]);
 
-  const fieldSx = {
-    "& .MuiOutlinedInput-root": {
-      borderRadius: 1,
-      borderColor: "divider",
-      backgroundColor: "transparent",
-    },
-  };
-
   const updateFilter = useCallback(
     (patch: Partial<EmployeeFilterAttributes>) => {
       dispatch(
         setEmployeeFilter({
           ...filter,
           ...patch,
-          page: 1,
-          perPage,
+          page: DEFAULT_PAGE_VALUE,
+          perPage: DEFAULT_PER_PAGE_VALUE,
         } as EmployeeFilterAttributes),
       );
     },
-    [dispatch, filter, perPage],
+    [dispatch, filter],
   );
 
   const clearAll = () => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     dispatch(
       setEmployeeFilter({
-        page: 1,
-        perPage,
-        searchString: "",
+        page: DEFAULT_PAGE_VALUE,
+        perPage: DEFAULT_PER_PAGE_VALUE,
+        searchString: filter.searchString ?? "",
       } as EmployeeFilterAttributes),
     );
   };
+
+  function hasAnyActiveFilters(filter: EmployeeFilterAttributes): boolean {
+    const {
+      businessUnit,
+      team,
+      subTeam,
+      unit,
+      gender,
+      country,
+      designation,
+      employmentType,
+      city,
+      nationality,
+    } = filter;
+
+    return Boolean(
+        businessUnit ||
+        team ||
+        subTeam ||
+        unit ||
+        gender ||
+        country ||
+        designation ||
+        employmentType ||
+        city ||
+        nationality
+    );
+  }
+
+  const active = useMemo(() => hasAnyActiveFilters(filter), [filter]);
 
   const chips = useMemo(() => {
     const items: ChipItem[] = [];
@@ -118,11 +144,6 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
       items.push({ key, label, onDelete });
     };
 
-    if (filter.searchString) {
-      add("searchString", `Search: ${filter.searchString}`, () =>
-        updateFilter({ searchString: "" }),
-      );
-    }
     if (filter.businessUnit) {
       add("businessUnit", `Business Unit: ${filter.businessUnit}`, () =>
         updateFilter({
@@ -172,26 +193,46 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
   }, [filter, updateFilter]);
 
   return (
-    <Box sx={{ mb: 2 }}>
+    <Box sx={{ my: 2 }}>
       {/* Search */}
-      <Box
-        sx={{
-          mt: 2,
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 2,
-          width: "100%",
-        }}
+      <Grid
+        container
+        justifyContent="flex-end"
+        spacing={2}
+        alignItems="flex-end"
       >
-        <Box sx={{ flex: 1, width: "100%" }}>
-          <TextField
-            size="small"
-            fullWidth
+        <Grid item flex={1}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 0.5,
+              alignItems: "center",
+            }}
+          >
+            <Box sx={{ ml: 0.8, mt: 0.5 }}>
+              <GroupsIcon />
+            </Box>
+            <Stack
+              sx={{
+                p: 0.8,
+              }}
+              flexDirection="row"
+              gap={1}
+            >
+              <Typography variant="h5" fontWeight="bold">
+                Employees
+              </Typography>
+            </Stack>
+          </Box>
+        </Grid>
+        <Grid item sx={{display: "flex", alignItems: "center", width: "40%" }}>
+          <BaseTextField
             id="searchString"
+            size="small"
             name="searchString"
-            label="Search Employees"
+            label="Search"
             value={searchText}
-            sx={fieldSx}
             onChange={(e) => {
               const value = e.target.value;
               setSearchText(value);
@@ -226,24 +267,32 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
               ),
             }}
           />
-        </Box>
-        <Button
-          variant="outlined"
-          startIcon={<FilterAltOutlined />}
-          onClick={() => setDrawerOpen(true)}
-          sx={{
-            color: (theme) => theme.palette.secondary.contrastText,
-            borderColor: (theme) => theme.palette.secondary.contrastText,
-            textTransform: "none",
-            "&:hover": {
-              borderColor: (theme) => theme.palette.secondary.contrastText,
-              backgroundColor: "#ff730022",
-            },
-          }}
-        >
-          Filters
-        </Button>
-      </Box>
+        </Grid>
+        <Grid item>
+          <Box sx={{ display: "flex", alignItems: "center", height: "40px" }}>
+            <Tooltip title="Filters">
+              <Box
+                onClick={() => setDrawerOpen(true)}
+                sx={{
+                  color: theme.palette.secondary.contrastText,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "opacity 0.2s",
+                  "&:hover": {
+                    opacity: 0.7,
+                  },
+                }}
+              >
+                {active ? <FilterAlt sx={{ fontSize: 28 }} /> : <FilterAltOutlined sx={{ fontSize: 28 }} />}
+              </Box>
+            </Tooltip>
+          </Box>
+        </Grid>
+      </Grid>
+
+      <Divider sx={{ my: 2 }} />
 
       {/* Chips */}
       {chips.length > 0 && (
@@ -381,9 +430,43 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
             <Button
               variant="text"
               onClick={clearAll}
-              sx={{ textTransform: "none" }}
+              sx={{
+                textTransform: "none",
+                height: "32px",
+                borderRadius: "50px",
+                px: 2,
+                border: `1px solid ${theme.palette.divider}`,
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  backgroundColor: theme.palette.mode === "dark" 
+                    ? theme.palette.grey[800] 
+                    : theme.palette.grey[100],
+                  borderColor: theme.palette.error.main,
+                },
+              }}
             >
-              <Typography variant="subtitle2" color="secondary">
+              <ClearIcon 
+                fontSize="small" 
+                sx={{ 
+                  mr: 0.5, 
+                  fontSize: 16,
+                  transition: "color 0.2s ease",
+                  ".MuiButton-root:hover &": {
+                    color: theme.palette.error.main,
+                  },
+                }} 
+              />
+              <Typography 
+                variant="subtitle2" 
+                sx={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  transition: "color 0.2s ease",
+                  ".MuiButton-root:hover &": {
+                    color: theme.palette.error.main,
+                  },
+                }}
+              >
                 Clear filters
               </Typography>
             </Button>
@@ -394,10 +477,9 @@ export function SearchForm({ page, perPage }: SearchFormProps) {
       <FilterDrawer
         drawerOpen={drawerOpen}
         setDrawerOpen={setDrawerOpen}
-        filter={filter}
-        updateFilter={updateFilter}
+        appliedFilter={filter}
+        onApply={updateFilter}
         clearAll={clearAll}
-        fieldSx={fieldSx}
         businessUnits={businessUnits}
         teams={teams}
         subTeams={subTeams}
