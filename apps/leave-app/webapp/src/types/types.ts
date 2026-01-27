@@ -36,9 +36,22 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
-export enum DayType {
+export enum PeriodType {
   ONE = "one",
   MULTIPLE = "multiple",
+  HALF = "half",
+}
+
+export enum DayPortion {
+  FULL = "full",
+  FIRST = "first",
+  SECOND = "second",
+}
+
+export enum DayPortionLabel {
+  FULL = "Full Day",
+  FIRST = "First Half",
+  SECOND = "Second Half",
 }
 
 export interface RouteDetail {
@@ -58,7 +71,7 @@ export type RouteObjectWithRole = RouteObject & {
 };
 
 // Leave approval status.
-export enum ApprovalStatus {
+export enum Status {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
@@ -72,6 +85,14 @@ export enum LeaveType {
   MATERNITY = "maternity",
   PATERNITY = "paternity",
   LIEU = "lieu",
+}
+
+export enum LeaveLabel {
+  CASUAL = "Casual/Annual",
+  MATERNITY = "Maternity",
+  PATERNITY = "Paternity",
+  LIEU = "Lieu",
+  SABBATICAL = "Sabbatical",
 }
 
 // Leave Approval action.
@@ -88,7 +109,7 @@ export enum OrderBy {
 
 // Leave validation types.
 export interface LeaveValidationRequest {
-  periodType: "one" | "multiple";
+  periodType: PeriodType;
   startDate: string;
   endDate: string;
   isMorningLeave: boolean | null;
@@ -123,7 +144,7 @@ export interface CachedMail {
 
 // Leave submission type.
 export interface LeaveSubmissionRequest {
-  periodType?: "one" | "multiple" | "half";
+  periodType?: PeriodType;
   startDate: string;
   endDate: string;
   isMorningLeave?: boolean | null;
@@ -144,8 +165,8 @@ export interface LeaveSubmissionResponse {
 export interface SingleLeaveHistory {
   id: number;
   email: string;
-  leaveType: string;
-  periodType: string;
+  leaveType: LeaveType;
+  periodType: PeriodType;
   copyEmailList: string;
   notifyEveryone: boolean;
   submitComment: string;
@@ -178,7 +199,7 @@ export interface LeaveHistoryQueryParam {
   endDate?: string;
   approverEmail?: string;
   leaveCategory?: LeaveType[];
-  statuses?: ApprovalStatus[];
+  statuses?: Status[];
   limit?: number;
   offset?: number;
   orderBy?: OrderBy;
@@ -201,22 +222,6 @@ export interface LeadReportResponse {
     paternity?: number;
     sabbatical?: number;
   };
-}
-
-// Single approval status item.
-export interface ApprovalStatusItem {
-  id: string;
-  email: string;
-  startDate: string;
-  endDate: string;
-  approvalStatus: ApprovalStatus;
-  submitNote: string;
-}
-
-// Approval request payload.
-export interface ApprovalRequest {
-  isApproved: boolean;
-  leaveId: string;
 }
 
 // Approval response payload.

@@ -28,12 +28,21 @@ import {
   useTheme,
 } from "@mui/material";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useSnackbar } from "notistack";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { approveLeave } from "@root/src/services/leaveService";
-import { Action, SingleLeaveHistory } from "@root/src/types/types";
+import { getLeaveHistory } from "@root/src/services/leaveService";
+import { approveLeaveAction, selectApproveState } from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectUser } from "@root/src/slices/userSlice/user";
+import {
+  Action,
+  LeaveHistoryResponse,
+  LeaveType,
+  SingleLeaveHistory,
+  State,
+  Status,
+} from "@root/src/types/types";
 
 interface ApproveLeaveTableProps {
   rows: SingleLeaveHistory[];
@@ -48,13 +57,47 @@ interface ConfirmationDialogState {
 
 export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTableProps) {
   const theme = useTheme();
-  const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector(selectUser);
+  const approveState = useAppSelector(selectApproveState);
+  const [subordinateCount] = useState<number>(userInfo?.subordinateCount || 0);
+  const [subordinateOnSabbaticalPercentage, setSubordinateOnSabbaticalPercentage] =
+    useState<string>("0%");
+  // calculate the subordinate percentage on sabbatical leave during the given period
+  const calculateSubordinatePercentage = async (startDate: string, endDate: string) => {
+    try {
+      const subordinateHistoryOnSabbatical: LeaveHistoryResponse = await getLeaveHistory({
+        startDate: startDate,
+        endDate: endDate,
+        approverEmail: userInfo?.workEmail,
+        leaveCategory: [LeaveType.SABBATICAL],
+        statuses: [Status.APPROVED],
+      });
+
+      if (subordinateCount > 0) {
+        setSubordinateOnSabbaticalPercentage(
+          (subordinateHistoryOnSabbatical.leaves.length / Number(subordinateCount)) * 100 + "%",
+        );
+      }
+    } catch (error) {
+      console.error("Failed to fetch subordinate sabbatical leave history", error);
+    }
+  };
   const [dialogState, setDialogState] = useState<ConfirmationDialogState>({
     open: false,
     isApproval: true,
     leaveItem: null,
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmitting = approveState === State.loading;
+
+  useEffect(() => {
+    if (dialogState.open && dialogState.leaveItem?.startDate && dialogState.leaveItem?.endDate) {
+      calculateSubordinatePercentage(
+        dialogState.leaveItem.startDate,
+        dialogState.leaveItem.endDate,
+      );
+    }
+  }, [dialogState.open, dialogState.leaveItem?.startDate, dialogState.leaveItem?.endDate]);
 
   const handleOpenDialog = (item: SingleLeaveHistory, isApproval: boolean) => {
     setDialogState({
@@ -75,30 +118,16 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
   const handleConfirm = async () => {
     if (!dialogState.leaveItem) return;
 
-    setIsSubmitting(true);
-    try {
-      await approveLeave(
-        String(dialogState.leaveItem.id),
-        dialogState.isApproval ? Action.APPROVE : Action.REJECT,
-      );
+    const result = await dispatch(
+      approveLeaveAction({
+        leaveId: String(dialogState.leaveItem.id),
+        action: dialogState.isApproval ? Action.APPROVE : Action.REJECT,
+      }),
+    );
+
+    if (approveLeaveAction.fulfilled.match(result)) {
       handleCloseDialog();
-      enqueueSnackbar(
-        dialogState.isApproval
-          ? "Leave request approved successfully"
-          : "Leave request rejected successfully",
-        { variant: "success" },
-      );
       onRefresh?.();
-    } catch (error) {
-      console.error("Failed to process leave request:", error);
-      enqueueSnackbar(
-        dialogState.isApproval
-          ? "Failed to approve leave request"
-          : "Failed to reject leave request",
-        { variant: "error" },
-      );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -192,6 +221,9 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
+            {subordinateOnSabbaticalPercentage} of your subordinates will be on sabbatical leave
+            during this period. <br />
+            <br />
             {dialogState.isApproval
               ? `Are you sure you want to approve the sabbatical leave request for ${dialogState.leaveItem?.email}?`
               : `Are you sure you want to reject the sabbatical leave request for ${dialogState.leaveItem?.email}?`}

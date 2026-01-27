@@ -14,48 +14,46 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress, Stack } from "@mui/material";
-import { useSnackbar } from "notistack";
-import { useSelector } from "react-redux";
+import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { cancelLeaveRequest, getLeaveHistory } from "@root/src/services/leaveService";
+import {
+  cancelLeave,
+  fetchLeaveHistory,
+  selectCancellingLeaveId,
+  selectLeaveState,
+  selectLeaves,
+} from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ApprovalStatus, OrderBy, SingleLeaveHistory } from "@root/src/types/types";
+import { OrderBy, State, Status } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
 export default function LeaveHistory() {
-  const { enqueueSnackbar } = useSnackbar();
-  const [leaves, setLeaves] = useState<SingleLeaveHistory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const userInfo = useSelector(selectUser);
+  const dispatch = useAppDispatch();
+  const [currentYear] = useState<number>(new Date().getFullYear());
+  const userInfo = useAppSelector(selectUser);
+  const leaveState = useAppSelector(selectLeaveState);
+  const leaves = useAppSelector(selectLeaves);
+  const cancellingLeaveId = useAppSelector(selectCancellingLeaveId);
+  const loading = leaveState === State.loading;
 
   useEffect(() => {
-    const fetchLeaveHistory = async () => {
-      setLoading(true);
-
-      try {
-        const response = await getLeaveHistory({
-          email: userInfo?.workEmail || "",
-          startDate: `${new Date().getFullYear()}-01-01`, // first day of the current year
-          statuses: [ApprovalStatus.APPROVED, ApprovalStatus.PENDING],
+    if (userInfo?.workEmail) {
+      dispatch(
+        fetchLeaveHistory({
+          email: userInfo.workEmail,
+          startDate: `${currentYear}-01-01`, // first day of the current year
+          statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
-        });
-
-        setLeaves(response.leaves);
-      } catch (err) {
-        console.error("Failed to load leave history", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeaveHistory();
-  }, []);
+        }),
+      );
+    }
+  }, [dispatch, currentYear, userInfo?.workEmail]);
 
   const getMonthAndDay = (dateString: string) => {
     const date = new Date(dateString);
@@ -65,42 +63,49 @@ export default function LeaveHistory() {
   };
 
   const handleDeleteLeave = async (id: number) => {
-    try {
-      await cancelLeaveRequest(id);
-      setLeaves((prevLeaves) => prevLeaves.filter((leave) => leave.id !== id));
-      enqueueSnackbar("Leave cancelled successfully", { variant: "success" });
-    } catch (err) {
-      console.error("Failed to delete leave", err);
-      enqueueSnackbar("Failed to cancel leave", { variant: "error" });
-    }
+    dispatch(cancelLeave(id));
   };
 
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
-      <Title firstWord="Leave" secondWord="History (Current Year)" />
+      <Title firstWord="Leave" secondWord={`History (${currentYear})`} />
       <Box
         gap="2rem"
         display="grid"
         gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }}
+        minHeight="200px"
       >
-        {loading && <CircularProgress size={30} />}
-        {leaves.map((leave) => {
-          const { month, day } = getMonthAndDay(leave.startDate);
-          return (
-            <LeaveCard
-              key={leave.id}
-              id={leave.id}
-              type={`${leave.leaveType}`}
-              startDate={leave.startDate.substring(0, 10)}
-              endDate={leave.endDate.substring(0, 10)}
-              duration={`${leave.numberOfDays} days`}
-              status="approved"
-              month={month}
-              day={day}
-              onDelete={handleDeleteLeave}
-            />
-          );
-        })}
+        {loading && (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            width="100%"
+            gridColumn="1 / -1"
+            minHeight="200px"
+          >
+            <CircularProgress size={30} />
+          </Box>
+        )}
+        {!loading && leaves.length === 0 && <Typography>No leave history available.</Typography>}
+        {!loading &&
+          leaves.map((leave) => {
+            const { month, day } = getMonthAndDay(leave.startDate);
+            return (
+              <LeaveCard
+                key={leave.id}
+                id={leave.id}
+                type={`${leave.leaveType}`}
+                startDate={leave.startDate.substring(0, 10)}
+                endDate={leave.endDate.substring(0, 10)}
+                duration={`${leave.numberOfDays} days`}
+                month={month}
+                day={day}
+                cancelling={cancellingLeaveId === leave.id}
+                onDelete={handleDeleteLeave}
+              />
+            );
+          })}
       </Box>
     </Stack>
   );

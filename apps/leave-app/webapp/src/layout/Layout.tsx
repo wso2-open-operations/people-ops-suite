@@ -43,7 +43,7 @@ export default function Layout() {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
-        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+        anchorOrigin: { horizontal: "center", vertical: "bottom" },
       });
     }
   }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
@@ -120,6 +120,12 @@ export default function Layout() {
               overflow: "auto",
               transition:
                 "margin-left 0.3s ease, opacity 0.2s ease-in-out, transform 0.2s ease-in-out",
+              /* Hide scrollbar */
+              "&::-webkit-scrollbar": {
+                display: "none",
+              },
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
               "& > *": {
                 animation: "fadeInSlide 0.3s ease-out",
               },

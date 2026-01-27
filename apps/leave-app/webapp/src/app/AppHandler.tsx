@@ -23,11 +23,13 @@ import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { RootState, useAppSelector } from "@slices/store";
+import { fetchAppConfig } from "@slices/configSlice/config";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 import { getActiveRoutesV2, routes } from "../route";
 
 const AppHandler = () => {
+  const dispatch = useAppDispatch();
   const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
     "loading",
   );
@@ -52,12 +54,13 @@ const AppHandler = () => {
       setAppState("loading");
     } else if (auth.status === "success") {
       setAppState("success");
+      dispatch(fetchAppConfig());
     } else if (auth.status === "failed") {
       setAppState("failed");
     } else if (auth.mode === "maintenance") {
       setAppState("maintenance");
     }
-  }, [auth.status, auth.mode]);
+  }, [auth.status, auth.mode, dispatch]);
 
   const renderApp = () => {
     switch (appState) {

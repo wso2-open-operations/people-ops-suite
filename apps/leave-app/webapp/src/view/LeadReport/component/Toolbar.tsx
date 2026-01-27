@@ -23,16 +23,19 @@ import { useSnackbar } from "notistack";
 import { useEffect } from "react";
 
 import Title from "@root/src/component/common/Title";
-import { formatDateForApi, getLeadReport } from "@root/src/services/leaveService";
-import { LeadReportResponse } from "@root/src/types/types";
+import { formatDateForApi } from "@root/src/services/leaveService";
+import {
+  fetchLeadReport,
+  selectLeadReportState,
+} from "@root/src/slices/leadReportSlice/leadReport";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { State } from "@root/src/types/types";
 
 interface ToolbarProps {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
-  onFetchReport: (data: LeadReportResponse) => void;
-  setLoading: (loading: boolean) => void;
 }
 
 export default function Toolbar({
@@ -40,12 +43,13 @@ export default function Toolbar({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  onFetchReport,
-  setLoading,
 }: ToolbarProps) {
   const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const leadReportState = useAppSelector(selectLeadReportState);
+  const loading = leadReportState === State.loading;
 
-  const handleFetchReport = async () => {
+  const handleFetchReport = () => {
     if (!startDate || !endDate) {
       enqueueSnackbar("Please select both start and end dates", { variant: "error" });
       return;
@@ -56,26 +60,19 @@ export default function Toolbar({
       return;
     }
 
-    try {
-      setLoading(true);
-      const response = await getLeadReport({
+    dispatch(
+      fetchLeadReport({
         startDate: formatDateForApi(startDate),
         endDate: formatDateForApi(endDate),
-      });
-      onFetchReport(response);
-      enqueueSnackbar("Report fetched successfully", { variant: "success" });
-    } catch (error: any) {
-      console.error("Error fetching lead report:", error);
-      const errorMessage = error?.response?.data?.message || "Failed to fetch report";
-      enqueueSnackbar(errorMessage, { variant: "error" });
-    } finally {
-      setLoading(false);
-    }
+      }),
+    );
   };
 
   useEffect(() => {
     // Fetch report on initial load with default dates
-    handleFetchReport();
+    if (startDate && endDate) {
+      handleFetchReport();
+    }
   }, []);
 
   return (
@@ -96,9 +93,10 @@ export default function Toolbar({
           color="primary"
           startIcon={<SearchIcon />}
           onClick={handleFetchReport}
+          disabled={loading}
           sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
         >
-          Fetch Report
+          {loading ? "Loading..." : "Fetch Report"}
         </Button>
       </Stack>
     </Stack>
