@@ -63,33 +63,6 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
         height: "100%",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 0.5,
-          alignItems: "center",
-        }}
-      >
-        {icon && <Box sx={{ ml: 0.8, mt: 0.5 }}>{icon}</Box>}
-        <Stack
-          sx={{
-            p: 0.8,
-          }}
-          flexDirection="row"
-          gap={1}
-        >
-          <Typography variant="h5" fontWeight="bold">
-            {title}
-          </Typography>
-          {hasTabs && (
-            <Typography variant="h6" color="secondary.main">
-              /{searchParams.get("tab")}
-            </Typography>
-          )}
-        </Stack>
-      </Box>
-
       {/* -------Tabs--------- */}
       {hasTabs && (
         <Stack flexDirection="row" sx={{ mt: 0.7 }}>
