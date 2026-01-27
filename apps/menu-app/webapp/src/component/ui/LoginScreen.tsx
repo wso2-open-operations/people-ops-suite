@@ -104,10 +104,6 @@ const LoginScreen = () => {
                     </Stack>
                   </Stack>
                 </Grid>
-
-                {/* <Typography align="center" color={"grey"} sx={{ fontSize: "0.8em" }}>
-                  {`© ${(new Date().getFullYear(), "yyyy")} WSO2 LLC`}
-                </Typography> */}
               </Grid>
             </Box>
           </CardContent>
