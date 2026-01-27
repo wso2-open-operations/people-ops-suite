@@ -217,7 +217,7 @@ const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
         if (token) {
           setTokens(token, null, null);
         } else {
-          console.log("No token available");
+          console.error("No token available");
         }
       });
     };
