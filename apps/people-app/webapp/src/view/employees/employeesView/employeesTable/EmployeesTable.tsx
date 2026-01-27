@@ -14,36 +14,29 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box } from "@mui/material";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState } from "react";
+import { DEFAULT_PER_PAGE_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
-  fetchFilteredEmployees,
   Employee,
+  fetchFilteredEmployees,
 } from "@slices/employeeSlice/employee";
-import { SearchForm } from "../searchForm/SearchForm";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@src/types/types";
-import { PAGE_SIZE_OPTIONS } from "@config/constant";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { SearchForm } from "../searchForm/SearchForm";
 
 export default function EmployeesTable() {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const employeeState = useAppSelector((state) => state.employee);
   const navigate = useNavigate();
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 3,
+    pageSize: DEFAULT_PER_PAGE_VALUE,
   });
-
-  const pagination = useMemo(
-    () => ({
-      page: paginationModel.page + 1,
-      perPage: paginationModel.pageSize,
-    }),
-    [paginationModel]
-  );
 
   const appliedFilter = useMemo(
     () => ({
@@ -51,7 +44,7 @@ export default function EmployeesTable() {
       page: paginationModel.page + 1,
       perPage: paginationModel.pageSize,
     }),
-    [employeeState.employeeFilter, paginationModel]
+    [employeeState.employeeFilter, paginationModel],
   );
 
   useEffect(() => {
@@ -67,64 +60,376 @@ export default function EmployeesTable() {
     return `${firstName || ""} ${lastName || ""}`.trim();
   }
 
+  function getEmployeeStatusColor(
+    status: string,
+  ): "default" | "success" | "warning" | "error" {
+    switch (status?.toLowerCase()) {
+      case "active":
+        return "success";
+      case "probation":
+        return "warning";
+      case "inactive":
+      case "terminated":
+        return "error";
+      default:
+        return "default";
+    }
+  }
+
+  const SkeletonRowsOverlay = () => (
+    <Box sx={{ width: "100%" }}>
+      {Array.from({ length: paginationModel.pageSize }).map((_, index) => (
+        <Box
+          key={index}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: columns.map(col => {
+              if (col.width) return `${col.width}px`;
+              if (col.flex) return `${col.flex}fr`;
+              return "1fr";
+            }).join(" "),
+            alignItems: "center",
+            minHeight: 52,
+            px: 2,
+            gap: 2,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          {columns.map((col, colIndex) => {
+            // Employee ID column
+            if (col.field === "employeeId") {
+              return (
+                <Box key={colIndex}>
+                  <Skeleton variant="rectangular" height={24} width="80%" sx={{ borderRadius: 3 }} />
+                </Box>
+              );
+            }
+            
+            // Employee name column with avatar
+            if (col.field === "fullName") {
+              return (
+                <Box key={colIndex} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                  <Skeleton variant="circular" width={24} height={24} />
+                  <Skeleton variant="rectangular" width="60%" height={24} sx={{
+                    borderRadius: 3
+                  }} />
+                </Box>
+              );
+            }
+            
+            // Email and Business Unit columns
+            if (col.field === "workEmail" || col.field === "businessUnit") {
+              return (
+                <Box key={colIndex} sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                  <Skeleton variant="rectangular" width="70%" height={24} sx={{ borderRadius: 3 }} />
+                </Box>
+              );
+            }
+            
+            // Status column
+            if (col.field === "employeeStatus") {
+              return (
+                <Box key={colIndex} sx={{ display: "flex", justifyContent: "center" }}>
+                  <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: 3 }} />
+                </Box>
+              );
+            }
+            
+            // Default for other columns
+            return (
+              <Box key={colIndex}>
+                <Skeleton variant="rectangular" width="75%" height={24} sx={{ borderRadius: 3 }} />
+              </Box>
+            );
+          })}
+        </Box>
+      ))}
+    </Box>
+  );
+
   const columns: GridColDef<Employee>[] = [
     {
       field: "employeeId",
       headerName: "Employee ID",
-      flex: 1,
-      minWidth: 160,
-      resizable: false
+      flex: 0.5,
+      width: 100,
+      resizable: false,
     },
     {
       field: "fullName",
-      headerName: "Employee Full Name",
-      flex: 1.5,
-      minWidth: 220,
+      headerName: "Employee",
+      flex: 1,
+      minWidth: 200,
       sortable: false,
       valueGetter: (_value, row) => getFullName(row.firstName, row.lastName),
       resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            width: "100%",
+          }}
+        >
+          {params.row.employeeThumbnail ? (
+            <Avatar
+              src={params.row.employeeThumbnail}
+              alt={getFullName(params.row.firstName, params.row.lastName)}
+              sx={{ width: 32, height: 32 }}
+            />
+          ) : (
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: theme.palette.primary.main,
+              }}
+            >
+              {params.row.firstName?.[0]?.toUpperCase() || "E"}
+            </Avatar>
+          )}
+          <Box
+            sx={{
+              fontWeight: 600,
+              color: theme.palette.text.primary,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {params.value}
+          </Box>
+        </Box>
+      ),
     },
     {
       field: "workEmail",
-      headerName: "Work Email",
-      flex: 2,
-      minWidth: 260,
+      headerName: "Email",
+      flex: 1,
+      minWidth: 220,
       resizable: false,
-    }
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Tooltip title={params.value || ""} arrow>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                color: theme.palette.text.primary,
+              }}
+            >
+              {params.value}
+            </Box>
+          </Box>
+        </Tooltip>
+      ),
+    },
+    {
+      field: "businessUnit",
+      headerName: "Business Unit",
+      flex: 0.8,
+      minWidth: 140,
+      resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Tooltip title={params.value || "N/A"} arrow>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                color: theme.palette.text.primary,
+              }}
+            >
+              {params.value || "N/A"}
+            </Box>
+          </Box>
+        </Tooltip>
+      ),
+    },
+    {
+      field: "team",
+      headerName: "Team",
+      flex: 0.8,
+      minWidth: 120,
+      resizable: false,
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Tooltip title={params.value || "N/A"} arrow>
+          <Box
+            sx={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              color: theme.palette.text.primary,
+            }}
+          >
+            {params.value || "N/A"}
+          </Box>
+        </Tooltip>
+      ),
+    },
+    {
+      field: "employmentType",
+      headerName: "Employment Type",
+      flex: 0.7,
+      minWidth: 130,
+      resizable: false,
+    },
+    {
+      field: "employeeStatus",
+      headerName: "Status",
+      width: 110,
+      resizable: false,
+      align: "center",
+      headerAlign: "center",
+      renderCell: (params: GridRenderCellParams<Employee>) => (
+        <Chip
+          label={params.value || "Unknown"}
+          variant="outlined"
+          size="small"
+          color={getEmployeeStatusColor(params.value)}
+          sx={{
+            fontWeight: 700,
+            fontSize: "0.7rem",
+            height: 24,
+            borderRadius: 2,
+            border: 1,
+          }}
+        />
+      ),
+    },
   ];
-
+  
   return (
+    <Box
+      sx={{
+        height: "100%",
+        width: "100%",
+        overflow: "auto",
+        background: "background.paper",
+        borderTopRightRadius: 12,
+        borderTopLeftRadius: 0,
+        borderBottomLeftRadius: 12,
+        borderBottomRightRadius: 12,
+      }}
+    >
+      <Box sx={{ px: 2 }}>
+        <SearchForm />
+      </Box>
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column"
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          px: 2,
+          pb: 2,
         }}
       >
-        <Box>
-          <SearchForm page={pagination.page} perPage={pagination.perPage} />
-        </Box>
-        <Box>
-          <DataGrid
-            columns={columns}
-            rows={rows}
-            getRowId={(row: Employee) => row.employeeId}
-            pagination
-            paginationMode="server"
-            rowCount={employeeState.filteredEmployeesResponse.totalCount ?? 0}
-            loading={isLoading}
-            paginationModel={paginationModel}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
-            onPaginationModelChange={(model) => {
-              setPaginationModel({
-                page: model.page,
-                pageSize: model.pageSize,
-              });
-            }}
-            onRowClick={(params) =>
-              navigate(`/employees/${params.row.employeeId}`)
-            }
-          />
-        </Box>
+        <DataGrid
+          columns={columns}
+          rows={isLoading ? [] : rows}
+          getRowId={(row: Employee) => row.employeeId}
+          pagination
+          paginationMode="server"
+          rowCount={employeeState.filteredEmployeesResponse.totalCount ?? 0}
+          loading={isLoading}
+          paginationModel={paginationModel}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          onPaginationModelChange={(model) => {
+            setPaginationModel({
+              page: model.page,
+              pageSize: model.pageSize,
+            });
+          }}
+          onRowClick={(params) =>
+            navigate(`/employees/${params.row.employeeId}`)
+          }
+          autoHeight={false}
+          slots={{
+            loadingOverlay: SkeletonRowsOverlay,
+          }}
+          sx={{
+            width: "100%",
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: theme.palette.mode === "dark" 
+                ? theme.palette.grey[800] 
+                : theme.palette.grey[100],
+              fontSize: "0.875rem",
+              fontWeight: 700,
+              color: theme.palette.text.primary,
+              borderBottom: `2px solid ${theme.palette.divider}`,
+              minHeight: "56px !important",
+              maxHeight: "56px !important",
+            },
+            "& .MuiDataGrid-columnHeader": {
+              "&:focus, &:focus-within": {
+                outline: "none",
+              },
+            },
+            "& .MuiDataGrid-columnHeaderTitle": {
+              fontWeight: 700,
+            },
+            "& .MuiDataGrid-virtualScroller": {
+              minHeight: "200px !important",
+            },
+            "& .MuiDataGrid-cell": {
+              display: "flex",
+              alignItems: "center",
+              fontSize: "0.875rem",
+              py: 1.5,
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              "&:focus, &:focus-within": {
+                outline: "none",
+              },
+            },
+            "& .MuiDataGrid-row": {
+              cursor: "pointer",
+              transition: "background-color 0.2s ease",
+              "&:hover": {
+                backgroundColor: theme.palette.mode === "dark"
+                  ? theme.palette.grey[900]
+                  : theme.palette.grey[50],
+              },
+              "&.Mui-selected": {
+                backgroundColor: theme.palette.mode === "dark"
+                  ? theme.palette.grey[800]
+                  : theme.palette.grey[100],
+                "&:hover": {
+                  backgroundColor: theme.palette.mode === "dark"
+                    ? theme.palette.grey[700]
+                    : theme.palette.grey[200],
+                },
+              },
+            },
+            "& .MuiDataGrid-filler": {
+              display: "none",
+            },
+            "& .MuiDataGrid-footerContainer": {
+              minHeight: "52px",
+            },
+          }}
+          slotProps={{
+            pagination: {
+              labelRowsPerPage: "Rows per page:",
+            },
+          }}
+        />
       </Box>
+    </Box>
   );
 }
