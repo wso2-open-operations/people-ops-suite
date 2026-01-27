@@ -27,7 +27,7 @@ public isolated service class JwtInterceptor {
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
         returns http:NextService|http:Forbidden|http:InternalServerError|error? {
 
-        if req.method == "OPTIONS" {
+        if req.method == http:HTTP_OPTIONS {
             return ctx.next();
         }
 
