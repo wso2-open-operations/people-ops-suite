@@ -18,6 +18,7 @@ import { useIdleTimer } from "react-idle-timer";
 
 import React, { useContext, useEffect, useState } from "react";
 
+import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
@@ -211,13 +212,17 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 };
 
 const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
+  const [appState, setAppState] = useState<AppState>(AppState.Loading);
+
   useEffect(() => {
     const getIdToken = async () => {
       getToken((token) => {
         if (token) {
           setTokens(token, null, null);
+          setAppState(AppState.Authenticated);
         } else {
           console.error("No token available");
+          setAppState(AppState.Unauthenticated);
         }
       });
     };
@@ -225,7 +230,20 @@ const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
     getIdToken();
   }, []);
 
-  return <>{props.children}</>;
+  const renderContent = () => {
+    switch (appState) {
+      case AppState.Loading:
+        return <PreLoader />;
+
+      case AppState.Unauthenticated:
+        return <ErrorHandler message={"Error while authenticating user"} />;
+
+      case AppState.Authenticated:
+        return <>{props.children}</>;
+    }
+  };
+
+  return renderContent();
 };
 
 const useAppAuthContext = (): AuthContextType => useContext(AuthContext);
