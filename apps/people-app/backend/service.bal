@@ -503,7 +503,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
             log:printError(customErr, updateResult, id = id);

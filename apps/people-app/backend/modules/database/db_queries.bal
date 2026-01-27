@@ -202,7 +202,7 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
     INNER JOIN employee e ON p.id = e.personal_info_id
         WHERE e.id = ${id};`;
 
-# Fetch emergency contacts by personal info id.
+# Fetch emergency contacts by personal info ID.
 #
 # + personalInfoId - Personal info primary key
 # + return - Query to fetch emergency contacts
@@ -210,11 +210,10 @@ isolated function getEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) 
     `SELECT
         name,
         relationship,
-        telephone,
-        mobile
-     FROM personal_info_emergency_contacts
-     WHERE personal_info_id = ${personalInfoId}
-     ORDER BY id;`;
+        mobile,
+        telephone
+    FROM personal_info_emergency_contacts
+    WHERE personal_info_id = ${personalInfoId};`;
 
 # Get business units query.
 # + return - Business units query
@@ -506,10 +505,47 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         city = ${payload.city},
         state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
-        country = ${payload.country},
-        emergency_contacts = ${payload.emergencyContacts.toJsonString()}
+        country = ${payload.country}
      WHERE
         id = ${id};`;
+
+# Delete emergency contacts by personal info id.
+# 
+# + personalInfoId - Personal info primary key
+# + return - Delete emergency contacts query
+isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE 
+        FROM personal_info_emergency_contacts
+            WHERE personal_info_id = ${personalInfoId};`;
+
+# Insert an emergency contact for a personal_info id.
+# 
+# + personalInfoId - Personal info primary key
+# + contact - Emergency contact details
+# + createdBy - Creator of the emergency contact record
+# + return - Insert emergency contact query
+isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
+    string createdBy) returns sql:ParameterizedQuery =>`
+        INSERT INTO personal_info_emergency_contacts
+            (
+                personal_info_id,
+                name, 
+                relationship, 
+                mobile, 
+                telephone, 
+                created_by, 
+                updated_by
+            )
+        VALUES
+            (
+                ${personalInfoId},
+                ${contact.name},
+                ${contact.relationship},
+                ${contact.mobile},
+                ${contact.telephone},
+                ${createdBy},
+                ${createdBy}
+            );`;
 
 # Build query to fetch vehicles.
 #
