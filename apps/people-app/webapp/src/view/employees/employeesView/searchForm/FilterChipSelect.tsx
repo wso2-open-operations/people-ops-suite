@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 
 type FilterChipSelectProps<T> = {
   label: string;
-  value: string;
+  value: string|undefined;
   options: T[];
   getLabel: (o: T) => string;
   onChange: (o: T) => void;
@@ -68,20 +68,32 @@ export function FilterChipSelect<T>({
         >
           {`${label} :`}
         </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            lineHeight: 1,
-            display: "flex",
-            alignItems: "center",
-            fontSize: "12px",
-            fontWeight: 900,
-            textTransform: "capitalize",
-            color: isDark ? theme.palette.grey[100] : theme.palette.grey[700],
-          }}
-        >
-          {`${value}`}
-        </Typography>
+          {value ? (<Typography
+            variant="body2"
+            sx={{
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              fontSize: "12px",
+              fontWeight: 900,
+              textTransform: "capitalize",
+              color: isDark ? theme.palette.grey[100] : theme.palette.grey[700],
+            }}
+          >
+            {`${value}`}
+          </Typography>) : (<Typography
+            variant="body2"
+            sx={{
+              lineHeight: 1,
+              display: "flex",
+              alignItems: "center",
+              fontSize: "12px",
+              fontWeight: 900,
+              color: theme.palette.grey[400],
+            }}
+          >
+            Select Value . . .
+          </Typography>)}
         {open ? (
           <KeyboardArrowUp
             className="arrow-icon"
@@ -96,6 +108,7 @@ export function FilterChipSelect<T>({
             className="arrow-icon"
             sx={{
               fontSize: 16,
+              fontWeight: 900,
               color: theme.palette.grey[500],
               ".MuiChip-root:hover &": { color: brandOrange },
             }}
@@ -155,8 +168,8 @@ export function FilterChipSelect<T>({
           p: 0,
           backgroundColor: isDark ? theme.palette.background.default : "#fff",
           borderRadius: "50px",
-          border: `1px solid ${alpha(brandOrange, 0.4)}`,
-          outline: `1px solid ${alpha(brandOrange, 1)}`,
+          border: `1px solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
+          outline: `${ value ? "1px" : "0"} solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
           transition: "all 0.1s ease-in-out",
           "&:active": {
             transform: "scale(0.98)",
@@ -188,7 +201,7 @@ export function FilterChipSelect<T>({
           paper: { sx: { maxHeight: 360, minWidth: 240 } },
         }}
       >
-        {options.map((o, idx) => {
+        {options.length > 0 ? options.map((o, idx) => {
           const optionLabel = getLabel(o);
           return (
             <MenuItem
@@ -202,7 +215,11 @@ export function FilterChipSelect<T>({
               {optionLabel}
             </MenuItem>
           );
-        })}
+        }) : (
+            <MenuItem disabled key="no-options">
+              No options available
+            </MenuItem>
+          )}
       </Menu>
     </>
   );

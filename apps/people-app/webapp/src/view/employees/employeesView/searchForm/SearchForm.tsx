@@ -14,7 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Countries, DEFAULT_PAGE_VALUE, DEFAULT_PER_PAGE_VALUE, EmployeeGenders } from "@config/constant";
+import {
+  Countries,
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_PER_PAGE_VALUE,
+  EmployeeGenders,
+} from "@config/constant";
 import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -29,7 +34,7 @@ import {
   Stack,
   Tooltip,
   Typography,
-  useTheme
+  useTheme,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
@@ -122,16 +127,16 @@ export function SearchForm() {
     } = filter;
 
     return Boolean(
-        businessUnit ||
-        team ||
-        subTeam ||
-        unit ||
-        gender ||
-        country ||
-        designation ||
-        employmentType ||
-        city ||
-        nationality
+      businessUnit ||
+      team ||
+      subTeam ||
+      unit ||
+      gender ||
+      country ||
+      designation ||
+      employmentType ||
+      city ||
+      nationality,
     );
   }
 
@@ -226,7 +231,7 @@ export function SearchForm() {
             </Stack>
           </Box>
         </Grid>
-        <Grid item sx={{display: "flex", alignItems: "center", width: "40%" }}>
+        <Grid item sx={{ display: "flex", alignItems: "center", width: "40%" }}>
           <BaseTextField
             id="searchString"
             size="small"
@@ -285,7 +290,11 @@ export function SearchForm() {
                   },
                 }}
               >
-                {active ? <FilterAlt sx={{ fontSize: 28 }} /> : <FilterAltOutlined sx={{ fontSize: 28 }} />}
+                {active ? (
+                  <FilterAlt sx={{ fontSize: 28 }} />
+                ) : (
+                  <FilterAltOutlined sx={{ fontSize: 28 }} />
+                )}
               </Box>
             </Tooltip>
           </Box>
@@ -297,15 +306,15 @@ export function SearchForm() {
       {/* Chips */}
       {chips.length > 0 && (
         <Box sx={{ mt: 1 }}>
-          <Stack
-            direction="row"
-            spacing={2}
-            useFlexGap
-            flexWrap="wrap"
-            alignItems="center"
-          >
-            {/* Dropdown chips */}
-            {filter.businessUnit && (
+          {/* Dropdown chips */}
+          {active && (
+            <Stack
+              direction="row"
+              spacing={2}
+              useFlexGap
+              flexWrap="wrap"
+              alignItems="center"
+            >
               <FilterChipSelect
                 label="Business Unit"
                 value={filter.businessUnit}
@@ -329,9 +338,7 @@ export function SearchForm() {
                   })
                 }
               />
-            )}
 
-            {filter.team && (
               <FilterChipSelect
                 label="Team"
                 value={filter.team}
@@ -353,9 +360,6 @@ export function SearchForm() {
                   })
                 }
               />
-            )}
-
-            {filter.subTeam && (
               <FilterChipSelect
                 label="Sub Team"
                 value={filter.subTeam}
@@ -369,9 +373,6 @@ export function SearchForm() {
                   updateFilter({ subTeam: undefined, unit: undefined })
                 }
               />
-            )}
-
-            {filter.unit && (
               <FilterChipSelect
                 label="Unit"
                 value={filter.unit}
@@ -380,10 +381,6 @@ export function SearchForm() {
                 onChange={(u) => updateFilter({ unit: u.name })}
                 onClear={() => updateFilter({ unit: undefined })}
               />
-            )}
-
-            {/* Keep the rest as plain chips OR convert similarly */}
-            {filter.gender && (
               <FilterChipSelect
                 label="Gender"
                 value={filter.gender}
@@ -392,9 +389,6 @@ export function SearchForm() {
                 onChange={(gender) => updateFilter({ gender: gender })}
                 onClear={() => updateFilter({ gender: undefined })}
               />
-            )}
-
-            {filter.country && (
               <FilterChipSelect
                 label="Country"
                 value={filter.country}
@@ -403,9 +397,6 @@ export function SearchForm() {
                 onChange={(country) => updateFilter({ country: country })}
                 onClear={() => updateFilter({ country: undefined })}
               />
-            )}
-
-            {filter.designation && (
               <FilterChipSelect
                 label="Designation"
                 value={filter.designation}
@@ -414,9 +405,6 @@ export function SearchForm() {
                 onChange={(d) => updateFilter({ designation: d.designation })}
                 onClear={() => updateFilter({ designation: undefined })}
               />
-            )}
-
-            {filter.employmentType && (
               <FilterChipSelect
                 label="Employment Type"
                 value={filter.employmentType}
@@ -425,52 +413,53 @@ export function SearchForm() {
                 onChange={(et) => updateFilter({ employmentType: et.name })}
                 onClear={() => updateFilter({ employmentType: undefined })}
               />
-            )}
 
-            <Button
-              variant="text"
-              onClick={clearAll}
-              sx={{
-                textTransform: "none",
-                height: "32px",
-                borderRadius: "50px",
-                px: 2,
-                border: `1px solid ${theme.palette.divider}`,
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  backgroundColor: theme.palette.mode === "dark" 
-                    ? theme.palette.grey[800] 
-                    : theme.palette.grey[100],
-                  borderColor: theme.palette.error.main,
-                },
-              }}
-            >
-              <ClearIcon 
-                fontSize="small" 
-                sx={{ 
-                  mr: 0.5, 
-                  fontSize: 16,
-                  transition: "color 0.2s ease",
-                  ".MuiButton-root:hover &": {
-                    color: theme.palette.error.main,
-                  },
-                }} 
-              />
-              <Typography 
-                variant="subtitle2" 
+              <Button
+                variant="text"
+                onClick={clearAll}
                 sx={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  transition: "color 0.2s ease",
-                  ".MuiButton-root:hover &": {
-                    color: theme.palette.error.main,
+                  textTransform: "none",
+                  height: "32px",
+                  borderRadius: "50px",
+                  px: 2,
+                  // border: `1px solid ${theme.palette.divider}`,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.grey[800]
+                        : theme.palette.grey[100],
+                    borderColor: theme.palette.error.main,
                   },
                 }}
               >
-                Clear filters
-              </Typography>
-            </Button>
-          </Stack>
+                <ClearIcon
+                  fontSize="small"
+                  sx={{
+                    mr: 0.5,
+                    fontSize: 16,
+                    transition: "color 0.2s ease",
+                    ".MuiButton-root:hover &": {
+                      color: theme.palette.error.main,
+                    },
+                  }}
+                />
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    transition: "color 0.2s ease",
+                    ".MuiButton-root:hover &": {
+                      color: theme.palette.error.main,
+                    },
+                  }}
+                >
+                  Clear filters
+                </Typography>
+              </Button>
+            </Stack>
+          )}
         </Box>
       )}
 
