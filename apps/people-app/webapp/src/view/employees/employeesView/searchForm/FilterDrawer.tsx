@@ -14,19 +14,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Countries, EmployeeGenders } from "@config/constant";
+import {
+  DEFAULT_PAGE_VALUE,
+  DEFAULT_PER_PAGE_VALUE,
+  EmployeeGenders,
+} from "@config/constant";
 import ClearIcon from "@mui/icons-material/Clear";
 import {
+  Autocomplete,
   Box,
   Button,
   Divider,
   Drawer,
   Grid,
   IconButton,
-  MenuItem,
-  TextField,
   Typography,
 } from "@mui/material";
+import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
@@ -40,6 +44,7 @@ import {
   Unit,
 } from "@slices/organizationSlice/organization";
 import { useAppDispatch } from "@slices/store";
+import { useEffect, useMemo, useState } from "react";
 import {
   OrganizationSelection,
   OrganizationTreeFilters,
@@ -48,10 +53,9 @@ import {
 type FilterDrawerProps = {
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
-  filter: EmployeeFilterAttributes;
-  updateFilter: (patch: Partial<EmployeeFilterAttributes>) => void;
+  appliedFilter: EmployeeFilterAttributes;
+  onApply: (next: Partial<EmployeeFilterAttributes>) => void;
   clearAll: () => void;
-  fieldSx: any;
   businessUnits: BusinessUnit[];
   teams: Team[];
   subTeams: SubTeam[];
@@ -63,10 +67,9 @@ type FilterDrawerProps = {
 export function FilterDrawer({
   drawerOpen,
   setDrawerOpen,
-  filter,
-  updateFilter,
+  appliedFilter,
+  onApply,
   clearAll,
-  fieldSx,
   businessUnits,
   teams,
   subTeams,
@@ -75,6 +78,24 @@ export function FilterDrawer({
   employmentTypes,
 }: FilterDrawerProps) {
   const dispatch = useAppDispatch();
+  const [draft, setDraft] = useState<EmployeeFilterAttributes>(appliedFilter);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      setDraft(appliedFilter);
+    }
+  }, [drawerOpen, appliedFilter]);
+
+  const set = (patch: Partial<EmployeeFilterAttributes>) => {
+    setDraft((p) => ({ ...p, ...patch }));
+  };
+
+  const designationOptions = useMemo(() => designations, [designations]);
+
+  const selectedDesignation = useMemo(
+    () => designationOptions.find(d => d.designation === draft.designation) ?? null,
+    [designationOptions, draft.designation]
+  );
 
   return (
     <Drawer
@@ -82,53 +103,55 @@ export function FilterDrawer({
       open={drawerOpen}
       onClose={() => setDrawerOpen(false)}
     >
-      <Box sx={{ width: 400, mt: 6 }}>
+      <Box sx={{ width: 600, mt: 6 }}>
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            px: 2,
+            pl: 4,
+            pr: 2,
             py: 1.5,
             borderBottom: 1,
             borderColor: "divider",
           }}
         >
-          <Typography variant="h6" color="primary">Filters</Typography>
-          <IconButton 
+          <Typography variant="h5" color="primary">
+            Filters
+          </Typography>
+          <IconButton
             size="small"
-            color="primary" 
-            sx={{ 
+            color="primary"
+            sx={{
               textTransform: "none",
-              display: "flex", 
+              display: "flex",
               alignItems: "center",
-              justifyContent: "center"
-            }} 
+              justifyContent: "center",
+            }}
             onClick={() => setDrawerOpen(false)}
           >
             <ClearIcon />
           </IconButton>
         </Box>
 
-        <Box sx={{ flex: 1, overflowY: "auto", px: 2, py: 2 }}>
-          <Grid container direction="column" spacing={2}>
+        <Box sx={{ flex: 1, overflowY: "auto", px: 4, py: 2 }}>
+          <Grid container direction="column" spacing={4}>
             <Grid item>
               <OrganizationTreeFilters
                 value={
                   {
-                    businessUnit: filter.businessUnit,
-                    team: filter.team,
-                    subTeam: filter.subTeam,
-                    unit: filter.unit,
+                    businessUnit: draft.businessUnit,
+                    team: draft.team,
+                    subTeam: draft.subTeam,
+                    unit: draft.unit,
                   } as OrganizationSelection
                 }
-                fieldSx={fieldSx}
                 businessUnits={businessUnits}
                 teams={teams}
                 subTeams={subTeams}
                 units={units}
                 onChangeBusinessUnit={(selected: BusinessUnit | null) => {
-                  updateFilter({
+                  set({
                     businessUnit: selected?.name,
                     team: undefined,
                     subTeam: undefined,
@@ -137,7 +160,7 @@ export function FilterDrawer({
                   if (selected?.id) dispatch(fetchTeams({ id: selected.id }));
                 }}
                 onChangeTeam={(selected: Team | null) => {
-                  updateFilter({
+                  set({
                     team: selected?.name,
                     subTeam: undefined,
                     unit: undefined,
@@ -146,11 +169,11 @@ export function FilterDrawer({
                     dispatch(fetchSubTeams({ id: selected.id }));
                 }}
                 onChangeSubTeam={(selected: SubTeam | null) => {
-                  updateFilter({ subTeam: selected?.name, unit: undefined });
+                  set({ subTeam: selected?.name, unit: undefined });
                   if (selected?.id) dispatch(fetchUnits({ id: selected.id }));
                 }}
                 onChangeUnit={(selected: Unit | null) => {
-                  updateFilter({ unit: selected?.name });
+                  set({ unit: selected?.name });
                 }}
               />
             </Grid>
@@ -158,82 +181,66 @@ export function FilterDrawer({
               <Divider />
             </Grid>
             <Grid item>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                label="Gender"
-                value={filter.gender ?? ""}
-                onChange={(e) =>
-                  updateFilter({ gender: e.target.value || undefined })
+              <Autocomplete<string, false, false, false>
+                options={EmployeeGenders}
+                getOptionLabel={(o) => o}
+                value={
+                  EmployeeGenders.find((g) => g === draft.gender) ?? null
                 }
-                sx={fieldSx}
-              >
-                {EmployeeGenders.map((g) => (
-                  <MenuItem key={g} value={g}>
-                    {g}
-                  </MenuItem>
-                ))}
-              </TextField>
+                autoHighlight
+                autoSelect
+                onChange={(_, selected) => set({ gender: selected || undefined })}
+                renderInput={(params) => (
+                  <BaseTextField
+                    {...params}
+                    size="small"
+                    label="Gender"
+                  />
+                )}
+              />
             </Grid>
             <Grid item>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                label="Country"
-                value={filter.country ?? ""}
-                onChange={(e) =>
-                  updateFilter({ country: e.target.value || undefined })
+              <Autocomplete<Designation, false, false, false>
+                options={designationOptions}
+                getOptionLabel={(o) => o.designation}
+                value={
+                  selectedDesignation
                 }
-                sx={fieldSx}
-              >
-                {Countries.map((c) => (
-                  <MenuItem key={c} value={c}>
-                    {c}
-                  </MenuItem>
-                ))}
-              </TextField>
+                autoHighlight
+                autoSelect
+                onChange={(_, selected) => set({ designation: selected?.designation })}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>{option.designation}</li>
+                )}
+                ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
+                renderInput={(params) => (
+                  <BaseTextField
+                    {...params}
+                    size="small"
+                    label="Designation"
+                  />
+                )}
+              />
             </Grid>
             <Grid item>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                label="Designation"
-                value={filter.designation ?? ""}
-                onChange={(e) =>
-                  updateFilter({ designation: e.target.value || undefined })
+              <Autocomplete<string, false, false, false>
+                options={employmentTypes.map((et) => et.name)}
+                getOptionLabel={(o) => o}
+                value={
+                  employmentTypes.find((et) => et.name === draft.employmentType)?.name ?? null
                 }
-                sx={fieldSx}
-              >
-                {designations.map((d) => (
-                  <MenuItem key={d.id} value={d.designation}>
-                    {d.designation}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item>
-              <TextField
-                select
-                size="small"
-                fullWidth
-                label="Employment Type"
-                value={filter.employmentType ?? ""}
-                onChange={(e) =>
-                  updateFilter({
-                    employmentType: e.target.value || undefined,
-                  })
-                }
-                sx={fieldSx}
-              >
-                {employmentTypes.map((et) => (
-                  <MenuItem key={et.id} value={et.name}>
-                    {et.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                autoHighlight
+                autoSelect
+                onChange={(_, selected) => set({ employmentType: selected || undefined })}
+                ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
+                renderInput={(params) => (
+                  <BaseTextField
+                    {...params}
+                    size="small"
+                    label="Employment Type"
+                  />
+                )}
+              />
             </Grid>
           </Grid>
         </Box>
@@ -253,18 +260,26 @@ export function FilterDrawer({
         >
           <Button
             variant="outlined"
-            color="secondary"
-            onClick={() => setDrawerOpen(false)}
-            sx={{textTransform: "none"}}
-          >
-            Done
-          </Button>
-          <Button 
-            variant="outlined"
-            color="primary" 
-            sx={{ textTransform: "none" }} onClick={clearAll}
+            color="primary"
+            sx={{ textTransform: "none" }}
+            onClick={clearAll}
           >
             Clear all
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => {
+              onApply(draft);
+              setDrawerOpen(false);
+              set({
+                page: DEFAULT_PAGE_VALUE,
+                perPage: DEFAULT_PER_PAGE_VALUE,
+              });
+            }}
+            sx={{ textTransform: "none" }}
+          >
+            Apply
           </Button>
         </Box>
       </Box>

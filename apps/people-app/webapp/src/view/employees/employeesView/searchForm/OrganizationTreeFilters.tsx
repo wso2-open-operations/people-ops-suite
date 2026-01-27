@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Autocomplete, Box, Grid, TextField, Typography } from "@mui/material";
+import { Autocomplete, Box, Grid, Typography } from "@mui/material";
+import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import {
   BusinessUnit,
   SubTeam,
@@ -31,7 +32,6 @@ export type OrganizationSelection = {
 
 export type OrganizationTreeFiltersProps = {
   value: OrganizationSelection;
-  fieldSx: any;
 
   businessUnits: BusinessUnit[];
   teams: Team[];
@@ -46,7 +46,6 @@ export type OrganizationTreeFiltersProps = {
 
 export function OrganizationTreeFilters({
   value,
-  fieldSx,
   businessUnits,
   teams,
   subTeams,
@@ -64,7 +63,7 @@ export function OrganizationTreeFilters({
     "&::before": {
       content: '""',
       position: "absolute",
-      top: "36px",
+      top: "48px",
       left: "12px",
       width: "12px",
       height: "1px",
@@ -77,7 +76,7 @@ export function OrganizationTreeFilters({
       top: 0,
       left: "12px",
       width: "1px",
-      height: "36px",
+      bottom: 0,
       bgcolor: "text.disabled",
     },
   };
@@ -90,7 +89,7 @@ export function OrganizationTreeFilters({
       }}
     >
       <Grid container direction="column">
-        <Typography variant="subtitle1" color="primary">
+        <Typography variant="h5" color="primary">
           Organization
         </Typography>
       </Grid>
@@ -105,12 +104,13 @@ export function OrganizationTreeFilters({
             }
             onChange={(_, selected) => onChangeBusinessUnit(selected)}
             renderInput={(params) => (
-              <TextField
+              <BaseTextField
                 {...params}
                 size="small"
                 label="Business Unit"
-                sx={fieldSx}
-                fullWidth
+                sx={{
+                      mt: 2,
+                    }}
               />
             )}
           />
@@ -124,12 +124,13 @@ export function OrganizationTreeFilters({
                 onChange={(_, selected) => onChangeTeam(selected)}
                 disabled={!value.businessUnit}
                 renderInput={(params) => (
-                  <TextField
+                  <BaseTextField
                     {...params}
                     size="small"
                     label="Team"
-                    sx={fieldSx}
-                    fullWidth
+                    sx={{
+                      mt: 2,
+                    }}
                   />
                 )}
               />
@@ -145,12 +146,13 @@ export function OrganizationTreeFilters({
                     onChange={(_, selected) => onChangeSubTeam(selected)}
                     disabled={!value.team}
                     renderInput={(params) => (
-                      <TextField
+                      <BaseTextField
                         {...params}
                         size="small"
                         label="Sub Team"
-                        sx={fieldSx}
-                        fullWidth
+                        sx={{
+                          mt: 2,
+                        }}
                       />
                     )}
                   />
@@ -164,12 +166,13 @@ export function OrganizationTreeFilters({
                         onChange={(_, selected) => onChangeUnit(selected)}
                         disabled={!value.subTeam}
                         renderInput={(params) => (
-                          <TextField
+                          <BaseTextField
                             {...params}
                             size="small"
                             label="Unit"
-                            sx={fieldSx}
-                            fullWidth
+                            sx={{
+                              mt: 2,
+                            }}
                           />
                         )}
                       />
