@@ -25,25 +25,23 @@ import { RootState } from "@slices/store";
 export enum Role {
   ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
-}
-
-// Custom extended interface
-interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
-  groups?: string[];
+  LEAD = "LEAD",
+  TEAM_LEAD = "TEAM_LEAD",
 }
 
 interface AuthState {
   status: State;
   mode: "active" | "maintenance";
   statusMessage: string | null;
+  isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
-  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
+  decodedIdToken: DecodedIDTokenPayload | null;
   roles: Role[];
 }
 
 interface AuthData {
   userInfo: BasicUserInfo;
-  decodedIdToken: ExtendedDecodedIDTokenPayload;
+  decodedIdToken: DecodedIDTokenPayload;
 }
 
 export interface UserState {
@@ -64,6 +62,7 @@ export interface UserInfoInterface {
 }
 
 const initialState: AuthState = {
+  isAuthenticated: false,
   status: State.idle,
   mode: "active",
   statusMessage: null,
