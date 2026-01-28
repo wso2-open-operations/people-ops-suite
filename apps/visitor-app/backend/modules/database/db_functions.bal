@@ -14,42 +14,36 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/sql;
-import ballerina/io;
 
-// # Add new visitor.
-// #
-// # + payload - Payload containing the visitor details  
-// # + createdBy - Person who is creating the visitor
-// # + return - Error if the insertion failed
-// public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-//     // Encrypt sensitive fields.
-//     payload.name = check encrypt(payload.name);
-//     payload.nicNumber = check encrypt(payload.nicNumber);
-//     string? email = payload.email;
-//     payload.email = email is string ? check encrypt(email) : null;
-//     payload.contactNumber = check encrypt(payload.contactNumber);
+# Add new visitor.
+#
+# + payload - Payload containing the visitor details  
+# + createdBy - Person who is creating the visitor
+# + return - Error if the insertion failed
+public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
+    // Encrypt sensitive fields.
+    payload.firstName = check encrypt(payload.firstName);
+    payload.lastName = check encrypt(payload.lastName);
+    string email = payload.email;
+    payload.email = check encrypt(email);
+    payload.contactNumber = check encrypt(payload.contactNumber);
 
-//     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
-// }
+    _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
+}
 
 # Fetch Visitor.
 #
-# + hashedEmail - Filter :  hashed NIC of the visitor
+# + hashedEmail - Filter :  hashed email of the visitor
 # + return - Visitor object or error if so
 public isolated function fetchVisitor(string hashedEmail) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedEmail));
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByEmailQuery(hashedEmail));
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
 
     // Decrypt sensitive fields.
-    // visitor.name = check decrypt(visitor.name);
-    // // visitor.nicNumber = check decrypt(visitor.nicNumber);
     visitor.contactNumber = check decrypt(visitor.contactNumber);
 
-    // string email = visitor.emailHash;
-    // visitor.emailHash = check decrypt(email);
-    io:println("visitor", visitor);
     return visitor;
 }
 
@@ -132,7 +126,6 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
     }
 
     string? accessibleLocations = visit.accessibleLocations;
-    string? email = visit.email;
     return {
         id: visit.id,
         timeOfEntry: visit.timeOfEntry.endsWith(".0")
@@ -142,10 +135,10 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
             ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
             : visit.timeOfDeparture,
         passNumber: visit.passNumber,
-        nicHash: visit.nicHash,
-        nicNumber: check decrypt(visit.nicNumber),
-        name: check decrypt(visit.name),
-        email: email is () ? () : check decrypt(email),
+        emailHash: visit.emailHash,
+        firstName: check decrypt(visit.firstName),
+        lastName: check decrypt(visit.lastName),
+        email:check decrypt(visit.email),
         contactNumber: check decrypt(visit.contactNumber),
         companyName: visit.companyName,
         whomTheyMeet: visit.whomTheyMeet,
@@ -173,7 +166,6 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
     check from VisitRecord visit in resultStream
         do {
             string? accessibleLocations = visit.accessibleLocations;
-            string? email = visit.email;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
@@ -184,10 +176,10 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                     ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
                     : visit.timeOfDeparture,
                 passNumber: visit.passNumber,
-                nicHash: visit.nicHash,
-                nicNumber: check decrypt(visit.nicNumber),
-                name: check decrypt(visit.name),
-                email: email is () ? () : check decrypt(email),
+                emailHash: visit.emailHash,
+                firstName: check decrypt(visit.firstName),
+                lastName: check decrypt(visit.lastName),
+                email: check decrypt(visit.email),
                 contactNumber: check decrypt(visit.contactNumber),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,

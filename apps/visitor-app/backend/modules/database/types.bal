@@ -56,13 +56,7 @@ public type Visitor record {|
 
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
-    # Nic Hash of the visitor
-    // @constraint:String {
-    //     pattern: {
-    //         value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-    //         message: "The NIC Hash should be a non-empty string with printable characters."
-    //     }
-    // }
+    # Encrypted email hash of the visitor
     string emailHash;
     # Name of the visitor
     @constraint:String {
@@ -102,8 +96,8 @@ public type Floor record {|
 
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
-    # Nic Hash of the visitor
-    string nicHash;
+    # Email Hash of the visitor
+    string emailHash;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -125,18 +119,18 @@ public type AddVisitPayload record {|
 # [Database] Visit record.
 public type VisitRecord record {|
     *AuditFields;
-    # Nic Hash of the visitor
-    string nicHash;
     # Unique identifier for the visit
     int id;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # First name of the visitor
+    string firstName;
+    # Last name of the visitor
+    string lastName;
     # Working phone number of visitor
     string contactNumber;
+    # Email Hash of the visitor
+    string emailHash;
     # Email of the visitor
-    string? email = ();
+    string email;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -164,8 +158,8 @@ public type Visit record {|
     *AuditFields;
     # Unique identifier for the visit
     int id;
-    # Nic Hash of the visitor
-    string nicHash;
+    # Email Hash of the visitor
+    string emailHash;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -182,14 +176,14 @@ public type Visit record {|
     string timeOfDeparture;
     # Status of the visit
     Status status;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # First name of the visitor
+    string firstName;
+    # Last name of the visitor
+    string lastName;
     # Working phone number of visitor
     string contactNumber;
     # Email of the visitor
-    string? email = ();
+    string email;
     # Invitation ID associated with the visit
     int? invitationId;
 |};

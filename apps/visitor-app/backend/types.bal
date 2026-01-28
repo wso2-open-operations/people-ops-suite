@@ -27,14 +27,14 @@ type UserInfo record {
 
 # Payload for adding a new visit.
 public type AddVisitPayload record {|
-    # Nic Hash of the visitor
+    # Email Hash of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The email Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
+    string emailHash;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -107,30 +107,30 @@ public type AddInvitationPayload record {|
 
 # Payload for filling an existing visit invitation.
 public type FillInvitationPayload record {|
-    # Name of the visitor
+    #  First name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            message: "The first name should be a non-empty string with printable characters."
         }
     }
-    string name;
-    # NIC number of visitor
+    string firstName;
+     # Last name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC number should be a non-empty string with printable characters."
+            message: "The Last name should be a non-empty string with printable characters."
         }
     }
-    string nicNumber;
-    # Nic Hash of the visitor
+    string lastName;
+    # Email Hash of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The email Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
+    string emailHash;
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -140,7 +140,7 @@ public type FillInvitationPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
     # Company name of visitor
     string? companyName;
     # The person the visitor is supposed to meet
