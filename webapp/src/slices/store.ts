@@ -18,12 +18,19 @@ import { enableMapSet } from "immer";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import authReducer from "@slices/authSlice/auth";
-import collectionReducer from "@slices/collections/collection";
 import commonReducer from "@slices/commonSlice/common";
+import parCycleReducer from "@slices/parCycleSlice/parCycle";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import userReducer from "@slices/userSlice/user";
+import reminderReducer from "@slices/reminderSlice/reminder";
 import metaReducer from "@slices/metaSlice/meta";
+import calendarSlice from "@slices/calendarSlice/calendar";
+import threeSixtyReviewReducer from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
+import healthReducer from "@slices/healthSlice/health";
+import teamReducer from "@slices/teamSlice/team";
+
 
 enableMapSet();
 
@@ -32,10 +39,16 @@ export const store = configureStore({
     auth: authReducer,
     user: userReducer,
     common: commonReducer,
+    parCycle: parCycleReducer,
     employee: employeeReducer,
-    collection: collectionReducer,
     appConfig: appConfigReducer,
+    reminder: reminderReducer,
     meta: metaReducer,
+    team: teamReducer,
+    calendarSlice: calendarSlice,
+    health: healthReducer,
+    employeeHistorySlice: employeeHistorySlice,
+    threeSixtyReview: threeSixtyReviewReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });
