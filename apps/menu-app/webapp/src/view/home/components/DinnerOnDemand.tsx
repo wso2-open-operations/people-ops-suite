@@ -69,6 +69,7 @@ export default function DinnerOnDemand() {
         const date = new Date().toLocaleDateString("en-CA");
 
         const submitPayload: DinnerRequest = {
+          id: dinner?.id,
           mealOption: values.mealOption,
           date: date,
           department: userInfo.department,
@@ -144,42 +145,65 @@ export default function DinnerOnDemand() {
                 gap: 2,
               }}
             >
-              {mealOptionsBox.map((meal) => (
-                <Box
-                  key={meal.value}
-                  onClick={() => !isFormDisabled && formik.setFieldValue("mealOption", meal.value)}
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    width: "100%",
-                    border: `1px solid ${
-                      formik.values.mealOption === meal.value
-                        ? theme.palette.customBorder.secondary.active
-                        : theme.palette.customBorder.territory.active
-                    }`,
-                    p: 2,
-                    borderRadius: 1,
-                    boxSizing: "border-box",
-                    color: theme.palette.customText.primary.p2.active,
-                    backgroundColor:
-                      formik.values.mealOption === meal.value
+              {mealOptionsBox.map((meal) => {
+                const isCurrentlySelected = formik.values.mealOption === meal.value;
+                const isOriginallyOrdered = mealOptionsDefault === meal.value;
+                const isUpdatingOrder =
+                  orderPlaced && formik.values.mealOption !== mealOptionsDefault;
+
+                const shouldShowAsOrdered =
+                  isOriginallyOrdered && isUpdatingOrder && !isCurrentlySelected;
+
+                const handleClick = () => {
+                  if (isFormDisabled) return;
+
+                  if (isCurrentlySelected) {
+                    if (isOriginallyOrdered && orderPlaced) return;
+                    formik.setFieldValue("mealOption", null);
+                  } else {
+                    formik.setFieldValue("mealOption", meal.value);
+                  }
+                };
+
+                return (
+                  <Box
+                    key={meal.value}
+                    onClick={handleClick}
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      border: `1px solid ${
+                        isCurrentlySelected
+                          ? theme.palette.customBorder.secondary.active
+                          : shouldShowAsOrdered
+                            ? theme.palette.customBorder.secondary.active
+                            : theme.palette.customBorder.territory.active
+                      }`,
+                      p: 2,
+                      borderRadius: 1,
+                      boxSizing: "border-box",
+                      color: theme.palette.customText.primary.p2.active,
+                      backgroundColor: isCurrentlySelected
                         ? theme.palette.fill.secondary_light.active
-                        : theme.palette.surface.secondary.active,
-                    "&:hover": {
-                      border:
-                        formik.values.mealOption !== meal.value
+                        : shouldShowAsOrdered
+                          ? theme.palette.fill.secondary_light.active
+                          : theme.palette.surface.secondary.active,
+                      "&:hover": {
+                        border: !isCurrentlySelected
                           ? `1px solid ${theme.palette.customBorder.primary.active}`
                           : undefined,
-                    },
-                    opacity: isFormDisabled ? 0.5 : 1,
-                    cursor: isFormDisabled ? "not-allowed" : "pointer",
-                    pointerEvents: isFormDisabled ? "none" : "auto",
-                  }}
-                >
-                  <Typography variant="body1">{meal.label}</Typography>
-                  {meal.icon}
-                </Box>
-              ))}
+                      },
+                      opacity: isFormDisabled ? 0.5 : shouldShowAsOrdered ? 0.59 : 1,
+                      cursor: isFormDisabled ? "not-allowed" : "pointer",
+                      pointerEvents: isFormDisabled ? "none" : "auto",
+                    }}
+                  >
+                    <Typography variant="body1">{meal.label}</Typography>
+                    {meal.icon}
+                  </Box>
+                );
+              })}
             </Box>
 
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>

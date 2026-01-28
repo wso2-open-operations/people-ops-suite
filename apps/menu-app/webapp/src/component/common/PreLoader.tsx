@@ -87,13 +87,12 @@ const PreLoader = (props: PreLoaderProps) => {
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
-                fontWeight: 500,
               }}
             >
               {loadingMsg[0]}
             </Typography>
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
@@ -104,12 +103,11 @@ const PreLoader = (props: PreLoaderProps) => {
             </Typography>
             {/* Duplicate of first element to create seamless loop */}
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
-                fontWeight: 600,
               }}
             >
               {loadingMsg[0]}

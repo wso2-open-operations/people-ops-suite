@@ -66,7 +66,7 @@ export enum MealOption {
 }
 
 export interface DinnerRequest {
-  id?: string;
+  id?: number;
   mealOption: MealOption;
   date: string;
   department: string;

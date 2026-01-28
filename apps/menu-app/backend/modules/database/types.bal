@@ -33,7 +33,7 @@ public type DatabaseConfig record {|
 # Dinner request data.
 public type DinnerRequest record {|
     # Request Id 
-    string id?;
+    int id?;
     # Meal option
     @sql:Column {name: "meal_option"}
     string mealOption;
@@ -49,6 +49,15 @@ public type DinnerRequest record {|
     # Timestamp of the request
     @sql:Column {name: "_timestamp"}
     string timestamp?;
+|};
+
+# Dinner request status data.
+public type DinnerRequestStatus record {|
+    # Request Id 
+    int id?;
+    # Active status of the dinner request
+    @sql:Column {name: "is_active"}
+    boolean isActive;
 |};
 
 # Employee information.
