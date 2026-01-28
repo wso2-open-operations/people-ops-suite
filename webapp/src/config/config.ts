@@ -52,6 +52,12 @@ export const AppConfig = {
     userData: ServiceBaseUrl + "/employees",
     parCycles: ServiceBaseUrl + "/par-cycles",
     configurations: ServiceBaseUrl + "/meta/configurations",
-    collections: ServiceBaseUrl + "/collections"
+    collections: ServiceBaseUrl + "/collections",
+
+    userPrivileges: ServiceBaseUrl + "/user-privileges",
+    emails: ServiceBaseUrl + "/employee-emails",
+    reminders: ServiceBaseUrl + "/reminders",
+    participants: ServiceBaseUrl + "/participants",
+    calendar: ServiceBaseUrl + "/calendar",
   },
 };
