@@ -147,7 +147,7 @@ const Sidebar = (props: SidebarProps) => {
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: "fit-content" ,
+              width: "fit-content",
               overflow: "visible",
             }}
           >
@@ -175,7 +175,12 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === idx}
+                        isActive={
+                          route.path === ""
+                            ? props.currentPath === "/" || props.currentPath === ""
+                            : props.currentPath === `/${route.path}` ||
+                              props.currentPath.startsWith(`/${route.path}/`)
+                        }
                         isHovered={navState.hovered === idx}
                         isExpanded={navState.expanded === idx}
                         onClick={() => handleClick(idx)}
