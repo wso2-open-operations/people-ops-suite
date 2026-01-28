@@ -28,7 +28,7 @@ import { RootState, useAppSelector } from "@slices/store";
 import { getActiveRoutesV2, routes } from "../route";
 
 const AppHandler = () => {
-  const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
+  const [appState, setAppState] = useState<"loading" | "succeeded" | "failed" | "maintenance">(
     "loading",
   );
 
@@ -51,7 +51,7 @@ const AppHandler = () => {
     if (auth.status === "loading") {
       setAppState("loading");
     } else if (auth.status === "success") {
-      setAppState("success");
+      setAppState("succeeded");
     } else if (auth.status === "failed") {
       setAppState("failed");
     } else if (auth.mode === "maintenance") {
@@ -67,7 +67,7 @@ const AppHandler = () => {
       case "failed":
         return <ErrorHandler message={auth.statusMessage} />;
 
-      case "success":
+      case "succeeded":
         return <RouterProvider router={router} />;
 
       case "maintenance":
