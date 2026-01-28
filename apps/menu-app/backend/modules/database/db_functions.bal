@@ -50,10 +50,10 @@ public isolated function cancelDinnerRequest(string email) returns error? {
     _ = check databaseClient->execute(cancelDinnerRequestQuery(email));
 }
 
-# Get dinner request status by id.
+# Get dinner request by id.
 #
 # + id - Dinner request id
-# + return - Dinner request status or error
+# + return - Dinner request or error
 public isolated function getDinnerRequestById(int id) returns DinnerRequest|error? {
     DinnerRequest|error dinnerRequest = databaseClient->queryRow(getDinnerRequestByIdQuery(id));
     return dinnerRequest is sql:NoRowsError ? () : dinnerRequest;
