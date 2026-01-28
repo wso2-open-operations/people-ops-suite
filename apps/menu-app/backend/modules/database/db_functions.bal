@@ -54,9 +54,9 @@ public isolated function cancelDinnerRequest(string email) returns error? {
 #
 # + id - Dinner request id
 # + return - Dinner request status or error
-public isolated function getDinnerRequestById(int id) returns DinnerRequestStatus|error? {
-    DinnerRequestStatus|error dinnerRequestStatus = databaseClient->queryRow(getDinnerRequestByIdQuery(id));
-    return dinnerRequestStatus is sql:NoRowsError ? () : dinnerRequestStatus;
+public isolated function getDinnerRequestById(int id) returns DinnerRequest|error? {
+    DinnerRequest|error dinnerRequest = databaseClient->queryRow(getDinnerRequestByIdQuery(id));
+    return dinnerRequest is sql:NoRowsError ? () : dinnerRequest;
 }
 
 # Get dinner request status by email.
