@@ -1,0 +1,21 @@
+[people.authorization.authorizedRoles]
+EMPLOYEE_ROLE = 100
+ADMIN_ROLE = 200
+
+[people.database.dbConfig]
+host = ""
+user = ""
+password = ""
+database = ""
+port = 3306
+
+[people.database.dbConfig.connectionPool]
+maxOpenConnections = 10
+maxConnectionLifeTime = 100.0
+minIdleConnections= 3
+
+[people.database.dbConfig.options]
+connectTimeout = 10.0
+
+[people.database.dbConfig.options.ssl]
+mode = "REQUIRED"
