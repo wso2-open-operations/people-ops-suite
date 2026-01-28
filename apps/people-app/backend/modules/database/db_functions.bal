@@ -210,30 +210,22 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns error? {
 
-    sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload));
-    if executionResult.affectedRowCount == 0 {
-        return error(ERROR_NO_ROWS_UPDATED);
-    }
-
-    EmergencyContact[]? contactsOpt = payload.emergencyContacts;
-    if contactsOpt is () {
-        return;
-    }
-
-    EmergencyContact[] contacts = contactsOpt;
     transaction {
-        _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
+        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload));
 
-        sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contacts
-            select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
-
-        if insertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(insertQueries);
+        check checkAffectedCount(executionResult.affectedRowCount);
+        EmergencyContact[]? contactsOpt = payload.emergencyContacts;
+        if contactsOpt is EmergencyContact[] {
+            EmergencyContact[] contacts = contactsOpt;
+            _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
+            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contacts
+                select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+            if insertQueries.length() > 0 {
+                _ = check databaseClient->batchExecute(insertQueries);
+            }
         }
-
         check commit;
     }
-
     return;
 }
 
