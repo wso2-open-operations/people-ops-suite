@@ -6,16 +6,28 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 import ballerina/http;
+import ballerina/log;
 
-public function createWifiAccount(
-    CreateWifiAccountPayload payload
-) returns error? {
+# Create a wifi account via the wifi service.
 
-    http:Response res = check wifiClient->/guest\-wifi\-accounts.post(
-        payload
-    );
+# + payload - Payload for creating wifi account
+# + return - Error if any
+public isolated function createWifiAccount(CreateWifiAccountPayload payload) returns error? {
+    http:Response| http:ClientError response =  wifiClient->/guest\-wifi\-accounts.post(payload);
+        if response is http:ClientError {
+        string customError = string `Client Error occurred while creating the Guest Wifi !`;
+        log:printError(customError, response);
+        return error(customError);
+    }
+    if response.statusCode != http:STATUS_OK {
 
-    if res.statusCode != http:STATUS_OK {
-        return error("WiFi service error");
+        string customError = string `Error occurred while creating the Guest Wifi !`;
+        json|error responsePayload = response.getJsonPayload();
+        if responsePayload is json {
+            log:printError(string `${customError} : ${responsePayload.toJsonString()}`);
+        } else {
+            log:printError(customError);
+        }
+        return error(customError);
     }
 }
