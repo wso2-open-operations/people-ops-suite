@@ -15,7 +15,7 @@
 // under the License.
 import { lazy } from "react";
 
-const home = lazy(() => import("@view/home/home"));
+const home = lazy(() => import("@root/src/view/home/Home"));
 
 export const View = {
   home,
