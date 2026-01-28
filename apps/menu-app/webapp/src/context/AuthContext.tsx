@@ -213,21 +213,28 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
 const MicroAppAuthProvider = (props: { children: React.ReactNode }) => {
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
+  let mounted = true;
 
   useEffect(() => {
     const getIdToken = async () => {
       getToken((token) => {
+        if (!mounted) return;
+
         if (token) {
           setTokens(token, null, null);
           setAppState(AppState.Authenticated);
         } else {
-          console.error("No token available");
           setAppState(AppState.Unauthenticated);
+          console.error("No token available");
         }
       });
     };
 
     getIdToken();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const renderContent = () => {
