@@ -14,25 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-
-import { Role } from "@slices/authSlice/auth";
 import { Collection } from "@slices/collections/collection";
-
-export interface AuthState {
-  status: State;
-  mode: "active" | "maintenance";
-  statusMessage: string | null;
-  isAuthenticated: boolean;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: DecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-export interface AuthData {
-  userInfo: BasicUserInfo;
-  decodedIdToken: DecodedIDTokenPayload;
-}
 
 export interface Employee {
   workEmail: string;
