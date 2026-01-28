@@ -491,8 +491,9 @@ isolated function addEmployeeAdditionalManagerQuery(int employeeId, string addit
 #
 # + id - Personal info ID
 # + payload - Personal info update payload
+# + updatedBy - Updater of the personal info record
 # + return - Personal info update query
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload)
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy) 
     returns sql:ParameterizedQuery =>
     `UPDATE
         personal_info
@@ -505,7 +506,8 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         city = ${payload.city},
         state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
-        country = ${payload.country}
+        country = ${payload.country},
+        updated_by = ${updatedBy}
      WHERE
         id = ${id};`;
 

@@ -211,14 +211,14 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
     returns error? {
 
     transaction {
-        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload));
+        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload,
+                updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
-            EmergencyContact[] contacts = contactsOpt;
             _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
-            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contacts
+            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contactsOpt
                 select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
