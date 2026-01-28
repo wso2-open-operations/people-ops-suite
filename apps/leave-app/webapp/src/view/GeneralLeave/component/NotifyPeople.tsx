@@ -57,7 +57,6 @@ export default function NotifyPeople({
   onMandatoryEmailsChange,
 }: NotifyPeopleProps) {
   const theme = useTheme();
-  const dispatch = useAppDispatch();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [fixedEmails, setFixedEmails] = useState<string[]>([]);
 
@@ -95,10 +94,6 @@ export default function NotifyPeople({
 
     setEmployeeOptions([...mandatoryOptions, ...optionalOptions]);
   }, []);
-
-  useEffect(() => {
-    dispatch(fetchEmployees());
-  }, [dispatch]);
 
   useEffect(() => {
     if (employees.length > 0) {
