@@ -14,41 +14,42 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/sql;
+import ballerina/io;
 
-# Add new visitor.
-#
-# + payload - Payload containing the visitor details  
-# + createdBy - Person who is creating the visitor
-# + return - Error if the insertion failed
-public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    // Encrypt sensitive fields.
-    payload.name = check encrypt(payload.name);
-    payload.nicNumber = check encrypt(payload.nicNumber);
-    string? email = payload.email;
-    payload.email = email is string ? check encrypt(email) : null;
-    payload.contactNumber = check encrypt(payload.contactNumber);
+// # Add new visitor.
+// #
+// # + payload - Payload containing the visitor details  
+// # + createdBy - Person who is creating the visitor
+// # + return - Error if the insertion failed
+// public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
+//     // Encrypt sensitive fields.
+//     payload.name = check encrypt(payload.name);
+//     payload.nicNumber = check encrypt(payload.nicNumber);
+//     string? email = payload.email;
+//     payload.email = email is string ? check encrypt(email) : null;
+//     payload.contactNumber = check encrypt(payload.contactNumber);
 
-    _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
-}
+//     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
+// }
 
 # Fetch Visitor.
 #
-# + hashedNic - Filter :  hashed NIC of the visitor
+# + hashedEmail - Filter :  hashed NIC of the visitor
 # + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedNic));
+public isolated function fetchVisitor(string hashedEmail) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedEmail));
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
 
     // Decrypt sensitive fields.
-    visitor.name = check decrypt(visitor.name);
-    visitor.nicNumber = check decrypt(visitor.nicNumber);
+    // visitor.name = check decrypt(visitor.name);
+    // // visitor.nicNumber = check decrypt(visitor.nicNumber);
     visitor.contactNumber = check decrypt(visitor.contactNumber);
 
-    string? email = visitor.email;
-    visitor.email = email is string ? check decrypt(email) : null;
-
+    // string email = visitor.emailHash;
+    // visitor.emailHash = check decrypt(email);
+    io:println("visitor", visitor);
     return visitor;
 }
 

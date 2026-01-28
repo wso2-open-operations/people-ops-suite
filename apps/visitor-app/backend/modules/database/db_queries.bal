@@ -16,52 +16,52 @@
 import ballerina/sql;
 import ballerina/time;
 
-# Build query to persist a visitor.
-#
-# + payload - Payload containing the visitor details
-# + createdBy - Person who is creating the visitor
-# + return - sql:ParameterizedQuery - Insert query for the new visitor
-isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) returns sql:ParameterizedQuery
-    => `
-        INSERT INTO visitor
-        (
-            nic_hash,
-            name,
-            nic_number,
-            email,
-            contact_number,
-            created_by,
-            updated_by
-        )
-        VALUES
-        (
-            ${payload.nicHash},
-            ${payload.name},
-            ${payload.nicNumber},
-            ${payload.email},
-            ${payload.contactNumber},
-            ${createdBy},
-            ${createdBy}
-        )
-        ON DUPLICATE KEY UPDATE
-            name = ${payload.name},
-            nic_number = ${payload.nicNumber},
-            email = ${payload.email},
-            contact_number = ${payload.contactNumber},
-            updated_by = ${createdBy}
-        ;`;
+// # Build query to persist a visitor.
+// #
+// # + payload - Payload containing the visitor details
+// # + createdBy - Person who is creating the visitor
+// # + return - sql:ParameterizedQuery - Insert query for the new visitor
+// isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) returns sql:ParameterizedQuery
+//     => `
+//         INSERT INTO visitor
+//         (
+//             nic_hash,
+//             name,
+//             nic_number,
+//             email,
+//             contact_number,
+//             created_by,
+//             updated_by
+//         )
+//         VALUES
+//         (
+//             ${payload.nicHash},
+//             ${payload.name},
+//             ${payload.nicNumber},
+//             ${payload.email},
+//             ${payload.contactNumber},
+//             ${createdBy},
+//             ${createdBy}
+//         )
+//         ON DUPLICATE KEY UPDATE
+//             name = ${payload.name},
+//             nic_number = ${payload.nicNumber},
+//             email = ${payload.email},
+//             contact_number = ${payload.contactNumber},
+//             updated_by = ${createdBy}
+//         ;`;
 
 # Build query to fetch a visitor by hashed NIC.
 #
-# + hashedNic - Filter : Hashed NIC of the visitor
+# + hashedEmail - Filter : Hashed NIC of the visitor
 # + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
-isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
+isolated function fetchVisitorByNicQuery(string hashedEmail) returns sql:ParameterizedQuery
     => `
-        SELECT   
-            nic_hash as nicHash,        
-            name,
-            nic_number as nicNumber,
+        SELECT         
+            first_name as firstName,
+            last_name as lastName,
             contact_number as contactNumber,
+            email_hash as emailHash,  
             email,
             created_by as createdBy,
             created_on as createdOn,
@@ -70,7 +70,7 @@ isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:Parameter
         FROM 
             visitor
         WHERE 
-            nic_hash = ${hashedNic};
+            email_hash = ${hashedEmail};
         `;
 
 # Build query to create a new invitation.

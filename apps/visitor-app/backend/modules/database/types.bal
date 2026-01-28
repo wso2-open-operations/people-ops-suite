@@ -57,13 +57,13 @@ public type Visitor record {|
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
     # Nic Hash of the visitor
-    @constraint:String {
-        pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
-        }
-    }
-    string nicHash;
+    // @constraint:String {
+    //     pattern: {
+    //         value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
+    //         message: "The NIC Hash should be a non-empty string with printable characters."
+    //     }
+    // }
+    string emailHash;
     # Name of the visitor
     @constraint:String {
         pattern: {
@@ -71,15 +71,15 @@ public type AddVisitorPayload record {|
             message: "The name should be a non-empty string with printable characters."
         }
     }
-    string name;
-    # NIC number of visitor
+    string firstName;
+    # Name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC number should be a non-empty string with printable characters."
+            message: "The name should be a non-empty string with printable characters."
         }
     }
-    string nicNumber;
+    string lastName;
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -89,7 +89,7 @@ public type AddVisitorPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email = ();
+    string email;
 |};
 
 # [Database] Floor record.
