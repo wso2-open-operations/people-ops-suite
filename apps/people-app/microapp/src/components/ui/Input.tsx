@@ -14,14 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import type { InputHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes } from "react";
 import type { Validity } from "@/types";
 import { validation } from "@/constants";
 import { Search } from "@mui/icons-material";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {}
-
-interface TextInputProps extends InputProps {
+interface TextInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   validity?: Validity;
 }
@@ -38,12 +36,18 @@ interface TextInputProps extends InputProps {
  * - All other standard input props like value, placeholder, onChange, disabled, etc., are supported.
  */
 export function TextInput(props: TextInputProps) {
+  const generatedId = useId();
+  const inputId = props.id ?? generatedId;
+
   return (
     <div className="flex flex-col">
       {props.label && (
-        <label className="font-[550] text-lg mb-2.5">{props.label}</label>
+        <label htmlFor={inputId} className="font-[550] text-lg mb-2.5">
+          {props.label}
+        </label>
       )}
       <input
+        id={inputId}
         type="text"
         className={`w-full outline-[3.5px] outline-transparent focus:outline-[3px] ${
           props.validity === validation.INVALID
