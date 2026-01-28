@@ -26,8 +26,7 @@ import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import PreLoader from "@root/src/component/common/PreLoader";
 import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
-import { userApi } from "@services/user.api";
-import { useAppSelector } from "@slices/store";
+import { useGetUserInfoQuery } from "@services/user.api";
 
 import CancelModal from "./CancelModal";
 
@@ -40,11 +39,9 @@ const mealOptionsBox = [
 export default function DinnerOnDemand() {
   const theme = useTheme();
 
-  const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
+  const { data: userInfo, isLoading: isUserLoading } = useGetUserInfoQuery();
   const [submitDinner] = useSubmitDinnerRequestMutation();
-
-  const usersState = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state));
-  const user = usersState.data;
+  const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
 
@@ -67,16 +64,16 @@ export default function DinnerOnDemand() {
     onSubmit: async (values) => {
       try {
         if (!values?.mealOption) return;
-        if (!user) return;
+        if (!userInfo) return;
 
         const date = new Date().toLocaleDateString("en-CA");
 
         const submitPayload: DinnerRequest = {
           mealOption: values.mealOption,
           date: date,
-          department: user.department,
-          team: user.team,
-          managerEmail: user.managerEmail,
+          department: userInfo.department,
+          team: userInfo.team,
+          managerEmail: userInfo.managerEmail,
         };
 
         await submitDinner(submitPayload);
@@ -98,12 +95,16 @@ export default function DinnerOnDemand() {
     setIsCancelDialogOpen(false);
   };
 
-  if (!user) {
+  if (isUserLoading) {
+    return <PreLoader isLoading message="Loading user info..." />;
+  }
+
+  if (!userInfo) {
     return <ErrorHandler message={"Failed to load user info"} />;
   }
 
   if (isLoading) {
-    return <PreLoader isLoading message="Getting things ready" />;
+    return <PreLoader isLoading message="We are getting things ready..." />;
   }
 
   if (error && !is404) {

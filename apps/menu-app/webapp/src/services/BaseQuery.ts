@@ -17,16 +17,17 @@ import { fetchBaseQuery, retry } from "@reduxjs/toolkit/query";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { Mutex } from "async-mutex";
 
-import { SERVICE_BASE_URL } from "../config/config";
+import { MicroAppType } from "@/types/types";
+import { SERVICE_BASE_URL, isMicroApp } from "@config/config";
 
 let ACCESS_TOKEN: string;
-let REFRESH_TOKEN_CALLBACK: () => Promise<{ accessToken: string }>;
-let LOGOUT_CALLBACK: () => void;
+let REFRESH_TOKEN_CALLBACK: (() => Promise<{ accessToken: string }>) | null;
+let LOGOUT_CALLBACK: (() => void) | null;
 
 export const setTokens = (
   accessToken: string,
-  refreshCallback: () => Promise<{ accessToken: string }>,
-  logoutCallBack: () => void,
+  refreshCallback: (() => Promise<{ accessToken: string }>) | null,
+  logoutCallBack: (() => void) | null,
 ) => {
   ACCESS_TOKEN = accessToken;
   REFRESH_TOKEN_CALLBACK = refreshCallback;
@@ -50,22 +51,29 @@ export const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   await mutex.waitForUnlock();
   let result = await baseQuery(args, api, extraOptions);
+
   if (result.error && result.error.status === 401) {
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
 
       try {
-        const refreshResult = await REFRESH_TOKEN_CALLBACK();
-        if (refreshResult?.accessToken) {
-          ACCESS_TOKEN = refreshResult.accessToken;
-          result = await baseQuery(args, api, extraOptions);
+        if (REFRESH_TOKEN_CALLBACK) {
+          const refreshResult = await REFRESH_TOKEN_CALLBACK();
+
+          if (refreshResult?.accessToken) {
+            ACCESS_TOKEN = refreshResult.accessToken;
+            result = await baseQuery(args, api, extraOptions);
+          } else {
+            console.error("Token refresh failed - no access token returned");
+            if (LOGOUT_CALLBACK) LOGOUT_CALLBACK();
+          }
         } else {
-          console.error("Token refresh failed - no access token returned");
-          LOGOUT_CALLBACK();
+          console.error("No refresh token callback available");
+          if (LOGOUT_CALLBACK) LOGOUT_CALLBACK();
         }
       } catch (error) {
         console.error("Error refreshing token:", error);
-        LOGOUT_CALLBACK();
+        if (LOGOUT_CALLBACK) LOGOUT_CALLBACK();
       } finally {
         release();
       }
@@ -84,7 +92,11 @@ export const baseQueryWithReauth: BaseQueryFn<
  */
 export const baseQueryWithRetry = retry(
   async (args: string | FetchArgs, api, extraOptions) => {
-    const result = await baseQueryWithReauth(args, api, extraOptions);
+    const isValidMicroApp = Object.values(MicroAppType).includes(isMicroApp as MicroAppType);
+
+    const result = isValidMicroApp
+      ? await baseQuery(args, api, extraOptions)
+      : await baseQueryWithReauth(args, api, extraOptions);
 
     if (result.error) {
       if (result.error.status !== 400 && result.error.status !== 404) {

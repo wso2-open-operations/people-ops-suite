@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { BaseURLAuthClientConfig } from "@asgardeo/auth-react";
+import { MicroAppType } from "@/types/types";
 
 declare global {
   interface Window {
@@ -26,16 +26,17 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       REACT_APP_BACKEND_BASE_URL: string;
+      IS_MICROAPP: MicroAppType;
     };
   }
 }
 
-export const AsgardeoConfig: BaseURLAuthClientConfig = {
+export const AsgardeoConfig = {
   scope: ["openid", "email", "groups"],
   baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
-  clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
-  signInRedirectURL: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
-  signOutRedirectURL: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
+  clientId: window.config?.ASGARDEO_CLIENT_ID ?? "",
+  afterSignInUrl: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
+  afterSignOutUrl: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
 };
 
 export const APP_NAME = window.config?.APP_NAME ?? "";
@@ -49,3 +50,5 @@ export const AppConfig = {
     dinner: SERVICE_BASE_URL + "/dinner",
   },
 };
+
+export const isMicroApp: MicroAppType = window.config.IS_MICROAPP;

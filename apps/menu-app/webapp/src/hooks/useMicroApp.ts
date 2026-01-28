@@ -13,10 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { lazy } from "react";
+import { useMemo } from "react";
 
-const home = lazy(() => import("@root/src/view/home/Home"));
+import { MicroAppType } from "@/types/types";
+import { isMicroApp } from "@config/config";
 
-export const View = {
-  home,
+export const useMicroApp = (): boolean => {
+  const isValidMicroApp = useMemo(
+    () => Object.values(MicroAppType).includes(isMicroApp as MicroAppType),
+    [],
+  );
+
+  return isValidMicroApp;
 };
