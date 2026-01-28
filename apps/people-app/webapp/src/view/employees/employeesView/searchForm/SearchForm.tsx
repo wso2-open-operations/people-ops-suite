@@ -141,7 +141,7 @@ export function SearchForm() {
   }
 
   const active = useMemo(() => hasAnyActiveFilters(filter), [filter]);
-
+  const [filtersAppliedOnce, setFiltersAppliedOnce] = useState<boolean>(false);
   const chips = useMemo(() => {
     const items: ChipItem[] = [];
 
@@ -304,116 +304,123 @@ export function SearchForm() {
       <Divider sx={{ my: 2 }} />
 
       {/* Chips */}
-      {chips.length > 0 && (
-        <Box sx={{ mt: 1 }}>
-          {/* Dropdown chips */}
-          {active && (
-            <Stack
-              direction="row"
-              spacing={2}
-              useFlexGap
-              flexWrap="wrap"
-              alignItems="center"
-            >
-              <FilterChipSelect
-                label="Business Unit"
-                value={filter.businessUnit}
-                options={businessUnits}
-                getLabel={(bu) => bu.name}
-                onChange={(bu) => {
-                  updateFilter({
-                    businessUnit: bu.name,
-                    team: undefined,
-                    subTeam: undefined,
-                    unit: undefined,
-                  });
-                  dispatch(fetchTeams({ id: bu.id }));
-                }}
-                onClear={() =>
-                  updateFilter({
-                    businessUnit: undefined,
-                    team: undefined,
-                    subTeam: undefined,
-                    unit: undefined,
-                  })
-                }
-              />
 
-              <FilterChipSelect
-                label="Team"
-                value={filter.team}
-                options={teams}
-                getLabel={(t) => t.name}
-                onChange={(t) => {
-                  updateFilter({
-                    team: t.name,
-                    subTeam: undefined,
-                    unit: undefined,
-                  });
-                  dispatch(fetchSubTeams({ id: t.id }));
-                }}
-                onClear={() =>
-                  updateFilter({
-                    team: undefined,
-                    subTeam: undefined,
-                    unit: undefined,
-                  })
-                }
-              />
-              <FilterChipSelect
-                label="Sub Team"
-                value={filter.subTeam}
-                options={subTeams}
-                getLabel={(st) => st.name}
-                onChange={(st) => {
-                  updateFilter({ subTeam: st.name, unit: undefined });
-                  dispatch(fetchUnits({ id: st.id }));
-                }}
-                onClear={() =>
-                  updateFilter({ subTeam: undefined, unit: undefined })
-                }
-              />
-              <FilterChipSelect
-                label="Unit"
-                value={filter.unit}
-                options={units}
-                getLabel={(u) => u.name}
-                onChange={(u) => updateFilter({ unit: u.name })}
-                onClear={() => updateFilter({ unit: undefined })}
-              />
-              <FilterChipSelect
-                label="Gender"
-                value={filter.gender}
-                options={EmployeeGenders}
-                getLabel={(gender) => gender}
-                onChange={(gender) => updateFilter({ gender: gender })}
-                onClear={() => updateFilter({ gender: undefined })}
-              />
-              <FilterChipSelect
-                label="Country"
-                value={filter.country}
-                options={Countries}
-                getLabel={(country) => country}
-                onChange={(country) => updateFilter({ country: country })}
-                onClear={() => updateFilter({ country: undefined })}
-              />
-              <FilterChipSelect
-                label="Designation"
-                value={filter.designation}
-                options={designations}
-                getLabel={(d) => d.designation}
-                onChange={(d) => updateFilter({ designation: d.designation })}
-                onClear={() => updateFilter({ designation: undefined })}
-              />
-              <FilterChipSelect
-                label="Employment Type"
-                value={filter.employmentType}
-                options={employmentTypes}
-                getLabel={(et) => et.name}
-                onChange={(et) => updateFilter({ employmentType: et.name })}
-                onClear={() => updateFilter({ employmentType: undefined })}
-              />
+      <Box sx={{ mt: 1 }}>
+        {/* Dropdown chips */}
+        {filtersAppliedOnce && (
+          <Stack
+            direction="row"
+            spacing={2}
+            useFlexGap
+            flexWrap="wrap"
+            alignItems="center"
+          >
+            <FilterChipSelect
+              label="Business Unit"
+              value={filter.businessUnit}
+              options={businessUnits}
+              getLabel={(bu) => bu.name}
+              onChange={(bu) => {
+                updateFilter({
+                  businessUnit: bu.name,
+                  team: undefined,
+                  subTeam: undefined,
+                  unit: undefined,
+                });
+                dispatch(fetchTeams({ id: bu.id }));
+              }}
+              onClear={() =>
+                updateFilter({
+                  businessUnit: undefined,
+                  team: undefined,
+                  subTeam: undefined,
+                  unit: undefined,
+                })
+              }
+            />
 
+            <FilterChipSelect
+              label="Team"
+              value={filter.team}
+              options={teams}
+              parent="Business Unit"
+              noParentSelected={!filter.businessUnit}
+              getLabel={(t) => t.name}
+              onChange={(t) => {
+                updateFilter({
+                  team: t.name,
+                  subTeam: undefined,
+                  unit: undefined,
+                });
+                dispatch(fetchSubTeams({ id: t.id }));
+              }}
+              onClear={() =>
+                updateFilter({
+                  team: undefined,
+                  subTeam: undefined,
+                  unit: undefined,
+                })
+              }
+            />
+            <FilterChipSelect
+              label="Sub Team"
+              value={filter.subTeam}
+              options={subTeams}
+              parent="Team"
+              noParentSelected={!filter.team}
+              getLabel={(st) => st.name}
+              onChange={(st) => {
+                updateFilter({ subTeam: st.name, unit: undefined });
+                dispatch(fetchUnits({ id: st.id }));
+              }}
+              onClear={() =>
+                updateFilter({ subTeam: undefined, unit: undefined })
+              }
+            />
+            <FilterChipSelect
+              label="Unit"
+              value={filter.unit}
+              options={units}
+              parent="Sub Team"
+              noParentSelected={!filter.subTeam}
+              getLabel={(u) => u.name}
+              onChange={(u) => updateFilter({ unit: u.name })}
+              onClear={() => updateFilter({ unit: undefined })}
+            />
+            <FilterChipSelect
+              label="Gender"
+              value={filter.gender}
+              options={EmployeeGenders}
+              getLabel={(gender) => gender}
+              onChange={(gender) => updateFilter({ gender: gender })}
+              onClear={() => updateFilter({ gender: undefined })}
+            />
+            <FilterChipSelect
+              label="Country"
+              value={filter.country}
+              options={Countries}
+              getLabel={(country) => country}
+              onChange={(country) => updateFilter({ country: country })}
+              onClear={() => updateFilter({ country: undefined })}
+            />
+            <FilterChipSelect
+              label="Designation"
+              value={filter.designation}
+              options={designations}
+              getLabel={(d) => d.designation}
+              onChange={(d) => updateFilter({ designation: d.designation })}
+              onClear={() => updateFilter({ designation: undefined })}
+            />
+            <FilterChipSelect
+              label="Employment Type"
+              value={filter.employmentType}
+              options={employmentTypes}
+              getLabel={(et) => et.name}
+              onChange={(et) => updateFilter({ employmentType: et.name })}
+              onClear={() => updateFilter({ employmentType: undefined })}
+            />
+
+            {chips.length > 0 && (
               <Button
                 variant="text"
                 onClick={clearAll}
@@ -458,14 +465,15 @@ export function SearchForm() {
                   Clear filters
                 </Typography>
               </Button>
-            </Stack>
-          )}
-        </Box>
-      )}
+            )}
+          </Stack>
+        )}
+      </Box>
 
       <FilterDrawer
         drawerOpen={drawerOpen}
         setDrawerOpen={setDrawerOpen}
+        setFiltersAppliedOnce={setFiltersAppliedOnce}
         appliedFilter={filter}
         onApply={updateFilter}
         clearAll={clearAll}
