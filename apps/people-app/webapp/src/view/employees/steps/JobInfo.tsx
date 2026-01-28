@@ -484,6 +484,7 @@ export default function JobInfoStep() {
                           value: dayjs(record.startDate).format("YYYY-MM-DD"),
                         },
                         { label: "Manager Email", value: record.managerEmail },
+                        { label: "Additional Managers", value: record.additionalManagerEmails },
                         { label: "Business Unit", value: record.businessUnit },
                         { label: "Team", value: record.team },
                         ...(record.subTeam

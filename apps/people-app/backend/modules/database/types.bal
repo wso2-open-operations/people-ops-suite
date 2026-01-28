@@ -162,8 +162,7 @@ public type EmployeePersonalInfo record {|
     # Nationality
     string nationality;
     # Emergency contacts
-    @sql:Column {name: "emergency_contacts"}
-    json? emergencyContacts;
+    EmergencyContact[] emergencyContacts = [];
 |};
 
 # Continuous service record information.

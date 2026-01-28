@@ -62,3 +62,14 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
+
+# Check the affected row count after an update operation.
+#
+# + affectedRowCount - Number of rows affected by the update operation
+# + return - Error if no rows are updated
+public isolated function checkAffectedCount(int? affectedRowCount) returns error?{
+    if affectedRowCount == 0 || affectedRowCount is (){
+        return error(ERROR_NO_ROWS_UPDATED);
+    }
+    return;
+}

@@ -609,12 +609,40 @@ export default function Me() {
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                  <Typography
+                    color="text.secondary"
+                    sx={{ fontWeight: 500, mb: 0.75 }}
+                  >
                     Additional Manager Emails
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.additionalManagerEmails || "-"}
-                  </Typography>
+
+                  {employee.additionalManagerEmails ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 0.25,
+                      }}
+                    >
+                      {employee.additionalManagerEmails
+                        .split(",")
+                        .map((e) => e.trim())
+                        .filter(Boolean)
+                        .map((email) => (
+                          <Typography
+                            key={email}
+                            variant="body2"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {email}
+                          </Typography>
+                        ))}
+                    </Box>
+                  ) : (
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      -
+                    </Typography>
+                  )}
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
