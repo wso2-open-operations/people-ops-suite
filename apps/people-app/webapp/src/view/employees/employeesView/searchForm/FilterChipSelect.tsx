@@ -29,11 +29,13 @@ import { useMemo, useState } from "react";
 
 type FilterChipSelectProps<T> = {
   label: string;
-  value: string|undefined;
+  value: string | undefined;
   options: T[];
   getLabel: (o: T) => string;
   onChange: (o: T) => void;
   onClear: () => void;
+  parent?: string;
+  noParentSelected?: boolean;
 };
 
 export function FilterChipSelect<T>({
@@ -43,6 +45,8 @@ export function FilterChipSelect<T>({
   getLabel,
   onChange,
   onClear,
+  parent,
+  noParentSelected,
 }: FilterChipSelectProps<T>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -68,7 +72,8 @@ export function FilterChipSelect<T>({
         >
           {`${label} :`}
         </Typography>
-          {value ? (<Typography
+        {value ? (
+          <Typography
             variant="body2"
             sx={{
               lineHeight: 1,
@@ -81,7 +86,9 @@ export function FilterChipSelect<T>({
             }}
           >
             {`${value}`}
-          </Typography>) : (<Typography
+          </Typography>
+        ) : (
+          <Typography
             variant="body2"
             sx={{
               lineHeight: 1,
@@ -92,8 +99,13 @@ export function FilterChipSelect<T>({
               color: theme.palette.grey[400],
             }}
           >
-            Select Value . . .
-          </Typography>)}
+            {parent && noParentSelected
+              ? `Select ${parent}`
+              : options.length > 0
+                ? "Select Value"
+                : "No options available"}
+          </Typography>
+        )}
         {open ? (
           <KeyboardArrowUp
             className="arrow-icon"
@@ -124,6 +136,9 @@ export function FilterChipSelect<T>({
     theme.palette.grey,
     theme.palette.primary.main,
     value,
+    noParentSelected,
+    parent,
+    options.length,
   ]);
 
   const openMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -140,6 +155,7 @@ export function FilterChipSelect<T>({
         label={chipText}
         clickable={false}
         onClick={openMenu}
+        disabled={noParentSelected || options.length === 0}
         deleteIcon={
           <Box
             sx={{
@@ -169,7 +185,7 @@ export function FilterChipSelect<T>({
           backgroundColor: isDark ? theme.palette.background.default : "#fff",
           borderRadius: "50px",
           border: `1px solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
-          outline: `${ value ? "1px" : "0"} solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
+          outline: `${value ? "1px" : "0"} solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
           transition: "all 0.1s ease-in-out",
           "&:active": {
             transform: "scale(0.98)",
@@ -201,25 +217,27 @@ export function FilterChipSelect<T>({
           paper: { sx: { maxHeight: 360, minWidth: 240 } },
         }}
       >
-        {options.length > 0 ? options.map((o, idx) => {
-          const optionLabel = getLabel(o);
-          return (
-            <MenuItem
-              key={`${optionLabel}-${idx}`}
-              selected={optionLabel === value}
-              onClick={() => {
-                onChange(o);
-                closeMenu();
-              }}
-            >
-              {optionLabel}
-            </MenuItem>
-          );
-        }) : (
-            <MenuItem disabled key="no-options">
-              No options available
-            </MenuItem>
-          )}
+        {options.length > 0 ? (
+          options.map((o, idx) => {
+            const optionLabel = getLabel(o);
+            return (
+              <MenuItem
+                key={`${optionLabel}-${idx}`}
+                selected={optionLabel === value}
+                onClick={() => {
+                  onChange(o);
+                  closeMenu();
+                }}
+              >
+                {optionLabel}
+              </MenuItem>
+            );
+          })
+        ) : (
+          <MenuItem disabled key="no-options">
+            No options available
+          </MenuItem>
+        )}
       </Menu>
     </>
   );

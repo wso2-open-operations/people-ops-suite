@@ -53,6 +53,7 @@ import {
 type FilterDrawerProps = {
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
+  setFiltersAppliedOnce: (applied: boolean) => void;
   appliedFilter: EmployeeFilterAttributes;
   onApply: (next: Partial<EmployeeFilterAttributes>) => void;
   clearAll: () => void;
@@ -67,6 +68,7 @@ type FilterDrawerProps = {
 export function FilterDrawer({
   drawerOpen,
   setDrawerOpen,
+  setFiltersAppliedOnce,
   appliedFilter,
   onApply,
   clearAll,
@@ -276,6 +278,7 @@ export function FilterDrawer({
                 page: DEFAULT_PAGE_VALUE,
                 perPage: DEFAULT_PER_PAGE_VALUE,
               });
+              setFiltersAppliedOnce(true);
             }}
             sx={{ textTransform: "none" }}
           >
