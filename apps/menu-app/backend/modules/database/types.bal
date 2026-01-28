@@ -51,6 +51,15 @@ public type DinnerRequest record {|
     string timestamp?;
 |};
 
+# Dinner request status data.
+public type DinnerRequestStatus record {|
+    # Request Id 
+    int id?;
+    # Active status of the dinner request
+    @sql:Column {name: "is_active"}
+    boolean isActive;
+|};
+
 # Employee information.
 public type Employee record {|
     # Employee first name
