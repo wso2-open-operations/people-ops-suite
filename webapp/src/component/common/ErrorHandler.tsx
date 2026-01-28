@@ -1,54 +1,65 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
 
-import { Box, Stack, useTheme } from "@mui/material";
-import Wso2Logo from "@assets/images/wso2-logo.svg";
-import StateWithImage from "@component/ui/StateWithImage";
-import ErrorSvg from "@assets/images/error.svg";
-import { ErrorHandlerProps } from "@root/src/utils/types";
+import Grid from "@mui/material/Grid";
+import {
+  Box,
+  Container,
+  Card,
+  CardContent,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import { tokens } from "../../theme";
+
+interface ErrorHandlerProps {
+  message: string | null;
+}
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
   const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   return (
     <Box
       sx={{
-        bgcolor: "background.default",
-        color: "text.primary",
-        minHeight: "100dvh",
+        background: colors.customColors.lightGray,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        pt: "20vh",
+        flexDirection: "column",
+        height: "100vh",
       }}
     >
-      <Stack spacing={4} alignItems="center" maxWidth="md">
-        <Box
-          component="img"
-          alt="WSO2 Logo"
-          src={Wso2Logo}
-          sx={{
-            width: "150px",
-            height: "auto",
-            filter: theme.palette.mode === 'dark' ? 'brightness(0) invert(1)' : 'none',
-          }}
-        />
-        <StateWithImage
-          message={props.message || "Something went wrong! Please try again later."}
-          imageUrl={ErrorSvg}
-        />
-      </Stack>
+      <Container maxWidth="md">
+        <Card sx={{ borderRadius: "0px", p: 10 }} variant="outlined">
+          <CardContent>
+            <Box>
+              <Grid
+                container
+                direction="column"
+                justifyContent="center"
+                alignItems="center"
+                spacing={2}
+              >
+                <Grid item xs={12}>
+                  <img
+                    alt="logo"
+                    width="150"
+                    height="auto"
+                    src="/warning.svg"
+                  ></img>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="h4">{props.message}</Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          </CardContent>
+        </Card>
+      </Container>
     </Box>
   );
 };
