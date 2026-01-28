@@ -49,3 +49,21 @@ public isolated function upsertDinnerRequest(DinnerRequest dinnerRequest, string
 public isolated function cancelDinnerRequest(string email) returns error? {
     _ = check databaseClient->execute(cancelDinnerRequestQuery(email));
 }
+
+# Get dinner request status by id.
+#
+# + id - Dinner request id
+# + return - Dinner request status or error
+public isolated function getDinnerRequestById(int id) returns DinnerRequestStatus|error? {
+    DinnerRequestStatus|error dinnerRequestStatus = databaseClient->queryRow(getDinnerRequestByIdQuery(id));
+    return dinnerRequestStatus is sql:NoRowsError ? () : dinnerRequestStatus;
+}
+
+# Get dinner request status by email.
+#
+# + email - Employee email
+# + return - Dinner request status or error
+public isolated function getDinnerRequestStatusByEmail(string email) returns DinnerRequestStatus|error? {
+    DinnerRequestStatus|error dinnerRequestStatus = databaseClient->queryRow(getDinnerRequestStatusByEmailQuery(email));
+    return dinnerRequestStatus is sql:NoRowsError ? () : dinnerRequestStatus;
+}
