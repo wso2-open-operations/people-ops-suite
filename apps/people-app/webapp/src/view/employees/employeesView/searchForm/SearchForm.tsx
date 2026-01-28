@@ -38,7 +38,10 @@ import {
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
-import { setEmployeeFilter } from "@slices/employeeSlice/employee";
+import {
+  setEmployeeFilter,
+  setFilterAppliedOnce,
+} from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
   fetchDesignations,
@@ -63,6 +66,9 @@ export function SearchForm() {
   const theme = useTheme();
   const employeeState = useAppSelector((state) => state.employee);
   const filter = employeeState.employeeFilter as EmployeeFilterAttributes;
+  const filtersAppliedOnce = useAppSelector(
+    (state) => state.employee.filterAppliedOnce,
+  );
 
   const {
     businessUnits,
@@ -141,7 +147,6 @@ export function SearchForm() {
   }
 
   const active = useMemo(() => hasAnyActiveFilters(filter), [filter]);
-  const [filtersAppliedOnce, setFiltersAppliedOnce] = useState<boolean>(false);
   const chips = useMemo(() => {
     const items: ChipItem[] = [];
 
@@ -473,7 +478,7 @@ export function SearchForm() {
       <FilterDrawer
         drawerOpen={drawerOpen}
         setDrawerOpen={setDrawerOpen}
-        setFiltersAppliedOnce={setFiltersAppliedOnce}
+        setFiltersAppliedOnce={(value) => dispatch(setFilterAppliedOnce(value))}
         appliedFilter={filter}
         onApply={updateFilter}
         clearAll={clearAll}
