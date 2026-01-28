@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import { AddSharp, KeyboardBackspaceSharp } from "@mui/icons-material";
 import { CircularProgress, IconButton } from "@mui/material";
@@ -25,7 +25,6 @@ import type { Vehicle } from "@/types";
 import { PageTransitionWrapper } from "@/components/shared";
 import {
   EmptyState,
-  VehicleGroup,
   VehicleRow,
   AddVehicleSheet,
   DeleteConfirmationModal,
@@ -41,7 +40,6 @@ function VehicleManagementPage() {
   const [vehiclePendingRemoval, setVehiclePendingRemoval] = useState<
     number | undefined
   >(undefined);
-  const [selected, setSelected] = useState<number | undefined>(undefined);
   const [rows, setRows] = useState<Vehicle[]>([]);
 
   const { handleRequest, handleRequestWithNewToken } = useHttp();
@@ -60,13 +58,13 @@ function VehicleManagementPage() {
             id: v.vehicleId,
             type: v.vehicleType,
             number: v.vehicleRegistrationNumber,
-          })
+          }),
         );
 
         setRows(vehicles);
       },
       (error) => console.error("Error while fetching vehicle list:", error),
-      (loading) => setIsLoading(loading)
+      (loading) => setIsLoading(loading),
     );
   };
 
@@ -77,7 +75,6 @@ function VehicleManagementPage() {
   const handleDeleteRequest = (id: number) => {
     setVehiclePendingRemoval(id);
     setShowDeleteModal(true);
-    setSelected(undefined);
   };
 
   const handleDeleteConfirm = async () => {
@@ -105,12 +102,7 @@ function VehicleManagementPage() {
           ) : (
             <>
               {rows.length > 0 ? (
-                <VehicleGroup
-                  selected={selected}
-                  onChange={(index: number | undefined) => {
-                    setSelected(index);
-                  }}
-                >
+                <>
                   {rows.map((row, index) => (
                     <VehicleRow
                       key={row.id}
@@ -121,7 +113,7 @@ function VehicleManagementPage() {
                       }}
                     />
                   ))}
-                </VehicleGroup>
+                </>
               ) : (
                 <EmptyState />
               )}
@@ -172,7 +164,7 @@ function AddButton({ onClick }: AddButtonProps) {
 }
 
 export function BackButton() {
-  let navigate = useNavigate();
+  const navigate = useNavigate();
   const handleBackButtonClick = () => navigate(-1);
 
   return (
