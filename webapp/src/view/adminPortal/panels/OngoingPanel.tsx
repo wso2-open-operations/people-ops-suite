@@ -1,85 +1,149 @@
-// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
 // This software is the property of WSO2 LLC. and its suppliers, if any.
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
-import { useState } from "react";
-import { 
-  Box, 
-  Button, 
-  Typography, 
-  Stack, 
-  useTheme, 
-  Fade 
-} from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import DonutLargeIcon from '@mui/icons-material/DonutLarge';
-import { ParCreationForm } from "@view/adminPortal/components/ParCreationForm"; 
+import { useState, useEffect } from "react";
+import { Box, Button, Stack } from "@mui/material";
+import {
+  fetchQuotaPendingParCycle,
+  fetchOpenParCycle,
+  fetchPendingParCycle,
+  resetOngoingParCycleState,
+  selectIsParCycleOngoing,
+  selectParCycleState,
+  selectIsQuotaPending,
+} from "@slices/parCycleSlice/parCycle";
+import { ParCreationForm } from "../components/ParCreationForm";
+import { OrgSummary } from "@view/adminPortal/components/OrgSummary";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
+import { SnackMessage, uiMessages } from "@config/constant";
+import { RequestState } from "@utils/types";
+import { ParCycleStatus } from "@slices/parCycleSlice/parCycle";
+import { AssignQuota } from "@view/adminPortal/components/AssignQuota";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 const OngoingPanel = () => {
-  const theme = useTheme();
-  const [isCreating, setIsCreating] = useState(false);
+  const isParCycleOngoing = useAppSelector(selectIsParCycleOngoing);
+  const globalConfigStatus = useAppSelector(selectConfigStatus);
+  const parCyclesLoadingState = useAppSelector(selectParCycleState);
+  const [isParCyclePending, setIsParCyclePending] = useState(false);
+  const isQuotaPending = useAppSelector(selectIsQuotaPending);
 
-  const handleCreateClick = () => setIsCreating(true);
-  const handleFormClose = () => setIsCreating(false);
+  const dispatch = useAppDispatch();
 
+  const [isParCycleCreationFormOpen, setIsParCycleCreationFormOpen] =
+    useState(false);
+
+  const handleFormOpen = () => {
+    dispatch(fetchConfigurations());
+    setIsParCycleCreationFormOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setIsParCycleCreationFormOpen(false);
+
+    setIsParCyclePending(true);
+    const intervalId = setInterval(() => {
+      dispatch(fetchPendingParCycle()).then((response) => {
+        if (response.payload.length === 0) {
+          clearInterval(intervalId);
+          setIsParCyclePending(false);
+          dispatch(fetchQuotaPendingParCycle());
+          dispatch(fetchOpenParCycle());
+        }
+      });
+    }, 10000);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await dispatch(fetchQuotaPendingParCycle());
+        if (
+          isQuotaPending !== ParCycleStatus.PENDING_QUOTA &&
+          isQuotaPending !== ""
+        ) {
+          await dispatch(fetchOpenParCycle());
+        }
+      } catch (error) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: SnackMessage.error.common,
+            type: "error",
+          })
+        );
+      }
+    };
+    fetchData();
+    return () => {
+      dispatch(resetOngoingParCycleState());
+    };
+  }, [dispatch, isQuotaPending]);
 
   return (
-    <Fade in={true}>
+    <>
       <Box
         sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "50vh",
-          textAlign: "center",
-          gap: 3,
+          height: "calc(100vh - 17rem)",
+          overflowY: "auto",
         }}
       >
-        <Stack spacing={1} alignItems="center" maxWidth="sm">
-          <Typography 
-            variant="h4"
-          >
-            PAR cycle not in progress
-          </Typography>
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              maxWidth: "480px",
-              // USING YOUR THEME TOKENS (lighter text for description):
-              color: theme.palette.customText.primary.p3.active 
-            }}
-          >
-            There is currently no active performance cycle. Initialize a new cycle to begin the evaluation process for this period.
-          </Typography>
-        </Stack>
+        {(parCyclesLoadingState === RequestState.LOADING ||
+          isParCyclePending) && (
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        )}
 
-        {/* Call to Action */}
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<AddIcon />}
-          onClick={handleCreateClick}
-          sx={{
-            padding: "10px 28px",
-            fontSize: "1rem",
-            marginTop: 2,
-            boxShadow: theme.shadows[2],
-            // The button colors are already handled by your theme.ts MuiButton override
-            transition: "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-            "&:hover": {
-              transform: "translateY(-2px)",
-              boxShadow: theme.shadows[4],
-            },
-          }}
-        >
-          CREATE CYCLE
-        </Button>
+        {parCyclesLoadingState === RequestState.SUCCEEDED && (
+          <Stack height={"100%"}>
+            {isParCycleOngoing && <OrgSummary isAdminAuditViewOn={true} />}
+
+            {isQuotaPending === ParCycleStatus.PENDING_QUOTA &&
+              !isParCycleOngoing &&
+              !isParCyclePending && <AssignQuota />}
+
+            {isParCycleCreationFormOpen && (
+              <Stack height={"100%"}>
+                {globalConfigStatus === RequestState.LOADING && (
+                  <LoadingEffect
+                    message={uiMessages.loading.pageLoading}
+                    isCircularLoading={true}
+                  />
+                )}
+
+                {globalConfigStatus === RequestState.SUCCEEDED && (
+                  <ParCreationForm handleFormClose={handleFormClose} />
+                )}
+              </Stack>
+            )}
+
+            {!isParCycleCreationFormOpen &&
+              !isParCycleOngoing &&
+              !isParCyclePending &&
+              isQuotaPending !== ParCycleStatus.PENDING_QUOTA && (
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  justifyContent="center"
+                  alignItems="center"
+                  sx={{ minHeight: "calc(580px)" }}
+                >
+                  <Box paddingBottom={2}>PAR cycle not in progress.</Box>
+                  <Box>
+                    <Button variant="contained" onClick={handleFormOpen}>
+                      Create Cycle
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+          </Stack>
+        )}
       </Box>
-    </Fade>
+    </>
   );
 };
 

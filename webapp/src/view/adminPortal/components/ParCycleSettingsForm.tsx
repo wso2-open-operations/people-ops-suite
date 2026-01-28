@@ -5,35 +5,39 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
   Typography,
   TextField,
   Divider,
-  Chip,
-  Autocomplete,
   Grid,
+  Breadcrumbs,
+  Link,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import dayjs from "dayjs";
-import { selectGlobalConfig } from "@slices/metaSlice/meta";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { createParCycle } from "@slices/parCycleSlice/parCycle";
-import { uiMessages } from "@config/constant";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import {
+  fetchOpenParCycle,
+  selectCurrentCycle,
+  updateParCycle,
+} from "@slices/parCycleSlice";
+import { snackMessages, uiMessages } from "@config/constant";
+import { showSnackBarMessage } from "@slices/commonSlice/common";
+import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
 
 interface FormProps {
-  handleFormClose: () => void;
+  closeParCycleSettings: () => void;
 }
 
-export const ParCreationForm = ({ handleFormClose }: FormProps) => {
+export const ParCycleSettingsForm = ({ closeParCycleSettings }: FormProps) => {
   const dispatch = useAppDispatch();
-  const globalConfig = useAppSelector(selectGlobalConfig);
+  const currentCycle = useAppSelector(selectCurrentCycle);
 
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
     useState(false);
@@ -42,10 +46,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
     setIsConfirmationDialogOpen(false);
     setSubmitting(false);
   };
+  const [hasFormValuesChanged, setHasFormValuesChanged] = useState(false);
 
   const validationSchema = yup.object().shape({
-    parCycleName: yup.string().trim().required("Required"),
-
     parCycleStartDate: yup
       .date()
       .typeError("Invalid date")
@@ -78,7 +81,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       )
       .max(
         yup.ref("parEvaluationEndDate"),
-        "Must be earlier than the PAR evaluation closing date"
+        "Must be earlier than the PAR cycle closing date"
       )
       .required("Required"),
 
@@ -91,7 +94,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       )
       .max(
         yup.ref("parEvaluationEndDate"),
-        "Must be earlier than the PAR evaluation closing date"
+        "Must be earlier than the PAR cycle closing date"
       )
       .required("Required"),
 
@@ -100,11 +103,11 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       .typeError("Invalid date")
       .min(
         yup.ref("parEmployeeDeadline"),
-        "Must be later than employee PAR deadline date"
+        "Must be later than employee PAR deadline"
       )
       .max(
         yup.ref("parEvaluationEndDate"),
-        "Must be earlier than the PAR evaluation closing date"
+        "Must be earlier than the PAR cycle closing date"
       )
       .test(
         "isAfterEmployeeDeadline",
@@ -128,22 +131,12 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       )
       .max(
         yup.ref("parEvaluationEndDate"),
-        "Must be earlier than the PAR evaluation closing date"
+        "Must be earlier than the PAR cycle closing date"
       )
       .required("Required"),
 
     employeeParQuestion: yup.string().trim().required("Required"),
     threeSixtyReviewQuestion: yup.string().trim().required("Required"),
-    parRatings: yup
-      .array()
-      .of(yup.string())
-      .min(1, "At least one rating is required")
-      .required("At least one rating is required"),
-    threeSixtyReviewRatings: yup
-      .array()
-      .of(yup.string())
-      .min(1, "At least one rating is required")
-      .required("At least one rating is required"),
   });
 
   const {
@@ -152,26 +145,27 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
     touched,
     handleChange,
     handleBlur,
-    handleSubmit,
     isSubmitting,
+    handleSubmit,
     setSubmitting,
     setFieldValue,
   } = useFormik({
     initialValues: {
-      parCycleName: "",
-      parCycleStartDate: "",
-      parCycleEndDate: "",
-      parEvaluationStartDate: dayjs(),
-      parEvaluationEndDate: "",
-      parEmployeeDeadline: "",
-      parThreeSixtyRatingDeadline: "",
-      parLeadDeadline: "",
-      parSpecialRatingDeadline: "",
-      parF2FDeadline: "",
-      employeeParQuestion: globalConfig.employeeParQuestion,
-      threeSixtyReviewQuestion: globalConfig.threeSixtyReviewQuestion,
-      parRatings: globalConfig.parRatings,
-      threeSixtyReviewRatings: globalConfig.threeSixtyReviewRatings,
+      parCycleStartDate: currentCycle.parCycleStartDate || "",
+      parCycleEndDate: currentCycle.parCycleEndDate || "",
+      parEvaluationStartDate:
+        dayjs(currentCycle.parEvaluationStartDate, "YYYY-MM-DD") || "",
+      parEvaluationEndDate: currentCycle.parEvaluationEndDate || "",
+      parEmployeeDeadline: currentCycle.parEmployeeDeadline || "",
+      parThreeSixtyRatingDeadline:
+        currentCycle.parThreeSixtyRatingDeadline || "",
+      parLeadDeadline: currentCycle.parLeadDeadline || "",
+      parSpecialRatingDeadline: currentCycle.parSpecialRatingDeadline || "",
+      parF2FDeadline: currentCycle.parF2FDeadline || "",
+      employeeParQuestion:
+        currentCycle.parCycleConfigurations?.employeeParQuestion || "",
+      threeSixtyReviewQuestion:
+        currentCycle.parCycleConfigurations?.threeSixtyReviewQuestion || "",
     },
     validationSchema,
     onSubmit: () => {
@@ -181,13 +175,10 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
 
   const handleConfirmationProceed = async () => {
     setSubmitting(true);
-    closeConfirmationDialog();
 
     const {
-      parCycleName,
       parCycleStartDate,
       parCycleEndDate,
-      parEvaluationStartDate,
       parEvaluationEndDate,
       parEmployeeDeadline,
       parThreeSixtyRatingDeadline,
@@ -196,17 +187,11 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       parF2FDeadline,
       employeeParQuestion,
       threeSixtyReviewQuestion,
-      parRatings,
-      threeSixtyReviewRatings,
     } = values;
 
     const formattedValues = {
-      parCycleName,
       parCycleStartDate: dayjs(parCycleStartDate).format("YYYY-MM-DD"),
       parCycleEndDate: dayjs(parCycleEndDate).format("YYYY-MM-DD"),
-      parEvaluationStartDate: dayjs(parEvaluationStartDate).format(
-        "YYYY-MM-DD"
-      ),
       parEvaluationEndDate: dayjs(parEvaluationEndDate).format("YYYY-MM-DD"),
       parEmployeeDeadline: dayjs(parEmployeeDeadline).format("YYYY-MM-DD"),
       parThreeSixtyRatingDeadline: dayjs(parThreeSixtyRatingDeadline).format(
@@ -220,58 +205,78 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
       parCycleConfigurations: {
         employeeParQuestion: employeeParQuestion.trim(),
         threeSixtyReviewQuestion: threeSixtyReviewQuestion.trim(),
-        parRatings,
-        threeSixtyReviewRatings,
       },
     };
 
-    const resultAction = await dispatch(createParCycle(formattedValues));
-    if (createParCycle.fulfilled.match(resultAction)) {
-      handleFormClose();
+    if (currentCycle?.parCycleId) {
+      const resultAction = await dispatch(
+        updateParCycle({
+          parCycleId: currentCycle.parCycleId,
+          values: formattedValues,
+        })
+      );
+      if (updateParCycle.fulfilled.match(resultAction)) {
+        closeConfirmationDialog();
+        dispatch(fetchOpenParCycle());
+        closeParCycleSettings();
+      }
+    } else {
+      dispatch(
+        showSnackBarMessage(snackMessages.error.parCycleUpdate, "error")
+      );
     }
-
     setSubmitting(false);
   };
 
-  return (
-    <Box alignItems="center" maxHeight={"100%"} sx={{ overflow: "hidden" }}>
-      <Grid size = {{ xs:12, sm:12}}
-      sx={{ paddingBottom:1 }}>
-        <Typography variant="h4" gutterBottom>
-          Create PAR Cycle
-        </Typography>
-        <Divider></Divider>
-      </Grid>
+  useEffect(() => {
+    const hasChanged =
+      values.parCycleStartDate !==
+        dayjs(currentCycle.parCycleStartDate).format("YYYY-MM-DD") ||
+      values.parCycleEndDate !==
+        dayjs(currentCycle.parCycleEndDate).format("YYYY-MM-DD") ||
+      values.parEvaluationEndDate !==
+        dayjs(currentCycle.parEvaluationEndDate).format("YYYY-MM-DD") ||
+      values.parEmployeeDeadline !==
+        dayjs(currentCycle.parEmployeeDeadline).format("YYYY-MM-DD") ||
+      values.parThreeSixtyRatingDeadline !==
+        dayjs(currentCycle.parThreeSixtyRatingDeadline).format("YYYY-MM-DD") ||
+      values.parLeadDeadline !==
+        dayjs(currentCycle.parLeadDeadline).format("YYYY-MM-DD") ||
+      values.parSpecialRatingDeadline !==
+        dayjs(currentCycle.parSpecialRatingDeadline).format("YYYY-MM-DD") ||
+      values.employeeParQuestion !==
+        currentCycle.parCycleConfigurations?.employeeParQuestion ||
+      values.threeSixtyReviewQuestion !==
+        currentCycle.parCycleConfigurations?.threeSixtyReviewQuestion;
 
+    setHasFormValuesChanged(hasChanged);
+  }, [values, currentCycle]);
+
+  return (
+    <Box alignItems="center" overflow={"auto"} height={"100%"}>
+      <Breadcrumbs aria-label="breadcrumb" sx={{ paddingBottom: 2 }}>
+        <Link underline="hover" color="inherit" onClick={closeParCycleSettings}>
+          Home
+        </Link>
+        <Typography color="text.primary">PAR Cycle Settings</Typography>
+      </Breadcrumbs>
+      <Grid item xs={12} sm={12} paddingBottom={1}>
+        <Typography variant="h4" gutterBottom>
+          PAR Cycle Settings
+        </Typography>
+        <Divider/>
+      </Grid>
       <form onSubmit={handleSubmit}>
         <Grid
           container
           spacing={1}
-          sx={{ overflow: "auto", maxHeight: "calc(100vh - 24rem)" }}
+          sx={{ height: "100%"}}
         >
-          <Grid size = {{ xs:12, sm:3}}>
-            <Typography paddingTop={1}>Name:</Typography>
-          </Grid>
-          <Grid size = {{ xs:12, sm:6}}>
-            <TextField
-              aria-label="par cycle name"
-              size="small"
-              fullWidth
-              name="parCycleName"
-              value={values.parCycleName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={touched.parCycleName && Boolean(errors.parCycleName)}
-              helperText={touched.parCycleName && errors.parCycleName}
-            />
-          </Grid>
-          <Grid size = {{ xs:12, sm:3 }} />
-
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Grid size = {{ xs:12, sm:3 }}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>PAR cycle starts from:</Typography>
             </Grid>
-            <Grid size = {{ sm:2 }} >
+            <Grid item sm={2}>
               <DatePicker
                 value={values.parCycleStartDate}
                 onChange={(newValue: any) => {
@@ -299,12 +304,12 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{xs:12, sm:1}}>
+            <Grid item xs={12} sm={1}>
               <Typography paddingTop={1} textAlign={"end"}>
                 to:
               </Typography>
             </Grid>
-            <Grid size = {{xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parCycleStartDate)}
                 value={values.parCycleEndDate}
@@ -324,7 +329,8 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     {...params}
                     onBlur={handleBlur}
                     error={
-                      touched.parCycleEndDate && Boolean(errors.parCycleEndDate)
+                      touched.parCycleEndDate &&
+                      Boolean(errors.parCycleEndDate)
                     }
                     helperText={
                       touched.parCycleEndDate && errors.parCycleEndDate
@@ -333,22 +339,22 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{xs:12, sm:4}} />
+            <Grid item xs={12} sm={4} />
 
-            <Grid size = {{xs:12, sm:3}}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>PAR creation date:</Typography>
             </Grid>
-            <Grid size = {{xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled
                 value={values.parEvaluationStartDate}
                 onChange={() => {}}
                 renderInput={(params) => (
                   <TextField
+                    disabled
                     aria-label="par creation date"
                     size="small"
                     fullWidth
-                    disabled
                     {...params}
                     name="parEvaluationStartDate"
                     error={
@@ -359,21 +365,23 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{xs:12, sm:7}} />
+            <Grid item xs={12} sm={7} />
 
-            <Grid size = {{xs:12, sm:3}}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>
                 PAR evaluation closing date:
               </Typography>
             </Grid>
-            <Grid size = {{xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parCycleStartDate)}
                 value={values.parEvaluationEndDate}
                 onChange={(newValue) => {
                   setFieldValue("parEvaluationEndDate", newValue);
                 }}
-                minDate={dayjs().add(1, "day").toDate()}
+                minDate={dayjs(values.parEvaluationStartDate)
+                  .add(1, "day")
+                  .toDate()}
                 renderInput={(params) => (
                   <TextField
                     aria-label="par evaluation closing date"
@@ -394,12 +402,14 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{xs:12, sm:7}} />
+            <Grid item xs={12} sm={7} />
 
-            <Grid size = {{ xs:12, sm:3}}>
-              <Typography paddingTop={1}>Deadline for employee PAR:</Typography>
+            <Grid item xs={12} sm={3}>
+              <Typography paddingTop={1}>
+                Deadline for employee PAR:
+              </Typography>
             </Grid>
-            <Grid size = {{ xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parEvaluationEndDate)}
                 value={values.parEmployeeDeadline}
@@ -409,7 +419,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     dayjs(newValue?.toString()).format("YYYY-MM-DD")
                   );
                 }}
-                minDate={dayjs().add(1, "day").toDate()}
+                minDate={dayjs(values.parEvaluationStartDate)
+                  .add(1, "day")
+                  .toDate()}
                 maxDate={dayjs(values.parEvaluationEndDate).toDate()}
                 renderInput={(params) => (
                   <TextField
@@ -424,20 +436,21 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                       Boolean(errors.parEmployeeDeadline)
                     }
                     helperText={
-                      touched.parEmployeeDeadline && errors.parEmployeeDeadline
+                      touched.parEmployeeDeadline &&
+                      errors.parEmployeeDeadline
                     }
                   />
                 )}
               />
             </Grid>
-            <Grid size = {{ xs:12, sm:7 }} />
+            <Grid item xs={12} sm={7} />
 
-            <Grid size = {{ xs:12, sm:3 }}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>
                 Deadline for 360° feedback:
               </Typography>
             </Grid>
-            <Grid size = {{ xs:12, sm:2 }}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parEvaluationEndDate)}
                 value={values.parThreeSixtyRatingDeadline}
@@ -447,7 +460,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     dayjs(newValue?.toString()).format("YYYY-MM-DD")
                   );
                 }}
-                minDate={dayjs().add(1, "day").toDate()}
+                minDate={dayjs(values.parEvaluationStartDate)
+                  .add(1, "day")
+                  .toDate()}
                 maxDate={dayjs(values.parEvaluationEndDate).toDate()}
                 renderInput={(params) => (
                   <TextField
@@ -469,14 +484,14 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{ xs:12, sm:7}} />
+            <Grid item xs={12} sm={7} />
 
-            <Grid size = {{ xs:12, sm:3}}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>
                 Deadline for lead's feedback:
               </Typography>
             </Grid>
-            <Grid size = {{ xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parEvaluationEndDate)}
                 value={values.parLeadDeadline}
@@ -486,7 +501,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     dayjs(newValue?.toString()).format("YYYY-MM-DD")
                   );
                 }}
-                minDate={dayjs().add(1, "day").toDate()}
+                minDate={dayjs(values.parEvaluationStartDate)
+                  .add(1, "day")
+                  .toDate()}
                 maxDate={dayjs(values.parEvaluationEndDate).toDate()}
                 renderInput={(params) => (
                   <TextField
@@ -497,7 +514,8 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     name="parLeadDeadline"
                     onBlur={handleBlur}
                     error={
-                      touched.parLeadDeadline && Boolean(errors.parLeadDeadline)
+                      touched.parLeadDeadline &&
+                      Boolean(errors.parLeadDeadline)
                     }
                     helperText={
                       touched.parLeadDeadline && errors.parLeadDeadline
@@ -506,14 +524,14 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size = {{ xs:12, sm:7}} />
+            <Grid item xs={12} sm={7} />
 
-            <Grid size = {{xs:12, sm:3}}>
+            <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>
                 Top 5%/20% rating submission:
               </Typography>
             </Grid>
-            <Grid size = {{ xs:12, sm:2}}>
+            <Grid item xs={12} sm={2}>
               <DatePicker
                 disabled={!Boolean(values.parEvaluationEndDate)}
                 value={values.parSpecialRatingDeadline}
@@ -523,7 +541,9 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                     dayjs(newValue?.toString()).format("YYYY-MM-DD")
                   );
                 }}
-                minDate={dayjs().add(1, "day").toDate()}
+                minDate={dayjs(values.parEvaluationStartDate)
+                  .add(1, "day")
+                  .toDate()}
                 maxDate={dayjs(values.parEvaluationEndDate).toDate()}
                 renderInput={(params) => (
                   <TextField
@@ -545,7 +565,8 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 )}
               />
             </Grid>
-            <Grid size {{ xs={12} sm7}} />
+
+            <Grid item xs={12} sm={7} />
 
             <Grid item xs={12} sm={3}>
               <Typography paddingTop={1}>
@@ -586,15 +607,15 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
             </Grid>
           </LocalizationProvider>
 
-          {/* PAR Configurations */}
-          <Box p={1}>
+          {/* PAR Configuration */}
+          <Box width={"100%"} p={1}>
             <Grid container spacing={1}>
-              <Grid size = {{ xs:12, sm:3}}>
+              <Grid item xs={12} sm={3}>
                 <Typography paddingTop={1}>
                   Employee PAR question:
                 </Typography>
               </Grid>
-              <Grid size = {{ xs:12, sm:6}}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   aria-label="employee par question"
                   size="small"
@@ -615,14 +636,13 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                   }
                 />
               </Grid>
-              <Grid size = {{ xs:12, sm:3}} />
-
-              <Grid size = {{ xs:12, sm:3}}>
+              <Grid item xs={12} sm={3} />
+              <Grid item xs={12} sm={3}>
                 <Typography paddingTop={1}>
                   360° feedback question:
                 </Typography>
               </Grid>
-              <Grid size = {{ xs:12, sm:6}}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   aria-label="three sixty review question"
                   size="small"
@@ -643,123 +663,31 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                   }
                 />
               </Grid>
-              <Grid size = {{ xs:12, sm:3}} />
-
-              <Grid size = {{ xs:12, sm:3}} >
-                <Typography paddingTop={1}>PAR ratings:</Typography>
-              </Grid>
-              <Grid size = {{ xs:12, sm:6}}>
-                <Autocomplete
-                  multiple
-                  id="parRatings"
-                  options={[]}
-                  value={values.parRatings}
-                  freeSolo
-                  onChange={(event, newValue) => {
-                    setFieldValue("parRatings", newValue);
-                  }}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        variant="outlined"
-                        label={option}
-                        {...getTagProps({ index })}
-                      />
-                    ))
-                  }
-                  renderInput={(params) => (
-                    <TextField
-                      aria-label="par ratings"
-                      {...params}
-                      variant="outlined"
-                      size="small"
-                      sx={{ minWidth: 300 }}
-                      onBlur={handleBlur}
-                      error={
-                        touched.parRatings && Boolean(errors.parRatings)
-                      }
-                      helperText={touched.parRatings && errors.parRatings}
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid size = {{ xs:12, sm:3}} />
-
-              <Grid size = {{ xs:12, sm:3}}>
-                <Typography paddingTop={1}>
-                  360° feedback ratings:
-                </Typography>
-              </Grid>
-              <Grid size = {{ xs:12, sm:6}}>
-                <Autocomplete
-                  multiple
-                  id="threeSixtyReviewRatings"
-                  options={[]}
-                  value={values.threeSixtyReviewRatings}
-                  freeSolo
-                  onChange={(event, newValue) => {
-                    setFieldValue("threeSixtyReviewRatings", newValue);
-                  }}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                      <Chip
-                        variant="outlined"
-                        label={option}
-                        {...getTagProps({ index })}
-                      />
-                    ))
-                  }
-                  renderInput={(params) => (
-                    <TextField
-                      aria-label="360° ratings"
-                      {...params}
-                      variant="outlined"
-                      size="small"
-                      sx={{ minWidth: 300 }}
-                      onBlur={handleBlur}
-                      error={
-                        touched.threeSixtyReviewRatings &&
-                        Boolean(errors.threeSixtyReviewRatings)
-                      }
-                      helperText={
-                        touched.threeSixtyReviewRatings &&
-                        errors.threeSixtyReviewRatings
-                      }
-                    />
-                  )}
-                />
-              </Grid>
-              <Grid size = {{ xs:12, sm:3}} />
-              <Grid
-                item
-                sm={12}
-                display="flex"
-                justifyContent="flex-end"
-                gap={2}
-                p={5}
-              >
-                <Button variant="outlined" onClick={handleFormClose}>
-                  Cancel
-                </Button>
-                <Button variant="contained" type="submit" disabled={isSubmitting}>
-                  Start Cycle
-                </Button>
-              </Grid>
             </Grid>
           </Box>
+          <Grid item sm={12} display="flex" gap={1}>
+            <Button variant="outlined" onClick={closeParCycleSettings}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              type="submit"
+              disabled={isSubmitting || !hasFormValuesChanged}
+            >
+              Save
+            </Button>
+          </Grid>
         </Grid>
-
       </form>
-
       <ConfirmationDialog
         open={isConfirmationDialogOpen}
         onClose={closeConfirmationDialog}
-        title={uiMessages.dialog.createParCycle.title}
-        message={uiMessages.dialog.createParCycle.message}
-        okText={uiMessages.dialog.createParCycle.okText}
+        title={uiMessages.dialog.updateParCycleSettings.title}
+        message={uiMessages.dialog.updateParCycleSettings.message}
+        okText={uiMessages.dialog.updateParCycleSettings.okText}
         onConfirm={handleConfirmationProceed}
-        ariaLabelledby="alert-par-creation-dialog-title"
-        ariaDescribedby="alert-par-creation-dialog-description"
+        ariaLabelledby="alert-par-update-settings-dialog-title"
+        ariaDescribedby="alert-par-update-settings-dialog-description"
       />
     </Box>
   );
