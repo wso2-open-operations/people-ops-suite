@@ -50,21 +50,20 @@ export interface Visitor extends AddVisitorPayload {
 }
 
 export interface AddVisitorPayload {
-  nicHash: string;
-  name: string;
-  nicNumber: string;
+  firstName: string;
+  lastName: string;
   email: string | null;
-  contactNumber: string;
+  contactNumber?: string;
 }
 
 export const fetchVisitor = createAsyncThunk(
   "visitor/fetchVisitor",
-  async (hashedNic: string, { dispatch, rejectWithValue }) => {
+  async (hashedEmail: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visitor>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.visitors + `/${hashedNic}`, {
+        .get(AppConfig.serviceUrls.visitors + `/${hashedEmail}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -84,13 +83,13 @@ export const fetchVisitor = createAsyncThunk(
                     ? error.response?.data?.message
                     : "An unknown error occurred.",
                 type: "error",
-              })
+              }),
             );
             reject(error);
           }
         });
     });
-  }
+  },
 );
 
 export const addVisitor = createAsyncThunk(
@@ -116,12 +115,12 @@ export const addVisitor = createAsyncThunk(
             enqueueSnackbarMessage({
               message: errorMessage,
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 const VisitorSlice = createSlice({

@@ -40,7 +40,6 @@ export interface FloorRoom {
 }
 
 export interface AddVisitPayload {
-  nicHash: string;
   companyName: string | null;
   passNumber?: string;
   whomTheyMeet: string;
@@ -115,7 +114,7 @@ export const addVisit = createAsyncThunk(
                 response.data.message ||
                 "Your visit has been added successfully!",
               type: "success",
-            })
+            }),
           );
           resolve(response.data);
         })
@@ -127,12 +126,12 @@ export const addVisit = createAsyncThunk(
                   ? error.response?.data?.message
                   : "An error occurred while adding visit!",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 export const fetchVisits = createAsyncThunk(
@@ -149,7 +148,7 @@ export const fetchVisits = createAsyncThunk(
       inviter?: string;
       statusArray?: string[];
     },
-    { dispatch, rejectWithValue }
+    { dispatch, rejectWithValue },
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
@@ -178,12 +177,12 @@ export const fetchVisits = createAsyncThunk(
                   ? error.response?.data?.message
                   : "An unknown error occurred.",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 export const visitStatusUpdate = createAsyncThunk(
@@ -203,14 +202,14 @@ export const visitStatusUpdate = createAsyncThunk(
           },
           {
             cancelToken: newCancelTokenSource.token,
-          }
+          },
         )
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({
               message: `Visit status updated to "${payload.status}" successfully!`,
               type: "success",
-            })
+            }),
           );
           resolve(response.data);
         })
@@ -221,12 +220,12 @@ export const visitStatusUpdate = createAsyncThunk(
                 error.response?.data?.message ??
                 "An error occurred while updating visit status!",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 const VisitSlice = createSlice({
@@ -268,7 +267,7 @@ const VisitSlice = createSlice({
           state.state = State.success;
           state.visits = action.payload;
           state.stateMessage = "Your visits have been fetched successfully!";
-        }
+        },
       )
       .addCase(fetchVisits.rejected, (state, action) => {
         state.state = State.failed;
@@ -286,7 +285,7 @@ const VisitSlice = createSlice({
         (state, action: PayloadAction<{ message: string }>) => {
           state.submitState = State.success;
           state.stateMessage = action.payload.message;
-        }
+        },
       )
       .addCase(visitStatusUpdate.rejected, (state, action) => {
         state.submitState = State.failed;
