@@ -56,7 +56,7 @@ export function FilterChipSelect<T>({
 
   const chipText = useMemo(() => {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: value ? 1 : 0.5 }}>
         <Typography
           variant="caption"
           sx={{
@@ -70,7 +70,7 @@ export function FilterChipSelect<T>({
             textTransform: "uppercase",
           }}
         >
-          {`${label} :`}
+          {value ? `${label} :` : `${label}` }
         </Typography>
         {value ? (
           <Typography
@@ -102,7 +102,7 @@ export function FilterChipSelect<T>({
             {parent && noParentSelected
               ? `Select ${parent}`
               : options.length > 0
-                ? "Select Value"
+                ? ""
                 : "No options available"}
           </Typography>
         )}
@@ -185,7 +185,6 @@ export function FilterChipSelect<T>({
           backgroundColor: isDark ? theme.palette.background.default : "#fff",
           borderRadius: "50px",
           border: `1px solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
-          outline: `${value ? "1px" : "0"} solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
           transition: "all 0.1s ease-in-out",
           "&:active": {
             transform: "scale(0.98)",

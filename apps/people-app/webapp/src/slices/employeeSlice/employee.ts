@@ -159,6 +159,7 @@ interface EmployeesState {
   employeeBasicInfoState: State;
   employeeFilter: EmployeeFilterAttributes;
   filteredEmployeesResponseState: State;
+  filterAppliedOnce: boolean;
   stateMessage: string | null;
   errorMessage: string | null;
   employee: Employee | null;
@@ -172,6 +173,7 @@ const initialState: EmployeesState = {
   employeeBasicInfoState: State.idle,
   employeeFilter: {},
   filteredEmployeesResponseState: State.idle,
+  filterAppliedOnce: false,
   stateMessage: null,
   errorMessage: null,
   employee: null,
@@ -337,6 +339,9 @@ const EmployeeSlice = createSlice({
     setEmployeeFilter(state, action: PayloadAction<EmployeeFilterAttributes>) {
       state.employeeFilter = action.payload;
     },
+    setFilterAppliedOnce(state, action: PayloadAction<boolean>) {
+      state.filterAppliedOnce = action.payload;
+    },
     resetSubmitState(state) {
       state.state = State.idle;
     },
@@ -451,6 +456,7 @@ const EmployeeSlice = createSlice({
 
 export const {
   setEmployeeFilter,
+  setFilterAppliedOnce,
   resetSubmitState,
   resetEmployee,
   resetCreateEmployeeState,
