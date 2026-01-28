@@ -17,70 +17,92 @@
 export const SnackMessage = {
   success: {
     addCollections: "Successfully added the Collection",
-    updateGlobalParConfigs: "Successfully updated the global PAR configurations",
+    parCycleCreation: "Successfully created the PAR cycle",
+    sendReminder: "Successfully sent",
+    parCycleClosing: "Successfully closed the PAR cycle",
+    parCycleUpdate: "Successfully updated the PAR settings",
+    updateGlobalParConfigs:
+      "Successfully updated the global PAR configurations",
+
+    postReviewers: "Successfully created 360° feedback",
+    draftSaveThreeSixtyReview: "Draft saved",
+    postThreeSixtyReview: "Successfully sent",
+    rejectThreeSixtyReview: "Successfully rejected",
+    updateF2fStatus: "Successfully updated the F2F status",
+
+    employeeParDraftSaved: "Draft saved",
+    employeeParShared: "Successfully shared with your lead",
+    leadParDraftSaved: "Draft saved",
+    shareLeadReview: "Successfully shared with the employee",
+
+    adminParStatusUpdate: "Successfully updated the PAR status",
+
+    groupRemoved: "Group removed successfully",
+    teamRemoved: "Team removed successfully",
+    groupCreated: "Group created successfully",
+    quotaSaved: "Quota values saved successfully",
+
+    f2fCreated: "F2F scheduled successfully",
+    employeeSync: "Employee information synced successfully",
   },
   error: {
+    common: "Something went wrong",
     fetchCollectionsMessage: "Unable to retrieve list of selected Collections",
     addCollections: "Unable to create the Collection",
-    insufficientPrivileges: "Insufficient Privileges",
-    fetchPrivileges: "Failed to fetch Privileges",
-    fetchContacts: "Unable to retrieve list of Contacts",
     fetchEmployees: "Unable to retrieve list of Employees",
-    fetchCustomers: "Unable to retrieve list of Customers",
+    insufficientPrivileges: "Insufficient Privileges",
     fetchAppConfigMessage: "Unable to retrieve app configurations",
+    fetchPrivileges: "Failed to fetch Privileges",
     fetchGlobalParConfigs: "Error while retrieving global configurations",
-    fetchEmployeesData: "Error while retrieving organization data",
     updateGlobalParConfigs: "Error while updating global configurations",
-  },
-  warning: {},
-  dialog: {
 
-  },
-};
+    parCycleCreation: "Error while creating PAR cycle",
+    fetchCurrentCycleDetails: "Error while retrieving ongoing PAR cycle",
+    fetchRequestedCycleDetails: "Error while retrieving PAR cycle info",
+    fetchParCycleTeamDetails: "Error while retrieving team details",
 
-export const sliceErrorMessages = {
-  specialQuotaSlice: {
-    fetchGroups: "Error while retrieving quota groups",
-    postGroups: "Error while saving quota groups",
+    fetchTeamReport: "Error while retrieving team info",
+    sendReminder: "Error while sending reminder",
+    sendReminderMissingParId:
+      "Error while sending reminder: Missing PAR Identifier",
+
+    parCycleClosing: "Error while closing the PAR cycle",
+    parCycleUpdate: "Error while updating the PAR cycle settings",
+    fetchEmployeeParCycles: "Error while retrieving PAR cycles",
+    fetchEmployeeParRatings: "Error occurred while retrieving the record",
+    updateEmployeeParRatings: "Error while saving PAR ratings",
+
+    fetchReviewers: "Error while retrieving 360° reviewers",
+    postReviewers: "Error while requesting 360° feedback",
+    fetchReviewRequests: "Error while retrieving review requests",
+    postThreeSixtyReview: "Error while sending 360° feedback",
+    fetchThreeSixtyReview: "Error while retrieving 360° feedback",
+    fetchSelectedThreeSixtyReview: "Error while retrieving 360° feedback",
+    invalidBulkShare:
+      "Unable to share selected reviews. Please select only draft reviews.",
+    updateF2fStatus: "Error while updating the F2F status",
+
+    fetchEmployeesData: "Error while retrieving organization data",
+    fetchReportData: "Error while retrieving report data",
+    fetchQuotaData: "Error while retrieving quota data",
+
+    groupValidationFailed: "Group validation failed",
+    inconsistentData: "5% quota can not be larger than 20% quota",
+    groupAssignIncomplete: "There are still teams waiting to be assigned",
+
+    quotValidationError: "Error while validating quota values",
+    postQuotaError: "Error occurred while saving quota details",
+
+    maintenanceMessageParseError: "Error while parsing the maintenance message",
+
+    f2fCreationError: "Error while scheduling the F2F",
+    employeeSyncError: "Error occurred while syncing the employee",
   },
-  parCycleSlice: {
-    fetchQuotaCycle: "Error while retrieving quota pending par cycles",
-    fetchOpenCycle: "Error while retrieving open par cycles",
-    fetchCloseCycle: "Error while retrieving closed par cycles",
-    fetchPendingCycle: "Error while retrieving pending par cycles",
-    postCycle: "Error while saving the par cycle",
-    fetchCycle: "Error while retrieving the par cycle",
+  warning: {
+    sampleMessage: "There is a duplicate request found for this user",
   },
-  employeeSlice: {
-    getEmployee: "Error while retrieving employee details",
-    getEmployeeRating: "Error while retrieving employee ratings",
-    postEmployeeRating: "Error while saving employee details",
-    syncEmployeeData: "Error while syncing employee information",
-  },
-  teamSlice: {
-    fetchTeams: "Error while retrieving lead's teams",
-    fetchTeamReport: "Error while retrieving team details",
-  },
-  reminderSlice: {
-    postReminder: "Error while saving reminders",
-  },
-  threeSixtyReviewSlice: {
-    fetchReviewers: "Error while retrieving reviewers",
-    postReviewers: "Error while saving reviewers",
-    fetchReviewerRequest: "Error while retrieving reviewer requests",
-    fetchReview: "Error while retrieving reviews",
-    postReview: "Error while saving reviews",
-  },
-  metaSlice: {
-    fetchConfigs: "Error while retrieving configurations",
-    postConfigs: "Error while saving configurations",
-    fetchEmployees: "Error while retrieving employees",
-  },
-  reportSlice: {
-    fetchReport: "Error while retrieving reports",
-  },
-  calendarSlice: {
-    fetchCalendar: "Error while retrieving calendar data",
+  info: {
+    willRedirect: "You will be redirected",
   },
 };
 
@@ -258,6 +280,124 @@ export const uiMessages = {
     resetQuotaValues: "Reset quota values to default",
   },
 };
+
+export const shortDateFormat = "D MMM 'YY";
+
+export const autoSaveCountdownDuration = 5; // in seconds
+
+export const wso2LogoUrl =
+  "https://wso2.cachefly.net/wso2/sites/images/brand/downloads/wso2-logo.png";
+export const asgardeoLogoUrl =
+  "https://wso2.cachefly.net/wso2/sites/all/2023/images/asgardeo-logo.webp";
+export const choreoLogoUrl =
+  "https://wso2.cachefly.net/wso2/sites/all/2023/images/home-choreo-logo.webp";
+
+export const base64Regex =
+  /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+
+export const parUiText = {
+  ParSpecialRatingTopFivePercent: "Top 5%",
+  ParSpecialRatingTopTwentyPercent: "Top 20%",
+  NotAvailableText: "N/A",
+  ThreeSixtyReviewPanelDescription: `Your feedback is all about helping our colleagues improve and become better
+    versions of themselves. Please share your candid feedback to support their growth and development.`,
+  EmptyEmployeeQuestionText:
+    "Please provide any information you would like to share with your lead regarding your performance during this evaluation period. Additionally, you may include any feedback or concerns you wish to discuss during the face-to-face conversation.",
+};
+
+export const employeeThumbnailResolutionParam = {
+  Low: "s100",
+  High: "s600",
+};
+
+export const defaultTabWidth = "15rem";
+
+export const tooltipVisibilityDelay = 200;
+
+export const sliceErrorMessages = {
+  specialQuotaSlice: {
+    fetchGroups: "Error while retrieving quota groups",
+    postGroups: "Error while saving quota groups",
+  },
+  parCycleSlice: {
+    fetchQuotaCycle: "Error while retrieving quota pending par cycles",
+    fetchOpenCycle: "Error while retrieving open par cycles",
+    fetchCloseCycle: "Error while retrieving closed par cycles",
+    fetchPendingCycle: "Error while retrieving pending par cycles",
+    postCycle: "Error while saving the par cycle",
+    fetchCycle: "Error while retrieving the par cycle",
+  },
+  employeeSlice: {
+    getEmployee: "Error while retrieving employee details",
+    getEmployeeRating: "Error while retrieving employee ratings",
+    postEmployeeRating: "Error while saving employee details",
+    syncEmployeeData: "Error while syncing employee information",
+  },
+  teamSlice: {
+    fetchTeams: "Error while retrieving lead's teams",
+    fetchTeamReport: "Error while retrieving team details",
+  },
+  reminderSlice: {
+    postReminder: "Error while saving reminders",
+  },
+  threeSixtyReviewSlice: {
+    fetchReviewers: "Error while retrieving reviewers",
+    postReviewers: "Error while saving reviewers",
+    fetchReviewerRequest: "Error while retrieving reviewer requests",
+    fetchReview: "Error while retrieving reviews",
+    postReview: "Error while saving reviews",
+  },
+  metaSlice: {
+    fetchConfigs: "Error while retrieving configurations",
+    postConfigs: "Error while saving configurations",
+    fetchEmployees: "Error while retrieving employees",
+  },
+  reportSlice: {
+    fetchReport: "Error while retrieving reports",
+  },
+  calendarSlice: {
+    fetchCalendar: "Error while retrieving calendar data",
+  },
+};
+
+export const WORKING_HOURS_START = 9;
+export const WORKING_HOURS_END = 17;
+
+// Negating as getTimezoneOffset() returns a negative value
+export const USER_TIMEZONE_OFFSET = -(new Date().getTimezoneOffset() / 60);
+
+export const SANITIZE_CONFIG = {
+  ALLOWED_TAGS: [
+    "b",
+    "i",
+    "em",
+    "strong",
+    "a",
+    "p",
+    "br",
+    "li",
+    "ol",
+    "ul",
+    "div",
+    "span",
+    "u",
+  ],
+  ALLOWED_ATTR: ["href", "target", "class", "style", "data-list"],
+  FORBID_TAGS: [
+    "style",
+    "script",
+    "iframe",
+    "frame",
+    "object",
+    "embed",
+    "alert",
+  ],
+  FORBID_ATTR: ["on*", "onclick", "onerror", "onload", "onmouseover", "style"],
+  ADD_ATTR: ["target", "href", "rel"],
+  ALLOWED_URI_REGEXP:
+    /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+};
+
 
 export const APP_DESC = " Internal App Product Template.";
 
