@@ -50,8 +50,8 @@ export interface Visitor extends AddVisitorPayload {
 }
 
 export interface AddVisitorPayload {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   emailHash: string;
   contactNumber?: string;
   email: string;

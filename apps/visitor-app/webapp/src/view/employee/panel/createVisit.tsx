@@ -58,6 +58,7 @@ import {
 import FloorRoomSelector from "@view/employee/component/floorRoomSelector";
 import {
   addVisitor,
+  AddVisitorPayload,
   fetchVisitor,
   resetSubmitState as resetVisitorSubmitState,
 } from "@slices/visitorSlice/visitor";
@@ -70,6 +71,7 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
+import { add } from "lodash";
 
 dayjs.extend(utc);
 
@@ -258,14 +260,21 @@ function CreateVisit() {
         ConfirmationType.accept,
         async () => {
           const hashedEmail = await hash(draftVisitor.emailAddress);
+          const addVisitorPayload: AddVisitorPayload = {
+            emailHash: hashedEmail,
+            email: draftVisitor.emailAddress,
+          };
+
+          if (draftVisitor.firstName)
+            addVisitorPayload.firstName = draftVisitor.firstName;
+          if (draftVisitor.lastName)
+            addVisitorPayload.lastName = draftVisitor.lastName;
+          if (draftVisitor.contactNumber)
+            addVisitorPayload.contactNumber =
+              draftVisitor.countryCode + draftVisitor.contactNumber;
 
           const addVisitorAction = await dispatch(
-            addVisitor({
-              firstName: draftVisitor.firstName,
-              lastName: draftVisitor.lastName,
-              emailHash: hashedEmail,
-              email: draftVisitor.emailAddress,
-            }),
+            addVisitor(addVisitorPayload),
           );
 
           if (addVisitor.fulfilled.match(addVisitorAction)) {
@@ -275,11 +284,13 @@ function CreateVisit() {
           dispatch(resetVisitorSubmitState());
 
           const addVisitPayload: AddVisitPayload = {
-            whomTheyMeet: values.whoTheyMeet,
-            purposeOfVisit: values.purposeOfVisit,
             accessibleLocations: values.accessibleLocations,
             emailHash: hashedEmail,
           };
+          if (values.whoTheyMeet)
+            addVisitPayload.whomTheyMeet = values.whoTheyMeet;
+          if (values.purposeOfVisit)
+            addVisitPayload.purposeOfVisit = values.purposeOfVisit;
           if (values.companyName)
             addVisitPayload.companyName = values.companyName;
           if (values.timeOfEntry)
@@ -297,34 +308,29 @@ function CreateVisit() {
   );
 
   const fetchVisitorByEmail = useCallback(
-    async (email: string, index: number, formik: any) => {
-      if (!email?.trim()) return;
-      const hashed = await hash(email);
-      const action = await dispatch(fetchVisitor(hashed));
-      if (fetchVisitor.fulfilled.match(action)) {
-        const p = action.payload;
-        let countryCode = "+94";
-        let nationalNumber = "";
-
-        try {
-          const phone = phoneUtil.parseAndKeepRawInput(p.contactNumber || "");
-          if (phoneUtil.isValidNumber(phone)) {
-            countryCode = `+${phone.getCountryCode() || 94}`;
-            nationalNumber = phone.getNationalNumber()?.toString() || "";
+    async (idPassportNumber: string, index: number, formik: any) => {
+      await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
+        (action) => {
+          if (fetchVisitor.fulfilled.match(action)) {
+            const contactNumber = phoneUtil.parse(action.payload.contactNumber);
+            const countryCode =
+              contactNumber.getCountryCode()?.toString() || "";
+            const nationalNumber =
+              contactNumber.getNationalNumber()?.toString() || "";
+            const fetchedVisitor: VisitorDetail = {
+              firstName: action.payload.firstName || "",
+              lastName: action.payload.lastName || "",
+              contactNumber: nationalNumber,
+              countryCode: "+" + countryCode,
+              emailAddress: action.payload.email || "",
+              status: VisitorStatus.Draft,
+            };
+            formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
           }
-        } catch {}
-
-        formik.setFieldValue(`visitors.${index}`, {
-          firstName: p.firstName || "",
-          lastName: p.lastName || "",
-          contactNumber: nationalNumber,
-          countryCode,
-          emailAddress: email,
-          status: VisitorStatus.Draft,
-        });
-      }
+        },
+      );
     },
-    [dispatch, phoneUtil],
+    [dispatch],
   );
 
   const isAnySubmittedVisitor = useCallback(
@@ -336,8 +342,8 @@ function CreateVisit() {
   );
 
   const visitValidationSchema = Yup.object().shape({
-    whoTheyMeet: Yup.string().required("Required"),
-    purposeOfVisit: Yup.string().required("Required"),
+    whoTheyMeet: Yup.string(),
+    purposeOfVisit: Yup.string(),
     accessibleLocations: Yup.array().when([], {
       is: () => authState.roles.includes(Role.ADMIN),
       then: (s) => s.min(1, "Select at least one location"),
@@ -361,8 +367,8 @@ function CreateVisit() {
   const visitorValidationSchema = Yup.object().shape({
     visitors: Yup.array().of(
       Yup.object({
-        firstName: Yup.string().required("Required"),
-        lastName: Yup.string().required("Required"),
+        firstName: Yup.string(),
+        lastName: Yup.string(),
         emailAddress: Yup.string()
           .email("Invalid email")
           .required("Required")
@@ -480,7 +486,7 @@ function CreateVisit() {
                       return (
                         <TextField
                           {...params}
-                          label="Whom They Meet *"
+                          label="Whom They Meet"
                           placeholder="Search name or email"
                           error={
                             formik.touched.whoTheyMeet &&
@@ -533,7 +539,7 @@ function CreateVisit() {
                     multiline
                     rows={2}
                     name="purposeOfVisit"
-                    label="Purpose of Visit / Comments *"
+                    label="Purpose of Visit / Comments"
                     value={formik.values.purposeOfVisit}
                     onChange={formik.handleChange}
                     error={
@@ -724,7 +730,7 @@ function CreateVisit() {
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
-                              label="First Name *"
+                              label="First Name"
                               name={`visitors.${index}.firstName`}
                               value={visitor.firstName}
                               onChange={formik.handleChange}
@@ -745,7 +751,7 @@ function CreateVisit() {
                           <Grid item xs={12} md={6}>
                             <TextField
                               fullWidth
-                              label="Last Name *"
+                              label="Last Name"
                               name={`visitors.${index}.lastName`}
                               value={visitor.lastName}
                               onChange={formik.handleChange}
