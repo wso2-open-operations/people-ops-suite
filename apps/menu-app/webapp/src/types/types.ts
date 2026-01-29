@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -22,11 +21,16 @@ export type NavState = {
   expanded: number | null;
 };
 
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
+export enum MicroAppType {
+  Menu = "MENU_APP",
+  Dod = "DOD_APP",
+}
+
+export enum AppState {
+  Maintenance = "MAINTENANCE",
+  Failed = "FAILED",
+  Success = "SUCCESS",
+  Loading = "LOADING",
 }
 
 export enum ConfirmationType {
@@ -53,4 +57,20 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
+}
+
+export enum MealOption {
+  vegetarian = "Vegetarian",
+  fish = "Fish",
+  chicken = "Chicken",
+}
+
+export interface DinnerRequest {
+  id?: string;
+  mealOption: MealOption;
+  date: string;
+  department: string;
+  team?: string;
+  managerEmail: string;
+  timestamp?: string;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,17 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 import AppHandler from "@app/AppHandler";
-import { AuthProvider } from "@asgardeo/auth-react";
+import { AsgardeoProvider } from "@asgardeo/react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { createContext, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
+import { localStorageTheme } from "@config/constant";
 import AppAuthProvider from "@context/AuthContext";
-import { store } from "@slices/store";
+import { MicroAppAuthProvider } from "@context/AuthContext";
+import { useMicroApp } from "@hooks/useMicroApp";
 import { themeSettings } from "@root/src/theme";
+import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
 
 import "./index.css";
@@ -34,41 +37,35 @@ export const ColorModeContext = createContext({
   toggleColorMode: () => {},
 });
 
-function App() {
-  document.title = APP_NAME;
-  const processLocalThemeMode = (): ThemeMode => {
-    try {
-      const savedTheme = localStorage.getItem("internal-app-theme");
-      if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-        return savedTheme;
-      }
-
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-
-      localStorage.setItem("internal-app-theme", systemTheme);
-      return systemTheme;
-    } catch (err) {
-      console.error("Theme detection failed, defaulting to light mode.", err);
-      return ThemeMode.Light;
+const processLocalThemeMode = (): ThemeMode => {
+  try {
+    const savedTheme = localStorage.getItem(localStorageTheme);
+    if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
+      return savedTheme;
     }
-  };
+
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
+
+    localStorage.setItem(localStorageTheme, systemTheme);
+    return systemTheme;
+  } catch (err) {
+    console.error("Theme detection failed, defaulting to light mode.", err);
+    return ThemeMode.Light;
+  }
+};
+
+function WebApp() {
+  document.title = APP_NAME;
 
   const [mode, setMode] = useState<ThemeMode>(processLocalThemeMode());
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", mode);
-  }, [mode]);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
         const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
-        // Update localStorage
-        localStorage.setItem("internal-app-theme", newMode);
-        // Update state
+        localStorage.setItem(localStorageTheme, newMode);
         setMode(newMode);
-        // Apply the data-theme attribute to the document element
         document.documentElement.setAttribute("data-theme", newMode);
       },
     }),
@@ -82,11 +79,11 @@ function App() {
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
-            <AuthProvider config={AsgardeoConfig}>
+            <AsgardeoProvider {...AsgardeoConfig}>
               <AppAuthProvider>
                 <AppHandler />
               </AppAuthProvider>
-            </AuthProvider>
+            </AsgardeoProvider>
           </Provider>
         </ThemeProvider>
       </SnackbarProvider>
@@ -94,4 +91,26 @@ function App() {
   );
 }
 
-export default App;
+function MicroApp() {
+  const [mode, setMode] = useState<ThemeMode>(ThemeMode.Light);
+
+  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+
+  return (
+    <Provider store={store}>
+      <SnackbarProvider maxSnack={3} preventDuplicate>
+        <ThemeProvider theme={theme}>
+          <MicroAppAuthProvider>
+            <AppHandler />
+          </MicroAppAuthProvider>
+        </ThemeProvider>
+      </SnackbarProvider>
+    </Provider>
+  );
+}
+
+export default function App() {
+  const isValidMicroApp = useMicroApp();
+
+  return isValidMicroApp ? <MicroApp /> : <WebApp />;
+}

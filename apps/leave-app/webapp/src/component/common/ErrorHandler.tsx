@@ -25,8 +25,8 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
   return (
     <Box
       sx={{
-        paddingX: 2,
-        paddingY: 5,
+        px: 2,
+        py: 5,
       }}
     >
       <Container maxWidth="md">

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,18 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import {
-  Avatar,
-  Grid,
-  Paper,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import CallIcon from "@mui/icons-material/Call";
 import EmailIcon from "@mui/icons-material/Email";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import CallIcon from "@mui/icons-material/Call";
+import { Avatar, Grid, Paper, Skeleton, Stack, Typography } from "@mui/material";
 
 const SkeletonCard = () => {
   return (
@@ -39,10 +31,7 @@ const SkeletonCard = () => {
       }}
     >
       <Stack flexDirection={"column"} sx={{ width: "100%" }}>
-        <Stack
-          flexDirection={"row"}
-          sx={{ m: 0, width: "100%", alignItems: "center" }}
-        >
+        <Stack flexDirection={"row"} sx={{ m: 0, width: "100%", alignItems: "center" }}>
           <Stack flexDirection={"row"} sx={{ alignItems: "center" }}>
             <Skeleton variant="circular">
               <Avatar sx={{ width: 70, height: 70 }} />
@@ -98,28 +87,11 @@ const SkeletonCard = () => {
               <Skeleton variant="circular" />
               <Skeleton variant="circular" />
             </Stack>
-            <Grid
-              container
-              flexDirection={"row"}
-              sx={{ width: "auto", ml: "auto", mr: 1 }}
-              gap={2}
-            >
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
-              <Skeleton
-                variant="rectangular"
-                sx={{ width: 140, height: 50, borderRadius: 3 }}
-              />
+            <Grid container flexDirection={"row"} sx={{ width: "auto", ml: "auto", mr: 1 }} gap={2}>
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
+              <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />
             </Grid>
           </Stack>
         </Stack>

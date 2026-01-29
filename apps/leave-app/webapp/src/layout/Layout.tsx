@@ -13,12 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
@@ -33,16 +34,17 @@ export default function Layout() {
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
-        anchorOrigin: { horizontal: "right", vertical: "bottom" },
+        anchorOrigin: { horizontal: "center", vertical: "bottom" },
       });
     }
   }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
@@ -59,6 +61,16 @@ export default function Layout() {
     }
   }, [navigate]);
 
+  // Scroll to top when route changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
+
   return (
     <ConfirmationModalContextProvider>
       {/* Full screen container */}
@@ -66,18 +78,41 @@ export default function Layout() {
         sx={{
           display: "flex",
           flexDirection: "column",
-          height: "100vh",
+          minHeight: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.surface.primary.active,
+          backgroundColor: theme.palette.background.default,
         }}
       >
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: theme.palette.background.default,
+            zIndex: -1,
+          }}
+        />
         {/* Header */}
-        <Header />
+        <Box sx={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 1300 }}>
+          <Header />
+        </Box>
 
         {/* Main content container */}
-        <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <Box sx={{ display: "flex", flex: 1, position: "relative", marginTop: "64px" }}>
           {/* Sidebar */}
-          <Box sx={{ width: "fit-content", height: "100%" }}>
+          <Box
+            sx={{
+              position: "fixed",
+              top: "64px",
+              left: 0,
+              width: "fit-content",
+              height: "calc(100vh - 64px)",
+              zIndex: 1200,
+              backgroundColor: theme.palette.surface.secondary.active,
+            }}
+          >
             <Sidebar
               roles={roles}
               currentPath={location.pathname}
@@ -88,10 +123,34 @@ export default function Layout() {
 
           {/* Main content area */}
           <Box
+            ref={mainContentRef}
             sx={{
               flex: 1,
-              height: "100%",
+              marginLeft: open ? "200px" : "60px",
+              minHeight: "calc(100vh - 64px)",
               padding: theme.spacing(3),
+              overflow: "auto",
+              transition:
+                "margin-left 0.3s ease, opacity 0.2s ease-in-out, transform 0.2s ease-in-out",
+              /* Hide scrollbar */
+              "&::-webkit-scrollbar": {
+                display: "none",
+              },
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+              "& > *": {
+                animation: "fadeInSlide 0.3s ease-out",
+              },
+              "@keyframes fadeInSlide": {
+                "0%": {
+                  opacity: 0,
+                  transform: "translateY(10px)",
+                },
+                "100%": {
+                  opacity: 1,
+                  transform: "translateY(0)",
+                },
+              },
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
