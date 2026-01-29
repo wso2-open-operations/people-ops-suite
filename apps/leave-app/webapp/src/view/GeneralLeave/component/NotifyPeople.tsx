@@ -15,17 +15,7 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import {
-  Autocomplete,
-  Avatar,
-  Box,
-  Chip,
-  CircularProgress,
-  Stack,
-  TextField,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -123,11 +113,6 @@ export default function NotifyPeople({
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
           Select people/groups to notify (via email)
         </Typography>
-        {loading && (
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <CircularProgress size={20} />
-          </Box>
-        )}
       </Stack>
       <Autocomplete
         multiple
