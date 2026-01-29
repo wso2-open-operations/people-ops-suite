@@ -192,13 +192,10 @@ const Sidebar = (props: SidebarProps) => {
                             ) !== null
                           }
                           isHighlighted={
-                            r.children?.some(
-                              (sub) =>
-                                matchPath(
-                                  { path: sub.path ?? "" },
-                                  props.currentPath,
-                                ) !== null,
-                            ) || expandedPaths.includes(r.path)
+                            matchPath(
+                              { path: sub.path ?? "" },
+                              props.currentPath,
+                            ) !== null || expandedPaths.includes(r.path)
                           }
                           isChild={true}
                           isLastChild={sidx === (r.children?.length || 0) - 1}
