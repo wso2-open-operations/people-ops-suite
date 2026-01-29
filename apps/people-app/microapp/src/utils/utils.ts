@@ -14,9 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { IS_MICROAPP } from "../config/config";
 import { type RequestOptions } from "./http";
-import { ApiService } from "./apiService";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -38,31 +36,19 @@ export function executeWithTokenHandling(
   successFn: (param: any) => void,
   failFn: (param: any) => void,
   loadingFn: (param: any) => void,
-  headers?: HeadersInit | null
+  headers?: HeadersInit | null,
 ) {
-  if (IS_MICROAPP) {
-    handleRequestWithNewToken(() => {
-      handleRequest({
-        url,
-        method,
-        body,
-        successFn,
-        failFn,
-        loadingFn,
-        headers: headers ?? undefined,
-      });
-    });
-  } else {
-    ApiService.handleRequest(
+  handleRequestWithNewToken(() => {
+    handleRequest({
       url,
       method,
       body,
       successFn,
       failFn,
       loadingFn,
-      null
-    );
-  }
+      headers: headers ?? undefined,
+    });
+  });
 }
 
 export function getDisplayNameFromJWT(token: string) {
@@ -75,7 +61,7 @@ export function getDisplayNameFromJWT(token: string) {
         .map((c) => {
           return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
         })
-        .join("")
+        .join(""),
     );
     const payload = JSON.parse(jsonPayload);
 
@@ -98,7 +84,7 @@ export function getEmailFromJWT(token: string) {
         .map((c) => {
           return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
         })
-        .join("")
+        .join(""),
     );
     const payload = JSON.parse(jsonPayload);
 
@@ -111,7 +97,7 @@ export function getEmailFromJWT(token: string) {
 
 export function prepareUrlWithEmail(
   urlTemplate: string,
-  token: string
+  token: string,
 ): string {
   const email = getEmailFromJWT(token);
 
@@ -122,7 +108,7 @@ export function prepareUrlWithEmail(
 
   const urlWithEmail = urlTemplate.replace(
     "[email]",
-    encodeURIComponent(email)
+    encodeURIComponent(email),
   );
   return encodeURI(urlWithEmail);
 }

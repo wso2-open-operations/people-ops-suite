@@ -115,7 +115,7 @@ const useHttp = () => {
             });
           } else {
             console.error(
-              (responseBody && responseBody.error) || response.status
+              (responseBody && responseBody.error) || response.status,
             );
             if (failFn)
               failFn((responseBody && responseBody.error) || response.status);
@@ -132,7 +132,7 @@ const useHttp = () => {
 
   const handleCheckGroups = (
     groupNames: string[] | string,
-    resFn: (data: boolean) => void
+    resFn: (data: boolean) => void,
   ) => {
     const token = getIdToken();
 
