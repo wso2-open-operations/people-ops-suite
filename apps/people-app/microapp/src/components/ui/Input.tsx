@@ -73,6 +73,7 @@ export function SearchInput() {
       <input
         type="search"
         placeholder="Search available services"
+        aria-label="Search available services"
         className="w-full placeholder:text-[#8F8F8F] font-medium text-lg focus:outline-none"
       />
     </div>
