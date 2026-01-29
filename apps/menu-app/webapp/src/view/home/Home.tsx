@@ -13,10 +13,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { lazy } from "react";
+import { Box, Divider } from "@mui/material";
 
-const home = lazy(() => import("@root/src/view/home/Home"));
+import { MicroAppType } from "@/types/types";
+import { isMicroApp } from "@config/config";
 
-export const View = {
-  home,
-};
+import DinnerOnDemand from "./components/DinnerOnDemand";
+import Menu from "./components/Menu";
+
+export default function Home() {
+  if (isMicroApp === MicroAppType.Menu) return <Menu />;
+
+  if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <Menu />
+
+      <Divider />
+
+      <DinnerOnDemand />
+    </Box>
+  );
+}

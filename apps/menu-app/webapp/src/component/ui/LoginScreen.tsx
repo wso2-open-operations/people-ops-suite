@@ -66,57 +66,42 @@ const LoginScreen = () => {
                 spacing={2}
                 p={1}
               >
-                <Grid size={{ xs: 12 }}>
-                  <img alt="logo" width="130" height="auto" src={logo}></img>
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <Typography
-                    align="center"
-                    sx={{ fontWeight: "bold" }}
-                    variant="h5"
-                    color={"black"}
-                  >
-                    {APP_NAME}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
-                  <Typography
-                    align="center"
-                    sx={{ fontSize: "1em" }}
-                    color={"black"}
-                    fontWeight={"400"}
-                  >
-                    {APP_DESC}
-                  </Typography>
-                </Grid>
-                <Grid size={{ xs: 12 }}>
-                  <LoadingButton
-                    variant="contained"
-                    color="primary"
-                    sx={{ fontWeight: "bold" }}
-                    onClick={() => {
-                      appSignOut();
+                <img alt="logo" width="130" height="auto" src={logo}></img>
 
-                      appSignIn();
-                    }}
-                  >
-                    LOG IN
-                  </LoadingButton>
-                </Grid>
+                <Typography align="center" sx={{ fontWeight: "bold" }} variant="h5" color={"black"}>
+                  {APP_NAME}
+                </Typography>
+
+                <Typography
+                  align="center"
+                  sx={{ fontSize: "1em" }}
+                  color={"black"}
+                  fontWeight={"400"}
+                >
+                  {APP_DESC}
+                </Typography>
+
+                <LoadingButton
+                  variant="contained"
+                  color="primary"
+                  sx={{ fontWeight: "bold" }}
+                  onClick={async () => {
+                    await appSignOut();
+                    await appSignIn();
+                  }}
+                >
+                  LOG IN
+                </LoadingButton>
+
                 <Grid size={{ xs: 12 }} mt={6}>
                   <Stack direction="column" spacing={2}>
                     <Typography align="center" color={"black"}>
                       Powered By
                     </Typography>
-                    <Stack direction="row" spacing={2}>
+                    <Stack sx={{ alignItems: "center" }}>
                       <img height={22} alt="Product logos" src={ProductLogos} />
                     </Stack>
                   </Stack>
-                </Grid>
-                <Grid size={{ xs: 12 }} mt={3}>
-                  <Typography align="center" color={"grey"} sx={{ fontSize: "0.8em" }}>
-                    {/* {`© ${format(new Date(), "yyyy")} WSO2 LLC`} */}
-                  </Typography>
                 </Grid>
               </Grid>
             </Box>

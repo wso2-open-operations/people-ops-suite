@@ -13,10 +13,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { lazy } from "react";
+import { sendNativeLog } from ".";
 
-const home = lazy(() => import("@root/src/view/home/Home"));
+/**
+ * Logger class for logging messages to the React Native DevTools
+ */
+export class Logger {
+  // Info/Basic Logs
+  static info(message: string, data?: any) {
+    sendNativeLog(message, data, "info");
+  }
 
-export const View = {
-  home,
-};
+  // Error Logs
+  static error(message: string, data?: any) {
+    sendNativeLog(message, data, "error");
+  }
+
+  // Warning Logs
+  static warn(message: string, data?: any) {
+    sendNativeLog(message, data, "warn");
+  }
+}

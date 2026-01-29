@@ -35,6 +35,8 @@ export const APP_DESC = " Menu App";
 
 export const redirectUrl = "menu-app-redirect-url";
 
+export const localStorageTheme = "menu-app-theme";
+
 export const PRIVILEGE_ADMIN = 789;
 
 export const PRIVILEGE_EMPLOYEE = 987;
