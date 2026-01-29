@@ -5,6 +5,7 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
+import ballerina/graphql;
 # Auth2 client auth configurations.
 public type ClientAuthConfig record {|
     # Token URL
@@ -41,4 +42,35 @@ public type EmployeeData record {|
 public type EmployeeResponse record {|
     # Employee data fetched
     EmployeeData data;
+|};
+
+# The EmployeeBasic record type contains filtered employee data.
+public type EmployeeBasic record {|
+    # Employee first name
+    string firstName;
+    # Employee last name
+    string lastName;
+    # Employee work email
+    string workEmail;
+    # Thumbnail of the employee
+    string? employeeThumbnail = ();
+|};
+
+# The EmployeeFilter record type represents the filter criteria for the employees.
+public type EmployeeFilter record {|
+    # The employee statuses
+    string[]? employeeStatus?;
+    # The employment types
+    string[]? employmentType?;
+    # The email
+    string? email?;
+|};
+
+type EmployeesData record {|
+    EmployeeBasic[] employees;
+|};
+
+type EmployeesResponse record {|
+    *graphql:GenericResponseWithErrors;   
+    EmployeesData data;
 |};

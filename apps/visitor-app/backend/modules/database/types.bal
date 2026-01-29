@@ -65,7 +65,7 @@ public type AddVisitorPayload record {|
             message: "The name should be a non-empty string with printable characters."
         }
     }
-    string firstName;
+    string firstName?;
     # Name of the visitor
     @constraint:String {
         pattern: {
@@ -73,7 +73,7 @@ public type AddVisitorPayload record {|
             message: "The name should be a non-empty string with printable characters."
         }
     }
-    string lastName;
+    string lastName?;
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -81,7 +81,7 @@ public type AddVisitorPayload record {|
             message: "The contact number should be in valid international format."
         }
     }
-    string contactNumber;
+    string contactNumber?;
     # Email of the visitor
     string email;
 |};
@@ -99,21 +99,21 @@ public type AddVisitPayload record {|
     # Email Hash of the visitor
     string emailHash;
     # Company name of visitor
-    string? companyName;
+    string companyName?;
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string whomTheyMeet?;
     # Purpose of the visit
-    string purposeOfVisit;
+    string purposeOfVisit?;
     # The floors and rooms that the visitor can access
-    Floor[]? accessibleLocations = ();
+    Floor[] accessibleLocations?;
     # Time at which the visitor is supposed to check in [in UTC]
-    time:Utc timeOfEntry;
+    time:Utc timeOfEntry?;
     # Time at which the visitor is supposed to check out [in UTC]
-    time:Utc timeOfDeparture;
+    time:Utc timeOfDeparture?;
     # Status of the visit
-    Status status;
+    Status status?;
 |};
 
 # [Database] Visit record.

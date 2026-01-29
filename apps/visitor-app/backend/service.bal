@@ -194,51 +194,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        time:Utc|error idealEntryTime = time:utcFromString(payload.timeOfEntry + ".000Z");
-        if idealEntryTime is error {
-            string customError = "Error occurred while parsing the visit entry time!";
-            log:printError(customError, idealEntryTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        time:Utc|error idealDepartureTime = time:utcFromString(payload.timeOfDeparture + ".000Z");
-        if idealDepartureTime is error {
-            string customError = "Error occurred while parsing the visit departure time!";
-            log:printError(customError, idealDepartureTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
+        database:AddVisitPayload addVisitPayload = {
+            emailHash: payload.emailHash,
+            status: database:REQUESTED
+        };
+
+        string? timeOfEntry = payload.timeOfEntry;
+        string? timeOfDeparture = payload.timeOfDeparture;
+        if timeOfEntry is string && timeOfDeparture is string {
+            time:Utc|error idealEntryTime = time:utcFromString(timeOfEntry + ".000Z");
+            if idealEntryTime is error {
+                string customError = "Error occurred while parsing the visit entry time!";
+                log:printError(customError, idealEntryTime);
+                return <http:BadRequest>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            time:Utc|error idealDepartureTime = time:utcFromString(timeOfDeparture + ".000Z");
+            if idealDepartureTime is error {
+                string customError = "Error occurred while parsing the visit departure time!";
+                log:printError(customError, idealDepartureTime);
+                return <http:BadRequest>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            addVisitPayload.timeOfEntry = idealEntryTime;
+            addVisitPayload.timeOfDeparture = idealDepartureTime;
         }
 
-        time:Utc exactEntryTime = idealEntryTime;
-        // Determine visit status based on user role.
-        database:Status visitStatus = database:REQUESTED;
-        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
-            visitStatus = database:APPROVED; // Set status to APPROVED for admin users.
-            exactEntryTime = time:utcNow(); // Override entry time to current time for approved visits.
-            if payload.passNumber !is string {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Pass number is required when creating an approved visit!"
-                    }
-                };
-            }
-            if payload.accessibleLocations !is database:Floor[] {
-                return <http:BadRequest>{
-                    body: {
-                        message: "At least one accessible location is required when creating an approved visit!"
-                    }
-                };
-            }
-        } else {
-            // Sanitize fields not required for non-admin users.
-            payload.passNumber = ();
-            payload.accessibleLocations = ();
+        if (payload.companyName is string) {
+            addVisitPayload.companyName = payload.companyName;
+        }
+
+        if (payload.passNumber is string) {
+            addVisitPayload.passNumber = payload.passNumber;
+        }
+
+        if (payload.whomTheyMeet is string) {
+            addVisitPayload.whomTheyMeet = payload.whomTheyMeet;
+        }
+        if (payload.purposeOfVisit is string) {
+            addVisitPayload.purposeOfVisit = payload.purposeOfVisit;
+        }
+        if (payload.accessibleLocations is database:Floor[]) {
+            addVisitPayload.accessibleLocations = payload.accessibleLocations;
         }
 
         // Verify existing visitor.
@@ -262,17 +265,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? visitError = database:addVisit(
-                {
-                    companyName: payload.companyName,
-                    passNumber: payload.passNumber,
-                    whomTheyMeet: payload.whomTheyMeet,
-                    purposeOfVisit: payload.purposeOfVisit,
-                    accessibleLocations: payload.accessibleLocations,
-                    timeOfEntry: exactEntryTime,
-                    timeOfDeparture: idealDepartureTime,
-                    status: visitStatus,
-                    emailHash: payload.emailHash
-                }, invokerInfo.email, invokerInfo.email);
+                addVisitPayload, invokerInfo.email, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -281,57 +274,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customError
                 }
             };
-        }
-
-        string? visitorEmail = existingVisitor.email;
-        string? passNumber = payload.passNumber;
-        database:Floor[]? accessibleLocations = payload.accessibleLocations;
-        if visitorEmail is string && visitStatus == database:APPROVED && passNumber is string &&
-                accessibleLocations is database:Floor[] {
-
-            string accessibleLocationString = organizeLocations(accessibleLocations);
-
-            // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
-            string|error formattedFromDate = formatDateTime(payload.timeOfEntry, "Asia/Colombo");
-            if formattedFromDate is error {
-                string customError = "Error occurred while formatting the visit start time!";
-                log:printError(customError, formattedFromDate);
-            }
-            string|error formattedToDate = formatDateTime(payload.timeOfDeparture, "Asia/Colombo");
-            if formattedToDate is error {
-                string customError = "Error occurred while formatting the visit end time!";
-                log:printError(customError, formattedToDate);
-            }
-            string|error content = email:bindKeyValues(email:visitorApproveTemplate,
-                    {
-                        "TIME": time:utcToEmailString(time:utcNow()),
-                        "EMAIL": visitorEmail,
-                        "NAME": generateSalutation(existingVisitor.firstName + " " + existingVisitor.lastName),
-                        "TIME_OF_ENTRY": formattedFromDate is error ? payload.timeOfEntry + "(UTC)" : formattedFromDate,
-                        "TIME_OF_DEPARTURE": formattedToDate is error ?
-                            payload.timeOfDeparture + "(UTC)" : formattedToDate,
-                        "ALLOWED_FLOORS": accessibleLocationString,
-                        "PASS_NUMBER": passNumber.toString(),
-                        "CONTACT_EMAIL": email:contactUsEmail,
-                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                    });
-            if content is error {
-                string customError = "An error occurred while binding values to the email template!";
-                log:printError(customError, content);
-            } else {
-                error? emailError = email:sendEmail(
-                            {
-                            to: [visitorEmail],
-                            'from: email:fromEmailAddress,
-                            subject: email:VISIT_ACCEPTED_SUBJECT,
-                            template: content,
-                            cc: [email:receptionEmail]
-                        });
-                if emailError is error {
-                    string customError = "An error occurred while sending the approval email!";
-                    log:printError(customError, emailError);
-                }
-            }
         }
 
         return <http:Created>{
@@ -593,8 +535,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             // Persist new visitor.
             error? visitorError = database:addVisitor(
                     {
-                        firstName:payload.firstName,
-                        lastName: payload.lastName, 
+                        firstName: payload.firstName,
+                        lastName: payload.lastName,
                         contactNumber: payload.contactNumber,
                         emailHash: payload.emailHash,
                         email: payload.email
@@ -619,7 +561,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         timeOfDeparture: idealDepartureTime,
                         purposeOfVisit: payload.purposeOfVisit,
                         emailHash: payload.emailHash,
-                        status: database:REQUESTED
+                        status: database:REQUESTED,
+                        accessibleLocations: []
                     }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
 
             if visitError is error {
@@ -711,7 +654,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     timeOfEntry: idealEntryTime,
                     timeOfDeparture: idealDepartureTime,
                     emailHash: payload.emailHash,
-                    status: database:REQUESTED
+                    status: database:REQUESTED,
+                    accessibleLocations: []
                 }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
 
         if visitError is error {
@@ -1064,5 +1008,46 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
     }
-}
 
+    # Retrieve the work email list of the surbordinates.
+    #
+    # + ctx - Request context containing user information
+    # + search - Search term used to filter employees
+    # + offset - Pagination offset
+    # + limit - Maximum number of employees to return
+    # + return - Custom error or employee email object
+    resource function get employees(http:RequestContext ctx, string search = "", int offset = 0, int 'limit = 1000)
+        returns people:EmployeeBasic[]|http:InternalServerError|http:Forbidden {
+
+        // Retrieve user info from request context (set by JwtInterceptor)
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            people:EmployeeBasic[]|error allEmployees = people:getEmployees();
+            if allEmployees is error {
+                string customError = "Error occurred while fetching employees!";
+                log:printError(customError, allEmployees);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+            return allEmployees;
+        }
+        else {
+            return <http:Forbidden>{
+                body: {
+                    message: "Insufficient Privileges!"
+                }
+            };
+        }
+    }
+}

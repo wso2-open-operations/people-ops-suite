@@ -22,11 +22,20 @@ import ballerina/sql;
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
     // Encrypt sensitive fields.
-    payload.firstName = check encrypt(payload.firstName);
-    payload.lastName = check encrypt(payload.lastName);
+    string? first_name = payload.firstName;
+    string? last_name = payload.lastName;
+
+    if first_name is string {
+        payload.firstName = check encrypt(first_name);
+
+    }
+    if last_name is string {
+        payload.lastName = check encrypt(last_name);
+    }
+    
     string email = payload.email;
     payload.email = check encrypt(email);
-    payload.contactNumber = check encrypt(payload.contactNumber);
+    payload.contactNumber = check encrypt(payload.contactNumber ?: "");
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
@@ -40,9 +49,21 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
+    string? first_name = visitor.firstName;
+    string? last_name = visitor.lastName;
 
+    if first_name is string {
+        visitor.firstName = check decrypt(first_name);
+    }
+    if last_name is string {
+        visitor.lastName = check decrypt(last_name);
+    }
     // Decrypt sensitive fields.
-    visitor.contactNumber = check decrypt(visitor.contactNumber);
+    string? contact_number = visitor.contactNumber;
+    if contact_number is string {
+        visitor.contactNumber = check decrypt(contact_number);
+    }
+    visitor.email = check decrypt(visitor.email);
 
     return visitor;
 }
@@ -138,7 +159,7 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
         emailHash: visit.emailHash,
         firstName: check decrypt(visit.firstName),
         lastName: check decrypt(visit.lastName),
-        email:check decrypt(visit.email),
+        email: check decrypt(visit.email),
         contactNumber: check decrypt(visit.contactNumber),
         companyName: visit.companyName,
         whomTheyMeet: visit.whomTheyMeet,

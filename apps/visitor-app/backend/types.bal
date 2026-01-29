@@ -36,7 +36,7 @@ public type AddVisitPayload record {|
     }
     string emailHash;
     # Company name of visitor
-    string? companyName;
+    string companyName?;
     # Number in the tag given to visitor
     @constraint:String {
         pattern: {
@@ -52,9 +52,9 @@ public type AddVisitPayload record {|
             message: "The who they meet should be a non-empty string with printable characters."
         }
     }
-    string whomTheyMeet;
+    string whomTheyMeet?;
     # Purpose of the visit
-    string purposeOfVisit;
+    string purposeOfVisit?;
     # The floors and rooms that the visitor can access
     @constraint:Array {
         minLength: {
@@ -70,7 +70,7 @@ public type AddVisitPayload record {|
             message: "The time of entry should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
         }
     }
-    string timeOfEntry;
+    string timeOfEntry?;
     # Time at which the visitor is supposed to check out [in UTC]
     @constraint:String {
         pattern: {
@@ -78,7 +78,7 @@ public type AddVisitPayload record {|
             message: "The time of departure should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
         }
     }
-    string timeOfDeparture;
+    string timeOfDeparture?;
 |};
 
 # Payload for updating an existing visit.
