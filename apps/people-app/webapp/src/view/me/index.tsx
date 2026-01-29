@@ -42,7 +42,6 @@ import {
   TextField,
   Tooltip,
   Typography,
-  //useTheme,
 } from "@mui/material";
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
@@ -277,10 +276,10 @@ export default function Me(
   });
 
   useEffect(() => {
-    if (targetEmployeeId) {
-      dispatch(fetchEmployee(targetEmployeeId));
-      dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
-    }
+    if (!targetEmployeeId) return;
+
+    dispatch(fetchEmployee(targetEmployeeId));
+    dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
   }, [targetEmployeeId, dispatch]);
 
   const handleSaveChanges = async (values: EmployeePersonalInfo) => {
@@ -312,7 +311,7 @@ export default function Me(
 
   const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
-      if (employee?.employeeId) {
+      if (employee?.id) {
         const dataToSave = {
           personalEmail: values.personalEmail,
           personalPhone: values.personalPhone,
@@ -369,19 +368,6 @@ export default function Me(
           ${alpha(orange, 0.14)} 0%,
           ${alpha(orange, 0.08)} 45%,
           ${alpha("#ffffff", 0.9)} 100%)`,
-
-      "&:before": {
-        content: '""',
-        position: "absolute",
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: 8,
-        background: `linear-gradient(180deg, ${alpha(orange, 0.95)}, ${alpha(
-          orange,
-          0.55,
-        )})`,
-      },
 
       "&:after": {
         content: '""',

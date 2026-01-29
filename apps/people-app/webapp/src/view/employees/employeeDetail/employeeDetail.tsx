@@ -14,15 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React from "react";
 import { useParams } from "react-router-dom";
 import Me from "../../me";
 
-const EmployeeDetail: React.FC = () => {
+export default function EmployeeDetail() {
   const { employeeId } = useParams<{ employeeId: string }>();
-
-  if (!employeeId) return null;
-  return <Me key={employeeId} employeeId={employeeId} readOnly />;
-};
-
-export default EmployeeDetail;
+  return employeeId ? <Me employeeId={employeeId} readOnly /> : null;
+}

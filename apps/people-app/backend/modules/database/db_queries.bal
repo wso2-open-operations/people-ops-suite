@@ -22,6 +22,7 @@ import ballerina/sql;
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
         id,
+        employee_id,
         first_name,
         last_name,
         work_email,
@@ -35,6 +36,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
+        employee_id,
         first_name,
         last_name,
         work_email,
@@ -47,7 +49,8 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 # + return - Query to get employee detailed information
 isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS employeeId,
+        e.id AS id,
+        e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
         e.work_email AS workEmail,
@@ -95,8 +98,7 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.id = ${id};`;
-
+        e.employee_id = ${id};`;  
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
@@ -200,8 +202,8 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         nationality
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
-        WHERE e.id = ${id};`;
-
+        WHERE e.employee_id = ${id};`;
+         
 # Fetch emergency contacts by personal info ID.
 #
 # + personalInfoId - Personal info primary key

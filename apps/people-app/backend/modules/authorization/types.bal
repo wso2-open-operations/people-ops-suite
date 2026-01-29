@@ -28,4 +28,6 @@ public type AppRoles record {|
     string EMPLOYEE_ROLE;
     # Role for the admin
     string ADMIN_ROLE;
+    # Role for the recruitment team
+    string RECRUITMENT_TEAM_ROLE;
 |};
