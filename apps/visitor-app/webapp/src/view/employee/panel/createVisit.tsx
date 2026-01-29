@@ -263,7 +263,8 @@ function CreateVisit() {
             addVisitor({
               firstName: draftVisitor.firstName,
               lastName: draftVisitor.lastName,
-              email: hashedEmail,
+              emailHash: hashedEmail,
+              email: draftVisitor.emailAddress,
             }),
           );
 

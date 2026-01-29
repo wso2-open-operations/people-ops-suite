@@ -52,8 +52,9 @@ export interface Visitor extends AddVisitorPayload {
 export interface AddVisitorPayload {
   firstName: string;
   lastName: string;
-  email: string | null;
+  emailHash: string;
   contactNumber?: string;
+  email: string;
 }
 
 export const fetchVisitor = createAsyncThunk(
