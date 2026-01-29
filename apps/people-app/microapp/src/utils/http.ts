@@ -22,7 +22,7 @@ import {
 } from "./oauth";
 import { getToken } from "../components/microapp-bridge";
 import { prepareUrlWithEmail } from "./utils";
-import { decodeJWT } from "./jwtUtils";
+import { jwtDecode } from "jwt-decode";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -143,7 +143,8 @@ const useHttp = () => {
       console.error("Jwt token not found");
       resFn(false);
     } else {
-      const decoded = decodeJWT<{ groups?: string[] }>(token);
+      const decoded = jwtDecode<{ groups?: string[] }>(token);
+      console.log("decoded", decoded);
       const userGroups = decoded?.groups ?? [];
 
       // Normalize input to an array
