@@ -29,12 +29,8 @@ import {
 
 import { useEffect, useState } from "react";
 
-import {
-  fetchEmployees,
-  selectEmployeeState,
-  selectEmployees,
-} from "@root/src/slices/employeeSlice/employee";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
+import { useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { CachedMail, State } from "@root/src/types/types";
 

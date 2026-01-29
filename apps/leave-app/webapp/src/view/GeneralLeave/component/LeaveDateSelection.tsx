@@ -49,7 +49,7 @@ export default function LeaveDateSelection({
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
-  const [isValidating, setIsValidating] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
@@ -163,6 +163,7 @@ export default function LeaveDateSelection({
 
   // Determine status based on selection
   const getStatus = () => {
+    if (isValidating) return "Validating...";
     if (!startDate || !endDate) return "Please select dates";
     if (endDate.isBefore(startDate, "day")) return "Invalid date range";
     if (daysSelected <= 0) return "Invalid selection";
@@ -189,7 +190,6 @@ export default function LeaveDateSelection({
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
           Date Selection
         </Typography>
-        {isValidating && <CircularProgress size={20} />}
       </Stack>
       <Stack
         direction="row"
@@ -246,8 +246,8 @@ export default function LeaveDateSelection({
         </Stack>
       </Stack>
       <Alert
-        icon={<InfoOutlinedIcon fontSize="small" />}
-        severity={isValidSelection ? "success" : "warning"}
+        icon={isValidating ? <CircularProgress size={20} /> : <InfoOutlinedIcon fontSize="small" />}
+        severity={isValidating ? "warning" : isValidSelection ? "success" : "warning"}
         variant="outlined"
         sx={{
           boxSizing: "border-box",
