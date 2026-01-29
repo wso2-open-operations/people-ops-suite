@@ -195,10 +195,12 @@ const useHttp = () => {
         if (callback) {
           callback(); // Await the callback
         }
-
-        isTokenRequestInProgress = false;
-        processTokenQueue(); // Move to next in the queue
+      } else {
+        console.error("Token refresh failed");
       }
+
+      isTokenRequestInProgress = false;
+      processTokenQueue(); // Move to next in the queue
     });
   };
 
