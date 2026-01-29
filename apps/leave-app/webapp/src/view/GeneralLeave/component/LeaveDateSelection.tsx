@@ -49,7 +49,7 @@ export default function LeaveDateSelection({
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
-  const [isValidating, setIsValidating] = useState(true);
+  const [isValidating, setIsValidating] = useState(false);
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
