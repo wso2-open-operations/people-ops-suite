@@ -37,6 +37,9 @@ export interface RequestOptions {
   currentTry?: number;
 }
 
+const tokenRequestQueue: (() => void)[] = [];
+let isTokenRequestInProgress = false;
+
 const useHttp = () => {
   const MAX_TRIES = 4;
 
@@ -171,9 +174,6 @@ const useHttp = () => {
    * - Only one token refresh is sent to the server at a time
    * - All pending requests are resumed after a successful refresh
    */
-
-  const tokenRequestQueue: (() => void)[] = [];
-  let isTokenRequestInProgress = false;
 
   const handleRequestWithNewToken = (callback: () => void): void => {
     tokenRequestQueue.push(callback);
