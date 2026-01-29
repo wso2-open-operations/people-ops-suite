@@ -16,7 +16,7 @@
 
 import { motion } from "motion/react";
 import { CircularProgress } from "@mui/material";
-import { executeWithTokenHandling } from "@/utils/utils";
+import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
 import { serviceUrls } from "@/config/config";
 import useHttp from "@/utils/http";
 import { useState } from "react";
@@ -52,12 +52,15 @@ export default function DeleteConfirmationModal({
     executeWithTokenHandling(
       handleRequest,
       handleRequestWithNewToken,
-      serviceUrls.deleteVehicle.replace("[id]", encodeURIComponent(String(id))),
+      serviceUrls.deleteVehicle(
+        await getEmailAsync(),
+        encodeURIComponent(String(id)),
+      ),
       "DELETE",
       null,
       () => onConfirm(),
       (error) => console.log("vehicle delete failed", error),
-      (pending) => setIsPending(pending)
+      (pending) => setIsPending(pending),
     );
   };
 

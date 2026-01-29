@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { getToken } from "@/components/microapp-bridge";
 import { type RequestOptions } from "./http";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -111,4 +112,22 @@ export function prepareUrlWithEmail(
     encodeURIComponent(email),
   );
   return encodeURI(urlWithEmail);
+}
+
+export function getEmail(callback: (email: string | null) => void) {
+  getToken((token) => {
+    if (!token) return callback(null);
+
+    const email = getEmailFromJWT(token);
+    callback(email ? encodeURIComponent(email) : null);
+  });
+}
+
+export async function getEmailAsync(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    getEmail((email) => {
+      if (!email) return reject("Email not found");
+      resolve(email);
+    });
+  });
 }

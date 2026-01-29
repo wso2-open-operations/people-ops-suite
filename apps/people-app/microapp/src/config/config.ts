@@ -36,7 +36,9 @@ export const IS_MICROAPP = window.config.IS_MICROAPP;
 const baseUrl = window.config.BACKEND_BASE_URL;
 
 export const serviceUrls = {
-  fetchVehicles: baseUrl + "/employees/[email]/vehicles?vehicleStatus=ACTIVE",
-  registerVehicle: baseUrl + "/employees/[email]/vehicles",
-  deleteVehicle: baseUrl + "/employees/[email]/vehicles/[id]",
+  fetchVehicles: (email: string) =>
+    `${baseUrl}/employees/${email}/vehicles?vehicleStatus=ACTIVE`,
+  registerVehicle: (email: string) => `${baseUrl}/employees/${email}/vehicles`,
+  deleteVehicle: (email: string, id: string) =>
+    `${baseUrl}/employees/${email}/vehicles/${id}`,
 };

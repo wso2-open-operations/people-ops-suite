@@ -30,7 +30,7 @@ import {
   DeleteConfirmationModal,
 } from "@/components/features/vehicles";
 import useHttp from "@/utils/http";
-import { executeWithTokenHandling } from "@/utils/utils";
+import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
 import { serviceUrls } from "@/config/config";
 import { type Response as VehicleResponse } from "@/types";
 
@@ -49,7 +49,7 @@ function VehicleManagementPage() {
     executeWithTokenHandling(
       handleRequest,
       handleRequestWithNewToken,
-      serviceUrls.fetchVehicles,
+      await serviceUrls.fetchVehicles(await getEmailAsync()),
       "GET",
       null,
       (data) => {

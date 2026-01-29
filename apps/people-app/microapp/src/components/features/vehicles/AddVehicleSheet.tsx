@@ -30,7 +30,7 @@ import {
   format as formatLicensePlate,
 } from "@/utils/helpers/numberplate";
 import { serviceUrls } from "@/config/config";
-import { executeWithTokenHandling } from "@/utils/utils";
+import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
 import useHttp from "@/utils/http";
 
 interface AddVehicleSheetProps {
@@ -65,7 +65,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
   const [number, setNumber] = useState<string>("");
   const [type, setType] = useState<VehicleType | undefined>("CAR");
   const [isValidPlate, setIsValidPlate] = useState<Validity>(
-    validation.UNCERTAIN
+    validation.UNCERTAIN,
   );
 
   // for disabling button while request is pending. re-enabling on error for retry.
@@ -84,7 +84,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
       executeWithTokenHandling(
         handleRequest,
         handleRequestWithNewToken,
-        serviceUrls.registerVehicle,
+        serviceUrls.registerVehicle(await getEmailAsync()),
         "POST",
         {
           vehicleType: type,
@@ -98,7 +98,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
           console.error("Error registering vehicle", error);
           setBusy(false);
         },
-        (pending) => setBusy(pending)
+        (pending) => setBusy(pending),
       );
     }
   };
