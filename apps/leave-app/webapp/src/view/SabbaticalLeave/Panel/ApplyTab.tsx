@@ -168,10 +168,7 @@ export default function ApplyTab({
     let eligible = true;
     let errorMsg = "";
 
-    if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
-      eligible = false;
-      errorMsg = `You are ineligible for the following reasons: (1) You must be employed for at least ${sabbaticalEligibilityDurationInYears} years, and (2) Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years.`;
-    } else if (!isEmploymentEligible) {
+    if (!isEmploymentEligible) {
       eligible = false;
       errorMsg = `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`;
       setCanRenderSabbaticalFormField(false);
