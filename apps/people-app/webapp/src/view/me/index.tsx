@@ -14,10 +14,39 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useEffect, useState, useRef } from "react";
-import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType } from "@/types/types";
-import { useAppDispatch, useAppSelector } from "../../slices/store";
+import { useConfirmationModalContext } from "@context/DialogContext";
+import {
+  BadgeOutlined,
+  BusinessOutlined,
+  EmailOutlined,
+  WorkOutline,
+} from "@mui/icons-material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SaveIcon from "@mui/icons-material/Save";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Grid,
+  Paper,
+  Skeleton,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
+  //useTheme,
+} from "@mui/material";
+import IconButton from "@mui/material/IconButton";
+import type { Theme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
 import {
   EmployeePersonalInfo,
@@ -25,41 +54,22 @@ import {
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import {
-  Formik,
-  Form,
-  FormikHandlers,
-  FormikValues,
-  FormikErrors,
-  FieldArray,
-  getIn,
-} from "formik";
-import { array, object, string } from "yup";
-import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
-  Box,
-  Grid,
-  Skeleton,
-  Button,
-  TextField,
-  Tooltip,
-  Chip,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import type { Theme } from "@mui/material/styles";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import SaveIcon from "@mui/icons-material/Save";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import IconButton from "@mui/material/IconButton";
-import {
-  calculateServiceLength,
   calculateAge,
+  calculateServiceLength,
   formatServiceLength,
 } from "@root/src/utils/utils";
+import {
+  FieldArray,
+  Form,
+  Formik,
+  FormikErrors,
+  FormikHandlers,
+  FormikValues,
+  getIn,
+} from "formik";
+import { useEffect, useRef, useState } from "react";
+import { array, object, string } from "yup";
+import { useAppDispatch, useAppSelector } from "../../slices/store";
 
 const ReadOnly = ({
   label,
@@ -161,10 +171,18 @@ export const getEmployeeStatusChipStyles =
     };
   };
 
-export default function Me() {
+export default function Me(
+  {
+    employeeId,
+    readOnly = false,
+  }: { employeeId?: string; readOnly?: boolean } = {
+    readOnly: false,
+  },
+) {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
+  const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector(
     (state) => state.employee,
   );
@@ -193,6 +211,26 @@ export default function Me() {
     setShouldRequireEmergencyContacts(has);
   }, [personalInfo]);
 
+  const emergencyContactItemSchema = object().shape({
+    name: string()
+      .required("Name is required")
+      .max(100, "Name must be at most 100 characters"),
+    relationship: string()
+      .required("Relationship is required")
+      .max(50, "Relationship must be at most 50 characters"),
+    telephone: string()
+      .required("Telephone is required")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid telephone number format",
+      ),
+    mobile: string()
+      .required("Mobile is required")
+      .matches(
+        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+        "Invalid mobile number format",
+      ),
+  });
   const personalInfoSchema = object().shape({
     personalEmail: string()
       .nullable()
@@ -231,61 +269,19 @@ export default function Me() {
           .required("At least one emergency contact is required")
           .min(1, "At least one emergency contact is required")
           .max(4, "Maximum 4 emergency contacts allowed")
-          .of(
-            object().shape({
-              name: string()
-                .required("Name is required")
-                .max(100, "Name must be at most 100 characters"),
-              relationship: string()
-                .required("Relationship is required")
-                .max(50, "Relationship must be at most 50 characters"),
-              telephone: string()
-                .required("Telephone is required")
-                .matches(
-                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid telephone number format",
-                ),
-              mobile: string()
-                .required("Mobile is required")
-                .matches(
-                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid mobile number format",
-                ),
-            }),
-          )
+          .of(emergencyContactItemSchema)
       : array()
           .nullable()
           .max(4, "Maximum 4 emergency contacts allowed")
-          .of(
-            object().shape({
-              name: string()
-                .required("Name is required")
-                .max(100, "Name must be at most 100 characters"),
-              relationship: string()
-                .required("Relationship is required")
-                .max(50, "Relationship must be at most 50 characters"),
-              telephone: string()
-                .required("Telephone is required")
-                .matches(
-                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid telephone number format",
-                ),
-              mobile: string()
-                .required("Mobile is required")
-                .matches(
-                  /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-                  "Invalid mobile number format",
-                ),
-            }),
-          ),
+          .of(emergencyContactItemSchema),
   });
 
   useEffect(() => {
-    if (userInfo?.employeeId) {
-      dispatch(fetchEmployee(userInfo.employeeId));
-      dispatch(fetchEmployeePersonalInfo(userInfo.employeeId));
+    if (targetEmployeeId) {
+      dispatch(fetchEmployee(targetEmployeeId));
+      dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
     }
-  }, [userInfo?.employeeId, dispatch]);
+  }, [targetEmployeeId, dispatch]);
 
   const handleSaveChanges = async (values: EmployeePersonalInfo) => {
     showConfirmation(
@@ -352,8 +348,166 @@ export default function Me() {
     }
   };
 
+  const headerSx = (theme: Theme) => {
+    const orange = theme.palette.secondary.contrastText;
+    const isDark = theme.palette.mode === "dark";
+
+    return {
+      p: { xs: 2.25, sm: 3.25 },
+      borderRadius: 3,
+      position: "relative",
+      overflow: "hidden",
+      minHeight: { xs: 120, sm: 100 },
+
+      border: `1px solid ${alpha(theme.palette.divider, isDark ? 0.18 : 0.14)}`,
+
+      background: isDark
+        ? `linear-gradient(135deg,
+          ${alpha(theme.palette.background.paper, 0.6)} 0%,
+          ${alpha(theme.palette.background.default, 0.35)} 100%)`
+        : `linear-gradient(135deg,
+          ${alpha(orange, 0.14)} 0%,
+          ${alpha(orange, 0.08)} 45%,
+          ${alpha("#ffffff", 0.9)} 100%)`,
+
+      "&:before": {
+        content: '""',
+        position: "absolute",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 8,
+        background: `linear-gradient(180deg, ${alpha(orange, 0.95)}, ${alpha(
+          orange,
+          0.55,
+        )})`,
+      },
+
+      "&:after": {
+        content: '""',
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        background: isDark
+          ? `radial-gradient(650px circle at 12% 20%, ${alpha(
+              orange,
+              0.18,
+            )}, transparent 55%)`
+          : `radial-gradient(720px circle at 14% 22%, ${alpha(
+              orange,
+              0.22,
+            )}, transparent 55%)`,
+      },
+    };
+  };
+
+  const avatarSx = (theme: Theme) => {
+    const orange = theme.palette.secondary.contrastText;
+    const isDark = theme.palette.mode === "dark";
+
+    return {
+      width: 72,
+      height: 72,
+      border: `2px solid ${alpha(orange, isDark ? 0.55 : 0.35)}`,
+      backgroundColor: alpha(orange, isDark ? 0.16 : 0.12),
+      color: isDark ? theme.palette.common.white : theme.palette.primary.main,
+      fontWeight: 800,
+      fontSize: 20,
+      boxShadow: `0 10px 30px ${alpha(orange, isDark ? 0.12 : 0.1)}`,
+      flexShrink: 0,
+    };
+  };
+
+  const chipSx = (theme: Theme) => {
+    const isDark = theme.palette.mode === "dark";
+    const orange = theme.palette.secondary.contrastText;
+
+    return {
+      borderRadius: 999,
+      height: 34,
+      fontWeight: 600,
+      px: 0.25,
+      backgroundColor: isDark
+        ? alpha(theme.palette.background.paper, 0.6)
+        : theme.palette.common.white,
+      border: `1px solid ${alpha(theme.palette.divider, isDark ? 0.22 : 0.16)}`,
+      boxShadow: isDark ? "none" : `0 6px 18px ${alpha("#000", 0.06)}`,
+      "& .MuiChip-icon": {
+        color: alpha(orange, isDark ? 0.9 : 0.85),
+      },
+      "& .MuiChip-label": {
+        px: 1,
+        fontSize: 13,
+      },
+    };
+  };
+
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
+      <Paper elevation={0} sx={(theme) => headerSx(theme)}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2.5}
+          alignItems={{ xs: "flex-start", sm: "center" }}
+        >
+          <Avatar
+            src={employee?.employeeThumbnail ?? undefined}
+            sx={(theme) => avatarSx(theme)}
+          >
+            {employee?.firstName?.[0]?.toUpperCase() ?? "M"}
+          </Avatar>
+
+          <Box sx={{ flex: 1, minWidth: 0, pl: 0.5 }}>
+            <Typography variant="h4" fontWeight={850} noWrap>
+              {employee
+                ? `${employee.firstName} ${employee.lastName}`
+                : "My Profile"}
+            </Typography>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
+            >
+              {employee?.employeeId && (
+                <Chip
+                  size="medium"
+                  icon={<BadgeOutlined />}
+                  label={`ID: ${employee.employeeId}`}
+                  sx={(theme) => chipSx(theme)}
+                />
+              )}
+
+              {employee?.designation && (
+                <Chip
+                  size="medium"
+                  icon={<WorkOutline />}
+                  label={employee.designation}
+                  sx={(theme) => chipSx(theme)}
+                />
+              )}
+
+              {employee?.workEmail && (
+                <Chip
+                  size="medium"
+                  icon={<EmailOutlined />}
+                  label={employee.workEmail}
+                  sx={(theme) => chipSx(theme)}
+                />
+              )}
+
+              {employee?.businessUnit && (
+                <Chip
+                  size="medium"
+                  icon={<BusinessOutlined />}
+                  label={employee.businessUnit}
+                  sx={(theme) => chipSx(theme)}
+                />
+              )}
+            </Stack>
+          </Box>
+        </Stack>
+      </Paper>
       <Accordion
         defaultExpanded
         sx={{
@@ -631,7 +785,7 @@ export default function Me() {
                         .map((email) => (
                           <Typography
                             key={email}
-                            variant="body2"
+                            variant="h6"
                             sx={{ fontWeight: 600 }}
                           >
                             {email}
@@ -691,9 +845,10 @@ export default function Me() {
           ) : personalInfo ? (
             <Formik
               initialValues={personalInfo}
-              validationSchema={personalInfoSchema}
+              validationSchema={readOnly ? undefined : personalInfoSchema}
               enableReinitialize
               onSubmit={async (values) => {
+                if (readOnly) return;
                 await handleSaveChanges(values);
               }}
             >
@@ -740,221 +895,314 @@ export default function Me() {
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="personalEmail"
-                        label="Personal Email"
-                        type="email"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Personal Email"
+                          value={values.personalEmail}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="personalEmail"
+                          label="Personal Email"
+                          type="email"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="personalPhone"
-                        label="Personal Phone"
-                        type="tel"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Personal Phone"
+                          value={values.personalPhone}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="personalPhone"
+                          label="Personal Phone"
+                          type="tel"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="residentNumber"
-                        label="Resident Number"
-                        type="tel"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
-                    </Grid>
-                  </Grid>
-                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="addressLine1"
-                        label="Address Line 1"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="addressLine2"
-                        label="Address Line 2"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Resident Number"
+                          value={values.residentNumber}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="residentNumber"
+                          label="Resident Number"
+                          type="tel"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="city"
-                        label="City"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Address Line 1 "
+                          value={values.addressLine1}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="addressLine1"
+                          label="Address Line 1"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="stateOrProvince"
-                        label="State/Province"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Address Line 2"
+                          value={values.addressLine2}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="addressLine2"
+                          label="Address Line 2"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
+                    </Grid>
+                  </Grid>
+                  <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
+                    <Grid item xs={12} sm={6} md={3}>
+                      {readOnly ? (
+                        <ReadOnly label="City" value={values.city} />
+                      ) : (
+                        <FieldInput
+                          name="city"
+                          label="City"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="country"
-                        label="Country"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly
+                          label="State/Province"
+                          value={values.stateOrProvince}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="stateOrProvince"
+                          label="State/Province"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
-                      <FieldInput
-                        name="postalCode"
-                        label="Postal Code"
-                        values={values}
-                        handleChange={handleChange}
-                        handleBlur={handleBlur}
-                        errors={errors}
-                        touched={touched}
-                        isSavingChanges={isSavingChanges}
-                      />
+                      {readOnly ? (
+                        <ReadOnly label="Country" value={values.country} />
+                      ) : (
+                        <FieldInput
+                          name="country"
+                          label="Country"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      {readOnly ? (
+                        <ReadOnly
+                          label="Postal Code"
+                          value={values.postalCode}
+                        />
+                      ) : (
+                        <FieldInput
+                          name="postalCode"
+                          label="Postal Code"
+                          values={values}
+                          handleChange={handleChange}
+                          handleBlur={handleBlur}
+                          errors={errors}
+                          touched={touched}
+                          isSavingChanges={isSavingChanges}
+                        />
+                      )}
                     </Grid>
                     <Grid item xs={12}>
-                      <FieldArray name="emergencyContacts">
-                        {({ push, remove }) => (
-                          <Box sx={{ pt: 2 }}>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2,
-                              }}
+                      {readOnly ? (
+                        <Box sx={{ pt: 2 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              mb: 2,
+                            }}
+                          >
+                            <Typography sx={{ fontWeight: 600 }}>
+                              Emergency Contacts (
+                              {values.emergencyContacts?.length ?? 0}/4)
+                            </Typography>
+                          </Box>
+
+                          {!values.emergencyContacts ||
+                          values.emergencyContacts.length === 0 ? (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ textAlign: "center", py: 3 }}
                             >
-                              <Typography sx={{ fontWeight: 600 }}>
-                                Emergency Contacts (
-                                {values.emergencyContacts?.length ?? 0}/4)
-                              </Typography>
-                            </Box>
-
-                            {touched.emergencyContacts &&
-                              typeof errors.emergencyContacts === "string" && (
-                                <Typography
-                                  color="error"
-                                  variant="body2"
-                                  sx={{ mt: 1, mb: 2 }}
-                                >
-                                  {errors.emergencyContacts}
-                                </Typography>
-                              )}
-
-                            {!values.emergencyContacts ||
-                            values.emergencyContacts.length === 0 ? (
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ textAlign: "center", py: 3 }}
+                              No emergency contacts added yet.
+                            </Typography>
+                          ) : (
+                            values.emergencyContacts.map((c, index) => (
+                              <Grid
+                                container
+                                rowSpacing={1.5}
+                                columnSpacing={3}
+                                key={index}
+                                sx={{ mb: 2 }}
                               >
-                                No emergency contacts added yet.
-                              </Typography>
-                            ) : (
-                              values.emergencyContacts.map((_, index) => (
-                                <Grid
-                                  container
-                                  rowSpacing={1.5}
-                                  columnSpacing={3}
-                                  key={index}
-                                  sx={{ mb: 2 }}
+                                <Grid item xs={12} sm={6} md={3}>
+                                  <ReadOnly label="Name" value={c?.name} />
+                                </Grid>
+                                <Grid item xs={12} sm={6} md={3}>
+                                  <ReadOnly
+                                    label="Relationship"
+                                    value={c?.relationship}
+                                  />
+                                </Grid>
+                                <Grid item xs={12} sm={6} md={3}>
+                                  <ReadOnly
+                                    label="Telephone"
+                                    value={c?.telephone}
+                                  />
+                                </Grid>
+                                <Grid item xs={12} sm={6} md={3}>
+                                  <ReadOnly label="Mobile" value={c?.mobile} />
+                                </Grid>
+                              </Grid>
+                            ))
+                          )}
+                        </Box>
+                      ) : (
+                        <FieldArray name="emergencyContacts">
+                          {({ push, remove }) => (
+                            <Box sx={{ pt: 2 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  mb: 2,
+                                }}
+                              >
+                                <Typography sx={{ fontWeight: 600 }}>
+                                  Emergency Contacts (
+                                  {values.emergencyContacts?.length ?? 0}/4)
+                                </Typography>
+                              </Box>
+
+                              {touched.emergencyContacts &&
+                                typeof errors.emergencyContacts ===
+                                  "string" && (
+                                  <Typography
+                                    color="error"
+                                    variant="body2"
+                                    sx={{ mt: 1, mb: 2 }}
+                                  >
+                                    {errors.emergencyContacts}
+                                  </Typography>
+                                )}
+
+                              {!values.emergencyContacts ||
+                              values.emergencyContacts.length === 0 ? (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ textAlign: "center", py: 3 }}
                                 >
-                                  <Grid item xs={12} sm={6} md={3}>
-                                    <FieldInput
-                                      name={`emergencyContacts.${index}.name`}
-                                      label="Name"
-                                      values={values}
-                                      handleChange={handleChange}
-                                      handleBlur={handleBlur}
-                                      errors={errors}
-                                      touched={touched}
-                                      isSavingChanges={isSavingChanges}
-                                      isRequired
-                                    />
-                                  </Grid>
-
-                                  <Grid item xs={12} sm={6} md={3}>
-                                    <FieldInput
-                                      name={`emergencyContacts.${index}.relationship`}
-                                      label="Relationship"
-                                      values={values}
-                                      handleChange={handleChange}
-                                      handleBlur={handleBlur}
-                                      errors={errors}
-                                      touched={touched}
-                                      isSavingChanges={isSavingChanges}
-                                      isRequired
-                                    />
-                                  </Grid>
-
-                                  <Grid item xs={12} sm={6} md={3}>
-                                    <FieldInput
-                                      name={`emergencyContacts.${index}.telephone`}
-                                      label="Telephone"
-                                      type="tel"
-                                      values={values}
-                                      handleChange={handleChange}
-                                      handleBlur={handleBlur}
-                                      errors={errors}
-                                      touched={touched}
-                                      isSavingChanges={isSavingChanges}
-                                      isRequired
-                                    />
-                                  </Grid>
-
-                                  <Grid item xs={12} sm={6} md={3}>
-                                    <Box
-                                      sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                      }}
-                                    >
+                                  No emergency contacts added yet.
+                                </Typography>
+                              ) : (
+                                values.emergencyContacts.map((_, index) => (
+                                  <Grid
+                                    container
+                                    rowSpacing={1.5}
+                                    columnSpacing={3}
+                                    key={index}
+                                    sx={{ mb: 2 }}
+                                  >
+                                    <Grid item xs={12} sm={6} md={3}>
                                       <FieldInput
-                                        name={`emergencyContacts.${index}.mobile`}
-                                        label="Mobile"
+                                        name={`emergencyContacts.${index}.name`}
+                                        label="Name"
+                                        values={values}
+                                        handleChange={handleChange}
+                                        handleBlur={handleBlur}
+                                        errors={errors}
+                                        touched={touched}
+                                        isSavingChanges={isSavingChanges}
+                                        isRequired
+                                      />
+                                    </Grid>
+
+                                    <Grid item xs={12} sm={6} md={3}>
+                                      <FieldInput
+                                        name={`emergencyContacts.${index}.relationship`}
+                                        label="Relationship"
+                                        values={values}
+                                        handleChange={handleChange}
+                                        handleBlur={handleBlur}
+                                        errors={errors}
+                                        touched={touched}
+                                        isSavingChanges={isSavingChanges}
+                                        isRequired
+                                      />
+                                    </Grid>
+
+                                    <Grid item xs={12} sm={6} md={3}>
+                                      <FieldInput
+                                        name={`emergencyContacts.${index}.telephone`}
+                                        label="Telephone"
                                         type="tel"
                                         values={values}
                                         handleChange={handleChange}
@@ -964,114 +1212,144 @@ export default function Me() {
                                         isSavingChanges={isSavingChanges}
                                         isRequired
                                       />
+                                    </Grid>
 
-                                      <Tooltip
-                                        title={
-                                          (values.emergencyContacts?.length ??
-                                            0) <= 1
-                                            ? "At least one emergency contact is required"
-                                            : "Remove contact"
-                                        }
+                                    <Grid item xs={12} sm={6} md={3}>
+                                      <Box
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 1,
+                                        }}
                                       >
-                                        <span>
-                                          <IconButton
-                                            color="error"
-                                            size="small"
-                                            onClick={() =>
-                                              (values.emergencyContacts
-                                                ?.length ?? 0) > 1 &&
-                                              remove(index)
-                                            }
-                                            disabled={
-                                              isSavingChanges ||
-                                              (values.emergencyContacts
-                                                ?.length ?? 0) === 1
-                                            }
-                                            sx={{ flexShrink: 0 }}
-                                          >
-                                            <RemoveCircleOutlineIcon fontSize="small" />
-                                          </IconButton>
-                                        </span>
-                                      </Tooltip>
-                                    </Box>
-                                  </Grid>
-                                </Grid>
-                              ))
-                            )}
-                            <Button
-                              variant="outlined"
-                              color="secondary"
-                              startIcon={<AddCircleOutlineIcon />}
-                              sx={{ textTransform: "none" }}
-                              onClick={() => {
-                                push({
-                                  name: "",
-                                  relationship: "",
-                                  telephone: "",
-                                  mobile: "",
-                                });
-                                setShouldRequireEmergencyContacts(true);
-                              }}
-                              disabled={
-                                isSavingChanges ||
-                                (values.emergencyContacts?.length ?? 0) >= 4
-                              }
-                            >
-                              Add Contact
-                            </Button>
+                                        <FieldInput
+                                          name={`emergencyContacts.${index}.mobile`}
+                                          label="Mobile"
+                                          type="tel"
+                                          values={values}
+                                          handleChange={handleChange}
+                                          handleBlur={handleBlur}
+                                          errors={errors}
+                                          touched={touched}
+                                          isSavingChanges={isSavingChanges}
+                                          isRequired
+                                        />
 
-                            {(values.emergencyContacts?.length ?? 0) >= 4 && (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{
-                                  display: "block",
-                                  textAlign: "center",
-                                  mt: 1,
-                                }}
-                              >
-                                Maximum 4 emergency contacts reached.
-                              </Typography>
-                            )}
-                          </Box>
-                        )}
-                      </FieldArray>
+                                        <Tooltip
+                                          title={
+                                            (values.emergencyContacts?.length ??
+                                              0) <= 1
+                                              ? "At least one emergency contact is required"
+                                              : "Remove contact"
+                                          }
+                                        >
+                                          <span>
+                                            <IconButton
+                                              color="error"
+                                              size="small"
+                                              onClick={() =>
+                                                (values.emergencyContacts
+                                                  ?.length ?? 0) > 1 &&
+                                                remove(index)
+                                              }
+                                              disabled={
+                                                isSavingChanges ||
+                                                (values.emergencyContacts
+                                                  ?.length ?? 0) === 1
+                                              }
+                                              sx={{ flexShrink: 0 }}
+                                            >
+                                              <RemoveCircleOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                          </span>
+                                        </Tooltip>
+                                      </Box>
+                                    </Grid>
+                                  </Grid>
+                                ))
+                              )}
+
+                              <>
+                                <Button
+                                  variant="outlined"
+                                  color="secondary"
+                                  startIcon={<AddCircleOutlineIcon />}
+                                  sx={{ textTransform: "none" }}
+                                  onClick={() => {
+                                    push({
+                                      name: "",
+                                      relationship: "",
+                                      telephone: "",
+                                      mobile: "",
+                                    });
+                                    setShouldRequireEmergencyContacts(true);
+                                  }}
+                                  disabled={
+                                    isSavingChanges ||
+                                    (values.emergencyContacts?.length ?? 0) >= 4
+                                  }
+                                >
+                                  Add Contact
+                                </Button>
+
+                                {(values.emergencyContacts?.length ?? 0) >=
+                                  4 && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{
+                                      display: "block",
+                                      textAlign: "center",
+                                      mt: 1,
+                                    }}
+                                  >
+                                    Maximum 4 emergency contacts reached.
+                                  </Typography>
+                                )}
+                              </>
+                            </Box>
+                          )}
+                        </FieldArray>
+                      )}
                     </Grid>
-                    <Grid item xs={12}>
-                      {/* --- Action Buttons --- */}
-                      <Box
-                        sx={{
-                          mt: 3,
-                          width: "100%",
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          gap: 2,
-                        }}
-                      >
-                        <Button
-                          startIcon={<RestartAltIcon />}
-                          sx={{ textTransform: "none" }}
-                          variant="outlined"
-                          color="primary"
-                          onClick={() => {
-                            handleDiscardChanges(resetForm);
+
+                    {!readOnly && (
+                      <Grid item xs={12}>
+                        {/* --- Action Buttons --- */}
+                        <Box
+                          sx={{
+                            mt: 3,
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 2,
                           }}
-                          disabled={isSavingChanges || !dirty}
                         >
-                          Discard Changes
-                        </Button>
-                        <Button
-                          startIcon={<SaveIcon />}
-                          sx={{ textTransform: "none" }}
-                          variant="contained"
-                          color="secondary"
-                          type="submit"
-                          disabled={isSavingChanges || !dirty}
-                        >
-                          {isSavingChanges ? "Saving..." : "Save Changes"}
-                        </Button>
-                      </Box>
-                    </Grid>
+                          <Button
+                            startIcon={<RestartAltIcon />}
+                            sx={{ textTransform: "none" }}
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => {
+                              handleDiscardChanges(resetForm);
+                            }}
+                            disabled={isSavingChanges || !dirty}
+                          >
+                            Discard Changes
+                          </Button>
+                          <Button
+                            startIcon={<SaveIcon />}
+                            sx={{ textTransform: "none" }}
+                            variant="contained"
+                            color="secondary"
+                            type="submit"
+                            disabled={isSavingChanges || !dirty}
+                          >
+                            {isSavingChanges ? "Saving..." : "Save Changes"}
+                          </Button>
+                        </Box>
+                      </Grid>
+                    )}
                   </Grid>
                 </Form>
               )}
