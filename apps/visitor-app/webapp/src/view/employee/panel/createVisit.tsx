@@ -63,7 +63,7 @@ import {
 } from "@slices/visitorSlice/visitor";
 import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
-import { addVisit } from "@root/src/slices/visitSlice/visit";
+import { addVisit, AddVisitPayload } from "@root/src/slices/visitSlice/visit";
 import { Role } from "@root/src/slices/authSlice/auth";
 import { PhoneNumberUtil } from "google-libphonenumber";
 import {
@@ -274,22 +274,20 @@ function CreateVisit() {
 
           dispatch(resetVisitorSubmitState());
 
-          await dispatch(
-            addVisit({
-              companyName: values.companyName,
-              whomTheyMeet: values.whoTheyMeet,
-              purposeOfVisit: values.purposeOfVisit,
-              accessibleLocations: values.accessibleLocations,
-              timeOfEntry: values.timeOfEntry
-                ? dayjs(values.timeOfEntry).utc().format("YYYY-MM-DDTHH:mm:ss")
-                : "",
-              timeOfDeparture: values.timeOfDeparture
-                ? dayjs(values.timeOfDeparture)
-                    .utc()
-                    .format("YYYY-MM-DDTHH:mm:ss")
-                : "",
-            }),
-          );
+          const addVisitPayload: AddVisitPayload = {
+            whomTheyMeet: values.whoTheyMeet,
+            purposeOfVisit: values.purposeOfVisit,
+            accessibleLocations: values.accessibleLocations,
+            emailHash: hashedEmail,
+          };
+          if (values.companyName)
+            addVisitPayload.companyName = values.companyName;
+          if (values.timeOfEntry)
+            addVisitPayload.timeOfEntry = values.timeOfEntry;
+          if (values.timeOfDeparture)
+            addVisitPayload.timeOfDeparture = values.timeOfDeparture;
+
+          await dispatch(addVisit(addVisitPayload));
         },
         "Yes",
         "Cancel",

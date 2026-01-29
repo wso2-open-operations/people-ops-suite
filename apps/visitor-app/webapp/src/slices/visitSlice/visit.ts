@@ -40,13 +40,14 @@ export interface FloorRoom {
 }
 
 export interface AddVisitPayload {
-  companyName: string | null;
+  companyName?: string;
   passNumber?: string;
   whomTheyMeet: string;
   purposeOfVisit: string;
   accessibleLocations?: FloorRoom[] | null;
-  timeOfEntry: string;
-  timeOfDeparture: string;
+  timeOfEntry?: string;
+  timeOfDeparture?: string;
+  emailHash: string;
 }
 
 export interface Visit {
