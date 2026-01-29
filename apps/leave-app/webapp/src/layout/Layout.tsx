@@ -19,7 +19,7 @@ import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
@@ -37,6 +37,7 @@ export default function Layout() {
   const [open, setOpen] = useState(true);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -59,6 +60,16 @@ export default function Layout() {
       localStorage.removeItem(savedRedirectUrl);
     }
   }, [navigate]);
+
+  // Scroll to top when route changes
+  useEffect(() => {
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo(0, 0);
+    }
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname]);
 
   return (
     <ConfirmationModalContextProvider>
@@ -112,6 +123,7 @@ export default function Layout() {
 
           {/* Main content area */}
           <Box
+            ref={mainContentRef}
             sx={{
               flex: 1,
               marginLeft: open ? "200px" : "60px",

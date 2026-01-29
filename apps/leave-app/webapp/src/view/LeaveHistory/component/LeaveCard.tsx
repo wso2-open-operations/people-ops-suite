@@ -82,6 +82,7 @@ export default function LeaveCard({
     const diffInDays = (leaveStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
     return diffInDays < 1;
   };
+  const formattedLabel = `${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()} Leave`;
 
   return (
     <Card
@@ -109,7 +110,7 @@ export default function LeaveCard({
                   fontWeight: 600,
                 }}
               >
-                {type.toLocaleUpperCase()} LEAVE
+                {formattedLabel}
               </Typography>
               <Tooltip title="Cancel" arrow>
                 <span>

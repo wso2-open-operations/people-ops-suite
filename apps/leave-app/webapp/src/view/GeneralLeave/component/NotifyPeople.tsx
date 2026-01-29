@@ -15,26 +15,12 @@
 // under the License.
 
 import { Email } from "@mui/icons-material";
-import {
-  Autocomplete,
-  Avatar,
-  Box,
-  Chip,
-  CircularProgress,
-  Stack,
-  TextField,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
-import {
-  fetchEmployees,
-  selectEmployeeState,
-  selectEmployees,
-} from "@root/src/slices/employeeSlice/employee";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
+import { useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { CachedMail, State } from "@root/src/types/types";
 
@@ -57,7 +43,6 @@ export default function NotifyPeople({
   onMandatoryEmailsChange,
 }: NotifyPeopleProps) {
   const theme = useTheme();
-  const dispatch = useAppDispatch();
   const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   const [fixedEmails, setFixedEmails] = useState<string[]>([]);
 
@@ -97,10 +82,6 @@ export default function NotifyPeople({
   }, []);
 
   useEffect(() => {
-    dispatch(fetchEmployees());
-  }, [dispatch]);
-
-  useEffect(() => {
     if (employees.length > 0) {
       const employeeOptionsFromApi = employees.map((employee) => ({
         label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
@@ -132,11 +113,6 @@ export default function NotifyPeople({
         <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
           Select people/groups to notify (via email)
         </Typography>
-        {loading && (
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <CircularProgress size={20} />
-          </Box>
-        )}
       </Stack>
       <Autocomplete
         multiple
