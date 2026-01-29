@@ -50,8 +50,11 @@ type DatabaseConfig record {|
 
 # Employee basic information.
 public type EmployeeBasicInfo record {|
-    # Employee ID of the user
+    # Primary key ID
     @sql:Column {name: "id"}
+    int id;
+    # Employee ID of the user
+    @sql:Column {name: "employee_id"}
     string employeeId;
     # First name of the user
     @sql:Column {name: "first_name"}
@@ -171,7 +174,6 @@ public type ContinuousServiceRecordInfo record {|
     @sql:Column {name: "id"}
     int id;
     # Employee ID of the user
-    @sql:Column {name: "employeeId"}
     string employeeId;
     # First name
     string firstName;
