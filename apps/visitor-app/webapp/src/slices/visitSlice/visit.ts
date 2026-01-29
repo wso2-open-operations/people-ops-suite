@@ -78,11 +78,13 @@ export interface FetchVisitsResponse {
 }
 
 export interface UpdateVisitPayload {
-  rejectionReason: string | null | undefined;
-  passNumber: string | null;
-  accessibleLocations: FloorRoom[] | null;
+  rejectionReason?: string;
+  passNumber?: string;
+  accessibleLocations?: FloorRoom[];
   visitId: number;
   status: string;
+  purposeOfVisit?: string;
+  whomTheyMeet?: string;
 }
 
 const initialState: VisitState = {
@@ -200,6 +202,8 @@ export const visitStatusUpdate = createAsyncThunk(
             rejectionReason: payload.rejectionReason,
             passNumber: payload.passNumber,
             accessibleLocations: payload.accessibleLocations,
+            whomTheyMeet: payload.whomTheyMeet,
+            purposeOfVisit: payload.purposeOfVisit,
           },
           {
             cancelToken: newCancelTokenSource.token,
