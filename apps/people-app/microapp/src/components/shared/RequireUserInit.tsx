@@ -46,9 +46,9 @@ export default function RequireUserInit({ children }: RequireUserInitProps) {
             name: getDisplayNameFromJWT(token) ?? "",
             email: getEmailFromJWT(token) ?? "",
           });
-
-          setInitialized(true);
         }
+
+        setInitialized(true);
       });
     };
 

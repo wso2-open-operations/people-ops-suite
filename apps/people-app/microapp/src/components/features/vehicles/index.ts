@@ -19,7 +19,6 @@ export { default as EmptyState } from "@/components/features/vehicles/EmptyState
 export { default as IconOption } from "@/components/features/vehicles/IconOption";
 export { default as OptionGroup } from "@/components/features/vehicles/OptionGroup";
 export { default as MoreOptions } from "@/components/features/vehicles/MoreOptions";
-export { default as VehicleGroup } from "@/components/features/vehicles/VehicleGroup";
 export { default as DeleteConfirmationModal } from "@/components/features/vehicles/DeleteConfirmationModal";
 export {
   default as VehicleRow,
