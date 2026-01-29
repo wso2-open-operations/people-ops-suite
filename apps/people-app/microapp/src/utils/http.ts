@@ -72,7 +72,7 @@ const useHttp = () => {
       const response = await fetch(encodedUrl, {
         method,
         body: body ? JSON.stringify(body) : null,
-        headers: headers || defaultHeaders,
+        headers: { ...defaultHeaders, ...headers },
       });
 
       let responseBody: any = "";
