@@ -14,18 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-type Callback<T> = (data?: T) => void;
+import { ErrorMessages } from "@/utils/constants";
+import { TOPIC, type LogLevel, type TopicType } from "./types";
+import { Logger } from "@/utils/logger";
 
-// Bridge event topics used for communication between the main app and micro apps.
-const TOPIC = {
-  TOKEN: "token",
-  QR_REQUEST: "qr_request",
-  SAVE_LOCAL_DATA: "save_local_data",
-  GET_LOCAL_DATA: "get_local_data",
-  ALERT: "alert",
-  CONFIRM_ALERT: "confirm_alert",
-  TOTP: "totp",
-};
+type Callback<T> = (data?: T) => void;
 
 declare global {
   interface Window {
@@ -68,7 +61,7 @@ export const getToken = (callback: Callback<string>): void => {
 export const showAlert = (
   title: string,
   message: string,
-  buttonText: string
+  buttonText: string,
 ): void => {
   if (window.nativebridge && window.ReactNativeWebView) {
     const alertData = JSON.stringify({
@@ -89,7 +82,7 @@ export const showConfirmAlert = (
   confirmButtonText: string,
   cancelButtonText: string,
   confirmCallback: () => void,
-  cancelCallback: () => void
+  cancelCallback: () => void,
 ): void => {
   if (window.nativebridge && window.ReactNativeWebView) {
     const confirmData = JSON.stringify({
@@ -115,11 +108,11 @@ export const showConfirmAlert = (
 // Scan QR Code
 export const scanQRCode = (
   successCallback: (qrData: string) => void,
-  failedToRespondCallback: (error: string) => void
+  failedToRespondCallback: (error: string) => void,
 ): void => {
   if (window.nativebridge && window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(
-      JSON.stringify({ topic: TOPIC.QR_REQUEST })
+      JSON.stringify({ topic: TOPIC.QR_REQUEST }),
     );
 
     window.nativebridge.resolveQRCode = (qrData: string) =>
@@ -136,7 +129,7 @@ export const saveLocalData = (
   key: string,
   value: any,
   callback: () => void,
-  failedToRespondCallback: (error: string) => void
+  failedToRespondCallback: (error: string) => void,
 ): void => {
   key = key.toString().replace(" ", "-").toLowerCase();
   const encodedValue = btoa(JSON.stringify(value));
@@ -146,7 +139,7 @@ export const saveLocalData = (
       JSON.stringify({
         topic: TOPIC.SAVE_LOCAL_DATA,
         data: { key, value: encodedValue },
-      })
+      }),
     );
 
     window.nativebridge.resolveSaveLocalData = callback;
@@ -161,13 +154,13 @@ export const saveLocalData = (
 export const getLocalData = (
   key: string,
   callback: (data: any | null) => void,
-  failedToRespondCallback: (error: string) => void
+  failedToRespondCallback: (error: string) => void,
 ): void => {
   key = key.toString().replace(" ", "-").toLowerCase();
 
   if (window.nativebridge && window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(
-      JSON.stringify({ topic: TOPIC.GET_LOCAL_DATA, data: { key } })
+      JSON.stringify({ topic: TOPIC.GET_LOCAL_DATA, data: { key } }),
     );
 
     window.nativebridge.resolveGetLocalData = (encodedData: {
@@ -190,11 +183,11 @@ export const getLocalData = (
 // TOTP QR Migration Data
 export const totpQrMigrationData = (
   callback: (data: string[]) => void,
-  failedToRespondCallback: (error: string) => void
+  failedToRespondCallback: (error: string) => void,
 ): void => {
   if (window.nativebridge && window.ReactNativeWebView) {
     window.ReactNativeWebView.postMessage(
-      JSON.stringify({ topic: TOPIC.TOTP })
+      JSON.stringify({ topic: TOPIC.TOTP }),
     );
 
     window.nativebridge.resolveTotpQrMigrationData = (encodedData: {
@@ -211,5 +204,44 @@ export const totpQrMigrationData = (
       failedToRespondCallback(error);
   } else {
     console.error("Native bridge is not available");
+  }
+};
+
+/**
+ * Trigger an action in the super app
+ * @param topic - The topic to trigger
+ * @param data - The data to send
+ */
+const triggerSuperAppAction = (topic: TopicType, data?: unknown): void => {
+  if (window.ReactNativeWebView) {
+    const messageData = JSON.stringify({
+      topic,
+      data,
+    });
+    window.ReactNativeWebView.postMessage(messageData);
+  } else {
+    console.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+  }
+};
+
+/**
+ * Send a log message to the native side
+ * @param message - The message to send
+ * @param data - The data to send
+ * @param level - The level of the log
+ */
+export const sendNativeLog = (
+  message?: string,
+  data?: unknown,
+  level: LogLevel = "debug",
+): void => {
+  if (window.nativebridge && window.ReactNativeWebView) {
+    triggerSuperAppAction(TOPIC.NATIVE_LOG, {
+      message,
+      data,
+      level,
+    });
+  } else {
+    Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
   }
 };
