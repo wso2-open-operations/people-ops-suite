@@ -311,7 +311,7 @@ export default function Me(
 
   const savePersonalInfo = (values: EmployeePersonalInfo) => {
     try {
-      if (employee?.id) {
+      if (employee?.employeeId) {
         const dataToSave = {
           personalEmail: values.personalEmail,
           personalPhone: values.personalPhone,

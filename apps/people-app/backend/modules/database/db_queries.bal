@@ -45,9 +45,9 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 
 # Fetch employee detailed information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Query to get employee detailed information
-isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
+isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
         e.id AS id,
         e.employee_id AS employeeId,
@@ -98,7 +98,8 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.employee_id = ${id};`;  
+        e.employee_id = ${employeeId};`;  
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
@@ -179,9 +180,9 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
 
 # Fetch employee personal information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Query to get employee personal information
-isolated function getEmployeePersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
+isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
         p.id AS id,
         nic_or_passport,
@@ -202,8 +203,8 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         nationality
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
-        WHERE e.employee_id = ${id};`;
-         
+        WHERE e.employee_id = ${employeeId};`;
+
 # Fetch emergency contacts by personal info ID.
 #
 # + personalInfoId - Personal info primary key
