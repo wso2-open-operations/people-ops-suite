@@ -170,14 +170,31 @@ export const getEmployeeStatusChipStyles =
     };
   };
 
-export default function Me(
-  {
-    employeeId,
-    readOnly = false,
-  }: { employeeId?: string; readOnly?: boolean } = {
-    readOnly: false,
-  },
-) {
+const emergencyContactItemSchema = object().shape({
+  name: string()
+    .required("Name is required")
+    .max(100, "Name must be at most 100 characters"),
+  relationship: string()
+    .required("Relationship is required")
+    .max(50, "Relationship must be at most 50 characters"),
+  telephone: string()
+    .required("Telephone is required")
+    .matches(
+      /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+      "Invalid telephone number format",
+    ),
+  mobile: string()
+    .required("Mobile is required")
+    .matches(
+      /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
+      "Invalid mobile number format",
+    ),
+});
+
+export default function Me({
+  employeeId,
+  readOnly = false,
+}: { employeeId?: string; readOnly?: boolean } = {}) {
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
@@ -210,26 +227,6 @@ export default function Me(
     setShouldRequireEmergencyContacts(has);
   }, [personalInfo]);
 
-  const emergencyContactItemSchema = object().shape({
-    name: string()
-      .required("Name is required")
-      .max(100, "Name must be at most 100 characters"),
-    relationship: string()
-      .required("Relationship is required")
-      .max(50, "Relationship must be at most 50 characters"),
-    telephone: string()
-      .required("Telephone is required")
-      .matches(
-        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid telephone number format",
-      ),
-    mobile: string()
-      .required("Mobile is required")
-      .matches(
-        /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid mobile number format",
-      ),
-  });
   const personalInfoSchema = object().shape({
     personalEmail: string()
       .nullable()
