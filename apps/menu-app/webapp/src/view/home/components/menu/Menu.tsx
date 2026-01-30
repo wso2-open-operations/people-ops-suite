@@ -19,7 +19,7 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 import { useGetMenuQuery } from "@services/menu.api";
 
-import MenuCard from "./Card";
+import MenuCard from "./MenuCard";
 
 export default function Menu() {
   const { data, isLoading, isError } = useGetMenuQuery();
