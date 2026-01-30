@@ -74,14 +74,16 @@ function VisitHistory() {
       headerName: "Time of Entry",
       minWidth: 150,
       flex: 1,
-      renderCell: (params) => toLocalDateTime(params.value),
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
     },
     {
       field: "timeOfDeparture",
       headerName: "Time of Departure",
       minWidth: 150,
       flex: 1,
-      renderCell: (params) => toLocalDateTime(params.value),
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
     },
     {
       field: "passNumber",
@@ -90,16 +92,16 @@ function VisitHistory() {
       flex: 1,
     },
     {
-      field: "name",
-      headerName: "Visitor",
+      field: "firstName",
+      headerName: "First Name",
       minWidth: 180,
       flex: 1.5,
     },
     {
-      field: "nicNumber",
-      headerName: "NIC/Passport",
-      minWidth: 160,
-      flex: 1,
+      field: "lastName",
+      headerName: "Last Name",
+      minWidth: 180,
+      flex: 1.5,
     },
     {
       field: "contactNumber",
@@ -118,18 +120,21 @@ function VisitHistory() {
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "purposeOfVisit",
       headerName: "Purpose of Visit",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "whomTheyMeet",
       headerName: "Whom They Meet",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "accessibleLocations",
@@ -165,7 +170,7 @@ function VisitHistory() {
         limit: pageSize,
         offset: page * pageSize,
         inviter: loginUserEmail || "",
-      })
+      }),
     );
   }, [dispatch, page, pageSize]);
 
