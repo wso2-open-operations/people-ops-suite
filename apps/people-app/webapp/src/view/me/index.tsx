@@ -937,7 +937,7 @@ export default function Me({
                     <Grid item xs={12} sm={6} md={3}>
                       {readOnly ? (
                         <ReadOnly
-                          label="Address Line 1 "
+                          label="Address Line 1"
                           value={values.addressLine1}
                         />
                       ) : (
