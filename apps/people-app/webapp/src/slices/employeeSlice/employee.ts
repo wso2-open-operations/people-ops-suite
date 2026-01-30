@@ -24,6 +24,7 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
 interface Employee {
+  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -50,6 +51,7 @@ interface Employee {
 }
 
 export interface EmployeeBasicInfo {
+  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -148,7 +150,7 @@ export const fetchEmployee = createAsyncThunk(
   async (employeeId: string, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employee(employeeId)
+        AppConfig.serviceUrls.employee(employeeId),
       );
       return response.data as Employee;
     } catch (error: any) {
@@ -162,12 +164,12 @@ export const fetchEmployee = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const fetchEmployeesBasicInfo = createAsyncThunk(
@@ -175,7 +177,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.employeesBasicInfo}`
+        `${AppConfig.serviceUrls.employeesBasicInfo}`,
       );
       return resp.data as EmployeeBasicInfo[];
     } catch (error: any) {
@@ -188,11 +190,11 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const createEmployee = createAsyncThunk(
@@ -201,14 +203,14 @@ export const createEmployee = createAsyncThunk(
     try {
       const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.employees,
-        payload
+        payload,
       );
       const employeeId = response.data as number;
       dispatch(
         enqueueSnackbarMessage({
           message: "Employee created successfully!",
           type: "success",
-        })
+        }),
       );
       return employeeId;
     } catch (error: any) {
@@ -221,11 +223,11 @@ export const createEmployee = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const fetchContinuousServiceRecord = createAsyncThunk(
@@ -235,7 +237,7 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
       const response = await APIService.getInstance().get(
         `${
           AppConfig.serviceUrls.continuousServiceRecord
-        }?workEmail=${encodeURIComponent(workEmail)}`
+        }?workEmail=${encodeURIComponent(workEmail)}`,
       );
       return response.data as ContinuousServiceRecordInfo[];
     } catch (error: any) {
@@ -250,12 +252,12 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 const EmployeeSlice = createSlice({
@@ -331,7 +333,7 @@ const EmployeeSlice = createSlice({
           state.state = State.success;
           state.stateMessage = "Employee created successfully!";
           state.errorMessage = null;
-        }
+        },
       )
       .addCase(createEmployee.rejected, (state, action) => {
         state.state = State.failed;

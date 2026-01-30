@@ -6,6 +6,11 @@ ALTER TABLE personal_info
   MODIFY COLUMN dob             DATE NOT NULL,
   MODIFY COLUMN nationality     VARCHAR(100) NOT NULL;
 
+ALTER TABLE employee
+  MODIFY COLUMN start_date           DATE NOT NULL,
+  MODIFY COLUMN employment_type_id   INT NOT NULL,
+  MODIFY COLUMN sub_team_id          INT NOT NULL;
+
 ALTER TABLE employee DROP COLUMN additional_manager_emails;
 
 CREATE TABLE `employee_additional_managers` (

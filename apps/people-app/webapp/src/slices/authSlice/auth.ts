@@ -50,6 +50,7 @@ export interface UserState {
 }
 
 export interface UserInfoInterface {
+  id: number;                 
   employeeId: string;
   firstName: string;
   lastName: string;
