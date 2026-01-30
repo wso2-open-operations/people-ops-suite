@@ -29,7 +29,7 @@ export default function Menu() {
   }
 
   if (isError || !data) {
-    return <ErrorHandler message={"oops something went wrong..."} />;
+    return <ErrorHandler message={"Oops something went wrong, Couldn't load the menu"} />;
   }
 
   const { date, ...meals } = data;
@@ -41,6 +41,7 @@ export default function Menu() {
       day: "numeric",
       year: "numeric",
     });
+
     return <ErrorHandler message={`No menu available on ${date}`} />;
   }
 
