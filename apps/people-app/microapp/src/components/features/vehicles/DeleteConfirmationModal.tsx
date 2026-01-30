@@ -47,7 +47,6 @@ export default function DeleteConfirmationModal({
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
   const handleConfirm = async () => {
-    setIsPending(true);
     executeWithTokenHandling(
       handleRequest,
       handleRequestWithNewToken,
