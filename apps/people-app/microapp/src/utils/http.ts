@@ -67,11 +67,6 @@ const useHttp = () => {
         Authorization: `Bearer ${token}`,
       };
 
-      // const xJwtAssertion = token;
-      // if (xJwtAssertion) {
-      //   defaultHeaders["x-jwt-assertion"] = xJwtAssertion;
-      // }
-
       const response = await fetch(encodedUrl, {
         method,
         body: body ? JSON.stringify(body) : null,
