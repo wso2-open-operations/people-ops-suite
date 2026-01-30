@@ -30,8 +30,7 @@ import {
   format as formatLicensePlate,
 } from "@/utils/helpers/numberplate";
 import { serviceUrls } from "@/config/config";
-import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
-import useHttp from "@/utils/http";
+import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 
 interface AddVehicleSheetProps {
   onClose: () => void;

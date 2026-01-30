@@ -16,7 +16,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { getToken } from "@/components/microapp-bridge";
-import { getDisplayNameFromJWT, getEmailFromJWT } from "@/utils/utils";
+import { getDisplayNameFromJWT, getEmailFromJWT } from "@/utils/http";
 import type { User } from "@/types";
 
 interface RequireUserInitProps {

@@ -29,8 +29,7 @@ import {
   AddVehicleSheet,
   DeleteConfirmationModal,
 } from "@/components/features/vehicles";
-import useHttp from "@/utils/http";
-import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
+import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import { type Response as VehicleResponse } from "@/types";
 

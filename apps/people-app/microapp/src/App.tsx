@@ -25,9 +25,9 @@ import {
 
 import { Home, VehicleManagement } from "@/pages";
 import type { PageProps, User } from "@/types";
-import { getDisplayNameFromJWT, getEmailFromJWT } from "./utils/utils";
 import { useEffect, useState } from "react";
 import { getToken } from "./components/microapp-bridge";
+import { getDisplayNameFromJWT, getEmailFromJWT } from "@/utils/http";
 
 function AnimatedRoutes({ user }: PageProps) {
   const location = useLocation();

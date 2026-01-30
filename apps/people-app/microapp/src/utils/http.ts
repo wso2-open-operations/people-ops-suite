@@ -21,7 +21,6 @@ import {
   getIdToken,
 } from "./oauth";
 import { getToken } from "../components/microapp-bridge";
-import { prepareUrlWithEmail } from "./utils";
 import { jwtDecode } from "jwt-decode";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -208,3 +207,116 @@ const useHttp = () => {
 };
 
 export default useHttp;
+
+export function executeWithTokenHandling(
+  handleRequest: ({
+    url,
+    method,
+    body,
+    successFn,
+    failFn,
+    loadingFn,
+    headers,
+    currentTry,
+  }: RequestOptions) => Promise<void>,
+  handleRequestWithNewToken: (callback: () => void) => void,
+  url: string,
+  method: HttpMethod,
+  body: Object | null,
+  successFn: (param: any) => void,
+  failFn: (param: any) => void,
+  loadingFn: (param: any) => void,
+  headers?: HeadersInit | null,
+) {
+  handleRequestWithNewToken(() => {
+    handleRequest({
+      url,
+      method,
+      body,
+      successFn,
+      failFn,
+      loadingFn,
+      headers: headers ?? undefined,
+    });
+  });
+}
+
+export function getDisplayNameFromJWT(token: string) {
+  try {
+    const base64Url: string = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join(""),
+    );
+    const payload = JSON.parse(jsonPayload);
+
+    return payload.given_name && payload.family_name
+      ? payload.given_name + " " + payload.family_name
+      : "Unknown Account";
+  } catch (e) {
+    console.error("Failed to decode JWT", e);
+    return null;
+  }
+}
+
+export function getEmailFromJWT(token: string) {
+  try {
+    const base64Url: string = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join(""),
+    );
+    const payload = JSON.parse(jsonPayload);
+
+    return payload.email || payload.sub || null;
+  } catch (e) {
+    console.error("Failed to decode JWT", e);
+    return null;
+  }
+}
+
+export function prepareUrlWithEmail(
+  urlTemplate: string,
+  token: string,
+): string {
+  const email = getEmailFromJWT(token);
+
+  if (!email) {
+    console.warn("Email not found in token, returning original URL.");
+    return encodeURI(urlTemplate);
+  }
+
+  const urlWithEmail = urlTemplate.replace(
+    "[email]",
+    encodeURIComponent(email),
+  );
+  return encodeURI(urlWithEmail);
+}
+
+export function getEmail(callback: (email: string | null) => void) {
+  getToken((token) => {
+    if (!token) return callback(null);
+
+    const email = getEmailFromJWT(token);
+    callback(email ? encodeURIComponent(email) : null);
+  });
+}
+
+export async function getEmailAsync(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    getEmail((email) => {
+      if (!email) return reject("Email not found");
+      resolve(email);
+    });
+  });
+}

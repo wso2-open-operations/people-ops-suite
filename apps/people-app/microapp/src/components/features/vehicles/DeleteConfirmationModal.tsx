@@ -16,9 +16,8 @@
 
 import { motion } from "motion/react";
 import { CircularProgress } from "@mui/material";
-import { executeWithTokenHandling, getEmailAsync } from "@/utils/utils";
 import { serviceUrls } from "@/config/config";
-import useHttp from "@/utils/http";
+import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { useState } from "react";
 
 interface DeleteConfirmationModalProps {
