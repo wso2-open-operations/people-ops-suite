@@ -273,13 +273,7 @@ function CreateVisit() {
             addVisitorPayload.contactNumber =
               draftVisitor.countryCode + draftVisitor.contactNumber;
 
-          const addVisitorAction = await dispatch(
-            addVisitor(addVisitorPayload),
-          );
-
-          if (addVisitor.fulfilled.match(addVisitorAction)) {
-            setFieldValue(`visitors.${index}.status`, VisitorStatus.Completed);
-          }
+          await dispatch(addVisitor(addVisitorPayload));
 
           dispatch(resetVisitorSubmitState());
 
@@ -298,7 +292,11 @@ function CreateVisit() {
           if (values.timeOfDeparture)
             addVisitPayload.timeOfDeparture = values.timeOfDeparture;
 
-          await dispatch(addVisit(addVisitPayload));
+          const addVisitAction = await dispatch(addVisit(addVisitPayload));
+
+          if (addVisit.fulfilled.match(addVisitAction)) {
+            setFieldValue(`visitors.${index}.status`, VisitorStatus.Completed);
+          }
         },
         "Yes",
         "Cancel",
@@ -312,19 +310,31 @@ function CreateVisit() {
       await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
         (action) => {
           if (fetchVisitor.fulfilled.match(action)) {
-            const contactNumber = phoneUtil.parse(action.payload.contactNumber);
-            const countryCode =
-              contactNumber.getCountryCode()?.toString() || "";
-            const nationalNumber =
-              contactNumber.getNationalNumber()?.toString() || "";
+            let countryCode = "";
+            let nationalNumber = "";
+
+            const rawContactNumber = action.payload.contactNumber;
+
+            if (rawContactNumber) {
+              try {
+                const contactNumber = phoneUtil.parse(rawContactNumber);
+                countryCode = contactNumber.getCountryCode()?.toString() || "";
+                nationalNumber =
+                  contactNumber.getNationalNumber()?.toString() || "";
+              } catch (error) {
+                console.warn("Invalid contact number:", rawContactNumber);
+              }
+            }
+
             const fetchedVisitor: VisitorDetail = {
               firstName: action.payload.firstName || "",
               lastName: action.payload.lastName || "",
               contactNumber: nationalNumber,
-              countryCode: "+" + countryCode,
+              countryCode: countryCode ? `+${countryCode}` : "+94",
               emailAddress: action.payload.email || "",
               status: VisitorStatus.Draft,
             };
+
             formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
           }
         },
