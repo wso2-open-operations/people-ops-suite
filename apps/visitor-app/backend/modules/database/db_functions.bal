@@ -21,7 +21,6 @@ import ballerina/sql;
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    // Encrypt sensitive fields.
     string? first_name = payload.firstName;
     string? last_name = payload.lastName;
 
@@ -32,9 +31,8 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
     if last_name is string {
         payload.lastName = check encrypt(last_name);
     }
-    
-    string email = payload.email;
-    payload.email = check encrypt(email);
+
+    payload.email = check encrypt(payload.email);
     payload.contactNumber = check encrypt(payload.contactNumber ?: "");
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
@@ -49,8 +47,10 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
+
     string? first_name = visitor.firstName;
     string? last_name = visitor.lastName;
+    string? contact_number = visitor.contactNumber;
 
     if first_name is string {
         visitor.firstName = check decrypt(first_name);
@@ -58,11 +58,10 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
     if last_name is string {
         visitor.lastName = check decrypt(last_name);
     }
-    // Decrypt sensitive fields.
-    string? contact_number = visitor.contactNumber;
     if contact_number is string {
         visitor.contactNumber = check decrypt(contact_number);
     }
+
     visitor.email = check decrypt(visitor.email);
 
     return visitor;
@@ -146,28 +145,30 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
         return visit is sql:NoRowsError ? () : visit;
     }
 
+    string? timeOfEntry = visit.timeOfEntry;
+    string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
+
     return {
         id: visit.id,
-        timeOfEntry: visit.timeOfEntry.endsWith(".0")
-            ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
-            : visit.timeOfEntry,
-        timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
-            ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
-            : visit.timeOfDeparture,
-        passNumber: visit.passNumber,
         emailHash: visit.emailHash,
-        firstName: check decrypt(visit.firstName),
-        lastName: check decrypt(visit.lastName),
-        email: check decrypt(visit.email),
-        contactNumber: check decrypt(visit.contactNumber),
         companyName: visit.companyName,
+        passNumber: visit.passNumber,
         whomTheyMeet: visit.whomTheyMeet,
         purposeOfVisit: visit.purposeOfVisit,
         accessibleLocations: accessibleLocations is string ?
             check accessibleLocations.fromJsonStringWithType() : null,
-        invitationId: visit.invitationId,
+        timeOfEntry: timeOfEntry is string ?
+                timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
+        timeOfDeparture: timeOfDeparture is string ?
+                timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) :
+                timeOfDeparture : (),
         status: visit.status,
+        firstName: visit.firstName,
+        lastName: visit.lastName,
+        contactNumber: visit.contactNumber,
+        email: visit.email,
+        invitationId: visit.invitationId,
         createdBy: visit.createdBy,
         createdOn: visit.createdOn,
         updatedBy: visit.updatedBy,
@@ -187,21 +188,24 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
     check from VisitRecord visit in resultStream
         do {
             string? accessibleLocations = visit.accessibleLocations;
+            string? timeOfEntry = visit.timeOfEntry;
+            string? timeOfDeparture = visit.timeOfDeparture;
+            string? firstName = visit.firstName;
+            string? lastName = visit.lastName;
+            string? contactNumber = visit.contactNumber;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
-                timeOfEntry: visit.timeOfEntry.endsWith(".0")
-                    ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
-                    : visit.timeOfEntry,
-                timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
-                    ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
-                    : visit.timeOfDeparture,
+                timeOfEntry: timeOfEntry is string ?
+                        timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
+                timeOfDeparture: timeOfDeparture is string ?
+                        timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) : timeOfDeparture : (),
                 passNumber: visit.passNumber,
                 emailHash: visit.emailHash,
-                firstName: check decrypt(visit.firstName),
-                lastName: check decrypt(visit.lastName),
+                firstName: firstName is string ? check decrypt(firstName) : (),
+                lastName: lastName is string ? check decrypt(lastName) : (),
                 email: check decrypt(visit.email),
-                contactNumber: check decrypt(visit.contactNumber),
+                contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,

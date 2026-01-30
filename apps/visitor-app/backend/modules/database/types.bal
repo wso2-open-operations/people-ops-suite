@@ -122,11 +122,11 @@ public type VisitRecord record {|
     # Unique identifier for the visit
     int id;
     # First name of the visitor
-    string firstName;
+    string? firstName;
     # Last name of the visitor
-    string lastName;
+    string? lastName;
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber;
     # Email Hash of the visitor
     string emailHash;
     # Email of the visitor
@@ -136,15 +136,15 @@ public type VisitRecord record {|
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet;
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit;
     # The floors and rooms that the visitor can access
     string? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    string? timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    string? timeOfDeparture;
     # Invitation ID associated with the visit
     int? invitationId;
     # Status of the visit
@@ -161,31 +161,31 @@ public type Visit record {|
     # Email Hash of the visitor
     string emailHash;
     # Company name of visitor
-    string? companyName;
+    string? companyName = ();
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet = ();
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    string? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    string? timeOfDeparture = ();
     # Status of the visit
     Status status;
     # First name of the visitor
-    string firstName;
+    string? firstName = ();
     # Last name of the visitor
-    string lastName;
+    string? lastName = ();
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber = ();
     # Email of the visitor
     string email;
     # Invitation ID associated with the visit
-    int? invitationId;
+    int? invitationId = ();
 |};
 
 # Response Record for Visits.

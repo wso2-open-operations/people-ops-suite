@@ -148,7 +148,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
-        returns http:Created|http:InternalServerError {
+        returns http:Created|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -156,6 +156,24 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
+
+        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.emailHash);
+        if existingVisitor is error {
+            string customError = "Error occurred while fetching existing visitor!";
+            log:printError(customError, existingVisitor);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if existingVisitor != () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Visitor with this email already exists!"
                 }
             };
         }
@@ -689,325 +707,325 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     };
 
-    # Update visit details of existing visit.
-    #
-    # + visitId - ID of the visit to be updated
-    # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
-    # + payload - Payload containing the visit details to be updated
-    # + return - Successfully updated or error
-    resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPayload payload)
-        returns http:Ok|http:BadRequest|http:InternalServerError|http:Forbidden {
+    // # Update visit details of existing visit.
+    // #
+    // # + visitId - ID of the visit to be updated
+    // # + action - Action to be performed on the visit (ACCEPTED, REJECTED, COMPLETED)
+    // # + payload - Payload containing the visit details to be updated
+    // # + return - Successfully updated or error
+    // resource function post visits/[int visitId]/[Action action](http:RequestContext ctx, ActionPayload payload)
+    //     returns http:Ok|http:BadRequest|http:InternalServerError|http:Forbidden {
 
-        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if invokerInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
-            return <http:InternalServerError>{
-                body: {
-                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
-        }
+    //     authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+    //     if invokerInfo is error {
+    //         log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
+    //         return <http:InternalServerError>{
+    //             body: {
+    //                 message: USER_INFO_HEADER_NOT_FOUND_ERROR
+    //             }
+    //         };
+    //     }
 
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
-            string customError = string `Non-admin users cannot ${action} visits!`;
-            log:printError(customError);
-            return <http:Forbidden>{
-                body: {
-                    message: customError
-                }
-            };
-        }
+    //     if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+    //         string customError = string `Non-admin users cannot ${action} visits!`;
+    //         log:printError(customError);
+    //         return <http:Forbidden>{
+    //             body: {
+    //                 message: customError
+    //             }
+    //         };
+    //     }
 
-        database:Visit|error? visit = database:fetchVisit(visitId);
-        if visit is () {
-            return <http:BadRequest>{
-                body: {
-                    message: "Invalid visit ID!"
-                }
-            };
-        }
-        if visit is error {
-            string customError = "Error occurred while fetching visit!";
-            log:printError(customError, visit);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
+    //     database:Visit|error? visit = database:fetchVisit(visitId);
+    //     if visit is () {
+    //         return <http:BadRequest>{
+    //             body: {
+    //                 message: "Invalid visit ID!"
+    //             }
+    //         };
+    //     }
+    //     if visit is error {
+    //         string customError = "Error occurred while fetching visit!";
+    //         log:printError(customError, visit);
+    //         return <http:InternalServerError>{
+    //             body: {
+    //                 message: customError
+    //             }
+    //         };
+    //     }
 
-        // Get visitor email for sending notifications
-        string? visitorEmail = visit.email;
+    //     // Get visitor email for sending notifications
+    //     string? visitorEmail = visit.email;
 
-        // Approve a visit.
-        if action == APPROVE {
-            if visit.status != database:REQUESTED {
-                return <http:BadRequest>{
-                    body: {
-                        message: "The visit is not in the approvable state!"
-                    }
-                };
-            }
+    //     // Approve a visit.
+    //     if action == APPROVE {
+    //         if visit.status != database:REQUESTED {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "The visit is not in the approvable state!"
+    //                 }
+    //             };
+    //         }
 
-            string? passNumber = payload.passNumber;
-            database:Floor[]? accessibleLocations = payload.accessibleLocations;
-            if passNumber is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Pass number is required when approving a visit!"
-                    }
-                };
-            }
-            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
-                return <http:BadRequest>{
-                    body: {
-                        message: "At least one accessible location is required when approving a visit!"
-                    }
-                };
-            }
+    //         string? passNumber = payload.passNumber;
+    //         database:Floor[]? accessibleLocations = payload.accessibleLocations;
+    //         if passNumber is () {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "Pass number is required when approving a visit!"
+    //                 }
+    //             };
+    //         }
+    //         if accessibleLocations is () || array:length(accessibleLocations) == 0 {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "At least one accessible location is required when approving a visit!"
+    //                 }
+    //             };
+    //         }
 
-            error? response = database:updateVisit(visitId,
-                    {
-                        status: database:APPROVED,
-                        passNumber: payload.passNumber,
-                        accessibleLocations: accessibleLocations,
-                        actionedBy: invokerInfo.email,
-                        timeOfEntry: time:utcNow()
-                    }, invokerInfo.email);
+    //         error? response = database:updateVisit(visitId,
+    //                 {
+    //                     status: database:APPROVED,
+    //                     passNumber: payload.passNumber,
+    //                     accessibleLocations: accessibleLocations,
+    //                     actionedBy: invokerInfo.email,
+    //                     timeOfEntry: time:utcNow()
+    //                 }, invokerInfo.email);
 
-            if response is error {
-                string customError = "Error occurred while approving the visit!";
-                log:printError(customError, response);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
+    //         if response is error {
+    //             string customError = "Error occurred while approving the visit!";
+    //             log:printError(customError, response);
+    //             return <http:InternalServerError>{
+    //                 body: {
+    //                     message: customError
+    //                 }
+    //             };
+    //         }
 
-            if visitorEmail is string {
-                string accessibleLocationString = organizeLocations(accessibleLocations);
+    //         if visitorEmail is string {
+    //             string accessibleLocationString = organizeLocations(accessibleLocations);
 
-                // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
-                }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
-                }
-                string|error content = email:bindKeyValues(email:visitorApproveTemplate,
-                        {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "PASS_NUMBER": passNumber.toString(),
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                        });
-                if content is error {
-                    string customError = "An error occurred while binding values to the email template!";
-                    log:printError(customError, content);
-                } else {
-                    error? emailError = email:sendEmail(
-                            {
-                                to: [visitorEmail],
-                                'from: email:fromEmailAddress,
-                                subject: email:VISIT_ACCEPTED_SUBJECT,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
-                    if emailError is error {
-                        string customError = "An error occurred while sending the approval email!";
-                        log:printError(customError, emailError);
-                    }
-                }
-            }
+    //             // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
+    //             string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+    //             if formattedFromDate is error {
+    //                 string customError = "Error occurred while formatting the visit start time!";
+    //                 log:printError(customError, formattedFromDate);
+    //             }
+    //             string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+    //             if formattedToDate is error {
+    //                 string customError = "Error occurred while formatting the visit end time!";
+    //                 log:printError(customError, formattedToDate);
+    //             }
+    //             string|error content = email:bindKeyValues(email:visitorApproveTemplate,
+    //                     {
+    //                         "TIME": time:utcToEmailString(time:utcNow()),
+    //                         "EMAIL": visitorEmail,
+    //                         "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
+    //                         "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+    //                         "TIME_OF_DEPARTURE": formattedToDate is error ?
+    //                             visit.timeOfDeparture + "(UTC)" : formattedToDate,
+    //                         "ALLOWED_FLOORS": accessibleLocationString,
+    //                         "PASS_NUMBER": passNumber.toString(),
+    //                         "CONTACT_EMAIL": email:contactUsEmail,
+    //                         "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+    //                     });
+    //             if content is error {
+    //                 string customError = "An error occurred while binding values to the email template!";
+    //                 log:printError(customError, content);
+    //             } else {
+    //                 error? emailError = email:sendEmail(
+    //                         {
+    //                             to: [visitorEmail],
+    //                             'from: email:fromEmailAddress,
+    //                             subject: email:VISIT_ACCEPTED_SUBJECT,
+    //                             template: content,
+    //                             cc: [email:receptionEmail]
+    //                         });
+    //                 if emailError is error {
+    //                     string customError = "An error occurred while sending the approval email!";
+    //                     log:printError(customError, emailError);
+    //                 }
+    //             }
+    //         }
 
-            return <http:Ok>{
-                body: {
-                    message: "Visit approved successfully!"
-                }
-            };
+    //         return <http:Ok>{
+    //             body: {
+    //                 message: "Visit approved successfully!"
+    //             }
+    //         };
 
-        }
+    //     }
 
-        // Reject a visit.
-        if action == REJECT {
-            if payload.rejectionReason is () || payload.rejectionReason == "" {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Rejection reason is required when rejecting a visit!"
-                    }
-                };
-            }
-            if visit.status != database:REQUESTED {
-                return <http:BadRequest>{
-                    body: {
-                        message: "The visit is not in the rejectable state!"
-                    }
-                };
-            }
-            error? response = database:updateVisit(
-                    visitId,
-                    {
-                        status: database:REJECTED,
-                        rejectionReason: payload.rejectionReason,
-                        actionedBy: invokerInfo.email
-                    }, invokerInfo.email);
+    //     // Reject a visit.
+    //     if action == REJECT {
+    //         if payload.rejectionReason is () || payload.rejectionReason == "" {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "Rejection reason is required when rejecting a visit!"
+    //                 }
+    //             };
+    //         }
+    //         if visit.status != database:REQUESTED {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "The visit is not in the rejectable state!"
+    //                 }
+    //             };
+    //         }
+    //         error? response = database:updateVisit(
+    //                 visitId,
+    //                 {
+    //                     status: database:REJECTED,
+    //                     rejectionReason: payload.rejectionReason,
+    //                     actionedBy: invokerInfo.email
+    //                 }, invokerInfo.email);
 
-            if response is error {
-                string customError = "Error occurred while rejecting the visits!";
-                log:printError(customError, response);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
+    //         if response is error {
+    //             string customError = "Error occurred while rejecting the visits!";
+    //             log:printError(customError, response);
+    //             return <http:InternalServerError>{
+    //                 body: {
+    //                     message: customError
+    //                 }
+    //             };
+    //         }
 
-            if visitorEmail is string {
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
-                }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
-                }
-                string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
-                        {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
+    //         if visitorEmail is string {
+    //             string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+    //             if formattedFromDate is error {
+    //                 string customError = "Error occurred while formatting the visit start time!";
+    //                 log:printError(customError, formattedFromDate);
+    //             }
+    //             string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+    //             if formattedToDate is error {
+    //                 string customError = "Error occurred while formatting the visit end time!";
+    //                 log:printError(customError, formattedToDate);
+    //             }
+    //             string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
+    //                     {
+    //                         "TIME": time:utcToEmailString(time:utcNow()),
+    //                         "EMAIL": visitorEmail,
+    //                         "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
+    //                         "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+    //                         "TIME_OF_DEPARTURE": formattedToDate is error ?
+    //                             visit.timeOfDeparture + "(UTC)" : formattedToDate,
 
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                        });
-                if content is error {
-                    string customError = "An error occurred while binding values to the email template!";
-                    log:printError(customError, content);
-                } else {
-                    error? emailError = email:sendEmail(
-                                {
-                                to: [visitorEmail],
-                                'from: email:fromEmailAddress,
-                                subject: email:VISIT_REJECTED_SUBJECT,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
-                    if emailError is error {
-                        string customError = "An error occurred while sending the rejection email!";
-                        log:printError(customError, emailError);
-                    }
-                }
-            }
-            return <http:Ok>{
-                body: {
-                    message: "Visit rejected successfully!"
-                }
-            };
-        }
+    //                         "CONTACT_EMAIL": email:contactUsEmail,
+    //                         "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+    //                     });
+    //             if content is error {
+    //                 string customError = "An error occurred while binding values to the email template!";
+    //                 log:printError(customError, content);
+    //             } else {
+    //                 error? emailError = email:sendEmail(
+    //                             {
+    //                             to: [visitorEmail],
+    //                             'from: email:fromEmailAddress,
+    //                             subject: email:VISIT_REJECTED_SUBJECT,
+    //                             template: content,
+    //                             cc: [email:receptionEmail]
+    //                         });
+    //                 if emailError is error {
+    //                     string customError = "An error occurred while sending the rejection email!";
+    //                     log:printError(customError, emailError);
+    //                 }
+    //             }
+    //         }
+    //         return <http:Ok>{
+    //             body: {
+    //                 message: "Visit rejected successfully!"
+    //             }
+    //         };
+    //     }
 
-        // Complete a visit.
-        if action == COMPLETE {
-            if visit.status != database:APPROVED {
-                return <http:BadRequest>{
-                    body: {
-                        message: "The visit is not in the completable state!"
-                    }
-                };
-            }
-            error? response = database:updateVisit(visitId,
-                    {
-                        status: database:COMPLETED,
-                        actionedBy: invokerInfo.email,
-                        timeOfDeparture: time:utcNow()
-                    }, invokerInfo.email);
+    //     // Complete a visit.
+    //     if action == COMPLETE {
+    //         if visit.status != database:APPROVED {
+    //             return <http:BadRequest>{
+    //                 body: {
+    //                     message: "The visit is not in the completable state!"
+    //                 }
+    //             };
+    //         }
+    //         error? response = database:updateVisit(visitId,
+    //                 {
+    //                     status: database:COMPLETED,
+    //                     actionedBy: invokerInfo.email,
+    //                     timeOfDeparture: time:utcNow()
+    //                 }, invokerInfo.email);
 
-            if response is error {
-                string customError = "Error occurred while completing the visits!";
-                log:printError(customError, response);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
+    //         if response is error {
+    //             string customError = "Error occurred while completing the visits!";
+    //             log:printError(customError, response);
+    //             return <http:InternalServerError>{
+    //                 body: {
+    //                     message: customError
+    //                 }
+    //             };
+    //         }
 
-            if visitorEmail is string {
-                database:Floor[]? accessibleLocations = visit.accessibleLocations;
-                if accessibleLocations is () {
-                    string customError = "No accessible locations found for the visit!";
-                    log:printError(customError);
+    //         if visitorEmail is string {
+    //             database:Floor[]? accessibleLocations = visit.accessibleLocations;
+    //             if accessibleLocations is () {
+    //                 string customError = "No accessible locations found for the visit!";
+    //                 log:printError(customError);
 
-                }
+    //             }
 
-                string accessibleLocationString = accessibleLocations is database:Floor[] ?
-                    organizeLocations(accessibleLocations) : "N/A";
+    //             string accessibleLocationString = accessibleLocations is database:Floor[] ?
+    //                 organizeLocations(accessibleLocations) : "N/A";
 
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
-                }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
-                }
-                string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
-                        {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "START_TIME": visit.timeOfEntry,
-                            "END_TIME": visit.timeOfDeparture,
-                            "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactUsEmail
-                        });
-                if content is error {
-                    string customError = "An error occurred while binding values to the email template!";
-                    log:printError(customError, content);
-                } else {
-                    error? emailError = email:sendEmail(
-                            {
-                                to: [visitorEmail],
-                                'from: email:fromEmailAddress,
-                                subject: email:VISIT_COMPLETION_SUBJECT,
-                                template: content,
-                                cc: [email:receptionEmail]
-                            });
+    //             string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
+    //             if formattedFromDate is error {
+    //                 string customError = "Error occurred while formatting the visit start time!";
+    //                 log:printError(customError, formattedFromDate);
+    //             }
+    //             string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
+    //             if formattedToDate is error {
+    //                 string customError = "Error occurred while formatting the visit end time!";
+    //                 log:printError(customError, formattedToDate);
+    //             }
+    //             string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
+    //                     {
+    //                         "TIME": time:utcToEmailString(time:utcNow()),
+    //                         "EMAIL": visitorEmail,
+    //                         "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
+    //                         "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
+    //                         "TIME_OF_DEPARTURE": formattedToDate is error ?
+    //                             visit.timeOfDeparture + "(UTC)" : formattedToDate,
+    //                         "ALLOWED_FLOORS": accessibleLocationString,
+    //                         "START_TIME": visit.timeOfEntry,
+    //                         "END_TIME": visit.timeOfDeparture,
+    //                         "PASS_NUMBER": <string>visit.passNumber,
+    //                         "CONTACT_EMAIL": email:contactUsEmail
+    //                     });
+    //             if content is error {
+    //                 string customError = "An error occurred while binding values to the email template!";
+    //                 log:printError(customError, content);
+    //             } else {
+    //                 error? emailError = email:sendEmail(
+    //                         {
+    //                             to: [visitorEmail],
+    //                             'from: email:fromEmailAddress,
+    //                             subject: email:VISIT_COMPLETION_SUBJECT,
+    //                             template: content,
+    //                             cc: [email:receptionEmail]
+    //                         });
 
-                    if emailError is error {
-                        string customError = "An error occurred while sending the completion email!";
-                        log:printError(customError, emailError);
-                    }
-                }
-            }
-            return <http:Ok>{
-                body: {
-                    message: "Visit completed successfully!"
-                }
-            };
-        }
-    }
+    //                 if emailError is error {
+    //                     string customError = "An error occurred while sending the completion email!";
+    //                     log:printError(customError, emailError);
+    //                 }
+    //             }
+    //         }
+    //         return <http:Ok>{
+    //             body: {
+    //                 message: "Visit completed successfully!"
+    //             }
+    //         };
+    //     }
+    // }
 
     # Retrieve the work email list of the surbordinates.
     #

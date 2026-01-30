@@ -182,8 +182,8 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.time_of_departure as timeOfDeparture,
             v.pass_number as passNumber,
             v.email_hash as emailHash,
-            vs.first_name,
-            vs.last_name,
+            vs.first_name as firstName,
+            vs.last_name as lastName,
             vs.email,
             vs.contact_number as contactNumber,
             v.company_name as companyName,
@@ -195,7 +195,6 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.created_on as createdOn,
             v.updated_by as updatedBy,
             v.updated_on as updatedOn,
-            vi.invitation_id as invitationId,
             COUNT(*) OVER() AS totalCount
         FROM 
             visit v
@@ -203,10 +202,6 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             visitor vs
         ON
             v.email_hash = vs.email_hash
-        LEFT JOIN
-            visit_invitation vi
-        ON
-            v.invitation_id = vi.invitation_id
     `;
 
     // Setting the filters based on the inputs.
