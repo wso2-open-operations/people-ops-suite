@@ -61,7 +61,7 @@ const useHttp = () => {
       const token = getAccessToken();
       if (!token) throw new Error("Token not found");
 
-      const encodedUrl = prepareUrlWithEmail(url, token);
+      const encodedUrl = encodeURI(url);
       const defaultHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -280,24 +280,6 @@ export function getEmailFromJWT(token: string) {
     Logger.error("Failed to decode JWT", e);
     return null;
   }
-}
-
-export function prepareUrlWithEmail(
-  urlTemplate: string,
-  token: string,
-): string {
-  const email = getEmailFromJWT(token);
-
-  if (!email) {
-    Logger.warn("Email not found in token, returning original URL.");
-    return encodeURI(urlTemplate);
-  }
-
-  const urlWithEmail = urlTemplate.replace(
-    "[email]",
-    encodeURIComponent(email),
-  );
-  return encodeURI(urlWithEmail);
 }
 
 export function getEmail(callback: (email: string | null) => void) {
