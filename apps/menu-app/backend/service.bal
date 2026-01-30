@@ -225,6 +225,44 @@ service http:InterceptableService / on new http:Listener(9090) {
             return userEmail;
         }
 
+        int? requestId = payload.id;
+        if !(requestId is ()) {
+            DinnerRequest|error? existingDinnerRequest = database:getDinnerRequestById(requestId);
+
+            if existingDinnerRequest is () {
+                log:printError(string `Dinner request with ID ${requestId} not found for user ${userEmail}`);
+                return <http:BadRequest> {
+                    body:  {
+                        message: "Dinner request not found. Invalid request ID provided."
+                    }
+                };
+            }
+
+            if existingDinnerRequest is error {
+                log:printError(string `Error retrieving dinner request with ID ${requestId} for user ${userEmail}`, 
+                    existingDinnerRequest);
+                return <http:InternalServerError> {
+                    body:  {
+                        message: "Failed to retrieve existing dinner request for update."
+                    }
+                };
+            }
+        }
+
+        DinnerRequestStatus|error? dinnerRequestStatus = database:getDinnerRequestStatusByEmail(userEmail);
+        if dinnerRequestStatus is error {
+            log:printError(string `Error occurred while fetching dinner request status for user: ${userEmail}`, dinnerRequestStatus);
+            return <http:InternalServerError> {
+                body:  {
+                    message: "Failed to fetch dinner request status."
+                }
+            };
+        }
+        
+        if dinnerRequestStatus is DinnerRequestStatus {
+            payload.id = dinnerRequestStatus.id;
+        }
+        
         transaction {
             check database:upsertDinnerRequest(payload, userEmail);
             check sheets:upsertDinnerRequest(payload, userEmail);

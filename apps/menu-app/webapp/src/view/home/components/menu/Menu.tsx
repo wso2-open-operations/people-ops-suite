@@ -19,7 +19,7 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
 import { useGetMenuQuery } from "@services/menu.api";
 
-import MenuCard from "./Card";
+import MenuCard from "./MenuCard";
 
 export default function Menu() {
   const { data, isLoading, isError } = useGetMenuQuery();
@@ -29,7 +29,7 @@ export default function Menu() {
   }
 
   if (isError || !data) {
-    return <ErrorHandler message={"oops something went wrong..."} />;
+    return <ErrorHandler message={"Oops something went wrong, Couldn't load the menu"} />;
   }
 
   const { date, ...meals } = data;
@@ -41,6 +41,7 @@ export default function Menu() {
       day: "numeric",
       year: "numeric",
     });
+
     return <ErrorHandler message={`No menu available on ${date}`} />;
   }
 

@@ -18,8 +18,8 @@ import { Box, Divider } from "@mui/material";
 import { MicroAppType } from "@/types/types";
 import { isMicroApp } from "@config/config";
 
-import DinnerOnDemand from "./components/DinnerOnDemand";
-import Menu from "./components/Menu";
+import DinnerOnDemand from "./components/dod/DinnerOnDemand";
+import Menu from "./components/menu/Menu";
 
 export default function Home() {
   if (isMicroApp === MicroAppType.Menu) return <Menu />;
