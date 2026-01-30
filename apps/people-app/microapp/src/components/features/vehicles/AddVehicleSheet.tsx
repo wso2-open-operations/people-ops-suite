@@ -31,6 +31,7 @@ import {
 } from "@/utils/helpers/numberplate";
 import { serviceUrls } from "@/config/config";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
+import { Logger } from "@/utils/logger";
 
 interface AddVehicleSheetProps {
   onClose: () => void;
@@ -94,7 +95,7 @@ function AddVehicleSheet({ onClose, onSubmit }: AddVehicleSheetProps) {
           onClose();
         },
         (error) => {
-          console.error("Error registering vehicle", error);
+          Logger.error("Error registering vehicle", error);
           setBusy(false);
         },
         (pending) => setBusy(pending),

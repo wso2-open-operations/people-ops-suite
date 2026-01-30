@@ -19,6 +19,7 @@ import { CircularProgress } from "@mui/material";
 import { serviceUrls } from "@/config/config";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { useState } from "react";
+import { Logger } from "@/utils/logger";
 
 interface DeleteConfirmationModalProps {
   id: number;
@@ -57,7 +58,7 @@ export default function DeleteConfirmationModal({
       "DELETE",
       null,
       () => onConfirm(),
-      (error) => console.log("vehicle delete failed", error),
+      (error) => Logger.error("vehicle delete failed", error),
       (pending) => setIsPending(pending),
     );
   };

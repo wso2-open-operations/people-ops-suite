@@ -32,6 +32,7 @@ import {
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import { type Response as VehicleResponse } from "@/types";
+import { Logger } from "@/utils/logger";
 
 function VehicleManagementPage() {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
@@ -62,7 +63,7 @@ function VehicleManagementPage() {
 
         setRows(vehicles);
       },
-      (error) => console.error("Error while fetching vehicle list:", error),
+      (error) => Logger.error("Error while fetching vehicle list:", error),
       (loading) => setIsLoading(loading),
     );
   };

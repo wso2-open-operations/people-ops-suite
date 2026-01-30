@@ -22,6 +22,7 @@ import {
 } from "./oauth";
 import { getToken } from "../components/microapp-bridge";
 import { jwtDecode } from "jwt-decode";
+import { Logger } from "./logger";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -77,7 +78,7 @@ const useHttp = () => {
       try {
         responseBody = await response.json();
       } catch (e) {
-        console.error("Failed to parse JSON response", e);
+        Logger.error("Failed to parse JSON response", e);
       } finally {
         if (response.status >= 200 && response.status < 300) {
           successFn(responseBody);
@@ -108,7 +109,7 @@ const useHttp = () => {
               currentTry: currentTry + 1,
             });
           } else {
-            console.error(
+            Logger.error(
               (responseBody && responseBody.error) || response.status,
             );
             if (failFn)
@@ -118,7 +119,7 @@ const useHttp = () => {
         }
       }
     } catch (err) {
-      console.error(err);
+      Logger.error(err as string);
       if (failFn) failFn();
       if (loadingFn) loadingFn(false);
     }
@@ -131,11 +132,10 @@ const useHttp = () => {
     const token = getIdToken();
 
     if (!token) {
-      console.error("Jwt token not found");
+      Logger.error("Jwt token not found");
       resFn(false);
     } else {
       const decoded = jwtDecode<{ groups?: string[] }>(token);
-      console.log("decoded", decoded);
       const userGroups = decoded?.groups ?? [];
 
       // Normalize input to an array
@@ -188,7 +188,7 @@ const useHttp = () => {
           callback(); // Await the callback
         }
       } else {
-        console.error("Token refresh failed");
+        Logger.error("Token refresh failed");
       }
 
       isTokenRequestInProgress = false;
@@ -256,7 +256,7 @@ export function getDisplayNameFromJWT(token: string) {
       ? payload.given_name + " " + payload.family_name
       : "Unknown Account";
   } catch (e) {
-    console.error("Failed to decode JWT", e);
+    Logger.error("Failed to decode JWT", e);
     return null;
   }
 }
@@ -277,7 +277,7 @@ export function getEmailFromJWT(token: string) {
 
     return payload.email || payload.sub || null;
   } catch (e) {
-    console.error("Failed to decode JWT", e);
+    Logger.error("Failed to decode JWT", e);
     return null;
   }
 }
@@ -289,7 +289,7 @@ export function prepareUrlWithEmail(
   const email = getEmailFromJWT(token);
 
   if (!email) {
-    console.warn("Email not found in token, returning original URL.");
+    Logger.warn("Email not found in token, returning original URL.");
     return encodeURI(urlTemplate);
   }
 

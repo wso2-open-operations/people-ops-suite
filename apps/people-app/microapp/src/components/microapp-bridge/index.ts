@@ -44,7 +44,7 @@ export const getToken = (callback: Callback<string>): void => {
       callback(token);
     };
   } else {
-    console.error("Native bridge is not available");
+    Logger.error("Native bridge is not available");
     callback();
   }
 };
@@ -62,7 +62,7 @@ const triggerSuperAppAction = (topic: TopicType, data?: unknown): void => {
     });
     window.ReactNativeWebView.postMessage(messageData);
   } else {
-    console.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
+    Logger.error(ErrorMessages.NATIVE_BRIDGE_NOT_AVAILABLE);
   }
 };
 
@@ -103,6 +103,6 @@ export const scanQRCode = (
     window.nativebridge.rejectQRCode = (error: string) =>
       failedToRespondCallback(error);
   } else {
-    console.error("Native bridge is not available");
+    Logger.error("Native bridge is not available");
   }
 };
