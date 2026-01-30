@@ -14,21 +14,18 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useFormik } from "formik";
 import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
-import { useMemo, useState } from "react";
-
-import { DinnerRequest, MealOption } from "@/types/types";
 import infoIcon from "@assets/images/info-icon.svg";
-import ErrorHandler from "@root/src/component/common/ErrorHandler";
-import PreLoader from "@root/src/component/common/PreLoader";
-import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
-import { useGetUserInfoQuery } from "@services/user.api";
+import ErrorHandler from "@component/common/ErrorHandler";
+import PreLoader from "@component/common/PreLoader";
 
+import { useDinnerOnDemand } from "../hooks/useDinnerOnDemand";
 import CancelModal from "./CancelModal";
+import { MealOptionBox } from "./MealOptionBox";
+import { OrderInfoSection } from "./OrderInfo";
 
 const mealOptionsBox = [
   { value: "Chicken", label: "Chicken", icon: <Ham /> },
@@ -38,63 +35,22 @@ const mealOptionsBox = [
 
 export default function DinnerOnDemand() {
   const theme = useTheme();
-
-  const { data: userInfo, isLoading: isUserLoading } = useGetUserInfoQuery();
-  const [submitDinner] = useSubmitDinnerRequestMutation();
-  const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
-
-  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
-
-  const isDodTimeActive = useMemo(() => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(16, 0, 0, 0);
-    const endTime = new Date(now);
-    endTime.setHours(19, 0, 0, 0);
-    return now >= startTime && now <= endTime;
-  }, []);
-
-  const is404 = error && "status" in error && error.status === 404;
-  const mealOptionsDefault: MealOption | null = is404 ? null : dinner?.mealOption || null;
-  const orderPlaced = mealOptionsDefault !== null;
-
-  const formik = useFormik({
-    initialValues: { mealOption: mealOptionsDefault },
-    enableReinitialize: true,
-    onSubmit: async (values) => {
-      try {
-        if (!values?.mealOption) return;
-        if (!userInfo) return;
-
-        const date = new Date().toLocaleDateString("en-CA");
-
-        const submitPayload: DinnerRequest = {
-          id: dinner?.id,
-          mealOption: values.mealOption,
-          date: date,
-          department: userInfo.department,
-          team: userInfo.team,
-          managerEmail: userInfo.managerEmail,
-        };
-
-        await submitDinner(submitPayload);
-      } catch (error) {
-        console.error("Failed to submit dinner request:", error);
-      }
-    },
-  });
-
-  const isFormDisabled = formik.isSubmitting || !isDodTimeActive;
-
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const handleOpenCancelDialog = () => {
-    setIsCancelDialogOpen(true);
-  };
-
-  const handleCloseCancelDialog = () => {
-    setIsCancelDialogOpen(false);
-  };
+  const {
+    userInfo,
+    isUserLoading,
+    error,
+    isLoading,
+    is404,
+    formik,
+    isFormDisabled,
+    mealOptionsDefault,
+    orderPlaced,
+    isCancelDialogOpen,
+    handleOpenCancelDialog,
+    handleCloseCancelDialog,
+  } = useDinnerOnDemand();
 
   if (isUserLoading) {
     return <PreLoader isLoading message="Loading user info..." />;
@@ -112,12 +68,27 @@ export default function DinnerOnDemand() {
     return <ErrorHandler message="Failed to load dinner request" />;
   }
 
+  const handleMealOptionClick = (mealValue: string) => {
+    if (isFormDisabled) return;
+
+    const isCurrentlySelected = formik.values.mealOption === mealValue;
+    const isOriginallyOrdered = mealOptionsDefault === mealValue;
+
+    if (isCurrentlySelected) {
+      if (isOriginallyOrdered && orderPlaced) return;
+      formik.setFieldValue("mealOption", null);
+    } else {
+      formik.setFieldValue("mealOption", mealValue);
+    }
+  };
+
   return (
     <>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
           Dinner On Demand
         </Typography>
+
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <Typography
             variant="body1"
@@ -137,6 +108,7 @@ export default function DinnerOnDemand() {
               boxSizing: "border-box",
             }}
           >
+            {/* Meal Options */}
             <Box
               sx={{
                 display: "flex",
@@ -146,66 +118,23 @@ export default function DinnerOnDemand() {
               }}
             >
               {mealOptionsBox.map((meal) => {
-                const isCurrentlySelected = formik.values.mealOption === meal.value;
-                const isOriginallyOrdered = mealOptionsDefault === meal.value;
                 const isUpdatingOrder =
                   orderPlaced && formik.values.mealOption !== mealOptionsDefault;
 
-                const shouldShowAsOrdered =
-                  isOriginallyOrdered && isUpdatingOrder && !isCurrentlySelected;
-
-                const handleClick = () => {
-                  if (isFormDisabled) return;
-
-                  if (isCurrentlySelected) {
-                    if (isOriginallyOrdered && orderPlaced) return;
-                    formik.setFieldValue("mealOption", null);
-                  } else {
-                    formik.setFieldValue("mealOption", meal.value);
-                  }
-                };
-
                 return (
-                  <Box
+                  <MealOptionBox
                     key={meal.value}
-                    onClick={handleClick}
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      width: "100%",
-                      border: `1px solid ${
-                        isCurrentlySelected
-                          ? theme.palette.customBorder.secondary.active
-                          : shouldShowAsOrdered
-                            ? theme.palette.customBorder.secondary.active
-                            : theme.palette.customBorder.territory.active
-                      }`,
-                      p: 2,
-                      borderRadius: 1,
-                      boxSizing: "border-box",
-                      color: theme.palette.customText.primary.p2.active,
-                      backgroundColor: isCurrentlySelected
-                        ? theme.palette.fill.secondary_light.active
-                        : shouldShowAsOrdered
-                          ? theme.palette.fill.secondary_light.active
-                          : theme.palette.surface.secondary.active,
-                      "&:hover": {
-                        border: !isCurrentlySelected
-                          ? `1px solid ${theme.palette.customBorder.primary.active}`
-                          : undefined,
-                      },
-                      opacity: isFormDisabled ? 0.5 : shouldShowAsOrdered ? 0.59 : 1,
-                      cursor: isFormDisabled ? "not-allowed" : "pointer",
-                      pointerEvents: isFormDisabled ? "none" : "auto",
-                    }}
-                  >
-                    <Typography variant="body1">{meal.label}</Typography>
-                    {meal.icon}
-                  </Box>
+                    meal={meal}
+                    isSelected={formik.values.mealOption === meal.value}
+                    isOrdered={mealOptionsDefault === meal.value && isUpdatingOrder}
+                    isDisabled={isFormDisabled}
+                    onClick={() => handleMealOptionClick(meal.value)}
+                  />
                 );
               })}
             </Box>
 
+            {/* Info Message */}
             <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
               <Box
                 component="img"
@@ -217,6 +146,7 @@ export default function DinnerOnDemand() {
                   alignItems: "center",
                 }}
               />
+
               <Typography
                 variant="body2"
                 sx={{ color: theme.palette.customText.primary.p3.active }}
@@ -226,59 +156,15 @@ export default function DinnerOnDemand() {
               </Typography>
             </Box>
 
+            {/* Order Info */}
             {mealOptionsDefault && (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Typography
-                  variant="body2"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
-                >
-                  You’ve successfully ordered a{" "}
-                  <Box
-                    component={"span"}
-                    sx={{ color: theme.palette.customText.primary.p1.active }}
-                  >
-                    {mealOptionsDefault} meal
-                  </Box>{" "}
-                  for dinner and you can collect it from ground floor.
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
-                >
-                  To update the meal{" "}
-                  <Box
-                    component={"span"}
-                    sx={{ color: theme.palette.customText.primary.p1.active }}
-                  >
-                    choose different meal option and submit.
-                  </Box>{" "}
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
-                >
-                  To Cancel the order click{" "}
-                  <Box
-                    component="span"
-                    onClick={handleOpenCancelDialog}
-                    role="button"
-                    sx={{
-                      color: "#CC5500",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      "&:hover": {
-                        fontWeight: 600,
-                      },
-                    }}
-                  >
-                    Cancel
-                  </Box>
-                </Typography>
-              </Box>
+              <OrderInfoSection
+                mealType={mealOptionsDefault}
+                onCancelClick={handleOpenCancelDialog}
+              />
             )}
 
+            {/* Submit Buttons */}
             <Button
               type="submit"
               variant="contained"
