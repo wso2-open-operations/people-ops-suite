@@ -101,7 +101,7 @@ const approvalValidationSchema = Yup.object({
 const ActiveVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, submitState, stateMessage } = useAppSelector(
-    (state: RootState) => state.visit
+    (state: RootState) => state.visit,
   );
 
   const [page, setPage] = useState<number>(0);
@@ -125,14 +125,14 @@ const ActiveVisits = () => {
         limit: pageSize,
         offset: page * pageSize,
         statusArray: [VisitStatus.requested, VisitStatus.approved],
-      })
+      }),
     );
   }, [dispatch, page, pageSize]);
 
   const handleApproveSingleVisit = async (
     visitId: string,
     passNumber: string,
-    accessibleLocations: { floor: string; rooms: string[] }[]
+    accessibleLocations: { floor: string; rooms: string[] }[],
   ) => {
     try {
       const payload = {
@@ -152,7 +152,7 @@ const ActiveVisits = () => {
           limit: pageSize,
           offset: page * pageSize,
           statusArray: [VisitStatus.requested, VisitStatus.approved],
-        })
+        }),
       );
     } catch (error) {
       console.error("Error approving visit:", error);
@@ -181,7 +181,7 @@ const ActiveVisits = () => {
               limit: pageSize,
               offset: page * pageSize,
               statusArray: [VisitStatus.requested, VisitStatus.approved],
-            })
+            }),
           );
         } catch (error) {
           console.error("Error rejecting visit:", error);
@@ -193,7 +193,7 @@ const ActiveVisits = () => {
         label: "Rejection Reason",
         mandatory: true,
         type: "textarea",
-      }
+      },
     );
   };
 
@@ -217,11 +217,11 @@ const ActiveVisits = () => {
             limit: pageSize,
             offset: page * pageSize,
             statusArray: [VisitStatus.requested, VisitStatus.approved],
-          })
+          }),
         );
       },
       "Confirm",
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -231,14 +231,28 @@ const ActiveVisits = () => {
   };
 
   const showViewAccessibleFloors = (
-    locations: { floor: string; rooms: string[] }[]
+    locations: { floor: string; rooms: string[] }[],
   ) => {
     setAccessibleFloors(locations || []);
     setViewAccessibleFloors(true);
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    {
+      field: "firstName",
+      headerName: "First Name",
+      minWidth: 180,
+
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "lastName",
+      headerName: "Last Name",
+      minWidth: 180,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "contactNumber",
       headerName: "Contact Number",
@@ -246,15 +260,27 @@ const ActiveVisits = () => {
       flex: 1,
     },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "passNumber",
+      headerName: "Pass Number",
+      minWidth: 120,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "timeOfEntry",
       headerName: "Time Of Entry",
@@ -415,7 +441,7 @@ const ActiveVisits = () => {
               handleApproveSingleVisit(
                 currentVisitId || "",
                 values.passNumber,
-                values.selectedFloorsAndRooms
+                values.selectedFloorsAndRooms,
               );
             }}
           >
