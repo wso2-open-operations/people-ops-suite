@@ -25,7 +25,7 @@ import { IconButton } from "@mui/material";
 
 export interface VehicleRowProps {
   id: number;
-  index?: number;
+  index: number;
   type: VehicleType;
   number: string;
   selected?: boolean;
@@ -67,7 +67,7 @@ function VehicleRow({
         style={{ opacity: active && !selected ? "50%" : "100%" }}
       >
         <span className="justify-self-start text-[#A6A6A6] text-[18px]">
-          {index ?? ""}
+          {index}
         </span>
         <span className="justify-self-center">
           {type === "MOTORCYCLE" ? (
