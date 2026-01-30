@@ -15,14 +15,41 @@
 // under the License.
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-import type { Menu, MetaData, RawMenu, RawMetaData } from "@/types/types";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
-import { enqueueSnackbarMessage } from "../slices/commonSlice/common";
 import { baseQueryWithRetry } from "./BaseQuery";
 
 interface FeedbackRequest {
   message: string;
   mealType?: string;
+}
+
+export interface RawMetaData {
+  title: string;
+  description: string;
+}
+
+export interface RawMenu {
+  date: string;
+  breakfast: RawMetaData;
+  juice: RawMetaData;
+  lunch: RawMetaData;
+  dessert: RawMetaData;
+  snack: RawMetaData;
+}
+
+export interface MetaData {
+  title: string | null;
+  description: string | null;
+}
+
+export interface Menu {
+  date: string;
+  breakfast: MetaData;
+  juice: MetaData;
+  lunch: MetaData;
+  dessert: MetaData;
+  snack: MetaData;
 }
 
 const transformMetaData = (data: RawMetaData): MetaData => ({

@@ -93,7 +93,6 @@ export default function ApplyTab({
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isEligible, setIsEligible] = useState(true);
   const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
@@ -109,42 +108,59 @@ export default function ApplyTab({
 
   const isLoading = leaveState === State.loading || !hasFetched;
   const isSubmitting = submitState === State.loading;
+  const lastLeaveEndDate = leaves[0]?.endDate;
+  const todayUtc = dayjs.utc().startOf("day");
+
+  // Check eligibility conditions
+  const employmentStartDateDiff =
+    todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
+  const lastSabbaticalLeaveDiff = lastLeaveEndDate
+    ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
+    : null;
+  const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
 
   useEffect(() => {
     if (userInfo?.workEmail) {
-      // Reset the leave state first to clear any cached data
-      setHasFetched(false);
-      dispatch(resetLeaveState());
-      dispatch(
-        fetchLeaveHistory({
-          email: userInfo.workEmail,
-          leaveCategory: [LeaveType.SABBATICAL],
-          statuses: [Status.APPROVED],
-          orderBy: OrderBy.DESC,
-          limit: 1,
-        }),
-      ).then(() => {
+      if (isEmploymentEligible) {
+        setHasFetched(false);
+        dispatch(resetLeaveState());
+        dispatch(
+          fetchLeaveHistory({
+            email: userInfo.workEmail,
+            leaveCategory: [LeaveType.SABBATICAL],
+            statuses: [Status.APPROVED],
+            orderBy: OrderBy.DESC,
+            limit: 1,
+          }),
+        ).then(() => {
+          setHasFetched(true);
+        });
+      } else {
         setHasFetched(true);
-      });
+        setCanRenderSabbaticalFormField(false);
+        setErrorMessage(
+          `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`,
+        );
+        setEligibilityPayload({
+          employmentStartDate: userInfo?.employmentStartDate || "",
+          lastSabbaticalLeaveEndDate: "",
+          isEligible: false,
+        });
+      }
     }
-  }, [dispatch, userInfo?.workEmail]);
+  }, [
+    dispatch,
+    userInfo?.workEmail,
+    isEmploymentEligible,
+    userInfo?.employmentStartDate,
+    sabbaticalEligibilityDurationInYears,
+  ]);
 
   useEffect(() => {
     if (leaveState !== State.success || !hasFetched) {
       return;
     }
 
-    const lastLeaveEndDate = leaves[0]?.endDate;
-    const todayUtc = dayjs.utc().startOf("day");
-
-    const employmentStartDateDiff =
-      todayUtc.diff(dayjs(userInfo?.employmentStartDate).startOf("day"), "day") - 1;
-    const lastSabbaticalLeaveDiff = lastLeaveEndDate
-      ? todayUtc.diff(dayjs(lastLeaveEndDate).startOf("day"), "day") - 1
-      : null;
-
-    // Check eligibility conditions
-    const isEmploymentEligible = employmentStartDateDiff >= sabbaticalLeaveEligibilityDuration;
     const isSabbaticalLeaveEligible =
       lastSabbaticalLeaveDiff === null ||
       lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
@@ -152,10 +168,7 @@ export default function ApplyTab({
     let eligible = true;
     let errorMsg = "";
 
-    if (!isEmploymentEligible && !isSabbaticalLeaveEligible) {
-      eligible = false;
-      errorMsg = `You are ineligible for the following reasons: (1) You must be employed for at least ${sabbaticalEligibilityDurationInYears} years, and (2) Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years.`;
-    } else if (!isEmploymentEligible) {
+    if (!isEmploymentEligible) {
       eligible = false;
       errorMsg = `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`;
       setCanRenderSabbaticalFormField(false);
@@ -165,10 +178,8 @@ export default function ApplyTab({
     }
 
     if (!eligible) {
-      setIsEligible(false);
       setErrorMessage(errorMsg);
     } else {
-      setIsEligible(true);
       setErrorMessage("");
     }
 
@@ -201,7 +212,6 @@ export default function ApplyTab({
     const diffDays = todayUtc.diff(lastSabbaticalLeaveEndDate.startOf("day"), "day") - 1;
 
     if (diffDays < sabbaticalLeaveEligibilityDuration) {
-      setIsEligible(false);
       setErrorMessage(
         `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`,
       );
@@ -210,7 +220,6 @@ export default function ApplyTab({
         isEligible: false,
       }));
     } else {
-      setIsEligible(true);
       setErrorMessage("");
       setEligibilityPayload((prev) => ({
         ...prev,

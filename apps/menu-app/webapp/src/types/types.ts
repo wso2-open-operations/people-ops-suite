@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import type { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -22,55 +21,16 @@ export type NavState = {
   expanded: number | null;
 };
 
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
+export enum MicroAppType {
+  Menu = "MENU_APP",
+  Dod = "DOD_APP",
 }
 
-export enum Role {
-  ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
-}
-
-// Auth-related types
-export interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
-  groups?: string[];
-}
-
-export interface AuthState {
-  status: State;
-  mode: "active" | "maintenance";
-  statusMessage: string | null;
-  userInfo: BasicUserInfo | null;
-  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
-  roles: Role[];
-}
-
-export interface AuthData {
-  userInfo: BasicUserInfo;
-  decodedIdToken: ExtendedDecodedIDTokenPayload;
-}
-
-export interface UserInfoInterface {
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  workEmail: string;
-  employeeThumbnail: string | null;
-  jobRole: string;
-  privileges: number[];
-  managerEmail: string;
-  department: string;
-  team: string;
-}
-
-export interface UserState {
-  state: State;
-  stateMessage: string | null;
-  errorMessage: string | null;
-  userInfo: UserInfoInterface | null;
+export enum AppState {
+  Maintenance = "MAINTENANCE",
+  Failed = "FAILED",
+  Success = "SUCCESS",
+  Loading = "LOADING",
 }
 
 export enum ConfirmationType {
@@ -97,34 +57,6 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
   element?: React.ReactNode;
-}
-
-export interface RawMetaData {
-  title: string;
-  description: string;
-}
-
-export interface RawMenu {
-  date: string;
-  breakfast: RawMetaData;
-  juice: RawMetaData;
-  lunch: RawMetaData;
-  dessert: RawMetaData;
-  snack: RawMetaData;
-}
-
-export interface MetaData {
-  title: string | null;
-  description: string | null;
-}
-
-export interface Menu {
-  date: string;
-  breakfast: MetaData;
-  juice: MetaData;
-  lunch: MetaData;
-  dessert: MetaData;
-  snack: MetaData;
 }
 
 export enum MealOption {
