@@ -365,9 +365,10 @@ export default function Me(
           ${alpha(theme.palette.background.paper, 0.6)} 0%,
           ${alpha(theme.palette.background.default, 0.35)} 100%)`
         : `linear-gradient(135deg,
-          ${alpha(orange, 0.14)} 0%,
-          ${alpha(orange, 0.08)} 45%,
-          ${alpha("#ffffff", 0.9)} 100%)`,
+          ${alpha(orange, 0.18)} 0%,
+          ${alpha(orange, 0.1)} 28%,
+          ${alpha("#ffffff", 0.92)} 62%,
+          ${alpha("#ffffff", 0.96)} 100%)`,
 
       "&:after": {
         content: '""',
@@ -375,14 +376,8 @@ export default function Me(
         inset: 0,
         pointerEvents: "none",
         background: isDark
-          ? `radial-gradient(650px circle at 12% 20%, ${alpha(
-              orange,
-              0.18,
-            )}, transparent 55%)`
-          : `radial-gradient(720px circle at 14% 22%, ${alpha(
-              orange,
-              0.22,
-            )}, transparent 55%)`,
+          ? `radial-gradient(520px circle at 32% 38%, ${alpha(orange, 0.22)}, transparent 62%)`
+          : `radial-gradient(520px circle at 32% 38%, ${alpha(orange, 0.3)}, transparent 62%)`,
       },
     };
   };
