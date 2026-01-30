@@ -83,7 +83,7 @@ const useHttp = () => {
           // isGatewayForbidden = true;
         }
       } finally {
-        if ([200, 201, 202].includes(response.status)) {
+        if (response.status >= 200 && response.status < 300) {
           successFn(responseBody);
           if (loadingFn) loadingFn(false);
         } else {
