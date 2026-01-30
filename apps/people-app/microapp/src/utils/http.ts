@@ -73,14 +73,11 @@ const useHttp = () => {
       });
 
       let responseBody: any = "";
-      // let isGatewayForbidden = false;
 
       try {
         responseBody = await response.json();
       } catch (e) {
-        if (response.status === 403) {
-          // isGatewayForbidden = true;
-        }
+        console.error("Failed to parse JSON response", e);
       } finally {
         if (response.status >= 200 && response.status < 300) {
           successFn(responseBody);
