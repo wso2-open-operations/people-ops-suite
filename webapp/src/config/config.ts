@@ -83,6 +83,7 @@ export const evidenceEnabledRating = window.config?.EVIDENCE_ENABLED_RATING ?? "
 export const appConfig = {
   serviceUrls: {
     userPrivileges: serviceBaseUrl + "/user-privileges",
+    userInfo: serviceBaseUrl + "/user-info",
     userData: serviceBaseUrl + "/employees",
     parCycles: serviceBaseUrl + "/par-cycles",
     configurations: serviceBaseUrl + "/meta/configurations",

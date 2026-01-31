@@ -7,53 +7,58 @@
 
 import Layout from "../layout/Layout";
 import Error from "../layout/pages/404";
-import { RequestState } from "@utils/types";
-import { uiMessages } from "@config/constant";
 import PreLoader from "@components/common/PreLoader";
 import { getActiveRoutesV2, routes } from "../route";
-import Maintenance from "../layout/pages/Maintenance";
 import ErrorHandler from "@components/common/ErrorHandler";
 import { RootState, useAppSelector } from "../slices/store";
-import { selectEmployeeMapStatus } from "@slices/metaSlice";
-import { selectEmployeeInfoStatus } from "@slices/authSlice";
-import { selectMaintenanceStatus } from "@slices/healthSlice";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
+import { useEffect, useMemo, useState } from "react";
+
 const AppHandler = () => {
-  const auth = useAppSelector((state: RootState) => state.auth);
-  const employeeInfoStatus = useAppSelector(selectEmployeeInfoStatus);
-  const maintenanceStatus = useAppSelector(selectMaintenanceStatus);
-  const employeeMetaDataStatus = useAppSelector(selectEmployeeMapStatus);
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <Layout />,
-      errorElement: <Error />,
-      children: getActiveRoutesV2(routes, auth.roles),
-    },
-  ]);
-
-  return (
-    <>
-      {(auth.status === RequestState.LOADING ||
-        employeeInfoStatus === RequestState.LOADING ||
-        employeeMetaDataStatus === RequestState.LOADING) && <PreLoader isLoading={true} message={auth.statusMessage} />}
-
-      {auth.status === RequestState.SUCCEEDED &&
-        employeeInfoStatus === RequestState.SUCCEEDED &&
-        !maintenanceStatus &&
-        employeeMetaDataStatus === RequestState.SUCCEEDED && <RouterProvider router={router} />}
-
-      {auth.status === RequestState.FAILED && <ErrorHandler message={auth.errorMessage} />}
-
-      {(auth.employeeInfoStatus === RequestState.FAILED && !maintenanceStatus) ||
-        (employeeMetaDataStatus === RequestState.FAILED && (
-          <ErrorHandler message={uiMessages.error.fetchUserDetails} />
-        ))}
-
-      {maintenanceStatus && <Maintenance />}
-    </>
+  const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
+    "loading",
   );
+
+  const auth = useAppSelector((state: RootState) => state.auth);
+
+  const router = useMemo(
+    () =>
+      createBrowserRouter([
+        {
+          path: "/",
+          element: <Layout />,
+          errorElement: <Error />,
+          children: getActiveRoutesV2(routes, auth.roles),
+        },
+      ]),
+    [auth.roles],
+  );
+
+  useEffect(() => {
+    if (auth.status === "loading") {
+      setAppState("loading");
+    } else if (auth.status === "succeeded") {
+      setAppState("success");
+    } else if (auth.status === "failed") {
+      setAppState("failed");
+    }
+  }, [auth.status]);
+
+  const renderApp = () => {
+    switch (appState) {
+      case "loading":
+        return <PreLoader isLoading={true} message={"We are getting things ready ..."} />;
+
+      case "failed":
+        return <ErrorHandler message={auth.statusMessage} />;
+
+      case "success":
+        return <RouterProvider router={router} />;
+    }
+  };
+
+  return <>{renderApp()}</>;
 };
 
 export default AppHandler;

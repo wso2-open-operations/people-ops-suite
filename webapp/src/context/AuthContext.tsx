@@ -20,13 +20,12 @@ import { useAuthContext, BasicUserInfo, SecureApp } from "@asgardeo/auth-react";
 import {
   setUserAuthData,
   loadPrivileges,
-  loadEmployeeInfo,
 } from "@slices/authSlice";
 
 import { useAppDispatch } from "../slices/store";
 import LoginView from "@components/ui/LoginView";
 import PreLoader from "@components/common/PreLoader";
-import { fetchEmployees } from "@slices/metaSlice";
+import { getUserInfo } from "@slices/userSlice";
 
 type AuthContextType = {
   revokeToken: () => void;
@@ -57,13 +56,6 @@ const AppAuthProvider = (props: AppAuthProviderProps) => {
     appState === "active" && setOpen(true);
   };
 
-  const { getRemainingTime, activate } = useIdleTimer({
-    onPrompt,
-    timeout,
-    promptBeforeIdle,
-    throttle: 500,
-  });
-
   const {
     signOut,
     getDecodedIDToken,
@@ -71,26 +63,27 @@ const AppAuthProvider = (props: AppAuthProviderProps) => {
     getBasicUserInfo,
     revokeAccessToken,
     refreshAccessToken,
+    getIDToken,
     isAuthenticated,
     state,
   } = useAuthContext();
 
-  const refreshToken = () => {
-    return new Promise<{ idToken: string }>(async (resolve) => {
-      const userIsAuthenticated = await isAuthenticated();
-      if (userIsAuthenticated) {
-        resolve({ idToken: await getAccessToken() });
-      } else {
-        refreshAccessToken()
-          .then(async (res) => {
-            const accessToken = await getAccessToken();
-            resolve({ idToken: accessToken });
-          })
-          .catch((error) => {
-            appSignOut();
-          });
-      }
-    });
+  // --- FIX 1: Ensure Refresh Token returns 'idToken' ---
+  const refreshToken = async (): Promise<{ idToken: string }> => { 
+    if (state.isAuthenticated) {
+      const token = await getIDToken();
+      return { idToken: token }; 
+    }
+
+    try {
+      await refreshAccessToken();
+      const token = await getIDToken(); // Use getIDToken here too!
+      return { idToken: token }; 
+    } catch (error) {
+      console.error("Token refresh failed: ", error);
+      await appSignOut();
+      throw error;
+    }
   };
 
   useEffect(() => {
@@ -110,33 +103,33 @@ const AppAuthProvider = (props: AppAuthProviderProps) => {
     }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (appState === "active") {
       if (state.isAuthenticated) {
         Promise.all([
           getBasicUserInfo(),
-          getAccessToken(),
+          getIDToken(),        // <--- CHANGE 1: Get ID Token (was getAccessToken)
           getDecodedIDToken(),
-        ]).then(async ([userInfo, accessToken, decodedIdToken]) => {
+        ]).then(async ([userInfo, idToken, decodedIdToken]) => { // <--- CHANGE 2: Name it idToken
+          
           dispatch(
             setUserAuthData({
               userInfo: userInfo,
-              accessToken: accessToken,
+              // You can still get the access token here if you really need it for Redux
+              accessToken: idToken, 
               decodedIdToken: decodedIdToken,
             })
           );
+          
+          // CHANGE 3: Pass 'idToken' to ApiService
+          new ApiService(idToken, refreshToken, dispatch);
 
-          setUser(userInfo);
-          new ApiService(accessToken, refreshToken, dispatch);
-          dispatch(loadPrivileges());
-          if (userInfo?.email) {
-            dispatch(loadEmployeeInfo(userInfo.email));
-          }
-          dispatch(fetchEmployees());
+          await dispatch(getUserInfo()).then(() => {
+             dispatch(loadPrivileges());
+          });
         });
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appState, state.isAuthenticated]);
 
   const revokeToken = () => {
