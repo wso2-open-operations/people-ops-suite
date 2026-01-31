@@ -1,8 +1,11 @@
 window.config = {
-  APP_NAME: "Sample App-Dev",
-  REACT_APP_BACKEND_BASE_URL: "",
-  ASGARDEO_CLIENT_ID: "",
-  ASGARDEO_BASE_URL: "",
-  AUTH_SIGN_IN_REDIRECT_URL: "",
-  AUTH_SIGN_OUT_REDIRECT_URL: "",
+  BACKEND_BASE_URL: "",
+  ASGARDEO_CLIENT_ID: "xxxx",
+  ASGARDEO_BASE_URL: "https://api.asgardeo.io/t/xxxx",
+  AUTH_SIGN_IN_REDIRECT_URL: "http://localhost:3000",
+  AUTH_SIGN_OUT_REDIRECT_URL: "http://localhost:3000",
+  DEPLOYED_ENVIRONMENT: "Staging",
+  ADMIN_USER_GROUP : "stg-admin.par.all.apps",
+  EMPLOYEE_USER_GROUP: "wso2.all.employees",
+  TOP5P20PENABLEDRATING: "Successful"
 };

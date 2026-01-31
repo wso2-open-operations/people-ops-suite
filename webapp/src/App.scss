@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* IBM Plex Sans */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('./assets/fonts/IBMPlexSans-Regular.ttf') format('ttf');
+  font-weight: normal;
+  font-display: swap;
+  font-style: normal;
+}
+
+/* Poppins Regular */
+@font-face {
+  font-family: 'Poppins';
+  src: url('./assets/fonts/Poppins-Regular.ttf') format('ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Poppins Bold */
+@font-face {
+  font-family: 'Poppins';
+  src: url('./assets/fonts/Poppins-Bold.ttf') format('ttf');
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Paytone One */
+@font-face {
+  font-family: 'Paytone One';
+  src: url('./assets/fonts/PaytoneOne-Regular.ttf') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+* {
+  font-family: "Poppins", sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.menu-tooltip {
+  display: inline-block;
+  position: fixed;
+  padding: 5px 15px;
+  border-radius: 3px;
+  left: 90px;
+  background: #212A30;
+  opacity: 0;
+  visibility: hidden;
+  font-size: 13px;
+  letter-spacing: .5px;
+  
+
+  &:before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: -4px;
+    top: 11.5px;
+    transform: rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background-color: inherit;
+  }
+ 
+}

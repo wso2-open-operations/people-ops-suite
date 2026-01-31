@@ -1,22 +1,12 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
 
-export const SnackMessage = {
+export const snackMessages = {
   success: {
-    addCollections: "Successfully added the Collection",
     parCycleCreation: "Successfully created the PAR cycle",
     sendReminder: "Successfully sent",
     parCycleClosing: "Successfully closed the PAR cycle",
@@ -47,12 +37,6 @@ export const SnackMessage = {
   },
   error: {
     common: "Something went wrong",
-    fetchCollectionsMessage: "Unable to retrieve list of selected Collections",
-    addCollections: "Unable to create the Collection",
-    fetchEmployees: "Unable to retrieve list of Employees",
-    insufficientPrivileges: "Insufficient Privileges",
-    fetchAppConfigMessage: "Unable to retrieve app configurations",
-    fetchPrivileges: "Failed to fetch Privileges",
     fetchGlobalParConfigs: "Error while retrieving global configurations",
     updateGlobalParConfigs: "Error while updating global configurations",
 
@@ -397,8 +381,3 @@ export const SANITIZE_CONFIG = {
   ALLOWED_URI_REGEXP:
     /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
-
-
-export const APP_DESC = " Internal App Product Template.";
-
-export const redirectUrl = "iapm-marketplace-redirect-url";

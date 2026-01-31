@@ -1,85 +1,96 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-import { HomeIcon } from "lucide-react";
-import { CircleQuestionMark } from "lucide-react";
-import type { RouteObject } from "react-router-dom";
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
 
+import { NonIndexRouteObject } from "react-router-dom";
+import { View } from "./views";
 import React from "react";
-import ShieldIcon from "@mui/icons-material/Shield";
-import { Role } from "@slices/authSlice/auth";
-import { isIncludedRole } from "@utils/utils";
-import { View } from "@view/index";
+import { isIncludedRole } from "./utils/utils";
 
-import type { RouteDetail, RouteObjectWithRole } from "./types/types";
+// icons
+import DataUsageIcon from "@mui/icons-material/DataUsage";
+import GroupsIcon from "@mui/icons-material/Groups";
+import HistoryIcon from "@mui/icons-material/History";
+import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
+import ShieldIcon from "@mui/icons-material/Shield";
+
+import { Role } from "@utils/types";
+
+export interface RouteObjectWithRole extends NonIndexRouteObject {
+  allowRoles: Role[];
+  icon:
+    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+    | undefined;
+  text: string;
+  children?: RouteObjectWithRole[];
+  bottomNav?: boolean;
+}
+
+interface RouteDetail {
+  path: string;
+  allowRoles: Role[];
+  icon:
+    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+    | undefined;
+  text: string;
+  bottomNav?: boolean;
+}
 
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
-    text: "Home",
-    icon: React.createElement(HomeIcon),
-    element: React.createElement(View.firstView),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    text: "Employee Portal",
+    icon: React.createElement(DataUsageIcon),
+    element: React.createElement(View.OngoingCycleView),
+    allowRoles: [Role.EMPLOYEE],
   },
   {
-    path: "/help",
-    text: "Help & Support",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    bottomNav: true,
+    path: "/lead-portal",
+    text: "Lead Portal",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.LeadPortal),
+    allowRoles: [Role.TEAM_LEAD],
   },
   {
     path: "/admin-portal",
     text: "Admin Portal",
     icon: React.createElement(ShieldIcon),
     element: React.createElement(View.AdminPortal),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+    allowRoles: [Role.ADMIN],
   },
-
   {
-    path: "/page-two",
-    text: "Page 2",
-    icon: React.createElement(CircleQuestionMark),
-    element: React.createElement(View.pageTwo),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    children: [
-      {
-        path: "nested-page",
-        text: "Nested Page",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-      {
-        path: "nested-page-2",
-        text: "Nested Page 2",
-        icon: React.createElement(CircleQuestionMark),
-        element: React.createElement(View.nestedPage),
-        allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-      },
-    ],
+    path: "/history",
+    text: "PAR History",
+    icon: React.createElement(HistoryIcon),
+    element: React.createElement(View.ParHistory),
+    allowRoles: [Role.EMPLOYEE],
+  },
+  {
+    path: "/settings",
+    text: "Settings",
+    icon: React.createElement(SettingsIcon),
+    element: React.createElement(View.GlobalSettings),
+    allowRoles: [Role.ADMIN],
+  },
+  {
+    path: "/profile",
+    text: "Profile",
+    icon: React.createElement(PersonIcon),
+    element: React.createElement(View.Profile),
+    allowRoles: [Role.EMPLOYEE],
   },
 ];
 
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: string[],
+  roles: Role[]
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
-  const routesObj: RouteObjectWithRole[] = [];
+  var routesObj: RouteObjectWithRole[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
@@ -92,50 +103,15 @@ export const getActiveRoutesV2 = (
   return routesObj;
 };
 
-export const getActiveRoutes = (roles: string[]): RouteObject[] => {
-  const routesObj: RouteObject[] = [];
+export const getActiveRouteDetails = (roles: Role[]): RouteDetail[] => {
+  var routesObj: RouteDetail[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
+        path: routeObj.path ? routeObj.path : "",
         ...routeObj,
       });
     }
   });
   return routesObj;
-};
-
-export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
-  const routesObj: RouteDetail[] = [];
-  routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        ...routeObj,
-        path: routeObj.path ?? "",
-      });
-    }
-  });
-  return routesObj;
-};
-
-interface getActiveParentRoutesProps {
-  routes: RouteObjectWithRole[] | undefined;
-  roles: string[];
-}
-
-export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
-  if (!routes) return [];
-
-  let activeParentPaths: string[] = [];
-
-  routes.forEach((routeObj) => {
-    if (!routeObj.element) return;
-
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      if (routeObj.path) {
-        activeParentPaths.push(routeObj.path);
-      }
-    }
-  });
-
-  return activeParentPaths;
 };

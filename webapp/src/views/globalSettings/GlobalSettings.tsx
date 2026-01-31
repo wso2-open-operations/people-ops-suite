@@ -1,0 +1,411 @@
+import {
+  Box,
+  Fade,
+  Grid,
+  Paper,
+  Typography,
+  IconButton,
+  Button,
+  Divider,
+  TextField,
+  Autocomplete,
+  Chip,
+  useTheme,
+} from "@mui/material";
+
+import SettingsIcon from "@mui/icons-material/Settings";
+
+import { useEffect, useState } from "react";
+import {
+  fetchConfigurations,
+  selectGlobalConfig,
+  selectConfigStatus,
+  updateConfigurations,
+} from "@slices/metaSlice";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useFormik } from "formik";
+import * as yup from "yup";
+import { LoadingEffect } from "@components/ui/Loading";
+import { uiMessages } from "@config/constant";
+import { ParConfigurations, RequestState } from "@utils/types";
+import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
+import { tokens } from "../../theme";
+
+const GlobalSettingsView = () => {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
+  const globalConfigStatus = useAppSelector(selectConfigStatus);
+  const dispatch = useAppDispatch();
+  const globalConfig = useAppSelector(selectGlobalConfig);
+
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
+    useState(false);
+  const openConfirmationDialog = () => setIsConfirmationDialogOpen(true);
+  const closeConfirmationDialog = () => {
+    setSubmitting(false);
+    setIsConfirmationDialogOpen(false);
+  };
+
+  const [hasFormValuesChanged, setHasFormValuesChanged] = useState(false);
+
+  const validationSchema = yup.object().shape({
+    employeeParQuestion: yup.string().trim().required("Required"),
+    threeSixtyReviewQuestion: yup.string().trim().required("Required"),
+    parRatings: yup
+      .array()
+      .of(yup.string())
+      .min(1, "At least one rating is required")
+      .required("At least one rating is required"),
+    threeSixtyReviewRatings: yup
+      .array()
+      .of(yup.string())
+      .min(1, "At least one rating is required")
+      .required("At least one rating is required"),
+  });
+
+  const {
+    values,
+    errors,
+    touched,
+    setValues,
+    handleChange,
+    handleBlur,
+    isSubmitting,
+    handleSubmit,
+    setFieldValue,
+    setSubmitting,
+  } = useFormik({
+    initialValues: {
+      employeeParQuestion: "",
+      threeSixtyReviewQuestion: "",
+      parRatings: [] as string[],
+      threeSixtyReviewRatings: [] as string[],
+    },
+    validationSchema,
+    onSubmit: () => {
+      openConfirmationDialog();
+    },
+  });
+
+  const handleConfirmationProceed = async () => {
+    closeConfirmationDialog();
+
+    const {
+      employeeParQuestion,
+      threeSixtyReviewQuestion,
+      parRatings,
+      threeSixtyReviewRatings,
+    } = values;
+
+    const formattedValues = {
+      employeeParQuestion: employeeParQuestion.trim(),
+      threeSixtyReviewQuestion: threeSixtyReviewQuestion.trim(),
+      parRatings,
+      threeSixtyReviewRatings,
+    };
+
+    await dispatch(updateConfigurations(formattedValues));
+    setSubmitting(false);
+  };
+
+  const setFormValues = (globalConfig: ParConfigurations) => {
+    setValues({
+      employeeParQuestion: globalConfig.employeeParQuestion || "",
+      threeSixtyReviewQuestion: globalConfig.threeSixtyReviewQuestion || "",
+      parRatings: globalConfig.parRatings || [],
+      threeSixtyReviewRatings: globalConfig.threeSixtyReviewRatings || [],
+    });
+  };
+
+  const clearEdits = () => {
+    setFormValues(globalConfig);
+  };
+
+  useEffect(() => {
+    const hasChanged = Object.entries(values).some(
+      ([key, value]) =>
+        key in globalConfig &&
+        globalConfig[key as keyof ParConfigurations] !== value
+    );
+    setHasFormValuesChanged(hasChanged);
+  }, [values, globalConfig, globalConfigStatus]);
+
+  useEffect(() => {
+    const fetchGlobalConfigurations = async () => {
+      await dispatch(fetchConfigurations());
+    };
+
+    fetchGlobalConfigurations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (globalConfigStatus === RequestState.SUCCEEDED) {
+      setFormValues(globalConfig);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalConfigStatus, globalConfig]);
+
+  return (
+    <Fade in={true}>
+      <Grid>
+        <Paper
+          square
+          className="paper"
+          variant="outlined"
+          sx={{
+            minHeight: "calc(835px)",
+            borderRadius: "5px",
+            minWidth: "1200px",
+          }}
+        >
+          <Grid item>
+            <Grid
+              item
+              xs={12}
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                margin: "10px",
+              }}
+            >
+              <Grid
+                item
+                xs={12}
+                style={{
+                  display: "flex",
+                  justifyContent: "left",
+                }}
+              >
+                <IconButton
+                  color="primary"
+                  component="label"
+                  onClick={() => {}}
+                >
+                  <SettingsIcon fontSize="large" />
+                </IconButton>
+                <Typography
+                  variant="h4"
+                  sx={{ marginTop: "12px", marginLeft: "10px" }}
+                >
+                  Settings
+                </Typography>
+              </Grid>
+              <Grid item></Grid>
+            </Grid>
+            <Box alignItems="center">
+              <Grid item xs={12} sm={12} paddingY={3} mx={4}>
+                <Typography variant="h4" gutterBottom>
+                  Global PAR Configurations
+                </Typography>
+                <Divider></Divider>
+              </Grid>
+
+              {globalConfigStatus === RequestState.LOADING && (
+                <LoadingEffect
+                  message={uiMessages.loading.pageLoading}
+                  isCircularLoading={true}
+                />
+              )}
+
+              {globalConfigStatus === RequestState.SUCCEEDED && (
+                <Box mx={5}>
+                  <form onSubmit={handleSubmit}>
+                    <Grid container spacing={1}>
+                      <Box
+                        paddingY={2}
+                        sx={{
+                          height: "calc(100vh - 350px)",
+                          overflow: "auto",
+                          borderBottom: `1px solid ${colors.customColors.gray}`,
+                        }}
+                      >
+                        <Grid container spacing={1}>
+                          <Grid item xs={12} sm={3}>
+                            <Typography paddingTop={1}>
+                              Employee PAR question:
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={8}>
+                            <TextField
+                              aria-label="employee par question"
+                              size="small"
+                              multiline
+                              fullWidth
+                              minRows={4}
+                              name="employeeParQuestion"
+                              value={values.employeeParQuestion}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              error={
+                                touched.employeeParQuestion &&
+                                Boolean(errors.employeeParQuestion)
+                              }
+                              helperText={
+                                touched.employeeParQuestion &&
+                                errors.employeeParQuestion
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={1} />
+
+                          <Grid item xs={12} sm={3}>
+                            <Typography paddingTop={1}>
+                              360° feedback question:
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={8}>
+                            <TextField
+                              aria-label="three sixty review question"
+                              size="small"
+                              multiline
+                              fullWidth
+                              minRows={4}
+                              name="threeSixtyReviewQuestion"
+                              value={values.threeSixtyReviewQuestion}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              error={
+                                touched.threeSixtyReviewQuestion &&
+                                Boolean(errors.threeSixtyReviewQuestion)
+                              }
+                              helperText={
+                                touched.threeSixtyReviewQuestion &&
+                                errors.threeSixtyReviewQuestion
+                              }
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={1} />
+
+                          <Grid item xs={12} sm={3}>
+                            <Typography paddingTop={1}>PAR ratings:</Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Autocomplete
+                              multiple
+                              id="parRatings"
+                              options={[]}
+                              value={values.parRatings}
+                              freeSolo
+                              onChange={(event, newValue) => {
+                                setFieldValue("parRatings", newValue);
+                              }}
+                              renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                  <Chip
+                                    variant="outlined"
+                                    label={option}
+                                    {...getTagProps({ index })}
+                                  />
+                                ))
+                              }
+                              renderInput={(params) => (
+                                <TextField
+                                  aria-label="par ratings"
+                                  {...params}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{ minWidth: 300 }}
+                                  onBlur={handleBlur}
+                                  error={
+                                    touched.parRatings &&
+                                    Boolean(errors.parRatings)
+                                  }
+                                  helperText={
+                                    touched.parRatings && errors.parRatings
+                                  }
+                                />
+                              )}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={3} />
+
+                          <Grid item xs={12} sm={3}>
+                            <Typography paddingTop={1}>
+                              360° feedback ratings:
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <Autocomplete
+                              multiple
+                              id="threeSixtyReviewRatings"
+                              options={[]}
+                              value={values.threeSixtyReviewRatings}
+                              freeSolo
+                              onChange={(event, newValue) => {
+                                setFieldValue(
+                                  "threeSixtyReviewRatings",
+                                  newValue
+                                );
+                              }}
+                              renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                  <Chip
+                                    variant="outlined"
+                                    label={option}
+                                    {...getTagProps({ index })}
+                                  />
+                                ))
+                              }
+                              renderInput={(params) => (
+                                <TextField
+                                  aria-label="360° ratings"
+                                  {...params}
+                                  variant="outlined"
+                                  size="small"
+                                  sx={{ minWidth: 300 }}
+                                  onBlur={handleBlur}
+                                  error={
+                                    touched.threeSixtyReviewRatings &&
+                                    Boolean(errors.threeSixtyReviewRatings)
+                                  }
+                                  helperText={
+                                    touched.threeSixtyReviewRatings &&
+                                    errors.threeSixtyReviewRatings
+                                  }
+                                />
+                              )}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={3} />
+                        </Grid>
+                      </Box>
+                      <Grid item sm={12} display="flex" gap={1} my={2}>
+                        <Button
+                          variant="outlined"
+                          onClick={clearEdits}
+                          disabled={!hasFormValuesChanged}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          variant="contained"
+                          type="submit"
+                          disabled={isSubmitting || !hasFormValuesChanged}
+                        >
+                          Save
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </form>
+                </Box>
+              )}
+              <ConfirmationDialog
+                open={isConfirmationDialogOpen}
+                onClose={closeConfirmationDialog}
+                title={uiMessages.dialog.updateGlobalParConfigs.title}
+                message={uiMessages.dialog.updateGlobalParConfigs.message}
+                okText={uiMessages.dialog.updateGlobalParConfigs.okText}
+                onConfirm={handleConfirmationProceed}
+                ariaLabelledby="alert-par-update-global-configs-title"
+                ariaDescribedby="alert-par-update-global-configs-description"
+              />
+            </Box>
+          </Grid>
+        </Paper>
+      </Grid>
+    </Fade>
+  );
+};
+
+export default GlobalSettingsView;

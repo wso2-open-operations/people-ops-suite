@@ -1,110 +1,97 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
 //
-// WSO2 LLC. licenses this file to you under the Apache License,
-// Version 2.0 (the "License"); you may not use this file except
-// in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
+// This software is the property of WSO2 LLC. and its suppliers, if any.
+// Dissemination of any information or reproduction of any material contained
+// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
+// You may not alter or remove any copyright or other notice from copies of this content.
 
+import { snackMessages, USER_TIMEZONE_OFFSET } from "@config/constant";
+import { showSnackBarMessage } from "@slices/commonSlice/common";
+import { createSetMaintenanceStatusAction } from "@slices/healthSlice";
+import axios, { AxiosInstance, AxiosResponse, AxiosError, CancelTokenSource } from "axios";
+import { Dispatch } from "redux";
 import * as rax from "retry-axios";
-import axios, { AxiosInstance, CancelTokenSource } from "axios";
 
-export class APIService {
+export class ApiService {
   private static _instance: AxiosInstance;
   private static _idToken: string;
   private static _cancelTokenSource = axios.CancelToken.source();
-  private static _cancelTokenMap: Map<string, CancelTokenSource> = new Map();
-  private static callback: () => Promise<{ accessToken: string }>;
+  private static callback: () => Promise<{ idToken: string }>;
 
-  private static _isRefreshing = false;
-  private static _refreshPromise: Promise<{ accessToken: string }> | null = null;
+  constructor(idToken: string, callback: () => Promise<{ idToken: string }>, dispatch: Dispatch) {
+    ApiService._instance = axios.create();
+    rax.attach(ApiService._instance);
 
-  constructor(idToken: string, callback: () => Promise<{ accessToken: string }>) {
-    APIService._instance = axios.create();
-    rax.attach(APIService._instance);
+    ApiService._idToken = idToken;
+    ApiService.updateRequestInterceptor();
+    ApiService.callback = callback;
 
-    APIService._idToken = idToken;
-    APIService.updateRequestInterceptor();
-    APIService.callback = callback;
-    (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
+    ApiService._instance.interceptors.response.use(
+      (response: AxiosResponse) => response,
+      (error: AxiosError) => {
+        if (error.response && error.response.status === 503) {
+          const responseData = error.response?.data as { message: string };
+          try {
+            const message = JSON.parse(responseData.message) as {
+              isMaintenanceMode?: boolean;
+              maintenanceMessage?: string;
+            };
+
+            if (message.isMaintenanceMode && message.maintenanceMessage) {
+              const setMaintenanceStatusAction = createSetMaintenanceStatusAction(true, message.maintenanceMessage);
+              dispatch(setMaintenanceStatusAction);
+            }
+          } catch (parseError) {
+            showSnackBarMessage(snackMessages.error.maintenanceMessageParseError, "error");
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    (ApiService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
       retry: 3,
-      instance: APIService._instance,
-      httpMethodsToRetry: [
-        "GET",
-        "HEAD",
-        "OPTIONS",
-        "DELETE",
-        "POST",
-        "PATCH",
-        "PUT",
-      ],
-      statusCodesToRetry: [[401, 401]],
+      instance: ApiService._instance,
+      httpMethodsToRetry: ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH"],
+      statusCodesToRetry: [[401]],
       retryDelay: 100,
 
-      onRetryAttempt: async () => {
-        if (!APIService._isRefreshing) {
-          APIService._isRefreshing = true;
-          APIService._refreshPromise = APIService.callback()
-            .then((res) => {
-              APIService.updateTokens(res.accessToken);
-              APIService._instance.interceptors.request.clear();
-              APIService.updateRequestInterceptor();
-              return res;
-            })
-            .finally(() => {
-              APIService._isRefreshing = false;
-              APIService._refreshPromise = null;
-            });
-        }
-        return APIService._refreshPromise;
+      onRetryAttempt: async (err) => {
+        var res = await callback();
+        ApiService.updateTokens(res.idToken);
+        ApiService._instance.interceptors.request.clear();
+        ApiService.updateRequestInterceptor();
       },
     };
   }
 
   public static getInstance(): AxiosInstance {
-    return APIService._instance;
+    return ApiService._instance;
   }
 
   public static getCancelToken() {
-    return APIService._cancelTokenSource;
+    return ApiService._cancelTokenSource;
   }
 
   public static updateCancelToken(): CancelTokenSource {
-    APIService._cancelTokenSource = axios.CancelToken.source();
-    return APIService._cancelTokenSource;
+    ApiService._cancelTokenSource = axios.CancelToken.source();
+    return ApiService._cancelTokenSource;
   }
 
   private static updateTokens(idToken: string) {
-    APIService._idToken = idToken;
+    ApiService._idToken = idToken;
   }
 
   private static updateRequestInterceptor() {
-    APIService._instance.interceptors.request.use(
-      (config) => {
-        config.headers.set("Authorization", "Bearer " + APIService._idToken);
-        config.headers.set("x-jwt-assertion", APIService._idToken);
-        const endpoint = config.url || "";
-
-        const existingToken = APIService._cancelTokenMap.get(endpoint);
-        if (existingToken) {
-          existingToken.cancel(`Request cancelled for endpoint: ${endpoint}`);
-        }
-
-        const newTokenSource = axios.CancelToken.source();
-        APIService._cancelTokenMap.set(endpoint, newTokenSource);
-        config.cancelToken = newTokenSource.token;
+    ApiService._instance.interceptors.request.use(
+      async (config) => {
+        let res = await this.callback();
+        config.headers.set("Authorization", "Bearer " + res.idToken);
+        config.headers.set("x-jwt-assertion", res.idToken);
+        config.headers.set("x-user-timezone-offset", USER_TIMEZONE_OFFSET);
         return config;
       },
       (error) => {
-        return Promise.reject(error);
+        Promise.reject(error);
       }
     );
   }
