@@ -22,6 +22,7 @@ import healthReducer from "./healthSlice";
 import specialQuotaReducer from "./specialQuotaSlice";
 import employeeHistorySlice from "./employeeHistorySlice";
 import calendarSlice from "./calendarSlice";
+import userReducer from "./userSlice";
 
 enableMapSet();
 
@@ -29,6 +30,7 @@ export const store = configureStore({
   reducer: {
     auth: auth,
     common: common,
+    user: userReducer,
     parCycle: parCycleReducer,
     team: teamReducer,
     employee: employeeReducer,

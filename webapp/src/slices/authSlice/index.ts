@@ -7,6 +7,7 @@
 
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
+import { UserState } from "../userSlice/index"
 import {
   Role,
   AuthState,
@@ -38,22 +39,11 @@ export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setIsAuthenticated: (state, action: PayloadAction<boolean>) => {
-      state.isAuthenticated = action.payload;
-    },
     setUserAuthData: (state, action: PayloadAction<AuthData>) => {
       state.userInfo = action.payload.userInfo;
       state.accessToken = action.payload.accessToken;
       state.decodedIdToken = action.payload.decodedIdToken;
       state.userEmail = action.payload.decodedIdToken?.email || null;
-      let roles = [];
-      if (action.payload.decodedIdToken?.groups?.includes(adminGroup)) {
-        roles.push(Role.ADMIN);
-      }
-      if (action.payload.decodedIdToken?.groups?.includes(employeeGroup)) {
-        roles.push(Role.EMPLOYEE);
-      }
-      state.roles = roles;
     },
     setStatus: (state, action: PayloadAction<AuthState["status"]>) => {
       state.status = action.payload;
@@ -95,59 +85,66 @@ export const authSlice = createSlice({
     },
   },
 
-  extraReducers: (builder) => {
+extraReducers: (builder) => {
     builder
       .addCase(loadPrivileges.fulfilled, (state, action) => {
-        state.userPrivileges = action.payload;
-        state.authFlowState = "end";
+        state.roles = action.payload.roles;
         state.isAuthenticated = true;
         state.status = RequestState.SUCCEEDED;
       })
-      .addCase(loadPrivileges.rejected, (state) => {
+      .addCase(loadPrivileges.rejected, (state, action) => {
         state.status = RequestState.FAILED;
-        state.authFlowState = "e_user_privileges";
-        state.errorMessage = "Unable to load user privileges";
         state.isAuthenticated = false;
-      })
-      .addCase(loadEmployeeInfo.pending, (state, action) => {
-        state.employeeInfoStatus = RequestState.LOADING;
-      })
-      .addCase(loadEmployeeInfo.fulfilled, (state, action) => {
-        state.employeeInfo = action.payload;
-
-        //!TODO: Appending the Lead role here, Use an asgardeo group once available.
-        if (action.payload.lead) {
-          state.roles.push(Role.LEAD);
-        }
-        if (action.payload.isTeamLead) {
-          state.roles.push(Role.TEAM_LEAD);
-        }
-
-        state.employeeInfoStatus = RequestState.SUCCEEDED;
-      })
-      .addCase(loadEmployeeInfo.rejected, (state, action) => {
-        state.employeeInfo = undefined;
-        state.employeeInfoStatus = RequestState.FAILED;
+        state.errorMessage = action.payload as string;
       });
   },
 });
 
 export const loadPrivileges = createAsyncThunk(
   "auth/loadPrivileges",
-  async () => {
-    return getUserPrivileges();
+  (_, { getState, rejectWithValue }) => {
+    // Get the data fetched by the UserSlice
+    const { userInfo, state } = (getState() as RootState).user as UserState;
+
+    if (state === RequestState.FAILED || !userInfo) {
+      return rejectWithValue("User info not found");
+    }
+
+    const userPrivileges = userInfo.privileges || [];
+    const roles: Role[] = [];
+
+    // --- THE NEW NUMBER LOGIC ---
+    if (userPrivileges.includes(789)) {
+      roles.push(Role.ADMIN);
+    }
+    if (userPrivileges.includes(987)) {
+      roles.push(Role.EMPLOYEE);
+    }
+    // ----------------------------
+
+    if (roles.length === 0) {
+      return rejectWithValue("No valid roles found");
+    }
+
+    return { roles };
   }
 );
 
-export const loadEmployeeInfo = createAsyncThunk(
-  "auth/loadEmployeeInfo",
-  async (userEmail: string) => {
-    return getEmployeeInfo(userEmail);
-  }
-);
+// export const loadPrivileges = createAsyncThunk(
+//   "auth/loadPrivileges",
+//   async () => {
+//     return getUserPrivileges();
+//   }
+// );
+
+// export const loadEmployeeInfo = createAsyncThunk(
+//   "auth/loadEmployeeInfo",
+//   async (userEmail: string) => {
+//     return getEmployeeInfo(userEmail);
+//   }
+// );
 
 export const {
-  setIsAuthenticated,
   setUserAuthData,
   setStatus,
   setStatusMessage,
