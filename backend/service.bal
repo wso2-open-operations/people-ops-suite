@@ -46,7 +46,7 @@ service class ErrorInterceptor {
 }
 
 
-service http:InterceptableService / on new http:Listener(9091) {
+service http:InterceptableService / on new http:Listener(9093) {
 
     # Request interceptor.
     #
@@ -164,7 +164,7 @@ service http:InterceptableService / on new http:Listener(9091) {
         return parCycle;
     }
 
-    # The resource function to get all par cycles.
+# The resource function to get all par cycles.
     #
     # + ctx - The request context
     # + status - The status of the par cycles to be retrieved
@@ -172,17 +172,38 @@ service http:InterceptableService / on new http:Listener(9091) {
     # + return - The par cycles or an error
     resource function get par\-cycles(http:RequestContext ctx, types:ParCycleStatus? status, string? email)
             returns types:ParCycle[]|http:InternalServerError|http:BadRequest|http:Forbidden {
-        types:InvokerDetails|error invokerDetails = utils:getInvokerDetails(ctx);
-        if invokerDetails is error {
-            return utils:createInternalServerErrorResponse(invokerDetails,
-                    "An error occurred while retrieving invoker details.");
+        
+        // 1. Get the payload using the KEY THAT WORKS
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        
+        if userInfo is error {
+            return utils:createInternalServerErrorResponse(error("User info missing"), "User information header not found!");
         }
+
+        // 2. Check Admin Permissions
+        // Renamed to 'hasAdminPrivilege' to avoid "redeclared symbol" error later
+        boolean hasAdminPrivilege = authorization:checkPermissions(
+            [authorization:authorizedRoles.headPeopleOperationsRole], 
+            userInfo.groups
+        );
+
+        // 3. Manually construct InvokerDetails
+        // FIX: Used .cloneReadOnly() to fix the "incompatible types" error
+        // FIX: Removed 'groups' field to fix "undefined field" error
+        types:InvokerDetails invokerDetails = {
+            email: userInfo.email,
+            isAdmin: hasAdminPrivilege,
+            roles: userInfo.groups.cloneReadOnly()
+        };
 
         types:ParCycle[]|error parCycles;
         boolean isLead = email != () ? isLeadOfEmployeeInActiveParCycle(invokerDetails.email, email) : false;
         boolean isSelf = email == invokerDetails.email;
+        
+        // This is where the original 'isAdmin' variable is defined, no conflict now
         boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
         boolean isInvokerLead = isLeadInActiveParCycle(invokerDetails.email);
+        
         if isAdmin || isLead || isSelf || (email == () && isInvokerLead) {
             parCycles = getParCycles(status, email);
         } else {
