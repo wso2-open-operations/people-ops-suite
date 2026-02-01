@@ -19,12 +19,12 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
-import { localStorageTheme } from "@config/constant";
 import AppAuthProvider from "@context/AuthContext";
 import { MicroAppAuthProvider } from "@context/AuthContext";
+import { ColorModeContext, useColorMode } from "@hooks/useColorMode";
 import { useMicroApp } from "@hooks/useMicroApp";
 import { themeSettings } from "@root/src/theme";
 import { store } from "@slices/store";
@@ -32,50 +32,15 @@ import { ThemeMode } from "@utils/types";
 
 import "./index.css";
 
-export const ColorModeContext = createContext({
-  mode: ThemeMode.Light,
-  toggleColorMode: () => {},
-});
-
-const processLocalThemeMode = (): ThemeMode => {
-  try {
-    const savedTheme = localStorage.getItem(localStorageTheme);
-    if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-      return savedTheme;
-    }
-
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-
-    localStorage.setItem(localStorageTheme, systemTheme);
-    return systemTheme;
-  } catch (err) {
-    console.error("Theme detection failed, defaulting to light mode.", err);
-    return ThemeMode.Light;
-  }
-};
-
 function WebApp() {
   document.title = APP_NAME;
 
-  const [mode, setMode] = useState<ThemeMode>(processLocalThemeMode());
-
-  const colorMode = useMemo(
-    () => ({
-      toggleColorMode: () => {
-        const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
-        localStorage.setItem(localStorageTheme, newMode);
-        setMode(newMode);
-        document.documentElement.setAttribute("data-theme", newMode);
-      },
-    }),
-    [mode],
-  );
+  const { mode, toggleColorMode } = useColorMode();
 
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
 
   return (
-    <ColorModeContext.Provider value={{ mode, toggleColorMode: colorMode.toggleColorMode }}>
+    <ColorModeContext.Provider value={{ mode, toggleColorMode }}>
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
@@ -92,9 +57,7 @@ function WebApp() {
 }
 
 function MicroApp() {
-  const [mode, setMode] = useState<ThemeMode>(ThemeMode.Light);
-
-  const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
+  const theme = useMemo(() => createTheme(themeSettings(ThemeMode.Light)), []);
 
   return (
     <Provider store={store}>

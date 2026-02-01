@@ -23,12 +23,12 @@ import { Suspense, useContext, useEffect, useMemo, useState } from "react";
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
+import { ColorModeContext } from "@hooks/useColorMode";
 import { useMicroApp } from "@hooks/useMicroApp";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
-import { ColorModeContext } from "@src/colorMode";
 
 import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
