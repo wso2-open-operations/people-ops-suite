@@ -387,7 +387,7 @@ function CreateVisit() {
   const visitValidationSchema = Yup.object().shape({
     whoTheyMeet: Yup.string().nullable(),
     purposeOfVisit: Yup.string().nullable(),
-    accessibleLocations: Yup.array().of(Yup.string()),
+    accessibleLocations: Yup.array(),
     visitDate: Yup.string().required("Visit date is required"),
     timeOfEntry: Yup.string()
       .nullable()

@@ -90,18 +90,21 @@ function VisitHistory() {
       headerName: "Pass Number",
       minWidth: 120,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "firstName",
       headerName: "First Name",
       minWidth: 180,
       flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "lastName",
       headerName: "Last Name",
       minWidth: 180,
       flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "contactNumber",
