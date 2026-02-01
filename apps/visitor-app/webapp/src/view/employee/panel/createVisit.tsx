@@ -45,7 +45,7 @@ import {
 } from "@mui/icons-material";
 import { FieldArray, Form, Formik } from "formik";
 import * as Yup from "yup";
-import { DateTimePicker } from "@mui/x-date-pickers";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
@@ -71,7 +71,6 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
-import { add } from "lodash";
 
 dayjs.extend(utc);
 
@@ -162,6 +161,8 @@ const defaultVisitor: VisitorDetail = {
   emailAddress: "",
   status: VisitorStatus.Draft,
 };
+
+const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function CreateVisit() {
   const dispatch = useAppDispatch();
@@ -263,34 +264,27 @@ function CreateVisit() {
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
+            firstName: draftVisitor.firstName || undefined,
+            lastName: draftVisitor.lastName || undefined,
+            contactNumber: draftVisitor.contactNumber
+              ? draftVisitor.countryCode + draftVisitor.contactNumber
+              : undefined,
           };
 
-          if (draftVisitor.firstName)
-            addVisitorPayload.firstName = draftVisitor.firstName;
-          if (draftVisitor.lastName)
-            addVisitorPayload.lastName = draftVisitor.lastName;
-          if (draftVisitor.contactNumber)
-            addVisitorPayload.contactNumber =
-              draftVisitor.countryCode + draftVisitor.contactNumber;
-
           await dispatch(addVisitor(addVisitorPayload));
-
           dispatch(resetVisitorSubmitState());
 
           const addVisitPayload: AddVisitPayload = {
-            accessibleLocations: values.accessibleLocations,
+            visitDate: values.visitDate || undefined,
+            timeOfEntry: values.timeOfEntry || undefined,
+            timeOfDeparture: values.timeOfDeparture || undefined,
+            timeZone: values.timeZone || "UTC",
             emailHash: hashedEmail,
+            whomTheyMeet: values.whoTheyMeet || undefined,
+            passNumber: values.passNumber || undefined,
+            companyName: values.companyName || undefined,
+            accessibleLocations: values.accessibleLocations || undefined,
           };
-          if (values.whoTheyMeet)
-            addVisitPayload.whomTheyMeet = values.whoTheyMeet;
-          if (values.purposeOfVisit)
-            addVisitPayload.purposeOfVisit = values.purposeOfVisit;
-          if (values.companyName)
-            addVisitPayload.companyName = values.companyName;
-          if (values.timeOfEntry)
-            addVisitPayload.timeOfEntry = values.timeOfEntry;
-          if (values.timeOfDeparture)
-            addVisitPayload.timeOfDeparture = values.timeOfDeparture;
 
           const addVisitAction = await dispatch(addVisit(addVisitPayload));
 
@@ -306,39 +300,37 @@ function CreateVisit() {
   );
 
   const fetchVisitorByEmail = useCallback(
-    async (idPassportNumber: string, index: number, formik: any) => {
-      await dispatch(fetchVisitor(await hash(idPassportNumber))).then(
-        (action) => {
-          if (fetchVisitor.fulfilled.match(action)) {
-            let countryCode = "";
-            let nationalNumber = "";
+    async (email: string, index: number, formik: any) => {
+      const emailHash = await hash(email);
+      await dispatch(fetchVisitor(emailHash)).then((action) => {
+        if (fetchVisitor.fulfilled.match(action)) {
+          let countryCode = "+94";
+          let nationalNumber = "";
 
-            const rawContactNumber = action.payload.contactNumber;
-
-            if (rawContactNumber) {
-              try {
-                const contactNumber = phoneUtil.parse(rawContactNumber);
-                countryCode = contactNumber.getCountryCode()?.toString() || "";
-                nationalNumber =
-                  contactNumber.getNationalNumber()?.toString() || "";
-              } catch (error) {
-                console.warn("Invalid contact number:", rawContactNumber);
-              }
+          const rawContactNumber = action.payload.contactNumber;
+          if (rawContactNumber) {
+            try {
+              const parsed = phoneUtil.parseAndKeepRawInput(rawContactNumber);
+              const cc = parsed.getCountryCode();
+              countryCode = cc ? `+${cc}` : "+94";
+              nationalNumber = parsed.getNationalNumber()?.toString() || "";
+            } catch (err) {
+              console.warn("Could not parse phone number:", rawContactNumber);
             }
-
-            const fetchedVisitor: VisitorDetail = {
-              firstName: action.payload.firstName || "",
-              lastName: action.payload.lastName || "",
-              contactNumber: nationalNumber,
-              countryCode: countryCode ? `+${countryCode}` : "+94",
-              emailAddress: action.payload.email || "",
-              status: VisitorStatus.Draft,
-            };
-
-            formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
           }
-        },
-      );
+
+          const fetchedVisitor: VisitorDetail = {
+            firstName: action.payload.firstName || "",
+            lastName: action.payload.lastName || "",
+            contactNumber: nationalNumber,
+            countryCode,
+            emailAddress: action.payload.email || email,
+            status: VisitorStatus.Draft,
+          };
+
+          formik.setFieldValue(`visitors.${index}`, fetchedVisitor);
+        }
+      });
     },
     [dispatch],
   );
@@ -352,37 +344,39 @@ function CreateVisit() {
   );
 
   const visitValidationSchema = Yup.object().shape({
-    whoTheyMeet: Yup.string(),
-    purposeOfVisit: Yup.string(),
-    accessibleLocations: Yup.array().when([], {
-      is: () => authState.roles.includes(Role.ADMIN),
-      then: (s) => s.min(1, "Select at least one location"),
-      otherwise: (s) => s,
-    }),
-    timeOfEntry: Yup.string().test(
-      "future-or-now",
-      "Cannot be in the past",
-      (v) => !v || dayjs(v).isAfter(dayjs().subtract(1, "minute")),
-    ),
-    timeOfDeparture: Yup.string().test(
-      "after-entry",
-      "Departure must be after entry",
-      function (v) {
-        const entry = this.parent.timeOfEntry;
-        return !v || !entry || dayjs(v).isAfter(dayjs(entry));
-      },
-    ),
+    whoTheyMeet: Yup.string().nullable(),
+    purposeOfVisit: Yup.string().nullable(),
+    accessibleLocations: Yup.array().of(Yup.string()),
+    visitDate: Yup.string().required("Visit date is required"),
+    timeOfEntry: Yup.string()
+      .nullable()
+      .test("future-or-now", "Cannot be in the past", function (value) {
+        const { visitDate } = this.parent;
+        if (!visitDate || !value) return true;
+        const combined = dayjs(`${visitDate} ${value}:00`);
+        return combined.isAfter(dayjs().subtract(1, "minute"));
+      }),
+    timeOfDeparture: Yup.string()
+      .nullable()
+      .test("after-entry", "Departure must be after entry", function (value) {
+        const { visitDate, timeOfEntry } = this.parent;
+        if (!visitDate || !value || !timeOfEntry) return true;
+        const entry = dayjs(`${visitDate} ${timeOfEntry}:00`);
+        const departure = dayjs(`${visitDate} ${value}:00`);
+        return departure.isAfter(entry);
+      }),
+    timeZone: Yup.string().required("Time zone is required"), // New validation
   });
 
   const visitorValidationSchema = Yup.object().shape({
     visitors: Yup.array().of(
       Yup.object({
-        firstName: Yup.string(),
-        lastName: Yup.string(),
+        firstName: Yup.string().nullable(),
+        lastName: Yup.string().nullable(),
         emailAddress: Yup.string()
           .email("Invalid email")
-          .required("Required")
-          .test("unique", "Duplicate email", function (value) {
+          .required("Email is required")
+          .test("unique-email", "Email must be unique", function (value) {
             const visitors = this.options.context?.visitors || [];
             return (
               !value ||
@@ -390,7 +384,7 @@ function CreateVisit() {
             );
           }),
         contactNumber: Yup.string()
-          .matches(/^\d{6,15}$/, "Invalid number")
+          .matches(/^\d{6,15}$/, "Invalid phone number")
           .nullable(),
       }),
     ),
@@ -416,7 +410,7 @@ function CreateVisit() {
                     fullWidth
                     name="companyName"
                     label="Name of the Company"
-                    value={formik.values.companyName}
+                    value={formik.values.companyName || ""}
                     onChange={formik.handleChange}
                     variant="outlined"
                   />
@@ -550,7 +544,7 @@ function CreateVisit() {
                     rows={2}
                     name="purposeOfVisit"
                     label="Purpose of Visit / Comments"
-                    value={formik.values.purposeOfVisit}
+                    value={formik.values.purposeOfVisit || ""}
                     onChange={formik.handleChange}
                     error={
                       formik.touched.purposeOfVisit &&
@@ -567,31 +561,28 @@ function CreateVisit() {
 
             <Divider sx={{ my: 4 }} />
 
-            {authState.roles.includes(Role.ADMIN) && (
-              <>
-                <Box sx={{ mb: 5 }}>
-                  <Typography
-                    variant="h5"
-                    gutterBottom
-                    sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
-                  >
-                    <BusinessIcon color="primary" /> Accessible Floors & Rooms *
-                  </Typography>
-                  <FloorRoomSelector
-                    availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-                    selectedFloorsAndRooms={formik.values.accessibleLocations}
-                    onChange={(val) =>
-                      formik.setFieldValue("accessibleLocations", val)
-                    }
-                    error={
-                      formik.touched.accessibleLocations &&
-                      formik.errors.accessibleLocations
-                    }
-                  />
-                </Box>
-                <Divider sx={{ my: 4 }} />
-              </>
-            )}
+            <Box sx={{ mb: 5 }}>
+              <Typography
+                variant="h5"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+              >
+                <BusinessIcon color="primary" /> Accessible Floors & Rooms
+              </Typography>
+              <FloorRoomSelector
+                availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
+                selectedFloorsAndRooms={formik.values.accessibleLocations}
+                onChange={(val) =>
+                  formik.setFieldValue("accessibleLocations", val)
+                }
+                error={
+                  formik.touched.accessibleLocations &&
+                  formik.errors.accessibleLocations
+                }
+              />
+            </Box>
+
+            <Divider sx={{ my: 4 }} />
 
             <Box sx={{ mb: 4 }}>
               <Typography
@@ -603,19 +594,48 @@ function CreateVisit() {
               </Typography>
 
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <DateTimePicker
-                    label="Expected Time of Entry"
-                    minDateTime={dayjs()}
+                <Grid item xs={12} md={4}>
+                  <DatePicker
+                    label="Visit Date *"
+                    minDate={dayjs().startOf("day")}
                     value={
-                      formik.values.timeOfEntry
-                        ? dayjs(formik.values.timeOfEntry)
+                      formik.values.visitDate
+                        ? dayjs(formik.values.visitDate, "YYYY-MM-DD")
+                        : null
+                    }
+                    onChange={(newValue) =>
+                      formik.setFieldValue(
+                        "visitDate",
+                        newValue ? dayjs(newValue).format("YYYY-MM-DD") : "",
+                      )
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        required: true,
+                        error:
+                          formik.touched.visitDate && !!formik.errors.visitDate,
+                        helperText:
+                          formik.touched.visitDate && formik.errors.visitDate,
+                      },
+                    }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                  <TimePicker
+                    label="Expected Time of Entry"
+                    value={
+                      formik.values.visitDate && formik.values.timeOfEntry
+                        ? dayjs(
+                            `${formik.values.visitDate} ${formik.values.timeOfEntry}`,
+                          )
                         : null
                     }
                     onChange={(newValue) =>
                       formik.setFieldValue(
                         "timeOfEntry",
-                        newValue ? dayjs(newValue).utc().format() : "",
+                        newValue ? dayjs(newValue).format("HH:mm") : "",
                       )
                     }
                     slotProps={{
@@ -632,23 +652,39 @@ function CreateVisit() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <DateTimePicker
+                <Grid item xs={12} md={4}>
+                  <TimePicker
                     label="Expected Time of Departure"
-                    minDateTime={
+                    minTime={
                       formik.values.timeOfEntry
-                        ? dayjs(formik.values.timeOfEntry)
-                        : dayjs()
+                        ? dayjs()
+                            .set(
+                              "hour",
+                              parseInt(
+                                formik.values.timeOfEntry.split(":")[0],
+                                10,
+                              ),
+                            )
+                            .set(
+                              "minute",
+                              parseInt(
+                                formik.values.timeOfEntry.split(":")[1],
+                                10,
+                              ),
+                            )
+                        : undefined
                     }
                     value={
-                      formik.values.timeOfDeparture
-                        ? dayjs(formik.values.timeOfDeparture)
+                      formik.values.visitDate && formik.values.timeOfDeparture
+                        ? dayjs(
+                            `${formik.values.visitDate} ${formik.values.timeOfDeparture}`,
+                          )
                         : null
                     }
                     onChange={(newValue) =>
                       formik.setFieldValue(
                         "timeOfDeparture",
-                        newValue ? dayjs(newValue).utc().format() : "",
+                        newValue ? dayjs(newValue).format("HH:mm") : "",
                       )
                     }
                     slotProps={{
@@ -866,8 +902,10 @@ function CreateVisit() {
           whoTheyMeet: "",
           purposeOfVisit: "",
           accessibleLocations: [],
+          visitDate: "",
           timeOfEntry: "",
           timeOfDeparture: "",
+          timeZone: userTimeZone,
           visitors: [defaultVisitor],
         }}
         validationSchema={
@@ -875,86 +913,90 @@ function CreateVisit() {
         }
         onSubmit={submitVisit}
       >
-        {(formik) => (
-          <>
-            {(visitorState.state === State.loading ||
-              visitState.state === State.loading) && (
-              <BackgroundLoader
-                open
-                message={visitorState.stateMessage || "Processing..."}
-              />
-            )}
+        {(formik) => {
+          return (
+            <>
+              {(visitorState.state === State.loading ||
+                visitState.state === State.loading) && (
+                <BackgroundLoader
+                  open
+                  message={visitorState.stateMessage || "Processing..."}
+                />
+              )}
 
-            <Form noValidate>
-              <Stepper activeStep={activeStep} sx={{ mb: 5 }}>
-                {steps.map((label) => (
-                  <Step key={label}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
+              <Form noValidate>
+                <Stepper activeStep={activeStep} sx={{ mb: 5 }}>
+                  {steps.map((label) => (
+                    <Step key={label}>
+                      <StepLabel>{label}</StepLabel>
+                    </Step>
+                  ))}
+                </Stepper>
 
-              <Box sx={{ minHeight: "50vh" }}>
-                {renderStepContent(activeStep, formik)}
-              </Box>
+                <Box sx={{ minHeight: "50vh" }}>
+                  {renderStepContent(activeStep, formik)}
+                </Box>
 
-              <Box
-                sx={{
-                  mt: 5,
-                  display: "flex",
-                  justifyContent:
-                    activeStep === 0 ? "flex-end" : "space-between",
-                  gap: 2,
-                }}
-              >
-                {activeStep === 1 && (
-                  <Button
-                    variant="outlined"
-                    color={isAnySubmittedVisitor(formik) ? "error" : "inherit"}
-                    onClick={() =>
-                      isAnySubmittedVisitor(formik)
-                        ? handleClose(formik)
-                        : handleBack()
-                    }
-                  >
-                    {isAnySubmittedVisitor(formik) ? "Close Visit" : "Back"}
-                  </Button>
-                )}
-
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={isLastStep ? <AddIcon /> : null}
-                  disabled={
-                    isLastStep &&
-                    !formik.values.visitors.every(
-                      (v: VisitorDetail) =>
-                        v.status === VisitorStatus.Completed,
-                    )
-                  }
-                  onClick={async () => {
-                    if (isLastStep) {
-                      addNewVisitorBlock(formik);
-                    } else {
-                      const errors = await formik.validateForm();
-                      if (Object.keys(errors).length === 0) {
-                        handleNext();
-                      } else {
-                        formik.setTouched(
-                          Object.fromEntries(
-                            Object.keys(errors).map((key) => [key, true]),
-                          ),
-                        );
-                      }
-                    }
+                <Box
+                  sx={{
+                    mt: 5,
+                    display: "flex",
+                    justifyContent:
+                      activeStep === 0 ? "flex-end" : "space-between",
+                    gap: 2,
                   }}
                 >
-                  {isLastStep ? "Add Another Visitor" : "Continue"}
-                </Button>
-              </Box>
-            </Form>
-          </>
-        )}
+                  {activeStep === 1 && (
+                    <Button
+                      variant="outlined"
+                      color={
+                        isAnySubmittedVisitor(formik) ? "error" : "inherit"
+                      }
+                      onClick={() =>
+                        isAnySubmittedVisitor(formik)
+                          ? handleClose(formik)
+                          : handleBack()
+                      }
+                    >
+                      {isAnySubmittedVisitor(formik) ? "Close Visit" : "Back"}
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={isLastStep ? <AddIcon /> : null}
+                    disabled={
+                      isLastStep &&
+                      !formik.values.visitors.every(
+                        (v: VisitorDetail) =>
+                          v.status === VisitorStatus.Completed,
+                      )
+                    }
+                    onClick={async () => {
+                      if (isLastStep) {
+                        addNewVisitorBlock(formik);
+                      } else {
+                        const errors = await formik.validateForm();
+                        if (Object.keys(errors).length === 0) {
+                          handleNext();
+                        } else {
+                          formik.setTouched(
+                            Object.fromEntries(
+                              Object.keys(errors).map((key) => [key, true]),
+                            ),
+                          );
+                        }
+                      }
+                    }}
+                  >
+                    {isLastStep ? "Add Another Visitor" : "Continue"}
+                  </Button>
+                </Box>
+              </Form>
+            </>
+          );
+        }}
       </Formik>
     </Container>
   );

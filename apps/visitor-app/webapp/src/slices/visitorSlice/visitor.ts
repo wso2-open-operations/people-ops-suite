@@ -107,6 +107,10 @@ export const addVisitor = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
+          if (error.response?.status === HttpStatusCode.Conflict) {
+            reject(error);
+            return;
+          }
           const errorMessage =
             error.response?.data?.message ||
             (error.response?.status === HttpStatusCode.InternalServerError

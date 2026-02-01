@@ -48,6 +48,8 @@ export interface AddVisitPayload {
   timeOfEntry?: string;
   timeOfDeparture?: string;
   emailHash: string;
+  visitDate: string;
+  timeZone: string;
 }
 
 export interface Visit {
