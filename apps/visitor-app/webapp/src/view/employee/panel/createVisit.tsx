@@ -162,8 +162,6 @@ const defaultVisitor: VisitorDetail = {
   status: VisitorStatus.Draft,
 };
 
-const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
 function CreateVisit() {
   const dispatch = useAppDispatch();
   const authState = useAppSelector((state: RootState) => state.auth);
@@ -261,6 +259,7 @@ function CreateVisit() {
         ConfirmationType.accept,
         async () => {
           const hashedEmail = await hash(draftVisitor.emailAddress);
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
@@ -274,16 +273,40 @@ function CreateVisit() {
           await dispatch(addVisitor(addVisitorPayload));
           dispatch(resetVisitorSubmitState());
 
+          const visitDate: string = dayjs
+            .utc(values.visitDate)
+            .startOf("day")
+            .toISOString();
+
+          let expectedEntryTime: string | undefined = undefined;
+          if (values.timeOfEntry) {
+            expectedEntryTime = dayjs(
+              `${values.visitDate} ${values.timeOfEntry}`,
+            )
+              .utc()
+              .toISOString();
+          }
+
+          let expectedDepartureTime: string | undefined = undefined;
+          if (values.timeOfDeparture) {
+            expectedDepartureTime = dayjs(
+              `${values.visitDate} ${values.timeOfDeparture}`,
+            )
+              .utc()
+              .toISOString();
+          }
+
           const addVisitPayload: AddVisitPayload = {
-            visitDate: values.visitDate || undefined,
-            timeOfEntry: values.timeOfEntry || undefined,
-            timeOfDeparture: values.timeOfDeparture || undefined,
-            timeZone: values.timeZone || "UTC",
+            timeOfEntry: expectedEntryTime,
+            timeOfDeparture: expectedDepartureTime,
             emailHash: hashedEmail,
             whomTheyMeet: values.whoTheyMeet || undefined,
-            passNumber: values.passNumber || undefined,
             companyName: values.companyName || undefined,
-            accessibleLocations: values.accessibleLocations || undefined,
+            accessibleLocations: values.accessibleLocations?.length
+              ? values.accessibleLocations
+              : undefined,
+            purposeOfVisit: values.purposeOfVisit || undefined,
+            visitDate,
           };
 
           const addVisitAction = await dispatch(addVisit(addVisitPayload));
@@ -365,7 +388,6 @@ function CreateVisit() {
         const departure = dayjs(`${visitDate} ${value}:00`);
         return departure.isAfter(entry);
       }),
-    timeZone: Yup.string().required("Time zone is required"), // New validation
   });
 
   const visitorValidationSchema = Yup.object().shape({
@@ -905,7 +927,6 @@ function CreateVisit() {
           visitDate: "",
           timeOfEntry: "",
           timeOfDeparture: "",
-          timeZone: userTimeZone,
           visitors: [defaultVisitor],
         }}
         validationSchema={
@@ -913,90 +934,86 @@ function CreateVisit() {
         }
         onSubmit={submitVisit}
       >
-        {(formik) => {
-          return (
-            <>
-              {(visitorState.state === State.loading ||
-                visitState.state === State.loading) && (
-                <BackgroundLoader
-                  open
-                  message={visitorState.stateMessage || "Processing..."}
-                />
-              )}
+        {(formik) => (
+          <>
+            {(visitorState.state === State.loading ||
+              visitState.state === State.loading) && (
+              <BackgroundLoader
+                open
+                message={visitorState.stateMessage || "Processing..."}
+              />
+            )}
 
-              <Form noValidate>
-                <Stepper activeStep={activeStep} sx={{ mb: 5 }}>
-                  {steps.map((label) => (
-                    <Step key={label}>
-                      <StepLabel>{label}</StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
+            <Form noValidate>
+              <Stepper activeStep={activeStep} sx={{ mb: 5 }}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
 
-                <Box sx={{ minHeight: "50vh" }}>
-                  {renderStepContent(activeStep, formik)}
-                </Box>
+              <Box sx={{ minHeight: "50vh" }}>
+                {renderStepContent(activeStep, formik)}
+              </Box>
 
-                <Box
-                  sx={{
-                    mt: 5,
-                    display: "flex",
-                    justifyContent:
-                      activeStep === 0 ? "flex-end" : "space-between",
-                    gap: 2,
+              <Box
+                sx={{
+                  mt: 5,
+                  display: "flex",
+                  justifyContent:
+                    activeStep === 0 ? "flex-end" : "space-between",
+                  gap: 2,
+                }}
+              >
+                {activeStep === 1 && (
+                  <Button
+                    variant="outlined"
+                    color={isAnySubmittedVisitor(formik) ? "error" : "inherit"}
+                    onClick={() =>
+                      isAnySubmittedVisitor(formik)
+                        ? handleClose(formik)
+                        : handleBack()
+                    }
+                  >
+                    {isAnySubmittedVisitor(formik) ? "Close Visit" : "Back"}
+                  </Button>
+                )}
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={isLastStep ? <AddIcon /> : null}
+                  disabled={
+                    isLastStep &&
+                    !formik.values.visitors.every(
+                      (v: VisitorDetail) =>
+                        v.status === VisitorStatus.Completed,
+                    )
+                  }
+                  onClick={async () => {
+                    if (isLastStep) {
+                      addNewVisitorBlock(formik);
+                    } else {
+                      const errors = await formik.validateForm();
+                      if (Object.keys(errors).length === 0) {
+                        handleNext();
+                      } else {
+                        formik.setTouched(
+                          Object.fromEntries(
+                            Object.keys(errors).map((key) => [key, true]),
+                          ),
+                        );
+                      }
+                    }
                   }}
                 >
-                  {activeStep === 1 && (
-                    <Button
-                      variant="outlined"
-                      color={
-                        isAnySubmittedVisitor(formik) ? "error" : "inherit"
-                      }
-                      onClick={() =>
-                        isAnySubmittedVisitor(formik)
-                          ? handleClose(formik)
-                          : handleBack()
-                      }
-                    >
-                      {isAnySubmittedVisitor(formik) ? "Close Visit" : "Back"}
-                    </Button>
-                  )}
-
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={isLastStep ? <AddIcon /> : null}
-                    disabled={
-                      isLastStep &&
-                      !formik.values.visitors.every(
-                        (v: VisitorDetail) =>
-                          v.status === VisitorStatus.Completed,
-                      )
-                    }
-                    onClick={async () => {
-                      if (isLastStep) {
-                        addNewVisitorBlock(formik);
-                      } else {
-                        const errors = await formik.validateForm();
-                        if (Object.keys(errors).length === 0) {
-                          handleNext();
-                        } else {
-                          formik.setTouched(
-                            Object.fromEntries(
-                              Object.keys(errors).map((key) => [key, true]),
-                            ),
-                          );
-                        }
-                      }
-                    }}
-                  >
-                    {isLastStep ? "Add Another Visitor" : "Continue"}
-                  </Button>
-                </Box>
-              </Form>
-            </>
-          );
-        }}
+                  {isLastStep ? "Add Another Visitor" : "Continue"}
+                </Button>
+              </Box>
+            </Form>
+          </>
+        )}
       </Formik>
     </Container>
   );
