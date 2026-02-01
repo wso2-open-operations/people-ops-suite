@@ -21,11 +21,11 @@ import { LeafyGreen } from "lucide-react";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
+import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
 
 import CancelModal from "./CancelModal";
 import { MealOptionBox } from "./MealOptionBox";
 import { OrderInfoSection } from "./OrderInfo";
-import { useDinnerOnDemand } from "../../hooks/useDinnerOnDemand";
 
 const mealOptionsBox = [
   { value: "Chicken", label: "Chicken", icon: <Ham /> },
