@@ -30,8 +30,8 @@ import { useAppDispatch } from "@slices/store";
 import { getToken } from "@utils/microapp-bridge";
 
 type AuthContextType = {
-  appSignIn: () => Promise<void>;
-  appSignOut: () => Promise<void>;
+  appSignIn: () => void;
+  appSignOut: () => void;
 };
 
 enum AppState {
@@ -104,7 +104,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     );
 
     setTokens(accessToken, refreshToken, appSignOut);
-
     const userInfoResult = await triggerGetUserInfo();
     if (userInfoResult?.isError) {
       console.error("Failed to fetch user info:", userInfoResult.error);
@@ -161,12 +160,13 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
-    await signOut();
+    signOut();
+    console.log("Sign Out");
     setAppState(AppState.Unauthenticated);
   };
 
   const appSignIn = async () => {
-    await signIn();
+    signIn();
     setAppState(AppState.Loading);
   };
 
