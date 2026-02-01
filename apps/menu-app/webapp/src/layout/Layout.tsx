@@ -28,7 +28,7 @@ import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
-import { ColorModeContext } from "@src/App";
+import { ColorModeContext } from "@src/colorMode";
 
 import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
