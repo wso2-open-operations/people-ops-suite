@@ -114,6 +114,12 @@ public type AddVisitPayload record {|
     time:Utc timeOfDeparture?;
     # Status of the visit
     Status status?;
+    # QR code in base64 format
+    string qrCodeBase64;
+    # Date of the visit [in UTC]
+    time:Utc visitDate;
+    # Unique identifier for the visit
+    string uuid;
 |};
 
 # [Database] Visit record.

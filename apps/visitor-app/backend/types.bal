@@ -36,6 +36,12 @@ public type AddVisitPayload record {|
     }
     string emailHash;
     # Company name of visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The company name should be a non-empty string with printable characters."
+        }
+    }
     string companyName?;
     # Number in the tag given to visitor
     @constraint:String {
@@ -54,6 +60,12 @@ public type AddVisitPayload record {|
     }
     string whomTheyMeet?;
     # Purpose of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The purpose of the visit should be a non-empty string with printable characters."
+        }
+    }
     string purposeOfVisit?;
     # The floors and rooms that the visitor can access
     @constraint:Array {
@@ -79,6 +91,30 @@ public type AddVisitPayload record {|
         }
     }
     string timeOfDeparture?;
+    # Date of the visit [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:UTC_TIMESTAMP_REGEX,
+            message: "The date of the visit should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+        }
+    }
+    string visitDate;
+    # Unique identifier of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The visit UUID should be a non-empty string with printable characters."
+        }
+    }
+    string uuid;
+    # QR code in base64 format
+    @constraint:String {
+        pattern: {
+            value: database:BASE64_IMAGE_REGEX,
+            message: "The QR code should be a valid base64 image string."
+        }
+    }
+    string qrCodeBase64;
 |};
 
 # Payload for updating an existing visit.
@@ -107,7 +143,7 @@ public type AddInvitationPayload record {|
 
 # Payload for filling an existing visit invitation.
 public type FillInvitationPayload record {|
-    #  First name of the visitor
+    # First name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
@@ -115,7 +151,7 @@ public type FillInvitationPayload record {|
         }
     }
     string firstName;
-     # Last name of the visitor
+    # Last name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,

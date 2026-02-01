@@ -138,12 +138,14 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
     => `
         INSERT INTO visit
         (
+            uuid,
             email_hash,
             pass_number,
             company_name,
             whom_they_meet,
             purpose_of_visit,
             accessible_locations,
+            visit_date,
             time_of_entry,
             time_of_departure,
             invitation_id,
@@ -154,12 +156,14 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         )
         VALUES
         (
+            ${payload.uuid},
             ${payload.emailHash},
             ${payload.passNumber},
             ${payload.companyName},
             ${payload.whomTheyMeet},
             ${payload.purposeOfVisit},
             ${payload.accessibleLocations is Floor[] ? payload.accessibleLocations.toJsonString() : null},
+            ${payload.visitDate},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},
