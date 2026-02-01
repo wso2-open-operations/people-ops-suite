@@ -146,7 +146,7 @@ export default function Layout() {
               overflowY: "auto",
             }}
           >
-            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+            <Suspense fallback={<PreLoader isLoading message="Loading page data ..." />}>
               <Outlet />
             </Suspense>
           </Box>
