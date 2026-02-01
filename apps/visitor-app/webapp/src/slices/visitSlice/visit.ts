@@ -49,6 +49,8 @@ export interface AddVisitPayload {
   timeOfDeparture?: string;
   emailHash: string;
   visitDate: string;
+  uuid: string;
+  qrCodeBase64: string | undefined;
 }
 
 export interface Visit {

@@ -48,6 +48,8 @@ import * as Yup from "yup";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { v4 as uuidv4 } from "uuid";
+import QRCode from "qrcode";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { ConfirmationType, State } from "@root/src/types/types";
 import {
@@ -71,6 +73,7 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
+import { config } from "process";
 
 dayjs.extend(utc);
 
@@ -260,6 +263,21 @@ function CreateVisit() {
         async () => {
           const hashedEmail = await hash(draftVisitor.emailAddress);
 
+          const visitUUID = uuidv4();
+          const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/visit-temp/${visitUUID}`;
+          let qrCodeBase64: string | undefined = undefined;
+
+          try {
+            qrCodeBase64 = await QRCode.toDataURL(qrLink, {
+              width: 300,
+              margin: 2,
+              color: { dark: "#000000", light: "#fc7420ff" },
+              errorCorrectionLevel: "H",
+            });
+          } catch (err) {
+            console.error("QR code generation failed:", err);
+          }
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
@@ -273,23 +291,21 @@ function CreateVisit() {
           await dispatch(addVisitor(addVisitorPayload));
           dispatch(resetVisitorSubmitState());
 
-          const visitDate: string = dayjs
+          const visitDateUTC: string = dayjs
             .utc(values.visitDate)
             .startOf("day")
             .toISOString();
 
-          let expectedEntryTime: string | undefined = undefined;
-          if (values.timeOfEntry) {
-            expectedEntryTime = dayjs(
-              `${values.visitDate} ${values.timeOfEntry}`,
-            )
+          let timeOfEntryUTC: string | undefined = undefined;
+          if (values.visitDate && values.timeOfEntry) {
+            timeOfEntryUTC = dayjs(`${values.visitDate} ${values.timeOfEntry}`)
               .utc()
               .toISOString();
           }
 
-          let expectedDepartureTime: string | undefined = undefined;
-          if (values.timeOfDeparture) {
-            expectedDepartureTime = dayjs(
+          let timeOfDepartureUTC: string | undefined = undefined;
+          if (values.visitDate && values.timeOfDeparture) {
+            timeOfDepartureUTC = dayjs(
               `${values.visitDate} ${values.timeOfDeparture}`,
             )
               .utc()
@@ -297,8 +313,11 @@ function CreateVisit() {
           }
 
           const addVisitPayload: AddVisitPayload = {
-            timeOfEntry: expectedEntryTime,
-            timeOfDeparture: expectedDepartureTime,
+            uuid: visitUUID,
+            qrCodeBase64,
+            visitDate: visitDateUTC,
+            timeOfEntry: timeOfEntryUTC,
+            timeOfDeparture: timeOfDepartureUTC,
             emailHash: hashedEmail,
             whomTheyMeet: values.whoTheyMeet || undefined,
             companyName: values.companyName || undefined,
@@ -306,7 +325,6 @@ function CreateVisit() {
               ? values.accessibleLocations
               : undefined,
             purposeOfVisit: values.purposeOfVisit || undefined,
-            visitDate,
           };
 
           const addVisitAction = await dispatch(addVisit(addVisitPayload));
