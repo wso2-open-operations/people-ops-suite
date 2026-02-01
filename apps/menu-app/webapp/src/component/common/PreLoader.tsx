@@ -24,12 +24,13 @@ interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;
   hideImage?: boolean;
+  marqueeOn?: boolean;
 }
 
 const PreLoader = (props: PreLoaderProps) => {
   const loadingMsg = [APP_NAME, props.message];
   const theme = useTheme();
-  const { hideImage = true } = props;
+  const { hideImage = true, marqueeOn = false } = props;
 
   const logo = theme.palette.mode === "light" ? animatedLogoLight : animatedLogoDark;
 
@@ -61,7 +62,7 @@ const PreLoader = (props: PreLoaderProps) => {
         />
       )}
 
-      {props.message && (
+      {props.message && marqueeOn && (
         <Box
           sx={{
             position: "relative",
@@ -118,6 +119,20 @@ const PreLoader = (props: PreLoaderProps) => {
             </Typography>
           </Box>
         </Box>
+      )}
+
+      {props.message && !marqueeOn && (
+        <Typography
+          variant="h5"
+          sx={{
+            position: "relative",
+            top: props.isLoading ? 4 : -16,
+            color: theme.palette.customText.primary.p2.active,
+            textAlign: "center",
+          }}
+        >
+          {props.message}
+        </Typography>
       )}
     </Box>
   );
