@@ -23,11 +23,13 @@ import { APP_NAME } from "@root/src/config/config";
 interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;
+  hideImage?: boolean;
 }
 
 const PreLoader = (props: PreLoaderProps) => {
   const loadingMsg = [APP_NAME, props.message];
   const theme = useTheme();
+  const { hideImage = true } = props;
 
   const logo = theme.palette.mode === "light" ? animatedLogoLight : animatedLogoDark;
 
@@ -47,7 +49,7 @@ const PreLoader = (props: PreLoaderProps) => {
         backgroundColor: theme.palette.surface.primary.active,
       }}
     >
-      <Lottie animationData={logo} style={style} />
+      {!hideImage && <Lottie animationData={logo} style={style} />}
 
       {props.message && props.isLoading && (
         <LinearProgress
@@ -91,6 +93,7 @@ const PreLoader = (props: PreLoaderProps) => {
             >
               {loadingMsg[0]}
             </Typography>
+
             <Typography
               variant="h5"
               sx={{
@@ -101,6 +104,7 @@ const PreLoader = (props: PreLoaderProps) => {
             >
               {loadingMsg[1]}
             </Typography>
+
             {/* Duplicate of first element to create seamless loop */}
             <Typography
               variant="h5"

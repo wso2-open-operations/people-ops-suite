@@ -65,7 +65,9 @@ const AppHandler: FC = () => {
     }
 
     if (appState === AppState.Loading) {
-      return <PreLoader isLoading={true} message="We are getting things ready..." />;
+      return (
+        <PreLoader hideImage={true} isLoading={true} message="We are getting things ready..." />
+      );
     }
 
     if (appState === AppState.Maintenance) {
