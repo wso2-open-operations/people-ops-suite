@@ -815,7 +815,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
-    # Retrieve the work email list of the surbordinates.
+    # Retrieve the work email list of the subordinates.
     #
     # + ctx - Request context containing user information
     # + search - Search term used to filter employees

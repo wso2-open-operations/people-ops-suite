@@ -44,9 +44,9 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
             ${createdBy}
         )
         ON DUPLICATE KEY UPDATE
-            first_name = ${payload.firstName},
-            last_name = ${payload.lastName},
-            contact_number = ${payload.contactNumber},
+            first_name = COALESCE(${payload.firstName}, first_name),
+            last_name = COALESCE(${payload.lastName}, last_name),
+            contact_number = COALESCE(${payload.contactNumber}, contact_number),
             updated_by = ${createdBy}
         ;`;
 

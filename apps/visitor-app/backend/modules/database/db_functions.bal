@@ -140,6 +140,9 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
         return visit is sql:NoRowsError ? () : visit;
     }
 
+    string? firstName = visit.firstName;
+    string? lastName = visit.lastName;
+    string? contactNumber = visit.contactNumber;
     string? timeOfEntry = visit.timeOfEntry;
     string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
@@ -159,10 +162,10 @@ public isolated function fetchVisit(int visitId) returns Visit|error? {
                 timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) :
                 timeOfDeparture : (),
         status: visit.status,
-        firstName: visit.firstName,
-        lastName: visit.lastName,
-        contactNumber: visit.contactNumber,
-        email: visit.email,
+        firstName: firstName is string ? check decrypt(firstName) : (),
+        lastName: lastName is string ? check decrypt(lastName) : (),
+        contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
+        email: check decrypt(visit.email),
         invitationId: visit.invitationId,
         createdBy: visit.createdBy,
         createdOn: visit.createdOn,
