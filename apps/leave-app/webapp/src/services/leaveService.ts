@@ -58,7 +58,9 @@ export const validateLeaveRequest = async (
 export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
-  const response = await apiInstance.get<Employee[]>(AppConfig.serviceUrls.employees);
+  const response = await apiInstance.get<Employee[]>(
+    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active`,
+  );
 
   return response.data;
 };
