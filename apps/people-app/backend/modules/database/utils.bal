@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
+import ballerina/lang.regexp;
 
 # Build the database select query with dynamic filter attributes.
 #
@@ -61,6 +62,77 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
     }
 
     return updatedQuery;
+}
+
+# Escape special characters in the input string for SQL LIKE queries.
+# 
+# + input - The input string to escape
+# + return - The escaped string
+isolated function escapeLike(string input) returns string {
+    string escaped = input;
+
+    // Escape backslash
+    escaped = regexp:replaceAll(re `\\`, escaped, "\\\\");
+    // Escape SQL LIKE wildcards
+    escaped = regexp:replaceAll(re `%`, escaped, "\\%");
+    escaped = regexp:replaceAll(re `_`, escaped, "\\_");
+    return escaped;
+}
+
+# Tokenize the search query string into individual tokens.
+# 
+# + searchString - The search query string to tokenize
+# + return - Array of string tokens
+isolated function tokenizeSearchQuery(string searchString) returns string[] {
+    string[] tokens = [];
+    string normalized = searchString.trim().toLowerAscii();
+    if normalized == "" {
+        return tokens;
+    }
+
+    string[] parts = regexp:split( re `\s+`, normalized);
+
+    foreach string part in parts {
+        string trimmed = part.trim();
+        if trimmed is "" {
+            continue;
+        }
+
+        tokens.push(trimmed);
+        if tokens.length() >= MAX_TOKEN_COUNT {
+            break;
+        }
+    }
+
+    return tokens;
+}
+
+# Build the text token filter for the search query.
+# 
+# + token - The text token to build the filter for
+# + return - sql:ParameterizedQuery representing the text token filter
+isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQuery {
+    string escapedToken = escapeLike(token);
+    string likeValue = "%" + escapedToken + "%";
+
+    return `
+        (
+            LOWER(CONCAT(IFNULL(e.first_name, ''), ' ', IFNULL(e.last_name, '')))
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.first_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.last_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.work_email)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.personal_email)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.nic_or_passport)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.personal_phone)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+        )
+    `;
 }
 
 # Check the affected row count after an update operation.
