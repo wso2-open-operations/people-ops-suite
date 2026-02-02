@@ -182,6 +182,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.visit_id as id,
             v.time_of_entry as timeOfEntry,
             v.time_of_departure as timeOfDeparture,
+            v.invitation_id as invitationId,
             v.pass_number as passNumber,
             v.email_hash as emailHash,
             vs.first_name as firstName,
