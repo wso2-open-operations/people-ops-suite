@@ -955,10 +955,10 @@ function CreateVisit() {
         {(formik) => (
           <>
             {(visitorState.state === State.loading ||
-              visitState.state === State.loading) && (
+              visitState.submitState === State.loading) && (
               <BackgroundLoader
                 open
-                message={visitorState.stateMessage || "Processing..."}
+                message={visitState.stateMessage || "Processing..."}
               />
             )}
 
