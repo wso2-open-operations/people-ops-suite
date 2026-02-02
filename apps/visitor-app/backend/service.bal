@@ -23,8 +23,6 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/time;
 
-// import ballerina/uuid;
-
 configurable string webAppUrl = ?;
 
 final cache:Cache cache = new ({
@@ -588,47 +586,80 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // if visitorEmail is string {
-            //     string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-            //     if formattedFromDate is error {
-            //         string customError = "Error occurred while formatting the visit start time!";
-            //         log:printError(customError, formattedFromDate);
-            //     }
-            //     string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-            //     if formattedToDate is error {
-            //         string customError = "Error occurred while formatting the visit end time!";
-            //         log:printError(customError, formattedToDate);
-            //     }
-            //     string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
-            //             {
-            //                 "TIME": time:utcToEmailString(time:utcNow()),
-            //                 "EMAIL": visitorEmail,
-            //                 "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
-            //                 "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-            //                 "TIME_OF_DEPARTURE": formattedToDate is error ?
-            //                     visit.timeOfDeparture + "(UTC)" : formattedToDate,
+            if visitorEmail is string {
+                string? timeOfEntry = visit.timeOfEntry;
+                string|error formattedFromDate = "N/A";
+                if timeOfEntry is string {
+                    formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+                    if formattedFromDate is error {
+                        string customError = "Error occurred while formatting the visit start time!";
+                        log:printError(customError, formattedFromDate);
+                    }
+                }
 
-            //                 "CONTACT_EMAIL": email:contactUsEmail,
-            //                 "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-            //             });
-            //     if content is error {
-            //         string customError = "An error occurred while binding values to the email template!";
-            //         log:printError(customError, content);
-            //     } else {
-            //         error? emailError = email:sendEmail(
-            //                     {
-            //                     to: [visitorEmail],
-            //                     'from: email:fromEmailAddress,
-            //                     subject: email:VISIT_REJECTED_SUBJECT,
-            //                     template: content,
-            //                     cc: [email:receptionEmail]
-            //                 });
-            //         if emailError is error {
-            //             string customError = "An error occurred while sending the rejection email!";
-            //             log:printError(customError, emailError);
-            //         }
-            //     }
-            // }
+                string? timeOfDeparture = visit.timeOfDeparture;
+                string|error formattedToDate = "N/A";
+                if timeOfDeparture is string {
+                    formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                    if formattedToDate is error {
+                        string customError = "Error occurred while formatting the visit end time!";
+                        log:printError(customError, formattedToDate);
+                    }
+                }
+                string? firstName = visit.firstName;
+                string? lastName = visit.lastName;
+                string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visitorEmail,
+                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            "CONTACT_EMAIL": email:contactUsEmail,
+                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                        });
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                } else {
+                    error? emailError = email:sendEmail(
+                                {
+                                to: [visitorEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:VISIT_REJECTED_SUBJECT,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+                    if emailError is error {
+                        string customError = "An error occurred while sending the rejection email!";
+                        log:printError(customError, emailError);
+                    }
+                }
+            }
             return <http:Ok>{
                 body: {
                     message: "Visit rejected successfully!"
@@ -662,60 +693,120 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // if visitorEmail is string {
-            //     database:Floor[]? accessibleLocations = visit.accessibleLocations;
-            //     if accessibleLocations is () {
-            //         string customError = "No accessible locations found for the visit!";
-            //         log:printError(customError);
+            if visitorEmail is string {
+                database:Floor[]? accessibleLocations = visit.accessibleLocations;
+                if accessibleLocations is () {
+                    string customError = "No accessible locations found for the visit!";
+                    log:printError(customError);
 
-            //     }
+                }
 
-            //     string accessibleLocationString = accessibleLocations is database:Floor[] ?
-            //         organizeLocations(accessibleLocations) : "N/A";
+                string? passNumber = visit.passNumber;
+                string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                    organizeLocations(accessibleLocations) : ();
 
-            //     string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-            //     if formattedFromDate is error {
-            //         string customError = "Error occurred while formatting the visit start time!";
-            //         log:printError(customError, formattedFromDate);
-            //     }
-            //     string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-            //     if formattedToDate is error {
-            //         string customError = "Error occurred while formatting the visit end time!";
-            //         log:printError(customError, formattedToDate);
-            //     }
-            //     string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
-            //             {
-            //                 "TIME": time:utcToEmailString(time:utcNow()),
-            //                 "EMAIL": visitorEmail,
-            //                 "NAME": generateSalutation(visit.firstName + " " + visit.lastName),
-            //                 "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-            //                 "TIME_OF_DEPARTURE": formattedToDate is error ?
-            //                     visit.timeOfDeparture + "(UTC)" : formattedToDate,
-            //                 "ALLOWED_FLOORS": accessibleLocationString,
-            //                 "START_TIME": visit.timeOfEntry,
-            //                 "END_TIME": visit.timeOfDeparture,
-            //                 "PASS_NUMBER": <string>visit.passNumber,
-            //                 "CONTACT_EMAIL": email:contactUsEmail
-            //             });
-            //     if content is error {
-            //         string customError = "An error occurred while binding values to the email template!";
-            //         log:printError(customError, content);
-            //     } else {
-            //         error? emailError = email:sendEmail(
-            //                 {
-            //                     to: [visitorEmail],
-            //                     'from: email:fromEmailAddress,
-            //                     subject: email:VISIT_COMPLETION_SUBJECT,
-            //                     template: content,
-            //                     cc: [email:receptionEmail]
-            //                 });
+                string? timeOfEntry = visit.timeOfEntry;
+                string|error formattedFromDate = "N/A";
+                if timeOfEntry is string {
+                    formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+                    if formattedFromDate is error {
+                        string customError = "Error occurred while formatting the visit start time!";
+                        log:printError(customError, formattedFromDate);
+                    }
+                }
 
-            //         if emailError is error {
-            //             string customError = "An error occurred while sending the completion email!";
-            //             log:printError(customError, emailError);
-            //         }
-            //     }
-            // }
+                string? timeOfDeparture = visit.timeOfDeparture;
+                string|error formattedToDate = "N/A";
+                if timeOfDeparture is string {
+                    formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                    if formattedToDate is error {
+                        string customError = "Error occurred while formatting the visit end time!";
+                        log:printError(customError, formattedToDate);
+                    }
+                }
+                string? firstName = visit.firstName;
+                string? lastName = visit.lastName;
+                string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
+                        {
+                            "TIME": time:utcToEmailString(time:utcNow()),
+                            "EMAIL": visitorEmail,
+                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors:</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
+                              </li>` : "",
+                            "PASS_NUMBER": passNumber is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Pass Number :</strong>
+                                  <span>${passNumber}</span>
+                                </p>
+                              </li>` : "",
+                            "CONTACT_EMAIL": email:contactUsEmail
+                        });
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                } else {
+                    error? emailError = email:sendEmail(
+                            {
+                                to: [visitorEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:VISIT_COMPLETION_SUBJECT,
+                                template: content,
+                                cc: [email:receptionEmail]
+                            });
+
+                    if emailError is error {
+                        string customError = "An error occurred while sending the completion email!";
+                        log:printError(customError, emailError);
+                    }
+                }
+            }
+
             return <http:Ok>{
                 body: {
                     message: "Visit completed successfully!"
