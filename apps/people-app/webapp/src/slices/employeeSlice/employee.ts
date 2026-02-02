@@ -14,14 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { State } from "@/types/types";
+import { EmergencyContact, State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { EmergencyContact } from "@/types/types";
+import { APIService } from "@utils/apiService";
+import { HttpStatusCode } from "axios";
 
 export interface Employee {
   employeeId: string;
@@ -104,12 +103,16 @@ export type EmployeeFilterAttributes = {
   residentPhone?: string;
   city?: string;
   country?: string;
-  businessUnit?: string;
-  team?: string;
-  subTeam?: string;
-  designation?: string;
-  employmentType?: string;
-  unit?: string;
+  businessUnitId?: number;
+  teamId?: number;
+  subTeamId?: number;
+  unitId?: number;
+  careerFunctionId?: number;
+  managerEmail?: string;
+  designationId?: number;
+  employmentTypeId?: number;
+  location?: string;
+  officeId?: number;
   page?: number;
   perPage?: number;
 };
@@ -183,6 +186,7 @@ export interface ContinuousServiceRecordInfo {
 interface EmployeesState {
   state: State;
   employeeBasicInfoState: State;
+  managerEmails: string[];
   employeeFilter: EmployeeFilterAttributes;
   filteredEmployeesResponseState: State;
   filterAppliedOnce: boolean;
@@ -199,6 +203,7 @@ interface EmployeesState {
 const initialState: EmployeesState = {
   state: State.idle,
   employeeBasicInfoState: State.idle,
+  managerEmails: [],
   employeeFilter: {},
   filteredEmployeesResponseState: State.idle,
   filterAppliedOnce: false,
@@ -267,6 +272,30 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
     }
   },
 );
+
+export const fetchManagerEmails = createAsyncThunk<string[]>("employees/fetchManagerEmails",
+  async (_, {dispatch, rejectWithValue}) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.managerEmails}`
+      );
+      return resp.data as string[];
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching manager emails"
+          : error.response?.data?.message ||
+          "An unknown error occurred while fetching manager emails.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        })
+      );
+      return rejectWithValue(errorMessage);
+    }
+  }
+)
 
 export const fetchFilteredEmployees = createAsyncThunk<
   FilteredEmployeesResponse,
@@ -522,6 +551,23 @@ const EmployeeSlice = createSlice({
       .addCase(updateEmployeeJobInfo.rejected, (state, action) => {
         state.updateJobInfoState = State.failed;
         state.updateJobInfoMessage = "Failed to update job information!";
+        state.errorMessage = action.payload as string;
+      })
+      .addCase(fetchManagerEmails.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching manager emails...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagerEmails.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully fetched manager emails!";
+        state.managerEmails = action.payload;
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagerEmails.rejected, (state, action) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch manager emails!";
+        state.managerEmails = [];
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {

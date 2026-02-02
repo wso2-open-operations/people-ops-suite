@@ -24,10 +24,10 @@ import {
 } from "@root/src/slices/organizationSlice/organization";
 
 export type OrganizationSelection = {
-  businessUnit?: string;
-  team?: string;
-  subTeam?: string;
-  unit?: string;
+  businessUnitId?: number;
+  teamId?: number;
+  subTeamId?: number;
+  unitId?: number;
 };
 
 export type OrganizationTreeFiltersProps = {
@@ -100,7 +100,7 @@ export function OrganizationTreeFilters({
             options={businessUnits}
             getOptionLabel={(o) => o.name}
             value={
-              businessUnits.find((b) => b.name === value.businessUnit) ?? null
+              businessUnits.find((b) => b.id === value.businessUnitId) ?? null
             }
             onChange={(_, selected) => onChangeBusinessUnit(selected)}
             renderInput={(params) => (
@@ -120,9 +120,9 @@ export function OrganizationTreeFilters({
               <Autocomplete<Team, false, false, false>
                 options={teams}
                 getOptionLabel={(o) => o.name}
-                value={teams.find((t) => t.name === value.team) ?? null}
+                value={teams.find((t) => t.id === value.teamId) ?? null}
                 onChange={(_, selected) => onChangeTeam(selected)}
-                disabled={!value.businessUnit}
+                disabled={!value.businessUnitId}
                 renderInput={(params) => (
                   <BaseTextField
                     {...params}
@@ -141,10 +141,10 @@ export function OrganizationTreeFilters({
                     options={subTeams}
                     getOptionLabel={(o) => o.name}
                     value={
-                      subTeams.find((st) => st.name === value.subTeam) ?? null
+                      subTeams.find((st) => st.id === value.subTeamId) ?? null
                     }
                     onChange={(_, selected) => onChangeSubTeam(selected)}
-                    disabled={!value.team}
+                    disabled={!value.teamId}
                     renderInput={(params) => (
                       <BaseTextField
                         {...params}
@@ -162,9 +162,9 @@ export function OrganizationTreeFilters({
                       <Autocomplete<Unit, false, false, false>
                         options={units}
                         getOptionLabel={(o) => o.name}
-                        value={units.find((u) => u.name === value.unit) ?? null}
+                        value={units.find((u) => u.id === value.unitId) ?? null}
                         onChange={(_, selected) => onChangeUnit(selected)}
-                        disabled={!value.subTeam}
+                        disabled={!value.subTeamId}
                         renderInput={(params) => (
                           <BaseTextField
                             {...params}
