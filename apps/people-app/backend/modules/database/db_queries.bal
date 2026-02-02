@@ -118,7 +118,7 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     int perPage = params.perPage ?: 20;
     int offset = (page - 1) * perPage;
 
-    return `
+    sql:ParameterizedQuery baseQuery = `
         SELECT
             e.id AS employeeId,
             e.first_name AS firstName,
@@ -144,8 +144,7 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             st.name AS subTeam,
             u.name AS unit,
             COUNT(*) OVER() AS totalCount
-
-        FROM 
+        FROM
             employee e
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
@@ -155,31 +154,42 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
-        WHERE
-            (${params.title} IS NULL OR pi.title = ${params.title})
-        AND (${params.firstName} IS NULL OR e.first_name LIKE CONCAT('%', ${params.firstName}, '%'))
-        AND (${params.lastName}  IS NULL OR e.last_name  LIKE CONCAT('%', ${params.lastName},  '%'))
-        AND (${params.nicOrPassport} IS NULL OR pi.nic_or_passport LIKE CONCAT('%', ${params.nicOrPassport}, '%'))
-        AND (${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})
-        AND (${params.gender} IS NULL OR pi.gender = ${params.gender})
-        AND (${params.nationality} IS NULL OR pi.nationality = ${params.nationality})
-        AND (${params.personalEmail} IS NULL OR pi.personal_email LIKE CONCAT('%', ${params.personalEmail}, '%'))
-        AND (${params.personalPhone} IS NULL OR pi.personal_phone LIKE CONCAT('%', ${params.personalPhone}, '%'))
-        AND (${params.residentPhone} IS NULL OR pi.resident_number LIKE CONCAT('%', ${params.residentPhone}, '%'))
-        AND (${params.city} IS NULL OR pi.city = ${params.city})
-        AND (${params.country} IS NULL OR pi.country = ${params.country})
-        AND (${params.businessUnit} IS NULL OR bu.name = ${params.businessUnit})
-        AND (${params.team} IS NULL OR t.name = ${params.team})
-        AND (${params.subTeam} IS NULL OR st.name = ${params.subTeam})
-        AND (${params.designation} IS NULL OR d.designation = ${params.designation})
-        AND (${params.employmentType} IS NULL OR et.name = ${params.employmentType})
-        AND (${params.unit} IS NULL OR u.name = ${params.unit})
+        `;
 
+    sql:ParameterizedQuery[] filters = [];
+
+    filters.push(`(${params.title} IS NULL OR pi.title = ${params.title})`);
+    filters.push(`(${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})`);
+    filters.push(`(${params.gender} IS NULL OR pi.gender = ${params.gender})`);
+    filters.push(`(${params.nationality} IS NULL OR pi.nationality = ${params.nationality})`);
+    filters.push(`(${params.residentPhone} IS NULL OR pi.resident_number LIKE CONCAT('%', ${params.residentPhone}, '%'))`);
+    filters.push(`(${params.city} IS NULL OR pi.city = ${params.city})`);
+    filters.push(`(${params.country} IS NULL OR pi.country = ${params.country})`);
+    filters.push(`(${params.businessUnit} IS NULL OR bu.name = ${params.businessUnit})`);
+    filters.push(`(${params.team} IS NULL OR t.name = ${params.team})`);
+    filters.push(`(${params.subTeam} IS NULL OR st.name = ${params.subTeam})`);
+    filters.push(`(${params.designation} IS NULL OR d.designation = ${params.designation})`);
+    filters.push(`(${params.employmentType} IS NULL OR et.name = ${params.employmentType})`);
+    filters.push(`(${params.unit} IS NULL OR u.name = ${params.unit})`);
+
+    string? searchString = params.searchString;
+
+    if searchString is string {
+        string[] tokens = tokenizeSearchQuery(searchString);
+        foreach string token in tokens {
+            filters.push(buildTextTokenFilter(token));
+        }
+    }
+
+    sql:ParameterizedQuery updated = buildSqlSelectQuery(baseQuery, filters);
+
+    updated = sql:queryConcat(updated, `
         ORDER BY e.id ASC
         LIMIT ${perPage} OFFSET ${offset}
-    `;
-};
+    `);
 
+    return updated;
+};
 
 # Fetch continuous service record by work email.
 #

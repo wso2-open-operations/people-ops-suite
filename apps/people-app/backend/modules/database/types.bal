@@ -142,6 +142,8 @@ public type Employee record {|
 
 # Filter for getting employees.
 public type EmployeeSearchParameters record {|
+    # Search query
+    string? searchString = ();
     # Title
     string? title = ();
     # First name

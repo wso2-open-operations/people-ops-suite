@@ -18,3 +18,5 @@
 public const DEFAULT_LIMIT = 100;
 
 const ERROR_NO_ROWS_UPDATED = "No rows were updated";
+# A constant max token count for search operations
+const MAX_TOKEN_COUNT = 10;
