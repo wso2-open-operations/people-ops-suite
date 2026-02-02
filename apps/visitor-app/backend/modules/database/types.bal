@@ -65,7 +65,7 @@ public type AddVisitorPayload record {|
             message: "The name should be a non-empty string with printable characters."
         }
     }
-    string firstName?;
+    string? firstName = ();
     # Last name of the visitor
     @constraint:String {
         pattern: {
@@ -73,7 +73,7 @@ public type AddVisitorPayload record {|
             message: "The name should be a non-empty string with printable characters."
         }
     }
-    string lastName?;
+    string? lastName = ();
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -81,7 +81,7 @@ public type AddVisitorPayload record {|
             message: "The contact number should be in valid international format."
         }
     }
-    string contactNumber?;
+    string? contactNumber = ();
     # Email of the visitor
     string email;
 |};

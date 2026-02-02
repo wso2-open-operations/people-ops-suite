@@ -21,22 +21,14 @@ import ballerina/sql;
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    string? first_name = payload.firstName;
-    string? last_name = payload.lastName;
+    string? firstName = payload.firstName;
+    string? lastName = payload.lastName;
+    string? contactNumber = payload.contactNumber;
 
-    if first_name is string {
-        payload.firstName = check encrypt(first_name);
-
-    }
-    if last_name is string {
-        payload.lastName = check encrypt(last_name);
-    }
-
+    payload.firstName = firstName is string ? check encrypt(firstName) : ();
+    payload.lastName = lastName is string ? check encrypt(lastName) : ();
+    payload.contactNumber = contactNumber is string ? check encrypt(contactNumber) : ();
     payload.email = check encrypt(payload.email);
-    string? contact_number = payload.contactNumber;
-    if contact_number is string {
-        payload.contactNumber = check encrypt(contact_number);
-    }
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
