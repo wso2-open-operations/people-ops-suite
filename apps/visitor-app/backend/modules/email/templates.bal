@@ -3628,45 +3628,9 @@ public final string visitorApproveTemplate = string `
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Entry :</strong>
-                                  <span><!-- [TIME_OF_ENTRY] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Exit :</strong>
-                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Pass Number:</strong>
-                                  <!-- [PASS_NUMBER] -->
-                                </p>
-                              </li>
+                              <!-- [TIME_OF_ENTRY] -->
+                              <!-- [TIME_OF_DEPARTURE] -->
+                              <!-- [PASS_NUMBER] -->
 
                               <li>
                                 <p

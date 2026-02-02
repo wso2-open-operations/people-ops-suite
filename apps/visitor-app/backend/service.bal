@@ -20,7 +20,6 @@ import visitor.people;
 
 import ballerina/cache;
 import ballerina/http;
-import ballerina/lang.array;
 import ballerina/log;
 import ballerina/time;
 
@@ -423,20 +422,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
-            if passNumber is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Pass number is required when approving a visit!"
-                    }
-                };
-            }
-            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
-                return <http:BadRequest>{
-                    body: {
-                        message: "At least one accessible location is required when approving a visit!"
-                    }
-                };
-            }
 
             error? response = database:updateVisit(visitId,
                     {
@@ -458,7 +443,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if visitorEmail is string {
-                string accessibleLocationString = organizeLocations(accessibleLocations);
+                string? accessibleLocationString = accessibleLocations !is () ? organizeLocations(accessibleLocations) : ();
 
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
@@ -487,11 +472,58 @@ service http:InterceptableService / on new http:Listener(9090) {
                             "TIME": time:utcToEmailString(time:utcNow()),
                             "EMAIL": visitorEmail,
                             "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? "" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                "" : formattedToDate,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "PASS_NUMBER": passNumber.toString(),
+                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors :</strong>
+                                  <span>${accessibleLocationString}</span>
+                                </p>
+                              </li>` : "",
+                            "PASS_NUMBER": passNumber is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Pass Number :</strong>
+                                  <span>${passNumber}</span>
+                                </p>
+                              </li>` : "",
                             "CONTACT_EMAIL": email:contactUsEmail,
                             "YEAR": time:utcToCivil(time:utcNow()).year.toString()
                         });
