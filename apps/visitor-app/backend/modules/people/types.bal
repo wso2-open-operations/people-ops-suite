@@ -6,6 +6,7 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 import ballerina/graphql;
+
 # Auth2 client auth configurations.
 public type ClientAuthConfig record {|
     # Token URL
@@ -64,6 +65,8 @@ public type EmployeeFilter record {|
     string[]? employmentType?;
     # The email
     string? email?;
+    # The search term
+    string? emailSearchString?;
 |};
 
 type EmployeesData record {|
@@ -71,6 +74,6 @@ type EmployeesData record {|
 |};
 
 type EmployeesResponse record {|
-    *graphql:GenericResponseWithErrors;   
+    *graphql:GenericResponseWithErrors;
     EmployeesData data;
 |};

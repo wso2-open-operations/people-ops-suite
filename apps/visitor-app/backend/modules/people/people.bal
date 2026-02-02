@@ -30,8 +30,13 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
 
 # Filter basic employee data.
 #
+# + search - Search term
+# + 'limit - pagination limit
+# + offset - pagination offset
 # + return - Employees info
-public isolated function getEmployees() returns EmployeeBasic[]|error {
+public isolated function getEmployees(string search, int 'limit, int offset) returns EmployeeBasic[]|error {
+
+    string term = search.trim();
 
     string document = string `
         query getAllEmployees($filter: EmployeeFilter!, $limit: Int, $offset: Int) {
@@ -43,22 +48,17 @@ public isolated function getEmployees() returns EmployeeBasic[]|error {
     }}
     `;
 
-    EmployeeBasic[] employees = [];
     EmployeeFilter filter = {
         employeeStatus: ["ACTIVE", "LEFT", "MARKED LEAVER"],
-        employmentType: ["PERMANENT", "CONSULTANCY", "INTERNSHIP", "PROBATION"]
+        employmentType: ["PERMANENT", "CONSULTANCY", "INTERNSHIP", "PROBATION"],
+        emailSearchString: term
     };
 
-    boolean fetchMore = true;
-    while fetchMore {
-        EmployeesResponse response = check hrClient->execute(document, {
-            filter,
-            'limit: DEFAULT_LIMIT,
-            offset: employees.length()
-        });
+    EmployeesResponse response = check hrClient->execute(document, {
+        filter,
+        'limit,
+        offset
+    });
 
-        employees.push(...response.data.employees);
-        fetchMore = response.data.employees.length() > 0;
-    }
-    return employees;
+    return response.data.employees;
 }
