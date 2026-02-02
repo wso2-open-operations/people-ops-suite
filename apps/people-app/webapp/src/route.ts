@@ -31,6 +31,7 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
+  hideFromSidebar?: boolean;
 }
 
 export interface RouteDetail {
@@ -42,6 +43,7 @@ export interface RouteDetail {
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
+  hideFromSidebar?: boolean;
 }
 
 export const routes: RouteObjectWithRole[] = [
@@ -68,10 +70,18 @@ export const routes: RouteObjectWithRole[] = [
   //   allowRoles: [Role.ADMIN, Role.TEAM],
   //   bottomNav: true,
   // },
+  {
+    path: "/employees/:employeeId",
+    text: "Employees",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeeDetails),
+    allowRoles: [Role.ADMIN],
+    hideFromSidebar: true,
+  },
 ];
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: string[]
+  roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
   var routesObj: RouteObjectWithRole[] = [];

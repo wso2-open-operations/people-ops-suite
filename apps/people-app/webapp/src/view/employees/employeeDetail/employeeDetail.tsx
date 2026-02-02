@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,18 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import { useParams } from "react-router-dom";
+import Me from "../../me";
 
-const me = lazy(() => import("@view/me"));
-const employees = lazy(() => import("@view/employees/Employee"));
-const help = lazy(() => import("@view/help/help"));
-const employeeDetails = lazy(
-  () => import("@view/employees/employeeDetail/employeeDetail"),
-);
-
-export const View = {
-  me,
-  employees,
-  employeeDetails,
-  help,
-};
+export default function EmployeeDetail() {
+  const { employeeId } = useParams<{ employeeId: string }>();
+  return employeeId ? <Me employeeId={employeeId} readOnly /> : null;
+}
