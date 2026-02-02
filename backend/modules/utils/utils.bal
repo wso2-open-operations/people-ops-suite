@@ -5,7 +5,7 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 import par_app.types;
-
+import par_app.authorization;
 import ballerina/http;
 import ballerina/log;
 
@@ -13,8 +13,26 @@ import ballerina/log;
 #
 # + ctx - The request context.
 # + return - The invoker details or an error if the invoker details are not found.
-public isolated function getInvokerDetails(http:RequestContext ctx) returns types:InvokerDetails|error =>
-    ctx.getWithType(types:INVOKER_DETAILS);
+public isolated function getInvokerDetails(http:RequestContext ctx) returns types:InvokerDetails|error {
+    authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+
+    if userInfo is error {
+        return error("Invoker details not found: User info header missing.");
+    }
+
+    boolean hasAdminPrivilege = authorization:checkPermissions(
+        [authorization:authorizedRoles.headPeopleOperationsRole], 
+        userInfo.groups
+    );
+
+    types:InvokerDetails invokerDetails = {
+        email: userInfo.email,
+        isAdmin: hasAdminPrivilege, 
+        roles: userInfo.groups.cloneReadOnly()
+    };
+
+    return invokerDetails;
+}
 
 # Check if the given string is updated.
 #
