@@ -303,4 +303,6 @@ public type VisitFilters record {|
     int? 'limit = DEFAULT_LIMIT;
     # Offset for pagination
     int? offset = ();
+    # UUID of the visit
+    string? uuid = ();
 |};

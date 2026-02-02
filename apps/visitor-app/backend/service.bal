@@ -815,6 +815,32 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
     }
 
+    # Fetch a visit by its UUID.
+    #
+    # + uuid - UUID of the visit to be fetched
+    # + return - Visit object or error
+    resource function get visit/[string uuid]() returns database:Visit|http:NotFound|http:InternalServerError {
+        database:Visit|error? visit = database:fetchVisit(uuid = uuid);
+        if visit is error {
+            string customError = "Error occurred while fetching visit by UUID!";
+            log:printError(customError, visit);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if visit is () {
+            return <http:NotFound>{
+                body: {
+                    message: "No visit found with the provided UUID!"
+                }
+            };
+        }
+
+        return visit;
+    }
+
     # Retrieve the work email list of the subordinates.
     #
     # + ctx - Request context containing user information

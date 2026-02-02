@@ -228,6 +228,10 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         filterQueries.push(` v.visit_id = ${filters.visitId}`);
     }
 
+    if filters.uuid is string {
+        filterQueries.push(` v.uuid = ${filters.uuid}`);
+    }
+
     // Build main query with the filters.
     mainQuery = buildSqlSelectQuery(mainQuery, filterQueries);
 

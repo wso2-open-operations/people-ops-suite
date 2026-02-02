@@ -129,12 +129,13 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
     _ = check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
 }
 
-# Fetch visit by ID.
+# Fetch visit by ID or UUID.
 #
 # + visitId - ID of the visit to fetch
+# + uuid - UUID of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns Visit|error? {
-    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
+public isolated function fetchVisit(int? visitId = (), string? uuid = ()) returns Visit|error? {
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid}));
 
     if visit is error {
         return visit is sql:NoRowsError ? () : visit;
