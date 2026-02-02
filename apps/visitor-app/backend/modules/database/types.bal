@@ -99,23 +99,21 @@ public type AddVisitPayload record {|
     # Email Hash of the visitor
     string emailHash;
     # Company name of visitor
-    string companyName?;
+    string? companyName = ();
     # Number in the tag given to visitor
-    string passNumber?;
+    string? passNumber = ();
     # The person the visitor is supposed to meet
-    string whomTheyMeet?;
+    string? whomTheyMeet = ();
     # Purpose of the visit
-    string purposeOfVisit?;
+    string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
-    Floor[] accessibleLocations?;
+    Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    time:Utc timeOfEntry?;
+    time:Utc? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
-    time:Utc timeOfDeparture?;
+    time:Utc? timeOfDeparture = ();
     # Status of the visit
-    Status status?;
-    # QR code in base64 format
-    string qrCodeBase64;
+    Status? status = ();
     # Date of the visit [in UTC]
     time:Utc visitDate;
     # Unique identifier for the visit
