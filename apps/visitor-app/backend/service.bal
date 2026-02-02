@@ -161,24 +161,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.emailHash);
-        if existingVisitor is error {
-            string customError = "Error occurred while fetching existing visitor!";
-            log:printError(customError, existingVisitor);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        if existingVisitor != () {
-            return <http:Conflict>{
-                body: {
-                    message: "Visitor with this email already exists!"
-                }
-            };
-        }
-
         error? visitorError = database:addVisitor(payload, invokerInfo.email);
         if visitorError is error {
             string customError = "Error occurred while adding visitor!";
@@ -277,7 +259,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   accessibleLocations: payload.accessibleLocations,
                                                   timeOfEntry: timeOfEntry is string ? idealEntryTime : (),
                                                   timeOfDeparture: timeOfDeparture is string ? idealDepartureTime : (),
-                                                  status: database:REJECTED,
+                                                  status: database:REQUESTED,
                                                   visitDate: visitDate,
                                                   uuid: payload.uuid
                                               }, invokerInfo.email, invokerInfo.email);
@@ -720,7 +702,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get employees(http:RequestContext ctx, string search = "", int offset = 0, int 'limit = 1000)
         returns people:EmployeeBasic[]|http:InternalServerError|http:Forbidden {
 
-        // Retrieve user info from request context (set by JwtInterceptor)
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -730,25 +711,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-            people:EmployeeBasic[]|error allEmployees = people:getEmployees();
-            if allEmployees is error {
-                string customError = "Error occurred while fetching employees!";
-                log:printError(customError, allEmployees);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-            return allEmployees;
-        }
-        else {
-            return <http:Forbidden>{
+        people:EmployeeBasic[]|error allEmployees = people:getEmployees();
+        if allEmployees is error {
+            string customError = "Error occurred while fetching employees!";
+            log:printError(customError, allEmployees);
+            return <http:InternalServerError>{
                 body: {
-                    message: "Insufficient Privileges!"
+                    message: customError
                 }
             };
         }
+        return allEmployees;
     }
 }

@@ -33,7 +33,10 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
     }
 
     payload.email = check encrypt(payload.email);
-    payload.contactNumber = check encrypt(payload.contactNumber ?: "");
+    string? contact_number = payload.contactNumber;
+    if contact_number is string {
+        payload.contactNumber = check encrypt(contact_number);
+    }
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }

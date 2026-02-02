@@ -58,7 +58,7 @@ public type Visitor record {|
 public type AddVisitorPayload record {|
     # Encrypted email hash of the visitor
     string emailHash;
-    # Name of the visitor
+    # First name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
@@ -66,7 +66,7 @@ public type AddVisitorPayload record {|
         }
     }
     string firstName?;
-    # Name of the visitor
+    # Last name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,

@@ -46,8 +46,6 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         ON DUPLICATE KEY UPDATE
             first_name = ${payload.firstName},
             last_name = ${payload.lastName},
-            email_hash = ${payload.emailHash},
-            email = ${payload.email},
             contact_number = ${payload.contactNumber},
             updated_by = ${createdBy}
         ;`;

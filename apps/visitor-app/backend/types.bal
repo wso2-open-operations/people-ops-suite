@@ -155,7 +155,7 @@ public type FillInvitationPayload record {|
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The Last name should be a non-empty string with printable characters."
+            message: "The last name should be a non-empty string with printable characters."
         }
     }
     string lastName;
