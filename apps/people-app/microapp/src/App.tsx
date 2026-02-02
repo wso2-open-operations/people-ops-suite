@@ -27,7 +27,7 @@ import { Home, VehicleManagement } from "@/pages";
 import type { PageProps, User } from "@/types";
 import { useEffect, useState } from "react";
 import { getToken } from "./components/microapp-bridge";
-import { getDisplayNameFromJWT, getEmailFromJWT } from "@/utils/http";
+import { getDisplayNameFromJwt, getEmailFromJwt } from "@/utils/http";
 
 function AnimatedRoutes({ user }: PageProps) {
   const location = useLocation();
@@ -52,8 +52,8 @@ function App() {
       getToken((token: string | undefined) => {
         if (token) {
           setUser({
-            name: getDisplayNameFromJWT(token) ?? "",
-            email: getEmailFromJWT(token) ?? "",
+            name: getDisplayNameFromJwt(token) ?? "",
+            email: getEmailFromJwt(token) ?? "",
           });
         }
       });

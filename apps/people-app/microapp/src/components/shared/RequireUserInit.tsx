@@ -16,7 +16,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { getToken } from "@/components/microapp-bridge";
-import { getDisplayNameFromJWT, getEmailFromJWT } from "@/utils/http";
+import { getDisplayNameFromJwt, getEmailFromJwt } from "@/utils/http";
 import type { User } from "@/types";
 
 interface RequireUserInitProps {
@@ -43,8 +43,8 @@ export default function RequireUserInit({ children }: RequireUserInitProps) {
       getToken((token: string | undefined) => {
         if (token) {
           setUser({
-            name: getDisplayNameFromJWT(token) ?? "",
-            email: getEmailFromJWT(token) ?? "",
+            name: getDisplayNameFromJwt(token) ?? "",
+            email: getEmailFromJwt(token) ?? "",
           });
         }
 

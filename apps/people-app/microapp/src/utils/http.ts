@@ -238,7 +238,7 @@ export function executeWithTokenHandling(
   });
 }
 
-export function getDisplayNameFromJWT(token: string) {
+export function getDisplayNameFromJwt(token: string) {
   try {
     const base64Url: string = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -261,7 +261,7 @@ export function getDisplayNameFromJWT(token: string) {
   }
 }
 
-export function getEmailFromJWT(token: string) {
+export function getEmailFromJwt(token: string) {
   try {
     const base64Url: string = token.split(".")[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -286,7 +286,7 @@ export function getEmail(callback: (email: string | null) => void) {
   getToken((token) => {
     if (!token) return callback(null);
 
-    const email = getEmailFromJWT(token);
+    const email = getEmailFromJwt(token);
     callback(email ? encodeURIComponent(email) : null);
   });
 }
