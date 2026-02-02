@@ -29,7 +29,7 @@ import { useMemo, useState } from "react";
 
 type FilterChipSelectProps<T> = {
   label: string;
-  value: string | undefined;
+  value: string | number | undefined;
   options: T[];
   getLabel: (o: T) => string;
   onChange: (o: T) => void;
@@ -81,7 +81,6 @@ export function FilterChipSelect<T>({
               alignItems: "center",
               fontSize: "12px",
               fontWeight: 900,
-              textTransform: "capitalize",
               color: isDark ? theme.palette.grey[100] : theme.palette.grey[700],
             }}
           >
