@@ -156,30 +156,36 @@ public type EmployeeSearchParameters record {|
     string? dateOfBirth = ();
     # Gender
     string? gender = ();
-    # Nationality
-    string? nationality = ();
     # Personal email
     string? personalEmail = ();
     # Personal phone number
     string? personalPhone = ();
-    # Resident phone number
-    string? residentPhone = ();
     # City
     string? city = ();
     # Country
     string? country = ();
-    # Business unit
-    string? businessUnit = ();
-    # Team
-    string? team = ();
-    # Sub-team
-    string? subTeam = ();
-    # Designation
-    string? designation = ();
-    # Employment type
-    string? employmentType = ();
-    # Unit
-    string? unit = ();
+    # Career function ID
+    int? careerFunctionId = ();
+    # Manager email
+    string? managerEmail = ();
+    # Company ID
+    int? companyId = ();
+    # Employment location
+    string? location = ();
+    # Office ID
+    int? officeId = ();
+    # Business unit ID
+    int? businessUnitId = ();
+    # Team ID
+    int? teamId = ();
+    # Sub-team ID
+    int? subTeamId = ();
+    # Unit ID
+    int? unitId = ();
+    # Designation ID
+    int? designationId = ();
+    # Employment type ID
+    int? employmentTypeId = ();
     # Page number
     int? page = ();
     # Records per page
@@ -358,6 +364,13 @@ public type EmploymentType record {|
     int id;
     # Name of the employment type
     string name;
+|};
+
+# Manager email payload.
+public type ManagerEmail record {|
+    # Manager email
+    @sql:Column {name: "manager_email"}
+    string managerEmail;
 |};
 
 # Search employee personal information payload.

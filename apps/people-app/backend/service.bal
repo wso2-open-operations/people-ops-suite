@@ -179,6 +179,35 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
+    # Fetch manager emails.
+    # 
+    # + return - List of manager emails or error response
+    resource function get employees/managers(http:RequestContext ctx) 
+        returns string[]|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string[]|error managerEmails = database:getManagerEmails();
+        if managerEmails is error {
+            string customErr = "Error occurred while fetching manager emails";
+            log:printError(customErr, managerEmails);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return managerEmails;
+        
+    }
+
     # Fetch employees based on filters.
     # 
     # + params - Get employees filter payload

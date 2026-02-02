@@ -153,6 +153,7 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             INNER JOIN business_unit bu ON bu.id = e.business_unit_id
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
+            INNER JOIN company c ON c.id = o.company_id
             LEFT JOIN unit u ON u.id = e.unit_id
         `;
 
@@ -161,14 +162,20 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     filters.push(`(${params.title} IS NULL OR pi.title = ${params.title})`);
     filters.push(`(${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})`);
     filters.push(`(${params.gender} IS NULL OR pi.gender = ${params.gender})`);
-    filters.push(`(${params.nationality} IS NULL OR pi.nationality = ${params.nationality})`);
-    filters.push(`(${params.residentPhone} IS NULL OR pi.resident_number LIKE CONCAT('%', ${params.residentPhone}, '%'))`);
-    filters.push(`(${params.businessUnit} IS NULL OR bu.name = ${params.businessUnit})`);
-    filters.push(`(${params.team} IS NULL OR t.name = ${params.team})`);
-    filters.push(`(${params.subTeam} IS NULL OR st.name = ${params.subTeam})`);
-    filters.push(`(${params.designation} IS NULL OR d.designation = ${params.designation})`);
-    filters.push(`(${params.employmentType} IS NULL OR et.name = ${params.employmentType})`);
-    filters.push(`(${params.unit} IS NULL OR u.name = ${params.unit})`);
+
+    string escapedManager = escapeLike(params.managerEmail ?: "");
+
+    filters.push(`(${params.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
+    filters.push(`(${params.companyId} IS NULL OR o.company_id = ${params.companyId})`);
+    filters.push(`(${params.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${params.location}, '%')))`);
+    filters.push(`(${params.officeId} IS NULL OR e.office_id = ${params.officeId})`);
+    filters.push(`(${params.designationId} IS NULL OR e.designation_id = ${params.designationId})`);
+    filters.push(`(${params.careerFunctionId} IS NULL OR d.career_function_id = ${params.careerFunctionId})`);
+    filters.push(`(${params.businessUnitId} IS NULL OR e.business_unit_id = ${params.businessUnitId})`);
+    filters.push(`(${params.teamId} IS NULL OR e.team_id = ${params.teamId})`);
+    filters.push(`(${params.subTeamId} IS NULL OR e.sub_team_id = ${params.subTeamId})`);
+    filters.push(`(${params.unitId} IS NULL OR e.unit_id = ${params.unitId})`);
+    filters.push(`(${params.employmentTypeId} IS NULL OR e.employment_type_id = ${params.employmentTypeId})`);
 
     string? searchString = params.searchString;
 
@@ -188,6 +195,18 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
 
     return updated;
 };
+
+# Get manager emails query.
+#   + return - Manager emails query
+isolated function getManagerEmailsQuery() returns sql:ParameterizedQuery =>
+    `SELECT DISTINCT
+        manager_email
+    FROM
+        employee
+    WHERE
+        manager_email IS NOT NULL
+        AND manager_email != ''
+    ;`;
 
 # Fetch continuous service record by work email.
 #

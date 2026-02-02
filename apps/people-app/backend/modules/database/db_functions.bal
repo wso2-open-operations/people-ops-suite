@@ -213,6 +213,15 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Get manager emails.
+#
+# + return - Manager emails
+public isolated function getManagerEmails() returns string[]|error {
+    stream<ManagerEmail, error?> managerEmailStream = databaseClient->query(getManagerEmailsQuery());
+    return from ManagerEmail managerEmail in managerEmailStream
+        select managerEmail.managerEmail;
+}
+
 # Add new employee.
 #
 # + payload - Add employee payload

@@ -123,6 +123,12 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(e.last_name)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.first_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.last_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.employee_id)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(e.work_email)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.personal_email)
@@ -131,9 +137,17 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.personal_phone)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.resident_number)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.city)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.state_or_province)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.country)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.epf)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.secondary_job_title)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
         )
     `;
