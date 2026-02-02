@@ -291,6 +291,38 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string|error content = email:bindKeyValues(
+                email:inviteTemplate,
+                {
+                    QR_CODE_BASE64: payload.qrCodeBase64,
+                    CONTACT_EMAIL: email:contactUsEmail,
+                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
+                }
+        );
+
+        if content is error {
+            string customError = "An error occurred while binding values to the email template!";
+            log:printError(customError, content);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? emailError = email:sendEmail({
+                                                to: [existingVisitor.email],
+                                                'from: email:fromEmailAddress,
+                                                subject: email:VISIT_INVITATION_SUBJECT,
+                                                template: content,
+                                                cc: [email:receptionEmail]
+                                            });
+
+        if emailError is error {
+            string customError = "Error occurred while sending the email!";
+            log:printError(customError, emailError);
+        }
+
         return <http:Created>{
             body: {
                 message: "Visit added successfully!"
