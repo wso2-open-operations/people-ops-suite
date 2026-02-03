@@ -811,7 +811,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + uuid - UUID of the visit to be fetched
     # + return - Visit object or error
-    resource function get visit/[string uuid]() returns database:Visit|http:NotFound|http:InternalServerError {
+    resource function get visits/[string uuid]() returns database:Visit|http:NotFound|http:InternalServerError {
         database:Visit|error? visit = database:fetchVisit(uuid = uuid);
         if visit is error {
             string customError = "Error occurred while fetching visit by UUID!";
