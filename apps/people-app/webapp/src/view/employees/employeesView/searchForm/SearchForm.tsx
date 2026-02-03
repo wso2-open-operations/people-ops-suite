@@ -292,7 +292,7 @@ export function SearchForm() {
               if (debounceRef.current) window.clearTimeout(debounceRef.current);
               debounceRef.current = window.setTimeout(() => {
                 updateFilter({ searchString: value });
-              }, 500);
+              }, 100);
             }}
             InputProps={{
               startAdornment: (
