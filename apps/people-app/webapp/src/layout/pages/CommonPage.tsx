@@ -114,7 +114,7 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
           </TabPanel>
         ))
       ) : (
-        <>{page}</>
+        page
       )}
     </Box>
   );
