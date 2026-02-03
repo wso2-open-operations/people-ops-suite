@@ -3579,22 +3579,7 @@ public final string visitorApproveTemplate = string `
                               <!-- [TIME_OF_ENTRY] -->
                               <!-- [TIME_OF_DEPARTURE] -->
                               <!-- [PASS_NUMBER] -->
-
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Allowed Floors:</strong>
-                                </p>
-                                <ul>
-                                  <!-- [ALLOWED_FLOORS] -->
-                                </ul>
-                              </li>
+                              <!-- [ALLOWED_FLOORS] -->
                             </ul>
 
                             <p

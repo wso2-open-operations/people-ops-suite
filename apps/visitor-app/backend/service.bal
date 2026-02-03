@@ -192,17 +192,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        time:Utc|error visitDate = time:utcFromString(payload.visitDate);
-        if visitDate is error {
-            string customError = "Error occurred while parsing the visit date!";
-            log:printError(customError, visitDate);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
         string? timeOfEntry = payload.timeOfEntry;
         string? timeOfDeparture = payload.timeOfDeparture;
 
@@ -257,7 +246,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   timeOfEntry: timeOfEntry is string ? idealEntryTime : (),
                                                   timeOfDeparture: timeOfDeparture is string ? idealDepartureTime : (),
                                                   status: database:REQUESTED,
-                                                  visitDate,
+                                                  visitDate: payload.visitDate,
                                                   uuid: payload.uuid
                                               }, invokerInfo.email, invokerInfo.email);
         if visitError is error {
@@ -419,7 +408,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             string? passNumber = payload.passNumber;
-            database:Floor[]? accessibleLocations = payload.accessibleLocations;
+            database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
 
             error? response = database:updateVisit(visitId,
                     {
@@ -441,7 +430,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if visitorEmail is string {
-                string? accessibleLocationString = accessibleLocations !is () ? organizeLocations(accessibleLocations) : ();
+                string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                    organizeLocations(accessibleLocations) : ();
 
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
@@ -506,8 +496,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   "
                                 >
                                   <strong>Allowed Floors :</strong>
-                                  <span>${accessibleLocationString}</span>
                                 </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
                               </li>` : "",
                             "PASS_NUMBER": passNumber is string ? string `<li>
                                 <p
@@ -766,7 +758,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Allowed Floors:</strong>
+                                  <strong>Allowed Floors :</strong>
                                 </p>
                                 <ul>
                                   ${accessibleLocationString}
@@ -838,15 +830,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if visit.status != database:REQUESTED {
+        if visit.status == database:REQUESTED || visit.status == database:APPROVED {
+            return visit;
+        } else {
             return <http:NotFound>{
                 body: {
                     message: "No visit found with the provided UUID!"
                 }
             };
         }
-
-        return visit;
     }
 
     # Retrieve the work email list of the subordinates.

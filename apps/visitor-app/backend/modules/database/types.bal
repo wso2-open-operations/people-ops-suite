@@ -127,7 +127,7 @@ public type AddVisitPayload record {|
     # Status of the visit
     Status? status = ();
     # Date of the visit [in UTC]
-    time:Utc visitDate;
+    string visitDate;
     # Unique identifier for the visit
     string uuid;
 |};

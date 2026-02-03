@@ -94,8 +94,8 @@ public type AddVisitPayload record {|
     # Date of the visit [in UTC]
     @constraint:String {
         pattern: {
-            value: database:UTC_TIMESTAMP_REGEX,
-            message: "The date of the visit should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
+            value: database:DATE_REGEX,
+            message: "The visit date should be a valid date string(YYYY-MM-DD)."
         }
     }
     string visitDate;
