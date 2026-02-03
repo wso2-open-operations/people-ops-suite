@@ -143,6 +143,7 @@ export function SearchForm() {
       designationId,
       gender,
       employmentTypeId,
+      managerEmail,
       location,
       officeId,
     } = filter;
@@ -156,8 +157,9 @@ export function SearchForm() {
       gender ||
       designationId ||
       employmentTypeId ||
+      managerEmail ||
       location ||
-      officeId,
+      officeId
     );
   }
 
