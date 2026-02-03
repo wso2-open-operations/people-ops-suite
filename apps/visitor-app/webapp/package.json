@@ -51,6 +51,7 @@
     "export-from-json": "^1.7.2",
     "formik": "^2.4.6",
     "google-libphonenumber": "^3.2.42",
+    "html5-qrcode": "^2.3.8",
     "immer": "^9.0.19",
     "lodash": "^4.17.21",
     "material-ui-popup-state": "^5.0.4",
