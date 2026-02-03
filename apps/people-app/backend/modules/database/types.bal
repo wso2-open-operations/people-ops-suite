@@ -187,9 +187,11 @@ public type EmployeeSearchParameters record {|
     # Employment type ID
     int? employmentTypeId = ();
     # Page number
-    int? page = ();
+    @constraint:Int {minValue: 1}
+    int page = DEFAULT_PAGE_NUMBER;
     # Records per page
-    int? perPage = ();
+    @constraint:Int {minValue: 1, maxValue: 100}
+    int perPage = DEFAULT_RECORDS_PER_PAGE;
 |};
 
 # Employee record with total count.
