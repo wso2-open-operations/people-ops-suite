@@ -20,14 +20,15 @@ import { Container } from "@mui/material";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@root/src/slices/store";
 import { useTheme } from "@mui/material/styles";
+import { AsgardeoConfig } from "@src/config/config"; // adjust path if needed
 
 function ScanVisit() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
   const isValidUrl = (text: string) => {
     try {
-      new URL(text);
-      return true;
+      const url = new URL(text);
+      return url.href.startsWith(AsgardeoConfig.signInRedirectURL);
     } catch {
       return false;
     }
