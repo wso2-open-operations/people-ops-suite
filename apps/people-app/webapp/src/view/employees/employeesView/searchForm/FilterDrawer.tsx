@@ -332,12 +332,14 @@ export function FilterDrawer({
             variant="outlined"
             color="secondary"
             onClick={() => {
-              onApply(draft);
-              setDrawerOpen(false);
-              set({
+              const nextDraft = {
+                ...draft,
                 page: DEFAULT_PAGE_VALUE,
                 perPage: DEFAULT_PER_PAGE_VALUE,
-              });
+              };  
+              onApply(nextDraft);  
+              setDraft(nextDraft);  
+              setDrawerOpen(false);
               setFiltersAppliedOnce(true);
             }}
             sx={{ textTransform: "none" }}

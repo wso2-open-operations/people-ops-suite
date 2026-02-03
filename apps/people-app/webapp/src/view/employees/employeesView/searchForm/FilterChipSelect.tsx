@@ -221,7 +221,7 @@ export function FilterChipSelect<T>({
             return (
               <MenuItem
                 key={`${optionLabel}-${idx}`}
-                selected={optionLabel === value}
+                selected={optionLabel === String(value)}
                 onClick={() => {
                   onChange(o);
                   closeMenu();
