@@ -35,6 +35,14 @@ interface SidebarProps {
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
 
+  // Determine if route is active based on current path
+  const isRouteActive = (routePath: string) => {
+    if (routePath === "") {
+      return props.currentPath === "/" || props.currentPath === "";
+    }
+    return props.currentPath === `/${routePath}` || props.currentPath.startsWith(`/${routePath}/`);
+  };
+
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
     active: null,
@@ -147,7 +155,7 @@ const Sidebar = (props: SidebarProps) => {
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: "fit-content" ,
+              width: "fit-content",
               overflow: "visible",
             }}
           >
@@ -175,7 +183,7 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === idx}
+                        isActive={isRouteActive(route.path)}
                         isHovered={navState.hovered === idx}
                         isExpanded={navState.expanded === idx}
                         onClick={() => handleClick(idx)}
