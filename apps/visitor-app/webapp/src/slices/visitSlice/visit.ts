@@ -28,6 +28,8 @@ interface VisitState {
   state: State;
   submitState: State;
   visits: FetchVisitsResponse | null;
+  currentVisit: Visit | null;
+  currentVisitState: State;
   stateMessage: string | null;
   errorMessage: string | null;
   backgroundProcess: boolean;
@@ -55,18 +57,19 @@ export interface AddVisitPayload {
 
 export interface Visit {
   id: number;
-  name: string;
-  nicNumber: string;
-  contactNumber: string;
+  firstName: string | null;
+  lastName: string | null;
+  visitDate: string;
+  contactNumber: string | null;
   email: string;
-  nicHash: string;
-  companyName: string;
-  passNumber: string;
-  whomTheyMeet: string;
-  purposeOfVisit: string;
+  emailHash: string;
+  companyName: string | null;
+  passNumber: string | null;
+  whomTheyMeet: string | null;
+  purposeOfVisit: string | null;
   accessibleLocations: FloorRoom[] | null;
-  timeOfEntry: string;
-  timeOfDeparture: string;
+  timeOfEntry: string | null;
+  timeOfDeparture: string | null;
   status: string;
   createdBy: string;
   createdOn: string;
@@ -92,6 +95,8 @@ const initialState: VisitState = {
   state: State.idle,
   submitState: State.idle,
   visits: null,
+  currentVisit: null,
+  currentVisitState: State.idle,
   stateMessage: null,
   errorMessage: null,
   backgroundProcess: false,
@@ -180,6 +185,38 @@ export const fetchVisits = createAsyncThunk(
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? error.response?.data?.message
                   : "An unknown error occurred.",
+              type: "error",
+            }),
+          );
+          reject(error);
+        });
+    });
+  },
+);
+
+export const fetchSingleVisit = createAsyncThunk(
+  "visit/fetchSingleVisit",
+  async (uuid: string, { dispatch, rejectWithValue }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<Visit>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.visit}/${uuid}`, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while fetching visit details!",
               type: "error",
             }),
           );
@@ -279,6 +316,26 @@ const VisitSlice = createSlice({
           "Oops! Something went wrong while fetching visits!";
         state.errorMessage =
           (action.payload as string) || "Failed to fetch visits";
+      })
+      .addCase(fetchSingleVisit.pending, (state) => {
+        state.currentVisitState = State.loading;
+        state.currentVisit = null;
+        state.stateMessage = "Loading visit details...";
+      })
+      .addCase(
+        fetchSingleVisit.fulfilled,
+        (state, action: PayloadAction<Visit>) => {
+          state.currentVisitState = State.success;
+          state.currentVisit = action.payload;
+          state.stateMessage = "Visit details loaded successfully!";
+        },
+      )
+      .addCase(fetchSingleVisit.rejected, (state, action) => {
+        state.currentVisitState = State.failed;
+        state.currentVisit = null;
+        state.stateMessage = "Failed to load visit details!";
+        state.errorMessage =
+          (action.payload as string) || "Failed to fetch visit";
       })
       .addCase(visitStatusUpdate.pending, (state) => {
         state.submitState = State.loading;

@@ -264,7 +264,7 @@ function CreateVisit() {
           const hashedEmail = await hash(draftVisitor.emailAddress);
 
           const visitUUID = uuidv4();
-          const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/visit-temp/${visitUUID}`;
+          const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/admin-panel?tab=active-visits&uuid=${visitUUID}`;
           let qrCodeBase64: string | undefined = undefined;
 
           try {
@@ -636,7 +636,7 @@ function CreateVisit() {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
                   <DatePicker
-                    label="Visit Date *"
+                    label="Visit Date"
                     minDate={dayjs().startOf("day")}
                     value={
                       formik.values.visitDate
@@ -692,7 +692,7 @@ function CreateVisit() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                {/* <Grid item xs={12} md={4}>
                   <TimePicker
                     label="Expected Time of Departure"
                     minTime={
@@ -739,7 +739,7 @@ function CreateVisit() {
                       },
                     }}
                   />
-                </Grid>
+                </Grid> */}
               </Grid>
             </Box>
           </>
@@ -986,15 +986,20 @@ function CreateVisit() {
               >
                 {activeStep === 1 && (
                   <Button
-                    variant="outlined"
-                    color={isAnySubmittedVisitor(formik) ? "error" : "inherit"}
                     onClick={() =>
                       isAnySubmittedVisitor(formik)
                         ? handleClose(formik)
                         : handleBack()
                     }
+                    color="inherit"
+                    variant="contained"
+                    sx={{
+                      color: "white",
+                      bgcolor: "grey.500",
+                      "&:hover": { bgcolor: "grey.700" },
+                    }}
                   >
-                    {isAnySubmittedVisitor(formik) ? "Close Visit" : "Back"}
+                    {isAnySubmittedVisitor(formik) ? "Close" : "Back"}
                   </Button>
                 )}
 
