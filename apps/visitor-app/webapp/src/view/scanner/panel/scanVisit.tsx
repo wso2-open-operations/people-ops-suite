@@ -34,23 +34,10 @@ function ScanVisit() {
   };
   useEffect(() => {
     const scanner = new Html5QrcodeScanner("reader", { fps: 10 }, false);
-    // Hide info button and file selection after render
-    const hideExtraElements = () => {
-      const infoBtn = document.querySelector(
-        ".html5-qrcode-info-button",
-      ) as HTMLElement;
-      if (infoBtn) infoBtn.style.display = "none";
-
-      const fileLink = document.getElementById(
-        "html5-qrcode-button-file-selection",
-      ) as HTMLElement;
-      if (fileLink) fileLink.style.display = "none";
-    };
     scanner.render(
       (decodedText) => {
-        console.log("QR Code:", decodedText);
         if (isValidUrl(decodedText)) {
-          window.location.href = decodedText; // or window.open(decodedText, "_blank")
+          window.location.href = decodedText;
           scanner.clear();
         } else {
           dispatch(
@@ -61,9 +48,7 @@ function ScanVisit() {
           );
         }
       },
-      (error) => {
-        console.warn(error);
-      },
+      (error) => {},
     );
   }, []);
 
