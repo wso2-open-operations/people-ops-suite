@@ -22,7 +22,7 @@ export type BaseTextFieldProps = Omit<TextFieldProps, "label" | "variant" | "ful
   isRequired?: boolean;
 };
 
-export const BaseTextField = React.forwardRef<HTMLInputElement, BaseTextFieldProps>(
+export const BaseTextField = React.forwardRef<HTMLDivElement, BaseTextFieldProps>(
   function BaseTextField(
     {
       label,
