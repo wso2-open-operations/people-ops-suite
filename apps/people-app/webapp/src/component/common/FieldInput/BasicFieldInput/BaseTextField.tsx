@@ -47,7 +47,7 @@ export const BaseTextField = React.forwardRef<HTMLDivElement, BaseTextFieldProps
         sx={{
           "& .MuiInputLabel-root": { fontSize: 15 },
           "& .MuiFormHelperText-root": { fontSize: 14 },
-          ...(sx as any),
+          ...sx,
         }}
         InputProps={{
           ...InputProps,
