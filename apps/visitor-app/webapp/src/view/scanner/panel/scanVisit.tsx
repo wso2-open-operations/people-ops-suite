@@ -51,15 +51,20 @@ function ScanVisit() {
       },
       (error) => {},
     );
+    // Cleanup function to stop scanner on unmount
+    return () => {
+      scanner.clear().catch(() => {});
+    };
   }, []);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth={false} disableGutters>
       <style>
         {`
           /* Start/Stop buttons match theme primary color */
           #html5-qrcode-button-camera-start,
-          #html5-qrcode-button-camera-stop {
+          #html5-qrcode-button-camera-stop,
+          #html5-qrcode-button-camera-permission {
             background-color: ${theme.palette.primary.main};
             color: ${theme.palette.primary.contrastText || "white"};
             border: none;
@@ -72,12 +77,14 @@ function ScanVisit() {
           }
 
           #html5-qrcode-button-camera-start:hover,
-          #html5-qrcode-button-camera-stop:hover {
+          #html5-qrcode-button-camera-stop:hover,
+          #html5-qrcode-button-camera-permission:hover {
             background-color: ${theme.palette.primary.dark};
           }
 
           #html5-qrcode-button-camera-start:disabled,
-          #html5-qrcode-button-camera-stop:disabled {
+          #html5-qrcode-button-camera-stop:disabled,
+          #html5-qrcode-button-camera-permission:disabled {
             opacity: 0.6;
             cursor: not-allowed;
           }
