@@ -498,7 +498,7 @@ export function SearchForm() {
               options={locations}
               getLabel={(location) => location}
               onChange={(location) => {
-                updateFilter({ location });
+                updateFilter({ location, officeId: undefined });
               }}
               onClear={() =>
                 updateFilter({ location: undefined, officeId: undefined })
