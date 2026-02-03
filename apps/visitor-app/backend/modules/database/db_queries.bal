@@ -25,9 +25,9 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
     => `
         INSERT INTO visitor
         (
-            nic_hash,
-            name,
-            nic_number,
+            first_name,
+            last_name,
+            email_hash,
             email,
             contact_number,
             created_by,
@@ -35,33 +35,32 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         )
         VALUES
         (
-            ${payload.nicHash},
-            ${payload.name},
-            ${payload.nicNumber},
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.emailHash},
             ${payload.email},
             ${payload.contactNumber},
             ${createdBy},
             ${createdBy}
         )
         ON DUPLICATE KEY UPDATE
-            name = ${payload.name},
-            nic_number = ${payload.nicNumber},
-            email = ${payload.email},
-            contact_number = ${payload.contactNumber},
+            first_name = COALESCE(${payload.firstName}, first_name),
+            last_name = COALESCE(${payload.lastName}, last_name),
+            contact_number = COALESCE(${payload.contactNumber}, contact_number),
             updated_by = ${createdBy}
         ;`;
 
-# Build query to fetch a visitor by hashed NIC.
+# Build query to fetch a visitor by hashed email.
 #
-# + hashedNic - Filter : Hashed NIC of the visitor
-# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
-isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
+# + hashedEmail - Filter : Hashed email of the visitor
+# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email
+isolated function fetchVisitorByEmailQuery(string hashedEmail) returns sql:ParameterizedQuery
     => `
-        SELECT   
-            nic_hash as nicHash,        
-            name,
-            nic_number as nicNumber,
+        SELECT         
+            first_name as firstName,
+            last_name as lastName,
             contact_number as contactNumber,
+            email_hash as emailHash,  
             email,
             created_by as createdBy,
             created_on as createdOn,
@@ -70,7 +69,7 @@ isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:Parameter
         FROM 
             visitor
         WHERE 
-            nic_hash = ${hashedNic};
+            email_hash = ${hashedEmail};
         `;
 
 # Build query to create a new invitation.
@@ -137,12 +136,14 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
     => `
         INSERT INTO visit
         (
-            nic_hash,
+            uuid,
+            email_hash,
             pass_number,
             company_name,
             whom_they_meet,
             purpose_of_visit,
             accessible_locations,
+            visit_date,
             time_of_entry,
             time_of_departure,
             invitation_id,
@@ -153,12 +154,14 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         )
         VALUES
         (
-            ${payload.nicHash},
+            ${payload.uuid},
+            ${payload.emailHash},
             ${payload.passNumber},
             ${payload.companyName},
             ${payload.whomTheyMeet},
             ${payload.purposeOfVisit},
             ${payload.accessibleLocations is Floor[] ? payload.accessibleLocations.toJsonString() : null},
+            ${payload.visitDate},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},
@@ -179,33 +182,30 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.visit_id as id,
             v.time_of_entry as timeOfEntry,
             v.time_of_departure as timeOfDeparture,
+            v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.nic_hash as nicHash,
-            vs.nic_number as nicNumber,
-            vs.name,
+            v.email_hash as emailHash,
+            vs.first_name as firstName,
+            vs.last_name as lastName,
             vs.email,
             vs.contact_number as contactNumber,
             v.company_name as companyName,
             v.whom_they_meet as whomTheyMeet,
             v.purpose_of_visit as purposeOfVisit,
             v.accessible_locations as accessibleLocations,
+            v.visit_date as visitDate,
             v.status,
             v.created_by as createdBy,
             v.created_on as createdOn,
             v.updated_by as updatedBy,
             v.updated_on as updatedOn,
-            vi.invitation_id as invitationId,
             COUNT(*) OVER() AS totalCount
         FROM 
             visit v
         LEFT JOIN
             visitor vs
         ON
-            v.nic_hash = vs.nic_hash
-        LEFT JOIN
-            visit_invitation vi
-        ON
-            v.invitation_id = vi.invitation_id
+            v.email_hash = vs.email_hash
     `;
 
     // Setting the filters based on the inputs.
@@ -227,6 +227,10 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     if filters.visitId is int {
         filterQueries.push(` v.visit_id = ${filters.visitId}`);
+    }
+
+    if filters.uuid is string {
+        filterQueries.push(` v.uuid = ${filters.uuid}`);
     }
 
     // Build main query with the filters.

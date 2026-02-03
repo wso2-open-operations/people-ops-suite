@@ -27,16 +27,22 @@ type UserInfo record {
 
 # Payload for adding a new visit.
 public type AddVisitPayload record {|
-    # Nic Hash of the visitor
+    # Email Hash of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The email Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
+    string emailHash;
     # Company name of visitor
-    string? companyName;
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The company name should be a non-empty string with printable characters."
+        }
+    }
+    string companyName?;
     # Number in the tag given to visitor
     @constraint:String {
         pattern: {
@@ -52,9 +58,15 @@ public type AddVisitPayload record {|
             message: "The who they meet should be a non-empty string with printable characters."
         }
     }
-    string whomTheyMeet;
+    string whomTheyMeet?;
     # Purpose of the visit
-    string purposeOfVisit;
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The purpose of the visit should be a non-empty string with printable characters."
+        }
+    }
+    string purposeOfVisit?;
     # The floors and rooms that the visitor can access
     @constraint:Array {
         minLength: {
@@ -70,7 +82,7 @@ public type AddVisitPayload record {|
             message: "The time of entry should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
         }
     }
-    string timeOfEntry;
+    string timeOfEntry?;
     # Time at which the visitor is supposed to check out [in UTC]
     @constraint:String {
         pattern: {
@@ -78,7 +90,31 @@ public type AddVisitPayload record {|
             message: "The time of departure should be a valid UTC string(YYYY-MM-DDTHH:mm:ss)."
         }
     }
-    string timeOfDeparture;
+    string timeOfDeparture?;
+    # Date of the visit [in UTC]
+    @constraint:String {
+        pattern: {
+            value: database:DATE_REGEX,
+            message: "The visit date should be a valid date string(YYYY-MM-DD)."
+        }
+    }
+    string visitDate;
+    # Unique identifier of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The visit UUID should be a non-empty string with printable characters."
+        }
+    }
+    string uuid;
+    # QR code in base64 format
+    @constraint:String {
+        pattern: {
+            value: database:BASE64_IMAGE_REGEX,
+            message: "The QR code should be a valid base64 image string."
+        }
+    }
+    string qrCodeBase64;
 |};
 
 # Payload for updating an existing visit.
@@ -107,30 +143,30 @@ public type AddInvitationPayload record {|
 
 # Payload for filling an existing visit invitation.
 public type FillInvitationPayload record {|
-    # Name of the visitor
+    # First name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            message: "The first name should be a non-empty string with printable characters."
         }
     }
-    string name;
-    # NIC number of visitor
+    string firstName;
+    # Last name of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC number should be a non-empty string with printable characters."
+            message: "The last name should be a non-empty string with printable characters."
         }
     }
-    string nicNumber;
-    # Nic Hash of the visitor
+    string lastName;
+    # Email Hash of the visitor
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The email Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
+    string emailHash;
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -140,7 +176,7 @@ public type FillInvitationPayload record {|
     }
     string contactNumber;
     # Email of the visitor
-    string? email;
+    string email;
     # Company name of visitor
     string? companyName;
     # The person the visitor is supposed to meet

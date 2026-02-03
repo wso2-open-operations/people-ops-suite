@@ -885,9 +885,8 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              To ensure a seamless check-in process, we kindly request you
-                              to complete your visitor registration using the
-                              link below:
+                              For a seamless check-in experience, please present
+                              the QR code below for scanning at the entrance.
                             </p>
 
                             <p
@@ -899,22 +898,20 @@ public final string inviteTemplate = string `
                               "
                             ></p>
 
-                            <a
-                              href="<!-- [LINK] -->"
+                            <img
+                              alt="Visitor Registration QR"
+                              src="<!-- [QR_CODE_BASE64] -->"
                               style="
-                                font-family: 'Roboto', Helvetica, sans-serif;
-                                font-size: 16px;
-                                font-weight: normal;
-                                color: #ffffff;
+                                width: auto;
+                                max-width: 100%;
+                                height: auto;
+                                outline: none;
                                 text-decoration: none;
-                                background-color: #ff7300;
-                                padding: 7px 20px;
-                                border-radius: 5px;
-                                display: inline-block;
+                                border: 0;
+                                margin-top: 10px;
+                                margin-bottom: 10px;
                               "
-                            >
-                              Complete Registration
-                            </a>
+                            />
 
                             <p
                               style="
@@ -2237,62 +2234,10 @@ public final string visitorCompletionTemplate = string `
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Entry :</strong>
-                                  <span><!-- [TIME_OF_ENTRY] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Exit :</strong>
-                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
-                                </p>
-                              </li>
-
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Pass Number:</strong>
-                                  <!-- [PASS_NUMBER] -->
-                                </p>
-                              </li>
-
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Allowed Floors:</strong>
-                                </p>
-                                <ul>
-                                  <!-- [ALLOWED_FLOORS] -->
-                                </ul>
-                              </li>
+                              <!-- [TIME_OF_ENTRY] -->
+                              <!-- [TIME_OF_DEPARTURE] -->
+                              <!-- [PASS_NUMBER] -->
+                              <!-- [ALLOWED_FLOORS] -->
                             </ul>
 
                             <p
@@ -3631,61 +3576,10 @@ public final string visitorApproveTemplate = string `
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Entry :</strong>
-                                  <span><!-- [TIME_OF_ENTRY] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Exit :</strong>
-                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Pass Number:</strong>
-                                  <!-- [PASS_NUMBER] -->
-                                </p>
-                              </li>
-
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Allowed Floors:</strong>
-                                </p>
-                                <ul>
-                                  <!-- [ALLOWED_FLOORS] -->
-                                </ul>
-                              </li>
+                              <!-- [TIME_OF_ENTRY] -->
+                              <!-- [TIME_OF_DEPARTURE] -->
+                              <!-- [PASS_NUMBER] -->
+                              <!-- [ALLOWED_FLOORS] -->
                             </ul>
 
                             <p
@@ -5028,32 +4922,8 @@ public final string visitorRejectingTemplate = string `
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Entry :</strong>
-                                  <span><!-- [TIME_OF_ENTRY] --></span>
-                                </p>
-                              </li>
-                              <li>
-                                <p
-                                  style="
-                                    font-family: 'Roboto', Helvetica, sans-serif;
-                                    font-size: 17px;
-                                    color: #465868;
-                                    text-align: left;
-                                  "
-                                >
-                                  <strong>Exit :</strong>
-                                  <span><!-- [TIME_OF_DEPARTURE] --></span>
-                                </p>
-                              </li>
+                              <!-- [TIME_OF_ENTRY] -->
+                              <!-- [TIME_OF_DEPARTURE] -->
                             </ul>
 
                             <p
