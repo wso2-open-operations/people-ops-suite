@@ -322,11 +322,6 @@ export default function EmployeesTable() {
         height: "100%",
         width: "100%",
         overflow: "auto",
-        background: "background.paper",
-        borderTopRightRadius: 12,
-        borderTopLeftRadius: 0,
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12,
       }}
     >
       <Box sx={{ px: 2 }}>
