@@ -175,7 +175,7 @@ function VisitHistory() {
         inviter: loginUserEmail || "",
       }),
     );
-  }, [dispatch, page, pageSize]);
+  }, [dispatch, page, pageSize, loginUserEmail]);
 
   return (
     <Box>

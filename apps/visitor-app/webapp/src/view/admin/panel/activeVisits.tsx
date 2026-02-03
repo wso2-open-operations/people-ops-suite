@@ -171,7 +171,7 @@ const ActiveVisits = () => {
       await dispatch(visitStatusUpdate(payload));
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
-      setIsScanModalOpen(false);
+      handleCloseScanModal();
 
       dispatch(
         fetchVisits({
@@ -238,7 +238,7 @@ const ActiveVisits = () => {
         };
 
         await dispatch(visitStatusUpdate(payload));
-        setIsScanModalOpen(false);
+        handleCloseScanModal();
         dispatch(
           fetchVisits({
             limit: pageSize,

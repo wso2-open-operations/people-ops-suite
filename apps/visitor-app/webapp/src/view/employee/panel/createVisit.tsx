@@ -14,7 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useCallback, useState, useMemo, forwardRef, useEffect } from "react";
+import React, {
+  useCallback,
+  useState,
+  useMemo,
+  forwardRef,
+  useEffect,
+} from "react";
 import {
   Typography,
   Button,
@@ -67,13 +73,11 @@ import {
 import { hash } from "@root/src/utils/utils";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import { addVisit, AddVisitPayload } from "@root/src/slices/visitSlice/visit";
-import { Role } from "@root/src/slices/authSlice/auth";
 import { PhoneNumberUtil } from "google-libphonenumber";
 import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
-import { config } from "process";
 
 dayjs.extend(utc);
 
@@ -167,7 +171,6 @@ const defaultVisitor: VisitorDetail = {
 
 function CreateVisit() {
   const dispatch = useAppDispatch();
-  const authState = useAppSelector((state: RootState) => state.auth);
   const visitState = useAppSelector((state: RootState) => state.visit);
   const visitorState = useAppSelector((state: RootState) => state.visitor);
   const { employees, isLoadingMore, hasMore, currentSearchTerm } =
@@ -292,7 +295,12 @@ function CreateVisit() {
               : undefined,
           };
 
-          await dispatch(addVisitor(addVisitorPayload));
+          const addVisitorAction = await dispatch(
+            addVisitor(addVisitorPayload),
+          );
+          if (addVisitor.rejected.match(addVisitorAction)) {
+            return;
+          }
           dispatch(resetVisitorSubmitState());
 
           let timeOfEntryUTC: string | undefined = undefined;
@@ -341,6 +349,10 @@ function CreateVisit() {
 
   const fetchVisitorByEmail = useCallback(
     async (email: string, index: number, formik: any) => {
+      if (!email || !email.trim()) {
+        return;
+      }
+
       const emailHash = await hash(email);
       await dispatch(fetchVisitor(emailHash)).then((action) => {
         if (fetchVisitor.fulfilled.match(action)) {
@@ -957,7 +969,11 @@ function CreateVisit() {
               visitState.submitState === State.loading) && (
               <BackgroundLoader
                 open
-                message={visitState.stateMessage || "Processing..."}
+                message={
+                  visitorState.state === State.loading
+                    ? visitorState.stateMessage || "Processing..."
+                    : visitState.stateMessage || "Processing..."
+                }
               />
             )}
 

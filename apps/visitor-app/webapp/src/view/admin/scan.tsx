@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Chip,
   CircularProgress,
   Modal,
   Button,
@@ -231,7 +230,7 @@ function Scan({ onClose }: ScanProps) {
                   Contact Number
                 </Typography>
                 <Typography variant="body1" fontWeight="medium">
-                  {currentVisit.contactNumber}
+                  {currentVisit.contactNumber || "N/A"}
                 </Typography>
               </Grid>
 

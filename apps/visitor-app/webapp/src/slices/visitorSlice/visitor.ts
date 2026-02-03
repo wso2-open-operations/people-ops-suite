@@ -18,7 +18,6 @@ import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
-import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 

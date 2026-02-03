@@ -233,7 +233,6 @@ const employeesSlice = createSlice({
           state.state = State.failed;
         } else {
           state.state = State.success;
-          state.employees = [];
         }
         state.stateMessage = "Failed to fetch!";
         state.errorMessage = action.error.message || "Unknown error";
