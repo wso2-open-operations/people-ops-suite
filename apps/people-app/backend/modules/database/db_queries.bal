@@ -114,8 +114,8 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # + return - Parameterized query for fetching employees
 isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql:ParameterizedQuery {
 
-    int page = params.page ?: 1;
-    int perPage = params.perPage ?: 20;
+    int page = params.page;
+    int perPage = params.perPage;
     int offset = (page - 1) * perPage;
 
     sql:ParameterizedQuery baseQuery = `
@@ -132,12 +132,7 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
             COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
-            (
-                SELECT COUNT(1)
-                FROM employee e2
-                WHERE e2.id <> e.id
-                AND e2.manager_email = e.work_email
-            ) AS subordinateCount,
+            COALESCE(sc.subordinateCount, 0) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
             e.probation_end_date AS probationEndDate,
@@ -161,6 +156,16 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
                 FROM employee_additional_managers
                 GROUP BY employee_id
             ) eam ON eam.employee_id = e.id
+
+            LEFT JOIN (
+                SELECT 
+                    LOWER(manager_email) AS managerEmail,
+                    COUNT(*) AS subordinateCount
+                FROM employee
+                WHERE manager_email IS NOT NULL AND manager_email <> ''
+                GROUP BY LOWER(manager_email)
+            ) sc ON sc.managerEmail = LOWER(e.work_email)
+            
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id
@@ -175,14 +180,22 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     sql:ParameterizedQuery[] filters = [];
 
     filters.push(`(${params.title} IS NULL OR pi.title = ${params.title})`);
+    filters.push(`(${params.firstName} IS NULL OR LOWER(pi.first_name) = LOWER(${params.firstName}))`);
+    filters.push(`(${params.lastName} IS NULL OR LOWER(pi.last_name) = LOWER(${params.lastName}))`);
+    filters.push(`(${params.nicOrPassport} IS NULL OR pi.nic_or_passport = ${params.nicOrPassport})`);
     filters.push(`(${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})`);
     filters.push(`(${params.gender} IS NULL OR pi.gender = ${params.gender})`);
+    filters.push(`(${params.personalEmail} IS NULL OR LOWER(pi.personal_email) = LOWER(${params.personalEmail}))`);
+    filters.push(`(${params.personalPhone} IS NULL OR pi.personal_phone = ${params.personalPhone})`);
+    filters.push(`(${params.city} IS NULL OR LOWER(pi.city) = LOWER(${params.city}))`);
+    filters.push(`(${params.country} IS NULL OR LOWER(pi.country) = LOWER(${params.country}))`);
 
     string escapedManager = escapeLike(params.managerEmail ?: "");
+    string escapedLocation = escapeLike(params.location ?: "");
 
     filters.push(`(${params.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
     filters.push(`(${params.companyId} IS NULL OR o.company_id = ${params.companyId})`);
-    filters.push(`(${params.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${params.location}, '%')))`);
+    filters.push(`(${params.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escapedLocation}, '%')))`);
     filters.push(`(${params.officeId} IS NULL OR e.office_id = ${params.officeId})`);
     filters.push(`(${params.designationId} IS NULL OR e.designation_id = ${params.designationId})`);
     filters.push(`(${params.careerFunctionId} IS NULL OR d.career_function_id = ${params.careerFunctionId})`);
