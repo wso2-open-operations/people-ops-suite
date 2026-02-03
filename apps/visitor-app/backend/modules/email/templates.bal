@@ -885,8 +885,8 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              For a seamless check-in experience, please present
-                              the QR code below for scanning at the entrance.
+                              For a seamless check-in experience, please present the QR code attached to this email 
+                              for scanning at the entrance.
                             </p>
 
                             <p
@@ -897,21 +897,6 @@ public final string inviteTemplate = string `
                                 text-align: left;
                               "
                             ></p>
-
-                            <img
-                              alt="Visitor Registration QR"
-                              src="<!-- [QR_CODE_BASE64] -->"
-                              style="
-                                width: auto;
-                                max-width: 100%;
-                                height: auto;
-                                outline: none;
-                                text-decoration: none;
-                                border: 0;
-                                margin-top: 10px;
-                                margin-bottom: 10px;
-                              "
-                            />
 
                             <p
                               style="
