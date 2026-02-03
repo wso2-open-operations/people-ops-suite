@@ -272,15 +272,21 @@ function CreateVisit() {
 
           const visitUUID = uuidv4();
           const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/admin-panel?tab=active-visits&uuid=${visitUUID}`;
-          let qrCodeBase64: string | undefined = undefined;
+          let qrCodeByteArray: number[] | undefined = undefined;
 
           try {
-            qrCodeBase64 = await QRCode.toDataURL(qrLink, {
+            const qrCodeBase64 = await QRCode.toDataURL(qrLink, {
               width: 300,
               margin: 2,
               color: { dark: "#000000", light: "#fc7420ff" },
               errorCorrectionLevel: "H",
             });
+
+            const base64Data = qrCodeBase64.split(",")[1];
+            const binaryString = window.atob(base64Data);
+            qrCodeByteArray = Array.from(binaryString, (char) =>
+              char.charCodeAt(0),
+            );
           } catch (err) {
             console.error("QR code generation failed:", err);
           }
@@ -321,7 +327,7 @@ function CreateVisit() {
 
           const addVisitPayload: AddVisitPayload = {
             uuid: visitUUID,
-            qrCodeBase64,
+            qrCode: qrCodeByteArray,
             visitDate: values.visitDate,
             timeOfEntry: timeOfEntryUTC,
             timeOfDeparture: timeOfDepartureUTC,
@@ -384,7 +390,7 @@ function CreateVisit() {
         }
       });
     },
-    [dispatch],
+    [dispatch, phoneUtil],
   );
 
   const isAnySubmittedVisitor = useCallback(

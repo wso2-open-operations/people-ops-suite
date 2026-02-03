@@ -52,7 +52,7 @@ export interface AddVisitPayload {
   emailHash: string;
   visitDate: string;
   uuid: string;
-  qrCodeBase64: string | undefined;
+  qrCode?: number[];
 }
 
 export interface Visit {
