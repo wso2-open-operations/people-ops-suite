@@ -51,12 +51,13 @@ export function FilterChipSelect<T>({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const brandOrange = theme.palette.secondary.contrastText;
+  const hasValue = value !== undefined && value !== null;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
   const chipText = useMemo(() => {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: value ? 1 : 0.5 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: hasValue ? 1 : 0.5 }}>
         <Typography
           variant="caption"
           sx={{
@@ -70,9 +71,9 @@ export function FilterChipSelect<T>({
             textTransform: "uppercase",
           }}
         >
-          {value ? `${label} :` : `${label}` }
+          {hasValue ? `${label} :` : `${label}` }
         </Typography>
-        {value ? (
+        {hasValue ? (
           <Typography
             variant="body2"
             sx={{
@@ -134,6 +135,7 @@ export function FilterChipSelect<T>({
     open,
     theme.palette.grey,
     theme.palette.primary.main,
+    hasValue,
     value,
     noParentSelected,
     parent,
@@ -183,7 +185,7 @@ export function FilterChipSelect<T>({
           p: 0,
           backgroundColor: isDark ? theme.palette.background.default : "#fff",
           borderRadius: "50px",
-          border: `1px solid ${value ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
+          border: `1px solid ${hasValue ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
           transition: "all 0.1s ease-in-out",
           "&:active": {
             transform: "scale(0.98)",
@@ -221,7 +223,7 @@ export function FilterChipSelect<T>({
             return (
               <MenuItem
                 key={`${optionLabel}-${idx}`}
-                selected={optionLabel === String(value)}
+                selected={optionLabel === String(hasValue)}
                 onClick={() => {
                   onChange(o);
                   closeMenu();
