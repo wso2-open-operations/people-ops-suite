@@ -257,7 +257,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   timeOfEntry: timeOfEntry is string ? idealEntryTime : (),
                                                   timeOfDeparture: timeOfDeparture is string ? idealDepartureTime : (),
                                                   status: database:REQUESTED,
-                                                  visitDate: visitDate,
+                                                  visitDate,
                                                   uuid: payload.uuid
                                               }, invokerInfo.email, invokerInfo.email);
         if visitError is error {
@@ -831,6 +831,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visit is () {
+            return <http:NotFound>{
+                body: {
+                    message: "No visit found with the provided UUID!"
+                }
+            };
+        }
+
+        if visit.status != database:REQUESTED {
             return <http:NotFound>{
                 body: {
                     message: "No visit found with the provided UUID!"

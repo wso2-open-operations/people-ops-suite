@@ -193,6 +193,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.whom_they_meet as whomTheyMeet,
             v.purpose_of_visit as purposeOfVisit,
             v.accessible_locations as accessibleLocations,
+            v.visit_date as visitDate,
             v.status,
             v.created_by as createdBy,
             v.created_on as createdOn,

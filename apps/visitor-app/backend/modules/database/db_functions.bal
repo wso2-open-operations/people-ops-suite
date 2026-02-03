@@ -135,8 +135,11 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
 # + uuid - UUID of the visit to fetch
 # + return - Visit object or error
 public isolated function fetchVisit(int? visitId = (), string? uuid = ()) returns Visit|error? {
-    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid}));
+    if visitId is () && uuid is () {
+        return error("Either visitId or uuid must be provided.");
+    }
 
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid}));
     if visit is error {
         return visit is sql:NoRowsError ? () : visit;
     }
@@ -157,6 +160,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = ()) return
         purposeOfVisit: visit.purposeOfVisit,
         accessibleLocations: accessibleLocations is string ?
             check accessibleLocations.fromJsonStringWithType() : null,
+        visitDate: visit.visitDate,
         timeOfEntry: timeOfEntry is string ?
                 timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
         timeOfDeparture: timeOfDeparture is string ?
@@ -210,6 +214,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                 purposeOfVisit: visit.purposeOfVisit,
                 accessibleLocations: accessibleLocations is string ?
                     check accessibleLocations.fromJsonStringWithType() : null,
+                visitDate: visit.visitDate,
                 invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,

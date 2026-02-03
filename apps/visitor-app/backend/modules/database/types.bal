@@ -57,12 +57,18 @@ public type Visitor record {|
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
     # Encrypted email hash of the visitor
+    @constraint:String {
+        pattern: {
+            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The email Hash should be a non-empty string with printable characters."
+        }
+    }
     string emailHash;
     # First name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            message: "The first name should be a non-empty string with printable characters."
         }
     }
     string? firstName = ();
@@ -70,7 +76,7 @@ public type AddVisitorPayload record {|
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            message: "The last name should be a non-empty string with printable characters."
         }
     }
     string? lastName = ();
@@ -83,6 +89,12 @@ public type AddVisitorPayload record {|
     }
     string? contactNumber = ();
     # Email of the visitor
+    @constraint:String {
+        pattern: {
+            value: EMAIL_REGEX,
+            message: "The email should be a valid email address."
+        }
+    }
     string email;
 |};
 
@@ -145,6 +157,8 @@ public type VisitRecord record {|
     string? purposeOfVisit;
     # The floors and rooms that the visitor can access
     string? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
     # Time at which the visitor is supposed to check in [in UTC]
     string? timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
@@ -174,6 +188,8 @@ public type Visit record {|
     string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
     # Time at which the visitor is supposed to check in [in UTC]
     string? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
