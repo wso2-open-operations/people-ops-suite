@@ -94,7 +94,7 @@ isolated function tokenizeSearchQuery(string searchString) returns string[] {
 
     foreach string part in parts {
         string trimmed = part.trim();
-        if trimmed is "" {
+        if trimmed == "" {
             continue;
         }
 
@@ -128,8 +128,6 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
             OR LOWER(pi.first_name)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(pi.last_name)
-                LIKE LOWER(${likeValue}) ESCAPE '\\'
-            OR LOWER(e.employee_id)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(e.work_email)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
