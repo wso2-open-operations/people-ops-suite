@@ -108,18 +108,25 @@ export function SearchForm() {
     return offices.filter((o) => o.location === filter.location);
   }, [offices, filter.location]);
 
+  const filterRef = useRef<EmployeeFilterAttributes>(filter);
+  useEffect(() => {
+    filterRef.current = filter;
+  }, [filter]);
+
   const updateFilter = useCallback(
     (patch: Partial<EmployeeFilterAttributes>) => {
+      const current = filterRef.current;
       dispatch(
         setEmployeeFilter({
           ...filter,
+          ...current,
           ...patch,
           page: DEFAULT_PAGE_VALUE,
           perPage: DEFAULT_PER_PAGE_VALUE,
         } as EmployeeFilterAttributes),
       );
     },
-    [dispatch, filter],
+    [dispatch],
   );
 
   const clearAll = () => {
@@ -128,7 +135,7 @@ export function SearchForm() {
       setEmployeeFilter({
         page: DEFAULT_PAGE_VALUE,
         perPage: DEFAULT_PER_PAGE_VALUE,
-        searchString: filter.searchString ?? "",
+        searchString: searchText,
       } as EmployeeFilterAttributes),
     );
   };
