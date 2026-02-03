@@ -233,10 +233,10 @@ export function FilterDrawer({
                 locations={locations}
                 offices={filteredOfficesByLocation}
                 onChangeLocation={(selected: string | null) => {
-                  set({ location: selected || undefined });
+                  set({ location: selected  || undefined, officeId: undefined });
                 }}
                 onChangeOffice={(selected: Office | null) => {
-                  set({ officeId: selected?.id || undefined });
+                  set({ officeId: selected?.id });
                 }}
               />
             </Grid>
