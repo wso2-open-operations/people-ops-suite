@@ -186,6 +186,8 @@ public type EmployeeSearchParameters record {|
     int? designationId = ();
     # Employment type ID
     int? employmentTypeId = ();
+    # Employee Status
+    string? employeeStatus = ();
     # Page number
     @constraint:Int {minValue: 1}
     int page = DEFAULT_PAGE_NUMBER;
@@ -368,11 +370,16 @@ public type EmploymentType record {|
     string name;
 |};
 
-# Manager email payload.
-public type ManagerEmail record {|
-    # Manager email
-    @sql:Column {name: "manager_email"}
-    string managerEmail;
+# Manager payload.
+public type Manager record {|
+    # Manager ID
+    int id;
+    # Employee ID of the manager
+    @sql:Column {name: "employee_id"}
+    string employeeId;
+    # Manager work email
+    @sql:Column {name: "work_email"}
+    string workEmail;
 |};
 
 # Search employee personal information payload.

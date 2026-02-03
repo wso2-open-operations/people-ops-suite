@@ -179,11 +179,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
-    # Fetch manager emails.
+    # Fetch managers.
     # 
-    # + return - List of manager emails or error response
+    # + return - List of managers or error response
     resource function get employees/managers(http:RequestContext ctx) 
-        returns string[]|http:InternalServerError|http:Forbidden {
+        returns database:Manager[]|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -198,25 +198,25 @@ service http:InterceptableService / on new http:Listener(9090) {
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
         if !hasAdminAccess {
-            log:printWarn("User is not authorized to view manager emails", invokerEmail = userInfo.email);
+            log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
             return <http:Forbidden>{
                 body: {
-                    message: "You are not authorized to view manager emails"
+                    message: "You are not authorized to view managers"
                 }
             };
         }
 
-        string[]|error managerEmails = database:getManagerEmails();
-        if managerEmails is error {
-            string customErr = "Error occurred while fetching manager emails";
-            log:printError(customErr, managerEmails);
+        database:Manager[]|error managers = database:getManagers();
+        if managers is error {
+            string customErr = "Error occurred while fetching managers";
+            log:printError(customErr, managers);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
             };
         }
-        return managerEmails;
+        return managers;
     }
 
     # Fetch employees based on filters.

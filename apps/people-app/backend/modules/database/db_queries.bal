@@ -199,6 +199,7 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     filters.push(`(${params.officeId} IS NULL OR e.office_id = ${params.officeId})`);
     filters.push(`(${params.designationId} IS NULL OR e.designation_id = ${params.designationId})`);
     filters.push(`(${params.careerFunctionId} IS NULL OR d.career_function_id = ${params.careerFunctionId})`);
+    filters.push(`(${params.employeeStatus} IS NULL OR LOWER(e.employee_status) = LOWER(${params.employeeStatus}))`);
     filters.push(`(${params.businessUnitId} IS NULL OR e.business_unit_id = ${params.businessUnitId})`);
     filters.push(`(${params.teamId} IS NULL OR e.team_id = ${params.teamId})`);
     filters.push(`(${params.subTeamId} IS NULL OR e.sub_team_id = ${params.subTeamId})`);
@@ -224,17 +225,17 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
     return updated;
 };
 
-# Get manager emails query.
-#   + return - Manager emails query
-isolated function getManagerEmailsQuery() returns sql:ParameterizedQuery =>
-    `SELECT DISTINCT
-        manager_email
-    FROM
-        employee
-    WHERE
-        manager_email IS NOT NULL
-        AND manager_email != ''
-    ;`;
+# Fetch distinct managers.
+# 
+# + return - Parameterized query for fetching distinct managers
+isolated function getManagersQuery() returns sql:ParameterizedQuery =>
+    `SELECT DISTINCT 
+        m.id, 
+        m.employee_id, 
+        m.work_email
+    FROM employee e
+    JOIN employee m ON e.manager_email = m.work_email
+    WHERE e.manager_email IS NOT NULL AND e.manager_email <> '';`;
 
 # Fetch continuous service record by work email.
 #
