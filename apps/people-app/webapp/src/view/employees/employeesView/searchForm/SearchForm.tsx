@@ -350,7 +350,6 @@ export function SearchForm() {
                 </Box>
                 <Typography
                   variant="h5"
-                  fontWeight={600}
                   sx={{ letterSpacing: 1 }}
                 >
                   Filters
@@ -558,7 +557,7 @@ export function SearchForm() {
                     backgroundColor:
                       theme.palette.mode === "dark"
                         ? theme.palette.grey[800]
-                        : theme.palette.grey[100],
+                        : theme.palette.grey[300],
                     borderColor: theme.palette.error.main,
                   },
                 }}
@@ -569,9 +568,6 @@ export function SearchForm() {
                     mr: 0.5,
                     fontSize: 16,
                     transition: "color 0.2s ease",
-                    ".MuiButton-root:hover &": {
-                      color: theme.palette.error.main,
-                    },
                   }}
                 />
                 <Typography
@@ -580,9 +576,6 @@ export function SearchForm() {
                     fontSize: "12px",
                     fontWeight: 600,
                     transition: "color 0.2s ease",
-                    ".MuiButton-root:hover &": {
-                      color: theme.palette.error.main,
-                    },
                   }}
                 >
                   Clear filters

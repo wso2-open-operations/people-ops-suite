@@ -22,6 +22,7 @@ import {
   Chip,
   Menu,
   MenuItem,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -46,7 +47,7 @@ export function FilterChipSelect<T>({
   onChange,
   onClear,
   parent,
-  noParentSelected,
+  noParentSelected = false,
 }: FilterChipSelectProps<T>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -57,7 +58,9 @@ export function FilterChipSelect<T>({
 
   const chipText = useMemo(() => {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: hasValue ? 1 : 0.5 }}>
+      <Box
+        sx={{ display: "flex", alignItems: "center", gap: hasValue ? 1 : 0.5 }}
+      >
         <Typography
           variant="caption"
           sx={{
@@ -71,7 +74,7 @@ export function FilterChipSelect<T>({
             textTransform: "uppercase",
           }}
         >
-          {hasValue ? `${label} :` : `${label}` }
+          {hasValue ? `${label} :` : `${label}`}
         </Typography>
         {hasValue ? (
           <Typography
@@ -99,11 +102,7 @@ export function FilterChipSelect<T>({
               color: theme.palette.grey[400],
             }}
           >
-            {parent && noParentSelected
-              ? `Select ${parent}`
-              : options.length > 0
-                ? ""
-                : "No options available"}
+            {""}
           </Typography>
         )}
         {open ? (
@@ -129,17 +128,14 @@ export function FilterChipSelect<T>({
       </Box>
     );
   }, [
-    brandOrange,
-    isDark,
-    label,
-    open,
+    hasValue,
     theme.palette.grey,
     theme.palette.primary.main,
-    hasValue,
+    label,
+    isDark,
     value,
-    noParentSelected,
-    parent,
-    options.length,
+    open,
+    brandOrange,
   ]);
 
   const openMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -150,64 +146,91 @@ export function FilterChipSelect<T>({
     setAnchorEl(null);
   };
 
+  const tooltipTitle =
+    parent && noParentSelected
+      ? `Select ${parent} first`
+      : options.length === 0
+        ? "No options available"
+        : "";
+
+  console.log(noParentSelected);
+
   return (
     <>
-      <Chip
-        label={chipText}
-        clickable={false}
-        onClick={openMenu}
-        disabled={noParentSelected || options.length === 0}
-        deleteIcon={
-          <Box
+      <Tooltip title={tooltipTitle} arrow>
+        <span
+          style={{
+            pointerEvents:
+              noParentSelected || options.length === 0 ? "auto" : "auto",
+            cursor:
+              (parent && noParentSelected) || options.length === 0
+                ? "not-allowed"
+                : "pointer",
+          }}
+        >
+          <Chip
+            label={chipText}
+            clickable={false}
+            onClick={openMenu}
+            disabled={noParentSelected || options.length === 0}
+            deleteIcon={
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 4px",
+                  height: "100%",
+                  width: "28px",
+                  color: isDark
+                    ? theme.palette.grey[300]
+                    : theme.palette.grey[400],
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    color: theme.palette.error.main,
+                    backgroundColor: isDark
+                      ? alpha("#fff", 0.05)
+                      : theme.palette.grey[200],
+                  },
+                }}
+              >
+                <CloseIcon sx={{ fontSize: 16 }} />
+              </Box>
+            }
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 4px",
-              height: "100%",
-              width: "28px",
-              color: isDark ? theme.palette.grey[300] : theme.palette.grey[400],
-              transition: "all 0.2s ease",
-              "&:hover": {
-                color: theme.palette.error.main,
-                backgroundColor: isDark
-                  ? alpha("#fff", 0.05)
-                  : theme.palette.grey[200],
+              height: "32px",
+              p: 0,
+              backgroundColor: isDark
+                ? theme.palette.background.default
+                : "#fff",
+              borderRadius: "50px",
+              border: `1px solid ${hasValue ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
+              transition: "all 0.1s ease-in-out",
+              "&:active": {
+                transform: "scale(0.98)",
+              },
+              "& .MuiChip-label": {
+                pl: "12px",
+                pr: "8px",
+                borderRight: hasValue
+                  ? `1px solid ${isDark ? alpha(theme.palette.grey[100], 0.1) : theme.palette.grey[200]}`
+                  : "none",
+                height: "100%",
+                display: "flex",
+                alignItems: "center",
+                py: 0,
+              },
+              "& .MuiChip-deleteIcon": {
+                margin: 0,
+                height: "100%",
+                borderRadius: "0 50px 50px 0",
               },
             }}
-          >
-            <CloseIcon sx={{ fontSize: 16 }} />
-          </Box>
-        }
-        sx={{
-          cursor: "pointer",
-          height: "32px",
-          p: 0,
-          backgroundColor: isDark ? theme.palette.background.default : "#fff",
-          borderRadius: "50px",
-          border: `1px solid ${hasValue ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
-          transition: "all 0.1s ease-in-out",
-          "&:active": {
-            transform: "scale(0.98)",
-          },
-          "& .MuiChip-label": {
-            pl: "12px",
-            pr: "8px",
-            borderRight: `1px solid ${isDark ? alpha(theme.palette.grey[100], 0.1) : theme.palette.grey[200]}`,
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            py: 0,
-          },
-          "& .MuiChip-deleteIcon": {
-            margin: 0,
-            height: "100%",
-            borderRadius: "0 50px 50px 0",
-          },
-        }}
-        onDelete={onClear}
-        variant="outlined"
-      />
+            onDelete={hasValue ? onClear : undefined}
+            variant="outlined"
+          />
+        </span>
+      </Tooltip>
 
       <Menu
         anchorEl={anchorEl}
