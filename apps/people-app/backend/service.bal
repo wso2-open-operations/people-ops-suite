@@ -183,13 +183,25 @@ service http:InterceptableService / on new http:Listener(9090) {
     # 
     # + return - List of manager emails or error response
     resource function get employees/managers(http:RequestContext ctx) 
-        returns string[]|http:InternalServerError {
+        returns string[]|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess 
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view manager emails", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view manager emails"
                 }
             };
         }
@@ -205,7 +217,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return managerEmails;
-        
     }
 
     # Fetch employees based on filters.
@@ -256,7 +267,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + workEmail - Work email of the employee
     # + return - Employee ID and continuous service record or error response
     resource function get continuous\-service\-records(http:RequestContext ctx, string workEmail)
-        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {       
+        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         if workEmail.trim().length() == 0 {
             string customErr = "Work email is a mandatory query parameter";
