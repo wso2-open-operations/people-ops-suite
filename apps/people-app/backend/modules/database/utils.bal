@@ -119,6 +119,8 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
         (
             LOWER(CONCAT(IFNULL(e.first_name, ''), ' ', IFNULL(e.last_name, '')))
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.employee_id)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(e.first_name)
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
             OR LOWER(e.last_name)

@@ -120,7 +120,8 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
 
     sql:ParameterizedQuery baseQuery = `
         SELECT
-            e.id AS employeeId,
+            e.id AS id,
+            e.employee_id AS employeeId,
             e.first_name AS firstName,
             e.last_name AS lastName,
             e.work_email AS workEmail,
@@ -130,7 +131,13 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
-            e.additional_manager_emails AS additionalManagerEmails,
+            COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+            (
+                SELECT COUNT(1)
+                FROM employee e2
+                WHERE e2.id <> e.id
+                AND e2.manager_email = e.work_email
+            ) AS subordinateCount,
             e.employee_status AS employeeStatus,
             e.continuous_service_record AS continuousServiceRecord,
             e.probation_end_date AS probationEndDate,
@@ -146,6 +153,14 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
+            LEFT JOIN (
+                SELECT 
+                    employee_id,
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    AS additionalManagerEmails
+                FROM employee_additional_managers
+                GROUP BY employee_id
+            ) eam ON eam.employee_id = e.id
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id

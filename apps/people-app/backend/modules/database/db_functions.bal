@@ -57,6 +57,7 @@ public isolated function getEmployees(EmployeeSearchParameters params) returns E
             totalCount = employeeRecord.totalCount;
 
             Employee employee = {
+                id: employeeRecord.id,
                 employeeId: employeeRecord.employeeId,
                 firstName: employeeRecord.firstName,
                 lastName: employeeRecord.lastName,
@@ -79,7 +80,8 @@ public isolated function getEmployees(EmployeeSearchParameters params) returns E
                 businessUnit: employeeRecord.businessUnit,
                 team: employeeRecord.team,
                 subTeam: employeeRecord.subTeam,
-                unit: employeeRecord.unit
+                unit: employeeRecord.unit,
+                subordinateCount: employeeRecord.subordinateCount
             };
 
             employees.push(employee);
