@@ -159,21 +159,6 @@ function Scan({ onClose }: ScanProps) {
     setViewAccessibleFloors(true);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "requested":
-        return "warning";
-      case "approved":
-        return "success";
-      case "completed":
-        return "info";
-      case "rejected":
-        return "error";
-      default:
-        return "default";
-    }
-  };
-
   if (currentVisitState === State.loading) {
     return (
       <Box
@@ -196,19 +181,7 @@ function Scan({ onClose }: ScanProps) {
 
   if (currentVisitState === State.failed || !currentVisit) {
     return (
-      <Box
-        sx={{
-          width: "100vw",
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <ErrorHandler
-          message={stateMessage || "Failed to load visit details!"}
-        />
-      </Box>
+      <ErrorHandler message={stateMessage || "Failed to load visit details!"} />
     );
   }
 
