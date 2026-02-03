@@ -291,11 +291,6 @@ function CreateVisit() {
           await dispatch(addVisitor(addVisitorPayload));
           dispatch(resetVisitorSubmitState());
 
-          const visitDateUTC: string = dayjs
-            .utc(values.visitDate)
-            .startOf("day")
-            .toISOString();
-
           let timeOfEntryUTC: string | undefined = undefined;
           if (values.visitDate && values.timeOfEntry) {
             timeOfEntryUTC = dayjs(`${values.visitDate} ${values.timeOfEntry}`)
@@ -315,7 +310,7 @@ function CreateVisit() {
           const addVisitPayload: AddVisitPayload = {
             uuid: visitUUID,
             qrCodeBase64,
-            visitDate: visitDateUTC,
+            visitDate: values.visitDate,
             timeOfEntry: timeOfEntryUTC,
             timeOfDeparture: timeOfDepartureUTC,
             emailHash: hashedEmail,
