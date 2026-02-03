@@ -321,6 +321,7 @@ const VisitSlice = createSlice({
         state.currentVisitState = State.loading;
         state.currentVisit = null;
         state.stateMessage = "Loading visit details...";
+        state.errorMessage = null;
       })
       .addCase(
         fetchSingleVisit.fulfilled,
@@ -328,6 +329,7 @@ const VisitSlice = createSlice({
           state.currentVisitState = State.success;
           state.currentVisit = action.payload;
           state.stateMessage = "Visit details loaded successfully!";
+          state.errorMessage = null;
         },
       )
       .addCase(fetchSingleVisit.rejected, (state, action) => {

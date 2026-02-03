@@ -169,6 +169,10 @@ const defaultVisitor: VisitorDetail = {
   status: VisitorStatus.Draft,
 };
 
+const customListbox = forwardRef<HTMLUListElement, any>((props, ref) => (
+  <ul {...props} ref={ref} />
+));
+
 function CreateVisit() {
   const dispatch = useAppDispatch();
   const visitState = useAppSelector((state: RootState) => state.visit);
@@ -222,10 +226,6 @@ function CreateVisit() {
     },
     [dispatch, isLoadingMore, hasMore, inputValue],
   );
-
-  const CustomListbox = forwardRef<HTMLUListElement, any>((props, ref) => (
-    <ul {...props} ref={ref} onScroll={handleScroll} />
-  ));
 
   const addNewVisitorBlock = useCallback((formik: any) => {
     formik.setFieldValue("visitors", [
@@ -496,7 +496,8 @@ function CreateVisit() {
                           ? "No matching employees"
                           : "Type name or email to search"
                     }
-                    ListboxComponent={CustomListbox}
+                    ListboxComponent={customListbox}
+                    ListboxProps={{ onScroll: handleScroll }}
                     isOptionEqualToValue={(option, value) => option === value}
                     getOptionLabel={(option) => option}
                     renderOption={(props, emailOpt) => {
