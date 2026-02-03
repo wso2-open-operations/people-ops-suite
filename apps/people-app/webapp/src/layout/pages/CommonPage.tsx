@@ -14,11 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React from "react";
-import { useEffect, useState } from "react";
+import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Box, Stack, Tab, Tabs, Typography } from "@mui/material";
 
 interface CommonPageProps {
   title: string;
@@ -37,7 +36,10 @@ interface TabProps {
 const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [value, setValue] = useState<number>(0);
-  const tabs = commonPageTabs.map((tab) => tab.tabPath);
+  const tabs = useMemo(
+    () => commonPageTabs.map((tab) => tab.tabPath),
+    [commonPageTabs],
+  );
   const hasTabs = commonPageTabs.length > 0;
 
   useEffect(() => {
@@ -112,7 +114,7 @@ const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
           </TabPanel>
         ))
       ) : (
-          <>{page}</>
+        <>{page}</>
       )}
     </Box>
   );
