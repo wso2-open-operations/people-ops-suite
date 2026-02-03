@@ -76,78 +76,7 @@ export default function EmployeesTable() {
     }
   }
 
-  const SkeletonRowsOverlay = () => (
-    <Box sx={{ width: "100%" }}>
-      {Array.from({ length: paginationModel.pageSize }).map((_, index) => (
-        <Box
-          key={index}
-          sx={{
-            display: "grid",
-            gridTemplateColumns: columns.map(col => {
-              if (col.width) return `${col.width}px`;
-              if (col.flex) return `${col.flex}fr`;
-              return "1fr";
-            }).join(" "),
-            alignItems: "center",
-            minHeight: 52,
-            px: 2,
-            gap: 2,
-            borderBottom: `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          {columns.map((col, colIndex) => {
-            // Employee ID column
-            if (col.field === "employeeId") {
-              return (
-                <Box key={colIndex}>
-                  <Skeleton variant="rectangular" height={24} width="80%" sx={{ borderRadius: 3 }} />
-                </Box>
-              );
-            }
-            
-            // Employee name column with avatar
-            if (col.field === "fullName") {
-              return (
-                <Box key={colIndex} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                  <Skeleton variant="circular" width={24} height={24} />
-                  <Skeleton variant="rectangular" width="60%" height={24} sx={{
-                    borderRadius: 3
-                  }} />
-                </Box>
-              );
-            }
-            
-            // Email and Business Unit columns
-            if (col.field === "workEmail" || col.field === "businessUnit") {
-              return (
-                <Box key={colIndex} sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-                  <Skeleton variant="rectangular" width="70%" height={24} sx={{ borderRadius: 3 }} />
-                </Box>
-              );
-            }
-            
-            // Status column
-            if (col.field === "employeeStatus") {
-              return (
-                <Box key={colIndex} sx={{ display: "flex", justifyContent: "center" }}>
-                  <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: 3 }} />
-                </Box>
-              );
-            }
-            
-            // Default for other columns
-            return (
-              <Box key={colIndex}>
-                <Skeleton variant="rectangular" width="75%" height={24} sx={{ borderRadius: 3 }} />
-              </Box>
-            );
-          })}
-        </Box>
-      ))}
-    </Box>
-  );
-
-  const columns: GridColDef<Employee>[] = [
+  const columns: GridColDef<Employee>[] = useMemo(() => [
     {
       field: "employeeId",
       headerName: "Employee ID",
@@ -314,7 +243,82 @@ export default function EmployeesTable() {
         />
       ),
     },
-  ];
+  ], [theme]);
+
+  const SkeletonRowsOverlay = useMemo(() => {
+    return function Overlay() {
+      return (
+        <Box sx={{ width: "100%" }}>
+          {Array.from({ length: paginationModel.pageSize }).map((_, index) => (
+            <Box
+              key={index}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: columns.map(col => {
+                  if (col.width) return `${col.width}px`;
+                  if (col.flex) return `${col.flex}fr`;
+                  return "1fr";
+                }).join(" "),
+                alignItems: "center",
+                minHeight: 52,
+                px: 2,
+                gap: 2,
+                borderBottom: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              {columns.map((col, colIndex) => {
+                // Employee ID column
+                if (col.field === "employeeId") {
+                  return (
+                    <Box key={colIndex}>
+                      <Skeleton variant="rectangular" height={24} width="80%" sx={{ borderRadius: 3 }} />
+                    </Box>
+                  );
+                }
+                
+                // Employee name column with avatar
+                if (col.field === "fullName") {
+                  return (
+                    <Box key={colIndex} sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                      <Skeleton variant="circular" width={24} height={24} />
+                      <Skeleton variant="rectangular" width="60%" height={24} sx={{
+                        borderRadius: 3
+                      }} />
+                    </Box>
+                  );
+                }
+                
+                // Email and Business Unit columns
+                if (col.field === "workEmail" || col.field === "businessUnit") {
+                  return (
+                    <Box key={colIndex} sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
+                      <Skeleton variant="rectangular" width="70%" height={24} sx={{ borderRadius: 3 }} />
+                    </Box>
+                  );
+                }
+                
+                // Status column
+                if (col.field === "employeeStatus") {
+                  return (
+                    <Box key={colIndex} sx={{ display: "flex", justifyContent: "center" }}>
+                      <Skeleton variant="rounded" width={90} height={24} sx={{ borderRadius: 3 }} />
+                    </Box>
+                  );
+                }
+                
+                // Default for other columns
+                return (
+                  <Box key={colIndex}>
+                    <Skeleton variant="rectangular" width="75%" height={24} sx={{ borderRadius: 3 }} />
+                  </Box>
+                );
+              })}
+            </Box>
+          ))}
+        </Box>
+      )
+    };
+  }, [columns, paginationModel.pageSize, theme.palette.divider])
   
   return (
     <Box
