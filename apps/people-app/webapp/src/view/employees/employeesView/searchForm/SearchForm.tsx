@@ -294,7 +294,7 @@ export function SearchForm() {
               if (debounceRef.current) window.clearTimeout(debounceRef.current);
               debounceRef.current = window.setTimeout(() => {
                 updateFilter({ searchString: value });
-              }, 100);
+              }, 300);
             }}
             InputProps={{
               startAdornment: (
