@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useCallback, useState, useMemo, forwardRef } from "react";
+import { useCallback, useState, useMemo, forwardRef, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -191,6 +191,10 @@ function CreateVisit() {
     });
     return map;
   }, [employees]);
+
+  useEffect(() => {
+    dispatch(fetchEmployees({ searchTerm: "a", limit: 20, offset: 0 }));
+  }, [dispatch]);
 
   const handleInputChange = useCallback(
     (_: any, newInputValue: string, reason: string) => {
