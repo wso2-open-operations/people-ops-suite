@@ -12,26 +12,11 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
+
 import people.database;
 
 import ballerina/constraint;
-
-# Represents the response structure for retrieving user information.
-public type UserInfoResponse record {|
-    # Id of the employee
-    string employeeId;
-    # Email of the employee
-    string workEmail;
-    # First name of the employee
-    string firstName;
-    # Last name of the employee
-    string lastName;
-    # Thumbnail of the employee
-    string? employeeThumbnail;
-    # User Privileges
-    int[] privileges;
-|};
 
 // # Payload for adding a vehicle.
 type NewVehicle record {|
@@ -46,4 +31,3 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
-
