@@ -107,14 +107,8 @@ public type AddVisitPayload record {|
         }
     }
     string uuid;
-    # QR code in base64 format
-    @constraint:String {
-        pattern: {
-            value: database:BASE64_IMAGE_REGEX,
-            message: "The QR code should be a valid base64 image string."
-        }
-    }
-    string qrCodeBase64;
+    # QR code in byte array format
+    byte[] qrCode;
 |};
 
 # Payload for updating an existing visit.

@@ -262,7 +262,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         string|error content = email:bindKeyValues(
                 email:inviteTemplate,
                 {
-                    QR_CODE_BASE64: payload.qrCodeBase64,
                     CONTACT_EMAIL: email:contactUsEmail,
                     YEAR: time:utcToCivil(time:utcNow()).year.toString()
                 }
@@ -279,6 +278,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? emailError = email:sendEmail({
+                                                attachments: [
+                                                    {
+                                                        attachment: payload.qrCode,
+                                                        contentName: "visitor-pass.png",
+                                                        contentType: "image/png"
+                                                    }
+                                                ],
                                                 to: [existingVisitor.email],
                                                 'from: email:fromEmailAddress,
                                                 subject: email:VISIT_INVITATION_SUBJECT,
