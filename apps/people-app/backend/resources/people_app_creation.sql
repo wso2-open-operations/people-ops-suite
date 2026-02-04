@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS resignation;
 DROP TABLE IF EXISTS vehicle;
+DROP TABLE IF EXISTS employee_additional_managers;
 DROP TABLE IF EXISTS employee;
 DROP TABLE IF EXISTS recruit;
 DROP TABLE IF EXISTS business_unit_team_sub_team_unit;
@@ -14,6 +15,7 @@ DROP TABLE IF EXISTS company;
 DROP TABLE IF EXISTS designation;
 DROP TABLE IF EXISTS career_function;
 DROP TABLE IF EXISTS employment_type;
+DROP TABLE IF EXISTS personal_info_emergency_contacts;
 DROP TABLE IF EXISTS personal_info;
 
 CREATE TABLE `vehicle` (
@@ -201,13 +203,12 @@ CREATE TABLE `employment_type` (
 -- Personal_info table
 CREATE TABLE `personal_info` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `nic_or_passport` VARCHAR(20) UNIQUE,
-  `full_name` VARCHAR(255) NOT NULL,
-  `name_with_initials` VARCHAR(150),
-  `first_name` VARCHAR(100),
-  `last_name` VARCHAR(100),
-  `title` VARCHAR(100) NULL,
-  `dob` DATE,
+  `nic_or_passport` VARCHAR(20) NOT NULL UNIQUE,
+  `first_name` VARCHAR(100) NOT NULL,
+  `last_name` VARCHAR(100) NOT NULL,
+  `title` VARCHAR(100) NOT NULL,
+  `dob` DATE NOT NULL,
+  `gender` VARCHAR(20) NOT NULL DEFAULT 'Not Specified',
   `personal_email` VARCHAR(254),
   `personal_phone` VARCHAR(20),
   `resident_number` VARCHAR(20),
@@ -217,7 +218,7 @@ CREATE TABLE `personal_info` (
   `state_or_province` VARCHAR(100),
   `postal_code` VARCHAR(20),
   `country` VARCHAR(100),
-  `nationality` VARCHAR(100),
+  `nationality` VARCHAR(100) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
@@ -283,11 +284,9 @@ CREATE TABLE `employee` (
   `employment_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
   `work_email` VARCHAR(254) NOT NULL,
-  `work_phone_number` VARCHAR(45) NULL,
   `start_date` DATE NULL,
   `secondary_job_title` VARCHAR(100) NOT NULL,
   `manager_email` VARCHAR(254) NOT NULL,
-  `additional_manager_emails` VARCHAR(254) NULL,
   `employee_status` VARCHAR(50) NOT NULL,
   `continuous_service_record` VARCHAR(99) NULL,
   `employee_thumbnail` VARCHAR(512) NULL,
@@ -383,3 +382,40 @@ BEGIN
 END//
 //
 DELIMITER ;
+
+-- Additional_managers table
+CREATE TABLE `employee_additional_managers` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `employee_id` INT NOT NULL,
+  `additional_manager_email` VARCHAR(254) NOT NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_eam_employee_email` (`employee_id`, `additional_manager_email`),
+  KEY `idx_eam_manager_email` (`additional_manager_email`),
+  CONSTRAINT `fk_eam_employee`
+    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Emergency_contacts table
+CREATE TABLE `personal_info_emergency_contacts` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `personal_info_id` INT NOT NULL,
+  `name` VARCHAR(150) NOT NULL,
+  `mobile` VARCHAR(20) NOT NULL,
+  `telephone` VARCHAR(20) NOT NULL,
+  `relationship` VARCHAR(100) NOT NULL,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  KEY `idx_ec_personal_info_id` (`personal_info_id`),
+  KEY `idx_ec_mobile` (`mobile`),
+  CONSTRAINT `fk_ec_personal_info`
+    FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

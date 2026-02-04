@@ -22,6 +22,7 @@ import ballerina/sql;
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
         id,
+        employee_id,
         first_name,
         last_name,
         work_email,
@@ -35,6 +36,7 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
+        employee_id,
         first_name,
         last_name,
         work_email,
@@ -43,11 +45,12 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 
 # Fetch employee detailed information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Query to get employee detailed information
-isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery =>
+isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS employeeId,
+        e.id AS id,
+        e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
         e.work_email AS workEmail,
@@ -55,10 +58,15 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         e.epf AS epf,
         c.location AS employmentLocation,
         e.work_location AS workLocation,
-        e.work_phone_number AS workPhoneNumber,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.additional_manager_emails AS additionalManagerEmails,
+        COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        (
+            SELECT COUNT(1)
+            FROM employee e2
+            WHERE e2.id <> e.id
+              AND e2.manager_email = e.work_email
+        ) AS subordinateCount,
         e.employee_status AS employeeStatus,
         e.continuous_service_record AS continuousServiceRecord,
         e.probation_end_date AS probationEndDate,
@@ -73,6 +81,14 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         u.name AS unit
     FROM
         employee e
+        LEFT JOIN (
+            SELECT 
+                employee_id,
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                AS additionalManagerEmails
+            FROM employee_additional_managers
+            GROUP BY employee_id
+        ) eam ON eam.employee_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -80,9 +96,9 @@ isolated function getEmployeeInfoQuery(string id) returns sql:ParameterizedQuery
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
-        INNER JOIN unit u ON e.unit_id = u.id
+        LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.id = ${id};`;
+        e.employee_id = ${employeeId};`;  
 
 # Fetch continuous service record by work email.
 #
@@ -98,7 +114,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
-        e.additional_manager_emails AS additionalManagerEmails,
+        COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
         d.designation AS designation,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
@@ -106,8 +122,16 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         t.name AS team,
         st.name AS subTeam,
         u.name AS unit
-    FROM
-        employee e
+    FROM employee e
+        LEFT JOIN (
+            SELECT 
+                employee_id,
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                AS additionalManagerEmails
+            FROM employee_additional_managers
+            GROUP BY employee_id
+        ) eam ON eam.employee_id = e.id
+        INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
         INNER JOIN company c ON c.id = o.company_id
@@ -116,7 +140,9 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         LEFT JOIN sub_team st ON e.sub_team_id = st.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.work_email = ${workEmail};`;
+        e.work_email = ${workEmail}
+        AND et.is_active = 1
+        AND et.name IN ('Permanent');`;
 
 # Search employee personal information.
 #
@@ -128,12 +154,11 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
         SELECT 
             p.id AS id,
             nic_or_passport,
-            full_name,
-            name_with_initials,
             p.first_name AS firstName,
             p.last_name AS lastName,
             title,
             dob,
+            gender,
             personal_email,
             personal_phone,
             resident_number,
@@ -155,18 +180,17 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
 
 # Fetch employee personal information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Query to get employee personal information
-isolated function getEmployeePersonalInfoQuery(string id) returns sql:ParameterizedQuery =>
+isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
         p.id AS id,
         nic_or_passport,
-        full_name,
-        name_with_initials,
         p.first_name AS firstName,
         p.last_name AS lastName,
         title,
         dob,
+        gender,
         personal_email,
         personal_phone,
         resident_number,
@@ -176,11 +200,23 @@ isolated function getEmployeePersonalInfoQuery(string id) returns sql:Parameteri
         state_or_province,
         postal_code,
         country,
-        nationality,
-        emergency_contacts
+        nationality
     FROM personal_info p
     INNER JOIN employee e ON p.id = e.personal_info_id
-        WHERE e.id = ${id};`;
+        WHERE e.employee_id = ${employeeId};`;
+
+# Fetch emergency contacts by personal info ID.
+#
+# + personalInfoId - Personal info primary key
+# + return - Query to fetch emergency contacts
+isolated function getEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `SELECT
+        name,
+        relationship,
+        mobile,
+        telephone
+    FROM personal_info_emergency_contacts
+    WHERE personal_info_id = ${personalInfoId};`;
 
 # Get business units query.
 # + return - Business units query
@@ -280,6 +316,15 @@ isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
         working_locations
     FROM office;`;
 
+# Get employment types query.
+#
+# + return - Employment types query
+isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
+    `SELECT 
+        id,
+        name
+    FROM employment_type;`;
+
 # Add employee personal information query.
 #
 # + payload - Create personal info payload
@@ -290,12 +335,11 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
     `INSERT INTO personal_info
         (
             nic_or_passport,
-            full_name,
-            name_with_initials,
             first_name,
             last_name,
             title,
             dob,
+            gender,
             personal_email,
             personal_phone,
             resident_number,
@@ -306,19 +350,17 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             postal_code,
             country,
             nationality,
-            emergency_contacts,
             created_by,
             updated_by
         )
     VALUES
         (
             ${payload.nicOrPassport},
-            ${payload.fullName},
-            ${payload.nameWithInitials},
             ${payload.firstName},
             ${payload.lastName},
             ${payload.title},
             ${payload.dob},
+            ${payload.gender},
             ${payload.personalEmail},
             ${payload.personalPhone},
             ${payload.residentNumber},
@@ -329,7 +371,35 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.postalCode},
             ${payload.country},
             ${payload.nationality},
-            ${payload.emergencyContacts.toJsonString()},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
+# Add emergency contact query.
+#
+# + personalInfoId - Personal info primary key
+# + contact - Emergency contact details
+# + createdBy - Creator of the emergency contact record
+# + return - Emergency contact insert query
+isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO personal_info_emergency_contacts
+        (
+            personal_info_id,
+            name,
+            mobile,
+            telephone,
+            relationship,
+            created_by,
+            updated_by
+        )
+     VALUES
+        (
+            ${personalInfoId},
+            ${contact.name},
+            ${contact.mobile},
+            ${contact.telephone},
+            ${contact.relationship},
             ${createdBy},
             ${createdBy}
         );`;
@@ -350,11 +420,9 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             employment_location,
             work_location,
             work_email,
-            work_phone_number,
             start_date,
             secondary_job_title,
             manager_email,
-            additional_manager_emails,
             employee_status,
             continuous_service_record,
             employee_thumbnail,
@@ -379,11 +447,9 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.employmentLocation},
             ${payload.workLocation},
             ${payload.workEmail},
-            ${payload.workPhoneNumber},
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.managerEmail},
-            ${string:'join(", ", ...payload.additionalManagerEmails)},
             ${payload.employeeStatus},
             ${payload.continuousServiceRecord},
             ${payload.employeeThumbnail},
@@ -401,12 +467,36 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${createdBy}
         );`;
 
+# Add employee additional manager query.
+#
+# + employeeId - Employee primary key
+# + additionalManagerEmail - Additional manager email
+# + createdBy - Creator of the additional manager record
+# + return - Additional manager insert query
+isolated function addEmployeeAdditionalManagerQuery(int employeeId, string additionalManagerEmail, string createdBy)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_additional_managers
+        (
+            employee_id,
+            additional_manager_email,
+            created_by,
+            updated_by
+        )
+     VALUES
+        (
+            ${employeeId},
+            ${additionalManagerEmail},
+            ${createdBy},
+            ${createdBy}
+        );`;
+
 # Update employee personal information query.
 #
 # + id - Personal info ID
 # + payload - Personal info update payload
+# + updatedBy - Updater of the personal info record
 # + return - Personal info update query
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload)
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy) 
     returns sql:ParameterizedQuery =>
     `UPDATE
         personal_info
@@ -420,9 +510,47 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         state_or_province = ${payload.stateOrProvince},
         postal_code = ${payload.postalCode},
         country = ${payload.country},
-        emergency_contacts = ${payload.emergencyContacts.toJsonString()}
+        updated_by = ${updatedBy}
      WHERE
         id = ${id};`;
+
+# Delete emergency contacts by personal info id.
+# 
+# + personalInfoId - Personal info primary key
+# + return - Delete emergency contacts query
+isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+    `DELETE 
+        FROM personal_info_emergency_contacts
+            WHERE personal_info_id = ${personalInfoId};`;
+
+# Insert an emergency contact for a personal_info id.
+# 
+# + personalInfoId - Personal info primary key
+# + contact - Emergency contact details
+# + createdBy - Creator of the emergency contact record
+# + return - Insert emergency contact query
+isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
+    string createdBy) returns sql:ParameterizedQuery =>`
+        INSERT INTO personal_info_emergency_contacts
+            (
+                personal_info_id,
+                name, 
+                relationship, 
+                mobile, 
+                telephone, 
+                created_by, 
+                updated_by
+            )
+        VALUES
+            (
+                ${personalInfoId},
+                ${contact.name},
+                ${contact.relationship},
+                ${contact.mobile},
+                ${contact.telephone},
+                ${createdBy},
+                ${createdBy}
+            );`;
 
 # Build query to fetch vehicles.
 #

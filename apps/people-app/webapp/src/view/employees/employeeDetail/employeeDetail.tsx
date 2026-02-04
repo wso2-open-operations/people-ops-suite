@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -12,22 +12,12 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
-import people.database;
+// under the License.
 
-import ballerina/constraint;
+import { useParams } from "react-router-dom";
+import Me from "../../me";
 
-// # Payload for adding a vehicle.
-type NewVehicle record {|
-    # Registration number of the vehicle
-    @constraint:String {
-        pattern: {
-            value: re `^([A-Za-z]{1,3}|\d{1,3}) \d{4}$`,
-            message: "Vehicle registration number should be a valid pattern in Sri Lanka."
-        }
-    }
-    string vehicleRegistrationNumber;
-    # Type of the vehicle
-    database:VehicleTypes vehicleType;
-|};
-
+export default function EmployeeDetail() {
+  const { employeeId } = useParams<{ employeeId: string }>();
+  return employeeId ? <Me employeeId={employeeId} readOnly /> : null;
+}

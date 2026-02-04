@@ -30,6 +30,8 @@ import {
   useTheme,
   alpha,
   Tooltip,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -48,8 +50,8 @@ import {
   fetchCareerFunctions,
   fetchDesignations,
   fetchOffices,
+  fetchEmploymentTypes,
 } from "@slices/organizationSlice/organization";
-import { EmployeeTypes } from "@root/src/config/constant";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
@@ -107,10 +109,6 @@ export const jobInfoValidationSchema = Yup.object().shape({
   managerEmail: Yup.string().required("Manager email is required"),
   additionalManagerEmail: Yup.array()
     .of(Yup.string().email("Invalid email format"))
-    .nullable(),
-  workPhoneNumber: Yup.string()
-    .matches(/^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/, "Invalid phone number format")
-    .transform((value) => (value === "" ? null : value))
     .nullable(),
 });
 
@@ -181,6 +179,7 @@ export default function JobInfoStep() {
     careerFunctions,
     designations,
     offices,
+    employmentTypes,
   } = useAppSelector((state) => state.organization);
 
   const textFieldSx = useMemo(
@@ -243,42 +242,28 @@ export default function JobInfoStep() {
     []
   );
 
+  const filteredAdditionalManagerOptions = useMemo(() => {
+    if (!values.managerEmail) return employeesBasicInfo;
+
+    return employeesBasicInfo.filter(
+      (employee) => employee.workEmail !== values.managerEmail
+    );
+  }, [employeesBasicInfo, values.managerEmail]);
+
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
     null
   );
 
-  const FULL_TIME_ID = EmployeeTypes.find(
-    (type) => type.label === "Full-time"
-  )?.id;
-
-  const INTERN_ID = EmployeeTypes.find((type) => type.label === "Intern")?.id;
-
-  const CONSULTANCY_ID = EmployeeTypes.find(
-    (type) => type.label === "Consultancy"
-  )?.id;
-
-  // Determine if date fields should be disabled based on employment type
-  const isProbationEndDateDisabled = useMemo(() => {
-    return (
-      !values.employmentTypeId ||
-      values.employmentTypeId === INTERN_ID ||
-      values.employmentTypeId === CONSULTANCY_ID
-    );
-  }, [values.employmentTypeId, INTERN_ID, CONSULTANCY_ID]);
-
-  const isAgreementEndDateDisabled = useMemo(() => {
-    return !values.employmentTypeId || values.employmentTypeId === FULL_TIME_ID;
-  }, [values.employmentTypeId, FULL_TIME_ID]);
-
-  // Reset probation and agreement end dates when they are disabled
   useEffect(() => {
-    if (isProbationEndDateDisabled) {
-      setFieldValue("probationEndDate", null);
+    if (values.managerEmail && values.additionalManagerEmail?.length) {
+      const filtered = values.additionalManagerEmail.filter(
+        (email) => email !== values.managerEmail
+      );
+      if (filtered.length !== values.additionalManagerEmail.length) {
+        setFieldValue("additionalManagerEmail", filtered);
+      }
     }
-    if (isAgreementEndDateDisabled) {
-      setFieldValue("agreementEndDate", null);
-    }
-  }, [isProbationEndDateDisabled, isAgreementEndDateDisabled, setFieldValue]);
+  }, [values.managerEmail, values.additionalManagerEmail, setFieldValue]);
 
   // Fetch required master data on mount and reset employee slice on unmount
   useEffect(() => {
@@ -286,6 +271,7 @@ export default function JobInfoStep() {
     dispatch(fetchOffices());
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
+    dispatch(fetchEmploymentTypes());
     return () => {
       dispatch(resetEmployee());
     };
@@ -381,6 +367,11 @@ export default function JobInfoStep() {
   }, [continuousServiceRecord, selectedRecordIndex]);
 
   useEffect(() => {
+    if (!values.isRelocation) {
+      setFieldValue("continuousServiceRecord", null);
+      return;
+    }
+
     if (continuousServiceRecord?.length === 1) {
       setFieldValue(
         "continuousServiceRecord",
@@ -397,7 +388,12 @@ export default function JobInfoStep() {
     } else {
       setFieldValue("continuousServiceRecord", null);
     }
-  }, [continuousServiceRecord, selectedRecordIndex, setFieldValue]);
+  }, [
+    values.isRelocation,
+    continuousServiceRecord,
+    selectedRecordIndex,
+    setFieldValue,
+  ]);
 
   const renderField = useCallback(
     (name: keyof CreateEmployeeFormValues, label: string, required = true) => {
@@ -488,6 +484,7 @@ export default function JobInfoStep() {
                           value: dayjs(record.startDate).format("YYYY-MM-DD"),
                         },
                         { label: "Manager Email", value: record.managerEmail },
+                        { label: "Additional Managers", value: record.additionalManagerEmails },
                         { label: "Business Unit", value: record.businessUnit },
                         { label: "Team", value: record.team },
                         ...(record.subTeam
@@ -571,6 +568,34 @@ export default function JobInfoStep() {
               )}
             </Tooltip>
           </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={!!values.isRelocation}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setFieldValue("isRelocation", checked);
+
+                    if (!checked) {
+                      setFieldValue("continuousServiceRecord", null);
+                      return;
+                    }
+                    const record =
+                      selectedRecordIndex !== null
+                        ? continuousServiceRecord?.[selectedRecordIndex]
+                        : continuousServiceRecord?.[0];
+                    setFieldValue(
+                      "continuousServiceRecord",
+                      record?.employeeId ?? null
+                    );
+                  }}
+                />
+              }
+              label="Relocation"
+            />
+          </Grid>
+
           <Grid item xs={12} sm={6} md={4}>
             {renderField("epf", "EPF", false)}
           </Grid>
@@ -917,13 +942,22 @@ export default function JobInfoStep() {
                 touched.employmentTypeId && errors.employmentTypeId
               )}
               helperText={touched.employmentTypeId && errors.employmentTypeId}
+              disabled={organizationState === "loading"}
               sx={textFieldSx}
             >
-              {EmployeeTypes.map((type) => (
-                <MenuItem key={type.id} value={type.id}>
-                  {type.label}
+              {employmentTypes.length > 0 ? (
+                employmentTypes.map((type) => (
+                  <MenuItem key={type.id} value={type.id}>
+                    {type.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {organizationState === "loading"
+                    ? "Loading employment types..."
+                    : "No employment types available"}
                 </MenuItem>
-              ))}
+              )}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -956,7 +990,6 @@ export default function JobInfoStep() {
                   val ? val.format("YYYY-MM-DD") : null
                 )
               }
-              disabled={isProbationEndDateDisabled}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -965,7 +998,7 @@ export default function JobInfoStep() {
                   ),
                   helperText:
                     touched.probationEndDate && errors.probationEndDate,
-                  sx: { ...textFieldSx, ...disabledSx },
+                  sx: textFieldSx,
                 },
               }}
             />
@@ -982,7 +1015,6 @@ export default function JobInfoStep() {
                   val ? val.format("YYYY-MM-DD") : null
                 )
               }
-              disabled={isAgreementEndDateDisabled}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -991,7 +1023,7 @@ export default function JobInfoStep() {
                   ),
                   helperText:
                     touched.agreementEndDate && errors.agreementEndDate,
-                  sx: { ...textFieldSx, ...disabledSx },
+                  sx: textFieldSx,
                 },
               }}
             />
@@ -1063,8 +1095,8 @@ export default function JobInfoStep() {
               SelectProps={{ multiple: true }}
               sx={textFieldSx}
             >
-              {employeesBasicInfo.length ? (
-                employeesBasicInfo.map((employee) => (
+              {filteredAdditionalManagerOptions.length ? (
+                filteredAdditionalManagerOptions.map((employee) => (
                   <MenuItem
                     key={employee.employeeId}
                     value={employee.workEmail}
@@ -1076,24 +1108,12 @@ export default function JobInfoStep() {
                 <MenuItem disabled>
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
-                    : "No employees found"}
+                    : values.managerEmail
+                    ? "No other managers available"
+                    : "Select primary manager first"}
                 </MenuItem>
               )}
             </TextField>
-          </Grid>
-        </Grid>
-      </Box>
-
-      <Box>
-        <SectionHeader
-          icon={icons.phone}
-          title="Phone"
-          headerBoxSx={headerBoxSx}
-          iconBoxSx={iconBoxSx}
-        />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            {renderField("workPhoneNumber", "Work Phone Number", false)}
           </Grid>
         </Grid>
       </Box>

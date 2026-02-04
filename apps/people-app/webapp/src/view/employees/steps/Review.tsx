@@ -32,7 +32,6 @@ import {
   SupervisorAccountOutlined,
   PhoneOutlined,
 } from "@mui/icons-material";
-import { EmployeeTypes } from "@root/src/config/constant";
 import {
   fetchBusinessUnits,
   fetchTeams,
@@ -41,6 +40,7 @@ import {
   fetchCareerFunctions,
   fetchDesignations,
   fetchOffices,
+  fetchEmploymentTypes,
 } from "@slices/organizationSlice/organization";
 
 const SectionHeader = React.memo(
@@ -159,6 +159,7 @@ export default function ReviewStep() {
     careerFunctions,
     designations,
     offices,
+    employmentTypes,
   } = useAppSelector((s) => s.organization);
 
   const p = values.personalInfo ?? {};
@@ -168,6 +169,7 @@ export default function ReviewStep() {
     dispatch(fetchBusinessUnits());
     dispatch(fetchOffices());
     dispatch(fetchCareerFunctions());
+    dispatch(fetchEmploymentTypes());
 
     // Fetch dependent dropdowns based on user selections
     if (values.businessUnitId && values.businessUnitId !== 0) {
@@ -190,6 +192,7 @@ export default function ReviewStep() {
     values.teamId,
     values.subTeamId,
     values.careerFunctionId,
+    values.employmentTypeId,
   ]);
 
   const sectionBoxSx = useMemo(
@@ -241,7 +244,7 @@ export default function ReviewStep() {
           ?.careerFunction || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
       employmentType:
-        EmployeeTypes.find((e) => e.id === values.employmentTypeId)?.label ||
+        employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
         null,
     }),
     [
@@ -252,6 +255,7 @@ export default function ReviewStep() {
       designations,
       careerFunctions,
       offices,
+      employmentTypes,
       values.businessUnitId,
       values.teamId,
       values.subTeamId,
@@ -281,16 +285,7 @@ export default function ReviewStep() {
             <ReviewField label="Last Name" value={p.lastName} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Name With Initials"
-              value={p.nameWithInitials}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="NIC" value={p.nicOrPassport} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Full Name" value={p.fullName} />
           </Grid>
         </Grid>
       </Box>
@@ -304,6 +299,9 @@ export default function ReviewStep() {
               label="Date of Birth"
               value={p.dob ? dayjs(p.dob).format("MMMM D, YYYY") : null}
             />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="Gender" value={p.gender} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Nationality" value={p.nationality} />
@@ -529,19 +527,6 @@ export default function ReviewStep() {
                   ? values.additionalManagerEmail.join(", ")
                   : "—"
               }
-            />
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Phone */}
-      <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.phone} title="Phone" />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Work Phone Number"
-              value={values.workPhoneNumber}
             />
           </Grid>
         </Grid>

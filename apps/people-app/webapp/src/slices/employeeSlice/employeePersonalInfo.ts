@@ -24,14 +24,13 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
 export interface EmployeePersonalInfo {
-  id: number | null;
-  nicOrPassport: string | null;
-  fullName: string;
-  nameWithInitials: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  title: string | null;
-  dob: string | null;
+  id: number;
+  nicOrPassport: string;
+  firstName: string;
+  lastName: string;
+  title: string;
+  dob: string;
+  gender: string;
   personalEmail: string | null;
   personalPhone: string | null;
   residentNumber: string | null;
@@ -41,7 +40,7 @@ export interface EmployeePersonalInfo {
   stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
-  nationality: string | null;
+  nationality: string;
   emergencyContacts: EmergencyContact[] | null;
 }
 
@@ -77,7 +76,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
   async (employeeId: string, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employeePersonalInfo(employeeId)
+        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
       );
       return response.data as EmployeePersonalInfo;
     } catch (error: any) {
@@ -91,12 +90,12 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const updateEmployeePersonalInfo = createAsyncThunk(
@@ -106,19 +105,19 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
       employeeId,
       data,
     }: { employeeId: string; data: EmployeePersonalInfoUpdate },
-    { dispatch, rejectWithValue }
+    { dispatch, rejectWithValue },
   ) => {
     try {
       const response = await APIService.getInstance().put(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
-        data
+        data,
       );
 
       dispatch(
         enqueueSnackbarMessage({
           message: "Successfully updated!",
           type: "success",
-        })
+        }),
       );
       return response.data;
     } catch (error: any) {
@@ -132,12 +131,12 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 const EmployeePersonalInfoSlice = createSlice({

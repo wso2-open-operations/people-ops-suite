@@ -130,7 +130,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return employeeInfo;
+
+        return employeeInfo;    
     }
 
     # Fetch employee personal information.
@@ -361,6 +362,23 @@ service http:InterceptableService / on new http:Listener(9090) {
         return offices;
     }
 
+    # Get employment types.
+    #
+    # + return - Employment types
+    resource function get employment\-types() returns database:EmploymentType[]|http:InternalServerError {
+        database:EmploymentType[]|error employmentTypes = database:getEmploymentTypes();
+        if employmentTypes is error {
+            string customErr = "Error while fetching Employment Types";
+            log:printError(customErr, employmentTypes);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employmentTypes;
+    }
+
     # Create a new employee.
     #
     # + return - The created employee ID as an integer, or HTTP errors
@@ -485,7 +503,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload, userInfo.email);
         if updateResult is error {
             string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
             log:printError(customErr, updateResult, id = id);
@@ -499,12 +517,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {
             id: employeePersonalInfo.id,
             nicOrPassport: employeePersonalInfo.nicOrPassport,
-            fullName: employeePersonalInfo.fullName,
-            nameWithInitials: employeePersonalInfo.nameWithInitials,
             firstName: employeePersonalInfo.firstName,
             lastName: employeePersonalInfo.lastName,
             title: employeePersonalInfo.title,
             dob: employeePersonalInfo.dob,
+            gender: employeePersonalInfo.gender,
             nationality: employeePersonalInfo.nationality,
             personalEmail: payload.personalEmail,
             personalPhone: payload.personalPhone,
@@ -515,7 +532,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             stateOrProvince: payload.stateOrProvince,
             postalCode: payload.postalCode,
             country: payload.country,
-            emergencyContacts: payload.emergencyContacts
+            emergencyContacts: payload.emergencyContacts ?: []
         };
     }
 

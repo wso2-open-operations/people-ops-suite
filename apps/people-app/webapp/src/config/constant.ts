@@ -30,15 +30,11 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const EmployeeTypes = [
-  { id: 1, label: "Full-time" },
-  { id: 2, label: "Intern" },
-  { id: 3, label: "Consultancy" },
-];
-
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
 export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
+
+export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
 export const Countries = [
   "Afghanistan",
@@ -291,3 +287,5 @@ export const Countries = [
   "Zambia",
   "Zimbabwe",
 ];
+
+export const DATE_FMT = "yyyy-MM-dd";

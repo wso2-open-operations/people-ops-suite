@@ -26,7 +26,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { useFormikContext, FieldArray } from "formik";
+import { useFormikContext, FieldArray, Field, getIn } from "formik";
 import * as Yup from "yup";
 import {
   PersonOutline,
@@ -37,11 +37,12 @@ import {
   AddCircleOutline,
   RemoveCircleOutline,
 } from "@mui/icons-material";
-import { EmployeeTitle, Countries } from "@root/src/config/constant";
 import {
-  CreateEmployeeFormValues,
-  EmergencyContact,
-} from "@root/src/types/types";
+  EmployeeTitle,
+  Countries,
+  EmployeeGenders,
+} from "@root/src/config/constant";
+import { CreateEmployeeFormValues } from "@root/src/types/types";
 import dayjs from "dayjs";
 
 export const personalInfoValidationSchema = Yup.object().shape({
@@ -54,12 +55,6 @@ export const personalInfoValidationSchema = Yup.object().shape({
       )
       .max(20, "NIC/Passport must be at most 20 characters"),
 
-    fullName: Yup.string()
-      .required("Full name is required")
-      .max(255, "Full name must be at most 255 characters"),
-    nameWithInitials: Yup.string()
-      .required("Name with initials is required")
-      .max(150, "Name with initials must be at most 150 characters"),
     firstName: Yup.string()
       .required("First name is required")
       .max(100, "First name must be at most 100 characters"),
@@ -67,6 +62,9 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .required("Last name is required")
       .max(100, "Last name must be at most 100 characters"),
     title: Yup.string().required("Title is required"),
+    gender: Yup.string()
+      .required("Gender is required")
+      .oneOf(EmployeeGenders, "Invalid gender selected"),
     dob: Yup.string()
       .transform((value, originalValue) =>
         originalValue === null ? "" : value
@@ -80,14 +78,14 @@ export const personalInfoValidationSchema = Yup.object().shape({
     personalPhone: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid personal phone number format"
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     residentNumber: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid phone number format"
+        "Invalid resident number format"
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
@@ -130,19 +128,19 @@ export const personalInfoValidationSchema = Yup.object().shape({
           telephone: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid telephone number format"
             )
             .required("Telephone is required"),
           mobile: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid phone number format"
+              "Invalid mobile number format"
             )
             .required("Mobile is required"),
         })
       )
-      .min(1, "At least one emergency contact is required")
-      .max(4, "Maximum 4 emergency contacts allowed"),
+      .max(4, "Maximum 4 emergency contacts allowed")
+      .nullable(),
   }),
 });
 
@@ -259,29 +257,9 @@ export default function PersonalInfoStep() {
     []
   );
 
-  const getEmergencyContactError = useCallback(
-    (index: number, field: keyof EmergencyContact) => {
-      const contactErrors = errors.personalInfo?.emergencyContacts?.[index];
-      const contactTouched = touched.personalInfo?.emergencyContacts?.[index];
-
-      if (
-        contactErrors &&
-        typeof contactErrors === "object" &&
-        contactTouched
-      ) {
-        return contactErrors[field] as string | undefined;
-      }
-      return undefined;
-    },
-    [
-      errors.personalInfo?.emergencyContacts,
-      touched.personalInfo?.emergencyContacts,
-    ]
-  );
-
   return (
     <Box sx={{ width: "100%", px: 0 }}>
-      <Box sx={{ mt: 5 }}>
+      <Box sx={{ mt: 1 }}>
         <SectionHeader icon={icons.person} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
@@ -310,13 +288,7 @@ export default function PersonalInfoStep() {
             </TextField>
           </Grid>
 
-          {[
-            "firstName",
-            "lastName",
-            "nameWithInitials",
-            "nicOrPassport",
-            "fullName",
-          ].map((f) => (
+          {["firstName", "lastName", "nicOrPassport"].map((f) => (
             <Grid item xs={12} sm={6} md={4} key={f}>
               {renderField(
                 f as keyof CreateEmployeeFormValues["personalInfo"],
@@ -325,11 +297,7 @@ export default function PersonalInfoStep() {
                   : f
                       .replace(/([A-Z])/g, " $1")
                       .replace(/^./, (str) => str.toUpperCase()),
-                f === "firstName" ||
-                  f === "lastName" ||
-                  f === "nameWithInitials" ||
-                  f === "nicOrPassport" ||
-                  f === "fullName"
+                f === "firstName" || f === "lastName" || f === "nicOrPassport"
               )}
             </Grid>
           ))}
@@ -365,6 +333,31 @@ export default function PersonalInfoStep() {
                 },
               }}
             />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              fullWidth
+              required
+              label="Gender"
+              name="personalInfo.gender"
+              value={values.personalInfo.gender}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={Boolean(
+                touched.personalInfo?.gender && errors.personalInfo?.gender
+              )}
+              helperText={
+                touched.personalInfo?.gender && errors.personalInfo?.gender
+              }
+              sx={textFieldSx}
+            >
+              {EmployeeGenders.map((gender) => (
+                <MenuItem key={gender} value={gender}>
+                  {gender}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
           {["nationality"].map((f) => (
             <Grid item xs={12} sm={6} md={4} key={f}>
@@ -438,138 +431,100 @@ export default function PersonalInfoStep() {
           </Grid>
         </Grid>
       </Box>
-
       <Box sx={{ mt: 5 }}>
         <SectionHeader icon={icons.emergency} title="Emergency Contacts" />
         <FieldArray name="personalInfo.emergencyContacts">
           {({ push, remove }) => (
             <>
-              {values.personalInfo.emergencyContacts.map((contact, index) => (
-                <Box
-                  key={index}
-                  sx={{
-                    mb: 3,
-                    p: 3,
-                    borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    background: alpha(theme.palette.background.paper, 0.5),
-                  }}
-                >
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.name`}
-                        label="Name"
-                        value={contact.name || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(getEmergencyContactError(index, "name"))}
-                        helperText={getEmergencyContactError(index, "name")}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.relationship`}
-                        label="Relationship"
-                        value={contact.relationship || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "relationship")
-                        )}
-                        helperText={getEmergencyContactError(
-                          index,
-                          "relationship"
-                        )}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.telephone`}
-                        label="Telephone"
-                        value={contact.telephone || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "telephone")
-                        )}
-                        helperText={getEmergencyContactError(
-                          index,
-                          "telephone"
-                        )}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3}>
-                      <MemoizedTextField
-                        name={`personalInfo.emergencyContacts.${index}.mobile`}
-                        label="Mobile"
-                        value={contact.mobile || ""}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        error={Boolean(
-                          getEmergencyContactError(index, "mobile")
-                        )}
-                        helperText={getEmergencyContactError(index, "mobile")}
-                        textFieldSx={textFieldSx}
-                      />
-                    </Grid>
-                  </Grid>
+              {values.personalInfo.emergencyContacts?.length > 0 &&
+                values.personalInfo.emergencyContacts.map((_, index) => (
                   <Box
+                    key={index}
                     sx={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 1,
-                      mt: 2,
+                      mb: 3,
+                      p: 3,
+                      borderRadius: 2,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      background: alpha(theme.palette.background.paper, 0.5),
                     }}
                   >
-                    <IconButton
-                      onClick={() => remove(index)}
-                      disabled={
-                        values.personalInfo.emergencyContacts.length === 1
-                      }
+                    <Grid container spacing={3}>
+                      {["name", "relationship", "telephone", "mobile"].map(
+                        (field) => {
+                          const fieldName = `personalInfo.emergencyContacts.${index}.${field}`;
+                          const fieldError = getIn(errors, fieldName);
+                          const fieldTouched = getIn(touched, fieldName);
+                          return (
+                            <Grid item xs={12} sm={6} md={3} key={field}>
+                              <Field
+                                as={TextField}
+                                fullWidth
+                                required
+                                name={fieldName}
+                                label={
+                                  field.charAt(0).toUpperCase() + field.slice(1)
+                                }
+                                sx={textFieldSx}
+                                error={fieldTouched && Boolean(fieldError)}
+                                helperText={fieldTouched && fieldError}
+                              />
+                            </Grid>
+                          );
+                        }
+                      )}
+                    </Grid>
+                    <Box
                       sx={{
-                        color: theme.palette.error.main,
-                        "&:hover": {
-                          backgroundColor: alpha(theme.palette.error.main, 0.1),
-                        },
-                        "&.Mui-disabled": {
-                          color: alpha(theme.palette.action.disabled, 0.3),
-                        },
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 2,
                       }}
                     >
-                      <RemoveCircleOutline />
-                    </IconButton>
-                    {index ===
-                      values.personalInfo.emergencyContacts.length - 1 &&
-                      values.personalInfo.emergencyContacts.length < 4 && (
-                        <IconButton
-                          onClick={() =>
-                            push({
-                              name: "",
-                              relationship: "",
-                              telephone: "",
-                              mobile: "",
-                            })
-                          }
-                          sx={{
-                            color: theme.palette.secondary.contrastText,
-                            "&:hover": {
-                              backgroundColor: alpha(
-                                theme.palette.secondary.contrastText,
-                                0.1
-                              ),
-                            },
-                          }}
-                        >
-                          <AddCircleOutline />
-                        </IconButton>
-                      )}
+                      <IconButton onClick={() => remove(index)} color="error">
+                        <RemoveCircleOutline />
+                      </IconButton>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                ))}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: values.personalInfo.emergencyContacts?.length > 0 ? 0 : 2,
+                }}
+              >
+                <IconButton
+                  onClick={() =>
+                    push({
+                      name: "",
+                      relationship: "",
+                      telephone: "",
+                      mobile: "",
+                    })
+                  }
+                  sx={{
+                    color: theme.palette.secondary.contrastText,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      backgroundColor: alpha(
+                        theme.palette.secondary.contrastText,
+                        0.1
+                      ),
+                    },
+                  }}
+                >
+                  <AddCircleOutline />
+                  <Typography fontWeight={500}>
+                    Add Emergency Contact
+                  </Typography>
+                </IconButton>
+              </Box>
               {touched.personalInfo?.emergencyContacts &&
                 typeof errors.personalInfo?.emergencyContacts === "string" && (
                   <Typography
@@ -577,44 +532,9 @@ export default function PersonalInfoStep() {
                     variant="body2"
                     sx={{ mt: 1, ml: 2 }}
                   >
-                    {errors.personalInfo.emergencyContacts}
+                    {errors.personalInfo?.emergencyContacts}
                   </Typography>
                 )}
-              {values.personalInfo.emergencyContacts.length === 0 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                  <IconButton
-                    onClick={() =>
-                      push({
-                        name: "",
-                        relationship: "",
-                        telephone: "",
-                        mobile: "",
-                      })
-                    }
-                    sx={{
-                      color: theme.palette.secondary.contrastText,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1,
-                      px: 2,
-                      py: 1,
-                      borderRadius: 2,
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        backgroundColor: alpha(
-                          theme.palette.secondary.contrastText,
-                          0.1
-                        ),
-                      },
-                    }}
-                  >
-                    <AddCircleOutline />
-                    <Typography fontWeight={500}>
-                      Add Emergency Contact
-                    </Typography>
-                  </IconButton>
-                </Box>
-              )}
             </>
           )}
         </FieldArray>
