@@ -120,6 +120,88 @@ public type Employee record {|
     int subordinateCount;
 |};
 
+# Filters for getting employees.
+public type Filters record {|
+    # Title
+    string? title = ();
+    # First name
+    string? firstName = ();
+    # Last name
+    string? lastName = ();
+    # National Identity Card number or Passport
+    int|string? nicOrPassport = ();
+    # Date of birth
+    string? dateOfBirth = ();
+    # Gender
+    string? gender = ();
+    # Personal email
+    string? personalEmail = ();
+    # Personal phone number
+    string? personalPhone = ();
+    # City
+    string? city = ();
+    # Country
+    string? country = ();
+    # Career function ID
+    int? careerFunctionId = ();
+    # Manager email
+    string? managerEmail = ();
+    # Company ID
+    int? companyId = ();
+    # Employment location
+    string? location = ();
+    # Office ID
+    int? officeId = ();
+    # Business unit ID
+    int? businessUnitId = ();
+    # Team ID
+    int? teamId = ();
+    # Sub-team ID
+    int? subTeamId = ();
+    # Unit ID
+    int? unitId = ();
+    # Designation ID
+    int? designationId = ();
+    # Employment type ID
+    int? employmentTypeId = ();
+    # Employee Status
+    string? employeeStatus = ();
+|};
+
+public type Pagination record {|
+    # Page number
+    @constraint:Int {minValue: 1}
+    int page = DEFAULT_PAGE_NUMBER;
+    # Records per page
+    @constraint:Int {minValue: 1, maxValue: 100}
+    int perPage = DEFAULT_RECORDS_PER_PAGE;
+|};
+
+# Filter payload for getting employees.
+public type EmployeeSearchPayload record {|
+    # Search query
+    string? searchString = ();
+    # Filters
+    Filters filters;
+    # Pagination
+    Pagination pagination;
+|};
+
+# Employee record with total count.
+public type EmployeeRecord record {|
+    *Employee;
+    # Total count of matching employees
+    int totalCount;
+|};
+
+# Filtered employees response with total count.
+public type EmployeesResponse record {|
+    # List of filtered employees
+    Employee[] employees;
+    # Total count of matching employees
+    int totalCount;
+|};
+
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
     # Primary key ID
@@ -277,6 +359,18 @@ public type EmploymentType record {|
     int id;
     # Name of the employment type
     string name;
+|};
+
+# Manager payload.
+public type Manager record {|
+    # Manager ID
+    int id;
+    # Employee ID of the manager
+    @sql:Column {name: "employee_id"}
+    string employeeId;
+    # Manager work email
+    @sql:Column {name: "work_email"}
+    string workEmail;
 |};
 
 # Search employee personal information payload.

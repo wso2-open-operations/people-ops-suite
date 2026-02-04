@@ -91,8 +91,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // TODO: Fetch privileges and return along with the basic info
-        return {...employeeBasicInfo, privileges: []};
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            privileges.push(authorization:ADMIN_PRIVILEGE);
+        }
+        return {...employeeBasicInfo, privileges};
     }
 
     # Fetch employee detailed information.
@@ -170,6 +177,89 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Fetch managers.
+    # 
+    # + return - List of managers or error response
+    resource function get employees/managers(http:RequestContext ctx) 
+        returns database:Manager[]|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess 
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view managers"
+                }
+            };
+        }
+
+        database:Manager[]|error managers = database:getManagers();
+        if managers is error {
+            string customErr = "Error occurred while fetching managers";
+            log:printError(customErr, managers);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return managers;
+    }
+
+    # Fetch employees based on filters.
+    # 
+    # + params - Get employees filter payload
+    # + return - List of employees or error response
+    resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchPayload params) 
+        returns http:Ok|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess 
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view employee list", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employee list"
+                }
+            };
+        }
+
+        database:EmployeesResponse|error employees = database:getEmployees(params);
+        if employees is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, employees);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return <http:Ok>{
+            body: employees
+        };
     }
 
     # Fetch continuous service record by work email.

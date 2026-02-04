@@ -100,6 +100,135 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
     WHERE
         e.employee_id = ${employeeId};`;  
 
+# Fetch employees with filters.
+# 
+# + params - Get employees filter payload
+# + return - Parameterized query for fetching employees
+isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:ParameterizedQuery {
+
+    int page = params.pagination.page;
+    int perPage = params.pagination.perPage;
+    int offset = (page - 1) * perPage;
+
+    sql:ParameterizedQuery baseQuery = `
+        SELECT
+            e.id AS id,
+            e.employee_id AS employeeId,
+            e.first_name AS firstName,
+            e.last_name AS lastName,
+            e.work_email AS workEmail,
+            e.employee_thumbnail AS employeeThumbnail,
+            e.epf AS epf,
+            e.employment_location AS employmentLocation,
+            e.work_location AS workLocation,
+            e.start_date AS startDate,
+            e.manager_email AS managerEmail,
+            COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+            COALESCE(sc.subordinateCount, 0) AS subordinateCount,
+            e.employee_status AS employeeStatus,
+            e.continuous_service_record AS continuousServiceRecord,
+            e.probation_end_date AS probationEndDate,
+            e.agreement_end_date AS agreementEndDate,
+            et.name AS employmentType,
+            d.designation AS designation,
+            e.secondary_job_title AS secondaryJobTitle,
+            o.name AS office,
+            bu.name AS businessUnit,
+            t.name AS team,
+            st.name AS subTeam,
+            u.name AS unit,
+            COUNT(*) OVER() AS totalCount
+        FROM
+            employee e
+            LEFT JOIN (
+                SELECT 
+                    employee_id,
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    AS additionalManagerEmails
+                FROM employee_additional_managers
+                GROUP BY employee_id
+            ) eam ON eam.employee_id = e.id
+
+            LEFT JOIN (
+                SELECT 
+                    LOWER(manager_email) AS managerEmail,
+                    COUNT(*) AS subordinateCount
+                FROM employee
+                WHERE manager_email IS NOT NULL AND manager_email <> ''
+                GROUP BY LOWER(manager_email)
+            ) sc ON sc.managerEmail = LOWER(e.work_email)
+            
+            INNER JOIN personal_info pi ON pi.id = e.personal_info_id
+            INNER JOIN employment_type et ON et.id = e.employment_type_id
+            INNER JOIN designation d ON d.id = e.designation_id
+            INNER JOIN office o ON o.id = e.office_id
+            INNER JOIN business_unit bu ON bu.id = e.business_unit_id
+            INNER JOIN team t ON t.id = e.team_id
+            INNER JOIN sub_team st ON st.id = e.sub_team_id
+            INNER JOIN company c ON c.id = o.company_id
+            LEFT JOIN unit u ON u.id = e.unit_id
+        `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    filters.push(`(${params.filters.title} IS NULL OR pi.title = ${params.filters.title})`);
+    filters.push(`(${params.filters.firstName} IS NULL OR LOWER(pi.first_name) = LOWER(${params.filters.firstName}))`);
+    filters.push(`(${params.filters.lastName} IS NULL OR LOWER(pi.last_name) = LOWER(${params.filters.lastName}))`);
+    filters.push(`(${params.filters.nicOrPassport} IS NULL OR pi.nic_or_passport = ${params.filters.nicOrPassport})`);
+    filters.push(`(${params.filters.dateOfBirth} IS NULL OR pi.dob = ${params.filters.dateOfBirth})`);
+    filters.push(`(${params.filters.gender} IS NULL OR pi.gender = ${params.filters.gender})`);
+    filters.push(`(${params.filters.personalEmail} IS NULL OR LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail}))`);
+    filters.push(`(${params.filters.personalPhone} IS NULL OR pi.personal_phone = ${params.filters.personalPhone})`);
+    filters.push(`(${params.filters.city} IS NULL OR LOWER(pi.city) = LOWER(${params.filters.city}))`);
+    filters.push(`(${params.filters.country} IS NULL OR LOWER(pi.country) = LOWER(${params.filters.country}))`);
+
+    string escapedManager = escapeLike(params.filters.managerEmail ?: "");
+    string escapedLocation = escapeLike(params.filters.location ?: "");
+
+    filters.push(`(${params.filters.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
+    filters.push(`(${params.filters.companyId} IS NULL OR o.company_id = ${params.filters.companyId})`);
+    filters.push(`(${params.filters.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escapedLocation}, '%')))`);
+    filters.push(`(${params.filters.officeId} IS NULL OR e.office_id = ${params.filters.officeId})`);
+    filters.push(`(${params.filters.designationId} IS NULL OR e.designation_id = ${params.filters.designationId})`);
+    filters.push(`(${params.filters.careerFunctionId} IS NULL OR d.career_function_id = ${params.filters.careerFunctionId})`);
+    filters.push(`(${params.filters.employeeStatus} IS NULL OR LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus}))`);
+    filters.push(`(${params.filters.businessUnitId} IS NULL OR e.business_unit_id = ${params.filters.businessUnitId})`);
+    filters.push(`(${params.filters.teamId} IS NULL OR e.team_id = ${params.filters.teamId})`);
+    filters.push(`(${params.filters.subTeamId} IS NULL OR e.sub_team_id = ${params.filters.subTeamId})`);
+    filters.push(`(${params.filters.unitId} IS NULL OR e.unit_id = ${params.filters.unitId})`);
+    filters.push(`(${params.filters.employmentTypeId} IS NULL OR e.employment_type_id = ${params.filters.employmentTypeId})`);
+
+    string? searchString = params.searchString;
+
+    if searchString is string {
+        string[] tokens = tokenizeSearchQuery(searchString);
+        foreach string token in tokens {
+            filters.push(buildTextTokenFilter(token));
+        }
+    }
+
+    sql:ParameterizedQuery updated = buildSqlSelectQuery(baseQuery, filters);
+
+    updated = sql:queryConcat(updated, `
+        ORDER BY e.id ASC
+        LIMIT ${perPage} OFFSET ${offset}
+    `);
+
+    return updated;
+};
+
+# Fetch distinct managers.
+# 
+# + return - Parameterized query for fetching distinct managers
+isolated function getManagersQuery() returns sql:ParameterizedQuery =>
+    `SELECT DISTINCT 
+        m.id, 
+        m.employee_id, 
+        m.work_email
+    FROM employee e
+    JOIN employee m ON e.manager_email = m.work_email
+    WHERE e.manager_email IS NOT NULL AND e.manager_email <> '';`;
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
@@ -235,12 +364,14 @@ isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
         SELECT
             t.id, t.name
         FROM
-            team t
-        LEFT JOIN 
-            business_unit_team but ON but.team_id = t.id`;
+            team t`;
 
     if buId is int {
-        query = sql:queryConcat(query, ` WHERE but.business_unit_id = ${buId}`);
+        query = sql:queryConcat(query, `
+            LEFT JOIN 
+                business_unit_team but ON but.team_id = t.id
+            WHERE 
+                but.business_unit_id = ${buId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -254,10 +385,13 @@ isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQu
         SELECT
             st.id, st.name
         FROM
-            sub_team st
-        LEFT JOIN business_unit_team_sub_team butst ON butst.sub_team_id = st.id`;
+            sub_team st`;
     if teamId is int {
-        query = sql:queryConcat(query, ` WHERE butst.business_unit_team_id = ${teamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team butst ON butst.sub_team_id = st.id
+            WHERE 
+                butst.business_unit_team_id = ${teamId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -271,10 +405,13 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
         SELECT
             u.id, u.name
         FROM
-            unit u
-        LEFT JOIN business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id`;
+            unit u`;
     if subTeamId is int {
-        query = sql:queryConcat(query, ` WHERE butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
+            WHERE 
+                butstu.business_unit_team_sub_team_id = ${subTeamId}`);
     }
     return sql:queryConcat(query, `;`);
 }

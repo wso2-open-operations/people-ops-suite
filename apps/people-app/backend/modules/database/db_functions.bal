@@ -42,6 +42,54 @@ public isolated function getEmployeeInfo(string id) returns Employee|error? {
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
+# Fetch employees with filters.
+# 
+# + params - Get employees filter payload
+# + return - List of employees or error
+public isolated function getEmployees(EmployeeSearchPayload params) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(params));
+
+    int totalCount = 0;
+    Employee[] employees = [];
+
+    check from EmployeeRecord employeeRecord in resultStream
+        do {
+            totalCount = employeeRecord.totalCount;
+
+            Employee employee = {
+                id: employeeRecord.id,
+                employeeId: employeeRecord.employeeId,
+                firstName: employeeRecord.firstName,
+                lastName: employeeRecord.lastName,
+                workEmail: employeeRecord.workEmail,
+                employeeThumbnail: employeeRecord.employeeThumbnail,
+                epf: employeeRecord.epf,
+                employmentLocation: employeeRecord.employmentLocation,
+                workLocation: employeeRecord.workLocation,
+                startDate: employeeRecord.startDate,
+                managerEmail: employeeRecord.managerEmail,
+                additionalManagerEmails: employeeRecord.additionalManagerEmails,
+                employeeStatus: employeeRecord.employeeStatus,
+                continuousServiceRecord: employeeRecord.continuousServiceRecord,
+                probationEndDate: employeeRecord.probationEndDate,
+                agreementEndDate: employeeRecord.agreementEndDate,
+                employmentType: employeeRecord.employmentType,
+                designation: employeeRecord.designation,
+                secondaryJobTitle: employeeRecord.secondaryJobTitle,
+                office: employeeRecord.office,
+                businessUnit: employeeRecord.businessUnit,
+                team: employeeRecord.team,
+                subTeam: employeeRecord.subTeam,
+                unit: employeeRecord.unit,
+                subordinateCount: employeeRecord.subordinateCount
+            };
+
+            employees.push(employee);
+        };
+
+    return { employees, totalCount };
+}
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
@@ -165,6 +213,15 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
     stream<EmploymentType, error?> employmentTypeStream = databaseClient->query(getEmploymentTypesQuery());
     return from EmploymentType employmentType in employmentTypeStream
         select employmentType;
+}
+
+# Get managers.
+#
+# + return - Managers
+public isolated function getManagers() returns Manager[]|error {
+    stream<Manager, error?> managerStream = databaseClient->query(getManagersQuery());
+    return from Manager manager in managerStream
+        select manager;
 }
 
 # Add new employee.
