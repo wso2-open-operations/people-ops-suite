@@ -56,18 +56,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.adminRoles, userInfo.groups) {
                 privileges.push(authorization:ADMIN_PRIVILEGE);
             }
-
-            // Get last sabbatical leave end date
-            string?|error lastSabbaticalLeaveEndDate = database:getLastSabbaticalLeaveEndDate(userInfo.email);
-            if lastSabbaticalLeaveEndDate is error {
-                string errMsg = "Error occurred while fetching last sabbatical leave end date";
-                log:printError(errMsg, lastSabbaticalLeaveEndDate);
-                return <http:InternalServerError>{
-                    body: {
-                        message: errMsg
-                    }
-                };
-            }
             if (<boolean>empInfo.lead) {
                 privileges.push(authorization:LEAD_PRIVILEGE);
             }
