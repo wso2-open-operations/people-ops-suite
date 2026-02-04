@@ -46,7 +46,7 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 # 
 # + params - Get employees filter payload
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchParameters params) returns EmployeeFilterResult|error {
+public isolated function getEmployees(EmployeeSearchPayload params) returns EmployeesResponse|error {
     stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(params));
 
     int totalCount = 0;
@@ -87,7 +87,7 @@ public isolated function getEmployees(EmployeeSearchParameters params) returns E
             employees.push(employee);
         };
 
-    return { employees: employees, totalCount: totalCount };
+    return { employees, totalCount };
 }
 
 # Fetch continuous service record by work email.

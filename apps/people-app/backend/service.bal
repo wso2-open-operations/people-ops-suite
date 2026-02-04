@@ -223,7 +223,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # 
     # + params - Get employees filter payload
     # + return - List of employees or error response
-    resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchParameters params) 
+    resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchPayload params) 
         returns http:Ok|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -247,7 +247,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeeFilterResult|error employees = database:getEmployees(params);
+        database:EmployeesResponse|error employees = database:getEmployees(params);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);

@@ -140,10 +140,8 @@ public type Employee record {|
     int subordinateCount;
 |};
 
-# Filter for getting employees.
-public type EmployeeSearchParameters record {|
-    # Search query
-    string? searchString = ();
+# Filters for getting employees.
+public type Filters record {|
     # Title
     string? title = ();
     # First name
@@ -188,12 +186,25 @@ public type EmployeeSearchParameters record {|
     int? employmentTypeId = ();
     # Employee Status
     string? employeeStatus = ();
+|};
+
+public type Pagination record {|
     # Page number
     @constraint:Int {minValue: 1}
     int page = DEFAULT_PAGE_NUMBER;
     # Records per page
     @constraint:Int {minValue: 1, maxValue: 100}
     int perPage = DEFAULT_RECORDS_PER_PAGE;
+|};
+
+# Filter payload for getting employees.
+public type EmployeeSearchPayload record {|
+    # Search query
+    string? searchString = ();
+    # Filters
+    Filters filters;
+    # Pagination
+    Pagination pagination;
 |};
 
 # Employee record with total count.
@@ -203,8 +214,8 @@ public type EmployeeRecord record {|
     int totalCount;
 |};
 
-# Filtered employees list with total count.
-public type EmployeeFilterResult record {|
+# Filtered employees response with total count.
+public type EmployeesResponse record {|
     # List of filtered employees
     Employee[] employees;
     # Total count of matching employees

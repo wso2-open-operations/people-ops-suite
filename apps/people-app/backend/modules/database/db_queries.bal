@@ -112,10 +112,10 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # 
 # + params - Get employees filter payload
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:ParameterizedQuery {
 
-    int page = params.page;
-    int perPage = params.perPage;
+    int page = params.pagination.page;
+    int perPage = params.pagination.perPage;
     int offset = (page - 1) * perPage;
 
     sql:ParameterizedQuery baseQuery = `
@@ -179,32 +179,32 @@ isolated function getEmployeesQuery(EmployeeSearchParameters params) returns sql
 
     sql:ParameterizedQuery[] filters = [];
 
-    filters.push(`(${params.title} IS NULL OR pi.title = ${params.title})`);
-    filters.push(`(${params.firstName} IS NULL OR LOWER(pi.first_name) = LOWER(${params.firstName}))`);
-    filters.push(`(${params.lastName} IS NULL OR LOWER(pi.last_name) = LOWER(${params.lastName}))`);
-    filters.push(`(${params.nicOrPassport} IS NULL OR pi.nic_or_passport = ${params.nicOrPassport})`);
-    filters.push(`(${params.dateOfBirth} IS NULL OR pi.dob = ${params.dateOfBirth})`);
-    filters.push(`(${params.gender} IS NULL OR pi.gender = ${params.gender})`);
-    filters.push(`(${params.personalEmail} IS NULL OR LOWER(pi.personal_email) = LOWER(${params.personalEmail}))`);
-    filters.push(`(${params.personalPhone} IS NULL OR pi.personal_phone = ${params.personalPhone})`);
-    filters.push(`(${params.city} IS NULL OR LOWER(pi.city) = LOWER(${params.city}))`);
-    filters.push(`(${params.country} IS NULL OR LOWER(pi.country) = LOWER(${params.country}))`);
+    filters.push(`(${params.filters.title} IS NULL OR pi.title = ${params.filters.title})`);
+    filters.push(`(${params.filters.firstName} IS NULL OR LOWER(pi.first_name) = LOWER(${params.filters.firstName}))`);
+    filters.push(`(${params.filters.lastName} IS NULL OR LOWER(pi.last_name) = LOWER(${params.filters.lastName}))`);
+    filters.push(`(${params.filters.nicOrPassport} IS NULL OR pi.nic_or_passport = ${params.filters.nicOrPassport})`);
+    filters.push(`(${params.filters.dateOfBirth} IS NULL OR pi.dob = ${params.filters.dateOfBirth})`);
+    filters.push(`(${params.filters.gender} IS NULL OR pi.gender = ${params.filters.gender})`);
+    filters.push(`(${params.filters.personalEmail} IS NULL OR LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail}))`);
+    filters.push(`(${params.filters.personalPhone} IS NULL OR pi.personal_phone = ${params.filters.personalPhone})`);
+    filters.push(`(${params.filters.city} IS NULL OR LOWER(pi.city) = LOWER(${params.filters.city}))`);
+    filters.push(`(${params.filters.country} IS NULL OR LOWER(pi.country) = LOWER(${params.filters.country}))`);
 
-    string escapedManager = escapeLike(params.managerEmail ?: "");
-    string escapedLocation = escapeLike(params.location ?: "");
+    string escapedManager = escapeLike(params.filters.managerEmail ?: "");
+    string escapedLocation = escapeLike(params.filters.location ?: "");
 
-    filters.push(`(${params.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
-    filters.push(`(${params.companyId} IS NULL OR o.company_id = ${params.companyId})`);
-    filters.push(`(${params.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escapedLocation}, '%')))`);
-    filters.push(`(${params.officeId} IS NULL OR e.office_id = ${params.officeId})`);
-    filters.push(`(${params.designationId} IS NULL OR e.designation_id = ${params.designationId})`);
-    filters.push(`(${params.careerFunctionId} IS NULL OR d.career_function_id = ${params.careerFunctionId})`);
-    filters.push(`(${params.employeeStatus} IS NULL OR LOWER(e.employee_status) = LOWER(${params.employeeStatus}))`);
-    filters.push(`(${params.businessUnitId} IS NULL OR e.business_unit_id = ${params.businessUnitId})`);
-    filters.push(`(${params.teamId} IS NULL OR e.team_id = ${params.teamId})`);
-    filters.push(`(${params.subTeamId} IS NULL OR e.sub_team_id = ${params.subTeamId})`);
-    filters.push(`(${params.unitId} IS NULL OR e.unit_id = ${params.unitId})`);
-    filters.push(`(${params.employmentTypeId} IS NULL OR e.employment_type_id = ${params.employmentTypeId})`);
+    filters.push(`(${params.filters.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
+    filters.push(`(${params.filters.companyId} IS NULL OR o.company_id = ${params.filters.companyId})`);
+    filters.push(`(${params.filters.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escapedLocation}, '%')))`);
+    filters.push(`(${params.filters.officeId} IS NULL OR e.office_id = ${params.filters.officeId})`);
+    filters.push(`(${params.filters.designationId} IS NULL OR e.designation_id = ${params.filters.designationId})`);
+    filters.push(`(${params.filters.careerFunctionId} IS NULL OR d.career_function_id = ${params.filters.careerFunctionId})`);
+    filters.push(`(${params.filters.employeeStatus} IS NULL OR LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus}))`);
+    filters.push(`(${params.filters.businessUnitId} IS NULL OR e.business_unit_id = ${params.filters.businessUnitId})`);
+    filters.push(`(${params.filters.teamId} IS NULL OR e.team_id = ${params.filters.teamId})`);
+    filters.push(`(${params.filters.subTeamId} IS NULL OR e.sub_team_id = ${params.filters.subTeamId})`);
+    filters.push(`(${params.filters.unitId} IS NULL OR e.unit_id = ${params.filters.unitId})`);
+    filters.push(`(${params.filters.employmentTypeId} IS NULL OR e.employment_type_id = ${params.filters.employmentTypeId})`);
 
     string? searchString = params.searchString;
 
