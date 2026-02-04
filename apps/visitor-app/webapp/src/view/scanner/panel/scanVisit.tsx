@@ -20,11 +20,14 @@ import { Container } from "@mui/material";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@root/src/slices/store";
 import { useTheme } from "@mui/material/styles";
+import { useNavigate } from "react-router-dom";
 import { AsgardeoConfig } from "@src/config/config"; // adjust path if needed
 
 function ScanVisit() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
+  const navigate = useNavigate();
+
   const isValidUrl = (text: string) => {
     try {
       const url = new URL(text);
@@ -38,7 +41,9 @@ function ScanVisit() {
     scanner.render(
       (decodedText) => {
         if (isValidUrl(decodedText)) {
-          window.location.href = decodedText;
+          const url = new URL(decodedText);
+          const path = url.pathname + url.search + url.hash;
+          navigate(path);
           scanner.clear();
         } else {
           dispatch(
@@ -55,7 +60,7 @@ function ScanVisit() {
     return () => {
       scanner.clear().catch(() => {});
     };
-  }, []);
+  }, [dispatch, navigate]);
 
   return (
     <Container maxWidth={false} disableGutters>
