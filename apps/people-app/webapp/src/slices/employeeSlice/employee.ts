@@ -14,16 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { State } from "@/types/types";
+import { EmergencyContact, State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { EmergencyContact } from "@/types/types";
+import { APIService } from "@utils/apiService";
+import { HttpStatusCode } from "axios";
 
-interface Employee {
+export interface Employee {
   id: number;
   employeeId: string;
   firstName: string;
@@ -50,6 +49,15 @@ interface Employee {
   subordinateCount: number;
 }
 
+export enum EmployeeStatus {
+  Active = "ACTIVE",
+  Inactive = "INACTIVE",
+  Terminated = "TERMINATED",
+  Probation = "PROBATION",
+  Suspended = "SUSPENDED",
+  OnLeave = "ON_LEAVE",
+}
+
 export interface EmployeeBasicInfo {
   id: number;
   employeeId: string;
@@ -57,6 +65,12 @@ export interface EmployeeBasicInfo {
   lastName: string;
   workEmail: string;
   employeeThumbnail?: string;
+}
+
+export interface Manager {
+  id: number;
+  employeeId: string;
+  workEmail: string;
 }
 
 export type CreatePersonalInfoPayload = {
@@ -77,6 +91,37 @@ export type CreatePersonalInfoPayload = {
   country?: string;
   nationality?: string;
   emergencyContacts?: EmergencyContact[];
+};
+
+export type FilteredEmployeesResponse = {
+  employees: Employee[];
+  totalCount: number;
+};
+
+export type Filters = {
+  businessUnitId?: number;
+  teamId?: number;
+  subTeamId?: number;
+  unitId?: number;
+  careerFunctionId?: number;
+  designationId?: number;
+  location?: string;
+  officeId?: number;
+  employmentTypeId?: number;
+  managerEmail?: string;
+  gender?: string;
+  employeeStatus?: EmployeeStatus;
+};
+
+export type Pagination = {
+  page?: number;
+  perPage?: number;
+};
+
+export type EmployeeSearchPayload = {
+  searchString?: string;
+  filters: Filters;
+  pagination?: Pagination;
 };
 
 export type CreateEmployeePayload = {
@@ -128,20 +173,37 @@ export interface ContinuousServiceRecordInfo {
 interface EmployeesState {
   state: State;
   employeeBasicInfoState: State;
+  managers: Manager[];
+  employeeFilter: EmployeeSearchPayload;
+  filteredEmployeesResponseState: State;
+  filterAppliedOnce: boolean;
   stateMessage: string | null;
   errorMessage: string | null;
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
+  filteredEmployeesResponse: FilteredEmployeesResponse;
   continuousServiceRecord: ContinuousServiceRecordInfo[];
 }
 
 const initialState: EmployeesState = {
   state: State.idle,
   employeeBasicInfoState: State.idle,
+  managers: [],
+  employeeFilter: {
+    filters: {
+      employeeStatus: EmployeeStatus.Active
+    }
+  },
+  filteredEmployeesResponseState: State.idle,
+  filterAppliedOnce: false,
   stateMessage: null,
   errorMessage: null,
   employee: null,
   employeesBasicInfo: [],
+  filteredEmployeesResponse: { 
+    employees: [], 
+    totalCount: 0
+  },
   continuousServiceRecord: [],
 };
 
@@ -185,16 +247,72 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employees' basic information"
           : error.response?.data?.message ||
-            "An unknown error occurred while fetching employees' basic information.";
+          "An unknown error occurred while fetching employees' basic information.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
         }),
       );
+
       return rejectWithValue(errorMessage);
     }
   },
+);
+
+export const fetchManagers = createAsyncThunk<Manager[]>("employees/fetchManagers",
+  async (_, {dispatch, rejectWithValue}) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.managers}`
+      );
+      return resp.data as Manager[];
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching manager emails"
+          : error.response?.data?.message ||
+          "An unknown error occurred while fetching manager emails.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        })
+      );
+      return rejectWithValue(errorMessage);
+    }
+  }
+)
+
+export const fetchFilteredEmployees = createAsyncThunk<
+  FilteredEmployeesResponse,
+  EmployeeSearchPayload
+>(
+  "employees/fetchFilteredEmployees",
+  async (filterAttributes: EmployeeSearchPayload, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.searchEmployees,
+        filterAttributes
+      );
+      return response.data as FilteredEmployeesResponse;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? SnackMessage.error.fetchEmployee
+          : error.response?.data?.message ||
+          "An unknown error occurred while fetching employee information.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        })
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  }
 );
 
 export const createEmployee = createAsyncThunk(
@@ -264,6 +382,12 @@ const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
   reducers: {
+    setEmployeeFilter(state, action: PayloadAction<EmployeeSearchPayload>) {
+      state.employeeFilter = action.payload;
+    },
+    setFilterAppliedOnce(state, action: PayloadAction<boolean>) {
+      state.filterAppliedOnce = action.payload;
+    },
     resetSubmitState(state) {
       state.state = State.idle;
     },
@@ -322,6 +446,22 @@ const EmployeeSlice = createSlice({
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
       })
+      .addCase(fetchFilteredEmployees.pending, (state, action) => {
+        state.filteredEmployeesResponseState = State.loading;
+        state.stateMessage = "Fetching filtered employees...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchFilteredEmployees.fulfilled, (state, action) => {
+        state.filteredEmployeesResponse = action.payload;
+        state.filteredEmployeesResponseState = State.success;
+        state.stateMessage = "Filtered employees fetched successfully";
+        state.errorMessage = null;
+      })
+      .addCase(fetchFilteredEmployees.rejected, (state, action) => {
+        state.filteredEmployeesResponseState = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
       .addCase(createEmployee.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Creating employee...";
@@ -338,6 +478,23 @@ const EmployeeSlice = createSlice({
       .addCase(createEmployee.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage = "Failed to create employee.";
+        state.errorMessage = action.payload as string;
+      })
+      .addCase(fetchManagers.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching manager emails...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagers.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully fetched manager emails!";
+        state.managers = action.payload;
+        state.errorMessage = null;
+      })
+      .addCase(fetchManagers.rejected, (state, action) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch manager emails!";
+        state.managers = [];
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
@@ -361,6 +518,8 @@ const EmployeeSlice = createSlice({
 });
 
 export const {
+  setEmployeeFilter,
+  setFilterAppliedOnce,
   resetSubmitState,
   resetEmployee,
   resetCreateEmployeeState,

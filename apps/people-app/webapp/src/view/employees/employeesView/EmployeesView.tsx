@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,20 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import CommonPage from "@layout/pages/CommonPage";
+import GroupsIcon from '@mui/icons-material/Groups';
+import EmployeesTable from "./employeesTable/EmployeesTable";
 
-const me = lazy(() => import("@view/me"));
-const employees = lazy(() => import("@view/employees/Employee"));
-const employeesList = lazy(() => import("@view/employees/employeesView/EmployeesView"));
-const help = lazy(() => import("@view/help/help"));
-const employeeDetails = lazy(
-  () => import("@view/employees/employeeDetail/employeeDetail"),
-);
-
-export const View = {
-  me,
-  employees,
-  employeesList,
-  employeeDetails,
-  help,
-};
+export default function EmployeesView() {
+  return (
+    <CommonPage
+      title="Employees"
+      icon={<GroupsIcon />}
+      commonPageTabs={[]}
+      page={<EmployeesTable />}
+    />
+  );
+}
