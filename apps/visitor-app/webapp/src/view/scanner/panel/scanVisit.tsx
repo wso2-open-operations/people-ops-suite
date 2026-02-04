@@ -31,7 +31,11 @@ function ScanVisit() {
   const isValidUrl = (text: string) => {
     try {
       const url = new URL(text);
-      return url.href.startsWith(AsgardeoConfig.signInRedirectURL);
+      const redirectUrl = new URL(AsgardeoConfig.signInRedirectURL);
+      return (
+        url.origin === redirectUrl.origin &&
+        url.pathname.startsWith(redirectUrl.pathname)
+      );
     } catch {
       return false;
     }
@@ -42,8 +46,9 @@ function ScanVisit() {
       (decodedText) => {
         if (isValidUrl(decodedText)) {
           const url = new URL(decodedText);
-          const path = url.pathname + url.search + url.hash;
-          navigate(path);
+          const safePath =
+            "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
+          navigate(safePath);
           scanner.clear();
         } else {
           dispatch(
