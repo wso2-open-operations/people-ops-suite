@@ -31,7 +31,7 @@ import {
   Typography,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
-import { EmployeeFilterAttributes } from "@slices/employeeSlice/employee";
+import { EmployeeSearchPayload, EmployeeStatus, Filters } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
   CareerFunction,
@@ -65,8 +65,8 @@ type FilterDrawerProps = {
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
   setFiltersAppliedOnce: (applied: boolean) => void;
-  appliedFilter: EmployeeFilterAttributes;
-  onApply: (next: Partial<EmployeeFilterAttributes>) => void;
+  appliedFilter: EmployeeSearchPayload;
+  onApply: (next: Partial<EmployeeSearchPayload>) => void;
   clearAll: () => void;
   businessUnits: BusinessUnit[];
   teams: Team[];
@@ -99,7 +99,7 @@ export function FilterDrawer({
   filteredOfficesByLocation,
 }: FilterDrawerProps) {
   const dispatch = useAppDispatch();
-  const [draft, setDraft] = useState<EmployeeFilterAttributes>(appliedFilter);
+  const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
 
   useEffect(() => {
     if (drawerOpen) {
@@ -107,8 +107,8 @@ export function FilterDrawer({
     }
   }, [drawerOpen, appliedFilter]);
 
-  const set = (patch: Partial<EmployeeFilterAttributes>) => {
-    setDraft((p) => ({ ...p, ...patch }));
+  const set = (patch: Partial<Filters>) => {
+    setDraft((p) => ({ filters: { ...p.filters, ...patch } }));
   };
 
   return (
@@ -154,10 +154,10 @@ export function FilterDrawer({
               <OrganizationTreeFilters
                 value={
                   {
-                    businessUnitId: draft.businessUnitId,
-                    teamId: draft.teamId,
-                    subTeamId: draft.subTeamId,
-                    unitId: draft.unitId,
+                    businessUnitId: draft.filters.businessUnitId,
+                    teamId: draft.filters.teamId,
+                    subTeamId: draft.filters.subTeamId,
+                    unitId: draft.filters.unitId,
                   } as OrganizationSelection
                 }
                 businessUnits={businessUnits}
@@ -198,8 +198,8 @@ export function FilterDrawer({
               <CareerFunctionAndDesignationFilters
                 value={
                   {
-                    careerFunctionId: draft.careerFunctionId,
-                    designationId: draft.designationId,
+                    careerFunctionId: draft.filters.careerFunctionId,
+                    designationId: draft.filters.designationId,
                   } as CareerFunctionsAndDesignationsSelection
                 }
                 careerFunctions={careerFunctions}
@@ -226,8 +226,8 @@ export function FilterDrawer({
               <LocationAndOfficeFilters
                 value={
                   {
-                    location: draft.location,
-                    officeId: draft.officeId,
+                    location: draft.filters.location,
+                    officeId: draft.filters.officeId,
                   } as LocationAndOfficeSelection
                 }
                 locations={locations}
@@ -249,7 +249,7 @@ export function FilterDrawer({
                 getOptionLabel={(o) => o.name}
                 value={
                   employmentTypes.find(
-                    (et) => et.id === draft.employmentTypeId,
+                    (et) => et.id === draft.filters.employmentTypeId,
                   ) ?? null
                 }
                 autoHighlight
@@ -272,7 +272,7 @@ export function FilterDrawer({
                 options={managerEmails}
                 getOptionLabel={(email) => email}
                 value={
-                  managerEmails.find((e) => e === draft.managerEmail) ?? null
+                  managerEmails.find((e) => e === draft.filters.managerEmail) ?? null
                 }
                 autoHighlight
                 autoSelect
@@ -293,7 +293,7 @@ export function FilterDrawer({
               <Autocomplete<string, false, false, false>
                 options={EmployeeGenders}
                 getOptionLabel={(o) => o}
-                value={EmployeeGenders.find((g) => g === draft.gender) ?? null}
+                value={EmployeeGenders.find((g) => g === draft.filters.gender) ?? null}
                 autoHighlight
                 autoSelect
                 onChange={(_, selected) =>
@@ -301,6 +301,21 @@ export function FilterDrawer({
                 }
                 renderInput={(params) => (
                   <BaseTextField {...params} size="small" label="Gender" />
+                )}
+              />
+            </Grid>
+            <Grid item>
+              <Autocomplete<EmployeeStatus, false, false, false>
+                options={Object.values(EmployeeStatus)}
+                getOptionLabel={(o) => o}
+                value={ Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null }
+                autoHighlight
+                autoSelect
+                onChange={(_, selected) =>
+                  set({ employeeStatus: selected || undefined })
+                }
+                renderInput={(params) => (
+                  <BaseTextField {...params} size="small" label="Employee Status" />
                 )}
               />
             </Grid>
@@ -333,9 +348,13 @@ export function FilterDrawer({
             color="secondary"
             onClick={() => {
               const nextDraft = {
-                ...draft,
-                page: DEFAULT_PAGE_VALUE,
-                perPage: DEFAULT_PER_PAGE_VALUE,
+                filters: {
+                  ...draft.filters,
+                },
+                pagination: {
+                  page: DEFAULT_PAGE_VALUE,
+                  perPage: DEFAULT_PER_PAGE_VALUE,
+                },
               };  
               onApply(nextDraft);  
               setDraft(nextDraft);  
