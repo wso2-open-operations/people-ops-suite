@@ -8,4 +8,16 @@ import ballerina/http;
 
 configurable string endpoint = ?;
 
-public final http:Client peopleHrClient = check new (endpoint);
+public final http:Client peopleHrClient = check new (endpoint, {
+    timeout: 180.0,
+    retryConfig: {
+        count: 3,
+        interval: 5.0,
+        statusCodes: [
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});
