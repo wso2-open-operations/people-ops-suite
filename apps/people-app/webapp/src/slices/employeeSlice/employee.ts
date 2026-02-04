@@ -56,12 +56,27 @@ export interface Employee {
   unitId: number | null;
 }
 
+export enum EmployeeStatus {
+  Active = "ACTIVE",
+  Inactive = "INACTIVE",
+  Terminated = "TERMINATED",
+  Probation = "PROBATION",
+  Suspended = "SUSPENDED",
+  OnLeave = "ON_LEAVE",
+}
+
 export interface EmployeeBasicInfo {
   employeeId: string;
   firstName: string;
   lastName: string;
   workEmail: string;
   employeeThumbnail?: string;
+}
+
+export interface Manager {
+  id: number;
+  employeeId: string;
+  workEmail: string;
 }
 
 export type CreatePersonalInfoPayload = {
@@ -89,32 +104,30 @@ export type FilteredEmployeesResponse = {
   totalCount: number;
 };
 
-export type EmployeeFilterAttributes = {
-  searchString?: string;
-  title?: string;
-  firstName?: string;
-  lastName?: string;
-  nicOrPassport?: number | string;
-  dateOfBirth?: string;
-  gender?: string;
-  nationality?: string;
-  personalEmail?: string;
-  personalPhone?: string;
-  residentPhone?: string;
-  city?: string;
-  country?: string;
+export type Filters = {
   businessUnitId?: number;
   teamId?: number;
   subTeamId?: number;
   unitId?: number;
   careerFunctionId?: number;
-  managerEmail?: string;
   designationId?: number;
-  employmentTypeId?: number;
   location?: string;
   officeId?: number;
+  employmentTypeId?: number;
+  managerEmail?: string;
+  gender?: string;
+  employeeStatus?: EmployeeStatus;
+};
+
+export type Pagination = {
   page?: number;
   perPage?: number;
+};
+
+export type EmployeeSearchPayload = {
+  searchString?: string;
+  filters: Filters;
+  pagination?: Pagination;
 };
 
 export type CreateEmployeePayload = {
@@ -186,8 +199,8 @@ export interface ContinuousServiceRecordInfo {
 interface EmployeesState {
   state: State;
   employeeBasicInfoState: State;
-  managerEmails: string[];
-  employeeFilter: EmployeeFilterAttributes;
+  managers: Manager[];
+  employeeFilter: EmployeeSearchPayload;
   filteredEmployeesResponseState: State;
   filterAppliedOnce: boolean;
   stateMessage: string | null;
@@ -203,8 +216,12 @@ interface EmployeesState {
 const initialState: EmployeesState = {
   state: State.idle,
   employeeBasicInfoState: State.idle,
-  managerEmails: [],
-  employeeFilter: {},
+  managers: [],
+  employeeFilter: {
+    filters: {
+      employeeStatus: EmployeeStatus.Active
+    }
+  },
   filteredEmployeesResponseState: State.idle,
   filterAppliedOnce: false,
   stateMessage: null,
@@ -273,13 +290,13 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
   },
 );
 
-export const fetchManagerEmails = createAsyncThunk<string[]>("employees/fetchManagerEmails",
+export const fetchManagers = createAsyncThunk<Manager[]>("employees/fetchManagers",
   async (_, {dispatch, rejectWithValue}) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.managerEmails}`
+        `${AppConfig.serviceUrls.managers}`
       );
-      return resp.data as string[];
+      return resp.data as Manager[];
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
@@ -299,10 +316,10 @@ export const fetchManagerEmails = createAsyncThunk<string[]>("employees/fetchMan
 
 export const fetchFilteredEmployees = createAsyncThunk<
   FilteredEmployeesResponse,
-  EmployeeFilterAttributes
+  EmployeeSearchPayload
 >(
   "employees/fetchFilteredEmployees",
-  async (filterAttributes: EmployeeFilterAttributes, { dispatch, rejectWithValue }) => {
+  async (filterAttributes: EmployeeSearchPayload, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.searchEmployees,
@@ -434,7 +451,7 @@ const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
   reducers: {
-    setEmployeeFilter(state, action: PayloadAction<EmployeeFilterAttributes>) {
+    setEmployeeFilter(state, action: PayloadAction<EmployeeSearchPayload>) {
       state.employeeFilter = action.payload;
     },
     setFilterAppliedOnce(state, action: PayloadAction<boolean>) {
@@ -553,21 +570,21 @@ const EmployeeSlice = createSlice({
         state.updateJobInfoMessage = "Failed to update job information!";
         state.errorMessage = action.payload as string;
       })
-      .addCase(fetchManagerEmails.pending, (state) => {
+      .addCase(fetchManagers.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching manager emails...";
         state.errorMessage = null;
       })
-      .addCase(fetchManagerEmails.fulfilled, (state, action) => {
+      .addCase(fetchManagers.fulfilled, (state, action) => {
         state.state = State.success;
         state.stateMessage = "Successfully fetched manager emails!";
-        state.managerEmails = action.payload;
+        state.managers = action.payload;
         state.errorMessage = null;
       })
-      .addCase(fetchManagerEmails.rejected, (state, action) => {
+      .addCase(fetchManagers.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch manager emails!";
-        state.managerEmails = [];
+        state.managers = [];
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {

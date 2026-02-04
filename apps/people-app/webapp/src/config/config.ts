@@ -64,7 +64,7 @@ export const AppConfig = {
     employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
     employees: SERVICE_BASE_URL + "/employees",
     searchEmployees: SERVICE_BASE_URL + "/employees/search",
-    managerEmails: SERVICE_BASE_URL + "/employees/managers",
+    managers: SERVICE_BASE_URL + "/employees/managers",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
   },
 };
