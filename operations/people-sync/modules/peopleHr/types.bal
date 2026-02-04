@@ -21,16 +21,16 @@ public type PeopleHrResponse record {|
 # Employee information.
 public type Employee record {|
     # Employee ID on People HR
-    string Employee\ Id;
+    string? Employee\ Id;
 
     # Title
     string? Title;
     # First name
-    string First\ Name;
+    string? First\ Name;
     # Last name
-    string Last\ Name;
+    string? Last\ Name;
     # Gender
-    string Gender;
+    string? Gender;
 
     # Work email
     string? Work\ Email;
@@ -54,11 +54,11 @@ public type Employee record {|
     # Current job band
     string? System1\ ID?;
     # Current job role
-    string Job\ Role;
+    string? Job\ Role;
     # Employment type (i.e: PERMANENT, INTERNSHIP, PROBATION etc.)
     string? Employment\ Type;
     # Employee Status (i.e: Left, Active, Marked leaver)
-    string Employee\ Status;
+    string? Employee\ Status;
 
     # EPF
     string? EPF\ Number\ \(EPF\);
@@ -69,7 +69,7 @@ public type Employee record {|
     string? Additional\ Manager;
 
     # Work start date
-    string Start\ Date;
+    string? Start\ Date;
     # Initial joined date
     string? Initial\ date\ of\ joining\ \(Actual\ Start\ Date\)?;
     # Continuous Service date
