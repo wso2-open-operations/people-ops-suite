@@ -26,9 +26,10 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import type { MouseEvent } from "react";
 import { useMemo, useState } from "react";
 
-type FilterChipSelectProps<T> = {
+export type FilterChipSelectProps<T> = {
   label: string;
   value: string | number | undefined;
   options: T[];
@@ -51,7 +52,7 @@ export function FilterChipSelect<T>({
 }: FilterChipSelectProps<T>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const brandOrange = theme.palette.secondary.contrastText;
+  const textColor = theme.palette.secondary.contrastText;
   const hasValue = value !== undefined && value !== null;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -121,7 +122,7 @@ export function FilterChipSelect<T>({
               fontSize: 16,
               fontWeight: 900,
               color: theme.palette.grey[500],
-              ".MuiChip-root:hover &": { color: brandOrange },
+              ".MuiChip-root:hover &": { color: textColor },
             }}
           />
         )}
@@ -135,10 +136,10 @@ export function FilterChipSelect<T>({
     isDark,
     value,
     open,
-    brandOrange,
+    textColor,
   ]);
 
-  const openMenu = (event: React.MouseEvent<HTMLElement>) => {
+  const openMenu = (event: MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
@@ -151,17 +152,13 @@ export function FilterChipSelect<T>({
       ? `Select ${parent} first`
       : options.length === 0
         ? "No options available"
-        : "";
-
-  console.log(noParentSelected);
+        : undefined;
 
   return (
     <>
-      <Tooltip title={tooltipTitle} arrow>
+      <Tooltip title={tooltipTitle} disableHoverListener={!tooltipTitle} arrow>
         <span
           style={{
-            pointerEvents:
-              noParentSelected || options.length === 0 ? "auto" : "auto",
             cursor:
               (parent && noParentSelected) || options.length === 0
                 ? "not-allowed"
@@ -204,7 +201,7 @@ export function FilterChipSelect<T>({
                 ? theme.palette.background.default
                 : "#fff",
               borderRadius: "50px",
-              border: `1px solid ${hasValue ? alpha(brandOrange, 1) : theme.palette.grey[500]}`,
+              border: `1px solid ${hasValue ? alpha(textColor, 1) : theme.palette.grey[500]}`,
               transition: "all 0.1s ease-in-out",
               "&:active": {
                 transform: "scale(0.98)",
@@ -246,7 +243,7 @@ export function FilterChipSelect<T>({
             return (
               <MenuItem
                 key={`${optionLabel}-${idx}`}
-                selected={optionLabel === String(hasValue)}
+                selected={hasValue && optionLabel === String(value)}
                 onClick={() => {
                   onChange(o);
                   closeMenu();

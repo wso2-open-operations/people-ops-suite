@@ -44,6 +44,10 @@ import {
   setFilterAppliedOnce,
 } from "@slices/employeeSlice/employee";
 import {
+  BusinessUnit,
+  CareerFunction,
+  Designation,
+  EmploymentType,
   fetchBusinessUnits,
   fetchCareerFunctions,
   fetchDesignations,
@@ -52,17 +56,33 @@ import {
   fetchSubTeams,
   fetchTeams,
   fetchUnits,
+  Office,
+  SubTeam,
+  Team,
+  Unit,
 } from "@slices/organizationSlice/organization";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FilterChipSelect } from "./FilterChipSelect";
+import { FilterChipSelect, FilterChipSelectProps } from "./FilterChipSelect";
 import { FilterDrawer } from "./FilterDrawer";
 
-type ChipItem = {
-  key: string;
-  label: string;
-  onDelete: () => void;
-};
+type ChipMeta<K extends string, T> =
+  { kind: K;} & FilterChipSelectProps<T>;
+
+// Add the new filter chip to this union type when a new filter chip is added in the SearchForm
+type ChipConfig =
+  | ChipMeta<"businessUnit", BusinessUnit>
+  | ChipMeta<"team", Team>
+  | ChipMeta<"subTeam", SubTeam>
+  | ChipMeta<"unit", Unit>
+  | ChipMeta<"careerFunction", CareerFunction>
+  | ChipMeta<"designation", Designation>
+  | ChipMeta<"manager", string>
+  | ChipMeta<"office", Office>
+  | ChipMeta<"employmentType", EmploymentType>
+  | ChipMeta<"location", string>
+  | ChipMeta<"employeeStatus", EmployeeStatus>
+  | ChipMeta<"gender", string>;
 
 export function SearchForm() {
   const dispatch = useAppDispatch();
@@ -141,7 +161,7 @@ export function SearchForm() {
           page: DEFAULT_PAGE_VALUE,
           perPage: DEFAULT_PER_PAGE_VALUE,
         },
-      } as EmployeeSearchPayload),
+      } satisfies EmployeeSearchPayload),
     );
   };
 
@@ -179,23 +199,33 @@ export function SearchForm() {
 
   const active = useMemo(
     () => hasAnyActiveFilters(filterPayload.filters),
-    [filterPayload],
+    [filterPayload.filters],
   );
   const managerEmails = useMemo(() => {
     return employeeState.managers.map((manager) => manager.workEmail);
   }, [employeeState.managers]);
-  const chips = useMemo(() => {
-    const items: ChipItem[] = [];
 
-    const addChipItem = (chipItem: ChipItem) => {
-      items.push(chipItem);
-    };
-
-    if (filterPayload.filters.businessUnitId) {
-      addChipItem({
-        key: "businessUnit",
-        label: `Business Unit: ${businessUnits.find((bu) => bu.id === filterPayload.filters.businessUnitId)?.name}`,
-        onDelete: () =>
+  const filterChipConfigs = useMemo<ChipConfig[]>(() => [
+      {
+        kind: "businessUnit",
+        label: "Business Unit",
+        value: businessUnits.find(
+          (bu) => bu.id === filterPayload.filters.businessUnitId,
+        )?.name,
+        options: businessUnits,
+        getLabel: (businessUnit: BusinessUnit) => businessUnit.name,
+        onChange: (businessUnit: BusinessUnit) => {
+          updateSearchPayload({
+            filters: {
+              businessUnitId: businessUnit.id,
+              teamId: undefined,
+              subTeamId: undefined,
+              unitId: undefined,
+            },
+          });
+          dispatch(fetchTeams({ id: businessUnit.id }));
+        },
+        onClear: () =>
           updateSearchPayload({
             filters: {
               businessUnitId: undefined,
@@ -203,102 +233,203 @@ export function SearchForm() {
               subTeamId: undefined,
               unitId: undefined,
             },
-          }),}
-      );
-    }
-    if (filterPayload.filters.teamId) {
-      addChipItem({
-        key: "team",
-        label: `Team: ${teams.find((team) => team.id === filterPayload.filters.teamId)?.name}`,
-        onDelete: () =>
+          }),
+      },
+      {
+        kind: "team",
+        label: "Team",
+        value: teams.find((team) => team.id === filterPayload.filters.teamId)
+          ?.name,
+        options: teams,
+        parent: "Business Unit",
+        noParentSelected: !filterPayload.filters.businessUnitId,
+        getLabel: (team: Team) => team.name,
+        onChange: (team: Team) => {
+          updateSearchPayload({
+            filters: {
+              teamId: team.id,
+              subTeamId: undefined,
+              unitId: undefined,
+            },
+          });
+          dispatch(fetchSubTeams({ id: team.id }));
+        },
+        onClear: () =>
           updateSearchPayload({
             filters: {
               teamId: undefined,
               subTeamId: undefined,
               unitId: undefined,
             },
-          }),}
-      );
-    }
-    if (filterPayload.filters.subTeamId) {
-      addChipItem({
-        key: "subTeam",
-        label: `Sub Team: ${subTeams.find((subTeam) => subTeam.id === filterPayload.filters.subTeamId)?.name}`,
-        onDelete: () =>
+          }),
+      },
+      {
+        kind: "subTeam",
+        label: "Sub Team",
+        value: subTeams.find(
+          (subTeam) => subTeam.id === filterPayload.filters.subTeamId,
+        )?.name,
+        options: subTeams,
+        parent: "Team",
+        noParentSelected: !filterPayload.filters.teamId,
+        getLabel: (subTeam: SubTeam) => subTeam.name,
+        onChange: (subTeam: SubTeam) => {
+          updateSearchPayload({
+            filters: { subTeamId: subTeam.id, unitId: undefined },
+          });
+          dispatch(fetchUnits({ id: subTeam.id }));
+        },
+        onClear: () =>
           updateSearchPayload({
             filters: { subTeamId: undefined, unitId: undefined },
           }),
-      }
-      );
-    }
-    if (filterPayload.filters.unitId) {
-      addChipItem({
-        key: "unit",
-        label: `Unit: ${units.find((unit) => unit.id === filterPayload.filters.unitId)?.name}`,
-        onDelete: () => updateSearchPayload({ filters: { unitId: undefined } }),
-      });
-    }
-    if (filterPayload.filters.gender) {
-      addChipItem({
-        key: "gender",
-        label: `Gender: ${filterPayload.filters.gender}`,
-        onDelete: () => updateSearchPayload({ filters: { gender: undefined } }),
-      });
-    }
-    if (filterPayload.filters.careerFunctionId) {
-      addChipItem({
-        key: "careerFunction",
-        label: `Career Function: ${careerFunctions.find((cf) => cf.id === filterPayload.filters.careerFunctionId)?.careerFunction}`,
-        onDelete: () => updateSearchPayload({ filters: { careerFunctionId: undefined } }),
-      });
-    }
-    if (filterPayload.filters.designationId) {
-      addChipItem({
-        key: "designation",
-        label: `Designation: ${designations.find((designation) => designation.id === filterPayload.filters.designationId)?.designation}`,
-        onDelete: () => updateSearchPayload({ filters: { designationId: undefined } }),
-      });
-    }
-    if (filterPayload.filters.employmentTypeId) {
-      addChipItem({
-        key: "employmentType",
-        label: `Employment Type: ${employmentTypes.find((et) => et.id === filterPayload.filters.employmentTypeId)?.name}`,
-        onDelete: () => updateSearchPayload({ filters: { employmentTypeId: undefined } }),
-      });
-    }
-    if (filterPayload.filters.managerEmail) {
-      addChipItem({
-        key: "managerEmail",
-        label: `Manager Email: ${filterPayload.filters.managerEmail}`,
-        onDelete: () => updateSearchPayload({ filters: { managerEmail: undefined } }),
-      });
-    }
-    if (filterPayload.filters.employeeStatus) {
-      addChipItem({
-        key: "employeeStatus",
-        label: `Employee Status: ${filterPayload.filters.employeeStatus}`,
-        onDelete: () => updateSearchPayload({ filters: { employeeStatus: undefined } }),
-      });
-    }
-    if (filterPayload.filters.location) {
-      addChipItem({
-        key: "location",
-        label: `Location: ${filterPayload.filters.location}`,
-        onDelete: () => updateSearchPayload({ filters: { location: undefined } }),
-      });
-    }
-    if (filterPayload.filters.officeId) {
-      addChipItem({
-        key: "office",
-        label: `Office: ${offices.find((office) => office.id === filterPayload.filters.officeId)?.name}`,
-        onDelete: () => updateSearchPayload({ filters: { officeId: undefined } }),
-      });
-    }
-    return items;
-  }, [
+      },
+      {
+        kind: "unit",
+        label: "Unit",
+        value: units.find((unit) => unit.id === filterPayload.filters.unitId)
+          ?.name,
+        options: units,
+        parent: "Sub Team",
+        noParentSelected: !filterPayload.filters.subTeamId,
+        getLabel: (unit: Unit) => unit.name,
+        onChange: (unit: Unit) =>
+          updateSearchPayload({ filters: { unitId: unit.id } }),
+        onClear: () => updateSearchPayload({ filters: { unitId: undefined } }),
+      },
+      {
+        kind: "careerFunction",
+        label: "Career Function",
+        value: careerFunctions.find(
+          (cf) => cf.id === filterPayload.filters.careerFunctionId,
+        )?.careerFunction,
+        options: careerFunctions,
+        getLabel: (careerFunction: CareerFunction) =>
+          careerFunction.careerFunction,
+        onChange: (careerFunction: CareerFunction) => {
+          updateSearchPayload({
+            filters: {
+              careerFunctionId: careerFunction.id,
+              designationId: undefined,
+            },
+          });
+          dispatch(fetchDesignations({ careerFunctionId: careerFunction.id }));
+        },
+        onClear: () =>
+          updateSearchPayload({
+            filters: {
+              careerFunctionId: undefined,
+              designationId: undefined,
+            },
+          }),
+      },
+      {
+        kind: "designation",
+        label: "Designation",
+        value: designations.find(
+          (designation) =>
+            designation.id === filterPayload.filters.designationId,
+        )?.designation,
+        options: designations,
+        parent: "Career Function",
+        noParentSelected: !filterPayload.filters.careerFunctionId,
+        getLabel: (designation: Designation) => designation.designation,
+        onChange: (designation: Designation) => {
+          updateSearchPayload({
+            filters: { designationId: designation.id },
+          });
+        },
+        onClear: () =>
+          updateSearchPayload({ filters: { designationId: undefined } }),
+      },
+      {
+        kind: "location",
+        label: "Location",
+        value: filterPayload.filters.location,
+        options: locations,
+        getLabel: (location: string) => location,
+        onChange: (location: string) => {
+          updateSearchPayload({
+            filters: { location, officeId: undefined },
+          });
+        },
+        onClear: () =>
+          updateSearchPayload({
+            filters: { location: undefined, officeId: undefined },
+          }),
+      },
+      {
+        kind: "office",
+        label: "Office",
+        value: filteredOfficesByLocation.find(
+          (office) => office.id === filterPayload.filters.officeId,
+        )?.name,
+        parent: "Location",
+        noParentSelected: !filterPayload.filters.location,
+        options: filteredOfficesByLocation,
+        getLabel: (office: Office) => office.name,
+        onChange: (office: Office) => {
+          updateSearchPayload({ filters: { officeId: office.id } });
+        },
+        onClear: () =>
+          updateSearchPayload({ filters: { officeId: undefined } }),
+      },
+      {
+        kind: "employmentType",
+        label: "Employment Type",
+        value: employmentTypes.find(
+          (et) => et.id === filterPayload.filters.employmentTypeId,
+        )?.name,
+        options: employmentTypes,
+        getLabel: (employeeType: EmploymentType) => employeeType.name,
+        onChange: (employeeType: EmploymentType) =>
+          updateSearchPayload({
+            filters: { employmentTypeId: employeeType.id },
+          }),
+        onClear: () =>
+          updateSearchPayload({
+            filters: { employmentTypeId: undefined },
+          }),
+      },
+      {
+        kind: "manager",
+        label: "Manager",
+        value: managerEmails.find(
+          (email) => email === filterPayload.filters.managerEmail,
+        ),
+        options: managerEmails,
+        getLabel: (managerEmail: string) => managerEmail,
+        onChange: (managerEmail: string) =>
+          updateSearchPayload({ filters: { managerEmail } }),
+        onClear: () =>
+          updateSearchPayload({ filters: { managerEmail: undefined } }),
+      },
+      {
+        kind: "employeeStatus",
+        label: "Employee Status",
+        value: filterPayload.filters.employeeStatus,
+        options: Object.values(EmployeeStatus),
+        getLabel: (status: EmployeeStatus) => status,
+        onChange: (status: EmployeeStatus) =>
+          updateSearchPayload({ filters: { employeeStatus: status } }),
+        onClear: () =>
+          updateSearchPayload({ filters: { employeeStatus: undefined } }),
+      },
+      {
+        kind: "gender",
+        label: "Gender",
+        value: filterPayload.filters.gender,
+        options: EmployeeGenders,
+        getLabel: (gender: string) => gender,
+        onChange: (gender: string) =>
+          updateSearchPayload({ filters: { gender } }),
+        onClear: () => updateSearchPayload({ filters: { gender: undefined } }),
+      },
+    ], [
     businessUnits,
     careerFunctions,
     designations,
+    dispatch,
     employmentTypes,
     filterPayload.filters.businessUnitId,
     filterPayload.filters.careerFunctionId,
@@ -312,12 +443,22 @@ export function SearchForm() {
     filterPayload.filters.subTeamId,
     filterPayload.filters.teamId,
     filterPayload.filters.unitId,
-    offices,
+    filteredOfficesByLocation,
+    locations,
+    managerEmails,
     subTeams,
     teams,
     units,
     updateSearchPayload,
   ]);
+
+  const assertNever = (x: never): never => {
+    throw new Error("Unhandled chip kind");
+  };
+
+  const hasActiveFilters = useMemo(() => {
+    return hasAnyActiveFilters(filterPayload.filters);
+  }, [filterPayload.filters]);
 
   return (
     <Box sx={{ my: 2 }}>
@@ -432,7 +573,6 @@ export function SearchForm() {
       <Divider sx={{ my: 2 }} />
 
       {/* Chips */}
-
       <Box sx={{ mt: 1 }}>
         {/* Dropdown chips */}
         {filtersAppliedOnce && (
@@ -443,256 +583,56 @@ export function SearchForm() {
             flexWrap="wrap"
             alignItems="center"
           >
-            <FilterChipSelect
-              label="Business Unit"
-              value={
-                businessUnits.find(
-                  (businessUnit) =>
-                    businessUnit.id === filterPayload.filters.businessUnitId,
-                )?.name
+            {filterChipConfigs.map((config) => {
+              switch (config.kind) {
+                case "businessUnit": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<BusinessUnit> key={kind} {...props} />;
+                }
+                case "team": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<Team> key={kind} {...props} />;
+                }
+                case "subTeam": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<SubTeam> key={kind} {...props} />;
+                }
+                case "unit": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<Unit> key={kind} {...props} />;
+                }
+                case "careerFunction": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<CareerFunction> key={kind} {...props} />;
+                }
+                case "designation": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<Designation> key={kind} {...props} />;
+                }
+                case "employmentType": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<EmploymentType> key={kind} {...props} />;
+                }
+                case "employeeStatus": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<EmployeeStatus> key={kind} {...props} />;
+                }
+                case "office": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<Office> key={kind} {...props} />;
+                }
+                case "location":
+                case "manager":
+                case "gender": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<string> key={kind} {...props} />;
+                }
+                default:
+                  return assertNever(config);
               }
-              options={businessUnits}
-              getLabel={(businessUnit) => businessUnit.name}
-              onChange={(businessUnit) => {
-                updateSearchPayload({
-                  filters: {
-                    businessUnitId: businessUnit.id,
-                    teamId: undefined,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  },
-                });
-                dispatch(fetchTeams({ id: businessUnit.id }));
-              }}
-              onClear={() =>
-                updateSearchPayload({
-                  filters: {
-                    businessUnitId: undefined,
-                    teamId: undefined,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  },
-                })
-              }
-            />
+            })}
 
-            <FilterChipSelect
-              label="Team"
-              value={
-                teams.find((team) => team.id === filterPayload.filters.teamId)
-                  ?.name
-              }
-              options={teams}
-              parent="Business Unit"
-              noParentSelected={!filterPayload.filters.businessUnitId}
-              getLabel={(team) => team.name}
-              onChange={(team) => {
-                updateSearchPayload({
-                  filters: {
-                    teamId: team.id,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  },
-                });
-                dispatch(fetchSubTeams({ id: team.id }));
-              }}
-              onClear={() =>
-                updateSearchPayload({
-                  filters: {
-                    teamId: undefined,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  },
-                })
-              }
-            />
-            <FilterChipSelect
-              label="Sub Team"
-              value={
-                subTeams.find(
-                  (subTeam) => subTeam.id === filterPayload.filters.subTeamId,
-                )?.name
-              }
-              options={subTeams}
-              parent="Team"
-              noParentSelected={!filterPayload.filters.teamId}
-              getLabel={(subTeam) => subTeam.name}
-              onChange={(subTeam) => {
-                updateSearchPayload({
-                  filters: { subTeamId: subTeam.id, unitId: undefined },
-                });
-                dispatch(fetchUnits({ id: subTeam.id }));
-              }}
-              onClear={() =>
-                updateSearchPayload({
-                  filters: { subTeamId: undefined, unitId: undefined },
-                })
-              }
-            />
-            <FilterChipSelect
-              label="Unit"
-              value={
-                units.find((unit) => unit.id === filterPayload.filters.unitId)
-                  ?.name
-              }
-              options={units}
-              parent="Sub Team"
-              noParentSelected={!filterPayload.filters.subTeamId}
-              getLabel={(unit) => unit.name}
-              onChange={(unit) =>
-                updateSearchPayload({ filters: { unitId: unit.id } })
-              }
-              onClear={() =>
-                updateSearchPayload({ filters: { unitId: undefined } })
-              }
-            />
-            <FilterChipSelect
-              label="Career Function"
-              value={
-                careerFunctions.find(
-                  (careerFunction) =>
-                    careerFunction.id ===
-                    filterPayload.filters.careerFunctionId,
-                )?.careerFunction
-              }
-              options={careerFunctions}
-              getLabel={(careerFunction) => careerFunction.careerFunction}
-              onChange={(careerFunction) => {
-                updateSearchPayload({
-                  filters: {
-                    careerFunctionId: careerFunction.id,
-                    designationId: undefined,
-                  },
-                });
-                dispatch(
-                  fetchDesignations({ careerFunctionId: careerFunction.id }),
-                );
-              }}
-              onClear={() =>
-                updateSearchPayload({
-                  filters: {
-                    careerFunctionId: undefined,
-                    designationId: undefined,
-                  },
-                })
-              }
-            />
-            <FilterChipSelect
-              label="Designation"
-              value={
-                designations.find(
-                  (designation) =>
-                    designation.id === filterPayload.filters.designationId,
-                )?.designation
-              }
-              options={designations}
-              parent="Career Function"
-              noParentSelected={!filterPayload.filters.careerFunctionId}
-              getLabel={(designation) => designation.designation}
-              onChange={(designation) => {
-                updateSearchPayload({
-                  filters: { designationId: designation.id },
-                });
-              }}
-              onClear={() =>
-                updateSearchPayload({ filters: { designationId: undefined } })
-              }
-            />
-            <FilterChipSelect
-              label="Location"
-              value={filterPayload.filters.location}
-              options={locations}
-              getLabel={(location) => location}
-              onChange={(location) => {
-                updateSearchPayload({
-                  filters: { location, officeId: undefined },
-                });
-              }}
-              onClear={() =>
-                updateSearchPayload({
-                  filters: { location: undefined, officeId: undefined },
-                })
-              }
-            />
-            <FilterChipSelect
-              label="Office"
-              value={
-                filteredOfficesByLocation.find(
-                  (office) => office.id === filterPayload.filters.officeId,
-                )?.name
-              }
-              parent="Location"
-              noParentSelected={!filterPayload.filters.location}
-              options={filteredOfficesByLocation}
-              getLabel={(office) => office.name}
-              onChange={(office) => {
-                updateSearchPayload({ filters: { officeId: office.id } });
-              }}
-              onClear={() =>
-                updateSearchPayload({ filters: { officeId: undefined } })
-              }
-            />
-            <FilterChipSelect
-              label="Employment Type"
-              value={
-                employmentTypes.find(
-                  (employeeType) =>
-                    employeeType.id === filterPayload.filters.employmentTypeId,
-                )?.name
-              }
-              options={employmentTypes}
-              getLabel={(employeeType) => employeeType.name}
-              onChange={(employeeType) =>
-                updateSearchPayload({
-                  filters: { employmentTypeId: employeeType.id },
-                })
-              }
-              onClear={() =>
-                updateSearchPayload({
-                  filters: { employmentTypeId: undefined },
-                })
-              }
-            />
-            <FilterChipSelect
-              label="Manager Email"
-              value={managerEmails.find(
-                (email) => email === filterPayload.filters.managerEmail,
-              )}
-              options={managerEmails}
-              getLabel={(managerEmail) => managerEmail}
-              onChange={(managerEmail) =>
-                updateSearchPayload({ filters: { managerEmail } })
-              }
-              onClear={() =>
-                updateSearchPayload({ filters: { managerEmail: undefined } })
-              }
-            />
-            <FilterChipSelect
-              label="Employee Status"
-              value={filterPayload.filters.employeeStatus}
-              options={Object.values(EmployeeStatus)}
-              getLabel={(status) => status}
-              onChange={(status) =>
-                updateSearchPayload({ filters: { employeeStatus: status } })
-              }
-              onClear={() =>
-                updateSearchPayload({ filters: { employeeStatus: undefined } })
-              }
-            />
-            <FilterChipSelect
-              label="Gender"
-              value={filterPayload.filters.gender}
-              options={EmployeeGenders}
-              getLabel={(gender) => gender}
-              onChange={(gender) =>
-                updateSearchPayload({ filters: { gender } })
-              }
-              onClear={() =>
-                updateSearchPayload({ filters: { gender: undefined } })
-              }
-            />
-
-            {chips.length > 0 && (
+            {hasActiveFilters && (
               <Button
                 variant="text"
                 onClick={clearAll}
@@ -701,7 +641,6 @@ export function SearchForm() {
                   height: "32px",
                   borderRadius: "50px",
                   px: 2,
-                  // border: `1px solid ${theme.palette.divider}`,
                   transition: "all 0.2s ease",
                   "&:hover": {
                     backgroundColor:
