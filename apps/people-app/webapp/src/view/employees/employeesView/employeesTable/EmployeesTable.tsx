@@ -19,6 +19,7 @@ import { Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
   Employee,
+  EmployeeSearchPayload,
   fetchFilteredEmployees,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
@@ -41,9 +42,11 @@ export default function EmployeesTable() {
   const appliedFilter = useMemo(
     () => ({
       ...employeeState.employeeFilter,
-      page: paginationModel.page + 1,
-      perPage: paginationModel.pageSize,
-    }),
+      pagination: {
+        page: paginationModel.page + 1,
+        perPage: paginationModel.pageSize,
+      },
+    } as EmployeeSearchPayload),
     [employeeState.employeeFilter, paginationModel],
   );
 
