@@ -53,7 +53,7 @@ public type Employee record {|
     # Business unit
     string? BU\ \(Business\ Unit\);
     # Department
-    string Department;
+    string? Department;
     # Team
     string? Team\ \(Team\ and\ Sub\ Team\)?;
     # Sub Team
