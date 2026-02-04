@@ -19,5 +19,8 @@ public isolated function getEmployees() returns Employee[]|error {
         QueryName: QUERY_NAME,
         Action: ACTION
     });
+    if response.isError {
+        return error("PeopleHR API returned an error response", message = response.Message);
+    }
     return response.Result;
 }
