@@ -5,14 +5,6 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
-# People HR configuration.
-public type PeopleHrConfig record {|
-    # People HR Endpoint
-    string endpoint;
-    # Api Key
-    string apiKey;
-|};
-
 # Response from People HR.
 public type PeopleHrResponse record {|
     # Is error or not
