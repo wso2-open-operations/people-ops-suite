@@ -136,6 +136,7 @@ export function SearchForm() {
     dispatch(
       setEmployeeFilter({
         searchString: searchText,
+        filters: {},
         pagination: {
           page: DEFAULT_PAGE_VALUE,
           perPage: DEFAULT_PER_PAGE_VALUE,
