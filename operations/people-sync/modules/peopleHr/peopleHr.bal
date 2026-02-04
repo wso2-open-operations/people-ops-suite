@@ -10,7 +10,7 @@ configurable string apiKey = ?;
 const QUERY_NAME = "Internal Apps Data Sync";
 const ACTION = "GetQueryResult";
 
-# Get employees from People HR
+# Get employees from People HR.
 #
 # + return - List of employees
 public isolated function getEmployees() returns Employee[]|error {
