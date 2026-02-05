@@ -169,6 +169,44 @@ const defaultVisitor: VisitorDetail = {
   status: VisitorStatus.Draft,
 };
 
+const generateTimeSlots = (startHour = 8, endHour = 20, stepMinutes = 15) => {
+  const slots: string[] = [];
+  for (let h = startHour; h <= endHour; h++) {
+    for (let m = 0; m < 60; m += stepMinutes) {
+      const hourStr = h.toString().padStart(2, "0");
+      const minStr = m.toString().padStart(2, "0");
+      slots.push(`${hourStr}:${minStr}`);
+    }
+  }
+
+  const final = `${endHour.toString().padStart(2, "0")}:00`;
+  if (!slots.includes(final)) slots.push(final);
+  return slots;
+};
+
+const getDurationLabel = (
+  entry: string | null,
+  departure: string | null,
+): string => {
+  if (!entry || !departure) return "";
+
+  const [eh, em] = entry.split(":").map(Number);
+  const [dh, dm] = departure.split(":").map(Number);
+
+  const entryMinutes = eh * 60 + em;
+  const depMinutes = dh * 60 + dm;
+
+  if (depMinutes <= entryMinutes) return "";
+
+  const diff = depMinutes - entryMinutes;
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
+
+  if (hours === 0) return `${minutes} mins`;
+  if (minutes === 0) return `${hours} hr${hours > 1 ? "s" : ""}`;
+  return `${hours} hr${hours > 1 ? "s" : ""} ${minutes} mins`;
+};
+
 const customListbox = forwardRef<HTMLUListElement, any>((props, ref) => (
   <ul {...props} ref={ref} />
 ));
@@ -185,6 +223,11 @@ function CreateVisit() {
 
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
+  const [entryHour, setEntryHour] = useState<number | null>(null);
+  const timeSlots = useMemo(
+    () => generateTimeSlots(entryHour ?? 8, 23, 15),
+    [entryHour],
+  );
 
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
@@ -207,7 +250,9 @@ function CreateVisit() {
     (_: any, newInputValue: string, reason: string) => {
       setInputValue(newInputValue);
       if (reason === "input" && newInputValue.trim() !== currentSearchTerm) {
-        dispatch(fetchEmployees({ searchTerm: newInputValue.trim() }));
+        dispatch(
+          fetchEmployees({ searchTerm: newInputValue.trim(), limit: 100 }),
+        );
       }
     },
     [dispatch, currentSearchTerm],
@@ -355,9 +400,7 @@ function CreateVisit() {
 
   const fetchVisitorByEmail = useCallback(
     async (email: string, index: number, formik: any) => {
-      if (!email || !email.trim()) {
-        return;
-      }
+      if (!email || !email.trim()) return;
 
       const emailHash = await hash(email);
       await dispatch(fetchVisitor(emailHash)).then((action) => {
@@ -411,7 +454,7 @@ function CreateVisit() {
       .test("future-or-now", "Cannot be in the past", function (value) {
         const { visitDate } = this.parent;
         if (!visitDate || !value) return true;
-        const combined = dayjs(`${visitDate} ${value}:00`);
+        const combined = dayjs(`${visitDate} ${value}`);
         return combined.isAfter(dayjs().subtract(1, "minute"));
       }),
     timeOfDeparture: Yup.string()
@@ -419,8 +462,8 @@ function CreateVisit() {
       .test("after-entry", "Departure must be after entry", function (value) {
         const { visitDate, timeOfEntry } = this.parent;
         if (!visitDate || !value || !timeOfEntry) return true;
-        const entry = dayjs(`${visitDate} ${timeOfEntry}:00`);
-        const departure = dayjs(`${visitDate} ${value}:00`);
+        const entry = dayjs(`${visitDate} ${timeOfEntry}`);
+        const departure = dayjs(`${visitDate} ${value}`);
         return departure.isAfter(entry);
       }),
   });
@@ -683,6 +726,8 @@ function CreateVisit() {
                 <Grid item xs={12} md={4}>
                   <TimePicker
                     label="Expected Time of Entry"
+                    ampm={false}
+                    format="HH:mm"
                     value={
                       formik.values.visitDate && formik.values.timeOfEntry
                         ? dayjs(
@@ -690,12 +735,20 @@ function CreateVisit() {
                           )
                         : null
                     }
-                    onChange={(newValue) =>
-                      formik.setFieldValue(
-                        "timeOfEntry",
-                        newValue ? dayjs(newValue).format("HH:mm") : "",
-                      )
-                    }
+                    disabled={!formik.values.visitDate}
+                    onChange={(newValue) => {
+                      if (!newValue) {
+                        formik.setFieldValue("timeOfEntry", "");
+                        setEntryHour(null);
+                        return;
+                      }
+
+                      const formatted = dayjs(newValue).format("HH:mm");
+                      const hour = Number(formatted.split(":")[0]);
+
+                      formik.setFieldValue("timeOfEntry", formatted);
+                      setEntryHour(hour);
+                    }}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -710,54 +763,45 @@ function CreateVisit() {
                   />
                 </Grid>
 
-                {/* <Grid item xs={12} md={4}>
-                  <TimePicker
-                    label="Expected Time of Departure"
-                    minTime={
+                <Grid item xs={12} md={4}>
+                  <Autocomplete
+                    options={
                       formik.values.timeOfEntry
-                        ? dayjs()
-                            .set(
-                              "hour",
-                              parseInt(
-                                formik.values.timeOfEntry.split(":")[0],
-                                10,
-                              ),
-                            )
-                            .set(
-                              "minute",
-                              parseInt(
-                                formik.values.timeOfEntry.split(":")[1],
-                                10,
-                              ),
-                            )
-                        : undefined
-                    }
-                    value={
-                      formik.values.visitDate && formik.values.timeOfDeparture
-                        ? dayjs(
-                            `${formik.values.visitDate} ${formik.values.timeOfDeparture}`,
+                        ? timeSlots.filter(
+                            (option) => option > formik.values.timeOfEntry,
                           )
-                        : null
+                        : timeSlots
                     }
-                    onChange={(newValue) =>
-                      formik.setFieldValue(
-                        "timeOfDeparture",
-                        newValue ? dayjs(newValue).format("HH:mm") : "",
-                      )
+                    disabled={!formik.values.timeOfEntry}
+                    value={formik.values.timeOfDeparture || null}
+                    onChange={(_, value) =>
+                      formik.setFieldValue("timeOfDeparture", value || "")
                     }
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error:
-                          formik.touched.timeOfDeparture &&
-                          !!formik.errors.timeOfDeparture,
-                        helperText:
-                          formik.touched.timeOfDeparture &&
-                          formik.errors.timeOfDeparture,
-                      },
+                    getOptionLabel={(option) => {
+                      const duration = getDurationLabel(
+                        formik.values.timeOfEntry,
+                        option,
+                      );
+                      return duration ? `${option} (${duration})` : option;
                     }}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Expected Time of Departure"
+                        fullWidth
+                        error={
+                          formik.touched.timeOfDeparture &&
+                          !!formik.errors.timeOfDeparture
+                        }
+                        helperText={
+                          formik.touched.timeOfDeparture &&
+                          formik.errors.timeOfDeparture
+                        }
+                      />
+                    )}
                   />
-                </Grid> */}
+                </Grid>
               </Grid>
             </Box>
           </>
@@ -955,6 +999,8 @@ function CreateVisit() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Formik
+        validateOnChange
+        validateOnBlur
         initialValues={{
           companyName: "",
           whoTheyMeet: "",

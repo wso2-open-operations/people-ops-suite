@@ -20,6 +20,7 @@ import visitor.people;
 
 import ballerina/cache;
 import ballerina/http;
+import ballerina/lang.regexp;
 import ballerina/log;
 import ballerina/time;
 
@@ -285,6 +286,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Floor[]? accessibleLocations = payload.accessibleLocations;
         string? accessibleLocationString = accessibleLocations is database:Floor[] ?
             organizeLocations(accessibleLocations) : ();
+
+        if whomTheyMeet is string {
+            people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
+            if hostEmployee is error {
+                string customError = "An error occurred while fetching host employee details!";
+                log:printError(customError, hostEmployee);
+            }
+            if hostEmployee is () {
+                string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
+                log:printError(customError);
+            }
+            if hostEmployee is people:Employee {
+                whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
+            }
+        }
         string|error content = email:bindKeyValues(
                 email:inviteTemplate,
                 {
@@ -339,7 +355,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Whom They Meet :</strong>
+                                  <strong>Host :</strong>
                                   <span>${whomTheyMeet}</span>
                                 </p>
                               </li>` : "",
@@ -560,13 +576,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-
             if visitorEmail is string {
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
                 string|error formattedFromDate = "N/A";
                 if timeOfEntry is string {
-                    formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+                    formattedFromDate = formatDateTime(regexp:split(re `\.`, time:utcToString(time:utcNow()))[0], "Asia/Colombo");
                     if formattedFromDate is error {
                         string customError = "Error occurred while formatting the visit start time!";
                         log:printError(customError, formattedFromDate);
@@ -899,7 +914,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? timeOfDeparture = visit.timeOfDeparture;
                 string|error formattedToDate = "N/A";
                 if timeOfDeparture is string {
-                    formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                    formattedToDate = formatDateTime(regexp:split(re `\.`, time:utcToString(time:utcNow()))[0], "Asia/Colombo");
                     if formattedToDate is error {
                         string customError = "Error occurred while formatting the visit end time!";
                         log:printError(customError, formattedToDate);
