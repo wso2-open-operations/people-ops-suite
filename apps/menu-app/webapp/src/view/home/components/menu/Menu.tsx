@@ -16,7 +16,7 @@
 import { Box } from "@mui/material";
 
 import ErrorHandler from "@component/common/ErrorHandler";
-import PreLoader from "@component/common/PreLoader";
+import BackdropProgress from "@component/ui/BackdropProgress";
 import { useGetMenuQuery } from "@services/menu.api";
 
 import MenuCard from "./MenuCard";
@@ -25,7 +25,7 @@ export default function Menu() {
   const { data, isLoading, isError } = useGetMenuQuery();
 
   if (isLoading) {
-    return <PreLoader isLoading message="Loading menu data" />;
+    return <BackdropProgress open={isLoading} />;
   }
 
   if (isError || !data) {
