@@ -79,7 +79,7 @@ isolated function getDinnerRequestByEmailQuery(string email) returns sql:Paramet
 
 # Retrieve dinner request by id.
 #
-# + id - Dinner Id
+# + id - Dinner ID
 # + return - SQL parameterized query
 isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQuery => `
     SELECT 
