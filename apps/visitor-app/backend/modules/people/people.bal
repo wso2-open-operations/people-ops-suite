@@ -49,7 +49,7 @@ public isolated function getEmployees(string search, int 'limit, int offset) ret
     `;
 
     EmployeeFilter filter = {
-        employeeStatus: ["ACTIVE", "LEFT", "MARKED LEAVER"],
+        employeeStatus: ["ACTIVE", "MARKED LEAVER"],
         employmentType: ["PERMANENT", "CONSULTANCY", "INTERNSHIP", "PROBATION"],
         emailSearchString: term
     };
