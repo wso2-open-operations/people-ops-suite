@@ -735,6 +735,7 @@ function CreateVisit() {
                           )
                         : null
                     }
+                    disabled={!formik.values.visitDate}
                     onChange={(newValue) => {
                       if (!newValue) {
                         formik.setFieldValue("timeOfEntry", "");
@@ -998,6 +999,8 @@ function CreateVisit() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Formik
+        validateOnChange
+        validateOnBlur
         initialValues={{
           companyName: "",
           whoTheyMeet: "",
