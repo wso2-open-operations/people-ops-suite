@@ -262,7 +262,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string|error formattedFromDate = "N/A";
         if timeOfEntry is string {
-            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo", false);
             if formattedFromDate is error {
                 string customError = "Error occurred while formatting the visit start time!";
                 log:printError(customError, formattedFromDate);
@@ -271,7 +271,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string|error formattedToDate = "N/A";
         if timeOfDeparture is string {
-            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
             if formattedToDate is error {
                 string customError = "Error occurred while formatting the visit end time!";
                 log:printError(customError, formattedToDate);
@@ -527,7 +527,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
-            string? hostEmail = visit.whomTheyMeet;
             string? visitorFirstName = visit.firstName;
             string? visitorLastName = visit.lastName;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
@@ -542,6 +541,21 @@ service http:InterceptableService / on new http:Listener(9090) {
                         message: customError
                     }
                 };
+            }
+
+            string? hostEmail = visit.whomTheyMeet;
+            people:Employee|error? hostEmployee = ();
+            if hostEmail is string {
+                hostEmployee = people:fetchEmployee(hostEmail);
+                if hostEmployee is error {
+                    string customError = "Error occurred while fetching host employee details!";
+                    log:printError(customError, hostEmployee);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
             }
 
             error? response = database:updateVisit(visitId,
@@ -587,11 +601,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is string && lastName is string ?
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
                                 generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -604,7 +618,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -617,7 +631,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -632,7 +646,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                            "PASS_NUMBER": passNumber is string ? string `<li>
+                            PASS_NUMBER: passNumber is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -645,8 +659,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -667,21 +681,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
-            if hostEmail is string {
-                people:Employee|error? hostEmployee = people:fetchEmployee(hostEmail);
-                if hostEmployee is error {
-                    string customError = "An error occurred while fetching host employee details!";
-                    log:printError(customError, hostEmployee);
-                }
-                if hostEmployee is () {
-                    string customError = string `No employee information found for the host: ${hostEmail}!`;
-                    log:printError(customError);
-                }
-
+            if hostEmployee is people:Employee && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
-                            HOST_NAME: hostEmployee is people:Employee ? hostEmployee.firstName : hostEmail,
-
+                            HOST_NAME:
+                                generateSalutation(hostEmployee.firstName + " " + hostEmployee.lastName),
                             VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
                                 generateSalutation(visitorFirstName + " " + visitorLastName) :
                                     visitorFirstName is string ? visitorFirstName :
@@ -801,11 +805,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is string && lastName is string ?
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
                                 generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -818,7 +822,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -831,8 +835,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -920,10 +924,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -936,7 +940,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -949,7 +953,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -964,7 +968,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                            "PASS_NUMBER": passNumber is string ? string `<li>
+                            PASS_NUMBER: passNumber is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -977,7 +981,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail
+                            CONTACT_EMAIL: email:contactUsEmail
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
