@@ -34,6 +34,8 @@ public type DatabaseConfig record {|
 public type DinnerRequest record {|
     # Request Id 
     int id;
+    # User email
+    string userEmail;
     # Meal option
     @sql:Column {name: "meal_option"}
     string mealOption;

@@ -102,6 +102,8 @@ public enum Meal {
 public type DinnerRequest record {|
     # Request ID 
     int id;
+    # User email
+    string userEmail;
     # Meal option
     string mealOption;
     # Date of meal request
