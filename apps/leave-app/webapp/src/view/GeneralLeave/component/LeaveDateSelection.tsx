@@ -26,7 +26,7 @@ import {
   getPeriodType,
   validateLeaveRequest,
 } from "@root/src/services/leaveService";
-import { DayPortion, LeavePolicy, LeaveType, PeriodType } from "@root/src/types/types";
+import { DayPortion, LeaveEntitlement, LeaveType, PeriodType } from "@root/src/types/types";
 
 interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
@@ -36,7 +36,7 @@ interface LeaveDateSelectionProps {
   hasError?: boolean;
   onErrorClear?: () => void;
   selectedLeaveType?: LeaveType;
-  policyAdjustedLeave?: LeavePolicy;
+  entitlement?: LeaveEntitlement;
 }
 
 export default function LeaveDateSelection({
@@ -47,7 +47,7 @@ export default function LeaveDateSelection({
   hasError = false,
   onErrorClear,
   selectedLeaveType,
-  policyAdjustedLeave,
+  entitlement,
 }: LeaveDateSelectionProps) {
   const theme = useTheme();
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -174,9 +174,14 @@ export default function LeaveDateSelection({
   };
 
   const getAvailableBalance = (): number | null => {
-    if (!policyAdjustedLeave) return null;
-    if (selectedLeaveType === LeaveType.CASUAL) return policyAdjustedLeave.casual;
-    if (selectedLeaveType === LeaveType.ANNUAL) return policyAdjustedLeave.annual;
+    if (!entitlement) return null;
+    // Available balance = total allowed (leavePolicy) - already taken (policyAdjustedLeave)
+    if (selectedLeaveType === LeaveType.CASUAL) {
+      return entitlement.leavePolicy.casual - entitlement.policyAdjustedLeave.casual;
+    }
+    if (selectedLeaveType === LeaveType.ANNUAL) {
+      return entitlement.leavePolicy.annual - entitlement.policyAdjustedLeave.annual;
+    }
     return null;
   };
 
@@ -193,18 +198,20 @@ export default function LeaveDateSelection({
     const availableBalance = getAvailableBalance();
     const leaveDays = getLeaveDaysRequested();
 
-    if (availableBalance !== null && leaveDays > availableBalance) {
-      const leaveTypeName = selectedLeaveType === LeaveType.CASUAL ? "casual" : "annual";
-      return {
-        message: `Exceeds available ${leaveTypeName} balance (${availableBalance} days remaining)`,
-        severity: "error",
-      };
-    }
-
     if (availableBalance !== null) {
-      const leaveTypeName = selectedLeaveType === LeaveType.CASUAL ? "Casual" : "Annual";
+      const remainingAfterRequest = availableBalance - leaveDays;
+      const leaveTypeName = selectedLeaveType === LeaveType.CASUAL ? "casual" : "annual";
+
+      if (remainingAfterRequest < 0) {
+        return {
+          message: `Insufficient ${leaveTypeName} leave. Requesting ${leaveDays} days, only ${availableBalance} available`,
+          severity: "error",
+        };
+      }
+
+      const leaveTypeNameCapitalized = selectedLeaveType === LeaveType.CASUAL ? "Casual" : "Annual";
       return {
-        message: `${leaveTypeName}: ${leaveDays} of ${availableBalance} days available`,
+        message: `${leaveTypeNameCapitalized}: ${leaveDays} day(s) requested, ${remainingAfterRequest} day(s) remaining`,
         severity: "success",
       };
     }

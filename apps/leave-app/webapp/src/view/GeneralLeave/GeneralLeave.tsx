@@ -18,13 +18,14 @@ import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
-import { useAppSelector } from "@root/src/slices/store";
+import { fetchLeaveEntitlement } from "@root/src/slices/entitlementSlice/entitlement";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -33,6 +34,8 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector((state) => state.user.userInfo);
   const { entitlements } = useAppSelector((state) => state.entitlement);
   const [daysSelected, setDaysSelected] = useState(0);
   const [workingDays, setWorkingDays] = useState(0);
@@ -47,6 +50,12 @@ export default function GeneralLeave() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState(false);
 
+  useEffect(() => {
+    if (userInfo?.workEmail) {
+      dispatch(fetchLeaveEntitlement(userInfo.workEmail));
+    }
+  }, [dispatch, userInfo?.workEmail]);
+
   const currentYearEntitlement = entitlements.find((e) => e.year === new Date().getFullYear());
   const getLeaveDaysRequested = (): number => {
     if (selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND) {
@@ -60,22 +69,30 @@ export default function GeneralLeave() {
     if (!currentYearEntitlement) return true;
 
     const leaveDays = getLeaveDaysRequested();
-    const { policyAdjustedLeave } = currentYearEntitlement;
+    const { leavePolicy, policyAdjustedLeave } = currentYearEntitlement;
 
-    if (selectedLeaveType === LeaveType.CASUAL && leaveDays > policyAdjustedLeave.casual) {
-      enqueueSnackbar(
-        `Requested ${leaveDays} casual leave day(s) exceeds your available balance of ${policyAdjustedLeave.casual} day(s).`,
-        { variant: "error" },
-      );
-      return false;
+    if (selectedLeaveType === LeaveType.CASUAL) {
+      const available = leavePolicy.casual - policyAdjustedLeave.casual;
+      const remainingAfterRequest = available - leaveDays;
+      if (remainingAfterRequest < 0) {
+        enqueueSnackbar(
+          `Insufficient casual leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
+          { variant: "error" },
+        );
+        return false;
+      }
     }
 
-    if (selectedLeaveType === LeaveType.ANNUAL && leaveDays > policyAdjustedLeave.annual) {
-      enqueueSnackbar(
-        `Requested ${leaveDays} annual leave day(s) exceeds your available balance of ${policyAdjustedLeave.annual} day(s).`,
-        { variant: "error" },
-      );
-      return false;
+    if (selectedLeaveType === LeaveType.ANNUAL) {
+      const available = leavePolicy.annual - policyAdjustedLeave.annual;
+      const remainingAfterRequest = available - leaveDays;
+      if (remainingAfterRequest < 0) {
+        enqueueSnackbar(
+          `Insufficient annual leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
+          { variant: "error" },
+        );
+        return false;
+      }
     }
 
     return true;
@@ -154,6 +171,11 @@ export default function GeneralLeave() {
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
 
+      // Refetch entitlement after successful submission
+      if (userInfo?.workEmail) {
+        dispatch(fetchLeaveEntitlement(userInfo.workEmail));
+      }
+
       // Reset form
       setStartDate(null);
       setEndDate(null);
@@ -192,7 +214,7 @@ export default function GeneralLeave() {
             hasError={dateError}
             onErrorClear={() => setDateError(false)}
             selectedLeaveType={selectedLeaveType}
-            policyAdjustedLeave={currentYearEntitlement?.policyAdjustedLeave}
+            entitlement={currentYearEntitlement}
           />
           <LeaveSelection
             daysSelected={daysSelected}
