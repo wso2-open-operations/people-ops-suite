@@ -939,7 +939,7 @@ public final string inviteTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Visitor Name:</strong>
+                                  <strong>Visitor:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
@@ -2281,7 +2281,7 @@ public final string visitorCompletionTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Visitor Name:</strong>
+                                  <strong>Visitor:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
@@ -3624,7 +3624,7 @@ You have successfully checked in at the security desk using your QR code. You ma
                                     text-align: left;
                                   "
                                 >
-                                  <strong>User Name:</strong>
+                                  <strong>Visitor:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
@@ -4970,7 +4970,7 @@ public final string visitorRejectingTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Visitor Name :</strong>
+                                  <strong>Visitor:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
@@ -6310,7 +6310,7 @@ public final string employeeVisitorArrivalTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>Visitor Name:</strong>
+                                  <strong>Visitor:</strong>
                                   <span><!-- [VISITOR_NAME] --></span>
                                 </p>
                               </li>
