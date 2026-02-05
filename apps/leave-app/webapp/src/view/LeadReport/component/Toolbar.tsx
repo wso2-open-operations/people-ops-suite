@@ -20,15 +20,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
-import { useEffect } from "react";
-
-import Title from "@root/src/component/common/Title";
-import { formatDateForApi } from "@root/src/services/leaveService";
-import {
-  fetchLeadReport,
-  selectLeadReportState,
-} from "@root/src/slices/leadReportSlice/leadReport";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectLeadReportState } from "@root/src/slices/leadReportSlice/leadReport";
+import { useAppSelector } from "@root/src/slices/store";
 import { State } from "@root/src/types/types";
 
 interface ToolbarProps {
@@ -36,6 +29,7 @@ interface ToolbarProps {
   endDate: Dayjs | null;
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
+  onFetchReport: () => void;
 }
 
 export default function Toolbar({
@@ -43,9 +37,9 @@ export default function Toolbar({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  onFetchReport,
 }: ToolbarProps) {
   const { enqueueSnackbar } = useSnackbar();
-  const dispatch = useAppDispatch();
   const leadReportState = useAppSelector(selectLeadReportState);
   const loading = leadReportState === State.loading;
 
@@ -60,44 +54,37 @@ export default function Toolbar({
       return;
     }
 
-    dispatch(
-      fetchLeadReport({
-        startDate: formatDateForApi(startDate),
-        endDate: formatDateForApi(endDate),
-      }),
-    );
+    onFetchReport();
   };
 
-  useEffect(() => {
-    // Fetch report on initial load with default dates
-    if (startDate && endDate) {
-      handleFetchReport();
-    }
-  }, []);
-
   return (
-    <Stack direction="row" width="100%" alignItems="center">
-      <Title firstWord="Lead" secondWord="Report" />
-      <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
-        {/* TODO: Implement fetch for indirect reports */}
-        {/* <FormControlLabel
-          control={<Switch />}
-          label="Include indirect reports"
-          sx={{ color: theme.palette.text.secondary }}
-        /> */}
-        <DatePicker label="From" value={startDate} onChange={onStartDateChange} />
-        <DatePicker label="To" value={endDate} onChange={onEndDateChange} />
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          startIcon={<SearchIcon />}
-          onClick={handleFetchReport}
-          disabled={loading}
-          sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
-        >
-          {loading ? "Loading..." : "Fetch Report"}
-        </Button>
+    <Stack gap="1.5rem" width="100%">
+      <Stack direction="row" width="100%" alignItems="center">
+        <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
+          <DatePicker
+            label="From"
+            value={startDate}
+            onChange={onStartDateChange}
+            sx={{ minWidth: 200 }}
+          />
+          <DatePicker
+            label="To"
+            value={endDate}
+            onChange={onEndDateChange}
+            sx={{ minWidth: 200 }}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            startIcon={<SearchIcon />}
+            onClick={handleFetchReport}
+            disabled={loading}
+            sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
+          >
+            {loading ? "Loading..." : "Fetch Report"}
+          </Button>
+        </Stack>
       </Stack>
     </Stack>
   );
