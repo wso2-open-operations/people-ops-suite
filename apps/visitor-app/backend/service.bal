@@ -259,9 +259,105 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string|error formattedFromDate = "N/A";
+        if timeOfEntry is string {
+            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+            if formattedFromDate is error {
+                string customError = "Error occurred while formatting the visit start time!";
+                log:printError(customError, formattedFromDate);
+            }
+        }
+
+        string|error formattedToDate = "N/A";
+        if timeOfDeparture is string {
+            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+            if formattedToDate is error {
+                string customError = "Error occurred while formatting the visit end time!";
+                log:printError(customError, formattedToDate);
+            }
+        }
+
+        string? firstName = existingVisitor.firstName;
+        string? lastName = existingVisitor.lastName;
+        string visitorEmail = existingVisitor.email;
+        string? purposeOfVisit = payload.purposeOfVisit;
+        string? whomTheyMeet = payload.whomTheyMeet;
+        database:Floor[]? accessibleLocations = payload.accessibleLocations;
+        string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+            organizeLocations(accessibleLocations) : ();
         string|error content = email:bindKeyValues(
                 email:inviteTemplate,
                 {
+                    NAME: firstName is string && lastName is string ?
+                        generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                    VISIT_DATE: payload.visitDate,
+                    TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                    TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                    PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Purpose of Visit :</strong>
+                                  <span>${purposeOfVisit}</span>
+                                </p>
+                              </li>` : "",
+                    WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Whom They Meet :</strong>
+                                  <span>${whomTheyMeet}</span>
+                                </p>
+                              </li>` : "",
+                    ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
+                              </li>` : "",
                     CONTACT_EMAIL: email:contactUsEmail,
                     YEAR: time:utcToCivil(time:utcNow()).year.toString()
                 }
@@ -415,6 +511,22 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
+            string? hostEmail = visit.whomTheyMeet;
+            string? visitorFirstName = visit.firstName;
+            string? visitorLastName = visit.lastName;
+            string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                organizeLocations(accessibleLocations) : ();
+            string? purposeOfVisit = visit.purposeOfVisit;
+            string|error checkInTime = formatDateTime(time:utcToString(time:utcNow()), "Asia/Colombo", false);
+            if checkInTime is error {
+                string customError = "Error occurred while formatting the check-in time!";
+                log:printError(customError, checkInTime);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
 
             error? response = database:updateVisit(visitId,
                     {
@@ -436,9 +548,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if visitorEmail is string {
-                string? accessibleLocationString = accessibleLocations is database:Floor[] ?
-                    organizeLocations(accessibleLocations) : ();
-
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
                 string|error formattedFromDate = "N/A";
@@ -465,7 +574,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             "TIME": time:utcToEmailString(time:utcNow()),
                             "EMAIL": visitorEmail,
-                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            "NAME": firstName is string && lastName is string ?
+                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
                             "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -542,6 +652,63 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
+            if hostEmail is string {
+                string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
+                        {
+                            HOST_NAME: hostEmail,
+                            VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
+                                generateSalutation(visitorFirstName + " " + visitorLastName) :
+                                    visitorFirstName is string ? visitorFirstName :
+                                        visitorLastName is string ? visitorLastName : visit.email,
+                            CHECK_IN_TIME: checkInTime,
+                            LOCATIONS: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Accessible Locations :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>` : "",
+                            PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Purpose of Visit :</strong>
+                                  <span>${purposeOfVisit}</span>
+                                </p>
+                              </li>` : ""
+                        });
+
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                } else {
+                    error? emailError = email:sendEmail(
+                            {
+                                to: [hostEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:EMPLOYEE_VISITOR_ARRIVAL_SUBJECT,
+                                template: content
+                            });
+                    if emailError is error {
+                        string customError = "An error occurred while sending the host notification email!";
+                        log:printError(customError, emailError);
+                    }
+                }
+            }
+
             return <http:Ok>{
                 body: {
                     message: "Visit approved successfully!"
@@ -610,7 +777,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             "TIME": time:utcToEmailString(time:utcNow()),
                             "EMAIL": visitorEmail,
-                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            "NAME": firstName is string && lastName is string ?
+                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
                             "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
