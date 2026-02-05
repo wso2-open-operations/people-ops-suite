@@ -78,6 +78,12 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
               borderColor: theme.palette.primary.main,
             };
             break;
+          case "cancelled":
+            chipProps = {
+              color: theme.palette.secondary.main,
+              borderColor: theme.palette.secondary.main,
+            };
+            break;
           default:
             chipProps = {
               color: theme.palette.info.main,
