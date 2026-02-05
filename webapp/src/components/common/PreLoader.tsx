@@ -1,31 +1,31 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-import { Box, Container, LinearProgress, useTheme } from "@mui/material";
-import { tokens } from "../../theme";
-
-interface PreLoaderProps {
-  message: string | null;
-  hideLogo?: boolean;
-  isLoading?: boolean;
-}
+import { Box, Container, LinearProgress, Typography } from "@mui/material";
+import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   return (
     <Box
       sx={{
-        background: colors.customColors.lightGray,
+        background: (theme) => theme.palette.background.default,
         display: "flex",
-        pt: "20vh",
         flexDirection: "column",
+        justifyContent: "center",
         height: "100vh",
       }}
     >
@@ -39,23 +39,28 @@ const PreLoader = (props: PreLoaderProps) => {
             spacing={2}
           >
             <Grid item xs={12}>
-              {!props.hideLogo && (
-                <img
-                  alt="logo"
-                  width="250"
-                  height="auto"
-                  src="/pre_load.svg"
-                ></img>
+              {props.isLoading && (
+                <LinearProgress
+                  sx={{
+                    width: "150px",
+                  }}
+                />
               )}
             </Grid>
-            <Grid item xs={12}></Grid>
-
             <Grid item xs={12}>
-              <Typography variant="h4">{props.message}</Typography>
-            </Grid>
-            <Grid item xs={12}></Grid>
-            <Grid item xs={12}>
-              {props.isLoading && <LinearProgress sx={{ width: "100px" }} />}
+              <Typography
+                variant="inherit"
+                sx={{
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: (theme) =>
+                    theme.palette.mode === "light"
+                      ? theme.palette.common.black
+                      : theme.palette.common.white,
+                }}
+              >
+                {props.message}
+              </Typography>
             </Grid>
           </Grid>
         </Box>
