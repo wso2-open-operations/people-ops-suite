@@ -43,12 +43,15 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
 #
 # + dateTimeStr - UTC date-time string in "YYYY-MM-DD HH:MM" format  
 # + timeZone - UTC time zone string
+# + lenientParse - Boolean flag to enable lenient parsing (default: true)
 # + return - formatted date-time string in "YYYY-MM-DD HH:MM:SS (Time Zone)" format
-public isolated function formatDateTime(string dateTimeStr, string timeZone) returns string|error {
+public isolated function formatDateTime(string dateTimeStr, string timeZone, boolean lenientParse = true) returns string|error {
     string timeString = dateTimeStr;
 
-    timeString = regexp:replace(re ` `, timeString, "T");
-    timeString = timeString + ".00Z";
+    if (lenientParse) {
+        timeString = regexp:replace(re ` `, timeString, "T");
+        timeString = timeString + ".00Z";
+    }
 
     time:Utc utcFromString = check time:utcFromString(timeString);
     time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800);
