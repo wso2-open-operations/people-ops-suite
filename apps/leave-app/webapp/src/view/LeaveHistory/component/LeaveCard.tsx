@@ -20,6 +20,7 @@ import {
   Button,
   Card,
   CardContent,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -40,9 +41,9 @@ export interface LeaveCardProps {
   startDate: string;
   endDate: string;
   duration: string;
-  status: "approved" | "pending" | "rejected";
   month: string;
   day: string;
+  cancelling: boolean;
   onDelete?: (id: number) => void;
 }
 
@@ -54,6 +55,7 @@ export default function LeaveCard({
   endDate,
   month,
   day,
+  cancelling,
   onDelete,
 }: LeaveCardProps) {
   const theme = useTheme();
@@ -80,6 +82,7 @@ export default function LeaveCard({
     const diffInDays = (leaveStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
     return diffInDays < 1;
   };
+  const formattedLabel = `${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()} Leave`;
 
   return (
     <Card
@@ -88,6 +91,7 @@ export default function LeaveCard({
         border: `1px solid ${theme.palette.divider}`,
         alignItems: "center",
         boxShadow: "0 2px 8px rgba(5, 5, 5, 0.08)",
+        height: "fit-content",
         "&:hover": {
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
           transform: "translateY(-2px)",
@@ -106,7 +110,7 @@ export default function LeaveCard({
                   fontWeight: 600,
                 }}
               >
-                {type.toLocaleUpperCase()} LEAVE
+                {formattedLabel}
               </Typography>
               <Tooltip title="Cancel" arrow>
                 <span>
@@ -237,11 +241,18 @@ export default function LeaveCard({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary">
+          <Button onClick={handleCloseDialog} color="primary" disabled={cancelling}>
             No, Keep It
           </Button>
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" autoFocus>
-            Yes, Cancel Leave
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            startIcon={cancelling ? <CircularProgress size={16} color="inherit" /> : null}
+            disabled={cancelling}
+            autoFocus
+          >
+            {cancelling ? "Cancelling..." : "Yes, Cancel"}
           </Button>
         </DialogActions>
       </Dialog>

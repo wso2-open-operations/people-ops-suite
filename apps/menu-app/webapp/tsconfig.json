@@ -41,9 +41,10 @@
       "@view/*": ["./src/view/*"],
       "@utils/*": ["./src/utils/*"],
       "@services/*": ["./src/services/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "@/types/*": ["./src/types/*"]
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "src/**/*", "src/vite-env.d.ts"],
+  "include": ["src", "src/**/*", "src/vite-env.d.ts"]
 }

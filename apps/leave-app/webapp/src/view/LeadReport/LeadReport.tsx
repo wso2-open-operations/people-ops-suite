@@ -21,7 +21,12 @@ import dayjs from "dayjs";
 import { useState } from "react";
 
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { LeadReportResponse } from "@root/src/types/types";
+import {
+  selectLeadReport,
+  selectLeadReportState,
+} from "@root/src/slices/leadReportSlice/leadReport";
+import { useAppSelector } from "@root/src/slices/store";
+import { State } from "@root/src/types/types";
 
 import LeadReportTable from "./component/LeadReportTable";
 import Toolbar from "./component/Toolbar";
@@ -29,8 +34,10 @@ import Toolbar from "./component/Toolbar";
 export default function LeadReport() {
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
-  const [reportData, setReportData] = useState<LeadReportResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+
+  const reportData = useAppSelector(selectLeadReport);
+  const leadReportState = useAppSelector(selectLeadReportState);
+  const loading = leadReportState === State.loading;
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -39,8 +46,6 @@ export default function LeadReport() {
         endDate={endDate}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
-        onFetchReport={setReportData}
-        setLoading={setLoading}
       />
       <LeadReportTable reportData={reportData} loading={loading} />
     </Stack>

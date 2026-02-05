@@ -13,69 +13,80 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { RouterProvider, createBrowserRouter, createHashRouter } from "react-router-dom";
 
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { FC, memo, useMemo } from "react";
 
-import { useEffect, useMemo, useState } from "react";
-
+import { AppState } from "@/types/types";
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
+import { useMicroApp } from "@hooks/useMicroApp";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { RootState, useAppSelector } from "@slices/store";
+import { RootState } from "@slices/store";
+import { useAppSelector } from "@slices/store";
 
-import { getActiveRoutesV2, routes } from "../route";
+import { getActiveRoutesV2, getAllActiveRoutes, routes } from "../route";
 
-const AppHandler = () => {
-  const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
-    "loading",
-  );
-
-  const auth = useAppSelector((state: RootState) => state.auth);
-
-  const router = useMemo(
-    () =>
-      createBrowserRouter([
-        {
-          path: "/",
-          element: <Layout />,
-          errorElement: <NotFoundPage />,
-          children: getActiveRoutesV2(routes, auth.roles),
-        },
-      ]),
-    [auth.roles],
-  );
-
-  useEffect(() => {
-    if (auth.status === "loading") {
-      setAppState("loading");
-    } else if (auth.status === "success") {
-      setAppState("success");
-    } else if (auth.status === "failed") {
-      setAppState("failed");
-    } else if (auth.mode === "maintenance") {
-      setAppState("maintenance");
-    }
-  }, [auth.status, auth.mode]);
-
-  const renderApp = () => {
-    switch (appState) {
-      case "loading":
-        return <PreLoader isLoading={true} message={"We are getting things ready ..."} />;
-
-      case "failed":
-        return <ErrorHandler message={auth.statusMessage} />;
-
-      case "success":
-        return <RouterProvider router={router} />;
-
-      case "maintenance":
-        return <MaintenancePage />;
-    }
-  };
-
-  return <>{renderApp()}</>;
+const getAppState = (authStatus: string, authMode: string): AppState => {
+  if (authMode === AppState.Maintenance) return AppState.Maintenance;
+  if (authStatus === AppState.Loading) return AppState.Loading;
+  if (authStatus === AppState.Failed) return AppState.Failed;
+  return AppState.Success;
 };
 
-export default AppHandler;
+const AppHandler: FC = () => {
+  const { status, mode, roles, statusMessage } = useAppSelector((state: RootState) => state.auth);
+  const isValidMicroApp = useMicroApp();
+
+  const appState = useMemo(() => getAppState(status, mode), [status, mode]);
+
+  const appRoutes = useMemo(
+    () => [
+      {
+        path: "/",
+        element: <Layout />,
+        errorElement: <NotFoundPage />,
+        children: isValidMicroApp ? getAllActiveRoutes(routes) : getActiveRoutesV2(routes, roles),
+      },
+    ],
+    [isValidMicroApp, roles],
+  );
+
+  const router = useMemo(
+    () => (isValidMicroApp ? createHashRouter(appRoutes) : createBrowserRouter(appRoutes)),
+    [isValidMicroApp, appRoutes],
+  );
+
+  const renderApp = () => {
+    if (isValidMicroApp) {
+      return <RouterProvider router={router} />;
+    }
+
+    if (appState === AppState.Loading) {
+      return (
+        <PreLoader
+          hideImage={true}
+          marqueeOn={true}
+          isLoading={true}
+          message="We are getting things ready ..."
+        />
+      );
+    }
+
+    if (appState === AppState.Maintenance) {
+      return <MaintenancePage />;
+    }
+
+    if (appState === AppState.Failed) {
+      return <ErrorHandler message={statusMessage} />;
+    }
+
+    return <RouterProvider router={router} />;
+  };
+
+  return renderApp();
+};
+
+export default memo(AppHandler);

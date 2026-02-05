@@ -13,17 +13,52 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { AuthData, AuthState, Role, State, UserInfoInterface } from "@/types/types";
 import { PRIVILEGE_ADMIN, PRIVILEGE_EMPLOYEE, SnackMessage } from "@config/constant";
-import { userApi } from "@root/src/services/user.api";
+import { UserInfoInterface, userApi } from "@services/user.api";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
+export enum Role {
+  Admin = "ADMIN",
+  Employee = "EMPLOYEE",
+}
+
+export enum State {
+  Failed = "FAILED",
+  Success = "SUCCESS",
+  Loading = "LOADING",
+  Idle = "IDLE",
+}
+
+enum AuthMode {
+  Active = "ACTIVE",
+  Maintenance = "MAINTENANCE",
+}
+
+export interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
+  groups?: string[];
+}
+
+export interface AuthState {
+  status: State;
+  mode: AuthMode;
+  statusMessage: string | null;
+  userInfo: BasicUserInfo | null;
+  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
+  roles: Role[];
+}
+
+export interface AuthData {
+  userInfo: BasicUserInfo;
+  decodedIdToken: ExtendedDecodedIDTokenPayload;
+}
+
 const initialState: AuthState = {
-  status: State.idle,
-  mode: "active",
+  status: State.Idle,
+  mode: AuthMode.Active,
   statusMessage: null,
   userInfo: null,
   decodedIdToken: null,
@@ -61,10 +96,10 @@ export const loadPrivileges = createAsyncThunk(
     const roles: Role[] = [];
 
     if (userPrivileges.includes(PRIVILEGE_ADMIN)) {
-      roles.push(Role.ADMIN);
+      roles.push(Role.Admin);
     }
     if (userPrivileges.includes(PRIVILEGE_EMPLOYEE)) {
-      roles.push(Role.EMPLOYEE);
+      roles.push(Role.Employee);
     }
 
     if (roles.length === 0) {
@@ -87,10 +122,10 @@ export const authSlice = createSlice({
     setUserAuthData: (state, action: PayloadAction<AuthData>) => {
       state.userInfo = action.payload.userInfo;
       state.decodedIdToken = action.payload.decodedIdToken;
-      state.status = State.success;
+      state.status = State.Success;
     },
     setAuthError: (state) => {
-      state.status = State.failed;
+      state.status = State.Failed;
       state.userInfo = null;
       state.decodedIdToken = null;
       state.roles = [];
@@ -99,14 +134,14 @@ export const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(loadPrivileges.pending, (state) => {
-        state.status = State.loading;
+        state.status = State.Loading;
       })
       .addCase(loadPrivileges.fulfilled, (state, action) => {
-        state.status = State.success;
+        state.status = State.Success;
         state.roles = action.payload.roles;
       })
       .addCase(loadPrivileges.rejected, (state, action) => {
-        state.status = State.failed;
+        state.status = State.Failed;
         state.statusMessage = action.payload as string;
       });
   },

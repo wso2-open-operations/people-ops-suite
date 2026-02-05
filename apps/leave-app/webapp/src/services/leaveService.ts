@@ -19,7 +19,6 @@ import {
   Action,
   AppConfigResponse,
   ApprovalResponse,
-  DayType,
   Employee,
   LeadReportRequest,
   LeadReportResponse,
@@ -29,6 +28,7 @@ import {
   LeaveSubmissionResponse,
   LeaveValidationRequest,
   LeaveValidationResponse,
+  PeriodType,
 } from "@root/src/types/types";
 import { APIService } from "@root/src/utils/apiService";
 
@@ -58,7 +58,9 @@ export const validateLeaveRequest = async (
 export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
-  const response = await apiInstance.get<Employee[]>(AppConfig.serviceUrls.employees);
+  const response = await apiInstance.get<Employee[]>(
+    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active`,
+  );
 
   return response.data;
 };
@@ -212,6 +214,6 @@ export const formatDateForApi = (date: any): string => {
  * @param daysCount - Number of days selected
  * @returns Period type "one" or "multiple"
  */
-export const getPeriodType = (daysCount: number): DayType.ONE | DayType.MULTIPLE => {
-  return daysCount === 1 ? DayType.ONE : DayType.MULTIPLE;
+export const getPeriodType = (daysCount: number): PeriodType.ONE | PeriodType.MULTIPLE => {
+  return daysCount === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
 };

@@ -1,5 +1,5 @@
 {
-  "name": "webapp-template",
+  "name": "meal-app",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -12,8 +12,8 @@
     "format": "prettier . --write"
   },
   "dependencies": {
-    "@asgardeo/auth-react": "^5.4.0",
     "@asgardeo/auth-spa": "^3.3.0",
+    "@asgardeo/react": "^0.6.31",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.2.0",

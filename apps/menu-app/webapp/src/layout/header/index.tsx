@@ -36,7 +36,7 @@ import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
 
 const Header = () => {
-  const authContext = useAppAuthContext();
+  const { appSignOut } = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
@@ -165,7 +165,7 @@ const Header = () => {
                 <MenuItem
                   key={"logout"}
                   onClick={() => {
-                    authContext.appSignOut();
+                    appSignOut();
                   }}
                 >
                   <Typography textAlign="center">Logout</Typography>

@@ -65,7 +65,7 @@ export default function DatePill({
         variant="subtitle2"
         sx={{
           color: isSelected ? theme.palette.common.white : theme.palette.grey[600],
-          fontWeight: isSelected ? 600 : 400,
+          fontWeight: 400,
           transition: "color 0.2s ease",
         }}
       >
