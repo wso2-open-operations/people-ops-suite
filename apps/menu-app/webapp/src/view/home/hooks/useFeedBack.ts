@@ -13,26 +13,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider } from "@mui/material";
+import { FEEDBACK_TIME } from "@config/constant";
 
-import { MicroAppType } from "@/types/types";
-import { isMicroApp } from "@config/config";
+export const useFeedback = () => {
+  // FeedBack time
+  const useFeedbackTime = () => {
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setHours(...FEEDBACK_TIME.START);
+    const endTime = new Date(now);
+    endTime.setHours(...FEEDBACK_TIME.START);
 
-import DinnerOnDemand from "./components/dod/DinnerOnDemand";
-import Menu from "./components/menu/Menu";
+    return now >= startTime && now <= endTime;
+  };
 
-export default function Home() {
-  if (isMicroApp === MicroAppType.Menu) return <Menu />;
-
-  if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
-
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <Menu />
-
-      <Divider />
-
-      <DinnerOnDemand />
-    </Box>
-  );
-}
+  return {
+    useFeedbackTime,
+  };
+};
