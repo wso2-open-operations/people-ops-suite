@@ -259,3 +259,17 @@ export interface AppConfigResponse {
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
 }
+
+// Leave policy type.
+export interface LeavePolicy {
+  annual: number;
+  casual: number;
+}
+
+// Leave entitlement response type.
+export interface LeaveEntitlement {
+  year: number;
+  location: string;
+  leavePolicy: LeavePolicy;
+  policyAdjustedLeave: LeavePolicy;
+}
