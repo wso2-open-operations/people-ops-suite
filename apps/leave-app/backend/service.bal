@@ -846,7 +846,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             employees = check employee:getEmployees(
                     {
                         status: ["Active"],
-                        leadEmail: payload.isAdminView ? () : email
+                        leadEmail: (isAdmin && payload.isAdminView) ? () : email
                     }
                 );
             string[] emails = from Employee employee in employees
