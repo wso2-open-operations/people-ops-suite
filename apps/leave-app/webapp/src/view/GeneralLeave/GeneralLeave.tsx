@@ -24,6 +24,7 @@ import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
+import { useAppSelector } from "@root/src/slices/store";
 import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -32,6 +33,7 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
+  const { entitlements } = useAppSelector((state) => state.entitlement);
   const [daysSelected, setDaysSelected] = useState(0);
   const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -44,6 +46,40 @@ export default function GeneralLeave() {
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState(false);
+
+  const currentYearEntitlement = entitlements.find((e) => e.year === new Date().getFullYear());
+  const getLeaveDaysRequested = (): number => {
+    if (selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND) {
+      return 0.5;
+    }
+    return workingDays;
+  };
+
+  // Validate leave against entitlement
+  const validateLeaveEntitlement = (): boolean => {
+    if (!currentYearEntitlement) return true;
+
+    const leaveDays = getLeaveDaysRequested();
+    const { policyAdjustedLeave } = currentYearEntitlement;
+
+    if (selectedLeaveType === LeaveType.CASUAL && leaveDays > policyAdjustedLeave.casual) {
+      enqueueSnackbar(
+        `Requested ${leaveDays} casual leave day(s) exceeds your available balance of ${policyAdjustedLeave.casual} day(s).`,
+        { variant: "error" },
+      );
+      return false;
+    }
+
+    if (selectedLeaveType === LeaveType.ANNUAL && leaveDays > policyAdjustedLeave.annual) {
+      enqueueSnackbar(
+        `Requested ${leaveDays} annual leave day(s) exceeds your available balance of ${policyAdjustedLeave.annual} day(s).`,
+        { variant: "error" },
+      );
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSubmit = async () => {
     setDateError(false);
@@ -68,6 +104,10 @@ export default function GeneralLeave() {
 
     if (!selectedLeaveType) {
       enqueueSnackbar("Please select a leave type", { variant: "error" });
+      return;
+    }
+
+    if (!validateLeaveEntitlement()) {
       return;
     }
 
@@ -151,6 +191,8 @@ export default function GeneralLeave() {
             onWorkingDaysChange={setWorkingDays}
             hasError={dateError}
             onErrorClear={() => setDateError(false)}
+            selectedLeaveType={selectedLeaveType}
+            policyAdjustedLeave={currentYearEntitlement?.policyAdjustedLeave}
           />
           <LeaveSelection
             daysSelected={daysSelected}
