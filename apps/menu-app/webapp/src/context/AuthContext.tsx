@@ -119,7 +119,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       try {
         setAppState(AppState.Loading);
-
         if (isLoading) return;
 
         if (isSignedIn) {
@@ -161,7 +160,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const appSignOut = async () => {
     setAppState(AppState.Loading);
     signOut();
-    console.log("Sign Out");
     setAppState(AppState.Unauthenticated);
   };
 
