@@ -748,6 +748,7 @@ function CreateVisit() {
 
                       formik.setFieldValue("timeOfEntry", formatted);
                       setEntryHour(hour);
+                      formik.setFieldValue("timeOfDeparture", "");
                     }}
                     slotProps={{
                       textField: {
