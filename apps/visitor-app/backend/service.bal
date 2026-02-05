@@ -261,7 +261,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string|error formattedFromDate = "N/A";
         if timeOfEntry is string {
-            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo", false);
             if formattedFromDate is error {
                 string customError = "Error occurred while formatting the visit start time!";
                 log:printError(customError, formattedFromDate);
@@ -270,7 +270,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string|error formattedToDate = "N/A";
         if timeOfDeparture is string {
-            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
             if formattedToDate is error {
                 string customError = "Error occurred while formatting the visit end time!";
                 log:printError(customError, formattedToDate);
@@ -586,11 +586,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is string && lastName is string ?
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
                                 generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -603,7 +603,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -616,7 +616,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -631,7 +631,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                            "PASS_NUMBER": passNumber is string ? string `<li>
+                            PASS_NUMBER: passNumber is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -644,8 +644,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -790,11 +790,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is string && lastName is string ?
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
                                 generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -807,7 +807,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -820,8 +820,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -909,10 +909,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
-                            "TIME_OF_ENTRY": timeOfEntry is string && formattedFromDate is string ? string `<li>
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -925,7 +925,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                            "TIME_OF_DEPARTURE": timeOfDeparture is string && formattedToDate is string ? string `<li>
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -938,7 +938,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                            "ALLOWED_FLOORS": accessibleLocationString is string ? string `<li>
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -953,7 +953,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                            "PASS_NUMBER": passNumber is string ? string `<li>
+                            PASS_NUMBER: passNumber is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -966,7 +966,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            "CONTACT_EMAIL": email:contactUsEmail
+                            CONTACT_EMAIL: email:contactUsEmail
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
