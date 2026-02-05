@@ -30,8 +30,8 @@ import { useAppDispatch } from "@slices/store";
 import { getToken } from "@utils/microapp-bridge";
 
 type AuthContextType = {
-  appSignIn: () => Promise<void>;
-  appSignOut: () => Promise<void>;
+  appSignIn: () => void;
+  appSignOut: () => void;
 };
 
 enum AppState {
@@ -104,7 +104,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     );
 
     setTokens(accessToken, refreshToken, appSignOut);
-
     const userInfoResult = await triggerGetUserInfo();
     if (userInfoResult?.isError) {
       console.error("Failed to fetch user info:", userInfoResult.error);
@@ -120,7 +119,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     const initializeAuth = async () => {
       try {
         setAppState(AppState.Loading);
-
         if (isLoading) return;
 
         if (isSignedIn) {
@@ -161,12 +159,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
-    await signOut();
+    signOut();
     setAppState(AppState.Unauthenticated);
   };
 
   const appSignIn = async () => {
-    await signIn();
+    signIn();
     setAppState(AppState.Loading);
   };
 
@@ -178,10 +176,14 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
-        return <PreLoader isLoading message="Authenticating ..." />;
+        return (
+          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Authenticating ..." />
+        );
 
       case AppState.Authenticating:
-        return <PreLoader isLoading message="Loading User Info ..." />;
+        return (
+          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Loading User Info ..." />
+        );
 
       case AppState.Authenticated:
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;

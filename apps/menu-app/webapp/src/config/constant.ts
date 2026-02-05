@@ -40,3 +40,8 @@ export const localStorageTheme = "menu-app-theme";
 export const PRIVILEGE_ADMIN = 789;
 
 export const PRIVILEGE_EMPLOYEE = 987;
+
+export const FEEDBACK_TIME = {
+  START: [12, 0, 0, 0],
+  END: [16, 15, 0, 0],
+} as const;

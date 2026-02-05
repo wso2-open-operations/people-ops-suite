@@ -100,8 +100,8 @@ public enum Meal {
 
 # Dinner request data.
 public type DinnerRequest record {|
-    # Request Id 
-    string id?;
+    # Request ID 
+    int id?;
     # Meal option
     string mealOption;
     # Date of meal request
@@ -114,4 +114,12 @@ public type DinnerRequest record {|
     string managerEmail;
     # Timestamp of the request
     string timestamp?;
+|};
+
+# Dinner request status data.
+public type DinnerRequestStatus record {|
+    # Request ID 
+    int id?;
+    # Active status of the dinner request
+    boolean isActive;
 |};

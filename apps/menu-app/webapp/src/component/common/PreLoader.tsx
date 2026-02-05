@@ -23,11 +23,14 @@ import { APP_NAME } from "@root/src/config/config";
 interface PreLoaderProps {
   message?: string;
   isLoading?: boolean;
+  hideImage?: boolean;
+  marqueeOn?: boolean;
 }
 
 const PreLoader = (props: PreLoaderProps) => {
   const loadingMsg = [APP_NAME, props.message];
   const theme = useTheme();
+  const { hideImage = true, marqueeOn = false } = props;
 
   const logo = theme.palette.mode === "light" ? animatedLogoLight : animatedLogoDark;
 
@@ -47,7 +50,7 @@ const PreLoader = (props: PreLoaderProps) => {
         backgroundColor: theme.palette.surface.primary.active,
       }}
     >
-      <Lottie animationData={logo} style={style} />
+      {!hideImage && <Lottie animationData={logo} style={style} />}
 
       {props.message && props.isLoading && (
         <LinearProgress
@@ -59,7 +62,7 @@ const PreLoader = (props: PreLoaderProps) => {
         />
       )}
 
-      {props.message && (
+      {props.message && marqueeOn && (
         <Box
           sx={{
             position: "relative",
@@ -87,13 +90,13 @@ const PreLoader = (props: PreLoaderProps) => {
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
-                fontWeight: 500,
               }}
             >
               {loadingMsg[0]}
             </Typography>
+
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
@@ -102,20 +105,34 @@ const PreLoader = (props: PreLoaderProps) => {
             >
               {loadingMsg[1]}
             </Typography>
+
             {/* Duplicate of first element to create seamless loop */}
             <Typography
-              variant="h6"
+              variant="h5"
               sx={{
                 color: theme.palette.customText.primary.p2.active,
                 height: "24px",
                 lineHeight: "24px",
-                fontWeight: 600,
               }}
             >
               {loadingMsg[0]}
             </Typography>
           </Box>
         </Box>
+      )}
+
+      {props.message && !marqueeOn && (
+        <Typography
+          variant="h5"
+          sx={{
+            position: "relative",
+            top: props.isLoading ? 4 : -16,
+            color: theme.palette.customText.primary.p2.active,
+            textAlign: "center",
+          }}
+        >
+          {props.message}
+        </Typography>
       )}
     </Box>
   );
