@@ -24,7 +24,6 @@ import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
-import { fetchLeaveEntitlement } from "@slices/entitlementSlice/entitlement";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { APIService } from "@utils/apiService";
@@ -104,12 +103,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
     new APIService(idToken, refreshToken);
 
-    const userInfoResult = await dispatch(getUserInfo());
+    await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
-
-    if (getUserInfo.fulfilled.match(userInfoResult) && userInfoResult.payload.UserInfo?.workEmail) {
-      dispatch(fetchLeaveEntitlement(userInfoResult.payload.UserInfo.workEmail));
-    }
   };
 
   useEffect(() => {
