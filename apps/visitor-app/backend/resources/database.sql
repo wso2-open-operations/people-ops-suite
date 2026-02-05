@@ -56,3 +56,4 @@ CREATE TABLE `visitor` (
    KEY `email_hash_idx` (`email_hash`),
    CONSTRAINT `email_hash` FOREIGN KEY (`email_hash`) REFERENCES `visitor` (`email_hash`)
  )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+ 
