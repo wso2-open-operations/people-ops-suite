@@ -30,6 +30,7 @@ public function main() returns error? {
     }
 
     if missingFieldsMap.length() > 0 {
+        // TODO: This will be a temporary solution until the email sending functionality is implemented.
         check writeMissingFieldsToCsv(missingFieldsMap);
         log:printInfo(string `Found ${missingFieldsMap.length()} employees with missing mandatory fields.`);
     } else {
