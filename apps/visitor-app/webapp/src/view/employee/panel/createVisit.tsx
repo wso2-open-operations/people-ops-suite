@@ -40,6 +40,9 @@ import {
   Autocomplete,
   Avatar,
   CircularProgress,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -167,6 +170,46 @@ const defaultVisitor: VisitorDetail = {
   countryCode: "+94",
   emailAddress: "",
   status: VisitorStatus.Draft,
+};
+
+const generateTimeSlots = (startHour = 8, endHour = 20, stepMinutes = 15) => {
+  const slots: string[] = [];
+  for (let h = startHour; h <= endHour; h++) {
+    for (let m = 0; m < 60; m += stepMinutes) {
+      const hourStr = h.toString().padStart(2, "0");
+      const minStr = m.toString().padStart(2, "0");
+      slots.push(`${hourStr}:${minStr}`);
+    }
+  }
+
+  const final = `${endHour.toString().padStart(2, "0")}:00`;
+  if (!slots.includes(final)) slots.push(final);
+  return slots;
+};
+
+const timeSlots = generateTimeSlots(8, 20, 15);
+
+const getDurationLabel = (
+  entry: string | null,
+  departure: string | null,
+): string => {
+  if (!entry || !departure) return "";
+
+  const [eh, em] = entry.split(":").map(Number);
+  const [dh, dm] = departure.split(":").map(Number);
+
+  const entryMinutes = eh * 60 + em;
+  const depMinutes = dh * 60 + dm;
+
+  if (depMinutes <= entryMinutes) return "";
+
+  const diff = depMinutes - entryMinutes;
+  const hours = Math.floor(diff / 60);
+  const minutes = diff % 60;
+
+  if (hours === 0) return `${minutes} mins`;
+  if (minutes === 0) return `${hours} hr${hours > 1 ? "s" : ""}`;
+  return `${hours} hr${hours > 1 ? "s" : ""} ${minutes} mins`;
 };
 
 const customListbox = forwardRef<HTMLUListElement, any>((props, ref) => (
@@ -355,9 +398,7 @@ function CreateVisit() {
 
   const fetchVisitorByEmail = useCallback(
     async (email: string, index: number, formik: any) => {
-      if (!email || !email.trim()) {
-        return;
-      }
+      if (!email || !email.trim()) return;
 
       const emailHash = await hash(email);
       await dispatch(fetchVisitor(emailHash)).then((action) => {
@@ -411,7 +452,7 @@ function CreateVisit() {
       .test("future-or-now", "Cannot be in the past", function (value) {
         const { visitDate } = this.parent;
         if (!visitDate || !value) return true;
-        const combined = dayjs(`${visitDate} ${value}:00`);
+        const combined = dayjs(`${visitDate} ${value}`);
         return combined.isAfter(dayjs().subtract(1, "minute"));
       }),
     timeOfDeparture: Yup.string()
@@ -419,8 +460,8 @@ function CreateVisit() {
       .test("after-entry", "Departure must be after entry", function (value) {
         const { visitDate, timeOfEntry } = this.parent;
         if (!visitDate || !value || !timeOfEntry) return true;
-        const entry = dayjs(`${visitDate} ${timeOfEntry}:00`);
-        const departure = dayjs(`${visitDate} ${value}:00`);
+        const entry = dayjs(`${visitDate} ${timeOfEntry}`);
+        const departure = dayjs(`${visitDate} ${value}`);
         return departure.isAfter(entry);
       }),
   });
@@ -681,83 +722,99 @@ function CreateVisit() {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <TimePicker
-                    label="Expected Time of Entry"
-                    value={
-                      formik.values.visitDate && formik.values.timeOfEntry
-                        ? dayjs(
-                            `${formik.values.visitDate} ${formik.values.timeOfEntry}`,
-                          )
-                        : null
+                  <FormControl
+                    fullWidth
+                    error={
+                      formik.touched.timeOfEntry && !!formik.errors.timeOfEntry
                     }
-                    onChange={(newValue) =>
-                      formik.setFieldValue(
-                        "timeOfEntry",
-                        newValue ? dayjs(newValue).format("HH:mm") : "",
-                      )
-                    }
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error:
-                          formik.touched.timeOfEntry &&
-                          !!formik.errors.timeOfEntry,
-                        helperText:
-                          formik.touched.timeOfEntry &&
-                          formik.errors.timeOfEntry,
-                      },
-                    }}
-                  />
+                  >
+                    <InputLabel id="entry-time-label">
+                      Expected Time of Entry
+                    </InputLabel>
+                    <Select
+                      labelId="entry-time-label"
+                      label="Expected Time of Entry"
+                      name="timeOfEntry"
+                      value={formik.values.timeOfEntry || ""}
+                      onChange={formik.handleChange}
+                    >
+                      {timeSlots.map((slot) => (
+                        <MenuItem key={slot} value={slot}>
+                          {slot}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {formik.touched.timeOfEntry &&
+                      formik.errors.timeOfEntry && (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ mt: 0.5, ml: 1.8 }}
+                        >
+                          {String(formik.errors.timeOfEntry)}
+                        </Typography>
+                      )}
+                  </FormControl>
                 </Grid>
 
-                {/* <Grid item xs={12} md={4}>
-                  <TimePicker
-                    label="Expected Time of Departure"
-                    minTime={
-                      formik.values.timeOfEntry
-                        ? dayjs()
-                            .set(
-                              "hour",
-                              parseInt(
-                                formik.values.timeOfEntry.split(":")[0],
-                                10,
-                              ),
-                            )
-                            .set(
-                              "minute",
-                              parseInt(
-                                formik.values.timeOfEntry.split(":")[1],
-                                10,
-                              ),
-                            )
-                        : undefined
+                <Grid item xs={12} md={4}>
+                  <FormControl
+                    fullWidth
+                    error={
+                      formik.touched.timeOfDeparture &&
+                      !!formik.errors.timeOfDeparture
                     }
-                    value={
-                      formik.values.visitDate && formik.values.timeOfDeparture
-                        ? dayjs(
-                            `${formik.values.visitDate} ${formik.values.timeOfDeparture}`,
-                          )
-                        : null
-                    }
-                    onChange={(newValue) =>
-                      formik.setFieldValue(
-                        "timeOfDeparture",
-                        newValue ? dayjs(newValue).format("HH:mm") : "",
-                      )
-                    }
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error:
-                          formik.touched.timeOfDeparture &&
-                          !!formik.errors.timeOfDeparture,
-                        helperText:
-                          formik.touched.timeOfDeparture &&
-                          formik.errors.timeOfDeparture,
-                      },
-                    }}
-                  />
-                </Grid> */}
+                  >
+                    <InputLabel id="departure-time-label">
+                      Expected Time of Departure
+                    </InputLabel>
+                    <Select
+                      labelId="departure-time-label"
+                      label="Expected Time of Departure"
+                      name="timeOfDeparture"
+                      value={formik.values.timeOfDeparture || ""}
+                      onChange={formik.handleChange}
+                    >
+                      {timeSlots.map((slot) => {
+                        const disabled =
+                          !!formik.values.timeOfEntry &&
+                          slot <= formik.values.timeOfEntry;
+
+                        const duration = getDurationLabel(
+                          formik.values.timeOfEntry,
+                          slot,
+                        );
+                        const label = duration ? `${slot} (${duration})` : slot;
+
+                        return (
+                          <MenuItem
+                            key={slot}
+                            value={slot}
+                            disabled={disabled}
+                            sx={{
+                              color: disabled
+                                ? "text.disabled"
+                                : "text.primary",
+                              fontStyle: disabled ? "italic" : "normal",
+                            }}
+                          >
+                            {label}
+                          </MenuItem>
+                        );
+                      })}
+                    </Select>
+                    {formik.touched.timeOfDeparture &&
+                      formik.errors.timeOfDeparture && (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ mt: 0.5, ml: 1.8 }}
+                        >
+                          {String(formik.errors.timeOfDeparture)}
+                        </Typography>
+                      )}
+                  </FormControl>
+                </Grid>
               </Grid>
             </Box>
           </>
