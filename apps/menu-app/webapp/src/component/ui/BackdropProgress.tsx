@@ -21,6 +21,7 @@ type BackdropProgressProps = {
 
 const BackdropProgress = ({ open }: BackdropProgressProps) => {
   const theme = useTheme();
+  
   return (
     <Backdrop sx={{ zIndex: 500 + 1, color: theme.palette.secondary.contrastText }} open={open}>
       <CircularProgress />
