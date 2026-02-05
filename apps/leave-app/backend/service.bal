@@ -101,7 +101,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 employeeThumbnail: empInfo.employeeThumbnail,
                 jobRole: empInfo.jobRole,
                 privileges: privileges,
-                isLead: true,
+                isLead: empInfo.lead,
                 employmentStartDate: empInfo.startDate,
                 subordinateCount: empInfo.subordinateCount,
                 cachedEmails: defaultMailsToNotify
