@@ -48,7 +48,7 @@ public isolated function getEmployees() returns Employee[]|error {
 
     cache:Error? cacheResult = employeesCache.put(EMPLOYEES_CACHE_KEY, response.Result);
     if cacheResult is cache:Error {
-        log:printError("Failed to store employees data in cache", 'error = cacheResult);
+        log:printError("Failed to store employees data in cache", cacheResult);
     }
     return response.Result;
 }
