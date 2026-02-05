@@ -28,10 +28,10 @@ import {
 import { useAppSelector } from "@root/src/slices/store";
 import { State } from "@root/src/types/types";
 
-import LeadReportTable from "./component/LeadReportTable";
-import Toolbar from "./component/Toolbar";
+import LeadReportTable from "../component/LeadReportTable";
+import Toolbar from "../component/Toolbar";
 
-export default function LeadReport() {
+export default function LeadReportTab() {
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
 
