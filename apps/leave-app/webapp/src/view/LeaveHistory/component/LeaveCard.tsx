@@ -79,9 +79,12 @@ export default function LeaveCard({
     today.setHours(0, 0, 0, 0);
     const leaveStart = new Date(startDate);
     leaveStart.setHours(0, 0, 0, 0);
-    const diffInDays = (leaveStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    return diffInDays < 1;
+    // Block cancellation if leave start date is more than 30 days in the past
+    const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
+    const diffInMs = leaveStart.getTime() - today.getTime();
+    return diffInMs < -oneMonthMs;
   };
+
   const formattedLabel = `${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()} Leave`;
 
   return (
