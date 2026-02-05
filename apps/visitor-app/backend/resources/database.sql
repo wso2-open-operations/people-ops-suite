@@ -1,4 +1,35 @@
-CREATE TABLE `visit` (
+-- Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+
+-- WSO2 LLC. licenses this file to you under the Apache License,
+-- Version 2.0 (the "License"); you may not use this file except
+-- in compliance with the License.
+-- You may obtain a copy of the License at
+
+-- http://www.apache.org/licenses/LICENSE-2.0
+
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License. 
+
+CREATE TABLE `visitor` (
+   `email_hash` varchar(255) NOT NULL,
+   `email` varchar(255) DEFAULT NULL,
+   `first_name` varchar(255) DEFAULT NULL,
+   `last_name` varchar(255) DEFAULT NULL,
+   `contact_number` varchar(255) DEFAULT NULL,
+   `created_by` varchar(255) DEFAULT NULL,
+   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+   `updated_by` varchar(255) DEFAULT NULL,
+   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+   PRIMARY KEY (`email_hash`),
+   UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
+   UNIQUE KEY `email_UNIQUE` (`email`)
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ CREATE TABLE `visit` (
    `visit_id` int NOT NULL AUTO_INCREMENT,
    `uuid` char(36) NOT NULL,
    `email_hash` varchar(255) NOT NULL,
@@ -24,19 +55,5 @@ CREATE TABLE `visit` (
    KEY `fk_invitation_id_idx` (`invitation_id`),
    KEY `email_hash_idx` (`email_hash`),
    CONSTRAINT `email_hash` FOREIGN KEY (`email_hash`) REFERENCES `visitor` (`email_hash`)
- ) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-
-CREATE TABLE `visitor` (
-   `email_hash` varchar(255) NOT NULL,
-   `email` varchar(255) DEFAULT NULL,
-   `first_name` varchar(255) DEFAULT NULL,
-   `last_name` varchar(255) DEFAULT NULL,
-   `contact_number` varchar(255) DEFAULT NULL,
-   `created_by` varchar(255) DEFAULT NULL,
-   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-   `updated_by` varchar(255) DEFAULT NULL,
-   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
-   PRIMARY KEY (`email_hash`),
-   UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
-   UNIQUE KEY `email_UNIQUE` (`email`)
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+ 
