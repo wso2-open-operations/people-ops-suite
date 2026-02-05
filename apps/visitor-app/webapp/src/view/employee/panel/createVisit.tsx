@@ -40,9 +40,6 @@ import {
   Autocomplete,
   Avatar,
   CircularProgress,
-  Select,
-  FormControl,
-  InputLabel,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -187,8 +184,6 @@ const generateTimeSlots = (startHour = 8, endHour = 20, stepMinutes = 15) => {
   return slots;
 };
 
-const timeSlots = generateTimeSlots(8, 20, 15);
-
 const getDurationLabel = (
   entry: string | null,
   departure: string | null,
@@ -228,6 +223,8 @@ function CreateVisit() {
 
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
+  const [entryHour, setEntryHour] = useState<number | null>(null);
+  const timeSlots = generateTimeSlots(entryHour ?? 8, 24, 15);
 
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
@@ -250,7 +247,9 @@ function CreateVisit() {
     (_: any, newInputValue: string, reason: string) => {
       setInputValue(newInputValue);
       if (reason === "input" && newInputValue.trim() !== currentSearchTerm) {
-        dispatch(fetchEmployees({ searchTerm: newInputValue.trim() }));
+        dispatch(
+          fetchEmployees({ searchTerm: newInputValue.trim(), limit: 100 }),
+        );
       }
     },
     [dispatch, currentSearchTerm],
@@ -722,98 +721,81 @@ function CreateVisit() {
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <FormControl
-                    fullWidth
-                    error={
-                      formik.touched.timeOfEntry && !!formik.errors.timeOfEntry
+                  <TimePicker
+                    label="Expected Time of Entry"
+                    ampm={false}
+                    format="HH:mm"
+                    value={
+                      formik.values.visitDate && formik.values.timeOfEntry
+                        ? dayjs(
+                            `${formik.values.visitDate} ${formik.values.timeOfEntry}`,
+                          )
+                        : null
                     }
-                  >
-                    <InputLabel id="entry-time-label">
-                      Expected Time of Entry
-                    </InputLabel>
-                    <Select
-                      labelId="entry-time-label"
-                      label="Expected Time of Entry"
-                      name="timeOfEntry"
-                      value={formik.values.timeOfEntry || ""}
-                      onChange={formik.handleChange}
-                    >
-                      {timeSlots.map((slot) => (
-                        <MenuItem key={slot} value={slot}>
-                          {slot}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {formik.touched.timeOfEntry &&
-                      formik.errors.timeOfEntry && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 0.5, ml: 1.8 }}
-                        >
-                          {String(formik.errors.timeOfEntry)}
-                        </Typography>
-                      )}
-                  </FormControl>
+                    onChange={(newValue) => {
+                      if (!newValue) {
+                        formik.setFieldValue("timeOfEntry", "");
+                        setEntryHour(null);
+                        return;
+                      }
+
+                      const formatted = dayjs(newValue).format("HH:mm");
+                      const hour = Number(formatted.split(":")[0]);
+
+                      formik.setFieldValue("timeOfEntry", formatted);
+                      setEntryHour(hour); // ✅ stored in state
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error:
+                          formik.touched.timeOfEntry &&
+                          !!formik.errors.timeOfEntry,
+                        helperText:
+                          formik.touched.timeOfEntry &&
+                          formik.errors.timeOfEntry,
+                      },
+                    }}
+                  />
                 </Grid>
 
                 <Grid item xs={12} md={4}>
-                  <FormControl
-                    fullWidth
-                    error={
-                      formik.touched.timeOfDeparture &&
-                      !!formik.errors.timeOfDeparture
+                  <Autocomplete
+                    options={
+                      formik.values.timeOfEntry
+                        ? timeSlots.filter(
+                            (option) => option > formik.values.timeOfEntry,
+                          )
+                        : timeSlots
                     }
-                  >
-                    <InputLabel id="departure-time-label">
-                      Expected Time of Departure
-                    </InputLabel>
-                    <Select
-                      labelId="departure-time-label"
-                      label="Expected Time of Departure"
-                      name="timeOfDeparture"
-                      value={formik.values.timeOfDeparture || ""}
-                      onChange={formik.handleChange}
-                    >
-                      {timeSlots.map((slot) => {
-                        const disabled =
-                          !!formik.values.timeOfEntry &&
-                          slot <= formik.values.timeOfEntry;
-
-                        const duration = getDurationLabel(
-                          formik.values.timeOfEntry,
-                          slot,
-                        );
-                        const label = duration ? `${slot} (${duration})` : slot;
-
-                        return (
-                          <MenuItem
-                            key={slot}
-                            value={slot}
-                            disabled={disabled}
-                            sx={{
-                              color: disabled
-                                ? "text.disabled"
-                                : "text.primary",
-                              fontStyle: disabled ? "italic" : "normal",
-                            }}
-                          >
-                            {label}
-                          </MenuItem>
-                        );
-                      })}
-                    </Select>
-                    {formik.touched.timeOfDeparture &&
-                      formik.errors.timeOfDeparture && (
-                        <Typography
-                          variant="caption"
-                          color="error"
-                          sx={{ mt: 0.5, ml: 1.8 }}
-                        >
-                          {String(formik.errors.timeOfDeparture)}
-                        </Typography>
-                      )}
-                  </FormControl>
+                    value={formik.values.timeOfDeparture || null}
+                    onChange={(_, value) =>
+                      formik.setFieldValue("timeOfDeparture", value || "")
+                    }
+                    getOptionLabel={(option) => {
+                      const duration = getDurationLabel(
+                        formik.values.timeOfEntry,
+                        option,
+                      );
+                      return duration ? `${option} (${duration})` : option;
+                    }}
+                    isOptionEqualToValue={(opt, val) => opt === val}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Expected Time of Departure"
+                        fullWidth
+                        error={
+                          formik.touched.timeOfDeparture &&
+                          !!formik.errors.timeOfDeparture
+                        }
+                        helperText={
+                          formik.touched.timeOfDeparture &&
+                          formik.errors.timeOfDeparture
+                        }
+                      />
+                    )}
+                  />
                 </Grid>
               </Grid>
             </Box>
