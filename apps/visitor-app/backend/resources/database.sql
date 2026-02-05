@@ -23,7 +23,7 @@ CREATE TABLE `visitor` (
    `created_by` varchar(255) DEFAULT NULL,
    `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
    `updated_by` varchar(255) DEFAULT NULL,
-   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
+   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
    PRIMARY KEY (`email_hash`),
    UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
    UNIQUE KEY `email_UNIQUE` (`email`)
