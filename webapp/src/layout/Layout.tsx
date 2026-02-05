@@ -1,132 +1,108 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import { Suspense, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import Box from "@mui/material/Box";
-import { useTheme } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-
-import Header from "./header";
-import Sidebar, { DrawerHeader } from "./sidebar";
-import {
-  Outlet,
-  useLocation,
-  useNavigate,
-  matchRoutes,
-} from "react-router-dom";
-import { routes } from "../route";
-
-import ConfirmationModalContextProvider from "@context/DialogContext";
-import { selectUserInfo, selectRoles } from "@slices/authSlice";
+import { Box, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
-import pJson from "../../package.json";
-import { RootState, useAppSelector } from "@slices/store";
-import { Typography } from "@mui/material";
-import { LoadingEffect } from "@components/ui/Loading";
-import { uiMessages } from "@config/constant";
-import { tokens } from "../theme";
+import { useSelector } from "react-redux";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import PreLoader from "@components/common/PreLoader";
+import { redirectUrl as savedRedirectUrl } from "@config/constant";
+import ConfirmationModalContextProvider from "@context/DialogContext";
+import Header from "./header";
+import Sidebar from "./sidebar";
+import { selectRoles } from "@slices/authSlice";
+import { type RootState, useAppSelector } from "@slices/store";
+// import CssBaseline from "@mui/material/CssBaseline";
 
-const Layout = () => {
-  //snackbar configuration
+
+
+export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
-  useEffect(() => {
-    if (common.timestamp != null) {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const roles = useSelector(selectRoles);
+  const theme = useTheme();
+
+  const showSnackbar = useCallback(() => {
+    if (common.timestamp !== null) {
       enqueueSnackbar(common.message, {
         variant: common.type,
         preventDuplicate: true,
         anchorOrigin: { horizontal: "right", vertical: "bottom" },
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [common.timestamp]);
+  }, [common.message, common.type, common.timestamp, enqueueSnackbar]);
 
   useEffect(() => {
-    if (localStorage.getItem("internal-app-redirect-url")) {
-      navigate(localStorage.getItem("internal-app-redirect-url") as string);
-      localStorage.removeItem("internal-app-redirect-url");
+    showSnackbar();
+  }, [showSnackbar]);
+
+  useEffect(() => {
+    const redirectUrl = localStorage.getItem(savedRedirectUrl);
+    if (redirectUrl) {
+      navigate(redirectUrl);
+      localStorage.removeItem(savedRedirectUrl);
     }
-  }, []);
-
-  const location = useLocation();
-  const matches = matchRoutes(routes, location.pathname);
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-
-  const [open, setOpen] = useState(false);
-  const roles = useSelector(selectRoles);
-  const userInfo = useSelector(selectUserInfo);
-
-  const getAppBarTitle = (): string => {
-    var title: string = "";
-    matches?.forEach((obj) => {
-      if (location.pathname === obj.pathname) {
-        title = obj.route.text;
-      }
-    });
-
-    return title;
-  };
+  }, [navigate]);
 
   return (
     <ConfirmationModalContextProvider>
-      <Box sx={{ display: "flex" }}>
-        <CssBaseline />
+      {/* Full screen container */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          width: "100vw",
+          backgroundColor: theme.palette.mode === "light" ? "#f2f2f2" : "#141414",
+        }}
+      >
+        {/* Header */}
+        <Header />
 
-        <Sidebar
-          roles={roles}
-          currentPath={location.pathname}
-          open={open}
-          handleDrawer={() => setOpen(!open)}
-          theme={theme}
-        />
-        <Header
-          theme={theme}
-          title={getAppBarTitle()}
-          open={open}
-          email={userInfo?.email}
-        />
+        {/* Main content container */}
+        <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+          {/* Sidebar */}
+          <Box sx={{ width: "fit-content", height: "100%" }}>
+          <Sidebar
+            roles={roles}
+            currentPath={location.pathname}
+            open={open}
+            handleDrawer={() => setOpen(!open)}
+            theme={theme}
+          />
+          </Box>
 
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-          <DrawerHeader open={open} />
-          <Suspense
-            fallback={
-              <LoadingEffect message={uiMessages.loading.pageLoading} />
-            }
-          >
-            <Outlet />
-          </Suspense>
+          {/* Main content area */}
           <Box
-            className="layout-note"
             sx={{
-              height: "38px",
-              width: "100%",
-              margin: "-24px",
-              padding: "10px",
-              lineHeight: "20px",
-              position: "fixed",
-              bottom: "22px",
-              zIndex: 100,
-              background:
-                theme.palette.mode === "light"
-                  ? colors.customColors.offWhite
-                  : colors.customColors.darkGray,
+              flex: 1,
+              height: "100%",
+              padding: theme.spacing(3),
             }}
           >
-            <Typography variant="h6" sx={{ color: colors.customColors.gray }}>
-              v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
-            </Typography>
+            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+              <Outlet />
+            </Suspense>
           </Box>
         </Box>
       </Box>
     </ConfirmationModalContextProvider>
   );
-};
-
-export default Layout;
+}
