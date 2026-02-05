@@ -18,8 +18,8 @@
 public type AppRoles record {|
     # Role for all employees (including interns)
     string[] employeeRoles;
-    # Role for permanent employees
-    string[] adminRoles;
+    # Role for people operations team members
+    string[] peopleOpsTeamRoles;
     # Role for interns
     string[] internRoles;
 |};
