@@ -21,7 +21,7 @@ import ballerina/sql;
 # + dinnerRequest - Dinner request data
 # + employee - Employee data
 # + return - SQL parameterized query
-isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
+isolated function upsertDinnerRequestQuery(string email, DinnerRequestPayload dinnerRequest, Employee employee) 
     returns sql:ParameterizedQuery => `
         INSERT INTO dinner_bookings (
             id,
