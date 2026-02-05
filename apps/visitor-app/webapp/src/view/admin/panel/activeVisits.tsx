@@ -135,7 +135,7 @@ const ActiveVisits = () => {
         statusArray: [VisitStatus.requested, VisitStatus.approved],
       }),
     );
-  }, [dispatch, page, pageSize]);
+  }, [dispatch, page, pageSize, isScanModalOpen]);
 
   // Handle UUID parameter for opening scan modal
   useEffect(() => {

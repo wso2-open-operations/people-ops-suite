@@ -278,7 +278,7 @@ function CreateVisit() {
             const qrCodeBase64 = await QRCode.toDataURL(qrLink, {
               width: 300,
               margin: 2,
-              color: { dark: "#000000", light: "#fc7420ff" },
+              color: { dark: "#000000", light: "#ffffff" },
               errorCorrectionLevel: "H",
             });
 
