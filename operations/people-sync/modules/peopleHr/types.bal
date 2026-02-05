@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/data.jsondata;
 
 # Response from People HR.
@@ -32,7 +33,7 @@ public type PeopleHrResponse record {|
 public type Employee record {|
     # Employee ID on People HR
     @jsondata:Name {value: "Employee Id"}
-    string? employeeId;
+    string employeeId;
 
     # Title
     @jsondata:Name {value: "Title"}
