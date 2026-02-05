@@ -1098,7 +1098,7 @@ public final string inviteTemplate = string `
                                         alt="WSO2 In"
                                         src="https://wso2.cachefly.net/wso2/sites/all/2022/images/linkedin-dark-3.png"
                                         style="
-                                          width: 30px;f
+                                          width: 30px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
