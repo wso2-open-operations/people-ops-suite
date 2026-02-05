@@ -224,7 +224,10 @@ function CreateVisit() {
   const [activeStep, setActiveStep] = useState(0);
   const isLastStep = activeStep === steps.length - 1;
   const [entryHour, setEntryHour] = useState<number | null>(null);
-  const timeSlots = generateTimeSlots(entryHour ?? 8, 24, 15);
+  const timeSlots = useMemo(
+    () => generateTimeSlots(entryHour ?? 8, 23, 15),
+    [entryHour],
+  );
 
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
@@ -743,7 +746,7 @@ function CreateVisit() {
                       const hour = Number(formatted.split(":")[0]);
 
                       formik.setFieldValue("timeOfEntry", formatted);
-                      setEntryHour(hour); // ✅ stored in state
+                      setEntryHour(hour);
                     }}
                     slotProps={{
                       textField: {
@@ -768,6 +771,7 @@ function CreateVisit() {
                           )
                         : timeSlots
                     }
+                    disabled={!formik.values.timeOfEntry}
                     value={formik.values.timeOfDeparture || null}
                     onChange={(_, value) =>
                       formik.setFieldValue("timeOfDeparture", value || "")
