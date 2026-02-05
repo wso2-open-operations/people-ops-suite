@@ -25,7 +25,7 @@ import React from "react";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
-import LeadReport from "@view/LeadReport/LeadReport";
+import Report from "@view/LeadReport/Report";
 import LeaveHistory from "@view/LeaveHistory/LeaveHistory";
 import { SabbaticalLeave } from "@view/index";
 
@@ -61,11 +61,11 @@ export const routes: RouteObjectWithMeta[] = [
     allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
   },
   {
-    path: "lead-report",
-    text: "Lead Report",
+    path: "reports",
+    text: "Reports",
     icon: React.createElement(AssignmentIcon),
-    element: React.createElement(LeadReport),
-    allowRoles: [Role.LEAD],
+    element: React.createElement(Report),
+    allowRoles: [Role.LEAD, Role.PEOPLE_OPS_TEAM],
   },
 ];
 
