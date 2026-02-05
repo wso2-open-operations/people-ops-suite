@@ -661,7 +661,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                     visitorFirstName is string ? visitorFirstName :
                                         visitorLastName is string ? visitorLastName : visit.email,
                             CHECK_IN_TIME: checkInTime,
-                            LOCATIONS: accessibleLocationString is string ? string `<li>
+                            LOCATION: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
