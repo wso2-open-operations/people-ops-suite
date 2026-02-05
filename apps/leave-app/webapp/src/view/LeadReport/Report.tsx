@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import HowToRegIcon from "@mui/icons-material/HowToReg";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 
 import { useEffect, useState } from "react";
 
@@ -35,24 +35,24 @@ export default function Report() {
     const baseTabs: TabProps[] = [];
     if (userInfo?.privileges.includes(Privileges.LEAD)) {
       baseTabs.push({
-        tabTitle: "Lead View",
+        tabTitle: "Lead Report",
         tabPath: "reporting-lead",
-        icon: <HowToRegIcon />,
+        icon: <AssignmentIcon />,
         page: <LeadReportTab />,
       });
     }
     if (userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM)) {
       baseTabs.push(
         {
-          tabTitle: "Admin View",
-          tabPath: "admin-view",
-          icon: <HowToRegIcon />,
+          tabTitle: "Admin Report",
+          tabPath: "admin-report",
+          icon: <AssignmentIcon />,
           page: <AdminReportTab />,
         },
         {
-          tabTitle: "Sabbatical View",
+          tabTitle: "Sabbatical History Report",
           tabPath: "sabbatical-view",
-          icon: <HowToRegIcon />,
+          icon: <AssignmentIcon />,
           page: <AdminSabbaticalTab />,
         },
       );
