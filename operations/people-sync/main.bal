@@ -16,7 +16,26 @@
 
 import people_sync.peopleHr;
 
+import ballerina/log;
+
 public function main() returns error? {
     peopleHr:Employee[] peopleHrEmployees = check peopleHr:getEmployees();
+
+    map<string[]> missingFieldsMap = {};
+    foreach peopleHr:Employee employee in peopleHrEmployees {
+        string[] missingFields = getMissingMandatoryFields(employee);
+        if missingFields.length() > 0 {
+            missingFieldsMap[employee.employeeId] = missingFields;
+        }
+    }
+
+    if missingFieldsMap.length() > 0 {
+        // TODO: This will be a temporary solution until the email sending functionality is implemented.
+        check writeMissingFieldsToCsv(missingFieldsMap);
+        log:printInfo(string `Found ${missingFieldsMap.length()} employees with missing mandatory fields.`);
+    } else {
+        log:printInfo("All employees have all mandatory fields.");
+    }
+
     // TODO: Continue the sync process
 }

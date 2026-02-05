@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/data.jsondata;
+
 # Response from People HR.
 public type PeopleHrResponse record {|
     # Is error or not
@@ -30,75 +32,105 @@ public type PeopleHrResponse record {|
 # Employee information.
 public type Employee record {|
     # Employee ID on People HR
-    string? Employee\ Id;
+    @jsondata:Name {value: "Employee Id"}
+    string employeeId;
 
     # Title
-    string? Title;
+    @jsondata:Name {value: "Title"}
+    string? title;
     # First name
-    string? First\ Name;
+    @jsondata:Name {value: "First Name"}
+    string? firstName;
     # Last name
-    string? Last\ Name;
+    @jsondata:Name {value: "Last Name"}
+    string? lastName;
     # Gender
-    string? Gender;
+    @jsondata:Name {value: "Gender"}
+    string? gender;
 
     # Work email
-    string? Work\ Email;
+    @jsondata:Name {value: "Work Email"}
+    string? workEmail;
     # Work phone number
-    string? Work\ Phone\ Number;
+    @jsondata:Name {value: "Work Phone Number"}
+    string? workPhoneNumber;
 
     # Employee's company WSO2 LK, US..etc
-    string? Company;
+    @jsondata:Name {value: "Company"}
+    string? company;
     # Employee location (country)
-    string? Location;
+    @jsondata:Name {value: "Location"}
+    string? location;
 
     # Business unit
-    string? BU\ \(Business\ Unit\);
+    @jsondata:Name {value: "BU (Business Unit)"}
+    string? businessUnit;
     # Department
-    string? Department;
+    @jsondata:Name {value: "Department"}
+    string? department;
     # Team
-    string? Team\ \(Team\ and\ Sub\ Team\)?;
+    @jsondata:Name {value: "Team (Team and Sub Team)"}
+    string? team;
     # Sub Team
-    string? Sub\ Team\ \(Team\ and\ Sub\ Team\)?;
+    @jsondata:Name {value: "Sub Team (Team and Sub Team)"}
+    string? subTeam;
 
     # Current job band
-    string? System1\ ID?;
+    @jsondata:Name {value: "System1 ID"}
+    string? jobBand;
     # Current job role
-    string? Job\ Role;
+    @jsondata:Name {value: "Job Role"}
+    string? jobRole;
     # Employment type (i.e: PERMANENT, INTERNSHIP, PROBATION etc.)
-    string? Employment\ Type;
+    @jsondata:Name {value: "Employment Type"}
+    string? employmentType;
     # Employee Status (i.e: Left, Active, Marked leaver)
-    string? Employee\ Status;
+    @jsondata:Name {value: "Employee Status"}
+    string? employeeStatus;
 
     # EPF
-    string? EPF\ Number\ \(EPF\);
+    @jsondata:Name {value: "EPF Number (EPF)"}
+    string? epfNumber;
 
     # Manager email
-    string? Manager\ Email;
+    @jsondata:Name {value: "Manager Email"}
+    string? managerEmail;
     # Additional managers (comma separated array of names)
-    string? Additional\ Manager;
+    @jsondata:Name {value: "Additional Manager"}
+    string? additionalManagers;
 
     # Work start date
-    string? Start\ Date;
+    @jsondata:Name {value: "Start Date"}
+    string? startDate;
     # Initial joined date
-    string? Initial\ date\ of\ joining\ \(Actual\ Start\ Date\)?;
+    @jsondata:Name {value: "Initial date of joining (Actual Start Date)"}
+    string? initialDateOfJoining;
     # Continuous Service date
-    string? Continuous\ Service\ Date;
+    @jsondata:Name {value: "Continuous Service Date"}
+    string? continuousServiceDate;
 
     # Resignation date
-    string? Resignation\ Date;
+    @jsondata:Name {value: "Resignation Date"}
+    string? resignationDate;
     # Final day in office
-    string? Final\ Day\ in\ Office;
+    @jsondata:Name {value: "Final Day in Office"}
+    string? finalDayInOffice;
     # Final day of employment
-    string? Final\ Day\ of\ Employment;
+    @jsondata:Name {value: "Final Day of Employment"}
+    string? finalDayOfEmployment;
     # Relocation status
-    string? Relocation\ \(Relocation\);
+    @jsondata:Name {value: "Relocation (Relocation)"}
+    string? relocation;
     # Resignation reason
-    string? Reason\ for\ Resignation\ \(Resignation\ Reasons\)?;
+    @jsondata:Name {value: "Reason for Resignation (Resignation Reasons)"}
+    string? reasonForResignation;
 
     # Personal phone number
-    string? Personal\ Phone\ Number;
+    @jsondata:Name {value: "Personal Phone Number"}
+    string? personalPhone;
     # Personal email
-    string? Personal\ Email;
+    @jsondata:Name {value: "Personal Email"}
+    string? personalEmail;
 
     // TODO: check and enable if required
     // # Reports to lead name
