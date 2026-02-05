@@ -20,7 +20,6 @@ export type stateType = "failed" | "success" | "loading" | "idle";
 export enum Role {
   EMPLOYEE = "EMPLOYEE",
   ADMIN = "ADMIN",
-  LEAD = "LEAD",
   TEAM_LEAD = "TEAM_LEAD",
 }
 
@@ -365,4 +364,9 @@ export interface ParRatingSummary {
   parLeadStatus: ParLeadStatus;
   parLeadEmail: string;
   parCycleStatus: ParCycleStatus;
+}
+
+export enum ThemeMode {
+  Light = "light",
+  Dark = "dark",
 }
