@@ -11,7 +11,7 @@ CREATE TABLE `visitor` (
    PRIMARY KEY (`email_hash`),
    UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
    UNIQUE KEY `email_UNIQUE` (`email`)
- );
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
  CREATE TABLE `visit` (
    `visit_id` int NOT NULL AUTO_INCREMENT,
@@ -39,4 +39,4 @@ CREATE TABLE `visitor` (
    KEY `fk_invitation_id_idx` (`invitation_id`),
    KEY `email_hash_idx` (`email_hash`),
    CONSTRAINT `email_hash` FOREIGN KEY (`email_hash`) REFERENCES `visitor` (`email_hash`)
- );
+ )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
