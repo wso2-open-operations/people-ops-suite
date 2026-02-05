@@ -15,18 +15,17 @@
 // under the License.
 
 import EditDocumentIcon from "@mui/icons-material/EditDocument";
-import HistoryIcon from "@mui/icons-material/History";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import TabsPage, { TabProps } from "@root/src/layout/pages/TabsPage";
+import { Privileges } from "@root/src/slices/authSlice/auth";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
-import ApprovalHistoryTab from "./Panel/ApprovalHistoryTab";
 import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
 
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
@@ -62,25 +61,17 @@ export default function SabbaticalLeave() {
         },
       ];
       // Set approval tabs for leads only
-      if (userInfo?.isLead) {
-        baseTabs.push(
-          {
-            tabTitle: "Leave Approval",
-            tabPath: "leave-approval",
-            icon: <HowToRegIcon />,
-            page: <ApproveLeaveTab />,
-          },
-          {
-            tabTitle: "Approval History",
-            tabPath: "approval-history",
-            icon: <HistoryIcon />,
-            page: <ApprovalHistoryTab />,
-          },
-        );
+      if (userInfo?.privileges.includes(Privileges.LEAD)) {
+        baseTabs.push({
+          tabTitle: "Leave Approval",
+          tabPath: "leave-approval",
+          icon: <HowToRegIcon />,
+          page: <ApproveLeaveTab />,
+        });
       }
       setTabs(baseTabs);
     }
-  }, [appConfig, userInfo?.isLead]);
+  }, [appConfig, userInfo?.privileges]);
 
   if (!sabbaticalFeatureEnabled) {
     return (
