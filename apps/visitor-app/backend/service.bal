@@ -511,7 +511,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
-            string? hostEmail = visit.whomTheyMeet;
             string? visitorFirstName = visit.firstName;
             string? visitorLastName = visit.lastName;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
@@ -526,6 +525,21 @@ service http:InterceptableService / on new http:Listener(9090) {
                         message: customError
                     }
                 };
+            }
+
+            string? hostEmail = visit.whomTheyMeet;
+            people:Employee|error? hostEmployee = ();
+            if hostEmail is string {
+                hostEmployee = people:fetchEmployee(hostEmail);
+                if hostEmployee is error {
+                    string customError = "Error occurred while fetching host employee details!";
+                    log:printError(customError, hostEmployee);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
             }
 
             error? response = database:updateVisit(visitId,
@@ -652,10 +666,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
-            if hostEmail is string {
+            if hostEmployee is people:Employee && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
-                            HOST_NAME: hostEmail,
+                            HOST_NAME:
+                                generateSalutation(hostEmployee.firstName + " " + hostEmployee.lastName),
                             VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
                                 generateSalutation(visitorFirstName + " " + visitorLastName) :
                                     visitorFirstName is string ? visitorFirstName :
