@@ -217,7 +217,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Dinner request data (email, date, meal option)
     # + return - Dinner request success response or error response
-    resource function post dinner(http:RequestContext ctx, @http:Payload DinnerRequest payload) 
+    resource function post dinner(http:RequestContext ctx, @http:Payload DinnerRequestPayload payload) 
         returns http:BadRequest|http:InternalServerError|http:Created {
 
         string|http:BadRequest userEmail = authentication:getUserEmailFromRequestContext(ctx);
