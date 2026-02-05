@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import AssignmentIcon from "@mui/icons-material/Assignment";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import HistoryIcon from "@mui/icons-material/History";
 import WorkHistoryIcon from "@mui/icons-material/WorkHistory";
@@ -55,7 +55,7 @@ export const routes: RouteObjectWithMeta[] = [
   },
   {
     path: "leave-history",
-    text: "Leave History",
+    text: "My History",
     icon: React.createElement(HistoryIcon),
     element: React.createElement(LeaveHistory),
     allowRoles: [Role.EMPLOYEE, Role.INTERN, Role.LEAD],
@@ -63,7 +63,7 @@ export const routes: RouteObjectWithMeta[] = [
   {
     path: "reports",
     text: "Reports",
-    icon: React.createElement(AssignmentIcon),
+    icon: React.createElement(AssessmentIcon),
     element: React.createElement(Report),
     allowRoles: [Role.LEAD, Role.PEOPLE_OPS_TEAM],
   },
