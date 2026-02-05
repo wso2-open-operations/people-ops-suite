@@ -26,6 +26,11 @@ export default function BasicBreadcrumbs() {
   const { pathname } = location;
   const pathnames = pathname === "/" ? [] : pathname.split("/");
 
+  // --- HARDCODED COLORS (Fix for Old Theme) ---
+  const isLight = theme.palette.mode === "light";
+  const colorP3 = isLight ? "#666666" : "#ababab"; // Caption / Inactive
+  const colorP2 = isLight ? "#333333" : "#ffffff"; // Hover / Active
+
   const renderBreadCrumbs = () => {
     let routeTo = "";
 
@@ -36,6 +41,7 @@ export default function BasicBreadcrumbs() {
           sx={{
             "& .MuiBreadcrumbs-separator": {
               mx: "8px",
+              color: colorP3, // Applied here
             },
           }}
         >
@@ -49,7 +55,8 @@ export default function BasicBreadcrumbs() {
                 <Typography
                   key={`${path}-short`}
                   variant="caption"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
+                  // FIX 1: Hardcoded Color
+                  sx={{ color: colorP3 }}
                 >
                   {path.slice(0, 4)}...
                 </Typography>
@@ -57,7 +64,8 @@ export default function BasicBreadcrumbs() {
                 <Typography
                   key={`${path}-full`}
                   variant="caption"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
+                  // FIX 2: Hardcoded Color
+                  sx={{ color: colorP3 }}
                 >
                   {path}
                 </Typography>
@@ -76,7 +84,8 @@ export default function BasicBreadcrumbs() {
                     display: "flex",
                     alignItems: "center",
                     "&:hover": {
-                      color: theme.palette.customText.primary.p2.active,
+                      // FIX 3: Hardcoded Hover Color
+                      color: colorP2,
                     },
                   }}
                 >
@@ -96,7 +105,8 @@ export default function BasicBreadcrumbs() {
                   display: "flex",
                   alignItems: "center",
                   "&:hover": {
-                    color: theme.palette.customText.primary.p2.active,
+                    // FIX 4: Hardcoded Hover Color
+                    color: colorP2,
                   },
                 }}
               >
