@@ -885,8 +885,8 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              For a seamless check-in experience, please present the QR code attached to this email 
-                              for scanning at the entrance.
+                              We're pleased to inform you that you are invited to visit WSO2.</br>
+                            For a seamless entry experience, please present the QR code included in this email at the security desk upon your arrival.
                             </p>
 
                             <p
@@ -1098,7 +1098,7 @@ public final string inviteTemplate = string `
                                         alt="WSO2 In"
                                         src="https://wso2.cachefly.net/wso2/sites/all/2022/images/linkedin-dark-3.png"
                                         style="
-                                          width: 30px;
+                                          width: 30px;f
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -3522,8 +3522,9 @@ public final string visitorApproveTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              We are pleased to inform you that your visit to
-                              WSO2 has been approved.
+                              Your visit to WSO2 has officially started.</br>
+You have successfully checked in at the security desk using your QR code. You may now proceed as guided by security or your host.
+
                             </p>
 
                             <p

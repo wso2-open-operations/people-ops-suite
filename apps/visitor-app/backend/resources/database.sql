@@ -1,4 +1,19 @@
-CREATE TABLE `visit` (
+CREATE TABLE `visitor` (
+   `email_hash` varchar(255) NOT NULL,
+   `email` varchar(255) DEFAULT NULL,
+   `first_name` varchar(255) DEFAULT NULL,
+   `last_name` varchar(255) DEFAULT NULL,
+   `contact_number` varchar(255) DEFAULT NULL,
+   `created_by` varchar(255) DEFAULT NULL,
+   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+   `updated_by` varchar(255) DEFAULT NULL,
+   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
+   PRIMARY KEY (`email_hash`),
+   UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
+   UNIQUE KEY `email_UNIQUE` (`email`)
+ );
+
+ CREATE TABLE `visit` (
    `visit_id` int NOT NULL AUTO_INCREMENT,
    `uuid` char(36) NOT NULL,
    `email_hash` varchar(255) NOT NULL,
@@ -24,19 +39,4 @@ CREATE TABLE `visit` (
    KEY `fk_invitation_id_idx` (`invitation_id`),
    KEY `email_hash_idx` (`email_hash`),
    CONSTRAINT `email_hash` FOREIGN KEY (`email_hash`) REFERENCES `visitor` (`email_hash`)
- ) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
-
-CREATE TABLE `visitor` (
-   `email_hash` varchar(255) NOT NULL,
-   `email` varchar(255) DEFAULT NULL,
-   `first_name` varchar(255) DEFAULT NULL,
-   `last_name` varchar(255) DEFAULT NULL,
-   `contact_number` varchar(255) DEFAULT NULL,
-   `created_by` varchar(255) DEFAULT NULL,
-   `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-   `updated_by` varchar(255) DEFAULT NULL,
-   `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
-   PRIMARY KEY (`email_hash`),
-   UNIQUE KEY `email_hash_UNIQUE` (`email_hash`),
-   UNIQUE KEY `email_UNIQUE` (`email`)
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+ );
