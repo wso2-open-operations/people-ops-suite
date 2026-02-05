@@ -115,11 +115,3 @@ public type DinnerRequest record {|
     # Timestamp of the request
     string timestamp?;
 |};
-
-# Dinner request status data.
-public type DinnerRequestStatus record {|
-    # Request ID 
-    int id?;
-    # Active status of the dinner request
-    boolean isActive;
-|};
