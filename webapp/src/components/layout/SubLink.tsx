@@ -33,8 +33,20 @@ const SubLink = (props: SubLinkProps) => {
   const theme = useTheme();
 
   const fullPath = parentPath.replace(/\/$/, "") + "/" + to.replace(/^\//, "");
-
   const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
+
+  const isLight = theme.palette.mode === "light";
+  const colors = {
+    // Inactive Text: Grey
+    text: isLight ? "#666666" : "#a3a3a3",
+    // Active Text: Primary Blue (Light) / Secondary Blue (Dark)
+    textClicked: isLight ? "#021d5f" : "#5686e1",
+    // Hover BG: Subtle transparent layer
+    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
+    // Tooltip Colors
+    tooltipBg: "#333333",
+    tooltipText: "#ffffff"
+  };
 
   return (
     <>
@@ -51,11 +63,11 @@ const SubLink = (props: SubLinkProps) => {
             borderRadius: "8px",
             justifyContent: "flex-start",
             textDecoration: "none",
-            color: isActive ? theme.palette.customNavigation.textClicked : theme.palette.customNavigation.text,
+            color: isActive ? colors.textClicked : colors.text,
             "&:hover": {
               ...(!isActive && {
-                backgroundColor: theme.palette.customNavigation.hoverBg,
-                color: theme.palette.customNavigation.hover,
+                backgroundColor: colors.hoverBg,
+                color: colors.textClicked,
               }),
             },
           }}
@@ -102,8 +114,8 @@ const SubLink = (props: SubLinkProps) => {
               slotProps={{
                 tooltip: {
                   sx: {
-                    backgroundColor: theme.palette.neutral[10],
-                    color: theme.palette.neutral.white,
+                    backgroundColor: colors.tooltipBg,
+                    color: colors.tooltipText,
                     padding: theme.spacing(0.75, 1.5),
                     borderRadius: "4px",
                     fontSize: "14px",
@@ -112,7 +124,7 @@ const SubLink = (props: SubLinkProps) => {
                 },
                 arrow: {
                   sx: {
-                    color: theme.palette.neutral[10],
+                    color: colors.tooltipBg,
                   },
                 },
               }}
@@ -122,9 +134,7 @@ const SubLink = (props: SubLinkProps) => {
                 style: {
                   width: "20px",
                   height: "20px",
-                  color: isActive
-                    ? theme.palette.customNavigation.textClicked
-                    : theme.palette.customNavigation.text,
+                  color: isActive ? colors.textClicked : colors.text,
                 },
               })}
             </Tooltip>
