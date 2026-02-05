@@ -64,6 +64,6 @@ public isolated function getDinnerRequestById(int id) returns DinnerRequest|erro
 # + email - Employee email
 # + return - Dinner request status or error
 public isolated function getDinnerRequestStatusByEmail(string email) returns DinnerRequestStatus|error? {
-    DinnerRequestStatus|error dinnerRequestStatus = databaseClient->queryRow(getDinnerRequestStatusByEmailQuery(email));
-    return dinnerRequestStatus is sql:NoRowsError ? () : dinnerRequestStatus;
+    DinnerRequestStatus|error existingDinnerRequestStatus = databaseClient->queryRow(getDinnerRequestStatusByEmailQuery(email));
+    return existingDinnerRequestStatus is sql:NoRowsError ? () : existingDinnerRequestStatus;
 }
