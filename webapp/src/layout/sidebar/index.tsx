@@ -15,26 +15,42 @@
 // under the License.
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
-import { matchPath, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import { useMemo, useState } from "react";
 
-import type { NavState } from "@/types/types";
-import SidebarNavItem from "@component/layout/SidebarNavItem";
-import pJson from "@root/package.json";
+import type { NavState } from "../../types/types";
+import SidebarNavItem from "../../components/layout/SidebarNavItem";
+import pJson from "../../../package.json";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
+import { Role } from "@utils/types";
 
 interface SidebarProps {
   open: boolean;
   handleDrawer: () => void;
-  roles: string[];
+  roles: Role[];
   currentPath: string;
 }
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
   const location = useLocation();
+  const theme = useTheme();
+  
+  // --- HARDCODED COLORS (Derived from Old Theme) ---
+  const isLight = theme.palette.mode === "light";
+  const colors = {
+    sidebarBg: isLight ? "#ffffff" : "#141414",     // White / Grey 900
+    text: isLight ? "#666666" : "#a3a3a3",          // Grey 500 / Grey 300
+    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
+    hoverText: isLight ? "#021d5f" : "#5686e1",     // Primary Blue / Secondary Blue
+    activeBg: isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.12)",
+    activeText: isLight ? "#021d5f" : "#5686e1",
+    divider: isLight ? "#e0e0e0" : "#333333",       // Grey 100 / Grey 700
+    tooltipBg: "#333333",
+    tooltipText: "#ffffff"
+  };
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
@@ -58,7 +74,7 @@ const Sidebar = (props: SidebarProps) => {
   const handleMouseLeave = () => {
     setNavState((prev) => ({ ...prev, hovered: null }));
   };
-  const theme = useTheme();
+
 
   const renderControlButton = (
     icon: React.ReactNode,
@@ -83,16 +99,16 @@ const Sidebar = (props: SidebarProps) => {
           alignItems: "center",
           justifyContent: props.open ? "flex-start" : "center",
           gap: theme.spacing(1),
-          color: theme.palette.customNavigation.text,
+          color: colors.text,
           transition: "all 0.2s ease-in-out",
           ...(onClick && {
             "&:hover": {
-              backgroundColor: theme.palette.customNavigation.hoverBg,
-              color: theme.palette.customNavigation.hover,
+              backgroundColor: colors.hoverBg,
+              color: colors.hoverText,
             },
             "&:active": {
-              backgroundColor: theme.palette.customNavigation.clickedBg,
-              color: theme.palette.customNavigation.clicked,
+              backgroundColor: colors.activeBg,
+              color: colors.activeText,
             },
           }),
         }}
@@ -111,8 +127,9 @@ const Sidebar = (props: SidebarProps) => {
           slotProps={{
             tooltip: {
               sx: {
-                backgroundColor: theme.palette.neutral[1700],
-                color: theme.palette.neutral.white,
+                // FIX: Hardcoded Tooltip Colors
+                backgroundColor: colors.tooltipBg,
+                color: colors.tooltipText,
                 padding: theme.spacing(0.75, 1),
                 borderRadius: "4px",
                 fontSize: "12px",
@@ -121,7 +138,7 @@ const Sidebar = (props: SidebarProps) => {
             },
             arrow: {
               sx: {
-                color: theme.palette.neutral[1700],
+                color: colors.tooltipBg,
               },
             },
           }}
@@ -145,7 +162,8 @@ const Sidebar = (props: SidebarProps) => {
               height: "100%",
               paddingY: "16px",
               paddingX: "12px",
-              backgroundColor: theme.palette.surface.secondary.active,
+              // FIX: Hardcoded Sidebar Background
+              backgroundColor: colors.sidebarBg,
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
@@ -215,7 +233,7 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: theme.palette.customNavigation.clickedBg,
+                  backgroundColor: colors.divider,
                 }}
               />
 
