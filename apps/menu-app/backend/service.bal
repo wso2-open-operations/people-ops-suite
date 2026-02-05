@@ -225,6 +225,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             return userEmail;
         }
 
+        // Validate that the dinner request exists before updating
+        // This prevents creating duplicate records with invalid IDs during upsert operations
         int? requestId = payload.id;
         if requestId != () {
             DinnerRequest|error? existingDinnerRequest = database:getDinnerRequestById(requestId);
@@ -249,20 +251,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        DinnerRequestStatus|error? dinnerRequestStatus = database:getDinnerRequestStatusByEmail(userEmail);
-        if dinnerRequestStatus is error {
-            log:printError(string `Error occurred while fetching dinner request status for user: ${userEmail}`, dinnerRequestStatus);
-            return <http:InternalServerError> {
-                body:  {
-                    message: "Failed to fetch dinner request status."
-                }
-            };
-        }
-        
-        if dinnerRequestStatus is DinnerRequestStatus {
-            payload.id = dinnerRequestStatus.id;
-        }
-        
         transaction {
             check database:upsertDinnerRequest(payload, userEmail);
             check sheets:upsertDinnerRequest(payload, userEmail);
