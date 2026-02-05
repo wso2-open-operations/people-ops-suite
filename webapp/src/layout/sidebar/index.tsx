@@ -14,11 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
-import { useLocation } from "react-router-dom";
-
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useMemo, useState } from "react";
-
+import { useLocation } from "react-router-dom";
 import type { NavState } from "../../types/types";
 import SidebarNavItem from "../../components/layout/SidebarNavItem";
 import pJson from "../../../package.json";
@@ -127,7 +129,6 @@ const Sidebar = (props: SidebarProps) => {
           slotProps={{
             tooltip: {
               sx: {
-                // FIX: Hardcoded Tooltip Colors
                 backgroundColor: colors.tooltipBg,
                 color: colors.tooltipText,
                 padding: theme.spacing(0.75, 1),
@@ -162,7 +163,6 @@ const Sidebar = (props: SidebarProps) => {
               height: "100%",
               paddingY: "16px",
               paddingX: "12px",
-              // FIX: Hardcoded Sidebar Background
               backgroundColor: colors.sidebarBg,
               zIndex: 10,
               display: "flex",
@@ -218,14 +218,14 @@ const Sidebar = (props: SidebarProps) => {
             >
               {/* Theme Toggle */}
               {renderControlButton(
-                colorMode.mode === "dark" ? <Sun size={18} /> : <Moon size={18} />,
+                colorMode.mode === "dark" ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />,
                 colorMode.toggleColorMode,
                 colorMode.mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
               )}
 
               {/* Sidebar Toggle */}
               {renderControlButton(
-                !props.open ? <ChevronRight size={20} /> : <ChevronLeft size={20} />,
+                !props.open ? <ChevronRightIcon sx={{ fontSize: 22 }} /> : <ChevronLeftIcon sx={{ fontSize: 22 }} />,
                 props.handleDrawer,
                 props.open ? "Collapse Sidebar" : "Expand Sidebar",
               )}
