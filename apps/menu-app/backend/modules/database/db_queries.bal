@@ -96,20 +96,6 @@ isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQue
         id = ${id} AND is_active = 1 AND date >= CURRENT_DATE 
 `;
 
-# Retrieve dinner request status by email.
-#
-# + email - Employee email
-# + return - SQL parameterized query
-isolated function getDinnerRequestStatusByEmailQuery(string email) returns sql:ParameterizedQuery => `
-    SELECT 
-        id,
-        is_active
-    FROM 
-        dinner_bookings 
-    WHERE 
-        email = ${email} AND date >= CURRENT_DATE 
-`;
-
 # Retrieve all dinner requests.
 # 
 # + return - SQL parameterized query
