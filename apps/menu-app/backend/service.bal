@@ -42,6 +42,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         return new authentication:JwtInterceptor();
     }
 
+    function init() {
+        Menu|error menu = sheets:getMenu();
+        if menu is error {
+            log:printError("Error retrieving menu data", menu);
+        }
+
+        log:printInfo("Menu Application service started.");
+    }
+
     # Fetch logged-in user's details.
     #
     # + return - User information or InternalServerError
@@ -101,15 +110,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(customError, cacheError);
         }
         return userInfoResponse;
-    }
-
-    function init() {
-        Menu|error menu = sheets:getMenu();
-        if menu is error {
-            log:printError("Error retrieving menu data", menu);
-        }
-
-        log:printInfo("Menu Application service started.");
     }
 
     # Fetch meta info.
@@ -226,24 +226,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int? requestId = payload.id;
-        if !(requestId is ()) {
+        if requestId != () {
             DinnerRequest|error? existingDinnerRequest = database:getDinnerRequestById(requestId);
-
-            if existingDinnerRequest is () {
-                log:printError(string `Dinner request with ID ${requestId} not found for user ${userEmail}`);
-                return <http:BadRequest> {
-                    body:  {
-                        message: "Dinner request not found. Invalid request ID provided."
-                    }
-                };
-            }
-
+            
             if existingDinnerRequest is error {
                 log:printError(string `Error retrieving dinner request with ID ${requestId} for user ${userEmail}`, 
                     existingDinnerRequest);
                 return <http:InternalServerError> {
                     body:  {
                         message: "Failed to retrieve existing dinner request for update."
+                    }
+                };
+            }
+
+            if existingDinnerRequest is () {
+                log:printError(string `Dinner request with ID ${requestId} not found for user ${userEmail}`);
+                return <http:BadRequest> {
+                    body:  {
+                        message: "Dinner request not found. Invalid request ID provided."
                     }
                 };
             }
