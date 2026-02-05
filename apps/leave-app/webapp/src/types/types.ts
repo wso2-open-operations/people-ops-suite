@@ -210,6 +210,7 @@ export interface LeaveHistoryQueryParam {
 export interface LeadReportRequest {
   startDate: string;
   endDate: string;
+  isAdminView: boolean;
 }
 
 // Lead report response type.
