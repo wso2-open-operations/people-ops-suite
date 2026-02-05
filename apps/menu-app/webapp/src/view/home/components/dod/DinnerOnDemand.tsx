@@ -20,7 +20,7 @@ import { LeafyGreen } from "lucide-react";
 
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@component/common/ErrorHandler";
-import PreLoader from "@component/common/PreLoader";
+import BackdropProgress from "@component/ui/BackdropProgress";
 import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
 
 import CancelModal from "./CancelModal";
@@ -52,16 +52,12 @@ export default function DinnerOnDemand() {
     handleCloseCancelDialog,
   } = useDinnerOnDemand();
 
-  if (isUserLoading) {
-    return <PreLoader isLoading message="Loading user info..." />;
-  }
-
   if (!userInfo) {
     return <ErrorHandler message={"Failed to load user info"} />;
   }
 
-  if (isLoading) {
-    return <PreLoader isLoading message="We are getting things ready..." />;
+  if (isUserLoading || isLoading) {
+    return <BackdropProgress open={isLoading} />;
   }
 
   if (error && !is404) {
