@@ -939,7 +939,7 @@ public final string inviteTemplate = string `
                                     text-align: left;
                                   "
                                 >
-                                  <strong>User Name:</strong>
+                                  <strong>Visitor Name:</strong>
                                   <span><!-- [NAME] --></span>
                                 </p>
                               </li>
