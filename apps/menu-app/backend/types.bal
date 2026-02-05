@@ -101,6 +101,24 @@ public enum Meal {
 # Dinner request data.
 public type DinnerRequest record {|
     # Request ID 
+    int id;
+    # Meal option
+    string mealOption;
+    # Date of meal request
+    string date;
+    # Department of employee
+    string department;
+    # Team of employee
+    string? team;
+    # Manager email
+    string managerEmail;
+    # Timestamp of the request
+    string timestamp?;
+|};
+
+# Dinner request payload data.
+public type DinnerRequestPayload record {|
+    # Request ID 
     int id?;
     # Meal option
     string mealOption;
