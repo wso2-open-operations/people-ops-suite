@@ -885,7 +885,7 @@ public final string inviteTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              We're pleased to inform you that you are invited to visit WSO2.</br>
+                              We're pleased to inform you that you are invited to visit WSO2.<br/>
                             For a seamless entry experience, please present the QR code included in this email at the security desk upon your arrival.
                             </p>
 
@@ -3522,7 +3522,7 @@ public final string visitorApproveTemplate = string `
                                 text-align: justify;
                               "
                             >
-                              Your visit to WSO2 has officially started.</br>
+                              Your visit to WSO2 has officially started.<br/>
 You have successfully checked in at the security desk using your QR code. You may now proceed as guided by security or your host.
 
                             </p>
