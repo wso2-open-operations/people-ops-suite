@@ -1,136 +1,94 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+import { Box, Typography, useTheme } from "@mui/material";
+import { ChevronDown as ChevronDownIcon } from "lucide-react";
+import { ChevronUp as ChevronUpIcon } from "lucide-react";
 
 import React from "react";
-import { Theme, alpha } from "@mui/material/styles";
-import ListItem from "@mui/material/ListItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 
-import {
-  NavLink as RouterLink,
-  LinkProps as RouterLinkProps,
-} from "react-router-dom";
-import { Typography, useTheme } from "@mui/material";
-import { tokens } from "../../theme";
-
-const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(
-  itemProps,
-  ref
-) {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
-  return (
-    <RouterLink
-      ref={ref}
-      {...itemProps}
-      role={undefined}
-      style={({ isActive, isPending }) =>
-        isActive
-          ? {
-              background: alpha(colors.customColors.white, 0.05),
-              color: colors.customColors.orange,
-            }
-          : {}
-      }
-    />
-  );
-});
-
-const ListItemLink = ({
-  icon,
-  primary,
-  to,
-  open,
-  theme,
-  isActive,
-}: ListItemLinkProps) => {
-  const colors = tokens(theme.palette.mode);
-
-  return (
-    <li>
-      <ListItem
-        component={Link}
-        to={to}
-        sx={{
-          height: "38px",
-          borderRadius: "5px",
-          paddingLeft: "15px",
-          marginLeft: "8px",
-          width: "calc(100% - 16px)",
-          marginRight: "8px",
-          marginBottom: "10px",
-
-          "&:hover": {
-            background: alpha(theme.palette.common.white, 0.05),
-
-            ...(!open && {
-              "& .menu-tooltip": {
-                opacity: 1,
-                visibility: "visible",
-                color: "white",
-              },
-            }),
-          },
-          ...(isActive && {
-            background: alpha(theme.palette.common.white, 0.05),
-          }),
-          transition: theme.transitions.create(["width", "margin"], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-
-          ...(open && {}),
-        }}
-      >
-        {icon ? (
-          <ListItemIcon
-            sx={{
-              color: "white",
-              "&:hover": {
-                color: colors.customColors.orange,
-              },
-
-              ...(isActive && {
-                color: colors.customColors.orange,
-              }),
-            }}
-          >
-            {icon}
-          </ListItemIcon>
-        ) : null}
-        <ListItemText
-          sx={{
-            "& .MuiListItemText-primary": {
-              color: "white",
-              ...(isActive && {
-                color: colors.customColors.orange,
-              }),
-              marginTop: "1px",
-              fontSize: "16px",
-            },
-          }}
-          primary={primary}
-        />
-        <span className="menu-tooltip">
-          <Typography variant="h6">{primary}</Typography>{" "}
-        </span>
-      </ListItem>
-    </li>
-  );
-};
-
-export default ListItemLink;
+import { RouteDetail } from "@root/src/types/types";
 
 interface ListItemLinkProps {
   icon?: React.ReactElement;
-  primary: string;
-  to: string;
+  label: string;
   open: boolean;
   isActive: boolean;
-  theme: Theme;
+  hasChildren: boolean;
+  route?: RouteDetail;
 }
+
+const LinkItem = (props: ListItemLinkProps) => {
+  const { icon, label, open, isActive, hasChildren } = props;
+  const theme = useTheme();
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
+        padding: 1,
+        borderRadius: "8px",
+        justifyContent: "space-between",
+        transition: "all 0.2s",
+        backgroundColor: isActive ? theme.palette.customNavigation.clickedBg : "transparent",
+        "&:hover": {
+          ...(!isActive && {
+            backgroundColor: theme.palette.customNavigation.hoverBg,
+          }),
+        },
+        color: isActive
+          ? theme.palette.customNavigation.textClicked
+          : theme.palette.customNavigation.text 
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: theme.spacing(1),
+          justifyContent: "flex-start",
+        }}
+      >
+        {icon && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              "& svg": { width: "20px", height: "20px" },
+            }}
+          >
+            {icon}
+          </Box>
+        )}
+        {open && (
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 500,
+              lineHeight: "150%",
+              letterSpacing: "-0.03em",
+            }}
+          >
+            {label}
+          </Typography>
+        )}
+      </Box>
+      {hasChildren && open && (isActive ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
+    </Box>
+  );
+};
+export default LinkItem;

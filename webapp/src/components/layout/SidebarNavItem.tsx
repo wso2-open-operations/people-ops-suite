@@ -35,6 +35,16 @@ function SidebarNavItem({
 }) {
   const theme = useTheme();
 
+  const isLight = theme.palette.mode === "light";
+  const colors = {
+    // Tooltip Background: Dark Grey (matches neutral[1700] intent)
+    tooltipBg: "#333333", 
+    // Tooltip Text: White
+    tooltipText: "#ffffff",
+    // Border for nested items: Light Grey / Dark Grey
+    borderLeft: isLight ? "#e0e0e0" : "#525252" 
+  };
+
   return (
     <Box
       sx={{
@@ -55,8 +65,8 @@ function SidebarNavItem({
           popper: { className: "z-[9999]" },
           tooltip: {
             sx: {
-              backgroundColor: theme.palette.neutral[1700],
-              color: theme.palette.neutral.white,
+              backgroundColor: colors.tooltipBg,
+              color: colors.tooltipText,
               padding: theme.spacing(0.75, 1.5),
               borderRadius: "4px",
               fontSize: "12px",
@@ -65,7 +75,7 @@ function SidebarNavItem({
           },
           arrow: {
             sx: {
-              color: theme.palette.neutral[1700],
+              color: colors.tooltipBg,
             },
           },
         }}
@@ -120,7 +130,7 @@ function SidebarNavItem({
             alignItems: "center",
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
-            borderLeft: open ? `1px solid ${theme.palette.neutral["1000"]}` : "none",
+            borderLeft: open ? `1px solid ${colors.borderLeft}` : "none",
             paddingX: "8px",
           }}
         >
