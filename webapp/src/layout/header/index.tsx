@@ -1,48 +1,38 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import React from "react";
-import { styled, Theme } from "@mui/material/styles";
-import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
-
-import Typography from "@mui/material/Typography";
-import IconButton from "@mui/material/IconButton";
-
+import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
-
-import { selectUserInfo } from "@slices/authSlice";
-import { useSelector } from "react-redux";
-
-import { deployedEnvironment } from "@config/config";
-
-import { SIDEBAR_WIDTH } from "./../../config/ui";
-import { Box, Chip, Menu, MenuItem, Tooltip } from "@mui/material";
-
-import { useAppAuthContext } from "@context/AuthContext";
-import UserImage from "@components/ui/UserImage";
-import { tokens } from "../../theme";
+import Typography from "@mui/material/Typography";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import Wso2Logo from "../../assets/images/wso2-logo.svg";
+import { APP_NAME } from "@config/config";
+import { useAppAuthContext } from "@context/AuthContext";
+import { useAppSelector } from "@slices/store";
+import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
+import { selectUserInfoData } from "@slices/userSlice";
 
-interface HeaderProps {
-  open: boolean;
-  theme: Theme;
-  title: string;
-  email?: string;
-}
-
-const Header = (props: HeaderProps) => {
+const Header = () => {
   const authContext = useAppAuthContext();
+  const theme = useTheme();
   const navigate = useNavigate();
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
-    null
-  );
-
-  const userInfo = useSelector(selectUserInfo);
+  const userInfo = useAppSelector(selectUserInfoData);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -51,59 +41,105 @@ const Header = (props: HeaderProps) => {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+  const getThemeColor = (path: string, fallback: string): string => {
+    try {
+      const color = path.split('.').reduce((o: any, i: string) => o?.[i], theme.palette as any);
+      return typeof color === 'string' ? color : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  };
 
   return (
-    <AppBar position="fixed" open={props.open}>
-      <Toolbar>
-        <Typography
-          variant="h6"
-          noWrap
-          component="div"
+    <Box
+      sx={{
+        zIndex: 2110,
+        backgroundColor: getThemeColor("surface.territory.active", "#ffffff"),
+        boxShadow: theme.shadows[4],
+      }}
+    >
+      <Toolbar
+        variant="dense"
+        sx={{
+          paddingY: 0.3,
+          display: "flex",
+          gap: 0.5,
+          "&.MuiToolbar-root": {
+            pl: 0.3,
+          },
+        }}
+      >
+        <img
+          alt="wso2"
+          style={{
+            height: "40px",
+            maxWidth: "100px",
+          }}
+          onClick={() => navigate("/")}
+          src={Wso2Logo}
+        />
+
+        <Box
           sx={{
-            flexGrow: 1,
-            display: { xs: "none", sm: "block" },
-            fontWeight: 300,
-            fontSize: "1.0rem",
-            // fontFamily: `"Paytone One", sans-serif`,
+            display: "flex",
+            flexDirection: "row",
+            gap: theme.spacing(0.5),
+            width: "100%",
+            alignItems: "center",
+            height: "100%",
           }}
         >
-          {!props.open ? "PAR App" : ""}
-        </Typography>
-
-        {deployedEnvironment !== "Production" && (
-          <Chip
+          <Typography
+            variant="h5"
             sx={{
-              background: tokens(props.theme.palette.mode).customColors.green,
-              color: "white",
+              color: getThemeColor("customText.primary.p1.active", "#000000"),
             }}
-            label={
-              <>
-                env: <b> {deployedEnvironment}</b>{" "}
-              </>
-            }
-            style={{ borderRadius: "5px" }}
-            size="small"
-          />
-        )}
+          >
+            {APP_NAME}
+          </Typography>
+          <BasicBreadcrumbs />
+        </Box>
 
-        <IconButton size="large"></IconButton>
         <Box sx={{ flexGrow: 0 }}>
-          {userInfo && userInfo.email && (
+          {userInfo && (
             <>
-              <Tooltip arrow title="Open settings">
-                <IconButton
-                  onClick={handleOpenUserMenu}
-                  size="small"
-                  sx={{ p: 0 }}
-                >
-                  <UserImage
-                    isRound={true}
-                    email={userInfo.email}
-                    size={45}
-                    name={userInfo.email}
-                  ></UserImage>
-                </IconButton>
-              </Tooltip>
+              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
+                <Box sx={{ width: "fit-content" }}>
+                  <Typography
+                    noWrap
+                    variant="body1"
+                    sx={{
+                      color: getThemeColor("customText.primary.p2.active", "#333333"),
+                    }}
+                  >
+                    {userInfo?.employeeName}
+                  </Typography>
+                  <Typography
+                    noWrap
+                    variant="body2"
+                    sx={{
+                      color: getThemeColor("customText.primary.p3.active", "#666666"),
+                    }}
+                  >
+                    {userInfo?.jobRole}
+                  </Typography>
+                </Box>
+                <Tooltip title="Open settings">
+                  <Avatar
+                    onClick={handleOpenUserMenu}
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      border: 1,
+                      borderColor: getThemeColor("customBorder.territory.active", "#cccccc"),
+                    }}
+                    src={userInfo.employeeThumbnail || ""}
+                    alt={userInfo.employeeName || "Avatar"}
+                  >
+                    {userInfo.employeeName?.charAt(0)}
+                  </Avatar>
+                </Tooltip>
+              </Stack>
 
               <Menu
                 sx={{ mt: "45px" }}
@@ -122,15 +158,6 @@ const Header = (props: HeaderProps) => {
                 onClose={handleCloseUserMenu}
               >
                 <MenuItem
-                  key={"profile"}
-                  onClick={() => {
-                    handleCloseUserMenu();
-                    navigate("/profile");
-                  }}
-                >
-                  <Typography textAlign="center">Profile</Typography>
-                </MenuItem>
-                <MenuItem
                   key={"logout"}
                   onClick={() => {
                     authContext.appSignOut();
@@ -143,39 +170,8 @@ const Header = (props: HeaderProps) => {
           )}
         </Box>
       </Toolbar>
-    </AppBar>
+    </Box>
   );
 };
 
 export default Header;
-
-interface AppBarProps extends MuiAppBarProps {
-  open?: boolean;
-}
-
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== "open",
-})<AppBarProps>(({ theme, open }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  marginLeft: SIDEBAR_WIDTH,
-  color: "white",
-  background:
-    theme.palette.mode === "light"
-      ? tokens(theme.palette.mode).customColors.darkBlue
-      : tokens(theme.palette.mode).customColors.darkGray,
-  boxShadow: "none",
-  borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
-  width: `calc(100% - calc(${theme.spacing(9)} + 1px))`,
-  transition: theme.transitions.create(["width", "margin"], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  ...(open && {
-    marginLeft: SIDEBAR_WIDTH,
-    width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
-    transition: theme.transitions.create(["width", "margin"], {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.enteringScreen,
-    }),
-  }),
-}));
