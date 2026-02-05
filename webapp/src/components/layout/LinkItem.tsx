@@ -19,7 +19,7 @@ import { ChevronUp as ChevronUpIcon } from "lucide-react";
 
 import React from "react";
 
-import { RouteDetail } from "@root/src/types/types";
+import { RouteDetail } from "../../types/types";
 
 interface ListItemLinkProps {
   icon?: React.ReactElement;
@@ -34,6 +34,19 @@ const LinkItem = (props: ListItemLinkProps) => {
   const { icon, label, open, isActive, hasChildren } = props;
   const theme = useTheme();
 
+  // --- HARDCODED COLORS (Matches New Way intent, Safe for Old App) ---
+  const isLight = theme.palette.mode === "light";
+  const colors = {
+    // Inactive Text: Grey
+    text: isLight ? "#666666" : "#a3a3a3",
+    // Active Text: Primary Blue (Light) / Secondary Blue (Dark)
+    textClicked: isLight ? "#021d5f" : "#5686e1",
+    // Active Background: Subtle transparent
+    clickedBg: isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.12)",
+    // Hover Background
+    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
+  };
+
   return (
     <Box
       sx={{
@@ -44,15 +57,13 @@ const LinkItem = (props: ListItemLinkProps) => {
         borderRadius: "8px",
         justifyContent: "space-between",
         transition: "all 0.2s",
-        backgroundColor: isActive ? theme.palette.customNavigation.clickedBg : "transparent",
+        backgroundColor: isActive ? colors.clickedBg : "transparent",
         "&:hover": {
           ...(!isActive && {
-            backgroundColor: theme.palette.customNavigation.hoverBg,
+            backgroundColor: colors.hoverBg,
           }),
         },
-        color: isActive
-          ? theme.palette.customNavigation.textClicked
-          : theme.palette.customNavigation.text 
+        color: isActive ? colors.textClicked : colors.text,
       }}
     >
       <Box
