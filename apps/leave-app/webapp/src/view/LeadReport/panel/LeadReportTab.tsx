@@ -18,26 +18,47 @@ import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { formatDateForApi } from "@root/src/services/leaveService";
 import {
+  fetchLeadReport,
+  resetLeadReportState,
   selectLeadReport,
   selectLeadReportState,
 } from "@root/src/slices/leadReportSlice/leadReport";
-import { useAppSelector } from "@root/src/slices/store";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { State } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
 
 export default function LeadReportTab() {
+  const dispatch = useAppDispatch();
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
 
   const reportData = useAppSelector(selectLeadReport);
   const leadReportState = useAppSelector(selectLeadReportState);
   const loading = leadReportState === State.loading;
+
+  const handleFetchReport = () => {
+    if (startDate && endDate) {
+      dispatch(resetLeadReportState());
+      dispatch(
+        fetchLeadReport({
+          startDate: formatDateForApi(startDate),
+          endDate: formatDateForApi(endDate),
+          isAdminView: false,
+        }),
+      );
+    }
+  };
+
+  useEffect(() => {
+    handleFetchReport();
+  }, []);
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -46,6 +67,7 @@ export default function LeadReportTab() {
         endDate={endDate}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
+        onFetchReport={handleFetchReport}
       />
       <LeadReportTable reportData={reportData} loading={loading} />
     </Stack>
