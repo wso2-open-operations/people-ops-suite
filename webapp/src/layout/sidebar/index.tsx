@@ -43,7 +43,7 @@ const Sidebar = (props: SidebarProps) => {
   // --- HARDCODED COLORS (Derived from Old Theme) ---
   const isLight = theme.palette.mode === "light";
   const colors = {
-    sidebarBg: isLight ? "#ffffff" : "#141414",     // White / Grey 900
+    sidebarBg: isLight ? "#122e36" : "#0a0e0f",     // White / Grey 900
     text: isLight ? "#666666" : "#a3a3a3",          // Grey 500 / Grey 300
     hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
     hoverText: isLight ? "#021d5f" : "#5686e1",     // Primary Blue / Secondary Blue
