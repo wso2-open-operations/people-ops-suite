@@ -22,7 +22,7 @@ import { APIService } from "@root/src/utils/apiService";
 
 import { enqueueSnackbarMessage } from "../commonSlice/common";
 
-import { State } from "../../types/types";
+import { State } from "@/types/types";
 
 interface Invitee {
   nicHash: string;
@@ -102,14 +102,14 @@ export const sendInvitation = createAsyncThunk<
         payload,
         {
           cancelToken: newCancelTokenSource.token,
-        }
+        },
       );
 
       dispatch(
         enqueueSnackbarMessage({
           message: "Invitation sent successfully!",
           type: "success",
-        })
+        }),
       );
 
       return response.data;
@@ -118,12 +118,12 @@ export const sendInvitation = createAsyncThunk<
         enqueueSnackbarMessage({
           message: "An error occurred while sending invitation!",
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue("An error occurred while sending invitation!");
     }
-  }
+  },
 );
 
 export const submitVisitAsync = createAsyncThunk<
@@ -145,7 +145,7 @@ export const submitVisitAsync = createAsyncThunk<
             ...visitData.visitors[0],
             ...visitData.visitDetails,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -157,7 +157,7 @@ export const submitVisitAsync = createAsyncThunk<
         enqueueSnackbarMessage({
           message: "Visitors submitted successfully",
           type: "success",
-        })
+        }),
       );
       return data;
     } catch (error) {
@@ -165,11 +165,11 @@ export const submitVisitAsync = createAsyncThunk<
         enqueueSnackbarMessage({
           message: "Failed to submit visitors",
           type: "error",
-        })
+        }),
       );
       return rejectWithValue("Failed to submit visit");
     }
-  }
+  },
 );
 
 export const getVisitInvitationAsync = createAsyncThunk<
@@ -181,15 +181,15 @@ export const getVisitInvitationAsync = createAsyncThunk<
   async (invitationId, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`
+        `${AppConfig.serviceUrls.invitations}/${invitationId}/authorize`,
       );
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to fetch invitation"
+        error.response?.data?.message || "Failed to fetch invitation",
       );
     }
-  }
+  },
 );
 
 const invitationSlice = createSlice({
@@ -218,7 +218,7 @@ const invitationSlice = createSlice({
         sendInvitation.fulfilled,
         (state, action: PayloadAction<Invitation>) => {
           state.loading = false;
-        }
+        },
       )
       .addCase(sendInvitation.rejected, (state, action) => {
         state.loading = false;
@@ -232,7 +232,7 @@ const invitationSlice = createSlice({
         submitVisitAsync.fulfilled,
         (state, action: PayloadAction<VisitData>) => {
           state.submitState = State.success;
-        }
+        },
       )
       .addCase(submitVisitAsync.rejected, (state, action) => {
         state.submitState = State.failed;
@@ -247,7 +247,7 @@ const invitationSlice = createSlice({
           state.fetchState = State.success;
           state.visitInvitation = action.payload;
           state.error = null;
-        }
+        },
       )
       .addCase(getVisitInvitationAsync.rejected, (state, action) => {
         state.fetchState = State.failed;
