@@ -1,54 +1,36 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+import { Box, Typography } from "@mui/material";
 
-import React from "react";
-import { Grid, Typography } from "@mui/material";
-
-interface StateWithImageProps {
-  message: string;
-  imageUrl: string;
-  hideImage?: boolean;
-}
-
-const StateWithImage = (props: StateWithImageProps) => {
+function StateWithImage(props: { message: string; imageUrl: string; hideImage?: boolean }) {
   return (
-    <>
-      {!props.hideImage && (
-        <Grid
-          item
-          xs={12}
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            marginTop: "100px",
-            height: "180px",
-          }}
-        >
-          <img
-            height={"100%"}
-            src={props.imageUrl}
-            alt="Image"
-            className="image"
-          />
-        </Grid>
-      )}
-      <Grid
-        item
-        xs={12}
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginTop: props.hideImage ? 100 : 30,
-        }}
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+      {!props.hideImage && <img alt="logo" width="140" height="auto" src={props.imageUrl}></img>}
+
+      <Typography
+        variant="h5"
+        sx={(theme) => ({
+          color: theme.palette.grey[500],
+          textAlign: "center",
+        })}
       >
-        <Typography variant="h5">{props.message}</Typography>
-      </Grid>
-    </>
+        {props.message}
+      </Typography>
+    </Box>
   );
-};
+}
 
 export default StateWithImage;
