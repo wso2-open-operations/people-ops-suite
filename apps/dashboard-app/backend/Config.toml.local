@@ -1,6 +1,6 @@
 [sample_app.authorization.authorizedRoles]
-employeeRole = 
-headPeopleOperationsRole =
+EMPLOYEE_PRIVILEGE = 
+ADMIN_PRIVILEGE =
 
 [sample_app.appConfig]
 sampleAppConfig = 
