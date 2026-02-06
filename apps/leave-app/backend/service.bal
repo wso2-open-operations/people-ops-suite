@@ -834,7 +834,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             boolean isLead = empInfo.lead ?: false;
-            if !isAdmin && !isLead {
+            if !(isAdmin || isLead){
                 return <http:Forbidden>{
                     body: {
                         message: "You are not authorized to access leave reports."
