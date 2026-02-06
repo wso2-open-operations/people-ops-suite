@@ -382,5 +382,5 @@ export const SANITIZE_CONFIG = {
     /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
 
-//new ways 
+//new ways s
 export const redirectUrl = "iapm-marketplace-redirect-url";

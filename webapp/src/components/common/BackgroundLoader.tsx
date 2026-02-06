@@ -1,21 +1,28 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import React from "react";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Typography, useTheme } from "@mui/material";
+import { Typography } from "@mui/material";
 import LinearProgress, {
   LinearProgressProps,
 } from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
-import { tokens } from "../../theme";
 
-interface BackgroundLoaderProps {
+const BackgroundLoader = (props: {
   open: boolean;
   message: string | null;
   linearProgress?: {
@@ -23,15 +30,11 @@ interface BackgroundLoaderProps {
     completed: number;
     action?: () => void;
   };
-}
-
-const BackgroundLoader = (props: BackgroundLoaderProps) => {
-  const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
+}) => {
   return (
     <Backdrop
       sx={{
-        color: colors.customColors.white,
+        color: "#fff",
         zIndex: (theme) => theme.zIndex.drawer + 1,
         display: "flex",
         flexDirection: "column",
@@ -63,9 +66,9 @@ const BackgroundLoader = (props: BackgroundLoaderProps) => {
   );
 };
 
-const LinearProgressWithLabel = (
+function LinearProgressWithLabel(
   props: LinearProgressProps & { value: number }
-) => {
+) {
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Box sx={{ width: "100%", mr: 1 }}>
@@ -78,6 +81,6 @@ const LinearProgressWithLabel = (
       </Box>
     </Box>
   );
-};
+}
 
 export default BackgroundLoader;
