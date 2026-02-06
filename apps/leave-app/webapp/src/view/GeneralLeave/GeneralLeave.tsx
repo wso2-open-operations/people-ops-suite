@@ -71,24 +71,15 @@ export default function GeneralLeave() {
     const leaveDays = getLeaveDaysRequested();
     const { leavePolicy, policyAdjustedLeave } = currentYearEntitlement;
 
-    if (selectedLeaveType === LeaveType.CASUAL) {
-      const available = leavePolicy.casual - policyAdjustedLeave.casual;
+    if (selectedLeaveType === LeaveType.CASUAL || selectedLeaveType === LeaveType.ANNUAL) {
+      const available =
+        leavePolicy.casual +
+        leavePolicy.annual -
+        (policyAdjustedLeave.casual + policyAdjustedLeave.annual);
       const remainingAfterRequest = available - leaveDays;
       if (remainingAfterRequest < 0) {
         enqueueSnackbar(
-          `Insufficient casual leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
-          { variant: "error" },
-        );
-        return false;
-      }
-    }
-
-    if (selectedLeaveType === LeaveType.ANNUAL) {
-      const available = leavePolicy.annual - policyAdjustedLeave.annual;
-      const remainingAfterRequest = available - leaveDays;
-      if (remainingAfterRequest < 0) {
-        enqueueSnackbar(
-          `Insufficient annual leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
+          `Insufficient leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
           { variant: "error" },
         );
         return false;

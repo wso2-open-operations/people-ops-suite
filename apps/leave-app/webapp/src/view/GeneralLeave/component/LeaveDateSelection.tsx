@@ -176,11 +176,12 @@ export default function LeaveDateSelection({
   const getAvailableBalance = (): number | null => {
     if (!entitlement) return null;
     // Available balance = total allowed (leavePolicy) - already taken (policyAdjustedLeave)
-    if (selectedLeaveType === LeaveType.CASUAL) {
-      return entitlement.leavePolicy.casual - entitlement.policyAdjustedLeave.casual;
-    }
-    if (selectedLeaveType === LeaveType.ANNUAL) {
-      return entitlement.leavePolicy.annual - entitlement.policyAdjustedLeave.annual;
+    if (selectedLeaveType === LeaveType.CASUAL || selectedLeaveType === LeaveType.ANNUAL) {
+      return (
+        entitlement.leavePolicy.casual +
+        entitlement.leavePolicy.annual -
+        (entitlement.policyAdjustedLeave.casual + entitlement.policyAdjustedLeave.annual)
+      );
     }
     return null;
   };
@@ -200,18 +201,16 @@ export default function LeaveDateSelection({
 
     if (availableBalance !== null) {
       const remainingAfterRequest = availableBalance - leaveDays;
-      const leaveTypeName = selectedLeaveType === LeaveType.CASUAL ? "casual" : "annual";
 
       if (remainingAfterRequest < 0) {
         return {
-          message: `Insufficient ${leaveTypeName} leave. Requesting ${leaveDays} days, only ${availableBalance} available`,
+          message: `Insufficient leave. Requesting ${leaveDays} days, only ${availableBalance} available`,
           severity: "error",
         };
       }
 
-      const leaveTypeNameCapitalized = selectedLeaveType === LeaveType.CASUAL ? "Casual" : "Annual";
       return {
-        message: `${leaveTypeNameCapitalized}: ${leaveDays} day(s) requested, ${remainingAfterRequest} day(s) remaining`,
+        message: `${leaveDays} day(s) requested, ${remainingAfterRequest} day(s) remaining`,
         severity: "success",
       };
     }
