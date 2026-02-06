@@ -21,7 +21,7 @@ import ballerina/sql;
 # + dinnerRequest - Dinner request data
 # + employee - Employee data
 # + return - SQL parameterized query
-isolated function upsertDinnerRequestQuery(string email, DinnerRequest dinnerRequest, Employee employee) 
+isolated function upsertDinnerRequestQuery(string email, DinnerRequestPayload dinnerRequest, Employee employee) 
     returns sql:ParameterizedQuery => `
         INSERT INTO dinner_bookings (
             id,
@@ -65,6 +65,7 @@ isolated function cancelDinnerRequestQuery(string email) returns sql:Parameteriz
 isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery => `
     SELECT 
         id,
+        email,
         meal_option,
         date,
         department,
@@ -84,6 +85,7 @@ isolated function getDinnerRequestByEmailQuery(string email) returns sql:Paramet
 isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQuery => `
     SELECT 
         id,
+        email,
         meal_option,
         date,
         department,
@@ -94,20 +96,6 @@ isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQue
         dinner_bookings 
     WHERE 
         id = ${id} AND is_active = 1 AND date >= CURRENT_DATE 
-`;
-
-# Retrieve dinner request status by email.
-#
-# + email - Employee email
-# + return - SQL parameterized query
-isolated function getDinnerRequestStatusByEmailQuery(string email) returns sql:ParameterizedQuery => `
-    SELECT 
-        id,
-        is_active
-    FROM 
-        dinner_bookings 
-    WHERE 
-        email = ${email} AND date >= CURRENT_DATE 
 `;
 
 # Retrieve all dinner requests.

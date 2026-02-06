@@ -38,7 +38,7 @@ public isolated function getDinnerRequests() returns DinnerRequest[]|error {
 # + dinnerRequest - Dinner request payload
 # + email - Employee email
 # + return - Success result
-public isolated function upsertDinnerRequest(DinnerRequest dinnerRequest, string email) returns error? {
+public isolated function upsertDinnerRequest(DinnerRequestPayload dinnerRequest, string email) returns error? {
     _ = check databaseClient->execute(upsertDinnerRequestQuery(email, dinnerRequest, check people:fetchEmployee(email)));
 }
 
@@ -57,13 +57,4 @@ public isolated function cancelDinnerRequest(string email) returns error? {
 public isolated function getDinnerRequestById(int id) returns DinnerRequest|error? {
     DinnerRequest|error dinnerRequest = databaseClient->queryRow(getDinnerRequestByIdQuery(id));
     return dinnerRequest is sql:NoRowsError ? () : dinnerRequest;
-}
-
-# Get dinner request status by email.
-#
-# + email - Employee email
-# + return - Dinner request status or error
-public isolated function getDinnerRequestStatusByEmail(string email) returns DinnerRequestStatus|error? {
-    DinnerRequestStatus|error existingDinnerRequestStatus = databaseClient->queryRow(getDinnerRequestStatusByEmailQuery(email));
-    return existingDinnerRequestStatus is sql:NoRowsError ? () : existingDinnerRequestStatus;
 }
