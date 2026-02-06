@@ -106,6 +106,7 @@
   },
   "devDependencies": {
     "@types/google-libphonenumber": "^7.4.30",
+    "@types/qrcode": "^1.5.6",
     "react-app-rewired": "^2.2.1"
   }
 }
