@@ -204,15 +204,10 @@ export default function LeaveDateSelection({
 
       if (remainingAfterRequest < 0) {
         return {
-          message: `Insufficient leave. Requesting ${leaveDays} days, only ${availableBalance} available`,
+          message: `Insufficient entitled leaves. Only ${availableBalance} day(s) of annual/casual leave is remaining for the current user.`,
           severity: "error",
         };
       }
-
-      return {
-        message: `${leaveDays} day(s) requested, ${remainingAfterRequest} day(s) remaining`,
-        severity: "success",
-      };
     }
 
     return { message: "Valid date selection", severity: "success" };
@@ -300,6 +295,7 @@ export default function LeaveDateSelection({
           display: "flex",
           width: "100%",
           justifyContent: "center",
+          alignItems: "center",
           px: 2,
           py: 0.5,
           borderRadius: "0.4rem",
