@@ -641,6 +641,7 @@ function CreateVisit() {
           <Grid item xs={12} md={4}>
             <TimePicker
               label="Expected Entry Time"
+              ampm={false}
               value={
                 formik.values.visitDate && formik.values.timeOfEntry
                   ? dayjs(
