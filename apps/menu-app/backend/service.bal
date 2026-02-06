@@ -218,7 +218,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Dinner request data (email, date, meal option)
     # + return - Dinner request success response or error response
     resource function post dinner(http:RequestContext ctx, @http:Payload DinnerRequestPayload payload) 
-        returns http:BadRequest|http:InternalServerError|http:Created {
+        returns http:BadRequest|http:InternalServerError|http:Forbidden|http:Created {
 
         string|http:BadRequest userEmail = authentication:getUserEmailFromRequestContext(ctx);
         if userEmail is http:BadRequest {
@@ -253,7 +253,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             // Ensure the authenticated user owns the dinner request they're trying to update
             if userEmail !== existingDinnerRequest.userEmail {
                 log:printWarn(string `Authorization failed: User ${userEmail} attempted to modify dinner request ${requestId} belonging to ${existingDinnerRequest.userEmail}`);
-                return <http:BadRequest> {
+                return <http:Forbidden> {
                     body:  {
                         message: "You are not authorized to modify this dinner request."
                     }
