@@ -247,9 +247,9 @@ function CreateVisit() {
   }, [dispatch]);
 
   const handleInputChange = useCallback(
-    (_: any, newInputValue: string, reason: string) => {
+    (_: any, newInputValue: string, __: string) => {
       setInputValue(newInputValue);
-      if (reason === "input" && newInputValue.trim() !== currentSearchTerm) {
+      if (newInputValue.trim() !== currentSearchTerm) {
         dispatch(
           fetchEmployees({ searchTerm: newInputValue.trim(), limit: 100 }),
         );
