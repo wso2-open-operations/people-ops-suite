@@ -35,6 +35,7 @@ public type DinnerRequest record {|
     # Request Id 
     int id;
     # User email
+    @sql:Column {name: "email"}
     string userEmail;
     # Meal option
     @sql:Column {name: "meal_option"}
