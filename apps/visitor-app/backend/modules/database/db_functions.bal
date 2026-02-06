@@ -21,33 +21,43 @@ import ballerina/sql;
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    // Encrypt sensitive fields.
-    payload.name = check encrypt(payload.name);
-    payload.nicNumber = check encrypt(payload.nicNumber);
-    string? email = payload.email;
-    payload.email = email is string ? check encrypt(email) : null;
-    payload.contactNumber = check encrypt(payload.contactNumber);
+    string? firstName = payload.firstName;
+    string? lastName = payload.lastName;
+    string? contactNumber = payload.contactNumber;
+
+    payload.firstName = firstName is string ? check encrypt(firstName) : ();
+    payload.lastName = lastName is string ? check encrypt(lastName) : ();
+    payload.contactNumber = contactNumber is string ? check encrypt(contactNumber) : ();
+    payload.email = check encrypt(payload.email);
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
 
 # Fetch Visitor.
 #
-# + hashedNic - Filter :  hashed NIC of the visitor
+# + hashedEmail - Filter :  hashed email of the visitor
 # + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedNic) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByNicQuery(hashedNic));
+public isolated function fetchVisitor(string hashedEmail) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByEmailQuery(hashedEmail));
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
 
-    // Decrypt sensitive fields.
-    visitor.name = check decrypt(visitor.name);
-    visitor.nicNumber = check decrypt(visitor.nicNumber);
-    visitor.contactNumber = check decrypt(visitor.contactNumber);
+    string? first_name = visitor.firstName;
+    string? last_name = visitor.lastName;
+    string? contact_number = visitor.contactNumber;
 
-    string? email = visitor.email;
-    visitor.email = email is string ? check decrypt(email) : null;
+    if first_name is string {
+        visitor.firstName = check decrypt(first_name);
+    }
+    if last_name is string {
+        visitor.lastName = check decrypt(last_name);
+    }
+    if contact_number is string {
+        visitor.contactNumber = check decrypt(contact_number);
+    }
+
+    visitor.email = check decrypt(visitor.email);
 
     return visitor;
 }
@@ -119,40 +129,49 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
     _ = check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
 }
 
-# Fetch visit by ID.
+# Fetch visit by ID or UUID.
 #
 # + visitId - ID of the visit to fetch
+# + uuid - UUID of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int visitId) returns Visit|error? {
-    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId: visitId}));
+public isolated function fetchVisit(int? visitId = (), string? uuid = ()) returns Visit|error? {
+    if visitId is () && uuid is () {
+        return error("Either visitId or uuid must be provided.");
+    }
 
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid}));
     if visit is error {
         return visit is sql:NoRowsError ? () : visit;
     }
 
+    string? firstName = visit.firstName;
+    string? lastName = visit.lastName;
+    string? contactNumber = visit.contactNumber;
+    string? timeOfEntry = visit.timeOfEntry;
+    string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
-    string? email = visit.email;
+
     return {
         id: visit.id,
-        timeOfEntry: visit.timeOfEntry.endsWith(".0")
-            ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
-            : visit.timeOfEntry,
-        timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
-            ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
-            : visit.timeOfDeparture,
-        passNumber: visit.passNumber,
-        nicHash: visit.nicHash,
-        nicNumber: check decrypt(visit.nicNumber),
-        name: check decrypt(visit.name),
-        email: email is () ? () : check decrypt(email),
-        contactNumber: check decrypt(visit.contactNumber),
+        emailHash: visit.emailHash,
         companyName: visit.companyName,
+        passNumber: visit.passNumber,
         whomTheyMeet: visit.whomTheyMeet,
         purposeOfVisit: visit.purposeOfVisit,
         accessibleLocations: accessibleLocations is string ?
             check accessibleLocations.fromJsonStringWithType() : null,
-        invitationId: visit.invitationId,
+        visitDate: visit.visitDate,
+        timeOfEntry: timeOfEntry is string ?
+                timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
+        timeOfDeparture: timeOfDeparture is string ?
+                timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) :
+                timeOfDeparture : (),
         status: visit.status,
+        firstName: firstName is string ? check decrypt(firstName) : (),
+        lastName: lastName is string ? check decrypt(lastName) : (),
+        contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
+        email: check decrypt(visit.email),
+        invitationId: visit.invitationId,
         createdBy: visit.createdBy,
         createdOn: visit.createdOn,
         updatedBy: visit.updatedBy,
@@ -172,27 +191,30 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
     check from VisitRecord visit in resultStream
         do {
             string? accessibleLocations = visit.accessibleLocations;
-            string? email = visit.email;
+            string? timeOfEntry = visit.timeOfEntry;
+            string? timeOfDeparture = visit.timeOfDeparture;
+            string? firstName = visit.firstName;
+            string? lastName = visit.lastName;
+            string? contactNumber = visit.contactNumber;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
-                timeOfEntry: visit.timeOfEntry.endsWith(".0")
-                    ? visit.timeOfEntry.substring(0, visit.timeOfEntry.length() - 2)
-                    : visit.timeOfEntry,
-                timeOfDeparture: visit.timeOfDeparture.endsWith(".0")
-                    ? visit.timeOfDeparture.substring(0, visit.timeOfDeparture.length() - 2)
-                    : visit.timeOfDeparture,
+                timeOfEntry: timeOfEntry is string ?
+                        timeOfEntry.endsWith(".0") ? timeOfEntry.substring(0, timeOfEntry.length() - 2) : timeOfEntry : (),
+                timeOfDeparture: timeOfDeparture is string ?
+                        timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) : timeOfDeparture : (),
                 passNumber: visit.passNumber,
-                nicHash: visit.nicHash,
-                nicNumber: check decrypt(visit.nicNumber),
-                name: check decrypt(visit.name),
-                email: email is () ? () : check decrypt(email),
-                contactNumber: check decrypt(visit.contactNumber),
+                emailHash: visit.emailHash,
+                firstName: firstName is string ? check decrypt(firstName) : (),
+                lastName: lastName is string ? check decrypt(lastName) : (),
+                email: check decrypt(visit.email),
+                contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
                 purposeOfVisit: visit.purposeOfVisit,
                 accessibleLocations: accessibleLocations is string ?
                     check accessibleLocations.fromJsonStringWithType() : null,
+                visitDate: visit.visitDate,
                 invitationId: visit.invitationId,
                 status: visit.status,
                 createdBy: visit.createdBy,
