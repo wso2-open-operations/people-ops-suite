@@ -252,7 +252,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             // Ensure the authenticated user owns the dinner request they're trying to update
             if userEmail !== existingDinnerRequest.userEmail {
-                log:printWarn(string `Authorization failed: User ${userEmail} attempted to modify dinner request ${requestId} belonging to ${existingDinnerRequest.userEmail}`);
+                log:printWarn(string `Authorization failed: User ${userEmail} attempted to modify dinner request ${
+                    requestId} belonging to ${existingDinnerRequest.userEmail}`);
                 return <http:Forbidden> {
                     body:  {
                         message: "You are not authorized to modify this dinner request."
