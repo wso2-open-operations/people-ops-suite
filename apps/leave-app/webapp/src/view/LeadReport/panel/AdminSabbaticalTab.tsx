@@ -68,9 +68,9 @@ export default function AdminSabbaticalTab() {
             labelPlacement="bottom"
             label={
               showAllEmployees ? (
-                <Typography color={theme.palette.text.primary}>All Employees</Typography>
+                <Typography color={theme.palette.text.primary}>Displaying: All Employees</Typography>
               ) : (
-                <Typography color={theme.palette.text.primary}>Subordinates Only</Typography>
+                <Typography color={theme.palette.text.primary}>Displaying: Subordinates Only</Typography>
               )
             }
           />
