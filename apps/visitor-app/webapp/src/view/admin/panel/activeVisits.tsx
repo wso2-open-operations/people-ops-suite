@@ -40,6 +40,7 @@ import {
   Cancel,
   CorporateFare,
   Visibility,
+  Close,
 } from "@mui/icons-material";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import dayjs from "dayjs";
@@ -47,6 +48,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import { useSearchParams } from "react-router-dom";
 
 import {
   RootState,
@@ -64,6 +66,7 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+import Scan from "@view/admin/scan";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -101,8 +104,9 @@ const approvalValidationSchema = Yup.object({
 const ActiveVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, submitState, stateMessage } = useAppSelector(
-    (state: RootState) => state.visit
+    (state: RootState) => state.visit,
   );
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
@@ -116,6 +120,10 @@ const ActiveVisits = () => {
   >([]);
   const dialogContext = useConfirmationModalContext();
 
+  // Check for uuid parameter in URL
+  const uuidParam = searchParams.get("uuid");
+  const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
+
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
 
@@ -125,14 +133,31 @@ const ActiveVisits = () => {
         limit: pageSize,
         offset: page * pageSize,
         statusArray: [VisitStatus.requested, VisitStatus.approved],
-      })
+      }),
     );
-  }, [dispatch, page, pageSize]);
+  }, [dispatch, page, pageSize, isScanModalOpen]);
+
+  // Handle UUID parameter for opening scan modal
+  useEffect(() => {
+    if (uuidParam) {
+      setIsScanModalOpen(true);
+    } else {
+      setIsScanModalOpen(false);
+    }
+  }, [uuidParam]);
+
+  const handleCloseScanModal = () => {
+    // Remove uuid parameter from URL
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("uuid");
+    setSearchParams(newSearchParams);
+    setIsScanModalOpen(false);
+  };
 
   const handleApproveSingleVisit = async (
     visitId: string,
     passNumber: string,
-    accessibleLocations: { floor: string; rooms: string[] }[]
+    accessibleLocations: { floor: string; rooms: string[] }[],
   ) => {
     try {
       const payload = {
@@ -146,13 +171,14 @@ const ActiveVisits = () => {
       await dispatch(visitStatusUpdate(payload));
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
+      handleCloseScanModal();
 
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
           statusArray: [VisitStatus.requested, VisitStatus.approved],
-        })
+        }),
       );
     } catch (error) {
       console.error("Error approving visit:", error);
@@ -181,7 +207,7 @@ const ActiveVisits = () => {
               limit: pageSize,
               offset: page * pageSize,
               statusArray: [VisitStatus.requested, VisitStatus.approved],
-            })
+            }),
           );
         } catch (error) {
           console.error("Error rejecting visit:", error);
@@ -193,7 +219,7 @@ const ActiveVisits = () => {
         label: "Rejection Reason",
         mandatory: true,
         type: "textarea",
-      }
+      },
     );
   };
 
@@ -212,16 +238,17 @@ const ActiveVisits = () => {
         };
 
         await dispatch(visitStatusUpdate(payload));
+        handleCloseScanModal();
         dispatch(
           fetchVisits({
             limit: pageSize,
             offset: page * pageSize,
             statusArray: [VisitStatus.requested, VisitStatus.approved],
-          })
+          }),
         );
       },
       "Confirm",
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -231,14 +258,28 @@ const ActiveVisits = () => {
   };
 
   const showViewAccessibleFloors = (
-    locations: { floor: string; rooms: string[] }[]
+    locations: { floor: string; rooms: string[] }[],
   ) => {
     setAccessibleFloors(locations || []);
     setViewAccessibleFloors(true);
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
+    {
+      field: "firstName",
+      headerName: "First Name",
+      minWidth: 180,
+
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "lastName",
+      headerName: "Last Name",
+      minWidth: 180,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "contactNumber",
       headerName: "Contact Number",
@@ -246,18 +287,38 @@ const ActiveVisits = () => {
       flex: 1,
     },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
       field: "companyName",
       headerName: "Company Name",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "passNumber",
+      headerName: "Pass Number",
+      minWidth: 120,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "timeOfEntry",
       headerName: "Time Of Entry",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
       minWidth: 150,
       flex: 1,
       renderCell: (params) =>
@@ -377,6 +438,48 @@ const ActiveVisits = () => {
         }
       />
 
+      {/* Scan Modal - Shows when uuid parameter is present */}
+      {isScanModalOpen && (
+        <Modal
+          open
+          onClose={handleCloseScanModal}
+          aria-labelledby="scan-visit-modal"
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "50vw",
+              maxWidth: 1200,
+              maxHeight: "90vh",
+              bgcolor: "background.paper",
+              boxShadow: 24,
+              borderRadius: 2,
+              overflowY: "auto",
+            }}
+          >
+            <IconButton
+              onClick={handleCloseScanModal}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                zIndex: 1,
+                bgcolor: "background.paper",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+            <Scan onClose={handleCloseScanModal} />
+          </Box>
+        </Modal>
+      )}
+
       {/* Approval Modal */}
       <Modal
         open={isApprovalModalOpen}
@@ -415,7 +518,7 @@ const ActiveVisits = () => {
               handleApproveSingleVisit(
                 currentVisitId || "",
                 values.passNumber,
-                values.selectedFloorsAndRooms
+                values.selectedFloorsAndRooms,
               );
             }}
           >

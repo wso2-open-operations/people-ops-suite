@@ -56,30 +56,30 @@ public type Visitor record {|
 
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
-    # Nic Hash of the visitor
+    # Encrypted email hash of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The email Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
-    # Name of the visitor
+    string emailHash;
+    # First name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            message: "The first name should be a non-empty string with printable characters."
         }
     }
-    string name;
-    # NIC number of visitor
+    string? firstName = ();
+    # Last name of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC number should be a non-empty string with printable characters."
+            message: "The last name should be a non-empty string with printable characters."
         }
     }
-    string nicNumber;
+    string? lastName = ();
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -87,9 +87,15 @@ public type AddVisitorPayload record {|
             message: "The contact number should be in valid international format."
         }
     }
-    string contactNumber;
+    string? contactNumber = ();
     # Email of the visitor
-    string? email = ();
+    @constraint:String {
+        pattern: {
+            value: EMAIL_REGEX,
+            message: "The email should be a valid email address."
+        }
+    }
+    string email;
 |};
 
 # [Database] Floor record.
@@ -102,55 +108,61 @@ public type Floor record {|
 
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
-    # Nic Hash of the visitor
-    string nicHash;
+    # Email Hash of the visitor
+    string emailHash;
     # Company name of visitor
-    string? companyName;
+    string? companyName = ();
     # Number in the tag given to visitor
-    string passNumber?;
+    string? passNumber = ();
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet = ();
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    time:Utc timeOfEntry;
+    time:Utc? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
-    time:Utc timeOfDeparture;
+    time:Utc? timeOfDeparture = ();
     # Status of the visit
-    Status status;
+    Status? status = ();
+    # Date of the visit [in UTC]
+    string visitDate;
+    # Unique identifier for the visit
+    string uuid;
 |};
 
 # [Database] Visit record.
 public type VisitRecord record {|
     *AuditFields;
-    # Nic Hash of the visitor
-    string nicHash;
     # Unique identifier for the visit
     int id;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # First name of the visitor
+    string? firstName;
+    # Last name of the visitor
+    string? lastName;
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber;
+    # Email Hash of the visitor
+    string emailHash;
     # Email of the visitor
-    string? email = ();
+    string email;
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet;
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit;
     # The floors and rooms that the visitor can access
     string? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    string? timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    string? timeOfDeparture;
     # Invitation ID associated with the visit
     int? invitationId;
     # Status of the visit
@@ -164,34 +176,36 @@ public type Visit record {|
     *AuditFields;
     # Unique identifier for the visit
     int id;
-    # Nic Hash of the visitor
-    string nicHash;
+    # Email Hash of the visitor
+    string emailHash;
     # Company name of visitor
-    string? companyName;
+    string? companyName = ();
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet = ();
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    string? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    string? timeOfDeparture = ();
     # Status of the visit
     Status status;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # First name of the visitor
+    string? firstName = ();
+    # Last name of the visitor
+    string? lastName = ();
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber = ();
     # Email of the visitor
-    string? email = ();
+    string email;
     # Invitation ID associated with the visit
-    int? invitationId;
+    int? invitationId = ();
 |};
 
 # Response Record for Visits.
@@ -305,4 +319,6 @@ public type VisitFilters record {|
     int? 'limit = DEFAULT_LIMIT;
     # Offset for pagination
     int? offset = ();
+    # UUID of the visit
+    string? uuid = ();
 |};

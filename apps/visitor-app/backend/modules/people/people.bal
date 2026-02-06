@@ -27,3 +27,38 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
     Employee? employee = employeeResponse.data.employee;
     return employee;
 }
+
+# Filter basic employee data.
+#
+# + search - Search term
+# + 'limit - pagination limit
+# + offset - pagination offset
+# + return - Employees info
+public isolated function getEmployees(string search, int 'limit, int offset) returns EmployeeBasic[]|error {
+
+    string term = search.trim();
+
+    string document = string `
+        query getAllEmployees($filter: EmployeeFilter!, $limit: Int, $offset: Int) {
+        employees(filter: $filter, limit: $limit, offset: $offset) {
+            workEmail,     
+            firstName,
+            lastName, 
+            employeeThumbnail 
+    }}
+    `;
+
+    EmployeeFilter filter = {
+        employeeStatus: ["ACTIVE", "MARKED LEAVER"],
+        employmentType: ["PERMANENT", "CONSULTANCY", "INTERNSHIP", "PROBATION"],
+        emailSearchString: term
+    };
+
+    EmployeesResponse response = check hrClient->execute(document, {
+        filter,
+        'limit,
+        offset
+    });
+
+    return response.data.employees;
+}

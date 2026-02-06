@@ -28,6 +28,8 @@ interface VisitState {
   state: State;
   submitState: State;
   visits: FetchVisitsResponse | null;
+  currentVisit: Visit | null;
+  currentVisitState: State;
   stateMessage: string | null;
   errorMessage: string | null;
   backgroundProcess: boolean;
@@ -40,30 +42,34 @@ export interface FloorRoom {
 }
 
 export interface AddVisitPayload {
-  nicHash: string;
-  companyName: string | null;
+  companyName?: string;
   passNumber?: string;
-  whomTheyMeet: string;
-  purposeOfVisit: string;
+  whomTheyMeet?: string;
+  purposeOfVisit?: string;
   accessibleLocations?: FloorRoom[] | null;
-  timeOfEntry: string;
-  timeOfDeparture: string;
+  timeOfEntry?: string;
+  timeOfDeparture?: string;
+  emailHash: string;
+  visitDate: string;
+  uuid: string;
+  qrCode?: number[];
 }
 
 export interface Visit {
   id: number;
-  name: string;
-  nicNumber: string;
-  contactNumber: string;
+  firstName: string | null;
+  lastName: string | null;
+  visitDate: string;
+  contactNumber: string | null;
   email: string;
-  nicHash: string;
-  companyName: string;
-  passNumber: string;
-  whomTheyMeet: string;
-  purposeOfVisit: string;
+  emailHash: string;
+  companyName: string | null;
+  passNumber: string | null;
+  whomTheyMeet: string | null;
+  purposeOfVisit: string | null;
   accessibleLocations: FloorRoom[] | null;
-  timeOfEntry: string;
-  timeOfDeparture: string;
+  timeOfEntry: string | null;
+  timeOfDeparture: string | null;
   status: string;
   createdBy: string;
   createdOn: string;
@@ -89,6 +95,8 @@ const initialState: VisitState = {
   state: State.idle,
   submitState: State.idle,
   visits: null,
+  currentVisit: null,
+  currentVisitState: State.idle,
   stateMessage: null,
   errorMessage: null,
   backgroundProcess: false,
@@ -115,7 +123,7 @@ export const addVisit = createAsyncThunk(
                 response.data.message ||
                 "Your visit has been added successfully!",
               type: "success",
-            })
+            }),
           );
           resolve(response.data);
         })
@@ -127,12 +135,12 @@ export const addVisit = createAsyncThunk(
                   ? error.response?.data?.message
                   : "An error occurred while adding visit!",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 export const fetchVisits = createAsyncThunk(
@@ -149,7 +157,7 @@ export const fetchVisits = createAsyncThunk(
       inviter?: string;
       statusArray?: string[];
     },
-    { dispatch, rejectWithValue }
+    { dispatch, rejectWithValue },
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
@@ -178,12 +186,44 @@ export const fetchVisits = createAsyncThunk(
                   ? error.response?.data?.message
                   : "An unknown error occurred.",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
+);
+
+export const fetchSingleVisit = createAsyncThunk(
+  "visit/fetchSingleVisit",
+  async (uuid: string, { dispatch, rejectWithValue }) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<Visit>((resolve, reject) => {
+      APIService.getInstance()
+        .get(`${AppConfig.serviceUrls.visits}/${uuid}`, {
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            return rejectWithValue("Request canceled");
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? error.response?.data?.message
+                  : "An error occurred while fetching visit details!",
+              type: "error",
+            }),
+          );
+          reject(error);
+        });
+    });
+  },
 );
 
 export const visitStatusUpdate = createAsyncThunk(
@@ -203,14 +243,14 @@ export const visitStatusUpdate = createAsyncThunk(
           },
           {
             cancelToken: newCancelTokenSource.token,
-          }
+          },
         )
         .then((response) => {
           dispatch(
             enqueueSnackbarMessage({
               message: `Visit status updated to "${payload.status}" successfully!`,
               type: "success",
-            })
+            }),
           );
           resolve(response.data);
         })
@@ -221,12 +261,12 @@ export const visitStatusUpdate = createAsyncThunk(
                 error.response?.data?.message ??
                 "An error occurred while updating visit status!",
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 const VisitSlice = createSlice({
@@ -268,7 +308,7 @@ const VisitSlice = createSlice({
           state.state = State.success;
           state.visits = action.payload;
           state.stateMessage = "Your visits have been fetched successfully!";
-        }
+        },
       )
       .addCase(fetchVisits.rejected, (state, action) => {
         state.state = State.failed;
@@ -276,6 +316,28 @@ const VisitSlice = createSlice({
           "Oops! Something went wrong while fetching visits!";
         state.errorMessage =
           (action.payload as string) || "Failed to fetch visits";
+      })
+      .addCase(fetchSingleVisit.pending, (state) => {
+        state.currentVisitState = State.loading;
+        state.currentVisit = null;
+        state.stateMessage = "Loading visit details...";
+        state.errorMessage = null;
+      })
+      .addCase(
+        fetchSingleVisit.fulfilled,
+        (state, action: PayloadAction<Visit>) => {
+          state.currentVisitState = State.success;
+          state.currentVisit = action.payload;
+          state.stateMessage = "Visit details loaded successfully!";
+          state.errorMessage = null;
+        },
+      )
+      .addCase(fetchSingleVisit.rejected, (state, action) => {
+        state.currentVisitState = State.failed;
+        state.currentVisit = null;
+        state.stateMessage = "Failed to load visit details!";
+        state.errorMessage =
+          (action.payload as string) || "Failed to fetch visit";
       })
       .addCase(visitStatusUpdate.pending, (state) => {
         state.submitState = State.loading;
@@ -286,7 +348,7 @@ const VisitSlice = createSlice({
         (state, action: PayloadAction<{ message: string }>) => {
           state.submitState = State.success;
           state.stateMessage = action.payload.message;
-        }
+        },
       )
       .addCase(visitStatusUpdate.rejected, (state, action) => {
         state.submitState = State.failed;
