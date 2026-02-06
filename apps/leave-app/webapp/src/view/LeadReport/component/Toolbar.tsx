@@ -15,7 +15,8 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Stack } from "@mui/material";
+import { Button, FormControlLabel, Stack, Switch, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
@@ -30,6 +31,9 @@ interface ToolbarProps {
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
   onFetchReport: () => void;
+  showToggle?: boolean;
+  toggleChecked?: boolean;
+  onToggleChange?: (checked: boolean) => void;
 }
 
 export default function Toolbar({
@@ -38,7 +42,11 @@ export default function Toolbar({
   onStartDateChange,
   onEndDateChange,
   onFetchReport,
+  showToggle = false,
+  toggleChecked = true,
+  onToggleChange,
 }: ToolbarProps) {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const leadReportState = useAppSelector(selectLeadReportState);
   const loading = leadReportState === State.loading;
@@ -59,18 +67,41 @@ export default function Toolbar({
 
   return (
     <Stack gap="1.5rem" width="100%">
-      <Stack direction="row" width="100%" alignItems="center">
+      <Stack direction="row" width="100%" alignItems="center" justifyContent="space-between">
+        {showToggle && onToggleChange ? (
+          <FormControlLabel
+            control={
+              <Switch checked={toggleChecked} onChange={(e) => onToggleChange(e.target.checked)} />
+            }
+            labelPlacement="bottom"
+            label={
+              toggleChecked ? (
+                <Typography color={theme.palette.text.primary}>
+                  Displaying: All Employees
+                </Typography>
+              ) : (
+                <Typography color={theme.palette.text.primary}>
+                  Displaying: Subordinates Only
+                </Typography>
+              )
+            }
+          />
+        ) : (
+          <div />
+        )}
         <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
           <DatePicker
             label="From"
             value={startDate}
             onChange={onStartDateChange}
+            format="YYYY-MM-DD"
             sx={{ minWidth: 200 }}
           />
           <DatePicker
             label="To"
             value={endDate}
             onChange={onEndDateChange}
+            format="YYYY-MM-DD"
             sx={{ minWidth: 200 }}
           />
           <Button

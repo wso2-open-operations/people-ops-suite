@@ -14,12 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { CircularProgress, FormControlLabel, Stack, Switch, Typography } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
+import { CircularProgress, Stack } from "@mui/material";
+import { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
 
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { formatDateForApi } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
 import {
   fetchLeaveHistory,
@@ -29,53 +31,51 @@ import {
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import { LeaveType, State, Status } from "@root/src/types/types";
+import Toolbar from "@root/src/view/LeadReport/component/Toolbar";
 import ApprovalHistoryTable from "@root/src/view/SabbaticalLeave/component/ApprovalHistoryTable";
 
 export default function AdminSabbaticalTab() {
-  const theme = useTheme();
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const loading = leaveState === State.loading;
-  const [showAllEmployees, setShowAllEmployees] = useState(false);
+  const [showAllEmployees, setShowAllEmployees] = useState(true);
+  const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
+  const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
 
   const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
-  useEffect(() => {
-    if (userInfo?.workEmail) {
+  const handleFetchReport = () => {
+    if (userInfo?.workEmail && startDate && endDate) {
       dispatch(
         fetchLeaveHistory({
           leaveCategory: [LeaveType.SABBATICAL],
           statuses: [Status.PENDING, Status.APPROVED, Status.REJECTED, Status.CANCELLED],
+          startDate: formatDateForApi(startDate),
+          endDate: formatDateForApi(endDate),
           ...(showAllEmployees ? {} : { approverEmail: userInfo.workEmail }),
         }),
       );
     }
-  }, [dispatch, userInfo?.workEmail, showAllEmployees]);
+  };
+
+  useEffect(() => {
+    handleFetchReport();
+  }, [userInfo?.workEmail, showAllEmployees]);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      {isPeopleOpsTeam && (
-        <Stack direction="row" justifyContent="flex-end">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={showAllEmployees}
-                onChange={(e) => setShowAllEmployees(e.target.checked)}
-              />
-            }
-            labelPlacement="bottom"
-            label={
-              showAllEmployees ? (
-                <Typography color={theme.palette.text.primary}>Displaying: All Employees</Typography>
-              ) : (
-                <Typography color={theme.palette.text.primary}>Displaying: Subordinates Only</Typography>
-              )
-            }
-          />
-        </Stack>
-      )}
+      <Toolbar
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onFetchReport={handleFetchReport}
+        showToggle={isPeopleOpsTeam}
+        toggleChecked={showAllEmployees}
+        onToggleChange={setShowAllEmployees}
+      />
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">
           <CircularProgress size={30} />
