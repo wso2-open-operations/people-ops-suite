@@ -6,7 +6,24 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 import { PaletteMode } from "@mui/material";
+import designTokens from "./styles/design-tokens.json";
+// Extract font/typography tokens
+const extractTypography = () => {
+  const { font } = designTokens;
 
+  return {
+    h1: font.h1.value,
+    h2: font.h2.value,
+    h3: font.h3.value,
+    h4: font.h4.value,
+    h5: font.h5.value,
+    h6: font.h6.value,
+    body1: font["p-r"].value,
+    body2: font["p-m"].value,
+    caption: font["p-s"].value,
+    overline: font["p-xs"].value,
+  };
+};
 // color design tokens export
 export const tokens = (mode: PaletteMode) => ({
   ...(mode === "dark"
@@ -175,6 +192,7 @@ export const tokens = (mode: PaletteMode) => ({
 
 // mui theme settings
 export const themeSettings = (mode: PaletteMode) => {
+    const typography = extractTypography();
   const colors = tokens(mode);
   return {
     palette: {
@@ -289,7 +307,10 @@ export const themeSettings = (mode: PaletteMode) => {
         fontSize: 20,
       },
       h5: {
-        fontSize: 16,
+        fontSize: typography.h5.fontSize,
+        fontWeight: typography.h5.fontWeight,
+        lineHeight: `${typography.h5.lineHeight}px`,
+        letterSpacing: `${typography.h5.letterSpacing}px`,
       },
       h6: {
         fontSize: 14,

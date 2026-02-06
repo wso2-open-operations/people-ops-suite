@@ -34,17 +34,12 @@ const LinkItem = (props: ListItemLinkProps) => {
   const { icon, label, open, isActive, hasChildren } = props;
   const theme = useTheme();
 
-  // --- HARDCODED COLORS (Matches New Way intent, Safe for Old App) ---
-  const isLight = theme.palette.mode === "light";
+  // --- HARDCODED WHITE COLORS ---
   const colors = {
-    // Inactive Text: Grey
-    text: isLight ? "#666666" : "#a3a3a3",
-    // Active Text: Primary Blue (Light) / Secondary Blue (Dark)
-    textClicked: isLight ? "#021d5f" : "#5686e1",
-    // Active Background: Subtle transparent
-    clickedBg: isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.12)",
-    // Hover Background
-    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
+    text: "#ffffff",
+    textClicked: "#ffffff",
+    clickedBg: "rgba(255, 255, 255, 0.1)",
+    hoverBg: "rgba(255, 255, 255, 0.05)",
   };
 
   return (
@@ -58,12 +53,21 @@ const LinkItem = (props: ListItemLinkProps) => {
         justifyContent: "space-between",
         transition: "all 0.2s",
         backgroundColor: isActive ? colors.clickedBg : "transparent",
+        color: colors.text,
+        
         "&:hover": {
           ...(!isActive && {
             backgroundColor: colors.hoverBg,
           }),
         },
-        color: isActive ? colors.textClicked : colors.text,
+
+        "& .MuiSvgIcon-root": {
+          color: "#ffffff",
+        },
+        "& svg": {
+          color: "#ffffff",
+          stroke: "#ffffff"
+        }
       }}
     >
       <Box
@@ -92,6 +96,7 @@ const LinkItem = (props: ListItemLinkProps) => {
               fontWeight: 500,
               lineHeight: "150%",
               letterSpacing: "-0.03em",
+              color: "#ffffff"
             }}
           >
             {label}

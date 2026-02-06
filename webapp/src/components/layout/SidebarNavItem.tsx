@@ -35,14 +35,11 @@ function SidebarNavItem({
 }) {
   const theme = useTheme();
 
-  const isLight = theme.palette.mode === "light";
+  // --- HARDCODED WHITE TOOLTIP COLORS ---
   const colors = {
-    // Tooltip Background: Dark Grey (matches neutral[1700] intent)
-    tooltipBg: "#333333", 
-    // Tooltip Text: White
+    tooltipBg: "#333333",
     tooltipText: "#ffffff",
-    // Border for nested items: Light Grey / Dark Grey
-    borderLeft: isLight ? "#e0e0e0" : "#525252" 
+    borderLeft: "rgba(255, 255, 255, 0.12)"
   };
 
   return (
@@ -83,7 +80,12 @@ function SidebarNavItem({
         {route.element ? (
           <Link
             to={route.path}
-            style={{ width: "100%", display: "block", textDecoration: "none" }}
+            style={{
+              width: "100%",
+              display: "block",
+              textDecoration: "none",
+              color: "inherit"
+            }}
             onClick={onClick}
           >
             <LinkItem
@@ -104,6 +106,7 @@ function SidebarNavItem({
               border: "none",
               background: "none",
               padding: 0,
+              color: "inherit"
             }}
             onClick={onClick}
           >
