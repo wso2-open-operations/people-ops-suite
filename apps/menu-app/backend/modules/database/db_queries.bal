@@ -65,6 +65,7 @@ isolated function cancelDinnerRequestQuery(string email) returns sql:Parameteriz
 isolated function getDinnerRequestByEmailQuery(string email) returns sql:ParameterizedQuery => `
     SELECT 
         id,
+        email,
         meal_option,
         date,
         department,
@@ -84,6 +85,7 @@ isolated function getDinnerRequestByEmailQuery(string email) returns sql:Paramet
 isolated function getDinnerRequestByIdQuery(int id) returns sql:ParameterizedQuery => `
     SELECT 
         id,
+        email,
         meal_option,
         date,
         department,
