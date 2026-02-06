@@ -20,10 +20,9 @@ import visitor.people;
 
 import ballerina/cache;
 import ballerina/http;
-import ballerina/lang.array;
+import ballerina/lang.regexp;
 import ballerina/log;
 import ballerina/time;
-import ballerina/uuid;
 
 configurable string webAppUrl = ?;
 
@@ -104,11 +103,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Fetches a specific visitor by hashed NIC/Passport number.
+    # Fetches a specific visitor by hashed Email.
     #
-    # + hashedNic - Hashed NIC number of the visitor
+    # + hashedEmail - Hashed Email of the visitor
     # + return - Visitor or error
-    resource function get visitors/[string hashedNic](http:RequestContext ctx)
+    resource function get visitors/[string hashedEmail](http:RequestContext ctx)
         returns database:Visitor|http:InternalServerError|http:NotFound {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -121,7 +120,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Visitor|error? visitor = database:fetchVisitor(hashedNic);
+        database:Visitor|error? visitor = database:fetchVisitor(hashedEmail);
         if visitor is error {
             string customError = "Error occurred while fetching visitor!";
             log:printError(customError, visitor);
@@ -132,7 +131,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visitor is () {
-            log:printError(string `No visitor information found for the hashed NIC: ${hashedNic}!`);
+            log:printError(string `No visitor information found for the hashed Email: ${hashedEmail}!`);
             return <http:NotFound>{
                 body: {
                     message: "No visitor found!"
@@ -148,7 +147,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
-        returns http:Created|http:InternalServerError {
+        returns http:Created|http:InternalServerError|http:Conflict {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -194,55 +193,32 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        time:Utc|error idealEntryTime = time:utcFromString(payload.timeOfEntry + ".000Z");
-        if idealEntryTime is error {
-            string customError = "Error occurred while parsing the visit entry time!";
-            log:printError(customError, idealEntryTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        time:Utc|error idealDepartureTime = time:utcFromString(payload.timeOfDeparture + ".000Z");
-        if idealDepartureTime is error {
-            string customError = "Error occurred while parsing the visit departure time!";
-            log:printError(customError, idealDepartureTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
+        string? timeOfEntry = payload.timeOfEntry;
+        string? timeOfDeparture = payload.timeOfDeparture;
+
+        time:Utc|error? idealEntryTime = ();
+        time:Utc|error? idealDepartureTime = ();
+
+        if timeOfEntry is string {
+            idealEntryTime = time:utcFromString(timeOfEntry);
         }
 
-        time:Utc exactEntryTime = idealEntryTime;
-        // Determine visit status based on user role.
-        database:Status visitStatus = database:REQUESTED;
-        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
-            visitStatus = database:APPROVED; // Set status to APPROVED for admin users.
-            exactEntryTime = time:utcNow(); // Override entry time to current time for approved visits.
-            if payload.passNumber !is string {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Pass number is required when creating an approved visit!"
-                    }
-                };
-            }
-            if payload.accessibleLocations !is database:Floor[] {
-                return <http:BadRequest>{
-                    body: {
-                        message: "At least one accessible location is required when creating an approved visit!"
-                    }
-                };
-            }
-        } else {
-            // Sanitize fields not required for non-admin users.
-            payload.passNumber = ();
-            payload.accessibleLocations = ();
+        if timeOfDeparture is string {
+            idealDepartureTime = time:utcFromString(timeOfDeparture);
+        }
+
+        if idealEntryTime is error || idealDepartureTime is error {
+            string customError = "Error occurred while parsing the visit entry/departure time!";
+            log:printError(customError);
+            return <http:BadRequest>{
+                body: {
+                    message: customError
+                }
+            };
         }
 
         // Verify existing visitor.
-        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.nicHash);
+        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.emailHash);
         if existingVisitor is error {
             string customError = "Error occurred while fetching existing visitor!";
             log:printError(customError, existingVisitor);
@@ -255,24 +231,25 @@ service http:InterceptableService / on new http:Listener(9090) {
         if existingVisitor is () {
             return <http:BadRequest>{
                 body: {
-                    message: "No visitor found with the provided NIC hash!"
+                    message: "No visitor found with the provided email hash!"
                 }
             };
 
         }
 
-        error? visitError = database:addVisit(
-                {
-                    nicHash: payload.nicHash,
-                    companyName: payload.companyName,
-                    passNumber: payload.passNumber,
-                    whomTheyMeet: payload.whomTheyMeet,
-                    purposeOfVisit: payload.purposeOfVisit,
-                    accessibleLocations: payload.accessibleLocations,
-                    timeOfEntry: exactEntryTime,
-                    timeOfDeparture: idealDepartureTime,
-                    status: visitStatus
-                }, invokerInfo.email, invokerInfo.email);
+        error? visitError = database:addVisit({
+                                                  emailHash: payload.emailHash,
+                                                  companyName: payload.companyName,
+                                                  passNumber: payload.passNumber,
+                                                  whomTheyMeet: payload.whomTheyMeet,
+                                                  purposeOfVisit: payload.purposeOfVisit,
+                                                  accessibleLocations: payload.accessibleLocations,
+                                                  timeOfEntry: timeOfEntry is string ? idealEntryTime : (),
+                                                  timeOfDeparture: timeOfDeparture is string ? idealDepartureTime : (),
+                                                  status: database:REQUESTED,
+                                                  visitDate: payload.visitDate,
+                                                  uuid: payload.uuid
+                                              }, invokerInfo.email, invokerInfo.email);
         if visitError is error {
             string customError = "Error occurred while adding visit!";
             log:printError(customError, visitError);
@@ -283,55 +260,153 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string? visitorEmail = existingVisitor.email;
-        string? passNumber = payload.passNumber;
-        database:Floor[]? accessibleLocations = payload.accessibleLocations;
-        if visitorEmail is string && visitStatus == database:APPROVED && passNumber is string &&
-                accessibleLocations is database:Floor[] {
-
-            string accessibleLocationString = organizeLocations(accessibleLocations);
-
-            // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
-            string|error formattedFromDate = formatDateTime(payload.timeOfEntry, "Asia/Colombo");
+        string|error formattedFromDate = "N/A";
+        if timeOfEntry is string {
+            formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo", false);
             if formattedFromDate is error {
                 string customError = "Error occurred while formatting the visit start time!";
                 log:printError(customError, formattedFromDate);
             }
-            string|error formattedToDate = formatDateTime(payload.timeOfDeparture, "Asia/Colombo");
+        }
+
+        string|error formattedToDate = "N/A";
+        if timeOfDeparture is string {
+            formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
             if formattedToDate is error {
                 string customError = "Error occurred while formatting the visit end time!";
                 log:printError(customError, formattedToDate);
             }
-            string|error content = email:bindKeyValues(email:visitorApproveTemplate,
-                    {
-                        "TIME": time:utcToEmailString(time:utcNow()),
-                        "EMAIL": visitorEmail,
-                        "NAME": generateSalutation(existingVisitor.name),
-                        "TIME_OF_ENTRY": formattedFromDate is error ? payload.timeOfEntry + "(UTC)" : formattedFromDate,
-                        "TIME_OF_DEPARTURE": formattedToDate is error ?
-                            payload.timeOfDeparture + "(UTC)" : formattedToDate,
-                        "ALLOWED_FLOORS": accessibleLocationString,
-                        "PASS_NUMBER": passNumber.toString(),
-                        "CONTACT_EMAIL": email:contactUsEmail,
-                        "YEAR": time:utcToCivil(time:utcNow()).year.toString()
-                    });
-            if content is error {
-                string customError = "An error occurred while binding values to the email template!";
-                log:printError(customError, content);
-            } else {
-                error? emailError = email:sendEmail(
-                            {
-                            to: [visitorEmail],
-                            'from: email:fromEmailAddress,
-                            subject: email:VISIT_ACCEPTED_SUBJECT,
-                            template: content,
-                            cc: [email:receptionEmail]
-                        });
-                if emailError is error {
-                    string customError = "An error occurred while sending the approval email!";
-                    log:printError(customError, emailError);
-                }
+        }
+
+        string? firstName = existingVisitor.firstName;
+        string? lastName = existingVisitor.lastName;
+        string visitorEmail = existingVisitor.email;
+        string? purposeOfVisit = payload.purposeOfVisit;
+        string? whomTheyMeet = payload.whomTheyMeet;
+        database:Floor[]? accessibleLocations = payload.accessibleLocations;
+        string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+            organizeLocations(accessibleLocations) : ();
+
+        if whomTheyMeet is string {
+            people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
+            if hostEmployee is error {
+                string customError = "An error occurred while fetching host employee details!";
+                log:printError(customError, hostEmployee);
             }
+            if hostEmployee is () {
+                string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
+                log:printError(customError);
+            }
+            if hostEmployee is people:Employee {
+                whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
+            }
+        }
+        string|error content = email:bindKeyValues(
+                email:inviteTemplate,
+                {
+                    NAME: firstName is string && lastName is string ?
+                        generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                    VISIT_DATE: payload.visitDate,
+                    TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                    TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                    PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Purpose of Visit :</strong>
+                                  <span>${purposeOfVisit}</span>
+                                </p>
+                              </li>` : "",
+                    WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Host :</strong>
+                                  <span>${whomTheyMeet}</span>
+                                </p>
+                              </li>` : "",
+                    ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
+                              </li>` : "",
+                    CONTACT_EMAIL: email:contactUsEmail,
+                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
+                }
+        );
+
+        if content is error {
+            string customError = "An error occurred while binding values to the email template!";
+            log:printError(customError, content);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        error? emailError = email:sendEmail({
+                                                attachments: [
+                                                    {
+                                                        attachment: payload.qrCode,
+                                                        contentName: "visitor-pass.png",
+                                                        contentType: "image/png"
+                                                    }
+                                                ],
+                                                to: [existingVisitor.email],
+                                                'from: email:fromEmailAddress,
+                                                subject: email:VISIT_INVITATION_SUBJECT,
+                                                template: content,
+                                                cc: [email:receptionEmail]
+                                            });
+
+        if emailError is error {
+            string customError = "Error occurred while sending the email!";
+            log:printError(customError, emailError);
         }
 
         return <http:Created>{
@@ -389,361 +464,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return visitsResponse;
     }
-
-    # Create a new invitation.
-    #
-    # + payload - Payload containing the invitation details
-    # + return - Successfully created or error
-    resource function post invitations(http:RequestContext ctx, AddInvitationPayload payload)
-        returns http:Created|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if invokerInfo is error {
-            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
-            return <http:InternalServerError>{
-                body: {
-                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
-        }
-
-        string encodeString = array:toBase64((uuid:createType4AsString()).toBytes());
-        error? invitationError = database:addInvitation({...payload, isActive: true}, invokerInfo.email, encodeString);
-
-        if invitationError is error {
-            string customError = "Error occurred while creating invitation!";
-            log:printError(customError, invitationError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        string|error content = email:bindKeyValues(
-                email:inviteTemplate,
-                {
-                    LINK: webAppUrl + "/external/" + "?token=" + encodeString,
-                    CONTACT_EMAIL: email:contactUsEmail,
-                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
-                }
-        );
-
-        if content is error {
-            string customError = "An error occurred while binding values to the email template!";
-            log:printError(customError, content);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        error? emailError = email:sendEmail({
-                                                to: [payload.inviteeEmail],
-                                                'from: email:fromEmailAddress,
-                                                subject: email:VISIT_INVITATION_SUBJECT,
-                                                template: content,
-                                                cc: [email:receptionEmail]
-                                            });
-
-        if emailError is error {
-            string customError = "Error occurred while sending the email!";
-            log:printError(customError, emailError);
-        }
-
-        return <http:Created>{
-            body: {
-                message: "Invitation created successfully!"
-            }
-        };
-    }
-
-    # Fetch invitation details using the encoded value.
-    #
-    # + encodeValue - Encoded value from the invitation link
-    # + return - Invitation details or error
-    resource function post invitations/[string encodeValue]/authorize()
-        returns http:Ok|http:InternalServerError|http:Unauthorized|http:BadRequest {
-
-        database:Invitation|error? invitation = database:fetchInvitation(encodeValue);
-        if invitation is () {
-            return <http:BadRequest>{
-                body: {
-                    message: "Invalid invitation link!"
-                }
-            };
-        }
-        if invitation is error {
-            string customError = "Error occurred while fetching invitation!";
-            log:printError(customError, invitation);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        if invitation.active == false {
-            return <http:Unauthorized>{
-                body: {
-                    message: "Invitation is no longer active!"
-                }
-            };
-        }
-
-        database:VisitsResponse|error visitsResponse = database:fetchVisits({invitationId: invitation.invitationId});
-        if visitsResponse is error {
-            string customError = "Error occurred while fetching visits for this invitation!";
-            log:printError(customError, visitsResponse);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        database:AddVisitorPayload[] inviteesList = from database:Visit visit in visitsResponse.visits
-            select {
-                nicHash: visit.nicHash,
-                name: visit.name,
-                email: visit.email,
-                contactNumber: visit.contactNumber,
-                nicNumber: visit.nicNumber
-            };
-
-        if invitation.'type == "LK-QR" {
-            invitation.invitees = [];
-        } else {
-            invitation.invitees = inviteesList;
-        }
-
-        return <http:Ok>{
-            body: invitation
-        };
-    };
-
-    # Fill an invitation by adding a visitor and a visit.
-    #
-    # + encodeValue - Encoded value from the invitation link
-    # + payload - Payload containing the visitor details
-    # + return - Successfully created or error
-    resource function post invitations/[string encodeValue]/fill(FillInvitationPayload payload)
-        returns http:Created|http:BadRequest|http:InternalServerError {
-
-        // Retrieve invitation details
-        database:Invitation|error? invitation = database:fetchInvitation(encodeValue);
-        if invitation is () {
-            return <http:BadRequest>{
-                body: {
-                    message: "Invalid invitation link!"
-                }
-            };
-        }
-        if invitation is error {
-            string customError = "Error occurred while fetching invitation!";
-            log:printError(customError, invitation);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        if invitation.active == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Invitation is no longer active!"
-                }
-            };
-        }
-
-        database:VisitInfo? invitationVisitInfo = invitation.visitInfo;
-        database:VisitInfo newVisitInfo = {
-            companyName: payload.companyName,
-            whomTheyMeet: payload.whomTheyMeet,
-            purposeOfVisit: payload.purposeOfVisit,
-            timeOfEntry: payload.timeOfEntry,
-            timeOfDeparture: payload.timeOfDeparture
-        };
-
-        time:Utc|error idealEntryTime = time:utcFromString(payload.timeOfEntry + ".000Z");
-        if idealEntryTime is error {
-            string customError = "Error occurred while parsing the visit entry time!";
-            log:printError(customError, idealEntryTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        time:Utc|error idealDepartureTime = time:utcFromString(payload.timeOfDeparture + ".000Z");
-        if idealDepartureTime is error {
-            string customError = "Error occurred while parsing the visit departure time!";
-            log:printError(customError, idealDepartureTime);
-            return <http:BadRequest>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Handle LK-QR invitation.
-        if invitation.'type == "LK-QR" {
-            // Persist new visitor.
-            error? visitorError = database:addVisitor(
-                    {
-                        nicHash: payload.nicHash,
-                        name: payload.name,
-                        nicNumber: payload.nicNumber,
-                        contactNumber: payload.contactNumber,
-                        email: payload.email
-                    }, invitation.createdBy);
-
-            if visitorError is error {
-                string customError = "Error occurred while adding visitor!";
-                log:printError(customError, visitorError);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-
-            // Persist new visit.
-            error? visitError = database:addVisit(
-                    {
-                        companyName: payload.companyName,
-                        whomTheyMeet: payload.whomTheyMeet,
-                        timeOfEntry: time:utcNow(),
-                        timeOfDeparture: idealDepartureTime,
-                        purposeOfVisit: payload.purposeOfVisit,
-                        nicHash: payload.nicHash,
-                        status: database:REQUESTED
-                    }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
-
-            if visitError is error {
-                string customError = "Error occurred while adding visit!";
-                log:printError(customError, visitError);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-
-            // TODO : Send LK-QR specific email notification.
-            return <http:Created>{
-                body: {
-                    message: "Visit added successfully!"
-                }
-            };
-        }
-
-        // Retrieve existing visits for the invitation
-        database:VisitsResponse|error existingVisitors = database:fetchVisits({invitationId: invitation.invitationId});
-        if existingVisitors is error {
-            string customError = "Error occurred while fetching visits for this invitation!";
-            log:printError(customError, existingVisitors);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        if existingVisitors.totalCount >= invitation.noOfVisitors {
-            return <http:BadRequest>{
-                body: {
-                    message: "All invitation slots are already filled!"
-                }
-            };
-        }
-
-        // Verify if the visit details are provided previously matched with the newly provided visit details
-        if invitationVisitInfo is database:VisitInfo && invitationVisitInfo != newVisitInfo {
-            return <http:BadRequest>{
-                body: {
-                    message: "Provided visit details do not match with the previously provided visit details!"
-                }
-            };
-        }
-        if invitationVisitInfo is () {
-            error? invitationResult = database:updateInvitation(
-                    invitation.invitationId, {visitInfo: newVisitInfo}, invitation.inviteeEmail);
-
-            if invitationResult is error {
-                string customError = "Error occurred while updating invitation!";
-                log:printError(customError, invitationResult);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-        }
-
-        // Persist new visitor.
-        error? visitorError = database:addVisitor(
-                {
-                    nicHash: payload.nicHash,
-                    name: payload.name,
-                    nicNumber: payload.nicNumber,
-                    contactNumber: payload.contactNumber,
-                    email: payload.email
-                }, invitation.createdBy);
-
-        if visitorError is error {
-            string customError = "Error occurred while adding visitor!";
-            log:printError(customError, visitorError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        // Persist new visit.
-        error? visitError = database:addVisit(
-                {
-                    companyName: payload.companyName,
-                    whomTheyMeet: payload.whomTheyMeet,
-                    purposeOfVisit: payload.purposeOfVisit,
-                    timeOfEntry: idealEntryTime,
-                    timeOfDeparture: idealDepartureTime,
-                    nicHash: payload.nicHash,
-                    status: database:REQUESTED
-                }, invitation.createdBy, invitation.inviteeEmail, invitation.invitationId);
-
-        if visitError is error {
-            string customError = "Error occurred while adding visit!";
-            log:printError(customError, visitError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        if existingVisitors.totalCount + 1 >= invitation.noOfVisitors {
-            error? updateError = database:updateInvitation(
-                    invitation.invitationId, {active: false}, invitation.inviteeEmail);
-
-            if updateError is error {
-                string customError = "Error occurred while deactivating invitation!";
-                log:printError(customError, updateError);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customError
-                    }
-                };
-            }
-        }
-
-        return <http:Created>{
-            body: {
-                message: "Visit added successfully!"
-            }
-        };
-    };
 
     # Update visit details of existing visit.
     #
@@ -806,20 +526,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             string? passNumber = payload.passNumber;
-            database:Floor[]? accessibleLocations = payload.accessibleLocations;
-            if passNumber is () {
-                return <http:BadRequest>{
+            database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
+            string? visitorFirstName = visit.firstName;
+            string? visitorLastName = visit.lastName;
+            string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                organizeLocations(accessibleLocations) : ();
+            string? purposeOfVisit = visit.purposeOfVisit;
+            string|error checkInTime = formatDateTime(time:utcToString(time:utcNow()), "Asia/Colombo", false);
+            if checkInTime is error {
+                string customError = "Error occurred while formatting the check-in time!";
+                log:printError(customError, checkInTime);
+                return <http:InternalServerError>{
                     body: {
-                        message: "Pass number is required when approving a visit!"
+                        message: customError
                     }
                 };
             }
-            if accessibleLocations is () || array:length(accessibleLocations) == 0 {
-                return <http:BadRequest>{
-                    body: {
-                        message: "At least one accessible location is required when approving a visit!"
-                    }
-                };
+
+            string? hostEmail = visit.whomTheyMeet;
+            people:Employee|error? hostEmployee = ();
+            if hostEmail is string {
+                hostEmployee = people:fetchEmployee(hostEmail);
+                if hostEmployee is error {
+                    string customError = "Error occurred while fetching host employee details!";
+                    log:printError(customError, hostEmployee);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
             }
 
             error? response = database:updateVisit(visitId,
@@ -840,33 +576,91 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-
             if visitorEmail is string {
-                string accessibleLocationString = organizeLocations(accessibleLocations);
-
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
+                string? timeOfEntry = visit.timeOfEntry;
+                string|error formattedFromDate = "N/A";
+                if timeOfEntry is string {
+                    formattedFromDate = formatDateTime(regexp:split(re `\.`, time:utcToString(time:utcNow()))[0], "Asia/Colombo");
+                    if formattedFromDate is error {
+                        string customError = "Error occurred while formatting the visit start time!";
+                        log:printError(customError, formattedFromDate);
+                    }
                 }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
+
+                string? timeOfDeparture = visit.timeOfDeparture;
+                string|error formattedToDate = "N/A";
+                if timeOfDeparture is string {
+                    formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                    if formattedToDate is error {
+                        string customError = "Error occurred while formatting the visit end time!";
+                        log:printError(customError, formattedToDate);
+                    }
                 }
+                string? firstName = visit.firstName;
+                string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.name),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "PASS_NUMBER": passNumber.toString(),
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
+                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
+                              </li>` : "",
+                            PASS_NUMBER: passNumber is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Pass Number :</strong>
+                                  <span>${passNumber}</span>
+                                </p>
+                              </li>` : "",
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -882,6 +676,64 @@ service http:InterceptableService / on new http:Listener(9090) {
                             });
                     if emailError is error {
                         string customError = "An error occurred while sending the approval email!";
+                        log:printError(customError, emailError);
+                    }
+                }
+            }
+
+            if hostEmployee is people:Employee && hostEmail is string {
+                string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
+                        {
+                            HOST_NAME:
+                                generateSalutation(hostEmployee.firstName + " " + hostEmployee.lastName),
+                            VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
+                                generateSalutation(visitorFirstName + " " + visitorLastName) :
+                                    visitorFirstName is string ? visitorFirstName :
+                                        visitorLastName is string ? visitorLastName : visit.email,
+                            CHECK_IN_TIME: checkInTime,
+                            LOCATION: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Accessible Locations :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>` : "",
+                            PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family:
+                                      &quot;Roboto&quot;, Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Purpose of Visit :</strong>
+                                  <span>${purposeOfVisit}</span>
+                                </p>
+                              </li>` : ""
+                        });
+
+                if content is error {
+                    string customError = "An error occurred while binding values to the email template!";
+                    log:printError(customError, content);
+                } else {
+                    error? emailError = email:sendEmail(
+                            {
+                                to: [hostEmail],
+                                'from: email:fromEmailAddress,
+                                subject: email:EMPLOYEE_VISITOR_ARRIVAL_SUBJECT,
+                                template: content
+                            });
+                    if emailError is error {
+                        string customError = "An error occurred while sending the host notification email!";
                         log:printError(customError, emailError);
                     }
                 }
@@ -930,27 +782,61 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if visitorEmail is string {
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
+                string? timeOfEntry = visit.timeOfEntry;
+                string|error formattedFromDate = "N/A";
+                if timeOfEntry is string {
+                    formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+                    if formattedFromDate is error {
+                        string customError = "Error occurred while formatting the visit start time!";
+                        log:printError(customError, formattedFromDate);
+                    }
                 }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
+
+                string? timeOfDeparture = visit.timeOfDeparture;
+                string|error formattedToDate = "N/A";
+                if timeOfDeparture is string {
+                    formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo");
+                    if formattedToDate is error {
+                        string customError = "Error occurred while formatting the visit end time!";
+                        log:printError(customError, formattedToDate);
+                    }
                 }
+                string? firstName = visit.firstName;
+                string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.name),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
-
-                            "CONTACT_EMAIL": email:contactUsEmail,
-                            "YEAR": time:utcToCivil(time:utcNow()).year.toString()
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is string && lastName is string ?
+                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -1011,32 +897,91 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                 }
 
-                string accessibleLocationString = accessibleLocations is database:Floor[] ?
-                    organizeLocations(accessibleLocations) : "N/A";
+                string? passNumber = visit.passNumber;
+                string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                    organizeLocations(accessibleLocations) : ();
 
-                string|error formattedFromDate = formatDateTime(visit.timeOfEntry, "Asia/Colombo");
-                if formattedFromDate is error {
-                    string customError = "Error occurred while formatting the visit start time!";
-                    log:printError(customError, formattedFromDate);
+                string? timeOfEntry = visit.timeOfEntry;
+                string|error formattedFromDate = "N/A";
+                if timeOfEntry is string {
+                    formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo");
+                    if formattedFromDate is error {
+                        string customError = "Error occurred while formatting the visit start time!";
+                        log:printError(customError, formattedFromDate);
+                    }
                 }
-                string|error formattedToDate = formatDateTime(visit.timeOfDeparture, "Asia/Colombo");
-                if formattedToDate is error {
-                    string customError = "Error occurred while formatting the visit end time!";
-                    log:printError(customError, formattedToDate);
+
+                string? timeOfDeparture = visit.timeOfDeparture;
+                string|error formattedToDate = "N/A";
+                if timeOfDeparture is string {
+                    formattedToDate = formatDateTime(regexp:split(re `\.`, time:utcToString(time:utcNow()))[0], "Asia/Colombo");
+                    if formattedToDate is error {
+                        string customError = "Error occurred while formatting the visit end time!";
+                        log:printError(customError, formattedToDate);
+                    }
                 }
+                string? firstName = visit.firstName;
+                string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
-                            "TIME": time:utcToEmailString(time:utcNow()),
-                            "EMAIL": visitorEmail,
-                            "NAME": generateSalutation(visit.name),
-                            "TIME_OF_ENTRY": formattedFromDate is error ? visit.timeOfEntry + "(UTC)" : formattedFromDate,
-                            "TIME_OF_DEPARTURE": formattedToDate is error ?
-                                visit.timeOfDeparture + "(UTC)" : formattedToDate,
-                            "ALLOWED_FLOORS": accessibleLocationString,
-                            "START_TIME": visit.timeOfEntry,
-                            "END_TIME": visit.timeOfDeparture,
-                            "PASS_NUMBER": <string>visit.passNumber,
-                            "CONTACT_EMAIL": email:contactUsEmail
+                            TIME: time:utcToEmailString(time:utcNow()),
+                            EMAIL: visitorEmail,
+                            NAME: firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Entry :</strong>
+                                  <span>${formattedFromDate}</span>
+                                </p>
+                              </li>` : "",
+                            TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Departure :</strong>
+                                  <span>${formattedToDate}</span>
+                                </p>
+                              </li>` : "",
+                            ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Allowed Floors :</strong>
+                                </p>
+                                <ul>
+                                  ${accessibleLocationString}
+                                </ul>
+                              </li>` : "",
+                            PASS_NUMBER: passNumber is string ? string `<li>
+                                <p
+                                  style="
+                                    font-family: 'Roboto', Helvetica, sans-serif;
+                                    font-size: 17px;
+                                    color: #465868;
+                                    text-align: left;
+                                  "
+                                >
+                                  <strong>Pass Number :</strong>
+                                  <span>${passNumber}</span>
+                                </p>
+                              </li>` : "",
+                            CONTACT_EMAIL: email:contactUsEmail
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
@@ -1057,6 +1002,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 }
             }
+
             return <http:Ok>{
                 body: {
                     message: "Visit completed successfully!"
@@ -1064,5 +1010,71 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
     }
-}
 
+    # Fetch a visit by its UUID.
+    #
+    # + uuid - UUID of the visit to be fetched
+    # + return - Visit object or error
+    resource function get visits/[string uuid]() returns database:Visit|http:NotFound|http:InternalServerError {
+        database:Visit|error? visit = database:fetchVisit(uuid = uuid);
+        if visit is error {
+            string customError = "Error occurred while fetching visit by UUID!";
+            log:printError(customError, visit);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        if visit is () {
+            return <http:NotFound>{
+                body: {
+                    message: "No visit found with the provided UUID!"
+                }
+            };
+        }
+
+        if visit.status == database:REQUESTED || visit.status == database:APPROVED {
+            return visit;
+        } else {
+            return <http:NotFound>{
+                body: {
+                    message: "No visit found with the provided UUID!"
+                }
+            };
+        }
+    }
+
+    # Retrieve the work email list of the subordinates.
+    #
+    # + ctx - Request context containing user information
+    # + search - Search term used to filter employees
+    # + offset - Pagination offset
+    # + limit - Maximum number of employees to return
+    # + return - Custom error or employee email object
+    resource function get employees(http:RequestContext ctx, string search = "", int offset = 0, int 'limit = 1000)
+        returns people:EmployeeBasic[]|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        people:EmployeeBasic[]|error allEmployees = people:getEmployees(search, 'limit, offset);
+        if allEmployees is error {
+            string customError = "Error occurred while fetching employees!";
+            log:printError(customError, allEmployees);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        return allEmployees;
+    }
+}
