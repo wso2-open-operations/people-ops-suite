@@ -381,3 +381,6 @@ export const SANITIZE_CONFIG = {
   ALLOWED_URI_REGEXP:
     /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
+
+//new ways 
+export const redirectUrl = "iapm-marketplace-redirect-url";
