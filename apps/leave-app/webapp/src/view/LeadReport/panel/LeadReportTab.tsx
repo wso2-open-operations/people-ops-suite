@@ -68,6 +68,7 @@ export default function LeadReportTab() {
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
         onFetchReport={handleFetchReport}
+        loading={loading}
       />
       <LeadReportTable reportData={reportData} loading={loading} />
     </Stack>

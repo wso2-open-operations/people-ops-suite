@@ -72,6 +72,7 @@ export default function AdminSabbaticalTab() {
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
         onFetchReport={handleFetchReport}
+        loading={loading}
         showToggle={isPeopleOpsTeam}
         toggleChecked={showAllEmployees}
         onToggleChange={setShowAllEmployees}

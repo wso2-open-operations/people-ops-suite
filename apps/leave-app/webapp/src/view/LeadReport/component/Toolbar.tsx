@@ -21,16 +21,13 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
-import { selectLeadReportState } from "@root/src/slices/leadReportSlice/leadReport";
-import { useAppSelector } from "@root/src/slices/store";
-import { State } from "@root/src/types/types";
-
 interface ToolbarProps {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
   onFetchReport: () => void;
+  loading: boolean;
   showToggle?: boolean;
   toggleChecked?: boolean;
   onToggleChange?: (checked: boolean) => void;
@@ -42,14 +39,13 @@ export default function Toolbar({
   onStartDateChange,
   onEndDateChange,
   onFetchReport,
+  loading,
   showToggle = false,
   toggleChecked = true,
   onToggleChange,
 }: ToolbarProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
-  const leadReportState = useAppSelector(selectLeadReportState);
-  const loading = leadReportState === State.loading;
 
   const handleFetchReport = () => {
     if (!startDate || !endDate) {
