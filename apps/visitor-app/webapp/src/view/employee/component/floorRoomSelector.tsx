@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import React from "react";
 import {
   Box,
@@ -39,6 +40,7 @@ interface FloorRoomSelectorProps {
   selectedFloorsAndRooms: FloorRoom[];
   onChange: (floorsAndRooms: FloorRoom[]) => void;
   error?: string;
+  disabled?: boolean;
 }
 
 const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
@@ -46,40 +48,37 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
   selectedFloorsAndRooms,
   onChange,
   error,
+  disabled = false,
 }) => {
   const addFloor = (floor: string) => {
+    if (disabled) return;
     if (!selectedFloorsAndRooms.find((item) => item.floor === floor)) {
       onChange([...selectedFloorsAndRooms, { floor, rooms: [] }]);
     }
   };
 
   const removeFloor = (floor: string) => {
+    if (disabled) return;
     onChange(selectedFloorsAndRooms.filter((item) => item.floor !== floor));
   };
 
   const updateRooms = (floor: string, rooms: string[]) => {
+    if (disabled) return;
     const updatedFloors = selectedFloorsAndRooms.map((item) =>
-      item.floor === floor ? { ...item, rooms } : item
+      item.floor === floor ? { ...item, rooms } : item,
     );
     onChange(updatedFloors);
   };
 
   const getAvailableRoomsForFloor = (floor: string): string[] => {
     const floorData = availableFloorsAndRooms.find(
-      (item) => item.floor === floor
-    );
-    return floorData ? floorData.rooms : [];
-  };
-
-  const getSelectedRoomsForFloor = (floor: string): string[] => {
-    const floorData = selectedFloorsAndRooms.find(
-      (item) => item.floor === floor
+      (item) => item.floor === floor,
     );
     return floorData ? floorData.rooms : [];
   };
 
   return (
-    <Box>
+    <Box sx={{ opacity: disabled ? 0.75 : 1 }}>
       {/* Floor Selection */}
       <Typography
         variant="h6"
@@ -92,16 +91,19 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
       <Grid container spacing={1} sx={{ mb: 3 }}>
         {availableFloorsAndRooms.map((floorData) => {
           const isSelected = selectedFloorsAndRooms.some(
-            (item) => item.floor === floorData.floor
+            (item) => item.floor === floorData.floor,
           );
           return (
             <Grid item key={floorData.floor}>
               <Button
-                variant={"outlined"}
+                variant="outlined"
                 size="small"
                 onClick={() => addFloor(floorData.floor)}
-                disabled={isSelected}
-                sx={{ minWidth: "auto" }}
+                disabled={disabled || isSelected}
+                sx={{
+                  minWidth: "auto",
+                  ...(disabled && { cursor: "not-allowed" }),
+                }}
               >
                 {floorData.floor}
               </Button>
@@ -115,10 +117,16 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
         <Box>
           {selectedFloorsAndRooms.map((floorRoom) => {
             const availableRooms = getAvailableRoomsForFloor(floorRoom.floor);
-            const selectedRooms = getSelectedRoomsForFloor(floorRoom.floor);
 
             return (
-              <Card key={floorRoom.floor} variant="outlined" sx={{ mb: 2 }}>
+              <Card
+                key={floorRoom.floor}
+                variant="outlined"
+                sx={{
+                  mb: 2,
+                  bgcolor: disabled ? "action.hover" : "background.paper",
+                }}
+              >
                 <CardContent>
                   <Box
                     sx={{
@@ -135,34 +143,43 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
                       <BusinessIcon color="primary" fontSize="small" />
                       {floorRoom.floor}
                     </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => removeFloor(floorRoom.floor)}
-                    >
-                      <CloseIcon />
-                    </IconButton>
+
+                    {!disabled && (
+                      <IconButton
+                        size="small"
+                        onClick={() => removeFloor(floorRoom.floor)}
+                        disabled={disabled}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    )}
                   </Box>
 
                   {/* Room Selection with Chips in Input */}
                   <Autocomplete
                     multiple
                     options={availableRooms}
-                    value={selectedRooms}
+                    value={floorRoom.rooms || []}
                     onChange={(event, newValue) => {
-                      updateRooms(floorRoom.floor, newValue);
+                      updateRooms(floorRoom.floor, newValue as string[]);
                     }}
+                    disabled={disabled}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Search and select rooms"
                         placeholder={
-                          selectedRooms.length === 0
-                            ? "Type to search rooms..."
+                          (floorRoom.rooms?.length ?? 0) === 0
+                            ? "Search and select rooms..."
                             : ""
                         }
                         variant="outlined"
                         fullWidth
                         size="small"
+                        InputProps={{
+                          ...params.InputProps,
+                          disabled: disabled,
+                        }}
                       />
                     )}
                     renderTags={(value, getTagProps) =>
@@ -171,15 +188,16 @@ const FloorRoomSelector: React.FC<FloorRoomSelectorProps> = ({
                           {...getTagProps({ index })}
                           key={option}
                           label={option}
-                          icon={<RoomIcon />}
+                          icon={<RoomIcon fontSize="small" />}
                           color="primary"
                           variant="filled"
                           size="small"
+                          disabled={disabled}
                         />
                       ))
                     }
                     renderOption={(props, option) => {
-                      const { key, ...rest } = props; // Extract key prop to avoid React warnings when spreading props
+                      const { key, ...rest } = props;
                       return (
                         <Box component="li" key={key} {...rest}>
                           <RoomIcon sx={{ mr: 1 }} fontSize="small" />
