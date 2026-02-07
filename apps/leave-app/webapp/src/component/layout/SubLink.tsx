@@ -35,7 +35,9 @@ const SubLink = (props: SubLinkProps) => {
 
   const fullPath = parentPath.replace(/\/$/, "") + "/" + to.replace(/^\//, "");
 
-  const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
+  // "/" route treated as "/apply/general"
+  const currentPath = location.pathname === "/" ? "/apply/general" : location.pathname;
+  const isActive = !!matchPath({ path: fullPath, end: true }, currentPath);
 
   return (
     <>

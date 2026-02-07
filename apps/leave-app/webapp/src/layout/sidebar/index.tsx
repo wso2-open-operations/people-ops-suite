@@ -17,7 +17,7 @@
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { NavState } from "@/types/types";
 import SidebarNavItem from "@component/layout/SidebarNavItem";
@@ -34,21 +34,41 @@ interface SidebarProps {
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
+  const effectivePath = props.currentPath === "/" ? "/apply/general" : props.currentPath;
 
   // Determine if route is active based on current path
   const isRouteActive = (routePath: string) => {
     if (routePath === "") {
-      return props.currentPath === "/" || props.currentPath === "";
+      return effectivePath === "/" || effectivePath === "";
     }
-    return props.currentPath === `/${routePath}` || props.currentPath.startsWith(`/${routePath}/`);
+    return effectivePath === `/${routePath}` || effectivePath.startsWith(`/${routePath}/`);
   };
+
+  const findExpandedIndex = useCallback(() => {
+    const path = effectivePath;
+    const idx = allRoutes.findIndex(
+      (route) =>
+        !route.bottomNav &&
+        route.children &&
+        route.children.length > 0 &&
+        (path === `/${route.path}` || path.startsWith(`/${route.path}/`)),
+    );
+    return idx >= 0 ? idx : null;
+  }, [effectivePath, allRoutes]);
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
     active: null,
     hovered: null,
-    expanded: null,
+    expanded: findExpandedIndex(),
   });
+
+  useEffect(() => {
+    const idx = findExpandedIndex();
+    if (idx !== null) {
+      setNavState((prev) => ({ ...prev, expanded: idx }));
+    }
+  }, [findExpandedIndex]);
 
   // Handlers
   const handleClick = (idx: number) => {
