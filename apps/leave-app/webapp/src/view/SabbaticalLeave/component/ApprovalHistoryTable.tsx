@@ -47,6 +47,21 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
       renderCell: (params) => <span>{String(params.row?.endDate ?? "").substring(0, 10)}</span>,
     },
     {
+      field: "numberOfDays",
+      headerName: "Day Count",
+      type: "string",
+      flex: 1,
+      editable: false,
+    },
+    {
+      field: "approverEmail",
+      headerName: "Lead",
+      type: "string",
+      flex: 1,
+      editable: false,
+      valueGetter: (value) => value ?? "N/A",
+    },
+    {
       field: "status",
       headerName: "Status",
       type: "string",
