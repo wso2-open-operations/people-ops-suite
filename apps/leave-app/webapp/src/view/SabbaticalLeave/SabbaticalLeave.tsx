@@ -14,62 +14,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import EditDocumentIcon from "@mui/icons-material/EditDocument";
-import HowToRegIcon from "@mui/icons-material/HowToReg";
-
 import { useEffect, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
-import TabsPage, { TabProps } from "@root/src/layout/pages/TabsPage";
-import { Privileges } from "@root/src/slices/authSlice/auth";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
 import ApplyTab from "@root/src/view/SabbaticalLeave/Panel/ApplyTab";
 
-import ApproveLeaveTab from "./Panel/ApproveLeaveTab";
-
 // Tabs for Sabbatical Leave (Apply, Approve Leave, Approval History, Functional Lead View)
 export default function SabbaticalLeave() {
   const [sabbaticalFeatureEnabled, setSabbaticalFeatureEnabled] = useState<boolean>(false);
-  const [tabs, setTabs] = useState<TabProps[]>([]);
   const userInfo = useAppSelector(selectUser);
   const { config: appConfig } = useAppSelector((state: RootState) => state.appConfig);
 
   useEffect(() => {
     if (appConfig) {
-      const {
-        sabbaticalLeavePolicyUrl,
-        sabbaticalLeaveUserGuideUrl,
-        sabbaticalLeaveEligibilityDuration,
-        sabbaticalLeaveMaxApplicationDuration,
-      } = appConfig;
       setSabbaticalFeatureEnabled(appConfig.isSabbaticalLeaveEnabled);
-
-      const baseTabs: TabProps[] = [
-        {
-          tabTitle: "Apply",
-          tabPath: "apply",
-          icon: <EditDocumentIcon />,
-          page: (
-            <ApplyTab
-              sabbaticalPolicyUrl={sabbaticalLeavePolicyUrl}
-              sabbaticalUserGuideUrl={sabbaticalLeaveUserGuideUrl}
-              sabbaticalLeaveEligibilityDuration={sabbaticalLeaveEligibilityDuration}
-              sabbaticalLeaveMaxApplicationDuration={sabbaticalLeaveMaxApplicationDuration}
-            />
-          ),
-        },
-      ];
-      // Set approval tabs for leads only
-      if (userInfo?.privileges.includes(Privileges.LEAD)) {
-        baseTabs.push({
-          tabTitle: "Leave Approval",
-          tabPath: "leave-approval",
-          icon: <HowToRegIcon />,
-          page: <ApproveLeaveTab />,
-        });
-      }
-      setTabs(baseTabs);
     }
   }, [appConfig, userInfo?.privileges]);
 
@@ -82,8 +42,11 @@ export default function SabbaticalLeave() {
     );
   }
   return (
-    <>
-      <TabsPage title="Sabbatical Leave" tabsPage={tabs} />
-    </>
+    <ApplyTab
+      sabbaticalPolicyUrl={appConfig?.sabbaticalLeavePolicyUrl ?? ""}
+      sabbaticalUserGuideUrl={appConfig?.sabbaticalLeaveUserGuideUrl ?? ""}
+      sabbaticalLeaveEligibilityDuration={appConfig?.sabbaticalLeaveEligibilityDuration ?? 0}
+      sabbaticalLeaveMaxApplicationDuration={appConfig?.sabbaticalLeaveMaxApplicationDuration ?? 0}
+    />
   );
 }
