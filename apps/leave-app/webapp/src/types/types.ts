@@ -166,6 +166,7 @@ export interface LeaveSubmissionResponse {
 export interface SingleLeaveHistory {
   id: number;
   email: string;
+  approverEmail: string | null;
   leaveType: LeaveType;
   periodType: PeriodType;
   copyEmailList: string;
