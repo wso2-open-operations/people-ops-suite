@@ -64,7 +64,7 @@ export default function ApproveLeaveTab() {
         borderBottom={`1px solid ${theme.palette.divider}`}
         pb="1rem"
       >
-        <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
+        <Title firstWord="Sabbatical" secondWord=" Leave Approval" borderEnabled={false} />
       </Stack>
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">

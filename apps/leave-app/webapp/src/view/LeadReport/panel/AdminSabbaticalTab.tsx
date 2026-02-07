@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
 
+import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
@@ -66,6 +67,7 @@ export default function AdminSabbaticalTab() {
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Title firstWord="Sabbatical" secondWord="Leave Report" />
       <Toolbar
         startDate={startDate}
         endDate={endDate}
