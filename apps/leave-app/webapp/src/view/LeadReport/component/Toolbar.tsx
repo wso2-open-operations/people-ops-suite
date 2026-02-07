@@ -15,7 +15,7 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, FormControlLabel, Stack, Switch, Typography } from "@mui/material";
+import { Box, Button, Stack, Switch, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
@@ -64,28 +64,83 @@ export default function Toolbar({
   return (
     <Stack gap="1.5rem" width="100%">
       <Stack direction="row" width="100%" alignItems="center" justifyContent="space-between">
-        {showToggle && onToggleChange ? (
-          <FormControlLabel
-            control={
-              <Switch checked={toggleChecked} onChange={(e) => onToggleChange(e.target.checked)} />
-            }
-            labelPlacement="bottom"
-            label={
-              toggleChecked ? (
-                <Typography color={theme.palette.text.primary}>
-                  Displaying: All Employees
+        <Stack direction="row" gap="1.5rem" alignItems="center" flex={1}>
+          {showToggle && onToggleChange && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "rgba(0, 0, 0, 0.03)",
+                border: `1px solid ${
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
+                }`,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                View:
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: toggleChecked ? 600 : 400,
+                    color: toggleChecked
+                      ? theme.palette.text.primary
+                      : theme.palette.text.secondary,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  All Employees
                 </Typography>
-              ) : (
-                <Typography color={theme.palette.text.primary}>
-                  Displaying: Subordinates Only
+                <Switch
+                  checked={!toggleChecked}
+                  onChange={(e) => onToggleChange(!e.target.checked)}
+                  size="small"
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": {
+                      color: theme.palette.primary.main,
+                    },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      backgroundColor: theme.palette.primary.main,
+                    },
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: !toggleChecked ? 600 : 400,
+                    color: !toggleChecked
+                      ? theme.palette.text.primary
+                      : theme.palette.text.secondary,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  My Subordinates
                 </Typography>
-              )
-            }
-          />
-        ) : (
-          <div />
-        )}
-        <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
+              </Box>
+            </Box>
+          )}
+        </Stack>
+        <Stack direction="row" gap="1.5rem" alignItems="center">
           <DatePicker
             label="From"
             value={startDate}
