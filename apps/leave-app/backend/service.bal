@@ -56,7 +56,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
                 privileges.push(authorization:PEOPLE_OPS_TEAM_PRIVILEGE);
             }
-            if (<boolean>empInfo.lead) {
+            if ((empInfo.lead ?: false) && empInfo.subordinateCount > 0) {
                 privileges.push(authorization:LEAD_PRIVILEGE);
             }
             // Add optional mails for the form
