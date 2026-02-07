@@ -54,7 +54,7 @@ public isolated service class JwtInterceptor {
 
         final boolean isAdminOnlyPath = checkIfAdminOnlyPath(path, method);
         if isAdminOnlyPath {
-            boolean|error userIsAdmin = validateForSingleRole(readonlyDecodeUserInfo, authorizedRoles.adminRoles);
+            boolean|error userIsAdmin = validateForSingleRole(readonlyDecodeUserInfo, authorizedRoles.peopleOpsTeamRoles);
             if userIsAdmin != true {
                 string errorMsg = string `The user ${decodeUserInfo.email} was not privileged to access the${true ? " admin " : " "}resource ${req.rawPath}`;
                 log:printWarn(errorMsg);

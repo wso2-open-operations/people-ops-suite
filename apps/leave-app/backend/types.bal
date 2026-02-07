@@ -56,8 +56,6 @@ public type LeaveStat record {|
 public type FetchedLeavesRecord record {|
     # List of leaves
     database:Leave[] leaves;
-    # List of leave stats
-    LeaveStat[] stats;
 |};
 
 # Leave policy.
@@ -163,6 +161,8 @@ public type ReportPayload readonly & record {|
     string? team = ();
     # Employee status list
     EmployeeStatus[]? employeeStatuses = DEFAULT_EMPLOYEE_STATUSES;
+    # Admin view or not
+    boolean isAdminView = false;
 |};
 
 # User calendar content.
