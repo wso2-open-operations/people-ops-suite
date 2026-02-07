@@ -65,6 +65,7 @@ export default function LeadReportTab() {
 
   useEffect(() => {
     if (isPeopleOpsTeam) setShowAllEmployees(true);
+    else handleFetchReport();
   }, []);
   const firstRender = useRef(true);
   useEffect(() => {

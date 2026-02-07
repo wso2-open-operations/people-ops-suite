@@ -63,6 +63,7 @@ export default function AdminSabbaticalTab() {
 
   useEffect(() => {
     if (isPeopleOpsTeam) setShowAllEmployees(true);
+    else handleFetchReport();
   }, []);
   const firstRender = useRef(true);
   useEffect(() => {
