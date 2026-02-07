@@ -99,7 +99,7 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
         }}
       >
         <DialogContentText variant="body2" sx={{ m: 1 }}>
-          To proceed , please enter the following details of the collection.
+          To proceed, please enter the following details of the collection.
         </DialogContentText>
 
         {/* Collection Details */}
