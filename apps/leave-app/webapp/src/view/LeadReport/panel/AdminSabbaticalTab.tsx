@@ -41,7 +41,7 @@ export default function AdminSabbaticalTab() {
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const loading = leaveState === State.loading;
-  const [showAllEmployees, setShowAllEmployees] = useState(true);
+  const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
 
