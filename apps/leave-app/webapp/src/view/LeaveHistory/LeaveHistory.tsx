@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress, Stack, Typography } from "@mui/material";
+import { Box, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -41,6 +41,7 @@ export default function LeaveHistory() {
   const leaves = useAppSelector(selectLeaves);
   const cancellingLeaveId = useAppSelector(selectCancellingLeaveId);
   const loading = leaveState === State.loading;
+  const theme = useTheme();
 
   useEffect(() => {
     if (userInfo?.workEmail) {
@@ -87,7 +88,9 @@ export default function LeaveHistory() {
             <CircularProgress size={30} />
           </Box>
         )}
-        {!loading && leaves.length === 0 && <Typography>No leave history available.</Typography>}
+        {!loading && leaves.length === 0 && (
+          <Typography color={theme.palette.text.primary}>No leave history available.</Typography>
+        )}
         {!loading &&
           leaves.map((leave) => {
             const { month, day } = getMonthAndDay(leave.startDate);
