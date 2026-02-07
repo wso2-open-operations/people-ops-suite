@@ -42,7 +42,7 @@ export default function LeadReportTab() {
   const userInfo = useAppSelector(selectUser);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
-  const [showAllEmployees, setShowAllEmployees] = useState(true);
+  const [showAllEmployees, setShowAllEmployees] = useState(false);
 
   const reportData = useAppSelector(selectLeadReport);
   const leadReportState = useAppSelector(selectLeadReportState);
@@ -63,6 +63,9 @@ export default function LeadReportTab() {
     }
   };
 
+  useEffect(() => {
+    if (isPeopleOpsTeam) setShowAllEmployees(true);
+  }, []);
   useEffect(() => {
     handleFetchReport();
   }, [showAllEmployees]);
