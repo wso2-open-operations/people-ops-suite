@@ -20,8 +20,10 @@ import dayjs from "dayjs";
 
 import { useEffect, useState } from "react";
 
+import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi } from "@root/src/services/leaveService";
+import { Privileges } from "@root/src/slices/authSlice/auth";
 import {
   fetchLeadReport,
   resetLeadReportState,
@@ -29,6 +31,7 @@ import {
   selectLeadReportState,
 } from "@root/src/slices/leadReportSlice/leadReport";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { selectUser } from "@root/src/slices/userSlice/user";
 import { State } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
@@ -36,12 +39,16 @@ import Toolbar from "../component/Toolbar";
 
 export default function LeadReportTab() {
   const dispatch = useAppDispatch();
+  const userInfo = useAppSelector(selectUser);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
+  const [showAllEmployees, setShowAllEmployees] = useState(true);
 
   const reportData = useAppSelector(selectLeadReport);
   const leadReportState = useAppSelector(selectLeadReportState);
   const loading = leadReportState === State.loading;
+
+  const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
   const handleFetchReport = () => {
     if (startDate && endDate) {
@@ -50,7 +57,7 @@ export default function LeadReportTab() {
         fetchLeadReport({
           startDate: formatDateForApi(startDate),
           endDate: formatDateForApi(endDate),
-          isAdminView: false,
+          isAdminView: showAllEmployees,
         }),
       );
     }
@@ -58,10 +65,11 @@ export default function LeadReportTab() {
 
   useEffect(() => {
     handleFetchReport();
-  }, []);
+  }, [showAllEmployees]);
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      <Title firstWord="General" secondWord="Leave Report" />
       <Toolbar
         startDate={startDate}
         endDate={endDate}
@@ -69,6 +77,9 @@ export default function LeadReportTab() {
         onEndDateChange={setEndDate}
         onFetchReport={handleFetchReport}
         loading={loading}
+        showToggle={isPeopleOpsTeam}
+        toggleChecked={showAllEmployees}
+        onToggleChange={setShowAllEmployees}
       />
       <LeadReportTable reportData={reportData} loading={loading} />
     </Stack>
