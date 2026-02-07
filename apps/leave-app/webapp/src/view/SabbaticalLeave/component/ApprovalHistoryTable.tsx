@@ -120,6 +120,15 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
         pageSizeOptions={[10]}
         disableRowSelectionOnClick
         showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
     </Box>
   );
