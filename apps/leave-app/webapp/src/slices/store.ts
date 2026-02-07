@@ -22,6 +22,7 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
+import entitlementReducer from "@slices/entitlementSlice/entitlement";
 import leadReportReducer from "@slices/leadReportSlice/leadReport";
 import leaveReducer from "@slices/leaveSlice/leave";
 import userReducer from "@slices/userSlice/user";
@@ -37,6 +38,7 @@ export const store = configureStore({
     leave: leaveReducer,
     employee: employeeReducer,
     leadReport: leadReportReducer,
+    entitlement: entitlementReducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });

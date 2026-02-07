@@ -26,7 +26,7 @@ import {
   getPeriodType,
   validateLeaveRequest,
 } from "@root/src/services/leaveService";
-import { DayPortion, PeriodType } from "@root/src/types/types";
+import { DayPortion, LeaveEntitlement, LeaveType, PeriodType } from "@root/src/types/types";
 
 interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
@@ -35,6 +35,8 @@ interface LeaveDateSelectionProps {
   selectedDayPortion?: DayPortion | null;
   hasError?: boolean;
   onErrorClear?: () => void;
+  selectedLeaveType?: LeaveType;
+  entitlement?: LeaveEntitlement;
 }
 
 export default function LeaveDateSelection({
@@ -44,6 +46,8 @@ export default function LeaveDateSelection({
   selectedDayPortion,
   hasError = false,
   onErrorClear,
+  selectedLeaveType,
+  entitlement,
 }: LeaveDateSelectionProps) {
   const theme = useTheme();
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -161,18 +165,55 @@ export default function LeaveDateSelection({
     }
   };
 
-  // Determine status based on selection
-  const getStatus = () => {
-    if (isValidating) return "Validating...";
-    if (!startDate || !endDate) return "Please select dates";
-    if (endDate.isBefore(startDate, "day")) return "Invalid date range";
-    if (daysSelected <= 0) return "Invalid selection";
-    if (workingDaysSelected <= 0) return "No working days selected";
-    return "Valid date selection";
+  // Calculate leave days being requested
+  const getLeaveDaysRequested = (): number => {
+    if (selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND) {
+      return 0.5;
+    }
+    return workingDaysSelected;
   };
 
-  const status = getStatus();
-  const isValidSelection = status === "Valid date selection";
+  const getAvailableBalance = (): number | null => {
+    if (!entitlement) return null;
+    // Available balance = total allowed (leavePolicy) - already taken (policyAdjustedLeave)
+    if (selectedLeaveType === LeaveType.CASUAL || selectedLeaveType === LeaveType.ANNUAL) {
+      return (
+        entitlement.leavePolicy.casual +
+        entitlement.leavePolicy.annual -
+        (entitlement.policyAdjustedLeave.casual + entitlement.policyAdjustedLeave.annual)
+      );
+    }
+    return null;
+  };
+
+  // Determine the status based on selection
+  const getStatus = (): { message: string; severity: "success" | "warning" | "error" } => {
+    if (isValidating) return { message: "Validating...", severity: "warning" };
+    if (!startDate || !endDate) return { message: "Please select dates", severity: "warning" };
+    if (endDate.isBefore(startDate, "day"))
+      return { message: "Invalid date range", severity: "warning" };
+    if (daysSelected <= 0) return { message: "Invalid selection", severity: "warning" };
+    if (workingDaysSelected <= 0)
+      return { message: "No working days selected", severity: "warning" };
+
+    const availableBalance = getAvailableBalance();
+    const leaveDays = getLeaveDaysRequested();
+
+    if (availableBalance !== null) {
+      const remainingAfterRequest = availableBalance - leaveDays;
+
+      if (remainingAfterRequest < 0) {
+        return {
+          message: `Insufficient entitled leaves. Only ${availableBalance} day(s) of annual/casual leave is remaining for the current user.`,
+          severity: "error",
+        };
+      }
+    }
+
+    return { message: "Valid date selection", severity: "success" };
+  };
+
+  const statusInfo = getStatus();
 
   const displayDaysSelected =
     selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND
@@ -247,19 +288,20 @@ export default function LeaveDateSelection({
       </Stack>
       <Alert
         icon={isValidating ? <CircularProgress size={20} /> : <InfoOutlinedIcon fontSize="small" />}
-        severity={isValidating ? "warning" : isValidSelection ? "success" : "warning"}
+        severity={isValidating ? "warning" : statusInfo.severity}
         variant="outlined"
         sx={{
           boxSizing: "border-box",
           display: "flex",
           width: "100%",
           justifyContent: "center",
+          alignItems: "center",
           px: 2,
           py: 0.5,
           borderRadius: "0.4rem",
         }}
       >
-        <Typography variant="body2">{status}</Typography>
+        <Typography variant="body2">{statusInfo.message}</Typography>
       </Alert>
     </Stack>
   );

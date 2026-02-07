@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
@@ -27,6 +28,7 @@ interface LeadReportTableProps {
 }
 
 export default function LeadReportTable({ reportData, loading }: LeadReportTableProps) {
+  const theme = useTheme();
   const rows = useMemo(() => {
     if (!reportData) return [];
 
@@ -102,6 +104,16 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
         pageSizeOptions={[5, 10, 25]}
         disableRowSelectionOnClick
+        showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
     </Box>
   );

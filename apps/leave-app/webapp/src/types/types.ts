@@ -75,6 +75,7 @@ export enum Status {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
+  CANCELLED = "CANCELLED",
 }
 
 // Leave type.
@@ -165,6 +166,7 @@ export interface LeaveSubmissionResponse {
 export interface SingleLeaveHistory {
   id: number;
   email: string;
+  approverEmail: string | null;
   leaveType: LeaveType;
   periodType: PeriodType;
   copyEmailList: string;
@@ -209,6 +211,7 @@ export interface LeaveHistoryQueryParam {
 export interface LeadReportRequest {
   startDate: string;
   endDate: string;
+  isAdminView: boolean;
 }
 
 // Lead report response type.
@@ -256,4 +259,18 @@ export interface AppConfigResponse {
   sabbaticalLeaveUserGuideUrl: string;
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
+}
+
+// Leave policy type.
+export interface LeavePolicy {
+  annual: number;
+  casual: number;
+}
+
+// Leave entitlement response type.
+export interface LeaveEntitlement {
+  year: number;
+  location: string;
+  leavePolicy: LeavePolicy;
+  policyAdjustedLeave: LeavePolicy;
 }

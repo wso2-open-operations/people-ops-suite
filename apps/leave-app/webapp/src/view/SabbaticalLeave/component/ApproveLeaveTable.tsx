@@ -212,6 +212,15 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         pageSizeOptions={[5]}
         disableRowSelectionOnClick
         showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
 
       {/* Confirmation Dialog */}

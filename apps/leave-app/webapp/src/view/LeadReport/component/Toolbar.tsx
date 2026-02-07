@@ -15,27 +15,22 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Button, Stack } from "@mui/material";
+import { Box, Button, Stack, Switch, Typography } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
-
-import { useEffect } from "react";
-
-import Title from "@root/src/component/common/Title";
-import { formatDateForApi } from "@root/src/services/leaveService";
-import {
-  fetchLeadReport,
-  selectLeadReportState,
-} from "@root/src/slices/leadReportSlice/leadReport";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
-import { State } from "@root/src/types/types";
 
 interface ToolbarProps {
   startDate: Dayjs | null;
   endDate: Dayjs | null;
   onStartDateChange: (date: Dayjs | null) => void;
   onEndDateChange: (date: Dayjs | null) => void;
+  onFetchReport: () => void;
+  loading: boolean;
+  showToggle?: boolean;
+  toggleChecked?: boolean;
+  onToggleChange?: (checked: boolean) => void;
 }
 
 export default function Toolbar({
@@ -43,11 +38,14 @@ export default function Toolbar({
   endDate,
   onStartDateChange,
   onEndDateChange,
+  onFetchReport,
+  loading,
+  showToggle = false,
+  toggleChecked = true,
+  onToggleChange,
 }: ToolbarProps) {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
-  const dispatch = useAppDispatch();
-  const leadReportState = useAppSelector(selectLeadReportState);
-  const loading = leadReportState === State.loading;
 
   const handleFetchReport = () => {
     if (!startDate || !endDate) {
@@ -60,44 +58,115 @@ export default function Toolbar({
       return;
     }
 
-    dispatch(
-      fetchLeadReport({
-        startDate: formatDateForApi(startDate),
-        endDate: formatDateForApi(endDate),
-      }),
-    );
+    onFetchReport();
   };
 
-  useEffect(() => {
-    // Fetch report on initial load with default dates
-    if (startDate && endDate) {
-      handleFetchReport();
-    }
-  }, []);
-
   return (
-    <Stack direction="row" width="100%" alignItems="center">
-      <Title firstWord="Lead" secondWord="Report" />
-      <Stack direction="row" ml="auto" gap="1.5rem" alignItems="center">
-        {/* TODO: Implement fetch for indirect reports */}
-        {/* <FormControlLabel
-          control={<Switch />}
-          label="Include indirect reports"
-          sx={{ color: theme.palette.text.secondary }}
-        /> */}
-        <DatePicker label="From" value={startDate} onChange={onStartDateChange} />
-        <DatePicker label="To" value={endDate} onChange={onEndDateChange} />
-        <Button
-          type="submit"
-          variant="contained"
-          color="primary"
-          startIcon={<SearchIcon />}
-          onClick={handleFetchReport}
-          disabled={loading}
-          sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
-        >
-          {loading ? "Loading..." : "Fetch Report"}
-        </Button>
+    <Stack gap="1.5rem" width="100%">
+      <Stack direction="row" width="100%" alignItems="center" justifyContent="space-between">
+        <Stack direction="row" gap="1.5rem" alignItems="center" flex={1}>
+          {showToggle && onToggleChange && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                backgroundColor:
+                  theme.palette.mode === "dark"
+                    ? "rgba(255, 255, 255, 0.05)"
+                    : "rgba(0, 0, 0, 0.03)",
+                border: `1px solid ${
+                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
+                }`,
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: theme.palette.text.secondary,
+                }}
+              >
+                View:
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: toggleChecked ? 600 : 400,
+                    color: toggleChecked
+                      ? theme.palette.text.primary
+                      : theme.palette.text.secondary,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  All Employees
+                </Typography>
+                <Switch
+                  checked={!toggleChecked}
+                  onChange={(e) => onToggleChange(!e.target.checked)}
+                  size="small"
+                  sx={{
+                    "& .MuiSwitch-switchBase.Mui-checked": {
+                      color: theme.palette.primary.main,
+                    },
+                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                      backgroundColor: theme.palette.primary.main,
+                    },
+                  }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: !toggleChecked ? 600 : 400,
+                    color: !toggleChecked
+                      ? theme.palette.text.primary
+                      : theme.palette.text.secondary,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  My Subordinates
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </Stack>
+        <Stack direction="row" gap="1.5rem" alignItems="center">
+          <DatePicker
+            label="From"
+            value={startDate}
+            onChange={onStartDateChange}
+            format="YYYY-MM-DD"
+            sx={{ minWidth: 200 }}
+          />
+          <DatePicker
+            label="To"
+            value={endDate}
+            onChange={onEndDateChange}
+            format="YYYY-MM-DD"
+            sx={{ minWidth: 200 }}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            startIcon={<SearchIcon />}
+            onClick={handleFetchReport}
+            disabled={loading}
+            sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
+          >
+            {loading ? "Loading..." : "Fetch Report"}
+          </Button>
+        </Stack>
       </Stack>
     </Stack>
   );
