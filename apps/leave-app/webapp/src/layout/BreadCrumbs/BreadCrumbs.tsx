@@ -19,7 +19,7 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import { Link, useLocation } from "react-router-dom";
 
 export default function BasicBreadcrumbs() {
-  const MAX_LENGTH = 5;
+  const MAX_LENGTH = 10;
 
   const location = useLocation();
   const theme = useTheme();
