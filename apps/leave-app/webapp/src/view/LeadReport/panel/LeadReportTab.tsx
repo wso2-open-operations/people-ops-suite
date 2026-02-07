@@ -18,7 +18,7 @@ import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
@@ -66,7 +66,12 @@ export default function LeadReportTab() {
   useEffect(() => {
     if (isPeopleOpsTeam) setShowAllEmployees(true);
   }, []);
+  const firstRender = useRef(true);
   useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
     handleFetchReport();
   }, [showAllEmployees]);
 
