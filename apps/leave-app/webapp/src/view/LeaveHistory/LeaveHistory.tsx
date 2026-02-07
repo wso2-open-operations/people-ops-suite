@@ -29,11 +29,16 @@ import {
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { OrderBy, State, Status } from "@root/src/types/types";
+import { LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
 import LeaveCard from "./component/LeaveCard";
 
-export default function LeaveHistory() {
+interface LeaveHistoryProps {
+  leaveType?: LeaveType[];
+  title?: { firstWord: string; secondWord: string };
+}
+
+export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {}) {
   const dispatch = useAppDispatch();
   const [currentYear] = useState<number>(new Date().getFullYear());
   const userInfo = useAppSelector(selectUser);
@@ -51,10 +56,11 @@ export default function LeaveHistory() {
           startDate: `${currentYear}-01-01`, // first day of the current year
           statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
+          leaveCategory: leaveType,
         }),
       );
     }
-  }, [dispatch, currentYear, userInfo?.workEmail]);
+  }, [dispatch, currentYear, userInfo?.workEmail, leaveType]);
 
   const getMonthAndDay = (dateString: string) => {
     const date = new Date(dateString);
@@ -69,7 +75,10 @@ export default function LeaveHistory() {
 
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
-      <Title firstWord="Leave" secondWord={`History (${currentYear})`} />
+      <Title
+        firstWord={title?.firstWord ?? "Leave"}
+        secondWord={title?.secondWord ?? `History (${currentYear})`}
+      />
       <Box
         gap="2rem"
         display="grid"
@@ -89,7 +98,9 @@ export default function LeaveHistory() {
           </Box>
         )}
         {!loading && leaves.length === 0 && (
-          <Typography color={theme.palette.text.primary}>No leave history available.</Typography>
+          <Typography color={theme.palette.text.primary}>
+            No leave history available for the current year.
+          </Typography>
         )}
         {!loading &&
           leaves.map((leave) => {
