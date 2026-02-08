@@ -563,26 +563,34 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 async () => {
                   try {
                     if (hasJobChanges) {
-                      await dispatch(
+                      const jobResult = await dispatch(
                         updateEmployeeJobInfo({
                           employeeId,
                           payload: jobPatch as UpdateEmployeeJobInfoPayload,
                         }),
                       );
+                      if (updateEmployeeJobInfo.rejected.match(jobResult)) {
+                        throw new Error("Failed to update job info");
+                      }
                     }
 
                     if (hasPersonalChanges) {
-                      await dispatch(
+                      const personalResult = await dispatch(
                         updateEmployeePersonalInfo({
                           employeeId,
                           data: personalPatch as EmployeePersonalInfoUpdate,
                         }),
                       );
+                      if (
+                        updateEmployeePersonalInfo.rejected.match(personalResult,)) {
+                        throw new Error("Failed to update personal info");
+                      }
                     }
-
                     await dispatch(fetchEmployee(employeeId));
                     await dispatch(fetchEmployeePersonalInfo(employeeId));
                     setFormKey((prev) => prev + 1);
+                  } catch (error) {
+                    console.error("Update failed:", error);
                   } finally {
                     actions.setSubmitting(false);
                   }
