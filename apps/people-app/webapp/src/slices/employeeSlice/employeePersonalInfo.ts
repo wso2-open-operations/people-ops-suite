@@ -60,6 +60,7 @@ export interface EmployeePersonalInfoUpdate {
   stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
+  nationality?: string | null;
   emergencyContacts: EmergencyContact[] | null;
 }
 

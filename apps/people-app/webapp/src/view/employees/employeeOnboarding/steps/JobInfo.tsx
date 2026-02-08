@@ -62,7 +62,6 @@ import {
   PhoneOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
-import { Mode } from "../../EmployeeForm";
 
 export const jobInfoValidationSchema = Yup.object().shape({
   workEmail: Yup.string()
@@ -158,11 +157,8 @@ const MemoizedTextField = React.memo(
     />
   ),
 );
-type JobInfoStepProps = {
-  isEdit: Mode;
-};
 
-export default function JobInfoStep({ isEdit }: JobInfoStepProps) {
+export default function JobInfoStep() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { values, handleChange, handleBlur, touched, errors, setFieldValue } =

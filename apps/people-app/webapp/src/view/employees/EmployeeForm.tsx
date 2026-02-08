@@ -170,6 +170,7 @@ const toPersonalUpdatePayload = (
   stateOrProvince: values.personalInfo.stateOrProvince ?? null,
   postalCode: values.personalInfo.postalCode ?? null,
   country: values.personalInfo.country ?? null,
+  nationality: values.personalInfo.nationality ?? null,
   emergencyContacts: values.personalInfo.emergencyContacts ?? null,
 });
 
@@ -350,7 +351,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       case 0:
         return <PersonalInfoStep />;
       case 1:
-        return <JobInfoStep isEdit={mode} />;
+        return <JobInfoStep />;
       case 2:
         return <ReviewStep />;
       default:

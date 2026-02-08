@@ -28,6 +28,6 @@ public enum VehicleStatus {
 
 # [Database] Enum for employee statuses.
 public enum EmployeeStatus {
-    ACTIVE,
-    INACTIVE
+    EMPLOYEE_ACTIVE = "ACTIVE",
+    EMPLOYEE_INACTIVE = "INACTIVE"
 }
