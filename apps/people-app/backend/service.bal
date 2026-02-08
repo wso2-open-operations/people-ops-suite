@@ -442,9 +442,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Employee ID
     # + payload - Employee personal information update payload
     # + return - HTTP OK or HTTP errors
-    resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
-            database:UpdateEmployeePersonalInfoPayload payload)
-        returns database:EmployeePersonalInfo|http:NotFound|http:Forbidden|http:InternalServerError {
+    resource function patch employees/[string id]/personal\-info(http:RequestContext ctx,
+            database:UpdateEmployeePersonalInfoPayload payload) 
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -455,6 +455,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE],userInfo.groups);
+        
         database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
         if employeeInfo is error {
             log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
@@ -473,14 +475,36 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        if employeeInfo.workEmail != userInfo.email {
-            log:printWarn("User is trying to update personal info of another employee", id = id,
-                    invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not allowed to update personal information of other employees"
-                }
-            };
+
+        if !hasAdminAccess {
+            if employeeInfo.workEmail != userInfo.email {
+                string customErr = "You are not allowed to update personal information of another employee";
+                log:printWarn(customErr, id = id, invokerEmail = userInfo.email, targetEmail = employeeInfo.workEmail);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            boolean hasRestrictedFields =
+                payload.nicOrPassport is string ||
+                payload.firstName is string ||
+                payload.lastName is string ||
+                payload.title is string ||
+                payload.dob is string ||
+                payload.gender is string ||
+                payload.nationality is string;
+
+            if hasRestrictedFields {
+                string customErr = "You are not allowed to update one or more of the provided fields";
+                log:printWarn(customErr, id = id, invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
         }
 
         database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
@@ -514,26 +538,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {
-            id: employeePersonalInfo.id,
-            nicOrPassport: employeePersonalInfo.nicOrPassport,
-            firstName: employeePersonalInfo.firstName,
-            lastName: employeePersonalInfo.lastName,
-            title: employeePersonalInfo.title,
-            dob: employeePersonalInfo.dob,
-            gender: employeePersonalInfo.gender,
-            nationality: employeePersonalInfo.nationality,
-            personalEmail: payload.personalEmail,
-            personalPhone: payload.personalPhone,
-            residentNumber: payload.residentNumber,
-            addressLine1: payload.addressLine1,
-            addressLine2: payload.addressLine2,
-            city: payload.city,
-            stateOrProvince: payload.stateOrProvince,
-            postalCode: payload.postalCode,
-            country: payload.country,
-            emergencyContacts: payload.emergencyContacts ?: []
-        };
+        return http:OK;
     }
 
     # Fetch vehicles of a specific employee.

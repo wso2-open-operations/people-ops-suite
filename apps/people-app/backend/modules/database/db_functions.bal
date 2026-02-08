@@ -206,7 +206,7 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 # + id - Personal information ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
-# + return - True if the update was successful or error
+# + return - Nil if the update was successful or error
 public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns error? {
 
@@ -215,11 +215,16 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
                 updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
+
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
+
             _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
-            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contactsOpt
-                select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+
+            sql:ParameterizedQuery[] insertQueries = 
+                from EmergencyContact contact in contactsOpt
+                    select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+                    
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
             }

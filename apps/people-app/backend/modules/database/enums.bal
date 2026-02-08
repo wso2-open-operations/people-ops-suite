@@ -25,3 +25,9 @@ public enum VehicleStatus {
     ACTIVE,
     INACTIVE
 }
+
+# [Database] Enum for employee statuses.
+public enum EmployeeStatus {
+    ACTIVE,
+    INACTIVE
+}

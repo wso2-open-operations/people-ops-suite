@@ -102,20 +102,36 @@ public type Employee record {|
     string? agreementEndDate;
     # Employment type
     string employmentType;
+    # Employment type ID
+    int employmentTypeId;
+    # Career Function ID
+    int careerFunctionId;
     # Designation
     string designation;
+    # Designation ID
+    int designationId;
     # Job role of the user
     string secondaryJobTitle;
     # Office
     string office;
+    # Office ID
+    int officeId;
     # Business unit
     string businessUnit;
+    # Business unit ID
+    int businessUnitId;
     # Team
     string team;
+    # Team ID
+    int teamId;
     # Sub-team
     string subTeam;
+    # Sub-team ID
+    int subTeamId;
     # Unit
     string? unit;
+    # Unit ID
+    int? unitId;
     # Computed field: number of subordinates this employee manages
     int subordinateCount;
 |};
@@ -381,9 +397,6 @@ public type CreateEmployeePayload record {|
     string managerEmail;
     # Additional manager emails
     string[] additionalManagerEmails = [];
-    # Employee status
-    @constraint:String {maxLength: 50}
-    string employeeStatus;
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
@@ -416,6 +429,27 @@ public type CreateEmployeePayload record {|
 
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
+    # National Identity Card number or Passport
+    @constraint:String {maxLength: 100}
+    string? nicOrPassport = ();
+    # First name
+    @constraint:String {maxLength: 100}
+    string? firstName = ();
+    # Last name
+    @constraint:String {maxLength: 100}
+    string? lastName = ();
+    # Title (Mr./Ms./Dr./etc.)
+    @constraint:String {maxLength: 20}
+    string? title = ();
+    # Date of birth
+    @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
+    string? dob = ();
+    # Gender of the person
+    @constraint:String {maxLength: 20}
+    string? gender = ();
+    # Nationality
+    @constraint:String {maxLength: 100}
+    string? nationality = ();
     # Personal email address
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();

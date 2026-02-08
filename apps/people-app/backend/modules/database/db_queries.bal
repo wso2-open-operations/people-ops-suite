@@ -72,13 +72,21 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         et.name AS employmentType,
+        e.employment_type_id AS employmentTypeId,
+        d.career_function_id AS careerFunctionId,
         d.designation AS designation,
+        e.designation_id AS designationId,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
+        e.office_id AS officeId,
         bu.name AS businessUnit,
+        e.business_unit_id AS businessUnitId,
         t.name AS team,
+        e.team_id AS teamId,
         st.name AS subTeam,
-        u.name AS unit
+        e.sub_team_id AS subTeamId,
+        u.name AS unit,
+        e.unit_id AS unitId
     FROM
         employee e
         LEFT JOIN (
@@ -450,7 +458,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.managerEmail},
-            ${payload.employeeStatus},
+            ${"ACTIVE"},
             ${payload.continuousServiceRecord},
             ${payload.employeeThumbnail},
             ${payload.probationEndDate},
@@ -501,15 +509,22 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
     `UPDATE
         personal_info
      SET
-        personal_email = ${payload.personalEmail},
-        personal_phone = ${payload.personalPhone},
-        resident_number = ${payload.residentNumber},
-        address_line_1 = ${payload.addressLine1},
-        address_line_2 = ${payload.addressLine2},
-        city = ${payload.city},
-        state_or_province = ${payload.stateOrProvince},
-        postal_code = ${payload.postalCode},
-        country = ${payload.country},
+        nic_or_passport = COALESCE(${payload.nicOrPassport}, nic_or_passport),
+        first_name = COALESCE(${payload.firstName}, first_name),
+        last_name = COALESCE(${payload.lastName}, last_name),
+        title = COALESCE(${payload.title}, title),
+        dob = COALESCE(${payload.dob}, dob),
+        gender = COALESCE(${payload.gender}, gender),
+        nationality = COALESCE(${payload.nationality}, nationality),
+        personal_email = COALESCE(${payload.personalEmail}, personal_email),
+        personal_phone = COALESCE(${payload.personalPhone}, personal_phone),
+        resident_number = COALESCE(${payload.residentNumber}, resident_number),
+        address_line_1 = COALESCE(${payload.addressLine1}, address_line_1),
+        address_line_2 = COALESCE(${payload.addressLine2}, address_line_2),
+        city = COALESCE(${payload.city}, city),
+        state_or_province = COALESCE(${payload.stateOrProvince}, state_or_province),
+        postal_code = COALESCE(${payload.postalCode}, postal_code),
+        country = COALESCE(${payload.country}, country),
         updated_by = ${updatedBy}
      WHERE
         id = ${id};`;
