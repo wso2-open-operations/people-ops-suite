@@ -25,8 +25,9 @@ import { useAppAuthContext } from "@context/AuthContext";
 import { useAppSelector } from "@slices/store";
 import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
 import { selectUserInfoData } from "@slices/userSlice";
+import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
-const Header = () => {
+const Headercontent = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const navigate = useNavigate();
@@ -174,4 +175,10 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default function Header(){
+  return(
+        <NewThemeWrapper>
+          <Headercontent />
+        </NewThemeWrapper>
+  );
+};
