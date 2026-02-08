@@ -17,15 +17,15 @@
 import { lazy } from "react";
 
 const me = lazy(() => import("@view/me"));
-const employees = lazy(() => import("@view/employees/Employee"));
+const employeeOnboarding = lazy(() => import("@root/src/view/employees/employeeOnboarding/employeeOnboarding"));
 const help = lazy(() => import("@view/help/help"));
-const employeeDetails = lazy(
-  () => import("@view/employees/employeeDetail/employeeDetail"),
-);
+const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
+const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
 
 export const View = {
   me,
-  employees,
+  employeeOnboarding,
   employeeDetails,
+  employeeEdit,
   help,
 };
