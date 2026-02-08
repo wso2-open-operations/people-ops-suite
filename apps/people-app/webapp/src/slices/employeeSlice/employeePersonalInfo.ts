@@ -45,6 +45,12 @@ export interface EmployeePersonalInfo {
 }
 
 export interface EmployeePersonalInfoUpdate {
+  nicOrPassport?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  title?: string | null;
+  dob?: string | null;
+  gender?: string | null;
   personalEmail: string | null;
   personalPhone: string | null;
   residentNumber: string | null;
@@ -108,7 +114,7 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
     { dispatch, rejectWithValue },
   ) => {
     try {
-      const response = await APIService.getInstance().put(
+      await APIService.getInstance().patch(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
         data,
       );
@@ -119,7 +125,7 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "success",
         }),
       );
-      return response.data;
+      return;
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
@@ -176,13 +182,9 @@ const EmployeePersonalInfoSlice = createSlice({
         state.state = State.loading;
         state.stateMessage = "Updating employee personal info...";
       })
-      .addCase(updateEmployeePersonalInfo.fulfilled, (state, action) => {
+      .addCase(updateEmployeePersonalInfo.fulfilled, (state) => {
         state.state = State.success;
-        state.stateMessage =
-          "Successfully updated employee personal information!";
-        if (action.payload) {
-          state.personalInfo = action.payload;
-        }
+        state.stateMessage = "Successfully updated employee personal information!";
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {
