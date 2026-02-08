@@ -26,9 +26,6 @@ import Header from "./header";
 import Sidebar from "./sidebar";
 import { selectRoles } from "@slices/authSlice";
 import { type RootState, useAppSelector } from "@slices/store";
-// import CssBaseline from "@mui/material/CssBaseline";
-
-
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -70,7 +67,7 @@ export default function Layout() {
           flexDirection: "column",
           height: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.mode === "light" ? "#f2f2f2" : "#141414",
+          backgroundColor: theme.palette.mode === "light" ? "#ffffff" : "#141414",
         }}
       >
         {/* Header */}
@@ -80,13 +77,12 @@ export default function Layout() {
         <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
           {/* Sidebar */}
           <Box sx={{ width: "fit-content", height: "100%" }}>
-          <Sidebar
-            roles={roles}
-            currentPath={location.pathname}
-            open={open}
-            handleDrawer={() => setOpen(!open)}
-            theme={theme}
-          />
+            <Sidebar
+              roles={roles}
+              currentPath={location.pathname}
+              open={open}
+              handleDrawer={() => setOpen(!open)}
+            />
           </Box>
 
           {/* Main content area */}
@@ -94,7 +90,11 @@ export default function Layout() {
             sx={{
               flex: 1,
               height: "100%",
-              padding: theme.spacing(3),
+              paddingTop: 3,
+              paddingLeft: 3,
+              paddingRight: 3,
+              paddingBottom: 13,
+              overflowY: "auto"
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
