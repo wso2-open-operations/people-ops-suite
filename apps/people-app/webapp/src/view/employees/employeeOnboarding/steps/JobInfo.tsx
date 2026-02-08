@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -38,7 +38,6 @@ import * as Yup from "yup";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   fetchEmployeesBasicInfo,
-  resetEmployee,
   fetchContinuousServiceRecord,
   resetContinuousService,
 } from "@slices/employeeSlice/employee";
@@ -63,6 +62,7 @@ import {
   PhoneOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
+import { Mode } from "../../EmployeeForm";
 
 export const jobInfoValidationSchema = Yup.object().shape({
   workEmail: Yup.string()
@@ -129,7 +129,7 @@ const SectionHeader = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const MemoizedTextField = React.memo(
@@ -156,10 +156,13 @@ const MemoizedTextField = React.memo(
       helperText={helperText}
       sx={textFieldSx}
     />
-  )
+  ),
 );
+type JobInfoStepProps = {
+  isEdit: Mode;
+};
 
-export default function JobInfoStep() {
+export default function JobInfoStep({ isEdit }: JobInfoStepProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const { values, handleChange, handleBlur, touched, errors, setFieldValue } =
@@ -196,12 +199,12 @@ export default function JobInfoStep() {
         color: theme.palette.secondary.contrastText,
       },
     }),
-    [theme]
+    [theme],
   );
 
   const headerBoxSx = useMemo(
     () => ({ display: "flex", alignItems: "center", gap: 1.5, mb: 3, mt: 4 }),
-    []
+    [],
   );
 
   const iconBoxSx = useMemo(
@@ -214,11 +217,11 @@ export default function JobInfoStep() {
       borderRadius: 2,
       background: `linear-gradient(135deg, ${alpha(
         theme.palette.secondary.contrastText,
-        0.2
+        0.2,
       )}, ${alpha(theme.palette.secondary.contrastText, 0.1)})`,
       color: theme.palette.secondary.contrastText,
     }),
-    [theme]
+    [theme],
   );
 
   const disabledSx = useMemo(
@@ -227,7 +230,7 @@ export default function JobInfoStep() {
         backgroundColor: alpha(theme.palette.action.disabledBackground, 0.05),
       },
     }),
-    [theme]
+    [theme],
   );
 
   const icons = useMemo(
@@ -239,43 +242,50 @@ export default function JobInfoStep() {
       supervisor: <SupervisorAccountOutlined />,
       phone: <PhoneOutlined />,
     }),
-    []
+    [],
   );
 
-  const filteredAdditionalManagerOptions = useMemo(() => {
-    if (!values.managerEmail) return employeesBasicInfo;
+  const managerEmailOptions = useMemo(() => {
+    const list = employeesBasicInfo.map((e) => e.workEmail).filter(Boolean);
 
-    return employeesBasicInfo.filter(
-      (employee) => employee.workEmail !== values.managerEmail
-    );
+    if (values.managerEmail && !list.includes(values.managerEmail)) {
+      return [values.managerEmail, ...list];
+    }
+
+    return list;
   }, [employeesBasicInfo, values.managerEmail]);
 
+  const additionalManagerOptions = useMemo(() => {
+    const list = employeesBasicInfo.map((e) => e.workEmail).filter(Boolean);
+
+    const selected = values.additionalManagerEmail ?? [];
+    const missing = selected.filter((email) => email && !list.includes(email));
+
+    return [...missing, ...list];
+  }, [employeesBasicInfo, values.additionalManagerEmail]);
+
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
-    null
+    null,
   );
 
-  useEffect(() => {
-    if (values.managerEmail && values.additionalManagerEmail?.length) {
-      const filtered = values.additionalManagerEmail.filter(
-        (email) => email !== values.managerEmail
-      );
-      if (filtered.length !== values.additionalManagerEmail.length) {
-        setFieldValue("additionalManagerEmail", filtered);
-      }
-    }
-  }, [values.managerEmail, values.additionalManagerEmail, setFieldValue]);
-
-  // Fetch required master data on mount and reset employee slice on unmount
   useEffect(() => {
     dispatch(fetchBusinessUnits());
     dispatch(fetchOffices());
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
+
     return () => {
-      dispatch(resetEmployee());
+      dispatch(resetContinuousService());
     };
   }, [dispatch]);
+
+  useEffect(() => {
+    const id = Number(values.careerFunctionId);
+    if (!id || id <= 0) return;
+
+    dispatch(fetchDesignations({ careerFunctionId: id }));
+  }, [dispatch, values.careerFunctionId]);
 
   // Update employmentLocation automatically based on selected office
   const prevBusinessUnitId = React.useRef(values.businessUnitId);
@@ -330,24 +340,38 @@ export default function JobInfoStep() {
     }
   }, [values.subTeamId, dispatch, setFieldValue]);
 
-  // Update employmentLocation automatically based on selected office
   useEffect(() => {
+    if (!offices.length) return;
+
     const selectedOffice = offices.find(
-      (office) => office.id === values.officeId
+      (office) => office.id === values.officeId,
     );
-    if (selectedOffice) {
-      setFieldValue("employmentLocation", selectedOffice.location);
-      if (
-        values.workLocation &&
-        !selectedOffice.workingLocations.includes(values.workLocation)
-      ) {
+
+    if (!selectedOffice) {
+      if (!values.officeId) {
+        setFieldValue("employmentLocation", "");
         setFieldValue("workLocation", "");
       }
-    } else {
-      setFieldValue("employmentLocation", "");
+      return;
+    }
+
+    if (values.employmentLocation !== selectedOffice.location) {
+      setFieldValue("employmentLocation", selectedOffice.location);
+    }
+
+    if (
+      values.workLocation &&
+      !selectedOffice.workingLocations.includes(values.workLocation)
+    ) {
       setFieldValue("workLocation", "");
     }
-  }, [values.officeId, offices, setFieldValue, values.workLocation]);
+  }, [
+    values.officeId,
+    offices,
+    values.employmentLocation,
+    values.workLocation,
+    setFieldValue,
+  ]);
 
   // Debounced fetch for continuous service record based on work email
   useEffect(() => {
@@ -375,7 +399,7 @@ export default function JobInfoStep() {
     if (continuousServiceRecord?.length === 1) {
       setFieldValue(
         "continuousServiceRecord",
-        continuousServiceRecord[0].employeeId
+        continuousServiceRecord[0].employeeId,
       );
     } else if (
       continuousServiceRecord?.length > 1 &&
@@ -383,7 +407,7 @@ export default function JobInfoStep() {
     ) {
       setFieldValue(
         "continuousServiceRecord",
-        continuousServiceRecord[selectedRecordIndex].employeeId
+        continuousServiceRecord[selectedRecordIndex].employeeId,
       );
     } else {
       setFieldValue("continuousServiceRecord", null);
@@ -413,7 +437,7 @@ export default function JobInfoStep() {
         />
       );
     },
-    [values, handleChange, handleBlur, touched, errors, textFieldSx]
+    [values, handleChange, handleBlur, touched, errors, textFieldSx],
   );
 
   return (
@@ -437,7 +461,7 @@ export default function JobInfoStep() {
                 handleBlur(e);
                 const email = e.target.value?.trim();
                 if (email && Yup.string().email().isValidSync(email)) {
-                  dispatch(fetchContinuousServiceRecord(values.workEmail));
+                  dispatch(fetchContinuousServiceRecord(email));
                 } else {
                   dispatch(resetContinuousService());
                   setSelectedRecordIndex(null);
@@ -484,7 +508,10 @@ export default function JobInfoStep() {
                           value: dayjs(record.startDate).format("YYYY-MM-DD"),
                         },
                         { label: "Manager Email", value: record.managerEmail },
-                        { label: "Additional Managers", value: record.additionalManagerEmails },
+                        {
+                          label: "Additional Managers",
+                          value: record.additionalManagerEmails,
+                        },
                         { label: "Business Unit", value: record.businessUnit },
                         { label: "Team", value: record.team },
                         ...(record.subTeam
@@ -534,7 +561,7 @@ export default function JobInfoStep() {
                     setSelectedRecordIndex(index);
                     setFieldValue(
                       "continuousServiceRecord",
-                      continuousServiceRecord[index].employeeId
+                      continuousServiceRecord[index].employeeId,
                     );
                   }}
                   disabled={!!errorMessage}
@@ -587,7 +614,7 @@ export default function JobInfoStep() {
                         : continuousServiceRecord?.[0];
                     setFieldValue(
                       "continuousServiceRecord",
-                      record?.employeeId ?? null
+                      record?.employeeId ?? null,
                     );
                   }}
                 />
@@ -755,15 +782,10 @@ export default function JobInfoStep() {
                 const newCareerFunctionId = Number(e.target.value);
                 setFieldValue("careerFunctionId", newCareerFunctionId);
                 setFieldValue("designationId", 0);
-                if (newCareerFunctionId) {
-                  dispatch(
-                    fetchDesignations({ careerFunctionId: newCareerFunctionId })
-                  );
-                }
               }}
               onBlur={handleBlur}
               error={Boolean(
-                touched.careerFunctionId && errors.careerFunctionId
+                touched.careerFunctionId && errors.careerFunctionId,
               )}
               helperText={touched.careerFunctionId && errors.careerFunctionId}
               sx={textFieldSx}
@@ -782,6 +804,7 @@ export default function JobInfoStep() {
                 </MenuItem>
               )}
             </TextField>
+
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField
@@ -816,8 +839,8 @@ export default function JobInfoStep() {
                   {!values.careerFunctionId || values.careerFunctionId === 0
                     ? "Select career function first"
                     : organizationState === "loading"
-                    ? "Loading designations..."
-                    : "No designations found"}
+                      ? "Loading designations..."
+                      : "No designations found"}
                 </MenuItem>
               )}
             </TextField>
@@ -873,7 +896,7 @@ export default function JobInfoStep() {
               value={values.employmentLocation || ""}
               disabled
               error={Boolean(
-                touched.employmentLocation && errors.employmentLocation
+                touched.employmentLocation && errors.employmentLocation,
               )}
               helperText={
                 touched.employmentLocation && errors.employmentLocation
@@ -891,7 +914,7 @@ export default function JobInfoStep() {
               required
               label="Work Location"
               name="workLocation"
-              value={values.workLocation || ""}
+              value={values.workLocation}
               onChange={(e) => setFieldValue("workLocation", e.target.value)}
               onBlur={handleBlur}
               error={Boolean(touched.workLocation && errors.workLocation)}
@@ -939,7 +962,7 @@ export default function JobInfoStep() {
               }
               onBlur={handleBlur}
               error={Boolean(
-                touched.employmentTypeId && errors.employmentTypeId
+                touched.employmentTypeId && errors.employmentTypeId,
               )}
               helperText={touched.employmentTypeId && errors.employmentTypeId}
               disabled={organizationState === "loading"}
@@ -987,14 +1010,14 @@ export default function JobInfoStep() {
               onChange={(val) =>
                 setFieldValue(
                   "probationEndDate",
-                  val ? val.format("YYYY-MM-DD") : null
+                  val ? val.format("YYYY-MM-DD") : null,
                 )
               }
               slotProps={{
                 textField: {
                   fullWidth: true,
                   error: Boolean(
-                    touched.probationEndDate && errors.probationEndDate
+                    touched.probationEndDate && errors.probationEndDate,
                   ),
                   helperText:
                     touched.probationEndDate && errors.probationEndDate,
@@ -1012,14 +1035,14 @@ export default function JobInfoStep() {
               onChange={(val) =>
                 setFieldValue(
                   "agreementEndDate",
-                  val ? val.format("YYYY-MM-DD") : null
+                  val ? val.format("YYYY-MM-DD") : null,
                 )
               }
               slotProps={{
                 textField: {
                   fullWidth: true,
                   error: Boolean(
-                    touched.agreementEndDate && errors.agreementEndDate
+                    touched.agreementEndDate && errors.agreementEndDate,
                   ),
                   helperText:
                     touched.agreementEndDate && errors.agreementEndDate,
@@ -1050,16 +1073,15 @@ export default function JobInfoStep() {
               onChange={(e) => setFieldValue("managerEmail", e.target.value)}
               onBlur={handleBlur}
               error={Boolean(touched.managerEmail && errors.managerEmail)}
-              helperText={touched.managerEmail ? errors.managerEmail ?? "" : ""}
+              helperText={
+                touched.managerEmail ? (errors.managerEmail ?? "") : ""
+              }
               sx={textFieldSx}
             >
-              {employeesBasicInfo.length ? (
-                employeesBasicInfo.map((employee) => (
-                  <MenuItem
-                    key={employee.employeeId}
-                    value={employee.workEmail}
-                  >
-                    {employee.workEmail}
+              {managerEmailOptions.length ? (
+                managerEmailOptions.map((email) => (
+                  <MenuItem key={email} value={email}>
+                    {email}
                   </MenuItem>
                 ))
               ) : (
@@ -1082,12 +1104,12 @@ export default function JobInfoStep() {
                 const value = e.target.value;
                 setFieldValue(
                   "additionalManagerEmail",
-                  typeof value === "string" ? value.split(",") : value
+                  typeof value === "string" ? value.split(",") : value,
                 );
               }}
               onBlur={handleBlur}
               error={Boolean(
-                touched.additionalManagerEmail && errors.additionalManagerEmail
+                touched.additionalManagerEmail && errors.additionalManagerEmail,
               )}
               helperText={
                 touched.additionalManagerEmail && errors.additionalManagerEmail
@@ -1095,22 +1117,21 @@ export default function JobInfoStep() {
               SelectProps={{ multiple: true }}
               sx={textFieldSx}
             >
-              {filteredAdditionalManagerOptions.length ? (
-                filteredAdditionalManagerOptions.map((employee) => (
-                  <MenuItem
-                    key={employee.employeeId}
-                    value={employee.workEmail}
-                  >
-                    {employee.workEmail}
-                  </MenuItem>
-                ))
+              {additionalManagerOptions.length ? (
+                additionalManagerOptions
+                  .filter((email) => email !== values.managerEmail)
+                  .map((email) => (
+                    <MenuItem key={email} value={email}>
+                      {email}
+                    </MenuItem>
+                  ))
               ) : (
                 <MenuItem disabled>
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : values.managerEmail
-                    ? "No other managers available"
-                    : "Select primary manager first"}
+                      ? "No other managers available"
+                      : "Select primary manager first"}
                 </MenuItem>
               )}
             </TextField>

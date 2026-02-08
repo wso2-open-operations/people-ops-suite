@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -239,7 +239,7 @@ export default function ReviewStep() {
       designation:
         designations.find((cf) => cf.id === values.designationId)
           ?.designation || null,
-      careerFunctions:
+      careerFunction:
         careerFunctions.find((cf) => cf.id === values.careerFunctionId)
           ?.careerFunction || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
@@ -440,7 +440,7 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Career Function"
-              value={mappedNames.careerFunctions}
+              value={mappedNames.careerFunction}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
