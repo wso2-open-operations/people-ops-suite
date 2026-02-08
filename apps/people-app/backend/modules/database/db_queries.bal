@@ -480,7 +480,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
 # + employeeId - Employee primary key
 # + additionalManagerEmail - Additional manager email
 # + createdBy - Creator of the additional manager record
-# + return - Additional manager insert query
+# + return - sql:ParameterizedQuery - Insert query for additional managers
 isolated function addEmployeeAdditionalManagerQuery(int employeeId, string additionalManagerEmail, string createdBy)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee_additional_managers
@@ -503,7 +503,7 @@ isolated function addEmployeeAdditionalManagerQuery(int employeeId, string addit
 # + id - Personal info ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
-# + return - Personal info update query
+# + return - sql:ParameterizedQuery - Update query for personal info
 isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy) 
     returns sql:ParameterizedQuery =>
     `UPDATE
@@ -532,7 +532,7 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
 # Delete emergency contacts by personal info id.
 # 
 # + personalInfoId - Personal info primary key
-# + return - Delete emergency contacts query
+# + return - sql:ParameterizedQuery - Delete query for emergency contacts
 isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
     `DELETE 
         FROM personal_info_emergency_contacts
@@ -543,7 +543,7 @@ isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoI
 # + personalInfoId - Personal info primary key
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
-# + return - Insert emergency contact query
+# + return - sql:ParameterizedQuery - Insert query for emergency contacts
 isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
     string createdBy) returns sql:ParameterizedQuery =>`
         INSERT INTO personal_info_emergency_contacts
@@ -572,7 +572,7 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
 # + employeeDbId - Employee database ID
 # + payload - Job information update payload
 # + updatedBy - User performing the update
-# + return - Parameterized query to update employee job information
+# + return - sql:ParameterizedQuery - Update query for employee job info
 isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery => `
         UPDATE 
@@ -602,7 +602,7 @@ isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJob
 # Delete additional managers by employee database ID.
 #
 # + employeeDbId - Employee ID
-# + return - Parameterized query to delete all additional managers for the employee
+# + return - sql:ParameterizedQuery - Delete query for all additional managers
 isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeeDbId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers
       WHERE 
@@ -613,7 +613,7 @@ isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeeDbId) re
 # + employeeDbId - Employee ID
 # + email - Additional manager email address
 # + actor - User creating the additional manager record
-# + return - Parameterized query to insert an additional manager
+# + return - sql:ParameterizedQuery - Insert query for an additional managers
 isolated function addAdditionalManagerQuery(int employeeDbId, string email, string actor)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee_additional_managers
