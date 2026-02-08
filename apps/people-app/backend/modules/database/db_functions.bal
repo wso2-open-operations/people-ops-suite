@@ -234,6 +234,40 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
     return;
 }
 
+# Update employee job information.
+#
+# + employeeDbId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - Updater of the job info record
+# + return - Nil if the update was successful or error
+public isolated function updateEmployeeJobInfo(int employeeDbId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    transaction {
+        sql:ExecutionResult executionResult =
+            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeDbId, payload, updatedBy));
+
+        check checkAffectedCount(executionResult.affectedRowCount);
+
+        string[]? additionalManagerEmails = payload.additionalManagerEmails;
+        if additionalManagerEmails is string[] {
+
+            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeeDbId));
+
+            sql:ParameterizedQuery[] insertQueries =
+                from string email in additionalManagerEmails
+                    select addAdditionalManagerQuery(employeeDbId, email, updatedBy);
+
+            if insertQueries.length() > 0 {
+                _ = check databaseClient->batchExecute(insertQueries);
+            }
+        }
+
+        check commit;
+    }
+    return;
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  

@@ -541,6 +541,68 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Update employee job information.
+    #
+    # + id - Employee ID
+    # + payload - Employee job info update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string id]/job\-info(http:RequestContext ctx,
+            database:UpdateEmployeeJobInfoPayload payload) 
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to update an employee", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to update an employee"
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        if employeeInfo is error {
+            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
+                    employeeInfo, id = id);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn("Employee information not found", id = id);
+            return <http:NotFound>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        error? updateResult = database:updateEmployeeJobInfo(employeeInfo.id, payload, userInfo.email);
+        if updateResult is error {
+            string customErr = string `Error occurred while updating employee job information for ID: ${id}`;
+            log:printError(customErr, updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        return http:OK;
+    }
+
     # Fetch vehicles of a specific employee.
     #
     # + employeeEmail - The email of the employee  

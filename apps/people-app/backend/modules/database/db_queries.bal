@@ -567,6 +567,70 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
                 ${createdBy}
             );`;
 
+# Update employee job information query.
+#
+# + employeeDbId - Employee database ID
+# + payload - Job information update payload
+# + updatedBy - User performing the update
+# + return - Parameterized query to update employee job information
+isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery => `
+        UPDATE 
+            employee
+        SET
+            epf = COALESCE(${payload.epf}, epf),
+            employment_location = COALESCE(${payload.employmentLocation}, employment_location),
+            work_location = COALESCE(${payload.workLocation}, work_location),
+            start_date = COALESCE(${payload.startDate}, start_date),
+            secondary_job_title = COALESCE(${payload.secondaryJobTitle}, secondary_job_title),
+            manager_email = COALESCE(${payload.managerEmail}, manager_email),
+            employee_thumbnail = COALESCE(${payload.employeeThumbnail}, employee_thumbnail),
+            probation_end_date = COALESCE(${payload.probationEndDate}, probation_end_date),
+            agreement_end_date = COALESCE(${payload.agreementEndDate}, agreement_end_date),
+            employment_type_id = COALESCE(${payload.employmentTypeId}, employment_type_id),
+            designation_id = COALESCE(${payload.designationId}, designation_id),
+            office_id = COALESCE(${payload.officeId}, office_id),
+            team_id = COALESCE(${payload.teamId}, team_id),
+            sub_team_id = COALESCE(${payload.subTeamId}, sub_team_id),
+            business_unit_id = COALESCE(${payload.businessUnitId}, business_unit_id),
+            unit_id = COALESCE(${payload.unitId}, unit_id),
+            continuous_service_record = COALESCE(${payload.continuousServiceRecord}, continuous_service_record),
+            updated_by = ${updatedBy}
+        WHERE 
+            id = ${employeeDbId};`;
+
+# Delete additional managers by employee database ID.
+#
+# + employeeDbId - Employee ID
+# + return - Parameterized query to delete all additional managers for the employee
+isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeeDbId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers
+      WHERE 
+        employee_id = ${employeeDbId};`;
+
+# Add an additional manager for an employee.
+#
+# + employeeDbId - Employee ID
+# + email - Additional manager email address
+# + actor - User creating the additional manager record
+# + return - Parameterized query to insert an additional manager
+isolated function addAdditionalManagerQuery(int employeeDbId, string email, string actor)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_additional_managers
+        (
+            employee_id,
+            additional_manager_email,
+            created_by,
+            updated_by
+        )
+      VALUES
+        (
+            ${employeeDbId}, 
+            ${email}, 
+            ${actor}, 
+            ${actor}
+        );`;
+
 # Build query to fetch vehicles.
 #
 # + owner - Filter : Owner of the vehicles

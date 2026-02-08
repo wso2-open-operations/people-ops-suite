@@ -481,6 +481,56 @@ public type UpdateEmployeePersonalInfoPayload record {|
     EmergencyContact[]? emergencyContacts = ();
 |};
 
+# Employee job information update payload.
+public type UpdateEmployeeJobInfoPayload record {|
+    # Employee's Provident Fund number
+    @constraint:String {maxLength: 45}
+    string? epf = ();
+    # Employee location
+    @constraint:String {maxLength: 255}
+    string? employmentLocation = ();
+    # Work location   
+    @constraint:String {maxLength: 100}
+    string? workLocation = ();
+    # Start date    
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? startDate = ();
+    # Secondary job title
+    @constraint:String {maxLength: 100}
+    string? secondaryJobTitle = ();
+    # Manager email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? managerEmail = ();
+    # Additional manager emails
+    string[]? additionalManagerEmails = ();
+    # Employee thumbnail URL
+    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
+    string? employeeThumbnail = ();
+    # Probation end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? probationEndDate = ();
+    # Agreement end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? agreementEndDate = ();
+    # Employment type ID
+    int? employmentTypeId = ();
+    # Designation ID
+    int? designationId = ();
+    # Office ID
+    int? officeId = ();
+    # Team ID
+    int? teamId = ();
+    # Sub-team ID
+    int? subTeamId = ();
+    # Business unit ID
+    int? businessUnitId = ();
+    # Unit ID
+    int? unitId = ();
+    # Continuous service record
+    @constraint:String {maxLength: 99}
+    string? continuousServiceRecord = ();
+|};
+
 # [Database] Insert type for vehicle.
 public type AddVehiclePayload record {|
     # Owner of the vehicle
