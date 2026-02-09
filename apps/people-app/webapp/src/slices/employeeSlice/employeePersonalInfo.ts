@@ -118,29 +118,43 @@ export const updateEmployeePersonalInfo = createAsyncThunk<
         data,
       );
 
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
-      );
-
       dispatch(
         enqueueSnackbarMessage({
           message: "Successfully updated!",
           type: "success",
         }),
       );
-
-      return response.data as EmployeePersonalInfo;
     } catch (error: any) {
       const errorMessage =
-        error.response?.status === HttpStatusCode.InternalServerError
+        error?.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.updateEmployeePersonalInfo
-          : error.response?.data?.message ||
+          : error?.response?.data?.message ||
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
         enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
       );
       return rejectWithValue(errorMessage);
+    }
+
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
+      );
+      return response.data as EmployeePersonalInfo;
+    } catch (error: any) {
+      const refreshMessage =
+        error?.response?.data?.message ||
+        "Updated successfully, but failed to refresh personal info. Please reload.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: refreshMessage,
+          type: "warning",
+        }),
+      );
+
+      return rejectWithValue(refreshMessage);
     }
   },
 );

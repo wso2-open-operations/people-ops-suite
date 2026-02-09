@@ -30,6 +30,10 @@ const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
 # URL validation regex pattern
 const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 
+# Constrained email string type.
+@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+public type Email string;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -396,7 +400,7 @@ public type CreateEmployeePayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string managerEmail;
     # Additional manager emails
-    string[] additionalManagerEmails = [];
+    Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
@@ -502,7 +506,7 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? managerEmail = ();
     # Additional manager emails
-    string[]? additionalManagerEmails = ();
+    Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
