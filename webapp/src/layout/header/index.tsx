@@ -80,7 +80,7 @@ const Headercontent = () => {
           }}
         >
           <Typography
-            variant="h4"
+            variant="h5"
             sx={{
               color: theme.palette.customText.primary.p1.active,
             }}

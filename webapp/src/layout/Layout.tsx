@@ -26,15 +26,16 @@ import Header from "./header";
 import Sidebar from "./sidebar";
 import { selectRoles } from "@slices/authSlice";
 import { type RootState, useAppSelector } from "@slices/store";
+import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
-export default function Layout() {
+const LayoutContent = () => {
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
-  const theme = useTheme();
+  const theme = useTheme(); 
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -67,7 +68,7 @@ export default function Layout() {
           flexDirection: "column",
           height: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.mode === "light" ? "#ffffff" : "#141414",
+          backgroundColor: theme.palette.surface.primary.active,
         }}
       >
         {/* Header */}
@@ -90,11 +91,7 @@ export default function Layout() {
             sx={{
               flex: 1,
               height: "100%",
-              paddingTop: 3,
-              paddingLeft: 3,
-              paddingRight: 3,
-              paddingBottom: 13,
-              overflowY: "auto"
+              padding: theme.spacing(3),
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
@@ -104,5 +101,13 @@ export default function Layout() {
         </Box>
       </Box>
     </ConfirmationModalContextProvider>
+  );
+};
+
+export default function Layout() {
+  return (
+    <NewThemeWrapper>
+      <LayoutContent />
+    </NewThemeWrapper>
   );
 }
