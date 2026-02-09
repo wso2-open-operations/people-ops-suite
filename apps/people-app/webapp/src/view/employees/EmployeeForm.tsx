@@ -15,7 +15,7 @@
 // under the License.
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import { ConfirmationType, State } from "@/types/types";
@@ -273,6 +273,7 @@ type EmployeeFormProps = {
 export default function EmployeeForm({ mode }: EmployeeFormProps) {
   const { employeeId } = useParams();
   const theme = useTheme();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { showConfirmation } = useConfirmationModalContext();
 
@@ -583,13 +584,14 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         }),
                       );
                       if (
-                        updateEmployeePersonalInfo.rejected.match(personalResult,)) {
+                        updateEmployeePersonalInfo.rejected.match(
+                          personalResult,
+                        )
+                      ) {
                         throw new Error("Failed to update personal info");
                       }
                     }
-                    await dispatch(fetchEmployee(employeeId));
-                    await dispatch(fetchEmployeePersonalInfo(employeeId));
-                    setFormKey((prev) => prev + 1);
+                    navigate(`/employees/${employeeId}`, { replace: true });
                   } catch (error) {
                     console.error("Update failed:", error);
                   } finally {

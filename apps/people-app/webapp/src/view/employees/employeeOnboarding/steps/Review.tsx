@@ -58,7 +58,7 @@ const SectionHeader = React.memo(
             borderRadius: 1.5,
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.secondary.contrastText,
-              0.15
+              0.15,
             )}, ${alpha(theme.palette.secondary.contrastText, 0.08)})`,
             color: theme.palette.secondary.contrastText,
           }}
@@ -75,7 +75,7 @@ const SectionHeader = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const ReviewField = React.memo(
@@ -109,7 +109,7 @@ const ReviewField = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const MainSectionTitle = React.memo(({ title }: { title: string }) => {
@@ -183,7 +183,7 @@ export default function ReviewStep() {
     }
     if (values.careerFunctionId && values.careerFunctionId !== 0) {
       dispatch(
-        fetchDesignations({ careerFunctionId: values.careerFunctionId })
+        fetchDesignations({ careerFunctionId: values.careerFunctionId }),
       );
     }
   }, [
@@ -209,7 +209,7 @@ export default function ReviewStep() {
           ? alpha(theme.palette.common.white, 0.02)
           : alpha(theme.palette.common.black, 0.01),
     }),
-    [theme]
+    [theme],
   );
 
   const icons = useMemo(
@@ -225,7 +225,7 @@ export default function ReviewStep() {
       supervisor: <SupervisorAccountOutlined fontSize="small" />,
       phone: <PhoneOutlined fontSize="small" />,
     }),
-    []
+    [],
   );
 
   // Map IDs to Names for display
@@ -264,7 +264,7 @@ export default function ReviewStep() {
       values.careerFunctionId,
       values.officeId,
       values.employmentTypeId,
-    ]
+    ],
   );
 
   return (

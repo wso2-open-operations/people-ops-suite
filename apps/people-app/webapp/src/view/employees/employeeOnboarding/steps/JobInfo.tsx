@@ -910,7 +910,7 @@ export default function JobInfoStep() {
               required
               label="Work Location"
               name="workLocation"
-              value={values.workLocation}
+              value={values.workLocation || ""}
               onChange={(e) => setFieldValue("workLocation", e.target.value)}
               onBlur={handleBlur}
               error={Boolean(touched.workLocation && errors.workLocation)}

@@ -51,17 +51,17 @@ export interface EmployeePersonalInfoUpdate {
   title?: string | null;
   dob?: string | null;
   gender?: string | null;
-  personalEmail: string | null;
-  personalPhone: string | null;
-  residentNumber: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  stateOrProvince: string | null;
-  postalCode: string | null;
-  country: string | null;
+  personalEmail?: string | null;
+  personalPhone?: string | null;
+  residentNumber?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  stateOrProvince?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
   nationality?: string | null;
-  emergencyContacts: EmergencyContact[] | null;
+  emergencyContacts?: EmergencyContact[] | null;
 }
 
 interface EmployeePersonalInfoState {
@@ -105,19 +105,21 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
   },
 );
 
-export const updateEmployeePersonalInfo = createAsyncThunk(
+export const updateEmployeePersonalInfo = createAsyncThunk<
+  EmployeePersonalInfo,
+  { employeeId: string; data: EmployeePersonalInfoUpdate },
+  { rejectValue: string }
+>(
   "employees/updateEmployeePersonalInfo",
-  async (
-    {
-      employeeId,
-      data,
-    }: { employeeId: string; data: EmployeePersonalInfoUpdate },
-    { dispatch, rejectWithValue },
-  ) => {
+  async ({ employeeId, data }, { dispatch, rejectWithValue }) => {
     try {
       await APIService.getInstance().patch(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
         data,
+      );
+
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
       );
 
       dispatch(
@@ -126,7 +128,8 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "success",
         }),
       );
-      return;
+
+      return response.data as EmployeePersonalInfo;
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
@@ -135,12 +138,8 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
-        enqueueSnackbarMessage({
-          message: errorMessage,
-          type: "error",
-        }),
+        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
       );
-
       return rejectWithValue(errorMessage);
     }
   },
@@ -183,9 +182,11 @@ const EmployeePersonalInfoSlice = createSlice({
         state.state = State.loading;
         state.stateMessage = "Updating employee personal info...";
       })
-      .addCase(updateEmployeePersonalInfo.fulfilled, (state) => {
+      .addCase(updateEmployeePersonalInfo.fulfilled, (state, action) => {
         state.state = State.success;
-        state.stateMessage = "Successfully updated employee personal information!";
+        state.stateMessage =
+          "Successfully updated employee personal information!";
+        state.personalInfo = action.payload;
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {
