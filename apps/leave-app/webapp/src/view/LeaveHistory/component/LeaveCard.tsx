@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
   Button,
@@ -125,22 +125,19 @@ export default function LeaveCard({
                       width: "32px",
                       height: "32px",
                       borderRadius: "4px",
+                      backgroundColor: "transparent",
                       color: isCancelDisabled()
                         ? theme.palette.text.disabled
-                        : theme.palette.common.white,
-                      backgroundColor: isCancelDisabled()
-                        ? theme.palette.action.disabledBackground
-                        : theme.palette.error.main,
-                      "&:hover": {
-                        backgroundColor: theme.palette.error.dark,
-                      },
+                        : theme.palette.primary.main,
                       "&.Mui-disabled": {
-                        backgroundColor: theme.palette.action.disabledBackground,
                         color: theme.palette.text.disabled,
+                      },
+                      "&:hover": {
+                        backgroundColor: "transparent",
                       },
                     }}
                   >
-                    <CloseIcon fontSize="small" />
+                    <DeleteIcon fontSize="medium" />
                   </IconButton>
                 </span>
               </Tooltip>
