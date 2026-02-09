@@ -27,7 +27,7 @@ import {
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { OrderBy, State, Status } from "@root/src/types/types";
+import { LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
@@ -44,6 +44,7 @@ export default function ApproveLeaveTab() {
       dispatch(
         fetchLeaveHistory({
           approverEmail: userInfo.workEmail,
+          leaveCategory: [LeaveType.SABBATICAL],
           statuses: [Status.PENDING],
           orderBy: OrderBy.DESC,
         }),
