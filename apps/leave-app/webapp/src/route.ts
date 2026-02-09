@@ -32,7 +32,7 @@ import AdminSabbaticalTab from "@view/LeadReport/panel/AdminSabbaticalTab";
 import LeadReportTab from "@view/LeadReport/panel/LeadReportTab";
 import SabbaticalLeaveHistory from "@view/LeaveHistory/SabbaticalLeaveHistory";
 import ApproveLeaveTab from "@view/SabbaticalLeave/Panel/ApproveLeaveTab";
-import { SabbaticalLeave } from "@view/index";
+import SabbaticalLeave from "@view/SabbaticalLeave/SabbaticalLeave";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 import GeneralLeaveHistory from "./view/LeaveHistory/GeneralLeaveHistory";
