@@ -30,7 +30,6 @@ import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 const Headercontent = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
-  const navigate = useNavigate();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
   const userInfo = useAppSelector(selectUserInfoData);
@@ -42,20 +41,12 @@ const Headercontent = () => {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
-  const getThemeColor = (path: string, fallback: string): string => {
-    try {
-      const color = path.split('.').reduce((o: any, i: string) => o?.[i], theme.palette as any);
-      return typeof color === 'string' ? color : fallback;
-    } catch (e) {
-      return fallback;
-    }
-  };
 
   return (
     <Box
       sx={{
         zIndex: 2110,
-        backgroundColor: getThemeColor("surface.territory.active", "#ffffff"),
+        backgroundColor: theme.palette.surface.territory.active,
         boxShadow: theme.shadows[4],
       }}
     >
@@ -76,9 +67,9 @@ const Headercontent = () => {
             height: "40px",
             maxWidth: "100px",
           }}
-          onClick={() => navigate("/")}
+          onClick={() => (window.location.href = "/")}
           src={Wso2Logo}
-        />
+        ></img>
 
         <Box
           sx={{
@@ -91,9 +82,9 @@ const Headercontent = () => {
           }}
         >
           <Typography
-            variant="h5"
+            variant="h4"
             sx={{
-              color: getThemeColor("customText.primary.p1.active", "#000000"),
+              color: theme.palette.customText.primary.p1.active,
             }}
           >
             {APP_NAME}
@@ -110,7 +101,7 @@ const Headercontent = () => {
                     noWrap
                     variant="body1"
                     sx={{
-                      color: getThemeColor("customText.primary.p2.active", "#333333"),
+                      color: theme.palette.customText.primary.p2.active,
                     }}
                   >
                     {userInfo?.employeeName}
@@ -119,7 +110,7 @@ const Headercontent = () => {
                     noWrap
                     variant="body2"
                     sx={{
-                      color: getThemeColor("customText.primary.p3.active", "#666666"),
+                      color: theme.palette.customText.primary.p3.active,
                     }}
                   >
                     {userInfo?.jobRole}
@@ -132,7 +123,7 @@ const Headercontent = () => {
                       width: 48,
                       height: 48,
                       border: 1,
-                      borderColor: getThemeColor("customBorder.territory.active", "#cccccc"),
+                      borderColor: theme.palette.customBorder.territory.active,
                     }}
                     src={userInfo.employeeThumbnail || ""}
                     alt={userInfo.employeeName || "Avatar"}
