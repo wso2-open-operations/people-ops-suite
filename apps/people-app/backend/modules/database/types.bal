@@ -427,6 +427,8 @@ public type CreateEmployeePayload record {|
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
+    # Employee Status
+    EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};

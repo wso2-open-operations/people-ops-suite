@@ -458,7 +458,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.startDate},
             ${payload.secondaryJobTitle},
             ${payload.managerEmail},
-            ${"ACTIVE"},
+            ${payload.employeeStatus},
             ${payload.continuousServiceRecord},
             ${payload.employeeThumbnail},
             ${payload.probationEndDate},
