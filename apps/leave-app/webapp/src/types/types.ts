@@ -259,6 +259,7 @@ export interface AppConfigResponse {
   sabbaticalLeaveUserGuideUrl: string;
   sabbaticalLeaveEligibilityDuration: number;
   sabbaticalLeaveMaxApplicationDuration: number;
+  cachedEmails: CachedMail;
 }
 
 // Leave policy type.
