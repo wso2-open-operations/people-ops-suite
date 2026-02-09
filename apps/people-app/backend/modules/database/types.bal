@@ -499,9 +499,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {maxLength: 100}
     string? secondaryJobTitle = ();
     # Manager email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? managerEmail = ();
     # Additional manager emails
-    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string[]? additionalManagerEmails = ();
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
