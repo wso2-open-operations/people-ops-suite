@@ -56,42 +56,24 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
                 privileges.push(authorization:PEOPLE_OPS_TEAM_PRIVILEGE);
             }
-            if ((empInfo.lead ?: false) && empInfo.subordinateCount > 0) {
-                privileges.push(authorization:LEAD_PRIVILEGE);
-            }
-            // Add optional mails for the form
-            if empInfo.leadEmail is () {
-                return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
-            }
-            employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
-            if empLead is error {
-                string errorMsg = "Error occurred while fetching employee lead info";
-                log:printError(errorMsg, empLead);
+            employee:Employee[]|error subordinates = employee:getEmployees(
+                    {
+                        status: ["Active"],
+                        leadEmail: empInfo.workEmail
+                    });
+            if subordinates is error {
+                string errorMsg = "Error occurred while fetching employee subordinates. Lead privilege will not be" +
+                " assigned";
+                log:printError(errorMsg, subordinates);
                 return <http:InternalServerError>{
                     body: {
                         message: errorMsg
                     }
                 };
             }
-            employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
-            if optionalMailsToNotify is error {
-                string errorMsg = "Error occurred while fetching optional mails to notify";
-                log:printError(errorMsg, optionalMailsToNotify);
+            if (subordinates.length() > 0) {
+                privileges.push(authorization:LEAD_PRIVILEGE);
             }
-            employee:DefaultMailResponse defaultMailsToNotify = {
-                mandatoryMails: [
-                    {
-                        email: empLead.workEmail,
-                        thumbnail: empLead.employeeThumbnail ?: ""
-                    },
-                    {
-                        email: emailGroupToNotify,
-                        thumbnail: ""
-                    }
-                ],
-                optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
-            };
-
             UserInfo userInfoResponse = {
                 employeeId: empInfo.employeeId,
                 firstName: empInfo.firstName,
@@ -103,8 +85,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.startDate,
-                subordinateCount: empInfo.subordinateCount,
-                cachedEmails: defaultMailsToNotify
+                subordinateCount: subordinates.length()
             };
 
             return userInfoResponse;
@@ -144,13 +125,56 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        employee:Employee|error empInfo = employee:getEmployee(userInfo.email);
+        if empInfo is error {
+            string errMsg = "Error occurred while fetching employee info";
+            log:printError(errMsg, empInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        // Add optional mails for the form
+        if empInfo.leadEmail is () {
+            return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
+        }
+        employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
+        if empLead is error {
+            string errorMsg = "Error occurred while fetching employee lead info";
+            log:printError(errorMsg, empLead);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
+        }
+        employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
+        if optionalMailsToNotify is error {
+            string errorMsg = "Error occurred while fetching optional mails to notify";
+            log:printError(errorMsg, optionalMailsToNotify);
+        }
+        employee:DefaultMailResponse cachedEmails = {
+            mandatoryMails: [
+                {
+                    email: empLead.workEmail,
+                    thumbnail: empLead.employeeThumbnail ?: ""
+                },
+                {
+                    email: emailGroupToNotify,
+                    thumbnail: ""
+                }
+            ],
+            optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
+        };
 
         return {
             isSabbaticalLeaveEnabled,
             sabbaticalLeavePolicyUrl,
             sabbaticalLeaveUserGuideUrl,
             sabbaticalLeaveEligibilityDuration,
-            sabbaticalLeaveMaxApplicationDuration
+            sabbaticalLeaveMaxApplicationDuration,
+            cachedEmails
         };
     }
 
@@ -834,7 +858,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             boolean isLead = empInfo.lead ?: false;
-            if !(isAdmin || isLead){
+            if !(isAdmin || isLead) {
                 return <http:Forbidden>{
                     body: {
                         message: "You are not authorized to access leave reports."

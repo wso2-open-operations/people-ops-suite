@@ -220,9 +220,8 @@ public type UserInfo record {|
     boolean? isLead;
     # Subordinate count
     int subordinateCount;
-    # Cached email notifications list
-    employee:DefaultMailResponse cachedEmails;
 |};
+
 # Sabbatical leave Process Payload.
 public type SabbaticalProcessPayload record {|
     # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)
@@ -257,6 +256,8 @@ public type AppConfig record {|
     int sabbaticalLeaveEligibilityDuration;
     # Sabbatical leave maximum application duration in days
     int sabbaticalLeaveMaxApplicationDuration;
+    # Cached email notifications list
+    employee:DefaultMailResponse cachedEmails;
 |};
 
 # Sabbatical Leave Response.
