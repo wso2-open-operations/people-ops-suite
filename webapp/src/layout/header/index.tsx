@@ -18,7 +18,6 @@ import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/mate
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import Wso2Logo from "../../assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
@@ -33,7 +32,6 @@ const Headercontent = () => {
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
   const userInfo = useAppSelector(selectUserInfoData);
-
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
