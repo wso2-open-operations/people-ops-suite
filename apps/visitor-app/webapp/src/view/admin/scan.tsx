@@ -162,8 +162,8 @@ function Scan({ onClose }: ScanProps) {
     return (
       <Box
         sx={{
-          width: "100vw",
-          height: "100vh",
+          width: "100%",
+          height: "55vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
