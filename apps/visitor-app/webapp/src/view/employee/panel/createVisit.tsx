@@ -265,6 +265,10 @@ function CreateVisit() {
   }, [dispatch]);
 
   useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
     // Cleanup function runs on component unmount
     return () => {
       Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
@@ -787,6 +791,11 @@ function CreateVisit() {
                 formik.setFieldValue("timeOfEntry", fmt);
                 setEntryHour(Number(fmt.split(":")[0]));
                 formik.setFieldValue("timeOfDeparture", "");
+
+                setTimeout(() => {
+                  formik.setFieldTouched("timeOfEntry", true, false);
+                  formik.validateField("timeOfEntry");
+                }, 0);
               }}
               disabled={locked || !formik.values.visitDate}
               slotProps={{
