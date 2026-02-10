@@ -82,6 +82,7 @@ const Headercontent = () => {
           <Typography
             variant="h5"
             sx={{
+              letterSpacing: 0,
               color: theme.palette.customText.primary.p1.active,
             }}
           >
