@@ -511,7 +511,7 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? managerEmail = ();
     # Additional manager emails
-    Email[]? additionalManagerEmails = [];
+    Email[]? additionalManagerEmails = ();
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
@@ -538,6 +538,8 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
+    # Employee Status
+    EmployeeStatus? employeeStatus = ();
 |};
 
 # [Database] Insert type for vehicle.

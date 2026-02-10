@@ -106,7 +106,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
 );
 
 export const updateEmployeePersonalInfo = createAsyncThunk<
-  EmployeePersonalInfo,
+  void,
   { employeeId: string; data: EmployeePersonalInfoUpdate },
   { rejectValue: string }
 >(
@@ -124,6 +124,7 @@ export const updateEmployeePersonalInfo = createAsyncThunk<
           type: "success",
         }),
       );
+      return;
     } catch (error: any) {
       const errorMessage =
         error?.response?.status === HttpStatusCode.InternalServerError
@@ -132,29 +133,12 @@ export const updateEmployeePersonalInfo = createAsyncThunk<
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
-        enqueueSnackbarMessage({ message: errorMessage, type: "error" }),
-      );
-      return rejectWithValue(errorMessage);
-    }
-
-    try {
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
-      );
-      return response.data as EmployeePersonalInfo;
-    } catch (error: any) {
-      const refreshMessage =
-        error?.response?.data?.message ||
-        "Updated successfully, but failed to refresh personal info. Please reload.";
-
-      dispatch(
         enqueueSnackbarMessage({
-          message: refreshMessage,
-          type: "warning",
+          message: errorMessage,
+          type: "error",
         }),
       );
-
-      return rejectWithValue(refreshMessage);
+      return rejectWithValue(errorMessage);
     }
   },
 );
@@ -200,7 +184,6 @@ const EmployeePersonalInfoSlice = createSlice({
         state.state = State.success;
         state.stateMessage =
           "Successfully updated employee personal information!";
-        state.personalInfo = action.payload;
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {

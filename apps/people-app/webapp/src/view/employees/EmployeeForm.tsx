@@ -133,6 +133,7 @@ const toJobUpdatePayload = (
   epf: values.epf === "" ? null : values.epf,
   employmentLocation: values.employmentLocation,
   workLocation: values.workLocation,
+  workEmail: values.workEmail,
   startDate: values.startDate,
   secondaryJobTitle: values.secondaryJobTitle,
   managerEmail: values.managerEmail,
@@ -572,7 +573,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         }),
                       );
                       if (updateEmployeeJobInfo.rejected.match(jobResult)) {
-                        throw new Error("Failed to update job info");
+                        actions.setSubmitting(false);
+                        return;
                       }
                     }
 
@@ -588,7 +590,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                           personalResult,
                         )
                       ) {
-                        throw new Error("Failed to update personal info");
+                        actions.setSubmitting(false);
+                        return;
                       }
                     }
                     navigate(`/employees/${employeeId}`, { replace: true });
