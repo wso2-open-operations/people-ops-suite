@@ -44,6 +44,7 @@ export default function AdminSabbaticalTab() {
   const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
+  const [selectedEmail, setSelectedEmail] = useState<string>("");
 
   const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
@@ -56,6 +57,7 @@ export default function AdminSabbaticalTab() {
           startDate: formatDateForApi(startDate),
           endDate: formatDateForApi(endDate),
           ...(showAllEmployees ? {} : { approverEmail: userInfo.workEmail }),
+          ...(selectedEmail ? { email: selectedEmail } : {}),
         }),
       );
     }
@@ -72,7 +74,7 @@ export default function AdminSabbaticalTab() {
       return;
     }
     handleFetchReport();
-  }, [userInfo?.workEmail, showAllEmployees]);
+  }, [showAllEmployees, selectedEmail]);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -87,6 +89,8 @@ export default function AdminSabbaticalTab() {
         showToggle={isPeopleOpsTeam}
         toggleChecked={showAllEmployees}
         onToggleChange={setShowAllEmployees}
+        selectedEmail={selectedEmail}
+        onEmailChange={setSelectedEmail}
       />
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">

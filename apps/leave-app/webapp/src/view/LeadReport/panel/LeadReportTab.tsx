@@ -32,7 +32,7 @@ import {
 } from "@root/src/slices/leadReportSlice/leadReport";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { State } from "@root/src/types/types";
+import { LeadReportRequest, State } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
@@ -43,6 +43,8 @@ export default function LeadReportTab() {
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [showAllEmployees, setShowAllEmployees] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<string>("");
+  const [activeEmployeesOnly, setActiveEmployeesOnly] = useState(false);
 
   const reportData = useAppSelector(selectLeadReport);
   const leadReportState = useAppSelector(selectLeadReportState);
@@ -53,13 +55,21 @@ export default function LeadReportTab() {
   const handleFetchReport = () => {
     if (startDate && endDate) {
       dispatch(resetLeadReportState());
-      dispatch(
-        fetchLeadReport({
-          startDate: formatDateForApi(startDate),
-          endDate: formatDateForApi(endDate),
-          isAdminView: showAllEmployees,
-        }),
-      );
+      const payload: LeadReportRequest = {
+        startDate: formatDateForApi(startDate),
+        endDate: formatDateForApi(endDate),
+        isAdminView: showAllEmployees,
+      };
+
+      if (selectedEmail) {
+        payload.employeeEmail = selectedEmail;
+      }
+
+      if (activeEmployeesOnly) {
+        payload.employeeStatuses = ["Active"];
+      }
+
+      dispatch(fetchLeadReport(payload));
     }
   };
 
@@ -74,7 +84,7 @@ export default function LeadReportTab() {
       return;
     }
     handleFetchReport();
-  }, [showAllEmployees]);
+  }, [showAllEmployees, selectedEmail, activeEmployeesOnly]);
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -89,6 +99,10 @@ export default function LeadReportTab() {
         showToggle={isPeopleOpsTeam}
         toggleChecked={showAllEmployees}
         onToggleChange={setShowAllEmployees}
+        selectedEmail={selectedEmail}
+        onEmailChange={setSelectedEmail}
+        activeEmployeesOnly={activeEmployeesOnly}
+        onActiveEmployeesChange={setActiveEmployeesOnly}
       />
       <LeadReportTable reportData={reportData} loading={loading} />
     </Stack>

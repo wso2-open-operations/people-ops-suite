@@ -15,11 +15,27 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Box, Button, Stack, Switch, Typography } from "@mui/material";
+import {
+  Autocomplete,
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
+
+import { useEffect, useState } from "react";
+
+import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
+import { useAppSelector } from "@root/src/slices/store";
+import { State } from "@root/src/types/types";
 
 interface ToolbarProps {
   startDate: Dayjs | null;
@@ -31,6 +47,10 @@ interface ToolbarProps {
   showToggle?: boolean;
   toggleChecked?: boolean;
   onToggleChange?: (checked: boolean) => void;
+  selectedEmail?: string;
+  onEmailChange?: (email: string) => void;
+  activeEmployeesOnly?: boolean;
+  onActiveEmployeesChange?: (checked: boolean) => void;
 }
 
 export default function Toolbar({
@@ -43,9 +63,34 @@ export default function Toolbar({
   showToggle = false,
   toggleChecked = true,
   onToggleChange,
+  selectedEmail = "",
+  onEmailChange,
+  activeEmployeesOnly = false,
+  onActiveEmployeesChange,
 }: ToolbarProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+
+  const employees = useAppSelector(selectEmployees);
+  const employeeState = useAppSelector(selectEmployeeState);
+  const employeesLoading = employeeState === State.loading;
+
+  const [employeeOptions, setEmployeeOptions] = useState<Array<{ label: string; email: string }>>([
+    { label: "All Employees", email: "" },
+  ]);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      const options = [
+        { label: "All Employees", email: "" },
+        ...employees.map((emp) => ({
+          label: `${emp.firstName} ${emp.lastName} (${emp.workEmail})`,
+          email: emp.workEmail,
+        })),
+      ];
+      setEmployeeOptions(options);
+    }
+  }, [employees]);
 
   const handleFetchReport = () => {
     if (!startDate || !endDate) {
@@ -63,110 +108,139 @@ export default function Toolbar({
 
   return (
     <Stack gap="1.5rem" width="100%">
-      <Stack direction="row" width="100%" alignItems="center" justifyContent="space-between">
-        <Stack direction="row" gap="1.5rem" alignItems="center" flex={1}>
-          {showToggle && onToggleChange && (
+      {/* Employee, Date Pickers and Search Button Row */}
+      <Stack direction="row" width="100%" alignItems="center" gap="1.5rem" flexWrap="wrap">
+        {/* Employee Dropdown for People Ops Team */}
+        {showToggle && onEmailChange && (
+          <Autocomplete
+            options={employeeOptions}
+            value={employeeOptions.find((opt) => opt.email === selectedEmail) || employeeOptions[0]}
+            onChange={(_, newValue) => onEmailChange(newValue?.email || "")}
+            getOptionLabel={(option) => option.label}
+            loading={employeesLoading}
+            loadingText="Loading employees..."
+            sx={{ flex: 1, minWidth: 200 }}
+            renderInput={(params) => <TextField {...params} label="Select Employee" size="small" />}
+          />
+        )}
+
+        {/* Date Pickers */}
+        <DatePicker
+          label="From"
+          value={startDate}
+          onChange={onStartDateChange}
+          format="YYYY-MM-DD"
+          sx={{ flex: 1, minWidth: 200 }}
+          slotProps={{
+            textField: {
+              size: "small",
+              fullWidth: true,
+            },
+          }}
+        />
+        <DatePicker
+          label="To"
+          value={endDate}
+          onChange={onEndDateChange}
+          format="YYYY-MM-DD"
+          sx={{ flex: 1, minWidth: 200 }}
+          slotProps={{
+            textField: {
+              size: "small",
+              fullWidth: true,
+            },
+          }}
+        />
+
+        {/* Search Button */}
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          startIcon={<SearchIcon />}
+          onClick={handleFetchReport}
+          disabled={loading}
+          sx={{ px: "3rem", py: "0.5rem" }}
+        >
+          {loading ? "Loading..." : "Fetch Report"}
+        </Button>
+      </Stack>
+      {/* Toggle and Checkbox Row */}
+      <Stack direction="row" width="100%" alignItems="center" gap="1.5rem" flexWrap="wrap">
+        {/* Toggle for All Employees / My Subordinates */}
+        {showToggle && onToggleChange && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              backgroundColor:
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+              border: `1px solid ${
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
+              }`,
+            }}
+          >
             <Box
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: 1.5,
-                px: 2,
-                py: 1,
-                borderRadius: 2,
-                backgroundColor:
-                  theme.palette.mode === "dark"
-                    ? "rgba(255, 255, 255, 0.05)"
-                    : "rgba(0, 0, 0, 0.03)",
-                border: `1px solid ${
-                  theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
-                }`,
+                gap: 3,
               }}
             >
               <Typography
                 variant="body2"
                 sx={{
-                  fontWeight: 500,
-                  color: theme.palette.text.secondary,
+                  fontWeight: toggleChecked ? 600 : 400,
+                  color: toggleChecked ? theme.palette.text.primary : theme.palette.text.secondary,
+                  transition: "all 0.2s ease",
                 }}
               >
-                View:
+                All Employees
               </Typography>
-              <Box
+              <Switch
+                checked={!toggleChecked}
+                onChange={(e) => onToggleChange(!e.target.checked)}
+                size="small"
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: theme.palette.primary.main,
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: theme.palette.primary.main,
+                  },
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: !toggleChecked ? 600 : 400,
+                  color: !toggleChecked ? theme.palette.text.primary : theme.palette.text.secondary,
+                  transition: "all 0.2s ease",
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: toggleChecked ? 600 : 400,
-                    color: toggleChecked
-                      ? theme.palette.text.primary
-                      : theme.palette.text.secondary,
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  All Employees
-                </Typography>
-                <Switch
-                  checked={!toggleChecked}
-                  onChange={(e) => onToggleChange(!e.target.checked)}
-                  size="small"
-                  sx={{
-                    "& .MuiSwitch-switchBase.Mui-checked": {
-                      color: theme.palette.primary.main,
-                    },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                      backgroundColor: theme.palette.primary.main,
-                    },
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: !toggleChecked ? 600 : 400,
-                    color: !toggleChecked
-                      ? theme.palette.text.primary
-                      : theme.palette.text.secondary,
-                    transition: "all 0.2s ease",
-                  }}
-                >
-                  My Subordinates
-                </Typography>
-              </Box>
+                My Subordinates
+              </Typography>
             </Box>
-          )}
-        </Stack>
-        <Stack direction="row" gap="1.5rem" alignItems="center">
-          <DatePicker
-            label="From"
-            value={startDate}
-            onChange={onStartDateChange}
-            format="YYYY-MM-DD"
-            sx={{ minWidth: 200 }}
+          </Box>
+        )}
+
+        {/* Active Employees Checkbox for People Ops Team */}
+        {showToggle && onEmailChange && onActiveEmployeesChange && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={activeEmployeesOnly}
+                onChange={(e) => onActiveEmployeesChange?.(e.target.checked)}
+              />
+            }
+            label="Active Employees Only"
+            sx={{ color: theme.palette.text.primary }}
           />
-          <DatePicker
-            label="To"
-            value={endDate}
-            onChange={onEndDateChange}
-            format="YYYY-MM-DD"
-            sx={{ minWidth: 200 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            startIcon={<SearchIcon />}
-            onClick={handleFetchReport}
-            disabled={loading}
-            sx={{ width: "fit-content", height: "fit-content", px: "3rem", py: "0.5rem" }}
-          >
-            {loading ? "Loading..." : "Fetch Report"}
-          </Button>
-        </Stack>
+        )}
       </Stack>
     </Stack>
   );
