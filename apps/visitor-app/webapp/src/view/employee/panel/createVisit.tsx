@@ -910,6 +910,11 @@ function CreateVisit() {
                               email.includes("@") &&
                               email.length >= 6
                             ) {
+                              formik.setFieldValue(`visitors.${idx}.name`, "");
+                              formik.setFieldValue(
+                                `visitors.${idx}.contactNumber`,
+                                "",
+                              );
                               fetchVisitorByEmail(email, idx, formik);
                             }
                             delete visitorEmailDebounceRefs.current[idx];
