@@ -20,18 +20,19 @@ import { SyntheticEvent, ReactElement } from "react";
 export interface TabItem {
   label: string;
   value: string;
-  icon?: ReactElement; 
+  icon?: ReactElement;
 }
 
 interface SegmentedTabsProps {
-  items: TabItem[];
-  value: string;
-  onChange: (newValue: string) => void;
+  items: TabItem[]; // The list of tabs to render
+  value: string; // The ID of the currently active tab
+  onChange: (newValue: string) => void; // Function to call when a user clicks a tab
 }
 
 export default function SegmentedTabs({ items, value, onChange }: SegmentedTabsProps) {
   const theme = useTheme();
 
+  // Wrapper handler to extract the new value and pass it to the parent
   const handleChange = (_event: SyntheticEvent, newValue: string) => {
     onChange(newValue);
   };

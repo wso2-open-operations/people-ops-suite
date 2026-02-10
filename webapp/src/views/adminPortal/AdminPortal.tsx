@@ -29,7 +29,7 @@ import ShieldIcon from "@mui/icons-material/Shield";
 import OngoingPanel from "./panels/OngoingPanel";
 import HistoryPanel from "./panels/HistoryPanel";
 import { FormContainer } from "../../components/common/FormContainer";
-import SegmentedTabs from "../../components/common/SegmentedTabs"; // Import the new component
+import SegmentedTabs from "../../components/common/SegmentedTabs";
 import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
 enum ParCycleViewTabs {
@@ -56,6 +56,7 @@ const AdminPortalContent = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || ParCycleViewTabs.ONGOING;
 
+  // Update the URL when a user clicks a tab
   const handleTabChange = (newValue: string) => {
     setSearchParams({ tab: newValue });
   };
