@@ -212,6 +212,8 @@ export interface LeadReportRequest {
   startDate: string;
   endDate: string;
   isAdminView: boolean;
+  employeeEmail?: string;
+  employeeStatuses?: string[];
 }
 
 // Lead report response type.
