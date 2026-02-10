@@ -847,25 +847,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
             boolean isAdmin = authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, groups);
-            employee:Employee|error empInfo = employee:getEmployee(email);
-            if empInfo is error {
-                string errMsg = "Error occurred while fetching employee details for the user.";
-                log:printError(errMsg, empInfo);
-                return <http:InternalServerError>{
-                    body: {
-                        message: errMsg
-                    }
-                };
-            }
-            boolean isLead = empInfo.lead ?: false;
-            if !(isAdmin || isLead) {
-                return <http:Forbidden>{
-                    body: {
-                        message: "You are not authorized to access leave reports."
-                    }
-                };
-            }
-
             Employee[] employees;
             employees = check employee:getEmployees(
                     {
@@ -875,7 +856,14 @@ service http:InterceptableService / on new http:Listener(9090) {
                 );
             string[] emails = from Employee employee in employees
                 select employee.workEmail;
-
+            boolean isLead = emails.length() > 0;
+            if !(isAdmin || isLead) {
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to access leave reports."
+                    }
+                };
+            }
             if emails.length() == 0 {
                 return <http:Forbidden>{
                     body: {
