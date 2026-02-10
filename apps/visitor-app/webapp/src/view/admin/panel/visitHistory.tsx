@@ -88,13 +88,6 @@ const VisitHistory = () => {
       renderCell: (params) => params.value || "N/A",
     },
     { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) => params.value || "N/A",
-    },
     { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
     {
       field: "purposeOfVisit",
