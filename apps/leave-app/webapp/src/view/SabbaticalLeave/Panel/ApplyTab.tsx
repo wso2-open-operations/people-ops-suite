@@ -459,6 +459,7 @@ export default function ApplyTab({
                     label="Leave request end date*"
                     sx={{ flex: "1" }}
                     value={leaveEndDate}
+                    minDate={leaveStartDate ?? undefined}
                     onChange={(newValue) => {
                       setLeaveEndDate(newValue);
                       setEndDateError(false);
