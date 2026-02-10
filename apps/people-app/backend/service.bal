@@ -584,7 +584,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printWarn("Employee information not found", id = id);
             return <http:NotFound>{
                 body: {
-                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                    message: "Employee information not found"
                 }
             };
         }
