@@ -249,13 +249,13 @@ public isolated function updateEmployeeJobInfo(int employeeDbId, UpdateEmployeeJ
 
         check checkAffectedCount(executionResult.affectedRowCount);
 
-        string[]? additionalManagerEmails = payload.additionalManagerEmails;
-        if additionalManagerEmails is string[] {
+        Email[]? additionalManagerEmails = payload.additionalManagerEmails;
+        if additionalManagerEmails is Email[] {
 
             _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeeDbId));
 
             sql:ParameterizedQuery[] insertQueries =
-                from string email in additionalManagerEmails
+                from Email email in additionalManagerEmails
                     select addAdditionalManagerQuery(employeeDbId, email, updatedBy);
 
             if insertQueries.length() > 0 {

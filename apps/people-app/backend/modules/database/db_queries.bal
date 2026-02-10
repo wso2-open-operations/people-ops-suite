@@ -581,6 +581,7 @@ isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJob
             epf = COALESCE(${payload.epf}, epf),
             employment_location = COALESCE(${payload.employmentLocation}, employment_location),
             work_location = COALESCE(${payload.workLocation}, work_location),
+            work_email = COALESCE(${payload.workEmail}, work_email),
             start_date = COALESCE(${payload.startDate}, start_date),
             secondary_job_title = COALESCE(${payload.secondaryJobTitle}, secondary_job_title),
             manager_email = COALESCE(${payload.managerEmail}, manager_email),

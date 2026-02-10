@@ -498,6 +498,9 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Work location   
     @constraint:String {maxLength: 100}
     string? workLocation = ();
+    # Work email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? workEmail = ();
     # Start date    
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? startDate = ();
@@ -508,7 +511,7 @@ public type UpdateEmployeeJobInfoPayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? managerEmail = ();
     # Additional manager emails
-    Email[] additionalManagerEmails = [];
+    Email[]? additionalManagerEmails = [];
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();

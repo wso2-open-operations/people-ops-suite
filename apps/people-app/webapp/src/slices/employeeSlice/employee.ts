@@ -117,6 +117,7 @@ export type UpdateEmployeeJobInfoPayload = {
   epf?: string | null;
   employmentLocation?: string;
   workLocation?: string;
+  workEmail?: string;
   startDate?: string;
   secondaryJobTitle?: string;
   managerEmail?: string;
