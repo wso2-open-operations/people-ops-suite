@@ -176,7 +176,7 @@ export default function Toolbar({
               gap: 1.5,
               px: 2,
               py: 1,
-              borderRadius: 2,
+              borderRadius: 1,
               backgroundColor:
                 theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
               border: `1px solid ${
