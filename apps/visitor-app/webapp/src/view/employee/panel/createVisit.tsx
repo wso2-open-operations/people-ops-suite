@@ -655,14 +655,7 @@ function CreateVisit() {
                             <InputAdornment position="start" sx={{ ml: 0.5 }}>
                               <Avatar
                                 src={thumbnail ?? undefined}
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  fontSize: "0.95rem",
-                                  bgcolor: thumbnail
-                                    ? "transparent"
-                                    : "primary.main",
-                                }}
+                                sx={{ width: 32, height: 32 }}
                               >
                                 {!thumbnail && initial}
                               </Avatar>
