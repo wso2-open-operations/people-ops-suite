@@ -1,9 +1,18 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { APIService } from "@utils/apiService";
@@ -18,7 +27,6 @@ interface EmployeesState {
   stateMessage: string | null;
   errorMessage: string | null;
   employees: Employee[];
-  selectedEmail: string | null;
   lastFetched: number | null;
   currentPage: number;
   hasMore: boolean;
@@ -32,7 +40,6 @@ const initialState: EmployeesState = {
   stateMessage: "",
   errorMessage: "",
   employees: [],
-  selectedEmail: null,
   lastFetched: null,
   currentPage: 0,
   hasMore: true,
@@ -110,7 +117,7 @@ export const fetchEmployees = createAsyncThunk(
       fromCache?: boolean;
       searchTerm?: string;
     }>((resolve, reject) => {
-      const search = trimmedSearch || "a";
+      const search = trimmedSearch || "";
       APIService.getInstance()
         .get(`${AppConfig.serviceUrls.employeesInfo}`, {
           params: { search, offset, limit },
@@ -142,7 +149,7 @@ export const loadMoreEmployees = createAsyncThunk(
     }
 
     const offset = (currentPage + 1) * PAGE_SIZE;
-    const search = searchTerm.trim() || "a";
+    const search = searchTerm.trim() || "";
 
     return new Promise<{
       employees: Employee[];
@@ -174,9 +181,6 @@ const employeesSlice = createSlice({
   name: "employees",
   initialState,
   reducers: {
-    setSelectedEmail: (state, action: PayloadAction<string | null>) => {
-      state.selectedEmail = action.payload;
-    },
     setSearchTerm: (state, action: PayloadAction<string>) => {
       state.currentSearchTerm = action.payload;
     },
@@ -262,7 +266,6 @@ const employeesSlice = createSlice({
       });
   },
 });
-export const { setSelectedEmail, setSearchTerm, resetEmployees } =
-  employeesSlice.actions;
+export const { setSearchTerm, resetEmployees } = employeesSlice.actions;
 export default employeesSlice.reducer;
 export { CACHE_DURATION, PAGE_SIZE };

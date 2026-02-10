@@ -19,7 +19,7 @@ import Sidebar from "@layout/sidebar";
 import pJson from "@root/package.json";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
-import { Typography } from "@mui/material";
+import { CircularProgress, Typography } from "@mui/material";
 import { Box, alpha } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -86,7 +86,20 @@ export default function Layout() {
             pb: 4.5,
           }}
         >
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100vh",
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
             <Outlet />
           </Suspense>
           <Box
@@ -97,7 +110,7 @@ export default function Layout() {
                   ? (theme) =>
                       alpha(
                         theme.palette.secondary.main,
-                        theme.palette.action.activatedOpacity
+                        theme.palette.action.activatedOpacity,
                       )
                   : (theme) => alpha(theme.palette.common.black, 0.4),
             }}
