@@ -181,16 +181,6 @@ export default function Toolbar({
                 gap: 3,
               }}
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: toggleChecked ? 600 : 400,
-                  color: toggleChecked ? theme.palette.text.primary : theme.palette.text.secondary,
-                  transition: "all 0.2s ease",
-                }}
-              >
-                All Employees
-              </Typography>
               <Switch
                 checked={!toggleChecked}
                 onChange={(e) => onToggleChange(!e.target.checked)}
@@ -212,7 +202,7 @@ export default function Toolbar({
                   transition: "all 0.2s ease",
                 }}
               >
-                My Subordinates
+                Subordinates Only
               </Typography>
             </Box>
           </Box>
