@@ -89,8 +89,7 @@ enum VisitorStatus {
 }
 
 export interface VisitorDetail {
-  firstName: string;
-  lastName: string;
+  name?: string;
   contactNumber: string;
   countryCode: string;
   emailAddress: string;
@@ -160,8 +159,7 @@ const COUNTRY_CODES = [
 ];
 
 const defaultVisitor: VisitorDetail = {
-  firstName: "",
-  lastName: "",
+  name: "",
   contactNumber: "",
   countryCode: "+94",
   emailAddress: "",
@@ -340,11 +338,13 @@ function CreateVisit() {
             console.error("QR generation failed:", err);
           }
 
+          const visitorName = draftVisitor.name?.trim() || "";
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
-            firstName: draftVisitor.firstName || undefined,
-            lastName: draftVisitor.lastName || undefined,
+            firstName: visitorName.split(" ")[0] || undefined,
+            lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
             contactNumber: draftVisitor.contactNumber
               ? draftVisitor.countryCode + draftVisitor.contactNumber
               : undefined,
@@ -420,8 +420,7 @@ function CreateVisit() {
           }
         }
         const fetched: VisitorDetail = {
-          firstName: action.payload.firstName || "",
-          lastName: action.payload.lastName || "",
+          name: `${action.payload.firstName || ""} ${action.payload.lastName || ""}`.trim(),
           contactNumber: nationalNumber,
           countryCode,
           emailAddress: action.payload.email || email,
@@ -955,8 +954,8 @@ function CreateVisit() {
                     <TextField
                       fullWidth
                       label="First Name & Last Name"
-                      name={`visitors.${idx}.firstName`}
-                      value={visitor.firstName}
+                      name={`visitors.${idx}.name`}
+                      value={visitor.name}
                       onChange={formik.handleChange}
                       disabled={visitor.status === VisitorStatus.Completed}
                     />
