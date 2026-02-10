@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { AppConfig, ServiceBaseUrl } from "@root/src/config/config";
+import { AppConfig } from "@root/src/config/config";
 import {
   Action,
   AppConfigResponse,
@@ -22,7 +22,6 @@ import {
   Employee,
   LeadReportRequest,
   LeadReportResponse,
-  LeaveEntitlement,
   LeaveHistoryQueryParam,
   LeaveHistoryResponse,
   LeaveSubmissionRequest,
@@ -198,18 +197,6 @@ export const getAppConfig = async (): Promise<AppConfigResponse> => {
 
   const response = await apiInstance.get<AppConfigResponse>(AppConfig.serviceUrls.appConfig);
 
-  return response.data;
-};
-
-/**
- * Get leave entitlement for a user.
- * @param email - User's email address
- * @returns Promise with leave entitlement data
- */
-export const getLeaveEntitlement = async (email: string): Promise<LeaveEntitlement[]> => {
-  const apiInstance = APIService.getInstance();
-  const url = `${ServiceBaseUrl}/employees/${encodeURIComponent(email)}/leave-entitlement`;
-  const response = await apiInstance.get<LeaveEntitlement[]>(url);
   return response.data;
 };
 

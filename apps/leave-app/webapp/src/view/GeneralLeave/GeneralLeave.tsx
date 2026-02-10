@@ -18,13 +18,12 @@ import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
-import { fetchLeaveEntitlement } from "@root/src/slices/entitlementSlice/entitlement";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
@@ -36,7 +35,6 @@ export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector((state) => state.user.userInfo);
-  const { entitlements } = useAppSelector((state) => state.entitlement);
   const [daysSelected, setDaysSelected] = useState(0);
   const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -49,45 +47,6 @@ export default function GeneralLeave() {
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState(false);
-
-  useEffect(() => {
-    if (userInfo?.workEmail) {
-      dispatch(fetchLeaveEntitlement(userInfo.workEmail));
-    }
-  }, [dispatch, userInfo?.workEmail]);
-
-  const currentYearEntitlement = entitlements.find((e) => e.year === new Date().getFullYear());
-  const getLeaveDaysRequested = (): number => {
-    if (selectedDayPortion === DayPortion.FIRST || selectedDayPortion === DayPortion.SECOND) {
-      return 0.5;
-    }
-    return workingDays;
-  };
-
-  // Validate leave against entitlement
-  const validateLeaveEntitlement = (): boolean => {
-    if (!currentYearEntitlement) return true;
-
-    const leaveDays = getLeaveDaysRequested();
-    const { leavePolicy, policyAdjustedLeave } = currentYearEntitlement;
-
-    if (selectedLeaveType === LeaveType.CASUAL || selectedLeaveType === LeaveType.ANNUAL) {
-      const available =
-        leavePolicy.casual +
-        leavePolicy.annual -
-        (policyAdjustedLeave.casual + policyAdjustedLeave.annual);
-      const remainingAfterRequest = available - leaveDays;
-      if (remainingAfterRequest < 0) {
-        enqueueSnackbar(
-          `Insufficient leave balance. Requested: ${leaveDays} days, Available: ${available} days.`,
-          { variant: "error" },
-        );
-        return false;
-      }
-    }
-
-    return true;
-  };
 
   const handleSubmit = async () => {
     setDateError(false);
@@ -112,10 +71,6 @@ export default function GeneralLeave() {
 
     if (!selectedLeaveType) {
       enqueueSnackbar("Please select a leave type", { variant: "error" });
-      return;
-    }
-
-    if (!validateLeaveEntitlement()) {
       return;
     }
 
@@ -162,11 +117,6 @@ export default function GeneralLeave() {
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
 
-      // Refetch entitlement after successful submission
-      if (userInfo?.workEmail) {
-        dispatch(fetchLeaveEntitlement(userInfo.workEmail));
-      }
-
       // Reset form
       setStartDate(null);
       setEndDate(null);
@@ -205,7 +155,6 @@ export default function GeneralLeave() {
             hasError={dateError}
             onErrorClear={() => setDateError(false)}
             selectedLeaveType={selectedLeaveType}
-            entitlement={currentYearEntitlement}
           />
           <LeaveSelection
             daysSelected={daysSelected}
