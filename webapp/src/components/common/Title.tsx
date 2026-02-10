@@ -14,29 +14,68 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Typography, useTheme } from "@mui/material";
+import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { ReactNode } from "react";
+import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
 interface TitleProps {
-  firstWord: string;
-  secondWord: string;
-  borderEnabled?: boolean;
+    firstWord: string;
+    secondWord: string;
+    borderEnabled?: boolean;
+    icon?: ReactNode;
 }
 
-export default function Title({ firstWord, secondWord, borderEnabled = true }: TitleProps) {
-  const theme = useTheme();
+const TitleContent = ({
+    firstWord,
+    secondWord,
+    borderEnabled = true,
+    icon
+}: TitleProps) => {
+    const theme = useTheme();
 
-  return (
-    <Typography
-      variant="h5"
-      textAlign={{ xs: "center", md: "left" }}
-      sx={{
-        color: theme.palette.text.primary,
-        fontWeight: "600",
-        pb: borderEnabled ? "1rem" : 0,
-        borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
-      }}
-    >
-      <span style={{ color: theme.palette.primary.main }}>{firstWord}</span> {secondWord}
-    </Typography>
-  );
+    return (
+        <Box
+            sx={{
+                width: "100%",
+                pb: borderEnabled ? 2 : 0,
+                borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
+            }}
+        >
+            <Stack
+                direction="row"
+                gap={1}
+                justifyContent={{ xs: "center", md: "left" }}
+            >
+                {icon && (
+                    <Box
+                        sx={{
+                            marginTop: "3px",
+                            display: "flex",
+                            color: theme.palette.primary.main
+                        }}
+                    >
+                        {icon}
+                    </Box>
+                )}
+                <Typography
+                    variant="h5"
+                    sx={{
+                        color: theme.palette.text.primary,
+                        fontWeight: 550,
+                        letterSpacing: 0,
+                    }}
+                >
+                    <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}{secondWord}
+                </Typography>
+            </Stack>
+        </Box>
+    );
+};
+
+export default function Title(props: TitleProps) {
+    return (
+        <NewThemeWrapper>
+            <TitleContent {...props} />
+        </NewThemeWrapper>
+    );
 }
