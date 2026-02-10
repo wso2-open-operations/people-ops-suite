@@ -14,7 +14,6 @@ import { isIncludedRole } from "./utils/utils";
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
-import PersonIcon from "@mui/icons-material/Person";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ShieldIcon from "@mui/icons-material/Shield";
 
@@ -75,13 +74,6 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(SettingsIcon),
     element: React.createElement(View.GlobalSettings),
     allowRoles: [Role.ADMIN],
-  },
-  {
-    path: "/profile",
-    text: "Profile",
-    icon: React.createElement(PersonIcon),
-    element: React.createElement(View.Profile),
-    allowRoles: [Role.EMPLOYEE],
   },
 ];
 
