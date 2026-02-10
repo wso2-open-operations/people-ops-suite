@@ -202,7 +202,7 @@ export default function Toolbar({
                   transition: "all 0.2s ease",
                 }}
               >
-                Subordinates Only
+                Subordinates only
               </Typography>
             </Box>
           </Box>
