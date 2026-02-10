@@ -13,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { FormContainer } from "../../components/common/FormContainer"
 import { SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import Title from "../../components/common/Title";
@@ -24,7 +24,6 @@ import {
   Paper,
   Tab,
   Tabs,
-  Typography,
   IconButton,
   Stack,
 } from "@mui/material";
@@ -45,13 +44,13 @@ enum ParCycleViewTabs {
 const tabsAndPanelsData = [
   {
     label: "Ongoing",
-    icon: <DataUsageIcon />,
+    icon: <DataUsageIcon fontSize="small" />,
     value: ParCycleViewTabs.ONGOING,
     component: <OngoingPanel />,
   },
   {
     label: "History",
-    icon: <HistoryIcon />,
+    icon: <HistoryIcon fontSize="small" />,
     value: ParCycleViewTabs.HISTORY,
     component: <HistoryPanel />,
   },
@@ -70,71 +69,62 @@ const AdminPortalContent = () => {
 
   return (
     <Fade in={true}>
-      <Paper
-        className="paper"
-        variant="outlined"
-        sx={{
-          borderRadius: "0px 0px 16px 0px",
-          height: "100%",
-        }}
+      <Stack
+        sx={{ height: "100%" }}
       >
-        <Stack
-          sx={{
-            justifyContent: "space-between",
-            margin: "5px",
-          }}
-        >
-          <Stack
-            direction={"row"}
-            style={{
-              justifyContent: "left",
-            }}
-          >
-            <IconButton color="primary" component="label" onClick={() => { }}>
-              <ShieldIcon fontSize="medium" />
-            </IconButton>
-            <Title firstWord="Admin" secondWord="Portal" />
-          </Stack>
-        </Stack>
+        <FormContainer>
+          <Title
+            firstWord="Admin"
+            secondWord="Portal"
+            icon={<ShieldIcon fontSize="medium" />}
+          />
+            <Tabs
+              value={safeValue}
+              onChange={handleTabChange}
+              variant="scrollable" // Crucial for mobile responsiveness
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              aria-label="admin portal tabs"
+              sx={{
+                px: { xs: 1, md: 1 },
+                "& .MuiTab-root": {
+                 
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  textTransform: "none", // Modern look (no ALL CAPS)
 
-        <Box
-          sx={{
-            borderBottom: 1,
-            borderColor: "divider",
-            padding: "0px 30px",
-          }}
-        >
-          <Tabs
-            value={safeValue}
-            onChange={handleTabChange}
-            aria-label="icon label tabs"
+                },
+              }}
+            >
+              {tabsAndPanelsData.map((tab, index) => (
+                <Tab
+                  key={index}
+                  label={tab.label}
+                  icon={tab.icon}
+                  iconPosition="start"
+                />
+              ))}
+            </Tabs>
+
+          {/* --- Content Section (Scrollable) --- */}
+          <Box
             sx={{
-              "&.MuiTabs-root": {
-                height: "3rem",
-                alignItems: "center",
-              },
-              "& .MuiTabs-indicator": {
-                pb: "0.925rem",
-              },
+              flexGrow: 1,      // Fills remaining vertical space
+              overflowY: "auto", // Enables internal scrolling
+              p: 0,             // Padding handled by TabPanel or inner content
             }}
           >
             {tabsAndPanelsData.map((tab, index) => (
-              <Tab
-                key={index}
-                label={tab.label}
-                icon={tab.icon}
-                iconPosition="start"
-                sx={{ width: defaultTabWidth }}
-              />
+              <TabPanel key={index} value={safeValue} index={index}>
+                {tab.component}
+              </TabPanel>
             ))}
-          </Tabs>
-        </Box>
-        {tabsAndPanelsData.map((tab, index) => (
-          <TabPanel key={index} value={safeValue} index={index}>
-            {tab.component}
-          </TabPanel>
-        ))}
-      </Paper>
+          </Box>
+
+
+
+        </FormContainer>
+      </Stack>
     </Fade>
   );
 };
@@ -145,8 +135,9 @@ export default function AdminPortal() {
       <AdminPortalContent />
     </NewThemeWrapper>
   );
-};
+}
 
+// --- Optimized TabPanel ---
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -156,17 +147,27 @@ interface TabPanelProps {
 const TabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
 
+  // Render logic optimized: 
+  // We use `display: none` instead of unmounting to keep state alive if needed,
+  // OR standard conditional rendering. Standard conditional is better for performance.
+  if (value !== index) return null;
+
   return (
     <div
       role="tabpanel"
-      hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
+      style={{ height: "100%" }} // Ensure panel fills the scrollable area
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: "10px 20px 10px 20px" }}>{children}</Box>
-      )}
+      <Box
+        sx={{
+          p: { xs: 2, md: 3 }, // Responsive padding inside the panel
+          height: "100%"
+        }}
+      >
+        {children}
+      </Box>
     </div>
   );
 };
