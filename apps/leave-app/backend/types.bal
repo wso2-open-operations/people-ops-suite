@@ -159,6 +159,8 @@ public type ReportPayload readonly & record {|
     string? department = ();
     # Team of employees
     string? team = ();
+    # Employee emails to filter by
+    string? employeeEmail = ();
     # Employee status list
     EmployeeStatus[]? employeeStatuses = DEFAULT_EMPLOYEE_STATUSES;
     # Admin view or not
