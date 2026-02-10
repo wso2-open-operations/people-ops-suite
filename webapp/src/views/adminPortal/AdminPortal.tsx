@@ -1,9 +1,21 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+import { SyntheticEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   Box,
@@ -18,55 +30,41 @@ import {
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import HistoryIcon from "@mui/icons-material/History";
 import ShieldIcon from "@mui/icons-material/Shield";
-import { SyntheticEvent, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+
 import OngoingPanel from "./panels/OngoingPanel";
 import HistoryPanel from "./panels/HistoryPanel";
 import { defaultTabWidth } from "@config/constant";
+import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
-const AdminPortal = () => {
+enum ParCycleViewTabs {
+  ONGOING = "ongoing",
+  HISTORY = "history",
+}
+
+const tabsAndPanelsData = [
+  {
+    label: "Ongoing",
+    icon: <DataUsageIcon />,
+    value: ParCycleViewTabs.ONGOING,
+    component: <OngoingPanel />,
+  },
+  {
+    label: "History",
+    icon: <HistoryIcon />,
+    value: ParCycleViewTabs.HISTORY,
+    component: <HistoryPanel />,
+  },
+];
+
+const AdminPortalContent = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [value, setValue] = useState<number>(0);
-
-  enum ParCycleViewTabs {
-    ONGOING = "ongoing",
-    HISTORY = "history",
-    SPECIAL = "special",
-  }
-
-  const tabsAndPanelsData = [
-    {
-      label: "Ongoing",
-      icon: <DataUsageIcon />,
-      value: ParCycleViewTabs.ONGOING,
-      component: <OngoingPanel />,
-    },
-    {
-      label: "History",
-      icon: <HistoryIcon />,
-      value: ParCycleViewTabs.HISTORY,
-      component: <HistoryPanel />,
-    },
-  ];
-
-  useEffect(() => {
-    const currentTab = searchParams.get("tab");
-    if (
-      currentTab &&
-      Object.values(ParCycleViewTabs).includes(currentTab as ParCycleViewTabs)
-    ) {
-      setValue(
-        Object.values(ParCycleViewTabs).indexOf(currentTab as ParCycleViewTabs)
-      );
-    } else {
-      searchParams.set("tab", ParCycleViewTabs.ONGOING);
-      setSearchParams(searchParams);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const handleChange = (event: SyntheticEvent, newValue: number) => {
-    setValue(newValue);
+  const currentTab = searchParams.get("tab") || ParCycleViewTabs.ONGOING;
+  const value = tabsAndPanelsData.findIndex(tab => tab.value === currentTab);
+  const safeValue = value === -1 ? 0 : value;
+  
+  const handleTabChange = (_event: SyntheticEvent, newValue: number) => {
+    const newTabValue = tabsAndPanelsData[newValue].value;
+    setSearchParams({ tab: newTabValue });
   };
 
   return (
@@ -96,7 +94,7 @@ const AdminPortal = () => {
                 justifyContent: "left",
               }}
             >
-              <IconButton color="primary" component="label" onClick={() => {}}>
+              <IconButton color="primary" component="label" onClick={() => { }}>
                 <ShieldIcon fontSize="large" />
               </IconButton>
               <Typography
@@ -116,8 +114,8 @@ const AdminPortal = () => {
             }}
           >
             <Tabs
-              value={value}
-              onChange={handleChange}
+              value={safeValue}
+              onChange={handleTabChange}
               aria-label="icon label tabs"
               sx={{
                 "&.MuiTabs-root": {
@@ -132,17 +130,16 @@ const AdminPortal = () => {
               {tabsAndPanelsData.map((tab, index) => (
                 <Tab
                   key={index}
+                  label={tab.label}
                   icon={tab.icon}
                   iconPosition="start"
-                  label={tab.label}
-                  onClick={() => setSearchParams({ tab: tab.value })}
                   sx={{ width: defaultTabWidth }}
                 />
               ))}
             </Tabs>
           </Box>
           {tabsAndPanelsData.map((tab, index) => (
-            <TabPanel key={index} value={value} index={index}>
+            <TabPanel key={index} value={safeValue} index={index}>
               {tab.component}
             </TabPanel>
           ))}
@@ -152,7 +149,13 @@ const AdminPortal = () => {
   );
 };
 
-export default AdminPortal;
+export default function AdminPortal() {
+  return (
+    <NewThemeWrapper>
+      <AdminPortalContent />
+    </NewThemeWrapper>
+  );
+};
 
 interface TabPanelProps {
   children?: React.ReactNode;
