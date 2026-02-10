@@ -119,13 +119,6 @@ function VisitHistory() {
       flex: 2,
     },
     {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) => params.value || "N/A",
-    },
-    {
       field: "purposeOfVisit",
       headerName: "Purpose of Visit",
       minWidth: 150,

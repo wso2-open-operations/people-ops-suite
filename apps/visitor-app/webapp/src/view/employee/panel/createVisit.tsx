@@ -20,6 +20,7 @@ import React, {
   useMemo,
   forwardRef,
   useEffect,
+  useRef,
 } from "react";
 import {
   Typography,
@@ -36,6 +37,7 @@ import {
   Container,
   Autocomplete,
   Avatar,
+  CircularProgress,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -87,8 +89,7 @@ enum VisitorStatus {
 }
 
 export interface VisitorDetail {
-  firstName: string;
-  lastName: string;
+  name?: string;
   contactNumber: string;
   countryCode: string;
   emailAddress: string;
@@ -158,8 +159,7 @@ const COUNTRY_CODES = [
 ];
 
 const defaultVisitor: VisitorDetail = {
-  firstName: "",
-  lastName: "",
+  name: "",
   contactNumber: "",
   countryCode: "+94",
   emailAddress: "",
@@ -198,67 +198,116 @@ const getDurationLabel = (
   return `${hours} hr${hours > 1 ? "s" : ""} ${minutes} mins`;
 };
 
-const customListbox = forwardRef<HTMLUListElement, any>((props, ref) => (
-  <ul {...props} ref={ref} />
-));
+const CustomListbox = forwardRef<
+  HTMLUListElement,
+  React.HTMLAttributes<HTMLUListElement>
+>((props, ref) => {
+  const { children, ...other } = props;
+  const { state: employeesState, isLoadingMore } = useAppSelector(
+    (state: RootState) => state.employees,
+  );
+
+  return (
+    <>
+      {(employeesState === State.loading || isLoadingMore) && (
+        <Box
+          component="li"
+          sx={{
+            py: 1,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: 1.5,
+            color: "text.secondary",
+          }}
+        >
+          <CircularProgress size={24} />
+          <span>Loading employees...</span>
+        </Box>
+      )}
+      <ul {...other} ref={ref}>
+        {children}
+      </ul>
+    </>
+  );
+});
 
 function CreateVisit() {
   const dispatch = useAppDispatch();
   const visitState = useAppSelector((state: RootState) => state.visit);
   const visitorState = useAppSelector((state: RootState) => state.visitor);
-  const { employees, isLoadingMore, hasMore, currentSearchTerm } =
-    useAppSelector((state: RootState) => state.employees);
+  const {
+    employees,
+    isLoadingMore,
+    hasMore,
+    currentSearchTerm,
+    state: employeesState,
+  } = useAppSelector((state: RootState) => state.employees);
 
   const dialogContext = useConfirmationModalContext();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visitorEmailDebounceRefs = useRef<
+    Record<number, ReturnType<typeof setTimeout> | null>
+  >({});
   const phoneUtil = PhoneNumberUtil.getInstance();
 
   const [entryHour, setEntryHour] = useState<number | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [open, setOpen] = useState(false);
+
   const timeSlots = useMemo(
     () => generateTimeSlots(entryHour ?? 8, 23, 15),
     [entryHour],
   );
 
-  const [inputValue, setInputValue] = useState("");
-  const [open, setOpen] = useState(false);
-
-  const emailToEmployee = useMemo(() => {
-    const map: Record<string, any> = {};
-    employees.forEach((emp) => {
-      if (emp?.workEmail) {
-        map[emp.workEmail.toLowerCase()] = emp;
-      }
-    });
-    return map;
-  }, [employees]);
-
   useEffect(() => {
-    dispatch(fetchEmployees({ searchTerm: "a", limit: 20, offset: 0 }));
+    dispatch(fetchEmployees({ limit: 10, offset: 0 }));
   }, [dispatch]);
 
-  const handleInputChange = useCallback(
-    (_: any, newInputValue: string, reason: string) => {
-      setInputValue(newInputValue);
-      if (newInputValue.trim() !== currentSearchTerm && reason !== "reset") {
-        dispatch(
-          fetchEmployees({ searchTerm: newInputValue.trim(), limit: 100 }),
-        );
-      }
+  useEffect(() => {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    // Cleanup function runs on component unmount
+    return () => {
+      Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      });
+    };
+  }, []);
+
+  const debouncedEmployeeSearch = useCallback(
+    (term: string) => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
+      searchDebounceRef.current = setTimeout(() => {
+        const trimmed = term.trim();
+        if (trimmed !== currentSearchTerm) {
+          dispatch(
+            fetchEmployees({ searchTerm: trimmed, limit: 10, offset: 0 }),
+          );
+        }
+      }, 500);
     },
     [dispatch, currentSearchTerm],
   );
 
-  const handleScroll = useCallback(
+  const handleListboxScroll = useCallback(
     (event: React.UIEvent<HTMLUListElement>) => {
       const node = event.currentTarget;
       if (
-        node.scrollHeight - node.scrollTop - node.clientHeight < 180 &&
+        node.scrollHeight - node.scrollTop - node.clientHeight < 220 &&
         !isLoadingMore &&
-        hasMore
+        hasMore &&
+        employeesState !== State.loading
       ) {
         dispatch(loadMoreEmployees({ searchTerm: inputValue.trim() }));
       }
     },
-    [dispatch, isLoadingMore, hasMore, inputValue],
+    [dispatch, isLoadingMore, hasMore, inputValue, employeesState],
   );
 
   const addNewVisitorBlock = useCallback((formik: any) => {
@@ -304,11 +353,13 @@ function CreateVisit() {
             console.error("QR generation failed:", err);
           }
 
+          const visitorName = draftVisitor.name?.trim() || "";
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
-            firstName: draftVisitor.firstName || undefined,
-            lastName: draftVisitor.lastName || undefined,
+            firstName: visitorName.split(" ")[0] || undefined,
+            lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
             contactNumber: draftVisitor.contactNumber
               ? draftVisitor.countryCode + draftVisitor.contactNumber
               : undefined,
@@ -384,8 +435,7 @@ function CreateVisit() {
           }
         }
         const fetched: VisitorDetail = {
-          firstName: action.payload.firstName || "",
-          lastName: action.payload.lastName || "",
+          name: `${action.payload.firstName || ""} ${action.payload.lastName || ""}`.trim(),
           contactNumber: nationalNumber,
           countryCode,
           emailAddress: action.payload.email || email,
@@ -408,10 +458,8 @@ function CreateVisit() {
   const canAddMoreVisitors = useCallback(
     (formik: any) => {
       if (formik.values.visitors.length === 0) return false;
-
       const lastVisitor =
         formik.values.visitors[formik.values.visitors.length - 1];
-
       return (
         isAnySubmittedVisitor(formik) &&
         lastVisitor.status !== VisitorStatus.Draft
@@ -423,6 +471,8 @@ function CreateVisit() {
   const validationSchema = Yup.object().shape({
     companyName: Yup.string().nullable(),
     whoTheyMeet: Yup.string().nullable(),
+    whoTheyMeetName: Yup.string().nullable(),
+    whoTheyMeetThumbnail: Yup.string().nullable(),
     purposeOfVisit: Yup.string().nullable(),
     accessibleLocations: Yup.array().nullable(),
     visitDate: Yup.string()
@@ -471,7 +521,11 @@ function CreateVisit() {
     ),
   });
 
+  const formikRef = useRef<any>(null);
+
   const renderVisitDetails = (formik: any) => {
+    formikRef.current = formik;
+
     const locked = isAnySubmittedVisitor(formik);
 
     return (
@@ -494,71 +548,148 @@ function CreateVisit() {
               onOpen={() => !locked && setOpen(true)}
               onClose={() => setOpen(false)}
               disablePortal
-              options={employees.map((emp) => emp.workEmail)}
+              options={employees}
+              getOptionLabel={(option) => {
+                if (typeof option === "string") {
+                  return formik.values.whoTheyMeetName || option;
+                }
+                return `${option?.firstName || ""} ${option?.lastName || ""}`.trim();
+              }}
               value={formik.values.whoTheyMeet || null}
-              onChange={(_, val) =>
-                !locked && formik.setFieldValue("whoTheyMeet", val || "")
-              }
+              onChange={(_, newValue) => {
+                if (locked) return;
+
+                if (newValue === null) {
+                  formik.setFieldValue("whoTheyMeet", "");
+                  formik.setFieldValue("whoTheyMeetName", "");
+                  formik.setFieldValue("whoTheyMeetThumbnail", null);
+                  return;
+                }
+
+                if (typeof newValue === "object") {
+                  const fullName =
+                    `${newValue.firstName || ""} ${newValue.lastName || ""}`.trim();
+                  formik.setFieldValue("whoTheyMeet", newValue.workEmail || ""); // email for payload
+                  formik.setFieldValue("whoTheyMeetName", fullName); // name for display
+                  formik.setFieldValue(
+                    "whoTheyMeetThumbnail",
+                    newValue.employeeThumbnail || null,
+                  );
+                }
+              }}
               inputValue={inputValue}
-              onInputChange={handleInputChange}
+              onInputChange={(event, newInputValue, reason) => {
+                setInputValue(newInputValue);
+
+                if (reason === "input") {
+                  formikRef.current?.setFieldValue(
+                    "whoTheyMeetThumbnail",
+                    null,
+                  );
+                }
+
+                if (reason === "reset") return;
+
+                const trimmed = newInputValue.trim();
+
+                if (trimmed.length === 0) {
+                  debouncedEmployeeSearch("");
+                } else if (trimmed.length >= 2) {
+                  debouncedEmployeeSearch(trimmed);
+                }
+              }}
               filterOptions={(x) => x}
-              loading={isLoadingMore}
+              loading={employeesState === State.loading || isLoadingMore}
               autoHighlight
               disabled={locked}
-              ListboxComponent={customListbox}
-              ListboxProps={{ onScroll: handleScroll }}
-              renderOption={(props, emailOpt) => {
-                const emp = emailToEmployee[emailOpt.toLowerCase()];
-                const name = emp
-                  ? `${emp.firstName} ${emp.lastName}`
-                  : emailOpt;
-                return (
-                  <li
-                    {...props}
-                    key={emailOpt}
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
+              ListboxComponent={CustomListbox}
+              ListboxProps={{ onScroll: handleListboxScroll }}
+              noOptionsText={
+                inputValue.trim().length < 2
+                  ? "Type at least 2 characters to search employees"
+                  : employeesState === State.loading
+                    ? "Searching..."
+                    : "No employees found"
+              }
+              renderOption={(props, employee) => (
+                <li
+                  {...props}
+                  key={employee.workEmail}
+                  style={{ display: "flex", alignItems: "center", gap: 12 }}
+                >
+                  <Avatar
+                    src={employee.employeeThumbnail}
+                    sx={{ width: 32, height: 32 }}
                   >
-                    <Avatar
-                      src={emp?.employeeThumbnail}
-                      sx={{ width: 32, height: 32 }}
-                    >
-                      {name.charAt(0).toUpperCase() || "?"}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2" noWrap>
-                        {name}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        noWrap
-                      >
-                        {emailOpt}
-                      </Typography>
-                    </Box>
-                  </li>
+                    {employee.firstName?.charAt(0)?.toUpperCase() || "?"}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="body2" noWrap>
+                      {`${employee.firstName} ${employee.lastName}`}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" noWrap>
+                      {employee.workEmail}
+                    </Typography>
+                  </Box>
+                </li>
+              )}
+              renderInput={(params) => {
+                const thumbnail = formik.values.whoTheyMeetThumbnail;
+
+                let initial = "?";
+                if (formik.values.whoTheyMeetName) {
+                  initial = formik.values.whoTheyMeetName
+                    .charAt(0)
+                    .toUpperCase();
+                } else if (formik.values.whoTheyMeet) {
+                  initial = formik.values.whoTheyMeet.charAt(0).toUpperCase();
+                }
+
+                return (
+                  <TextField
+                    {...params}
+                    label="Whom They Meet"
+                    placeholder="Search by name or email..."
+                    disabled={locked}
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          {formik.values.whoTheyMeet && (
+                            <InputAdornment position="start" sx={{ ml: 0.5 }}>
+                              <Avatar
+                                src={thumbnail ?? undefined}
+                                sx={{ width: 32, height: 32 }}
+                              >
+                                {!thumbnail && initial}
+                              </Avatar>
+                            </InputAdornment>
+                          )}
+                          {params.InputProps.startAdornment}
+                        </>
+                      ),
+                      endAdornment: (
+                        <>
+                          {(employeesState === State.loading ||
+                            isLoadingMore) && (
+                            <InputAdornment position="end" sx={{ mr: 1 }}>
+                              <CircularProgress size={18} />
+                            </InputAdornment>
+                          )}
+                          {params.InputProps.endAdornment}
+                        </>
+                      ),
+                    }}
+                    error={
+                      formik.touched.whoTheyMeet &&
+                      Boolean(formik.errors.whoTheyMeet)
+                    }
+                    helperText={
+                      formik.touched.whoTheyMeet && formik.errors.whoTheyMeet
+                    }
+                  />
                 );
               }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Whom They Meet"
-                  disabled={locked}
-                  InputProps={{
-                    ...params.InputProps,
-                    startAdornment: formik.values.whoTheyMeet ? (
-                      <Avatar
-                        src={
-                          emailToEmployee[
-                            formik.values.whoTheyMeet.toLowerCase()
-                          ]?.employeeThumbnail
-                        }
-                        sx={{ width: 24, height: 24, mr: 1 }}
-                      />
-                    ) : null,
-                  }}
-                />
-              )}
             />
           </Grid>
 
@@ -660,6 +791,11 @@ function CreateVisit() {
                 formik.setFieldValue("timeOfEntry", fmt);
                 setEntryHour(Number(fmt.split(":")[0]));
                 formik.setFieldValue("timeOfDeparture", "");
+
+                setTimeout(() => {
+                  formik.setFieldTouched("timeOfEntry", true, false);
+                  formik.validateField("timeOfEntry");
+                }, 0);
               }}
               disabled={locked || !formik.values.visitDate}
               slotProps={{
@@ -750,7 +886,6 @@ function CreateVisit() {
                       </IconButton>
                     )}
                 </Box>
-
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
                     <TextField
@@ -759,11 +894,34 @@ function CreateVisit() {
                       label="Email Address"
                       name={`visitors.${idx}.emailAddress`}
                       value={visitor.emailAddress}
-                      onChange={formik.handleChange}
-                      onBlur={() =>
-                        visitor.status === VisitorStatus.Draft &&
-                        fetchVisitorByEmail(visitor.emailAddress, idx, formik)
-                      }
+                      onChange={(e) => {
+                        formik.handleChange(e);
+                        const email = e.target.value.trim();
+
+                        if (visitorEmailDebounceRefs.current[idx]) {
+                          clearTimeout(visitorEmailDebounceRefs.current[idx]!);
+                        }
+
+                        visitorEmailDebounceRefs.current[idx] = setTimeout(
+                          () => {
+                            if (
+                              visitor.status === VisitorStatus.Draft &&
+                              email &&
+                              email.includes("@") &&
+                              email.length >= 6
+                            ) {
+                              formik.setFieldValue(`visitors.${idx}.name`, "");
+                              formik.setFieldValue(
+                                `visitors.${idx}.contactNumber`,
+                                "",
+                              );
+                              fetchVisitorByEmail(email, idx, formik);
+                            }
+                            delete visitorEmailDebounceRefs.current[idx];
+                          },
+                          600,
+                        );
+                      }}
                       disabled={visitor.status === VisitorStatus.Completed}
                       error={
                         formik.touched.visitors?.[idx]?.emailAddress &&
@@ -773,17 +931,6 @@ function CreateVisit() {
                         formik.touched.visitors?.[idx]?.emailAddress &&
                         formik.errors.visitors?.[idx]?.emailAddress
                       }
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="First Name & Last Name"
-                      name={`visitors.${idx}.firstName`}
-                      value={visitor.firstName}
-                      onChange={formik.handleChange}
-                      disabled={visitor.status === VisitorStatus.Completed}
                     />
                   </Grid>
 
@@ -807,7 +954,7 @@ function CreateVisit() {
                               disabled={
                                 visitor.status === VisitorStatus.Completed
                               }
-                              sx={{ minWidth: 80 }}
+                              sx={{ minWidth: 80, mr: 1 }}
                             >
                               {COUNTRY_CODES.map((c) => (
                                 <MenuItem key={c.code} value={c.code}>
@@ -818,6 +965,17 @@ function CreateVisit() {
                           </InputAdornment>
                         ),
                       }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="First Name & Last Name"
+                      name={`visitors.${idx}.name`}
+                      value={visitor.name}
+                      onChange={formik.handleChange}
+                      disabled={visitor.status === VisitorStatus.Completed}
                     />
                   </Grid>
 
@@ -849,6 +1007,8 @@ function CreateVisit() {
         initialValues={{
           companyName: "",
           whoTheyMeet: "",
+          whoTheyMeetName: "",
+          whoTheyMeetThumbnail: null as string | null,
           purposeOfVisit: "",
           accessibleLocations: [],
           visitDate: "",
@@ -874,8 +1034,8 @@ function CreateVisit() {
                   open
                   message={
                     visitorState.state === State.loading
-                      ? visitorState.stateMessage || "Processing..."
-                      : visitState.stateMessage || "Processing..."
+                      ? visitorState.stateMessage || "Processing visitor..."
+                      : visitState.stateMessage || "Creating visit..."
                   }
                 />
               )}
