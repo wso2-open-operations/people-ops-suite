@@ -850,12 +850,15 @@ service http:InterceptableService / on new http:Listener(9090) {
             Employee[] employees;
             employees = check employee:getEmployees(
                     {
-                        status: ["Active"],
+                        status: payload.employeeStatuses,
                         leadEmail: (isAdmin && payload.isAdminView) ? () : email
                     }
                 );
             string[] emails = from Employee employee in employees
                 select employee.workEmail;
+            if payload.employeeEmail is string {
+                emails = emails.filter(empMail => empMail == payload.employeeEmail);
+            }
             boolean isLead = emails.length() > 0;
             if !(isAdmin || isLead) {
                 return <http:Forbidden>{
@@ -864,14 +867,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if emails.length() == 0 {
-                return <http:Forbidden>{
-                    body: {
-                        message: "You do not have any subordinates to view leave reports!"
-                    }
-                };
-            }
-
             final database:Leave[]|error leaves = database:getLeaves(
                     {
                         emails,
