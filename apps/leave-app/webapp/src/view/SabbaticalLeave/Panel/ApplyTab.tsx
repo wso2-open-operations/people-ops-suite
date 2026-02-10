@@ -147,9 +147,13 @@ export default function ApplyTab({
       } else {
         setHasFetched(true);
         setCanRenderSabbaticalFormField(false);
-        setErrorMessage(
-          `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`,
+        let errorMsg = (
+          <>
+            You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
+            eligible for sabbatical leave. {policyMessage}
+          </>
         );
+        setErrorMessage(errorMsg);
         setEligibilityPayload({
           employmentStartDate: userInfo?.employmentStartDate || "",
           lastSabbaticalLeaveEndDate: "",
