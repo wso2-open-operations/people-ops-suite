@@ -275,7 +275,7 @@ function CreateVisit() {
             fetchEmployees({ searchTerm: trimmed, limit: 10, offset: 0 }),
           );
         }
-      }, 400);
+      }, 500);
     },
     [dispatch, currentSearchTerm],
   );
@@ -457,7 +457,7 @@ function CreateVisit() {
     companyName: Yup.string().nullable(),
     whoTheyMeet: Yup.string().nullable(),
     whoTheyMeetName: Yup.string().nullable(),
-    whomTheyMeetThumbnail: Yup.string().nullable(),
+    whoTheyMeetThumbnail: Yup.string().nullable(),
     purposeOfVisit: Yup.string().nullable(),
     accessibleLocations: Yup.array().nullable(),
     visitDate: Yup.string()
@@ -547,17 +547,17 @@ function CreateVisit() {
                 if (newValue === null) {
                   formik.setFieldValue("whoTheyMeet", "");
                   formik.setFieldValue("whoTheyMeetName", "");
-                  formik.setFieldValue("whomTheyMeetThumbnail", null);
+                  formik.setFieldValue("whoTheyMeetThumbnail", null);
                   return;
                 }
 
-                if (typeof newValue === "object" && newValue !== null) {
+                if (typeof newValue === "object") {
                   const fullName =
                     `${newValue.firstName || ""} ${newValue.lastName || ""}`.trim();
                   formik.setFieldValue("whoTheyMeet", newValue.workEmail || ""); // email for payload
                   formik.setFieldValue("whoTheyMeetName", fullName); // name for display
                   formik.setFieldValue(
-                    "whomTheyMeetThumbnail",
+                    "whoTheyMeetThumbnail",
                     newValue.employeeThumbnail || null,
                   );
                 }
@@ -568,7 +568,7 @@ function CreateVisit() {
 
                 if (reason === "input") {
                   formikRef.current?.setFieldValue(
-                    "whomTheyMeetThumbnail",
+                    "whoTheyMeetThumbnail",
                     null,
                   );
                 }
@@ -599,7 +599,7 @@ function CreateVisit() {
               renderOption={(props, employee) => (
                 <li
                   {...props}
-                  key={employee.email}
+                  key={employee.workEmail}
                   style={{ display: "flex", alignItems: "center", gap: 12 }}
                 >
                   <Avatar
@@ -619,7 +619,7 @@ function CreateVisit() {
                 </li>
               )}
               renderInput={(params) => {
-                const thumbnail = formik.values.whomTheyMeetThumbnail;
+                const thumbnail = formik.values.whoTheyMeetThumbnail;
 
                 let initial = "?";
                 if (formik.values.whoTheyMeetName) {
@@ -990,7 +990,7 @@ function CreateVisit() {
           companyName: "",
           whoTheyMeet: "",
           whoTheyMeetName: "",
-          whomTheyMeetThumbnail: null as string | null,
+          whoTheyMeetThumbnail: null as string | null,
           purposeOfVisit: "",
           accessibleLocations: [],
           visitDate: "",
