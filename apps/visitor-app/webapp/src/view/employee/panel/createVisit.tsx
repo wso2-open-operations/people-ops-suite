@@ -955,12 +955,8 @@ function CreateVisit() {
                     <TextField
                       fullWidth
                       label="First Name & Last Name"
-                      name={`visitors.${idx}.firstName and lastName`}
-                      value={
-                        visitor.firstName && visitor.lastName
-                          ? `${visitor.firstName} ${visitor.lastName}`
-                          : ""
-                      }
+                      name={`visitors.${idx}.firstName`}
+                      value={visitor.firstName}
                       onChange={formik.handleChange}
                       disabled={visitor.status === VisitorStatus.Completed}
                     />
