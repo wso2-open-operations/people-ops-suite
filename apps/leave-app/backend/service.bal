@@ -867,6 +867,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            if emails.length() <= 0 {
+                return <http:Forbidden>{
+                    body: {
+                        message: "You don't have any subordinates to view the leave report!"
+                    }
+                };
+            }
             final database:Leave[]|error leaves = database:getLeaves(
                     {
                         emails,
