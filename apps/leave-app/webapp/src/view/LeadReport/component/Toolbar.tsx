@@ -15,17 +15,7 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import {
-  Autocomplete,
-  Box,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Stack,
-  Switch,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Autocomplete, Box, Button, Stack, Switch, TextField, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
@@ -228,18 +218,57 @@ export default function Toolbar({
           </Box>
         )}
 
-        {/* Active Employees Checkbox for People Ops Team */}
+        {/* Active Employees Toggle for People Ops Team */}
         {showToggle && onEmailChange && onActiveEmployeesChange && (
-          <FormControlLabel
-            control={
-              <Checkbox
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              px: 2,
+              py: 1,
+              borderRadius: 1,
+              backgroundColor:
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
+              border: `1px solid ${
+                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
+              }`,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 3,
+              }}
+            >
+              <Switch
                 checked={activeEmployeesOnly}
                 onChange={(e) => onActiveEmployeesChange?.(e.target.checked)}
+                size="small"
+                sx={{
+                  "& .MuiSwitch-switchBase.Mui-checked": {
+                    color: theme.palette.primary.main,
+                  },
+                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                    backgroundColor: theme.palette.primary.main,
+                  },
+                }}
               />
-            }
-            label="Active Employees Only"
-            sx={{ color: theme.palette.text.primary }}
-          />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: activeEmployeesOnly ? 600 : 400,
+                  color: activeEmployeesOnly
+                    ? theme.palette.text.primary
+                    : theme.palette.text.secondary,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                Active employees only
+              </Typography>
+            </Box>
+          </Box>
         )}
       </Stack>
     </Stack>
