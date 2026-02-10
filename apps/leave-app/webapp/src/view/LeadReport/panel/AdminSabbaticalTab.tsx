@@ -26,6 +26,7 @@ import { formatDateForApi } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
 import {
   fetchLeaveHistory,
+  resetLeaveState,
   selectLeaveState,
   selectLeaves,
 } from "@root/src/slices/leaveSlice/leave";
@@ -50,6 +51,7 @@ export default function AdminSabbaticalTab() {
 
   const handleFetchReport = () => {
     if (userInfo?.workEmail && startDate && endDate) {
+      dispatch(resetLeaveState());
       dispatch(
         fetchLeaveHistory({
           leaveCategory: [LeaveType.SABBATICAL],
