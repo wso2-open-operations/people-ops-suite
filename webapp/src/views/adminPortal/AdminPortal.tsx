@@ -16,6 +16,7 @@
 
 import { SyntheticEvent } from "react";
 import { useSearchParams } from "react-router-dom";
+import Title from "../../components/common/Title";
 
 import {
   Box,
@@ -61,7 +62,7 @@ const AdminPortalContent = () => {
   const currentTab = searchParams.get("tab") || ParCycleViewTabs.ONGOING;
   const value = tabsAndPanelsData.findIndex(tab => tab.value === currentTab);
   const safeValue = value === -1 ? 0 : value;
-  
+
   const handleTabChange = (_event: SyntheticEvent, newValue: number) => {
     const newTabValue = tabsAndPanelsData[newValue].value;
     setSearchParams({ tab: newTabValue });
@@ -69,82 +70,71 @@ const AdminPortalContent = () => {
 
   return (
     <Fade in={true}>
-      <Stack>
-        <Paper
-          square
-          className="paper"
-          variant="outlined"
+      <Paper
+        className="paper"
+        variant="outlined"
+        sx={{
+          borderRadius: "0px 0px 16px 0px",
+          height: "100%",
+        }}
+      >
+        <Stack
           sx={{
-            borderRadius: "5px",
-            minWidth: "1200px",
-            height: "fit-content",
+            justifyContent: "space-between",
+            margin: "5px",
           }}
         >
           <Stack
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              margin: "5px",
+            direction={"row"}
+            style={{
+              justifyContent: "left",
             }}
           >
-            <Stack
-              direction={"row"}
-              style={{
-                display: "flex",
-                justifyContent: "left",
-              }}
-            >
-              <IconButton color="primary" component="label" onClick={() => { }}>
-                <ShieldIcon fontSize="large" />
-              </IconButton>
-              <Typography
-                variant="h4"
-                sx={{ marginTop: "12px", marginLeft: "10px" }}
-              >
-                Admin Portal
-              </Typography>
-            </Stack>
+            <IconButton color="primary" component="label" onClick={() => { }}>
+              <ShieldIcon fontSize="medium" />
+            </IconButton>
+            <Title firstWord="Admin" secondWord="Portal" />
           </Stack>
+        </Stack>
 
-          <Box
+        <Box
+          sx={{
+            borderBottom: 1,
+            borderColor: "divider",
+            padding: "0px 30px",
+          }}
+        >
+          <Tabs
+            value={safeValue}
+            onChange={handleTabChange}
+            aria-label="icon label tabs"
             sx={{
-              borderBottom: 1,
-              borderColor: "divider",
-              padding: "0px 30px",
+              "&.MuiTabs-root": {
+                height: "3rem",
+                alignItems: "center",
+              },
+              "& .MuiTabs-indicator": {
+                pb: "0.925rem",
+              },
             }}
           >
-            <Tabs
-              value={safeValue}
-              onChange={handleTabChange}
-              aria-label="icon label tabs"
-              sx={{
-                "&.MuiTabs-root": {
-                  height: "3rem",
-                  alignItems: "center",
-                },
-                "& .MuiTabs-indicator": {
-                  pb: "0.925rem",
-                },
-              }}
-            >
-              {tabsAndPanelsData.map((tab, index) => (
-                <Tab
-                  key={index}
-                  label={tab.label}
-                  icon={tab.icon}
-                  iconPosition="start"
-                  sx={{ width: defaultTabWidth }}
-                />
-              ))}
-            </Tabs>
-          </Box>
-          {tabsAndPanelsData.map((tab, index) => (
-            <TabPanel key={index} value={safeValue} index={index}>
-              {tab.component}
-            </TabPanel>
-          ))}
-        </Paper>
-      </Stack>
+            {tabsAndPanelsData.map((tab, index) => (
+              <Tab
+                key={index}
+                label={tab.label}
+                icon={tab.icon}
+                iconPosition="start"
+                sx={{ width: defaultTabWidth }}
+              />
+            ))}
+          </Tabs>
+        </Box>
+        {tabsAndPanelsData.map((tab, index) => (
+          <TabPanel key={index} value={safeValue} index={index}>
+            {tab.component}
+          </TabPanel>
+        ))}
+      </Paper>
     </Fade>
   );
 };
