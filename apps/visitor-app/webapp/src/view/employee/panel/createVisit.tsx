@@ -245,9 +245,9 @@ function CreateVisit() {
   } = useAppSelector((state: RootState) => state.employees);
 
   const dialogContext = useConfirmationModalContext();
-  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visitorEmailDebounceRefs = useRef<
-    Record<number, NodeJS.Timeout | null>
+    Record<number, ReturnType<typeof setTimeout> | null>
   >({});
   const phoneUtil = PhoneNumberUtil.getInstance();
 
@@ -263,6 +263,17 @@ function CreateVisit() {
   useEffect(() => {
     dispatch(fetchEmployees({ limit: 10, offset: 0 }));
   }, [dispatch]);
+
+  useEffect(() => {
+    // Cleanup function runs on component unmount
+    return () => {
+      Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      });
+    };
+  }, []);
 
   const debouncedEmployeeSearch = useCallback(
     (term: string) => {
