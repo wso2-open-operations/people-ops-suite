@@ -24,6 +24,7 @@ import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -32,6 +33,8 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
+  const dispatch = useAppDispatch();
+  const userInfo = useAppSelector((state) => state.user.userInfo);
   const [daysSelected, setDaysSelected] = useState(0);
   const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
@@ -151,6 +154,7 @@ export default function GeneralLeave() {
             onWorkingDaysChange={setWorkingDays}
             hasError={dateError}
             onErrorClear={() => setDateError(false)}
+            selectedLeaveType={selectedLeaveType}
           />
           <LeaveSelection
             daysSelected={daysSelected}

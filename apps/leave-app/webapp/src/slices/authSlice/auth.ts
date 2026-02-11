@@ -17,7 +17,7 @@
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { CachedMail, State } from "@/types/types";
+import { State } from "@/types/types";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
@@ -26,7 +26,14 @@ export enum Role {
   EMPLOYEE = "EMPLOYEE",
   INTERN = "INTERN",
   LEAD = "LEAD",
-  ADMIN = "ADMIN",
+  PEOPLE_OPS_TEAM = "PEOPLE_OPS_TEAM",
+}
+
+export enum Privileges {
+  EMPLOYEE = 987,
+  INTERN = 678,
+  LEAD = 879,
+  PEOPLE_OPS_TEAM = 789,
 }
 
 // Custom extended interface
@@ -67,7 +74,6 @@ export interface UserInfoInterface {
   employmentStartDate: string;
   subordinateCount: number | null;
   privileges: number[];
-  cachedEmails: CachedMail;
 }
 
 const initialState: AuthState = {
@@ -96,17 +102,17 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(987)) {
+    if (userPrivileges.includes(Privileges.EMPLOYEE)) {
       roles.push(Role.EMPLOYEE);
     }
-    if (userPrivileges.includes(879)) {
+    if (userPrivileges.includes(Privileges.LEAD)) {
       roles.push(Role.LEAD);
     }
-    if (userPrivileges.includes(678)) {
+    if (userPrivileges.includes(Privileges.INTERN)) {
       roles.push(Role.INTERN);
     }
-    if (userPrivileges.includes(789)) {
-      roles.push(Role.ADMIN);
+    if (userPrivileges.includes(Privileges.PEOPLE_OPS_TEAM)) {
+      roles.push(Role.PEOPLE_OPS_TEAM);
     }
 
     if (roles.length === 0) {

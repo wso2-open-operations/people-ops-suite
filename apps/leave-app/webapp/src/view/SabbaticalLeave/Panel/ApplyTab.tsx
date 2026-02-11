@@ -37,7 +37,7 @@ import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useSnackbar } from "notistack";
 
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
@@ -77,6 +77,15 @@ export default function ApplyTab({
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const submitState = useAppSelector(selectSubmitState);
+  const policyMessage: ReactNode = (
+    <>
+      Refer to the{" "}
+      <Link href={sabbaticalPolicyUrl} target="_blank" rel="noopener" underline="hover">
+        Sabbatical Leave Policy
+      </Link>{" "}
+      for more information.
+    </>
+  );
 
   const [eligibilityPayload, setEligibilityPayload] = useState<EligibilityResponse>({
     isEligible: false,
@@ -84,7 +93,7 @@ export default function ApplyTab({
     lastSabbaticalLeaveEndDate: dayjs().toISOString(),
   });
   const [sabbaticalEndDateFieldEditable, setSabbaticalEndDateFieldEditable] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<ReactNode>("");
   const [lastSabbaticalLeaveEndDate, setLastSabbaticalLeaveEndDate] = useState<Dayjs | null>(null);
   const [leaveStartDate, setLeaveStartDate] = useState<Dayjs | null>(null);
   const [leaveEndDate, setLeaveEndDate] = useState<Dayjs | null>(null);
@@ -138,9 +147,13 @@ export default function ApplyTab({
       } else {
         setHasFetched(true);
         setCanRenderSabbaticalFormField(false);
-        setErrorMessage(
-          `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`,
+        let errorMsg = (
+          <>
+            You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
+            eligible for sabbatical leave. {policyMessage}
+          </>
         );
+        setErrorMessage(errorMsg);
         setEligibilityPayload({
           employmentStartDate: userInfo?.employmentStartDate || "",
           lastSabbaticalLeaveEndDate: "",
@@ -166,15 +179,26 @@ export default function ApplyTab({
       lastSabbaticalLeaveDiff >= sabbaticalLeaveEligibilityDuration;
 
     let eligible = true;
-    let errorMsg = "";
+    let errorMsg;
 
     if (!isEmploymentEligible) {
       eligible = false;
-      errorMsg = `You must be employed for at least ${sabbaticalEligibilityDurationInYears} years to be eligible for sabbatical leave.`;
+      errorMsg = (
+        <>
+          You must be employed for at least {sabbaticalEligibilityDurationInYears} years to be
+          eligible for sabbatical leave. {policyMessage}
+        </>
+      );
+
       setCanRenderSabbaticalFormField(false);
     } else if (!isSabbaticalLeaveEligible) {
       eligible = false;
-      errorMsg = `Your last sabbatical leave was taken within the past ${sabbaticalEligibilityDurationInYears} years, making you ineligible.`;
+      errorMsg = (
+        <>
+          Your last sabbatical leave was taken within the past{" "}
+          {sabbaticalEligibilityDurationInYears} years, making you ineligible. {policyMessage}
+        </>
+      );
     }
 
     if (!eligible) {
@@ -435,6 +459,7 @@ export default function ApplyTab({
                     label="Leave request end date*"
                     sx={{ flex: "1" }}
                     value={leaveEndDate}
+                    minDate={leaveStartDate ?? undefined}
                     onChange={(newValue) => {
                       setLeaveEndDate(newValue);
                       setEndDateError(false);
