@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import visitor.authorization;
+import visitor.calendar;
 import visitor.database;
 import visitor.email;
 import visitor.people;
@@ -1076,5 +1077,33 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return allEmployees;
+    }
+
+    # Get meeting room resources.
+    #
+    # + ctx - Request context
+    # + return - Meeting room resources or error
+    resource function get meeting\-rooms(http:RequestContext ctx)
+        returns calendar:FilteredCalendarResource[]|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "User information header not found!"
+                }
+            };
+        }
+
+        calendar:FilteredCalendarResource[]|error result = calendar:getMeetingRooms();
+        if result is error {
+            string cusError = "Error retrieving meeting rooms";
+            log:printError(cusError, result);
+            return <http:InternalServerError>{
+                body: {message: cusError}
+            };
+        }
+
+        return result;
     }
 }
