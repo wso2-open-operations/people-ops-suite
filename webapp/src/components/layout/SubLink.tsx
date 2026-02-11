@@ -16,7 +16,6 @@
 import { Box, Typography, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link, matchPath, useLocation } from "react-router-dom";
-
 import React from "react";
 
 interface SubLinkProps {
@@ -31,22 +30,8 @@ const SubLink = (props: SubLinkProps) => {
   const { icon, primary, to, open, parentPath } = props;
   const location = useLocation();
   const theme = useTheme();
-
-  const fullPath = parentPath.replace(/\/$/, "") + "/" + to.replace(/^\//, "");
+  const fullPath = to.startsWith('/') ? to : `${parentPath.replace(/\/$/, "")}/${to.replace(/^\//, "")}`;
   const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
-
-  const isLight = theme.palette.mode === "light";
-  const colors = {
-    // Inactive Text: Grey
-    text: isLight ? "#666666" : "#a3a3a3",
-    // Active Text: Primary Blue (Light) / Secondary Blue (Dark)
-    textClicked: isLight ? "#021d5f" : "#5686e1",
-    // Hover BG: Subtle transparent layer
-    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
-    // Tooltip Colors
-    tooltipBg: "#333333",
-    tooltipText: "#ffffff"
-  };
 
   return (
     <>
@@ -58,16 +43,18 @@ const SubLink = (props: SubLinkProps) => {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            paddingX: "8px",
-            paddingY: "8px",
+            px: "8px",
+            py: "8px",
             borderRadius: "8px",
             justifyContent: "flex-start",
             textDecoration: "none",
-            color: isActive ? colors.textClicked : colors.text,
+            color: isActive
+              ? theme.palette.customNavigation.textClicked
+              : theme.palette.customNavigation.text,
             "&:hover": {
               ...(!isActive && {
-                backgroundColor: colors.hoverBg,
-                color: colors.textClicked,
+                backgroundColor: theme.palette.customNavigation.hoverBg,
+                color: theme.palette.customNavigation.hover,
               }),
             },
           }}
@@ -86,7 +73,7 @@ const SubLink = (props: SubLinkProps) => {
           {open && (
             <Typography
               sx={{
-                fontSize: "14px",
+                fontSize: theme.typography.body2.fontSize,
                 fontWeight: 500,
                 lineHeight: "150%",
                 letterSpacing: "-0.03em",
@@ -103,7 +90,9 @@ const SubLink = (props: SubLinkProps) => {
           sx={{
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             textDecoration: "none",
+            py: "8px",
           }}
         >
           {icon && React.isValidElement(icon) ? (
@@ -114,17 +103,17 @@ const SubLink = (props: SubLinkProps) => {
               slotProps={{
                 tooltip: {
                   sx: {
-                    backgroundColor: colors.tooltipBg,
-                    color: colors.tooltipText,
+                    backgroundColor: theme.palette.neutral[10],
+                    color: theme.palette.neutral.white,
                     padding: theme.spacing(0.75, 1.5),
                     borderRadius: "4px",
-                    fontSize: "14px",
+                    fontSize: theme.typography.body2.fontSize,
                     boxShadow: theme.shadows[8],
                   },
                 },
                 arrow: {
                   sx: {
-                    color: colors.tooltipBg,
+                    color: theme.palette.neutral[10],
                   },
                 },
               }}
@@ -134,7 +123,9 @@ const SubLink = (props: SubLinkProps) => {
                 style: {
                   width: "20px",
                   height: "20px",
-                  color: isActive ? colors.textClicked : colors.text,
+                  color: isActive
+                    ? theme.palette.customNavigation.textClicked
+                    : theme.palette.customNavigation.text,
                 },
               })}
             </Tooltip>
