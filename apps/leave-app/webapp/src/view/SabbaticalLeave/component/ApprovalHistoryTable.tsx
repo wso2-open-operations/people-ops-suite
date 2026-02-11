@@ -47,6 +47,21 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
       renderCell: (params) => <span>{String(params.row?.endDate ?? "").substring(0, 10)}</span>,
     },
     {
+      field: "numberOfDays",
+      headerName: "Day Count",
+      type: "string",
+      flex: 1,
+      editable: false,
+    },
+    {
+      field: "approverEmail",
+      headerName: "Lead",
+      type: "string",
+      flex: 1,
+      editable: false,
+      valueGetter: (value) => value ?? "N/A",
+    },
+    {
       field: "status",
       headerName: "Status",
       type: "string",
@@ -76,6 +91,12 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
             chipProps = {
               color: theme.palette.primary.main,
               borderColor: theme.palette.primary.main,
+            };
+            break;
+          case "cancelled":
+            chipProps = {
+              color: theme.palette.secondary.main,
+              borderColor: theme.palette.secondary.main,
             };
             break;
           default:
@@ -114,6 +135,15 @@ export default function ApprovalHistoryTable({ rows }: { rows: SingleLeaveHistor
         pageSizeOptions={[10]}
         disableRowSelectionOnClick
         showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
     </Box>
   );

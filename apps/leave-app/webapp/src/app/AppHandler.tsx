@@ -23,7 +23,6 @@ import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { fetchAppConfig } from "@slices/configSlice/config";
 import { fetchEmployees } from "@slices/employeeSlice/employee";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
@@ -55,7 +54,6 @@ const AppHandler = () => {
       setAppState("loading");
     } else if (auth.status === "success") {
       setAppState("success");
-      dispatch(fetchAppConfig());
       dispatch(fetchEmployees());
     } else if (auth.status === "failed") {
       setAppState("failed");

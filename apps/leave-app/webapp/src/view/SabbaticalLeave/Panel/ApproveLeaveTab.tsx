@@ -27,7 +27,7 @@ import {
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { OrderBy, State, Status } from "@root/src/types/types";
+import { LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
 
@@ -44,6 +44,7 @@ export default function ApproveLeaveTab() {
       dispatch(
         fetchLeaveHistory({
           approverEmail: userInfo.workEmail,
+          leaveCategory: [LeaveType.SABBATICAL],
           statuses: [Status.PENDING],
           orderBy: OrderBy.DESC,
         }),
@@ -64,7 +65,7 @@ export default function ApproveLeaveTab() {
         borderBottom={`1px solid ${theme.palette.divider}`}
         pb="1rem"
       >
-        <Title firstWord="Leave" secondWord="Approval" borderEnabled={false} />
+        <Title firstWord="Sabbatical" secondWord=" Leave Approval" borderEnabled={false} />
       </Stack>
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">
