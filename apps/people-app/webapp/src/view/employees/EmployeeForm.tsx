@@ -128,8 +128,10 @@ const toFormValues = (
 };
 
 const toJobUpdatePayload = (
+  employeeId: string,
   values: CreateEmployeeFormValues,
 ): UpdateEmployeeJobInfoPayload => ({
+  employeeId: employeeId,
   epf: values.epf === "" ? null : values.epf,
   employmentLocation: values.employmentLocation,
   workLocation: values.workLocation,
@@ -153,6 +155,12 @@ const toJobUpdatePayload = (
     : null,
 });
 
+const toNullableString = (v?: string | null) => {
+  if (v == null) return null;
+  const s = (v as string).trim();
+  return s === "" ? null : s;
+};
+
 const toPersonalUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): EmployeePersonalInfoUpdate => ({
@@ -162,17 +170,21 @@ const toPersonalUpdatePayload = (
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
-  personalEmail: values.personalInfo.personalEmail ?? null,
-  personalPhone: values.personalInfo.personalPhone ?? null,
-  residentNumber: values.personalInfo.residentNumber ?? null,
-  addressLine1: values.personalInfo.addressLine1 ?? null,
-  addressLine2: values.personalInfo.addressLine2 ?? null,
-  city: values.personalInfo.city ?? null,
-  stateOrProvince: values.personalInfo.stateOrProvince ?? null,
-  postalCode: values.personalInfo.postalCode ?? null,
-  country: values.personalInfo.country ?? null,
+  personalEmail: toNullableString(values.personalInfo.personalEmail),
+  personalPhone: toNullableString(values.personalInfo.personalPhone),
+  residentNumber: toNullableString(values.personalInfo.residentNumber),
+  addressLine1: toNullableString(values.personalInfo.addressLine1),
+  addressLine2: toNullableString(values.personalInfo.addressLine2),
+  city: toNullableString(values.personalInfo.city),
+  stateOrProvince: toNullableString(values.personalInfo.stateOrProvince),
+  postalCode: toNullableString(values.personalInfo.postalCode),
+  country: toNullableString(values.personalInfo.country),
   nationality: values.personalInfo.nationality ?? null,
-  emergencyContacts: values.personalInfo.emergencyContacts ?? null,
+  emergencyContacts:
+    values.personalInfo.emergencyContacts &&
+    values.personalInfo.emergencyContacts.length > 0
+      ? values.personalInfo.emergencyContacts
+      : null,
 });
 
 const OrangeConnector = styled(StepConnector)(({ theme }) => ({
@@ -527,8 +539,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 return;
               }
 
-              const initialJob = toJobUpdatePayload(initialEditValues);
-              const currentJob = toJobUpdatePayload(values);
+              const initialJob = toJobUpdatePayload(
+                employeeId,
+                initialEditValues,
+              );
+              const currentJob = toJobUpdatePayload(employeeId, values);
 
               const initialPersonal =
                 toPersonalUpdatePayload(initialEditValues);
@@ -568,8 +583,10 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     if (hasJobChanges) {
                       const jobResult = await dispatch(
                         updateEmployeeJobInfo({
-                          employeeId,
-                          payload: jobPatch as UpdateEmployeeJobInfoPayload,
+                          payload: {
+                            employeeId,
+                            ...jobPatch,
+                          } as UpdateEmployeeJobInfoPayload,
                         }),
                       );
                       if (updateEmployeeJobInfo.rejected.match(jobResult)) {

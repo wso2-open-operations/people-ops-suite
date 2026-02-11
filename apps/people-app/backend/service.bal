@@ -543,10 +543,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update employee job information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + payload - Employee job info update payload
     # + return - HTTP OK or HTTP errors
-    resource function patch employees/[string id]/job\-info(http:RequestContext ctx,
+    resource function patch employees/[string employeeId]/job\-info(http:RequestContext ctx,
             database:UpdateEmployeeJobInfoPayload payload) 
         returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
@@ -569,10 +569,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
-                    employeeInfo, id = id);
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
 
             return <http:InternalServerError>{
                 body: {
@@ -581,7 +581,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn("Employee information not found", id = id);
+            log:printWarn("Employee information not found", employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: "Employee information not found"
@@ -589,10 +589,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateEmployeeJobInfo(employeeInfo.id, payload, userInfo.email);
+        error? updateResult = database:updateEmployeeJobInfo(payload, userInfo.email);
         if updateResult is error {
-            string customErr = string `Error occurred while updating employee job information for ID: ${id}`;
-            log:printError(customErr, updateResult, id = id);
+            string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED

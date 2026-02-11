@@ -45,10 +45,10 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 
 # Fetch employee detailed information.
 #
-# + employeeId - Employee ID
+# + employeeId - Employee ID or employee database ID
 # + return - Query to get employee detailed information
-isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
-    `SELECT 
+isolated function getEmployeeInfoQuery(string|int employeeId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `SELECT 
         e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
@@ -96,7 +96,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
                 AS additionalManagerEmails
             FROM employee_additional_managers
             GROUP BY employee_id
-        ) eam ON eam.employee_id = e.id
+        ) eam ON eam.employee_id = e.employee_id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -104,9 +104,18 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
-        LEFT JOIN unit u ON e.unit_id = u.id
-    WHERE
-        e.employee_id = ${employeeId};`;  
+        LEFT JOIN unit u ON e.unit_id = u.id`;
+
+    sql:ParameterizedQuery whereClause;
+
+    if employeeId is string {
+        whereClause = ` WHERE e.employee_id = ${employeeId};`;
+    } else {
+        whereClause = ` WHERE e.id = ${employeeId};`;
+    }
+
+    return sql:queryConcat(mainQuery, whereClause);
+}
 
 # Fetch continuous service record by work email.
 #
@@ -475,36 +484,13 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${createdBy}
         );`;
 
-# Add employee additional manager query.
-#
-# + employeeId - Employee primary key
-# + additionalManagerEmail - Additional manager email
-# + createdBy - Creator of the additional manager record
-# + return - sql:ParameterizedQuery - Insert query for additional managers
-isolated function addEmployeeAdditionalManagerQuery(int employeeId, string additionalManagerEmail, string createdBy)
-    returns sql:ParameterizedQuery =>
-    `INSERT INTO employee_additional_managers
-        (
-            employee_id,
-            additional_manager_email,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            ${employeeId},
-            ${additionalManagerEmail},
-            ${createdBy},
-            ${createdBy}
-        );`;
-
 # Update employee personal information query.
 #
 # + id - Personal info ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
 # + return - sql:ParameterizedQuery - Update query for personal info
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy) 
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery =>
     `UPDATE
         personal_info
@@ -530,7 +516,7 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
         id = ${id};`;
 
 # Delete emergency contacts by personal info id.
-# 
+#
 # + personalInfoId - Personal info primary key
 # + return - sql:ParameterizedQuery - Delete query for emergency contacts
 isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
@@ -539,13 +525,13 @@ isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoI
             WHERE personal_info_id = ${personalInfoId};`;
 
 # Insert an emergency contact for a personal_info id.
-# 
+#
 # + personalInfoId - Personal info primary key
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
 # + return - sql:ParameterizedQuery - Insert query for emergency contacts
 isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
-    string createdBy) returns sql:ParameterizedQuery =>`
+        string createdBy) returns sql:ParameterizedQuery => `
         INSERT INTO personal_info_emergency_contacts
             (
                 personal_info_id,
@@ -569,11 +555,10 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
 
 # Update employee job information query.
 #
-# + employeeDbId - Employee database ID
 # + payload - Job information update payload
 # + updatedBy - User performing the update
 # + return - sql:ParameterizedQuery - Update query for employee job info
-isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+isolated function updateEmployeeJobInfoQuery(UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery => `
         UPDATE 
             employee
@@ -598,24 +583,24 @@ isolated function updateEmployeeJobInfoQuery(int employeeDbId, UpdateEmployeeJob
             continuous_service_record = COALESCE(${payload.continuousServiceRecord}, continuous_service_record),
             updated_by = ${updatedBy}
         WHERE 
-            id = ${employeeDbId};`;
+            employee_id = ${payload.employeeId};`;
 
 # Delete additional managers by employee database ID.
 #
-# + employeeDbId - Employee ID
+# + employeeId - Employee ID
 # + return - sql:ParameterizedQuery - Delete query for all additional managers
-isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeeDbId) returns sql:ParameterizedQuery =>
+isolated function deleteAdditionalManagersByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers
       WHERE 
-        employee_id = ${employeeDbId};`;
+        employee_id = ${employeeId};`;
 
 # Add an additional manager for an employee.
 #
-# + employeeDbId - Employee ID
+# + employeeId - Employee ID
 # + email - Additional manager email address
 # + actor - User creating the additional manager record
 # + return - sql:ParameterizedQuery - Insert query for an additional managers
-isolated function addAdditionalManagerQuery(int employeeDbId, string email, string actor)
+isolated function addEmployeeAdditionalManagerQuery(string employeeId, string email, string actor)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee_additional_managers
         (
@@ -626,7 +611,7 @@ isolated function addAdditionalManagerQuery(int employeeDbId, string email, stri
         )
       VALUES
         (
-            ${employeeDbId}, 
+            ${employeeId}, 
             ${email}, 
             ${actor}, 
             ${actor}

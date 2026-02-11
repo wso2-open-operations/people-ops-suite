@@ -489,6 +489,9 @@ public type UpdateEmployeePersonalInfoPayload record {|
 
 # Employee job information update payload.
 public type UpdateEmployeeJobInfoPayload record {|
+    # Employee ID
+    @constraint:String {maxLength: 99}
+    string employeeId;
     # Employee's Provident Fund number
     @constraint:String {maxLength: 45}
     string? epf = ();

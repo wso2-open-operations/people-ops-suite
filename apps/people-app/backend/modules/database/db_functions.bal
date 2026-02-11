@@ -37,7 +37,7 @@ public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|
 #
 # + id - Employee ID
 # + return - Employee detailed information
-public isolated function getEmployeeInfo(string id) returns Employee|error? {
+public isolated function getEmployeeInfo(string|int id) returns Employee|error? {
     Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
@@ -188,16 +188,20 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 
         sql:ExecutionResult employeeResult = check databaseClient->execute(addEmployeeQuery(payload, createdBy,
                 personalInfoId));
-        int employeeId = check employeeResult.lastInsertId.ensureType(int);
+        int id = check employeeResult.lastInsertId.ensureType(int);
 
-        sql:ParameterizedQuery[] managerInsertQueries = from string managerEmail in payload.additionalManagerEmails
-            select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
-        if managerInsertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(managerInsertQueries);
+        Employee? insertedEmployee = check getEmployeeInfo(id);
+
+        if insertedEmployee is Employee {
+            sql:ParameterizedQuery[] managerInsertQueries = from string managerEmail in payload.additionalManagerEmails
+                select addEmployeeAdditionalManagerQuery(insertedEmployee.employeeId, managerEmail, createdBy);
+            if managerInsertQueries.length() > 0 {
+                _ = check databaseClient->batchExecute(managerInsertQueries);
+            }
         }
 
         check commit;
-        return employeeId;
+        return id;
     }
 }
 
@@ -221,10 +225,10 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
 
             _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
 
-            sql:ParameterizedQuery[] insertQueries = 
+            sql:ParameterizedQuery[] insertQueries =
                 from EmergencyContact contact in contactsOpt
-                    select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
-                    
+            select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
             }
@@ -236,27 +240,26 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
 
 # Update employee job information.
 #
-# + employeeDbId - Employee ID
 # + payload - Job information update payload
 # + updatedBy - Updater of the job info record
 # + return - Nil if the update was successful or error
-public isolated function updateEmployeeJobInfo(int employeeDbId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+public isolated function updateEmployeeJobInfo(UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
 
     transaction {
         sql:ExecutionResult executionResult =
-            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeDbId, payload, updatedBy));
+            check databaseClient->execute(updateEmployeeJobInfoQuery(payload, updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
 
-            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeeDbId));
+            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(payload.employeeId));
 
             sql:ParameterizedQuery[] insertQueries =
                 from Email email in additionalManagerEmails
-                    select addAdditionalManagerQuery(employeeDbId, email, updatedBy);
+            select addEmployeeAdditionalManagerQuery(payload.employeeId, email, updatedBy);
 
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
