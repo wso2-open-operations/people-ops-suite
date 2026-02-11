@@ -56,8 +56,6 @@ public type LeaveStat record {|
 public type FetchedLeavesRecord record {|
     # List of leaves
     database:Leave[] leaves;
-    # List of leave stats
-    LeaveStat[] stats;
 |};
 
 # Leave policy.
@@ -161,8 +159,12 @@ public type ReportPayload readonly & record {|
     string? department = ();
     # Team of employees
     string? team = ();
+    # Employee emails to filter by
+    string? employeeEmail = ();
     # Employee status list
     EmployeeStatus[]? employeeStatuses = DEFAULT_EMPLOYEE_STATUSES;
+    # Admin view or not
+    boolean isAdminView = false;
 |};
 
 # User calendar content.
@@ -220,9 +222,8 @@ public type UserInfo record {|
     boolean? isLead;
     # Subordinate count
     int subordinateCount;
-    # Cached email notifications list
-    employee:DefaultMailResponse cachedEmails;
 |};
+
 # Sabbatical leave Process Payload.
 public type SabbaticalProcessPayload record {|
     # Action to be performed (APPROVE/REJECT/APPLY/CANCEL)
@@ -257,6 +258,8 @@ public type AppConfig record {|
     int sabbaticalLeaveEligibilityDuration;
     # Sabbatical leave maximum application duration in days
     int sabbaticalLeaveMaxApplicationDuration;
+    # Cached email notifications list
+    employee:DefaultMailResponse cachedEmails;
 |};
 
 # Sabbatical Leave Response.
