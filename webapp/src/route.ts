@@ -1,11 +1,6 @@
 // Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
-//
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
 
-import { NonIndexRouteObject } from "react-router-dom";
+import type { RouteObject } from "react-router-dom";
 import { View } from "./views";
 import React from "react";
 import { isIncludedRole } from "./utils/utils";
@@ -16,28 +11,8 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ShieldIcon from "@mui/icons-material/Shield";
-
 import { Role } from "@utils/types";
-
-export interface RouteObjectWithRole extends NonIndexRouteObject {
-  allowRoles: Role[];
-  icon:
-    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-    | undefined;
-  text: string;
-  children?: RouteObjectWithRole[];
-  bottomNav?: boolean;
-}
-
-interface RouteDetail {
-  path: string;
-  allowRoles: Role[];
-  icon:
-    | React.ReactElement<any, string | React.JSXElementConstructor<any>>
-    | undefined;
-  text: string;
-  bottomNav?: boolean;
-}
+import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -58,8 +33,23 @@ export const routes: RouteObjectWithRole[] = [
     path: "/admin-portal",
     text: "Admin Portal",
     icon: React.createElement(ShieldIcon),
-    element: React.createElement(View.AdminPortal),
     allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/admin-portal/ongoing",
+        text: "Ongoing Cycles",
+        icon: React.createElement(DataUsageIcon),
+        element: React.createElement(View.AdminOngoingView),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/admin-portal/history",
+        text: "History",
+        icon: React.createElement(HistoryIcon),
+        element: React.createElement(View.AdminHistoryView),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   {
     path: "/history",
@@ -79,10 +69,10 @@ export const routes: RouteObjectWithRole[] = [
 
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: Role[]
+  roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
-  var routesObj: RouteObjectWithRole[] = [];
+  const routesObj: RouteObjectWithRole[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
@@ -95,15 +85,50 @@ export const getActiveRoutesV2 = (
   return routesObj;
 };
 
-export const getActiveRouteDetails = (roles: Role[]): RouteDetail[] => {
-  var routesObj: RouteDetail[] = [];
+export const getActiveRoutes = (roles: string[]): RouteObject[] => {
+  const routesObj: RouteObject[] = [];
   routes.forEach((routeObj) => {
     if (isIncludedRole(roles, routeObj.allowRoles)) {
       routesObj.push({
-        path: routeObj.path ? routeObj.path : "",
         ...routeObj,
       });
     }
   });
   return routesObj;
+};
+
+export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
+  const routesObj: RouteDetail[] = [];
+  routes.forEach((routeObj) => {
+    if (isIncludedRole(roles, routeObj.allowRoles)) {
+      routesObj.push({
+        ...routeObj,
+        path: routeObj.path ?? "",
+      });
+    }
+  });
+  return routesObj;
+};
+
+interface getActiveParentRoutesProps {
+  routes: RouteObjectWithRole[] | undefined;
+  roles: string[];
+}
+
+export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
+  if (!routes) return [];
+
+  let activeParentPaths: string[] = [];
+
+  routes.forEach((routeObj) => {
+    if (!routeObj.element) return;
+
+    if (isIncludedRole(roles, routeObj.allowRoles)) {
+      if (routeObj.path) {
+        activeParentPaths.push(routeObj.path);
+      }
+    }
+  });
+
+  return activeParentPaths;
 };
