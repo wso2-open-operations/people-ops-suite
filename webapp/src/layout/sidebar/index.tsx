@@ -26,12 +26,11 @@ import SidebarNavItem from "../../components/layout/SidebarNavItem";
 import pJson from "../../../package.json";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
-import { Role } from "@utils/types";
 
 interface SidebarProps {
   open: boolean;
   handleDrawer: () => void;
-  roles: Role[];
+  roles: string[];
   currentPath: string;
 }
 
