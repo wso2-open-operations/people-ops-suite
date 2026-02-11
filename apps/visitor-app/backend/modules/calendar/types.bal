@@ -29,11 +29,11 @@ public type CalendarRetryConfig record {|
     # Retry count
     int count = RETRY_COUNT;
     # Retry interval
-    decimal interval = <decimal>RETRY_INTERVAL;
+    decimal interval = RETRY_INTERVAL;
     # Retry backOff factor
     float backOffFactor = RETRY_BACKOFF_FACTOR;
     # Retry max interval
-    decimal maxWaitInterval = <decimal>RETRY_MAX_INTERVAL;
+    decimal maxWaitInterval = RETRY_MAX_INTERVAL;
 |};
 
 # Busy interval record type.

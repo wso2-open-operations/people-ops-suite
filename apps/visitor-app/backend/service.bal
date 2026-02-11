@@ -1016,7 +1016,18 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + uuid - UUID of the visit to be fetched
     # + return - Visit object or error
-    resource function get visits/[string uuid]() returns database:Visit|http:NotFound|http:InternalServerError {
+    resource function get visits/[string uuid](http:RequestContext ctx)
+        returns database:Visit|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
         database:Visit|error? visit = database:fetchVisit(uuid = uuid);
         if visit is error {
             string customError = "Error occurred while fetching visit by UUID!";
@@ -1056,11 +1067,12 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function get employees(http:RequestContext ctx, string search = "", int offset = 0, int 'limit = 1000)
         returns people:EmployeeBasic[]|http:InternalServerError|http:Forbidden {
 
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
@@ -1084,23 +1096,24 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Meeting room resources or error
     resource function get meeting\-rooms(http:RequestContext ctx)
-        returns calendar:FilteredCalendarResource[]|http:InternalServerError|http:Forbidden {
+        returns calendar:FilteredCalendarResource[]|http:InternalServerError {
 
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
+        authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if invokerInfo is error {
+            log:printError(USER_INFO_HEADER_NOT_FOUND_ERROR, invokerInfo);
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: USER_INFO_HEADER_NOT_FOUND_ERROR
                 }
             };
         }
 
         calendar:FilteredCalendarResource[]|error result = calendar:getMeetingRooms();
         if result is error {
-            string cusError = "Error retrieving meeting rooms";
-            log:printError(cusError, result);
+            string customError = "Error retrieving meeting rooms";
+            log:printError(customError, result);
             return <http:InternalServerError>{
-                body: {message: cusError}
+                body: {message: customError}
             };
         }
 

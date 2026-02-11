@@ -18,10 +18,10 @@
 public const RETRY_COUNT = 3;
 
 # client retry configuration for wait interval in seconds.
-public const RETRY_INTERVAL = 3.0;
+public const RETRY_INTERVAL = 3.0d;
 
 # client retry configuration for interval increment in seconds.
 public const RETRY_BACKOFF_FACTOR = 2.0;
 
 # client retry configuration for maximum wait interval in seconds.
-public const RETRY_MAX_INTERVAL = 20.0;
+public const RETRY_MAX_INTERVAL = 20.0d;
