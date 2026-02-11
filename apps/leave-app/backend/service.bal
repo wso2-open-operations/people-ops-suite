@@ -53,57 +53,27 @@ service http:InterceptableService / on new http:Listener(9090) {
             if authorization:checkPermissions(authorization:authorizedRoles.internRoles, userInfo.groups) {
                 privileges.push(authorization:INTERN_PRIVILEGE);
             }
-            if authorization:checkPermissions(authorization:authorizedRoles.adminRoles, userInfo.groups) {
-                privileges.push(authorization:ADMIN_PRIVILEGE);
+            if authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups) {
+                privileges.push(authorization:PEOPLE_OPS_TEAM_PRIVILEGE);
             }
-
-            // Get last sabbatical leave end date
-            string?|error lastSabbaticalLeaveEndDate = database:getLastSabbaticalLeaveEndDate(userInfo.email);
-            if lastSabbaticalLeaveEndDate is error {
-                string errMsg = "Error occurred while fetching last sabbatical leave end date";
-                log:printError(errMsg, lastSabbaticalLeaveEndDate);
-                return <http:InternalServerError>{
-                    body: {
-                        message: errMsg
-                    }
-                };
-            }
-            if (<boolean>empInfo.lead) {
-                privileges.push(authorization:LEAD_PRIVILEGE);
-            }
-            // Add optional mails for the form
-            if empInfo.leadEmail is () {
-                return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
-            }
-            employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
-            if empLead is error {
-                string errorMsg = "Error occurred while fetching employee lead info";
-                log:printError(errorMsg, empLead);
+            employee:Employee[]|error subordinates = employee:getEmployees(
+                    {
+                        status: ["Active"],
+                        leadEmail: empInfo.workEmail
+                    });
+            if subordinates is error {
+                string errorMsg = "Error occurred while fetching employee subordinates. Lead privilege will not be" +
+                " assigned";
+                log:printError(errorMsg, subordinates);
                 return <http:InternalServerError>{
                     body: {
                         message: errorMsg
                     }
                 };
             }
-            employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
-            if optionalMailsToNotify is error {
-                string errorMsg = "Error occurred while fetching optional mails to notify";
-                log:printError(errorMsg, optionalMailsToNotify);
+            if (subordinates.length() > 0) {
+                privileges.push(authorization:LEAD_PRIVILEGE);
             }
-            employee:DefaultMailResponse defaultMailsToNotify = {
-                mandatoryMails: [
-                    {
-                        email: empLead.workEmail,
-                        thumbnail: empLead.employeeThumbnail ?: ""
-                    },
-                    {
-                        email: emailGroupToNotify,
-                        thumbnail: ""
-                    }
-                ],
-                optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
-            };
-
             UserInfo userInfoResponse = {
                 employeeId: empInfo.employeeId,
                 firstName: empInfo.firstName,
@@ -115,8 +85,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.startDate,
-                subordinateCount: empInfo.subordinateCount,
-                cachedEmails: defaultMailsToNotify
+                subordinateCount: subordinates.length()
             };
 
             return userInfoResponse;
@@ -156,13 +125,56 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+        employee:Employee|error empInfo = employee:getEmployee(userInfo.email);
+        if empInfo is error {
+            string errMsg = "Error occurred while fetching employee info";
+            log:printError(errMsg, empInfo);
+            return <http:InternalServerError>{
+                body: {
+                    message: errMsg
+                }
+            };
+        }
+        // Add optional mails for the form
+        if empInfo.leadEmail is () {
+            return <http:InternalServerError>{body: {message: "Employee lead email not available"}};
+        }
+        employee:Employee & readonly|error empLead = employee:getEmployee(empInfo.leadEmail);
+        if empLead is error {
+            string errorMsg = "Error occurred while fetching employee lead info";
+            log:printError(errorMsg, empLead);
+            return <http:InternalServerError>{
+                body: {
+                    message: errorMsg
+                }
+            };
+        }
+        employee:DefaultMail[]|error optionalMailsToNotify = getOptionalMailsToNotify(userInfo.email);
+        if optionalMailsToNotify is error {
+            string errorMsg = "Error occurred while fetching optional mails to notify";
+            log:printError(errorMsg, optionalMailsToNotify);
+        }
+        employee:DefaultMailResponse cachedEmails = {
+            mandatoryMails: [
+                {
+                    email: empLead.workEmail,
+                    thumbnail: empLead.employeeThumbnail ?: ""
+                },
+                {
+                    email: emailGroupToNotify,
+                    thumbnail: ""
+                }
+            ],
+            optionalMails: optionalMailsToNotify is employee:DefaultMail[] ? optionalMailsToNotify : []
+        };
 
         return {
             isSabbaticalLeaveEnabled,
             sabbaticalLeavePolicyUrl,
             sabbaticalLeaveUserGuideUrl,
             sabbaticalLeaveEligibilityDuration,
-            sabbaticalLeaveMaxApplicationDuration
+            sabbaticalLeaveMaxApplicationDuration,
+            cachedEmails
         };
     }
 
@@ -190,7 +202,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         do {
             readonly & authorization:CustomJwtPayload userInfo = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
                     authorization:authorizedRoles.employeeRoles);
             if !validateForSingleRole {
@@ -202,8 +213,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            // Restrict employees to view only view their own leaves
-            if email is string && email != userInfo.email {
+            boolean isPeopleOpsTeamMember = authorization:checkPermissions(
+                    authorization:authorizedRoles.peopleOpsTeamRoles, userInfo.groups);
+            // Restrict access to fetch leaves of all employees if the user is not a people ops team member
+            if !isPeopleOpsTeamMember && (
+                (email is string && email != userInfo.email) || (email is () && approverEmail is ()) ||
+                (approverEmail is string && approverEmail != userInfo.email)
+            ) {
                 return <http:Forbidden>{
                     body: {
                         message: ERR_MSG_UNAUTHORIZED_VIEW_LEAVE
@@ -224,53 +240,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             if leaves is error {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
-            LeaveResponse[] leaveResponses = from database:Leave leave in leaves
-                select check toLeaveEntity(leave, jwt);
-
-            Leave[] leavesFinalResult = [];
-            map<float> statsMap = {};
-            float totalCount = 0.0;
-            foreach LeaveResponse leaveResponse in leaveResponses {
-                var {
-                id,
-                createdDate,
-                leaveType,
-                endDate: entityEndDate,
-                status: entityStatus,
-                periodType,
-                startDate: entityStartDate,
-                email: entityEmail,
-                isMorningLeave,
-                numberOfDays
-                } = leaveResponse;
-
-                leavesFinalResult.push({
-                    id,
-                    createdDate,
-                    leaveType,
-                    endDate: entityEndDate,
-                    status: <Status>entityStatus,
-                    periodType,
-                    startDate: entityStartDate,
-                    email: entityEmail,
-                    isMorningLeave,
-                    numberOfDays,
-                    isCancelAllowed: checkIfLeaveAllowedToCancel(leaveResponse)
-                });
-                statsMap[leaveType] = statsMap.hasKey(leaveType) ?
-                    statsMap.get(leaveType) + numberOfDays : numberOfDays;
-                if leaveType !is database:LIEU_LEAVE {
-                    totalCount += numberOfDays;
-                }
-            }
-            statsMap[TOTAL_LEAVE_TYPE] = totalCount;
             return {
-                leaves,
-                stats: from [string, float] ['type, count] in statsMap.entries()
-                    select {
-                        'type,
-                        count
-                    }
+                leaves
             };
 
         } on fail error internalErr {
@@ -581,7 +552,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             final string email = userInfo.email;
             if leaveResponse.email != email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
+                        authorization:authorizedRoles.peopleOpsTeamRoles);
                 if !validateForSingleRole {
                     return <http:Forbidden>{
                         body: {
@@ -799,7 +770,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
             if email != userInfo.email {
                 boolean validateForSingleRole = authorization:validateForSingleRole(userInfo,
-                        authorization:authorizedRoles.adminRoles);
+                        authorization:authorizedRoles.peopleOpsTeamRoles);
                 if !validateForSingleRole {
                     log:printWarn(string `The user ${userInfo.email} was not privileged to access the${false ?
                                 " admin " : " "}resource /leave-entitlement with email=${email.toString()}`);
@@ -875,32 +846,34 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
-            string jwt = check ctx.getWithType(authorization:INVOKER_TOKEN);
-
-            boolean isAdmin = authorization:checkRoles(authorization:authorizedRoles.adminRoles, groups);
+            boolean isAdmin = authorization:checkPermissions(authorization:authorizedRoles.peopleOpsTeamRoles, groups);
             Employee[] employees;
-
             employees = check employee:getEmployees(
                     {
-                        location: payload.location,
-                        businessUnit: payload.businessUnit,
-                        team: payload.department,
-                        unit: payload.team,
                         status: payload.employeeStatuses,
-                        leadEmail: isAdmin ? () : email
+                        leadEmail: (isAdmin && payload.isAdminView) ? () : email
                     }
                 );
             string[] emails = from Employee employee in employees
                 select employee.workEmail;
-
-            if !isAdmin && emails.length() == 0 {
+            if payload.employeeEmail is string {
+                emails = emails.filter(empMail => empMail == payload.employeeEmail);
+            }
+            boolean isLead = emails.length() > 0;
+            if !(isAdmin || isLead) {
                 return <http:Forbidden>{
                     body: {
-                        message: "You have not been assigned as a lead/manager to any employee!"
+                        message: "You are not authorized to access leave reports."
                     }
                 };
             }
-
+            if emails.length() <= 0 {
+                return <http:Forbidden>{
+                    body: {
+                        message: "You don't have any subordinates to view the leave report!"
+                    }
+                };
+            }
             final database:Leave[]|error leaves = database:getLeaves(
                     {
                         emails,
@@ -913,10 +886,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
 
-            LeaveResponse[] leaveResponses = from database:Leave leave in leaves
-                select check toLeaveEntity(leave, jwt);
-
-            return getLeaveReportContent(leaveResponses);
+            return getLeaveReportContent(leaves);
 
         } on fail error internalErr {
             string errMsg = "Error occurred while generating leave report";
