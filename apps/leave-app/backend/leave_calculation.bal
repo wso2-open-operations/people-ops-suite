@@ -273,9 +273,38 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
 # Get leave report content for a given leaves.
 #
 # + leaves - Leaves to be used to generate report content
+# + reportStartDate - Start date of the report
+# + reportEndDate - End date of the report
 # + return - Report content
-isolated function getLeaveReportContent(database:Leave[] leaves) returns ReportContent {
+isolated function getLeaveReportContent(database:Leave[] leaves, string reportStartDate, string reportEndDate)
+    returns ReportContent|error {
 
+    // Trim each leave to fit within the report date boundaries
+    foreach database:Leave leave in leaves {
+        string? leaveType = leave.leaveType;
+        string? leavePeriodType = leave.periodType;
+        if leaveType is () || leavePeriodType is () {
+            continue;
+        }
+        if leave.startDate < reportStartDate || leave.endDate > reportEndDate {
+            string effectiveStart = leave.startDate < reportStartDate ? reportStartDate : leave.startDate;
+            string effectiveEnd = leave.endDate > reportEndDate ? reportEndDate : leave.endDate;
+
+            LeaveDay[]|error effectiveDays = getEffectiveLeaveDaysFromLeave({
+                                                                                startDate: effectiveStart,
+                                                                                endDate: effectiveEnd,
+                                                                                email: leave.email,
+                                                                                isMorningLeave: leave.isEndHalf,
+                                                                                leaveType: leaveType,
+                                                                                periodType: leavePeriodType,
+                                                                                status: leave.status
+                                                                            });
+            if effectiveDays is error {
+                return effectiveDays;
+            }
+            leave.numberOfDays = getNumberOfDaysFromLeaveDays(effectiveDays);
+        }
+    }
     ReportContent reportContent = {};
     foreach database:Leave leave in leaves {
         string? leaveType = leave.leaveType;

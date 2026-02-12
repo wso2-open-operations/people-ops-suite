@@ -885,9 +885,28 @@ service http:InterceptableService / on new http:Listener(9090) {
             if leaves is error {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
-
-            return getLeaveReportContent(leaves);
-
+            string? reportStartDate = payload.startDate;
+            string? reportEndDate = payload.endDate;
+            if reportStartDate is () || reportEndDate is () {
+                string errMsg = "Start date and end date are required to generate the leave report.";
+                log:printError(errMsg);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+            ReportContent|error report = getLeaveReportContent(leaves, reportStartDate, reportEndDate);
+            if report is error {
+                string errMsg = "Error occurred while generating leave report!";
+                log:printError(errMsg, report);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+            return report;
         } on fail error internalErr {
             string errMsg = "Error occurred while generating leave report";
             log:printError(errMsg, internalErr);
