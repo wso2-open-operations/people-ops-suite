@@ -15,17 +15,17 @@ ALTER TABLE employee DROP COLUMN additional_manager_emails;
 
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `employee_id` VARCHAR(99) NOT NULL,
+  `employee_pk_id` INT NOT NULL,
   `additional_manager_email` VARCHAR(254) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_eam_employee_email` (`employee_id`, `additional_manager_email`),
+  UNIQUE KEY `uk_eam_employee_email` (`employee_pk_id`, `additional_manager_email`),
   KEY `idx_eam_manager_email` (`additional_manager_email`),
   CONSTRAINT `fk_eam_employee`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`employee_id`)
+    FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
