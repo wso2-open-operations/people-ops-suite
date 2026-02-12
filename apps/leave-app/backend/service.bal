@@ -874,17 +874,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            final database:Leave[]|error leaves = database:getLeaves(
-                    {
-                        emails,
-                        startDate: payload.startDate,
-                        endDate: payload.endDate,
-                        statuses: [database:APPROVED]
-                    }
-                    );
-            if leaves is error {
-                fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
-            }
             string? reportStartDate = payload.startDate;
             string? reportEndDate = payload.endDate;
             if reportStartDate is () || reportEndDate is () {
@@ -896,6 +885,18 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            final database:Leave[]|error leaves = database:getLeaves(
+                    {
+                        emails,
+                        startDate: reportStartDate,
+                        endDate: reportEndDate,
+                        statuses: [database:APPROVED]
+                    }
+                    );
+            if leaves is error {
+                fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
+            }
+
             ReportContent|error report = getLeaveReportContent(leaves, reportStartDate, reportEndDate);
             if report is error {
                 string errMsg = "Error occurred while generating leave report!";
