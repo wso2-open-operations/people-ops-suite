@@ -77,7 +77,7 @@ const AppAuthProvider = (props: AppAuthProviderProps) => {
 
     try {
       await refreshAccessToken();
-      const token = await getIDToken(); // Use getIDToken here too!
+      const token = await getIDToken();
       return { idToken: token }; 
     } catch (error) {
       console.error("Token refresh failed: ", error);
@@ -108,20 +108,18 @@ useEffect(() => {
       if (state.isAuthenticated) {
         Promise.all([
           getBasicUserInfo(),
-          getIDToken(),        // <--- CHANGE 1: Get ID Token (was getAccessToken)
+          getIDToken(),
           getDecodedIDToken(),
-        ]).then(async ([userInfo, idToken, decodedIdToken]) => { // <--- CHANGE 2: Name it idToken
+        ]).then(async ([userInfo, idToken, decodedIdToken]) => {
           
           dispatch(
             setUserAuthData({
               userInfo: userInfo,
-              // You can still get the access token here if you really need it for Redux
               accessToken: idToken, 
               decodedIdToken: decodedIdToken,
             })
           );
           
-          // CHANGE 3: Pass 'idToken' to ApiService
           new ApiService(idToken, refreshToken, dispatch);
 
           await dispatch(getUserInfo()).then(() => {
