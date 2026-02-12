@@ -842,7 +842,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Request payload
     # + return - Leave report or lead-specific leave report
     resource function post leaves/report(http:RequestContext ctx, ReportPayload payload)
-        returns ReportContent|http:Forbidden|http:InternalServerError {
+        returns ReportContent|http:BadRequest|http:Forbidden|http:InternalServerError {
 
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -890,7 +890,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             if reportStartDate is () || reportEndDate is () {
                 string errMsg = "Start date and end date are required to generate the leave report.";
                 log:printError(errMsg);
-                return <http:InternalServerError>{
+                return <http:BadRequest>{
                     body: {
                         message: errMsg
                     }
