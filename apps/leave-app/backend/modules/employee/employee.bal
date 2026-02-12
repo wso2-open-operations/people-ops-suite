@@ -127,9 +127,8 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
 # Get the location of an employee based on their email address using GraphQL.
 #
 # + email - Email address of the employee 
-# + token - JWT token (not used in GraphQL OAuth2 flow)
 # + return - The employee's location or an error
-public isolated function getEmployeeLocation(string email, string token) returns string|error {
+public isolated function getEmployeeLocation(string email) returns string|error {
 
     readonly & Employee|error employee = getEmployee(email);
     if employee is error {

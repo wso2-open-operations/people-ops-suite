@@ -33,7 +33,7 @@ public isolated function calculateLeaveDetails(LeaveInput input, string token)
     returns LeaveDetails[]|error? {
 
     final LeaveInput {email, startDate, endDate, periodType, isMorningLeave} = input;
-    string|error employeeLocation = employee:getEmployeeLocation(email, token);
+    string|error employeeLocation = employee:getEmployeeLocation(email);
     if employeeLocation is error {
         return error(employeeLocation.message(), employeeLocation);
     }

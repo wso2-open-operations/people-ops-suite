@@ -69,11 +69,11 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
         return error(ERR_MSG_LEAVE_OVERLAPS_WITH_EXISTING_LEAVE);
     }
     if !isValidationOnlyMode {
-        string|error location = employee:getEmployeeLocation(input.email, token);
+        string|error location = employee:getEmployeeLocation(input.email);
         if location is error {
             return location;
         }
-        LeaveDay[]|error effectiveLeaveDaysFromLeave = getEffectiveLeaveDaysFromLeave(input, token);
+        LeaveDay[]|error effectiveLeaveDaysFromLeave = getEffectiveLeaveDaysFromLeave(input);
         if effectiveLeaveDaysFromLeave is error {
             return effectiveLeaveDaysFromLeave;
         }
@@ -89,7 +89,7 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
         }
         return leaveDetailsNotValidationMode;
     }
-    string|error employeeLocation = employee:getEmployeeLocation(input.email, token);
+    string|error employeeLocation = employee:getEmployeeLocation(input.email);
     if employeeLocation is error {
         return employeeLocation;
     }
@@ -108,7 +108,7 @@ public isolated function insertLeaveToDatabase(database:LeaveInput input, boolea
         location: employeeLocation
     };
 
-    LeaveDay[]|error effectiveLeaveDaysFromLeave = getEffectiveLeaveDaysFromLeave(input, token);
+    LeaveDay[]|error effectiveLeaveDaysFromLeave = getEffectiveLeaveDaysFromLeave(input);
     if effectiveLeaveDaysFromLeave is error {
         return effectiveLeaveDaysFromLeave;
     }
@@ -175,11 +175,10 @@ public isolated function getDateStringFromTimestamp(string timestamp) returns st
 # Get the effective leave days for a given leave input, factoring in holidays and working days.
 #
 # + leaveInput - Leave input record
-# + token - JWT token
 # + return - An array of `LeaveDay` records with calculated effective leave days or an error if the calculation fails
-public isolated function getEffectiveLeaveDaysFromLeave(database:LeaveInput leaveInput, string token)
+public isolated function getEffectiveLeaveDaysFromLeave(database:LeaveInput leaveInput)
     returns LeaveDay[]|error {
-    string|error location = employee:getEmployeeLocation(leaveInput.email, token);
+    string|error location = employee:getEmployeeLocation(leaveInput.email);
     if location is error {
         return location;
     }
@@ -265,7 +264,7 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
     string[] emailRecipients = copyEmailList == () || copyEmailList.length() == 0 ?
         [] : regex:split(copyEmailList, ",");
 
-    string|error empLocation = employee:getEmployeeLocation(email, token);
+    string|error empLocation = employee:getEmployeeLocation(email);
     if empLocation is error {
         return empLocation;
     }
@@ -299,8 +298,7 @@ public isolated function getLeaveEntityFromDbRecord(database:Leave dbLeave, stri
                     periodType: leaveDetails.periodType,
                     isMorningLeave: leaveDetails.isMorningLeave,
                     status: ()
-                },
-                token
+                }
             );
         if effectiveLeaveDaysFromLeave is error {
             return effectiveLeaveDaysFromLeave;
@@ -522,7 +520,7 @@ public isolated function toLeaveEntity(database:Leave leave, string token, boole
                     periodType: entityLeavePeriodType,
                     isMorningLeave,
                     status: ()
-                }, token);
+                });
 
         if effectiveDays is error {
             return error(ERR_MSG_EFFECTIVE_DAYS_FAILED, effectiveDays);
