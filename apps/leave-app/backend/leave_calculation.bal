@@ -279,6 +279,8 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
 isolated function getLeaveReportContent(database:Leave[] leaves, string reportStartDate, string reportEndDate)
     returns ReportContent|error {
 
+    string normalizedReportStartDate = getDateStringFromTimestamp(reportStartDate);
+    string normalizedReportEndDate = getDateStringFromTimestamp(reportEndDate);
     // Trim each leave to fit within the report date boundaries
     foreach database:Leave leave in leaves {
         string? leaveType = leave.leaveType;
@@ -286,9 +288,11 @@ isolated function getLeaveReportContent(database:Leave[] leaves, string reportSt
         if leaveType is () || leavePeriodType is () {
             continue;
         }
-        if leave.startDate < reportStartDate || leave.endDate > reportEndDate {
-            string effectiveStart = leave.startDate < reportStartDate ? reportStartDate : leave.startDate;
-            string effectiveEnd = leave.endDate > reportEndDate ? reportEndDate : leave.endDate;
+        string leaveStart = getDateStringFromTimestamp(leave.startDate);
+        string leaveEnd = getDateStringFromTimestamp(leave.endDate);
+        if leaveStart < normalizedReportStartDate || leaveEnd > normalizedReportEndDate {
+            string effectiveStart = leaveStart < normalizedReportStartDate ? reportStartDate : leave.startDate;
+            string effectiveEnd = leaveEnd > normalizedReportEndDate ? reportEndDate : leave.endDate;
 
             LeaveDay[]|error effectiveDays = getEffectiveLeaveDaysFromLeave({
                                                                                 startDate: effectiveStart,
