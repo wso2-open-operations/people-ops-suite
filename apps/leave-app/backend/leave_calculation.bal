@@ -298,7 +298,8 @@ isolated function getLeaveReportContent(database:Leave[] leaves, string reportSt
                                                                                 startDate: effectiveStart,
                                                                                 endDate: effectiveEnd,
                                                                                 email: leave.email,
-                                                                                isMorningLeave: leave.isEndHalf,
+                                                                                isMorningLeave:
+                                                                                    leave.startHalf == 0 ? true : false,
                                                                                 leaveType: leaveType,
                                                                                 periodType: leavePeriodType,
                                                                                 status: leave.status
