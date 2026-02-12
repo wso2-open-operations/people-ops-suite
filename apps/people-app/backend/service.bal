@@ -97,9 +97,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch employee detailed information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee detailed information
-    resource function get employees/[string id](http:RequestContext ctx)
+    resource function get employees/[string employeeId](http:RequestContext ctx)
         returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -111,10 +111,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            string customErr = string `Error occurred while fetching employee information for ID: ${id}`;
-            log:printError(customErr, employeeInfo, id = id);
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
@@ -123,7 +123,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeeInfo is () {
             string customErr = "Employee information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr

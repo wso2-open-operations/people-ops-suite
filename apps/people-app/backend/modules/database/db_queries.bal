@@ -47,8 +47,8 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 #
 # + employeeId - Employee ID or employee database ID
 # + return - Query to get employee detailed information
-isolated function getEmployeeInfoQuery(string|int employeeId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `SELECT 
+isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `SELECT 
         e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
@@ -91,12 +91,12 @@ isolated function getEmployeeInfoQuery(string|int employeeId) returns sql:Parame
         employee e
         LEFT JOIN (
             SELECT 
-                employee_id,
+                employee_pk_id,
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
-            GROUP BY employee_id
-        ) eam ON eam.employee_id = e.employee_id
+            GROUP BY employee_pk_id
+        ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -104,18 +104,9 @@ isolated function getEmployeeInfoQuery(string|int employeeId) returns sql:Parame
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
-        LEFT JOIN unit u ON e.unit_id = u.id`;
-
-    sql:ParameterizedQuery whereClause;
-
-    if employeeId is string {
-        whereClause = ` WHERE e.employee_id = ${employeeId};`;
-    } else {
-        whereClause = ` WHERE e.id = ${employeeId};`;
-    }
-
-    return sql:queryConcat(mainQuery, whereClause);
-}
+        LEFT JOIN unit u ON e.unit_id = u.id
+    WHERE
+        e.employee_id = ${employeeId};`;  
 
 # Fetch continuous service record by work email.
 #
@@ -142,12 +133,12 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
     FROM employee e
         LEFT JOIN (
             SELECT 
-                employee_id,
+                employee_pk_id,
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
-            GROUP BY employee_id
-        ) eam ON eam.employee_id = e.id
+            GROUP BY employee_pk_id
+        ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -587,31 +578,31 @@ isolated function updateEmployeeJobInfoQuery(UpdateEmployeeJobInfoPayload payloa
 
 # Delete additional managers by employee database ID.
 #
-# + employeeId - Employee ID
+# + employeePkId - Employee ID
 # + return - sql:ParameterizedQuery - Delete query for all additional managers
-isolated function deleteAdditionalManagersByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
+isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeePkId) returns sql:ParameterizedQuery =>
     `DELETE FROM employee_additional_managers
       WHERE 
-        employee_id = ${employeeId};`;
+        employee_pk_id = ${employeePkId};`;
 
 # Add an additional manager for an employee.
 #
-# + employeeId - Employee ID
+# + id - Employee ID
 # + email - Additional manager email address
 # + actor - User creating the additional manager record
 # + return - sql:ParameterizedQuery - Insert query for an additional managers
-isolated function addEmployeeAdditionalManagerQuery(string employeeId, string email, string actor)
+isolated function addEmployeeAdditionalManagerQuery(int id, string email, string actor)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee_additional_managers
         (
-            employee_id,
+            employee_pk_id,
             additional_manager_email,
             created_by,
             updated_by
         )
       VALUES
         (
-            ${employeeId}, 
+            ${id}, 
             ${email}, 
             ${actor}, 
             ${actor}
