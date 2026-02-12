@@ -24,7 +24,6 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
 export interface Employee {
-  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -59,7 +58,6 @@ export interface Employee {
 }
 
 export interface EmployeeBasicInfo {
-  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -137,7 +135,6 @@ export type UpdateEmployeeJobInfoPayload = {
 };
 
 export interface ContinuousServiceRecordInfo {
-  id: number;
   employeeId: string;
   firstName: string | null;
   lastName: string | null;

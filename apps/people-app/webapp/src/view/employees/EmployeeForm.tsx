@@ -539,17 +539,18 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 return;
               }
 
-              const initialJob = toJobUpdatePayload(
-                employeeId,
-                initialEditValues,
-              );
-              const currentJob = toJobUpdatePayload(employeeId, values);
+              let initialJob = {};
+              let currentJob = {};
+
+              initialJob = toJobUpdatePayload(employeeId, initialEditValues);
+              currentJob = toJobUpdatePayload(employeeId, values);
 
               const initialPersonal =
                 toPersonalUpdatePayload(initialEditValues);
               const currentPersonal = toPersonalUpdatePayload(values);
 
-              const jobPatch = diffObject(initialJob, currentJob);
+              const jobPatch: Partial<UpdateEmployeeJobInfoPayload> =
+                diffObject(initialJob, currentJob);
               const personalPatch = diffObject(
                 initialPersonal,
                 currentPersonal,
