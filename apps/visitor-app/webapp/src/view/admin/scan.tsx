@@ -41,22 +41,6 @@ import { ConfirmationType } from "@/types/types";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const AVAILABLE_FLOORS_AND_ROOMS = [
-  { floor: "1st Floor", rooms: ["Cafeteria"] },
-  { floor: "6th Floor", rooms: ["The Launchpad"] },
-  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
-  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
-  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
-  { floor: "9th and 10th", rooms: ["The Circuit"] },
-  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
-  { floor: "11th Floor", rooms: ["Tinker Room"] },
-  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
-  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
-  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
-  { floor: "15th Floor", rooms: ["Common Area"] },
-  { floor: "Rooftop", rooms: ["Basketball Court"] },
-];
-
 const toLocalDateTime = (utcString: string) => {
   return dayjs
     .utc(utcString)
@@ -403,7 +387,6 @@ function Scan({ onClose }: ScanProps) {
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector
-                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
                   selectedFloorsAndRooms={values.selectedFloorsAndRooms}
                   onChange={(value) =>
                     setFieldValue("selectedFloorsAndRooms", value)

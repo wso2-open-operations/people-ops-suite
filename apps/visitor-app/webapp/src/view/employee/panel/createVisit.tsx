@@ -79,7 +79,6 @@ import {
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
 import { customList } from "country-codes-list";
-import { fetchBuildingResources } from "@root/src/slices/buildingResourcesSlice/buildingResources";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
@@ -189,8 +188,6 @@ function CreateVisit() {
     currentSearchTerm,
     state: employeesState,
   } = useAppSelector((state: RootState) => state.employees);
-  const { buildingResources, loading: buildingResourcesLoading } =
-    useAppSelector((state: RootState) => state.buildingResources);
 
   const dialogContext = useConfirmationModalContext();
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -208,62 +205,8 @@ function CreateVisit() {
     [entryHour],
   );
 
-  // Transform building resources into floor/room structure
-  const availableFloorsAndRooms = useMemo(() => {
-    if (!buildingResources || buildingResources.length === 0) {
-      return [];
-    }
-
-    // Group resources by floorName and collect resourceName (rooms)
-    const floorsMap = new Map<string, string[]>();
-
-    buildingResources.forEach((resource) => {
-      // Only process resources that have floorName defined
-      if (resource.floorName && resource.resourceName) {
-        const floor = resource.floorName.trim();
-        const room = resource.resourceName.trim();
-
-        if (!floorsMap.has(floor)) {
-          floorsMap.set(floor, []);
-        }
-
-        // Add room to the floor if it doesn't already exist
-        const rooms = floorsMap.get(floor)!;
-        if (!rooms.includes(room)) {
-          rooms.push(room);
-        }
-      }
-    });
-
-    // Convert Map to array format [{floor, rooms: [...]}]
-    const result = Array.from(floorsMap.entries())
-      .map(([floor, rooms]) => ({
-        floor,
-        rooms: rooms.sort(), // Sort rooms alphabetically
-      }))
-      .sort((a, b) => {
-        // Custom sort to handle floor numbers and names
-        const floorA = a.floor.toLowerCase();
-        const floorB = b.floor.toLowerCase();
-
-        // Extract numbers from floor names for better sorting
-        const numA = parseInt(floorA.match(/\d+/)?.[0] || "999");
-        const numB = parseInt(floorB.match(/\d+/)?.[0] || "999");
-
-        if (numA !== numB) {
-          return numA - numB;
-        }
-
-        // If numbers are same or no numbers, sort alphabetically
-        return floorA.localeCompare(floorB);
-      });
-
-    return result;
-  }, [buildingResources]);
-
   useEffect(() => {
     dispatch(fetchEmployees({ limit: 10, offset: 0 }));
-    dispatch(fetchBuildingResources());
   }, [dispatch]);
 
   useEffect(() => {
@@ -720,24 +663,13 @@ function CreateVisit() {
           {locked && <LockIcon fontSize="small" color="action" />}
         </Typography>
 
-        {buildingResourcesLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress size={24} />
-          </Box>
-        ) : availableFloorsAndRooms.length === 0 ? (
-          <Typography color="text.secondary" sx={{ py: 2 }}>
-            No building resources available. Please contact the administrator.
-          </Typography>
-        ) : (
-          <FloorRoomSelector
-            availableFloorsAndRooms={availableFloorsAndRooms}
-            selectedFloorsAndRooms={formik.values.accessibleLocations}
-            onChange={(val) =>
-              !locked && formik.setFieldValue("accessibleLocations", val)
-            }
-            disabled={locked}
-          />
-        )}
+        <FloorRoomSelector
+          selectedFloorsAndRooms={formik.values.accessibleLocations}
+          onChange={(val) =>
+            !locked && formik.setFieldValue("accessibleLocations", val)
+          }
+          disabled={locked}
+        />
 
         <Divider sx={{ my: 4 }} />
 

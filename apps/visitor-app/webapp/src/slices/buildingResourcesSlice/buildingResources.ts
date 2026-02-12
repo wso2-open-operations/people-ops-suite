@@ -47,20 +47,10 @@ const initialState: BuildingResourcesState = {
 export const fetchBuildingResources = createAsyncThunk(
   "buildingResources/fetch",
   async () => {
-    APIService.getCancelToken().cancel();
-    const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<BuildingResource[]>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.buildingResources, {
-          cancelToken: newCancelTokenSource.token,
-        })
-        .then((response) => {
-          resolve(response.data);
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
+    const response = await APIService.getInstance().get(
+      AppConfig.serviceUrls.buildingResources,
+    );
+    return response.data as BuildingResource[];
   },
 );
 
@@ -69,7 +59,7 @@ export const buildingResourcesSlice = createSlice({
   initialState,
   reducers: {
     setBuildingResources: (state, action) => {
-      return action.payload;
+      state.buildingResources = action.payload;
     },
   },
   extraReducers: (builder) => {
