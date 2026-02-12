@@ -33,11 +33,11 @@ import {
   CardContent,
   IconButton,
   InputAdornment,
-  MenuItem,
   Container,
   Autocomplete,
   Avatar,
   CircularProgress,
+  MenuItem,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -78,6 +78,8 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
+import { customList } from "country-codes-list";
+import { fetchBuildingResources } from "@root/src/slices/buildingResourcesSlice/buildingResources";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
@@ -96,67 +98,11 @@ export interface VisitorDetail {
   status: VisitorStatus;
 }
 
-const AVAILABLE_FLOORS_AND_ROOMS = [
-  { floor: "1st Floor", rooms: ["Cafeteria"] },
-  { floor: "6th Floor", rooms: ["The Launchpad"] },
-  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
-  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
-  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
-  { floor: "9th and 10th", rooms: ["The Circuit"] },
-  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
-  { floor: "11th Floor", rooms: ["Tinker Room"] },
-  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
-  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
-  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
-  { floor: "15th Floor", rooms: ["Common Area"] },
-  { floor: "Rooftop", rooms: ["Basketball Court"] },
-];
-
-const COUNTRY_CODES = [
-  { code: "+1", country: "US/CA", flag: "🇺🇸" },
-  { code: "+44", country: "GB", flag: "🇬🇧" },
-  { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+86", country: "CN", flag: "🇨🇳" },
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+33", country: "FR", flag: "🇫🇷" },
-  { code: "+81", country: "JP", flag: "🇯🇵" },
-  { code: "+82", country: "KR", flag: "🇰🇷" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+55", country: "BR", flag: "🇧🇷" },
-  { code: "+7", country: "RU/KZ", flag: "🇷🇺" },
-  { code: "+20", country: "EG", flag: "🇪🇬" },
-  { code: "+27", country: "ZA", flag: "🇿🇦" },
-  { code: "+34", country: "ES", flag: "🇪🇸" },
-  { code: "+39", country: "IT", flag: "🇮🇹" },
-  { code: "+31", country: "NL", flag: "🇳🇱" },
-  { code: "+32", country: "BE", flag: "🇧🇪" },
-  { code: "+46", country: "SE", flag: "🇸🇪" },
-  { code: "+47", country: "NO", flag: "🇳🇴" },
-  { code: "+48", country: "PL", flag: "🇵🇱" },
-  { code: "+351", country: "PT", flag: "🇵🇹" },
-  { code: "+41", country: "CH", flag: "🇨🇭" },
-  { code: "+43", country: "AT", flag: "🇦🇹" },
-  { code: "+60", country: "MY", flag: "🇲🇾" },
-  { code: "+62", country: "ID", flag: "🇮🇩" },
-  { code: "+63", country: "PH", flag: "🇵🇭" },
-  { code: "+64", country: "NZ", flag: "🇳🇿" },
-  { code: "+66", country: "TH", flag: "🇹🇭" },
-  { code: "+90", country: "TR", flag: "🇹🇷" },
-  { code: "+92", country: "PK", flag: "🇵🇰" },
-  { code: "+95", country: "MM", flag: "🇲🇲" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+972", country: "IL", flag: "🇮🇱" },
-  { code: "+973", country: "BH", flag: "🇧🇭" },
-  { code: "+974", country: "QA", flag: "🇶🇦" },
-  { code: "+975", country: "BT", flag: "🇧🇹" },
-  { code: "+976", country: "MN", flag: "🇲🇳" },
-  { code: "+977", country: "NP", flag: "🇳🇵" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+886", country: "TW", flag: "🇹🇼" },
-  { code: "+880", country: "BD", flag: "🇧🇩" },
-  { code: "+84", country: "VN", flag: "🇻🇳" },
-  { code: "+94", country: "LK", flag: "🇱🇰" },
-];
+// Get country codes list with flags
+const COUNTRY_CODES = customList(
+  "countryCode",
+  "{countryNameEn}: +{countryCallingCode}",
+);
 
 const defaultVisitor: VisitorDetail = {
   name: "",
@@ -243,6 +189,8 @@ function CreateVisit() {
     currentSearchTerm,
     state: employeesState,
   } = useAppSelector((state: RootState) => state.employees);
+  const { buildingResources, loading: buildingResourcesLoading } =
+    useAppSelector((state: RootState) => state.buildingResources);
 
   const dialogContext = useConfirmationModalContext();
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -260,8 +208,62 @@ function CreateVisit() {
     [entryHour],
   );
 
+  // Transform building resources into floor/room structure
+  const availableFloorsAndRooms = useMemo(() => {
+    if (!buildingResources || buildingResources.length === 0) {
+      return [];
+    }
+
+    // Group resources by floorName and collect resourceName (rooms)
+    const floorsMap = new Map<string, string[]>();
+
+    buildingResources.forEach((resource) => {
+      // Only process resources that have floorName defined
+      if (resource.floorName && resource.resourceName) {
+        const floor = resource.floorName.trim();
+        const room = resource.resourceName.trim();
+
+        if (!floorsMap.has(floor)) {
+          floorsMap.set(floor, []);
+        }
+
+        // Add room to the floor if it doesn't already exist
+        const rooms = floorsMap.get(floor)!;
+        if (!rooms.includes(room)) {
+          rooms.push(room);
+        }
+      }
+    });
+
+    // Convert Map to array format [{floor, rooms: [...]}]
+    const result = Array.from(floorsMap.entries())
+      .map(([floor, rooms]) => ({
+        floor,
+        rooms: rooms.sort(), // Sort rooms alphabetically
+      }))
+      .sort((a, b) => {
+        // Custom sort to handle floor numbers and names
+        const floorA = a.floor.toLowerCase();
+        const floorB = b.floor.toLowerCase();
+
+        // Extract numbers from floor names for better sorting
+        const numA = parseInt(floorA.match(/\d+/)?.[0] || "999");
+        const numB = parseInt(floorB.match(/\d+/)?.[0] || "999");
+
+        if (numA !== numB) {
+          return numA - numB;
+        }
+
+        // If numbers are same or no numbers, sort alphabetically
+        return floorA.localeCompare(floorB);
+      });
+
+    return result;
+  }, [buildingResources]);
+
   useEffect(() => {
     dispatch(fetchEmployees({ limit: 10, offset: 0 }));
+    dispatch(fetchBuildingResources());
   }, [dispatch]);
 
   useEffect(() => {
@@ -718,14 +720,24 @@ function CreateVisit() {
           {locked && <LockIcon fontSize="small" color="action" />}
         </Typography>
 
-        <FloorRoomSelector
-          availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
-          selectedFloorsAndRooms={formik.values.accessibleLocations}
-          onChange={(val) =>
-            !locked && formik.setFieldValue("accessibleLocations", val)
-          }
-          disabled={locked}
-        />
+        {buildingResourcesLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : availableFloorsAndRooms.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 2 }}>
+            No building resources available. Please contact the administrator.
+          </Typography>
+        ) : (
+          <FloorRoomSelector
+            availableFloorsAndRooms={availableFloorsAndRooms}
+            selectedFloorsAndRooms={formik.values.accessibleLocations}
+            onChange={(val) =>
+              !locked && formik.setFieldValue("accessibleLocations", val)
+            }
+            disabled={locked}
+          />
+        )}
 
         <Divider sx={{ my: 4 }} />
 
@@ -954,13 +966,29 @@ function CreateVisit() {
                               disabled={
                                 visitor.status === VisitorStatus.Completed
                               }
-                              sx={{ minWidth: 80, mr: 1 }}
+                              sx={{ minWidth: 120, mr: 1 }}
+                              SelectProps={{
+                                MenuProps: {
+                                  PaperProps: {
+                                    style: {
+                                      maxHeight: 300,
+                                    },
+                                  },
+                                },
+                              }}
                             >
-                              {COUNTRY_CODES.map((c) => (
-                                <MenuItem key={c.code} value={c.code}>
-                                  {c.flag} {c.code}
-                                </MenuItem>
-                              ))}
+                              {Object.entries(COUNTRY_CODES).map(
+                                ([code, name]) => {
+                                  const dialCode = name
+                                    .toString()
+                                    .split("+")[1];
+                                  return (
+                                    <MenuItem key={code} value={`+${dialCode}`}>
+                                      {code} +{dialCode}
+                                    </MenuItem>
+                                  );
+                                },
+                              )}
                             </TextField>
                           </InputAdornment>
                         ),
@@ -988,7 +1016,7 @@ function CreateVisit() {
                         startIcon={<CheckIcon />}
                         disabled={formik.isSubmitting}
                       >
-                        Submit Visitor
+                        Submit
                       </Button>
                     </Grid>
                   )}
@@ -1065,7 +1093,7 @@ function CreateVisit() {
                     onClick={() => addNewVisitorBlock(formik)}
                     disabled={!canAddMore}
                   >
-                    Add Another Visitor
+                    Add Visitor
                   </Button>
                 </Box>
 
@@ -1085,7 +1113,7 @@ function CreateVisit() {
                         )
                       }
                     >
-                      Finish & Close Visit
+                      Finish Visit Registration
                     </Button>
                   </Box>
                 )}
