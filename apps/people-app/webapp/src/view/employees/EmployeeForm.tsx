@@ -155,12 +155,6 @@ const toJobUpdatePayload = (
     : null,
 });
 
-const toNullableString = (v?: string | null) => {
-  if (v == null) return null;
-  const s = (v as string).trim();
-  return s === "" ? null : s;
-};
-
 const toPersonalUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): EmployeePersonalInfoUpdate => ({
@@ -170,15 +164,37 @@ const toPersonalUpdatePayload = (
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
-  personalEmail: toNullableString(values.personalInfo.personalEmail),
-  personalPhone: toNullableString(values.personalInfo.personalPhone),
-  residentNumber: toNullableString(values.personalInfo.residentNumber),
-  addressLine1: toNullableString(values.personalInfo.addressLine1),
-  addressLine2: toNullableString(values.personalInfo.addressLine2),
-  city: toNullableString(values.personalInfo.city),
-  stateOrProvince: toNullableString(values.personalInfo.stateOrProvince),
-  postalCode: toNullableString(values.personalInfo.postalCode),
-  country: toNullableString(values.personalInfo.country),
+  personalEmail:
+    values.personalInfo.personalEmail === ""
+      ? null
+      : values.personalInfo.personalEmail,
+  personalPhone:
+    values.personalInfo.personalPhone === ""
+      ? null
+      : values.personalInfo.personalPhone,
+  residentNumber:
+    values.personalInfo.residentNumber === ""
+      ? null
+      : values.personalInfo.residentNumber,
+  addressLine1:
+    values.personalInfo.addressLine1 === ""
+      ? null
+      : values.personalInfo.addressLine1,
+  addressLine2:
+    values.personalInfo.addressLine2 === ""
+      ? null
+      : values.personalInfo.addressLine2,
+  city: values.personalInfo.city === "" ? null : values.personalInfo.city,
+  stateOrProvince:
+    values.personalInfo.stateOrProvince === ""
+      ? null
+      : values.personalInfo.stateOrProvince,
+  postalCode:
+    values.personalInfo.postalCode === ""
+      ? null
+      : values.personalInfo.postalCode,
+  country:
+    values.personalInfo.country === "" ? null : values.personalInfo.country,
   nationality: values.personalInfo.nationality ?? null,
   emergencyContacts:
     values.personalInfo.emergencyContacts &&
@@ -538,12 +554,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 actions.setSubmitting(false);
                 return;
               }
-
-              let initialJob = {};
-              let currentJob = {};
-
-              initialJob = toJobUpdatePayload(employeeId, initialEditValues);
-              currentJob = toJobUpdatePayload(employeeId, values);
+              const initialJob = toJobUpdatePayload(
+                employeeId,
+                initialEditValues,
+              );
+              const currentJob = toJobUpdatePayload(employeeId, values);
 
               const initialPersonal =
                 toPersonalUpdatePayload(initialEditValues);
@@ -581,6 +596,10 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 ConfirmationType.accept,
                 async () => {
                   try {
+                    let jobUpdateFailed = false;
+                    let personalUpdateFailed = false;
+                    const failedUpdates: string[] = [];
+
                     if (hasJobChanges) {
                       const jobResult = await dispatch(
                         updateEmployeeJobInfo({
@@ -591,8 +610,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                         }),
                       );
                       if (updateEmployeeJobInfo.rejected.match(jobResult)) {
-                        actions.setSubmitting(false);
-                        return;
+                        jobUpdateFailed = true;
+                        failedUpdates.push("Job Information");
                       }
                     }
 
@@ -608,13 +627,38 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                           personalResult,
                         )
                       ) {
-                        actions.setSubmitting(false);
-                        return;
+                        personalUpdateFailed = true;
+                        failedUpdates.push("Personal Information");
                       }
                     }
-                    navigate(`/employees/${employeeId}`, { replace: true });
+
+                    if (jobUpdateFailed || personalUpdateFailed) {
+                      const errorMessage =
+                        failedUpdates.length === 1
+                          ? `Failed to update ${failedUpdates[0]}.`
+                          : `Failed to update ${failedUpdates.join(" and ")}.`;
+
+                      showConfirmation(
+                        "Update Failed",
+                        <Typography variant="body1">{errorMessage}</Typography>,
+                        ConfirmationType.accept,
+                        () => {},
+                        "OK",
+                      );
+                    } else {
+                      navigate(`/employees/${employeeId}`, { replace: true });
+                    }
                   } catch (error) {
                     console.error("Update failed:", error);
+                    showConfirmation(
+                      "Update Error",
+                      <Typography variant="body1">
+                        An unexpected error occurred during the update.
+                      </Typography>,
+                      ConfirmationType.accept,
+                      () => {},
+                      "OK",
+                    );
                   } finally {
                     actions.setSubmitting(false);
                   }
@@ -622,7 +666,6 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 "Yes",
                 "No",
               );
-
               return;
             }
           }}

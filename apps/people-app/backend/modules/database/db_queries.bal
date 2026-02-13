@@ -482,29 +482,99 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
 # + updatedBy - Updater of the personal info record
 # + return - sql:ParameterizedQuery - Update query for personal info
 isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
-    returns sql:ParameterizedQuery =>
-    `UPDATE
-        personal_info
-     SET
-        nic_or_passport = COALESCE(${payload.nicOrPassport}, nic_or_passport),
-        first_name = COALESCE(${payload.firstName}, first_name),
-        last_name = COALESCE(${payload.lastName}, last_name),
-        title = COALESCE(${payload.title}, title),
-        dob = COALESCE(${payload.dob}, dob),
-        gender = COALESCE(${payload.gender}, gender),
-        nationality = COALESCE(${payload.nationality}, nationality),
-        personal_email = COALESCE(${payload.personalEmail}, personal_email),
-        personal_phone = COALESCE(${payload.personalPhone}, personal_phone),
-        resident_number = COALESCE(${payload.residentNumber}, resident_number),
-        address_line_1 = COALESCE(${payload.addressLine1}, address_line_1),
-        address_line_2 = COALESCE(${payload.addressLine2}, address_line_2),
-        city = COALESCE(${payload.city}, city),
-        state_or_province = COALESCE(${payload.stateOrProvince}, state_or_province),
-        postal_code = COALESCE(${payload.postalCode}, postal_code),
-        country = COALESCE(${payload.country}, country),
-        updated_by = ${updatedBy}
-     WHERE
-        id = ${id};`;
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE personal_info SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.nicOrPassport != () {
+        updates.push(`nic_or_passport = ${payload.nicOrPassport}`);
+    }
+
+    if payload.firstName != () {
+        updates.push(`first_name = ${payload.firstName}`);
+    }
+
+    if payload.lastName != () {
+        updates.push(`last_name = ${payload.lastName}`);
+    }
+
+    if payload.title != () {
+        updates.push(`title = ${payload.title}`);
+    }
+
+    if payload.dob != () {
+        updates.push(`dob = ${payload.dob}`);
+    }
+
+    if payload.gender != () {
+        updates.push(`gender = ${payload.gender}`);
+    }
+
+    if payload.nationality != () {
+        updates.push(`nationality = ${payload.nationality}`);
+    }
+
+    if payload.personalEmail is () || payload.personalEmail == "" {
+        updates.push(`personal_email = NULL`);
+    } else {
+        updates.push(`personal_email = ${payload.personalEmail}`);
+    }
+
+    if payload.personalPhone is () || payload.personalPhone == "" {
+        updates.push(`personal_phone = NULL`);
+    } else {
+        updates.push(`personal_phone = ${payload.personalPhone}`);
+    }
+
+    if payload.residentNumber is () || payload.residentNumber == "" {
+        updates.push(`resident_number = NULL`);
+    } else {
+        updates.push(`resident_number = ${payload.residentNumber}`);
+    }
+
+    if payload.addressLine1 is () || payload.addressLine1 == "" {
+        updates.push(`address_line_1 = NULL`);
+    } else {
+        updates.push(`address_line_1 = ${payload.addressLine1}`);
+    }
+
+    if payload.addressLine2 is () || payload.addressLine2 == "" {
+        updates.push(`address_line_2 = NULL`);
+    } else {
+        updates.push(`address_line_2 = ${payload.addressLine2}`);
+    }
+
+    if payload.city is () || payload.city == "" {
+        updates.push(`city = NULL`);
+    } else {
+        updates.push(`city = ${payload.city}`);
+    }
+
+    if payload.stateOrProvince is () || payload.stateOrProvince == "" {
+        updates.push(`state_or_province = NULL`);
+    } else {
+        updates.push(`state_or_province = ${payload.stateOrProvince}`);
+    }
+
+    if payload.postalCode is () || payload.postalCode == "" {
+        updates.push(`postal_code = NULL`);
+    } else {
+        updates.push(`postal_code = ${payload.postalCode}`);
+    }
+
+    if payload.country is () || payload.country == "" {
+        updates.push(`country = NULL`);
+    } else {
+        updates.push(`country = ${payload.country}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE id = ${id}`);
+    return finalQuery;
+}
 
 # Delete emergency contacts by personal info id.
 #
@@ -550,31 +620,102 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
 # + updatedBy - User performing the update
 # + return - sql:ParameterizedQuery - Update query for employee job info
 isolated function updateEmployeeJobInfoQuery(UpdateEmployeeJobInfoPayload payload, string updatedBy)
-    returns sql:ParameterizedQuery => `
-        UPDATE 
-            employee
-        SET
-            epf = COALESCE(${payload.epf}, epf),
-            employment_location = COALESCE(${payload.employmentLocation}, employment_location),
-            work_location = COALESCE(${payload.workLocation}, work_location),
-            work_email = COALESCE(${payload.workEmail}, work_email),
-            start_date = COALESCE(${payload.startDate}, start_date),
-            secondary_job_title = COALESCE(${payload.secondaryJobTitle}, secondary_job_title),
-            manager_email = COALESCE(${payload.managerEmail}, manager_email),
-            employee_thumbnail = COALESCE(${payload.employeeThumbnail}, employee_thumbnail),
-            probation_end_date = COALESCE(${payload.probationEndDate}, probation_end_date),
-            agreement_end_date = COALESCE(${payload.agreementEndDate}, agreement_end_date),
-            employment_type_id = COALESCE(${payload.employmentTypeId}, employment_type_id),
-            designation_id = COALESCE(${payload.designationId}, designation_id),
-            office_id = COALESCE(${payload.officeId}, office_id),
-            team_id = COALESCE(${payload.teamId}, team_id),
-            sub_team_id = COALESCE(${payload.subTeamId}, sub_team_id),
-            business_unit_id = COALESCE(${payload.businessUnitId}, business_unit_id),
-            unit_id = COALESCE(${payload.unitId}, unit_id),
-            continuous_service_record = COALESCE(${payload.continuousServiceRecord}, continuous_service_record),
-            updated_by = ${updatedBy}
-        WHERE 
-            employee_id = ${payload.employeeId};`;
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.epf is () || payload.epf == "" {
+        updates.push(`epf = NULL`);
+    } else {
+        updates.push(`epf = ${payload.epf}`);
+    }
+
+    if payload.employmentLocation != () {
+        updates.push(`employment_location = ${payload.employmentLocation}`);
+    }
+
+    if payload.workLocation != () {
+        updates.push(`work_location = ${payload.workLocation}`);
+    }
+
+    if payload.workEmail != () {
+        updates.push(`work_email = ${payload.workEmail}`);
+    }
+
+    if payload.startDate != () {
+        updates.push(`start_date = ${payload.startDate}`);
+    }
+
+    if payload.secondaryJobTitle != () {
+        updates.push(`secondary_job_title = ${payload.secondaryJobTitle}`);
+    }
+
+    if payload.managerEmail != () {
+        updates.push(`manager_email = ${payload.managerEmail}`);
+    }
+
+    if payload.employeeThumbnail is () || payload.employeeThumbnail == "" {
+        updates.push(`employee_thumbnail = NULL`);
+    } else {
+        updates.push(`employee_thumbnail = ${payload.employeeThumbnail}`);
+    }
+
+    if payload.probationEndDate is () || payload.probationEndDate == "" {
+        updates.push(`probation_end_date = NULL`);
+    } else {
+        updates.push(`probation_end_date = ${payload.probationEndDate}`);
+    }
+
+    if payload.agreementEndDate is () || payload.agreementEndDate == "" {
+        updates.push(`agreement_end_date = NULL`);
+    } else {
+        updates.push(`agreement_end_date = ${payload.agreementEndDate}`);
+    }
+
+    if payload.employmentTypeId != () {
+        updates.push(`employment_type_id = ${payload.employmentTypeId}`);
+    }
+    if payload.designationId != () {
+        updates.push(`designation_id = ${payload.designationId}`);
+    }
+    if payload.officeId != () {
+        updates.push(`office_id = ${payload.officeId}`);
+
+    }
+    if payload.teamId != () {
+        updates.push(`team_id = ${payload.teamId}`);
+
+    }
+    if payload.subTeamId != () {
+        updates.push(`sub_team_id = ${payload.subTeamId}`);
+    }
+
+    if payload.businessUnitId != () {
+        updates.push(`business_unit_id = ${payload.businessUnitId}`);
+    }
+
+    if payload.unitId is () {
+        updates.push(`unit_id = NULL`);
+    } else {
+        updates.push(`unit_id = ${payload.unitId}`);
+    }
+
+    if payload.continuousServiceRecord is () || payload.continuousServiceRecord == "" {
+        updates.push(`continuous_service_record = NULL`);
+    } else {
+        updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
+    }
+
+    if payload.employeeStatus != () {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+    return sql:queryConcat(query, ` WHERE employee_id = ${payload.employeeId}`);
+}
 
 # Delete additional managers by employee database ID.
 #
