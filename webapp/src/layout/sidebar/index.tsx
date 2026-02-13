@@ -13,14 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import LightModeIcon from "@mui/icons-material/LightMode";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
-import SettingsIcon from "@mui/icons-material/Settings";
-import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+
 import type { NavState } from "../../types/types";
 import SidebarNavItem from "../../components/layout/SidebarNavItem";
 import pJson from "../../../package.json";
@@ -36,35 +35,47 @@ interface SidebarProps {
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
-  const location = useLocation();
-  const theme = useTheme();
-  
-  // --- HARDCODED COLORS (Derived from Old Theme) ---
-  const isLight = theme.palette.mode === "light";
-  const colors = {
-    sidebarBg: isLight ? "#122e36" : "#0a0e0f",     // White / Grey 900
-    text: isLight ? "#ffffff" : "#a3a3a3",          // Grey 500 / Grey 300
-    hoverBg: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.08)",
-    hoverText: isLight ? "#021d5f" : "#5686e1",     // Primary Blue / Secondary Blue
-    activeBg: isLight ? "rgba(0, 0, 0, 0.08)" : "rgba(255, 255, 255, 0.12)",
-    activeText: isLight ? "#021d5f" : "#5686e1",
-    divider: isLight ? "#e0e0e0" : "#333333",       // Grey 100 / Grey 700
-    tooltipBg: "#333333",
-    tooltipText: "#ffffff"
+  const effectivePath = props.currentPath === "/" ? "/apply/general" : props.currentPath;
+
+  // Determine if route is active based on current path
+  const isRouteActive = (routePath: string) => {
+    if (routePath === "") {
+      return effectivePath === "/" || effectivePath === "";
+    }
+    return effectivePath === `/${routePath}` || effectivePath.startsWith(`/${routePath}/`);
   };
+
+  const findExpandedIndex = useCallback(() => {
+    const path = effectivePath;
+    const idx = allRoutes.findIndex(
+      (route) =>
+        !route.bottomNav &&
+        route.children &&
+        route.children.length > 0 &&
+        (path === `/${route.path}` || path.startsWith(`/${route.path}/`)),
+    );
+    return idx >= 0 ? idx : null;
+  }, [effectivePath, allRoutes]);
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
     active: null,
     hovered: null,
-    expanded: null,
+    expanded: findExpandedIndex(),
   });
+
+  useEffect(() => {
+    const idx = findExpandedIndex();
+    if (idx !== null) {
+      setNavState((prev) => ({ ...prev, expanded: idx }));
+    }
+  }, [findExpandedIndex]);
 
   // Handlers
   const handleClick = (idx: number) => {
     setNavState((prev) => ({
       ...prev,
-      active: prev.active === idx ? null : idx,
+      expanded: prev.expanded === idx ? null : idx,
     }));
   };
 
@@ -75,7 +86,7 @@ const Sidebar = (props: SidebarProps) => {
   const handleMouseLeave = () => {
     setNavState((prev) => ({ ...prev, hovered: null }));
   };
-
+  const theme = useTheme();
 
   const renderControlButton = (
     icon: React.ReactNode,
@@ -85,7 +96,6 @@ const Sidebar = (props: SidebarProps) => {
     const button = (
       <Box
         component="button"
-        type="button"
         onClick={onClick}
         disabled={!onClick}
         aria-label={tooltipTitle}
@@ -100,16 +110,16 @@ const Sidebar = (props: SidebarProps) => {
           alignItems: "center",
           justifyContent: props.open ? "flex-start" : "center",
           gap: theme.spacing(1),
-          color: colors.text,
+          color: theme.palette.customNavigation.text,
           transition: "all 0.2s ease-in-out",
           ...(onClick && {
             "&:hover": {
-              backgroundColor: colors.hoverBg,
-              color: colors.hoverText,
+              backgroundColor: theme.palette.customNavigation.hoverBg,
+              color: theme.palette.customNavigation.hover,
             },
             "&:active": {
-              backgroundColor: colors.activeBg,
-              color: colors.activeText,
+              backgroundColor: theme.palette.customNavigation.clickedBg,
+              color: theme.palette.customNavigation.clicked,
             },
           }),
         }}
@@ -128,17 +138,17 @@ const Sidebar = (props: SidebarProps) => {
           slotProps={{
             tooltip: {
               sx: {
-                backgroundColor: colors.tooltipBg,
-                color: colors.tooltipText,
+                backgroundColor: theme.palette.neutral[1700],
+                color: theme.palette.neutral.white,
                 padding: theme.spacing(0.75, 1),
                 borderRadius: "4px",
-                fontSize: "12px",
+                fontSize: theme.typography.caption.fontSize,
                 boxShadow: theme.shadows[8],
               },
             },
             arrow: {
               sx: {
-                color: colors.tooltipBg,
+                color: theme.palette.neutral[1700],
               },
             },
           }}
@@ -160,13 +170,13 @@ const Sidebar = (props: SidebarProps) => {
           <Box
             sx={{
               height: "100%",
-              paddingY: "16px",
-              paddingX: "12px",
-              backgroundColor: colors.sidebarBg,
+              py: "16px",
+              px: "12px",
+              backgroundColor: theme.palette.surface.secondary.active,
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: props.open ? "200px" : "fit-content",
+              width: "fit-content",
               overflow: "visible",
             }}
           >
@@ -179,8 +189,8 @@ const Sidebar = (props: SidebarProps) => {
                 width: props.open ? "100%" : "fit-content",
               }}
             >
-              {allRoutes.map((route, idx) => {
-                return (
+              {allRoutes.map(
+                (route, idx) =>
                   !route.bottomNav && (
                     <Box
                       key={idx}
@@ -194,13 +204,14 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === null ? idx === 0 : navState.active === idx}
+                        isActive={isRouteActive(route.path)}
+                        isHovered={navState.hovered === idx}
+                        isExpanded={navState.expanded === idx}
                         onClick={() => handleClick(idx)}
                       />
                     </Box>
-                  )
-                );
-              })}
+                  ),
+              )}
             </Stack>
 
             {/* Spacer */}
@@ -212,19 +223,19 @@ const Sidebar = (props: SidebarProps) => {
               gap={1}
               sx={{
                 paddingBottom: "20px",
-                alignItems: "center",
+                alignItems: "flex-start",
               }}
             >
               {/* Theme Toggle */}
               {renderControlButton(
-                colorMode.mode === "dark" ? <LightModeIcon sx={{ fontSize: 20 }} /> : <DarkModeIcon sx={{ fontSize: 20 }} />,
+                colorMode.mode === "dark" ? <Sun size={18} /> : <Moon size={18} />,
                 colorMode.toggleColorMode,
                 colorMode.mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode",
               )}
 
               {/* Sidebar Toggle */}
               {renderControlButton(
-                !props.open ? <ChevronRightIcon sx={{ fontSize: 22 }} /> : <ChevronLeftIcon sx={{ fontSize: 22 }} />,
+                !props.open ? <ChevronRight size={20} /> : <ChevronLeft size={20} />,
                 props.handleDrawer,
                 props.open ? "Collapse Sidebar" : "Expand Sidebar",
               )}
@@ -232,7 +243,7 @@ const Sidebar = (props: SidebarProps) => {
               <Divider
                 sx={{
                   width: "100%",
-                  backgroundColor: colors.divider,
+                  backgroundColor: theme.palette.customNavigation.clickedBg,
                 }}
               />
 
