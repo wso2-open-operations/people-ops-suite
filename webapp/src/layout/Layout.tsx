@@ -92,6 +92,7 @@ const LayoutContent = () => {
               flex: 1,
               height: "100%",
               padding: theme.spacing(3),
+              boxSizing: "border-box",
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
