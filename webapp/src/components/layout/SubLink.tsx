@@ -13,9 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Typography, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link, matchPath, useLocation } from "react-router-dom";
+
 import React from "react";
 
 interface SubLinkProps {
@@ -30,6 +32,7 @@ const SubLink = (props: SubLinkProps) => {
   const { icon, primary, to, open, parentPath } = props;
   const location = useLocation();
   const theme = useTheme();
+
   const fullPath = to.startsWith('/') ? to : `${parentPath.replace(/\/$/, "")}/${to.replace(/^\//, "")}`;
   const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
 
@@ -90,9 +93,7 @@ const SubLink = (props: SubLinkProps) => {
           sx={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
             textDecoration: "none",
-            py: "8px",
           }}
         >
           {icon && React.isValidElement(icon) ? (
