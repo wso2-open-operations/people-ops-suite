@@ -26,21 +26,16 @@ interface ListItemLinkProps {
   label: string;
   open: boolean;
   isActive: boolean;
+  isHovered: boolean;
+  isExpanded: boolean;
   hasChildren: boolean;
   route?: RouteDetail;
 }
 
 const LinkItem = (props: ListItemLinkProps) => {
-  const { icon, label, open, isActive, hasChildren } = props;
+  const { icon, label, open, isActive, isExpanded, hasChildren } = props;
   const theme = useTheme();
-
-  // --- HARDCODED WHITE COLORS ---
-  const colors = {
-    text: "#ffffff",
-    textClicked: "#ffffff",
-    clickedBg: "rgba(255, 255, 255, 0.1)",
-    hoverBg: "rgba(255, 255, 255, 0.05)",
-  };
+  const isActiveOrExpanded = isActive || isExpanded;
 
   return (
     <Box
@@ -52,22 +47,15 @@ const LinkItem = (props: ListItemLinkProps) => {
         borderRadius: "8px",
         justifyContent: "space-between",
         transition: "all 0.2s",
-        backgroundColor: isActive ? colors.clickedBg : "transparent",
-        color: colors.text,
-        
+        backgroundColor: isActiveOrExpanded ? theme.palette.customNavigation.clickedBg : "transparent",
         "&:hover": {
-          ...(!isActive && {
-            backgroundColor: colors.hoverBg,
+          ...(!isActiveOrExpanded && {
+            backgroundColor: theme.palette.customNavigation.hoverBg,
           }),
         },
-
-        "& .MuiSvgIcon-root": {
-          color: "#ffffff",
-        },
-        "& svg": {
-          color: "#ffffff",
-          stroke: "#ffffff"
-        }
+        color: isActiveOrExpanded
+          ? theme.palette.customNavigation.textClicked
+          : theme.palette.customNavigation.text 
       }}
     >
       <Box
@@ -92,18 +80,17 @@ const LinkItem = (props: ListItemLinkProps) => {
         {open && (
           <Typography
             sx={{
-              fontSize: "14px",
+              fontSize: theme.typography.body2.fontSize,
               fontWeight: 500,
               lineHeight: "150%",
               letterSpacing: "-0.03em",
-              color: "#ffffff"
             }}
           >
             {label}
           </Typography>
         )}
       </Box>
-      {hasChildren && open && (isActive ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
+      {hasChildren && open && (isExpanded ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
     </Box>
   );
 };
