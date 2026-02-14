@@ -119,11 +119,83 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
+    # Get employee joined deatails
+    #
+    # + ctx - Request Context er Description  
+    # + employeeWorkEmail - employee email
+    # + return - Internal Server Error or Unauthorized Error or Employee info object
+    resource function GET employee\-info(http:RequestContext ctx, string employeeWorkEmail)
+        returns EmployeeInfoWithLead|http:InternalServerError|http:Unauthorized|error? {
+
+        // "RequestedBy" is the email of the user access this resource
+        // Interceptor set this value after validating the jwt.
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            log:printError(USER_INFORMATION_HEADER_NOT_FOUND);
+            return <http:InternalServerError>{
+                body: {
+                    message: USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if userInfo.email != employeeWorkEmail {
+            authorization:UserAppPrivilege userAppPrivileges = check authorization:getUserPrivileges(userInfo.email);
+            if !database:checkRoles([database:LEAD], userAppPrivileges.roles) {
+                return <http:Unauthorized>{
+                    body: {
+                        message: "Insufficient privileges!"
+                    }
+                };
+            }
+        }
+
+        //Get employee History
+        people:EmployeeHistory|error employeeData = check people:fetchEmployeeHistory(employeeWorkEmail);
+
+        if employeeData is error {
+            string customError = string `Error while retrieving Employee Data!`;
+            log:printError(customError, employeeData);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        if employeeData.managerEmail == "" {
+            string customError = string `Reporting lead email is not available!`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+        
+        string reportingLead = employeeData.managerEmail ?: "";
+
+        EmployeeInfoWithLead employeeInfoWithLead = {
+            workEmail: employeeData.workEmail,
+            startDate: employeeData.startDate,
+            jobBand: employeeData.jobBand,
+            joinedJobRole: employeeData.joinedJobRole,
+            joinedBusinessUnit: employeeData.joinedBusinessUnit,
+            joinedDepartment: employeeData.joinedDepartment,
+            joinedTeam: employeeData.joinedTeam,
+            joinedLocation: employeeData.joinedLocation,
+            lastPromotedDate: employeeData.lastPromotedDate,
+            employeeThumbnail: employeeData.employeeThumbnail,
+            reportingLead: reportingLead
+        };
+        return employeeInfoWithLead;
+    }
+
     # Retrieve specific users' promotion requests for given criteria.
     # 
     # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
-    resource function GET promotions/[string email](http:RequestContext ctx, string[]? statusArray)
+    resource function GET promotions(http:RequestContext ctx, string? employeeEmail, string[]? statusArray)
         returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
 
         // if there is a status array.
@@ -152,7 +224,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if userInfo.email != email {
+        if userInfo.email != employeeEmail {
             string customError = string `You are not authorized to view promotion details of other employees!`;
             log:printError(customError);
             return <http:Forbidden>{
@@ -164,7 +236,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Retrieve promotion requests from the database, using various filters and constraints.
         database:Promotion[]|error PromotionArray = database:getPromotions(
-            employeeEmail = email,  // Constrain by user email if needed.
+            employeeEmail = employeeEmail,  // Constrain by user email if needed.
             statusArray = statusArray // Filter by status.
         );
 

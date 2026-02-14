@@ -47,6 +47,7 @@ export const AppConfig = {
   serviceUrls: {
     userInfo: SERVICE_BASE_URL + "/user-info",
     employees: SERVICE_BASE_URL + "/employees",
+    employeeHistory: SERVICE_BASE_URL + "/employee-info",
     appConfig: SERVICE_BASE_URL + "/app-config",
     getEmployeeHistory: SERVICE_BASE_URL + "/employee-info",
     retrieveAllPromotionRequests: SERVICE_BASE_URL + "/promotions",

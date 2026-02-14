@@ -97,8 +97,6 @@ public type EmployeeInfoWithLead record {
     string? employeeThumbnail = "";
     # Email of the reporting lead
     string reportingLead;
-    # Thumbnail of the reporting lead
-    string reportingLeadThumbnail;
 };
 
 # Result object of the get user promotion requests resource function.
