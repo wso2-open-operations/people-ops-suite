@@ -72,6 +72,8 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .max(45, "EPF must be at most 45 characters")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
+  secondaryJobTitle: Yup.string()
+    .required("Secondary job title is required"),
   businessUnitId: Yup.number()
     .required("Business unit is required")
     .min(1, "Select a valid business unit"),
@@ -623,7 +625,7 @@ export default function JobInfoStep() {
             {renderField("epf", "EPF", false)}
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            {renderField("secondaryJobTitle", "Secondary Job Title", false)}
+            {renderField("secondaryJobTitle", "Secondary Job Title", true)}
           </Grid>
         </Grid>
       </Box>
