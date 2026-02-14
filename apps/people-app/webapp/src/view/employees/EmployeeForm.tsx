@@ -128,10 +128,8 @@ const toFormValues = (
 };
 
 const toJobUpdatePayload = (
-  employeeId: string,
   values: CreateEmployeeFormValues,
 ): UpdateEmployeeJobInfoPayload => ({
-  employeeId: employeeId,
   epf: values.epf === "" ? null : values.epf,
   employmentLocation: values.employmentLocation,
   workLocation: values.workLocation,
@@ -554,11 +552,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 actions.setSubmitting(false);
                 return;
               }
-              const initialJob = toJobUpdatePayload(
-                employeeId,
-                initialEditValues,
-              );
-              const currentJob = toJobUpdatePayload(employeeId, values);
+              const initialJob = toJobUpdatePayload(initialEditValues);
+              const currentJob = toJobUpdatePayload(values);
 
               const initialPersonal =
                 toPersonalUpdatePayload(initialEditValues);
@@ -603,8 +598,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     if (hasJobChanges) {
                       const jobResult = await dispatch(
                         updateEmployeeJobInfo({
+                          employeeId,
                           payload: {
-                            employeeId,
                             ...jobPatch,
                           } as UpdateEmployeeJobInfoPayload,
                         }),

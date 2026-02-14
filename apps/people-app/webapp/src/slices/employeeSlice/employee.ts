@@ -112,7 +112,6 @@ export type CreateEmployeePayload = {
 };
 
 export type UpdateEmployeeJobInfoPayload = {
-  employeeId: string;
   epf?: string | null;
   employmentLocation?: string;
   workLocation?: string;
@@ -260,12 +259,12 @@ export const createEmployee = createAsyncThunk(
 export const updateEmployeeJobInfo = createAsyncThunk(
   "employees/updateEmployeeJobInfo",
   async (
-    params: { payload: UpdateEmployeeJobInfoPayload },
+    params: { employeeId: string; payload: UpdateEmployeeJobInfoPayload },
     { dispatch, rejectWithValue },
   ) => {
     try {
       await APIService.getInstance().patch(
-        AppConfig.serviceUrls.jobInfo(params.payload.employeeId),
+        AppConfig.serviceUrls.jobInfo(params.employeeId),
         params.payload,
       );
 
