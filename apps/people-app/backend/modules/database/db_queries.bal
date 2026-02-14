@@ -616,10 +616,11 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
 
 # Update employee job information query.
 #
+# + employeeId - Employee ID
 # + payload - Job information update payload
 # + updatedBy - User performing the update
 # + return - sql:ParameterizedQuery - Update query for employee job info
-isolated function updateEmployeeJobInfoQuery(UpdateEmployeeJobInfoPayload payload, string updatedBy)
+isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
@@ -714,7 +715,7 @@ isolated function updateEmployeeJobInfoQuery(UpdateEmployeeJobInfoPayload payloa
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    return sql:queryConcat(query, ` WHERE employee_id = ${payload.employeeId}`);
+    return sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
 }
 
 # Delete additional managers by employee database ID.

@@ -193,13 +193,13 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 
         int lastInsertedEmployeeId = check employeeResult.lastInsertId.ensureType(int);
 
-            sql:ParameterizedQuery[] managerInsertQueries 
-                = from string managerEmail in payload.additionalManagerEmails
-                    select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
+        sql:ParameterizedQuery[] managerInsertQueries 
+            = from string managerEmail in payload.additionalManagerEmails
+                select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
 
-            if managerInsertQueries.length() > 0 {
-                _ = check databaseClient->batchExecute(managerInsertQueries);
-            }
+        if managerInsertQueries.length() > 0 {
+            _ = check databaseClient->batchExecute(managerInsertQueries);
+        }
 
         check commit;
         return lastInsertedEmployeeId;
@@ -241,24 +241,25 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
 
 # Update employee job information.
 #
+# + employeeId - Employee ID
 # + payload - Job information update payload
 # + updatedBy - Updater of the job info record
 # + return - Nil if the update was successful or error
-public isolated function updateEmployeeJobInfo(UpdateEmployeeJobInfoPayload payload, string updatedBy)
+public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
     returns error? {
 
     transaction {
         sql:ExecutionResult executionResult =
-            check databaseClient->execute(updateEmployeeJobInfoQuery(payload, updatedBy));
+            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId,payload, updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
 
-            int employeePkId;
-            string employeeId = payload.employeeId;
-            employeePkId = check int:fromString(re `\D`.replaceAll(employeeId, ""));
+            int employeePkId = check databaseClient->queryRow(
+                `SELECT id FROM employee WHERE employee_id = ${employeeId}`
+            );
             _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
 
             sql:ParameterizedQuery[] insertQueries =
