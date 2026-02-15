@@ -136,9 +136,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetch employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee personal information
-    resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
+    resource function get employees/[string employeeId]/personal\-info(http:RequestContext ctx)
         returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -150,10 +150,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
@@ -162,7 +162,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -439,10 +439,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + payload - Employee personal information update payload
     # + return - HTTP OK or HTTP errors
-    resource function patch employees/[string id]/personal\-info(http:RequestContext ctx,
+    resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload) 
         returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
@@ -457,10 +457,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE],userInfo.groups);
         
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
-                    employeeInfo, id = id);
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -468,7 +468,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn("Employee information not found", id = id);
+            log:printWarn("Employee information not found", employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -479,7 +479,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !hasAdminAccess {
             if employeeInfo.workEmail != userInfo.email {
                 string customErr = "You are not allowed to update personal information of another employee";
-                log:printWarn(customErr, id = id, invokerEmail = userInfo.email, targetEmail = employeeInfo.workEmail);
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email, targetEmail = employeeInfo.workEmail);
                 return <http:Forbidden>{
                     body: {
                         message: customErr
@@ -498,7 +498,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             if hasRestrictedFields {
                 string customErr = "You are not allowed to update one or more of the provided fields";
-                log:printWarn(customErr, id = id, invokerEmail = userInfo.email);
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email);
                 return <http:Forbidden>{
                     body: {
                         message: customErr
@@ -507,10 +507,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -519,7 +519,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -529,8 +529,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload, userInfo.email);
         if updateResult is error {
-            string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
-            log:printError(customErr, updateResult, id = id);
+            string customErr = string `Error occurred while updating employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED

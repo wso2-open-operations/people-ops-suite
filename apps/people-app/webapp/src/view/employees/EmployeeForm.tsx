@@ -53,6 +53,7 @@ import {
   UpdateEmployeeJobInfoPayload,
   fetchEmployee,
   updateEmployeeJobInfo,
+  resetUpdateEmployeeJobInfoState,
   type Employee,
 } from "@slices/employeeSlice/employee";
 import { EmployeeFormSteps } from "@root/src/config/constant";
@@ -322,8 +323,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     return () => {
       dispatch(resetEmployee());
       dispatch(resetPersonalInfo());
+      if (isEditMode) {
+      dispatch(resetUpdateEmployeeJobInfoState());
+    }
     };
-  }, [dispatch]);
+  }, [dispatch, isEditMode]);
 
   useEffect(() => {
     if (!isEditMode || !employeeId) return;
@@ -705,7 +709,9 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                   color="secondary"
                   type="button"
                   disabled={
-                    isSubmitting || employeeSlice.state === State.loading
+                    isSubmitting || 
+                    employeeSlice.state === State.loading || 
+                    employeeSlice.updateJobInfoState === State.loading
                   }
                   onClick={async () => {
                     const errors = await validateForm();
@@ -720,7 +726,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     }
                   }}
                 >
-                  {employeeSlice.state === State.loading
+                  {employeeSlice.state === State.loading || 
+                   employeeSlice.updateJobInfoState === State.loading
                     ? "Saving..."
                     : activeStep === EmployeeFormSteps.length - 1
                       ? isEditMode

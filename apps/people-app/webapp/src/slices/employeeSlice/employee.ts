@@ -159,6 +159,8 @@ interface EmployeesState {
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
   continuousServiceRecord: ContinuousServiceRecordInfo[];
+  updateJobInfoState: State;
+  updateJobInfoMessage: string | null;
 }
 
 const initialState: EmployeesState = {
@@ -169,6 +171,8 @@ const initialState: EmployeesState = {
   employee: null,
   employeesBasicInfo: [],
   continuousServiceRecord: [],
+  updateJobInfoState: State.idle,
+  updateJobInfoMessage: null,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -339,11 +343,17 @@ const EmployeeSlice = createSlice({
       state.employee = null;
       state.employeesBasicInfo = [];
       state.continuousServiceRecord = [];
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
+    },
+    resetUpdateEmployeeJobInfoState(state) {
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
     },
     resetContinuousService(state) {
       state.continuousServiceRecord = [];
@@ -406,18 +416,18 @@ const EmployeeSlice = createSlice({
         state.errorMessage = action.payload as string;
       })
       .addCase(updateEmployeeJobInfo.pending, (state) => {
-        state.state = State.loading;
-        state.stateMessage = "Updating job information...";
+        state.updateJobInfoState = State.loading;
+        state.updateJobInfoMessage = "Updating job information...";
         state.errorMessage = null;
       })
       .addCase(updateEmployeeJobInfo.fulfilled, (state) => {
-        state.state = State.success;
-        state.stateMessage = "Job information updated successfully!";
+        state.updateJobInfoState = State.success;
+        state.updateJobInfoMessage = "Job information updated successfully!";
         state.errorMessage = null;
       })
       .addCase(updateEmployeeJobInfo.rejected, (state, action) => {
-        state.state = State.failed;
-        state.stateMessage = "Failed to update job information!";
+        state.updateJobInfoState = State.failed;
+        state.updateJobInfoMessage = "Failed to update job information!";
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
@@ -444,6 +454,7 @@ export const {
   resetSubmitState,
   resetEmployee,
   resetCreateEmployeeState,
+  resetUpdateEmployeeJobInfoState,
   resetContinuousService,
 } = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

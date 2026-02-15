@@ -498,7 +498,7 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Work location   
     @constraint:String {maxLength: 100}
     string? workLocation = ();
-    # Work email
+    # Work email - WARNING: Identity key used for authorization checks
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? workEmail = ();
     # Start date    
