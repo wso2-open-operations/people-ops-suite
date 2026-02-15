@@ -45,7 +45,7 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 
 # Fetch employee detailed information.
 #
-# + employeeId - Employee ID or employee database ID
+# + employeeId - Employee ID
 # + return - Query to get employee detailed information
 isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 

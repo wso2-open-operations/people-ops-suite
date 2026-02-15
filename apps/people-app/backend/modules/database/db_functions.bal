@@ -257,9 +257,10 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
 
-            int employeePkId = check databaseClient->queryRow(
+            int|error? pkIdResult = databaseClient->queryRow(
                 `SELECT id FROM employee WHERE employee_id = ${employeeId}`
             );
+            int employeePkId = check validateEmployeePkId(pkIdResult, employeeId);
             _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
 
             sql:ParameterizedQuery[] insertQueries =
