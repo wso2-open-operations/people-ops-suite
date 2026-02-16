@@ -39,7 +39,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
-    # + return - authorization:JwtInterceptor, ErrorInterceptor
+    # + return - authorization:JwtInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor()];
 
@@ -195,7 +195,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # 
     # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
-    resource function GET promotions(http:RequestContext ctx, string? employeeEmail, string[]? statusArray)
+    resource function GET promotions(http:RequestContext ctx, string employeeEmail, string[]? statusArray)
         returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
 
         // if there is a status array.

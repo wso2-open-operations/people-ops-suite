@@ -31,6 +31,7 @@ public enum PromotionCyclesStatus {
 // Promotion Request Types.
 public enum PromotionRequestType {
     NORMAL,
+    SPECIAL,
     TIME_BASED,
     INDIVIDUAL_CONTRIBUTOR
 }
