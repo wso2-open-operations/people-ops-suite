@@ -243,7 +243,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if PromotionArray is error {
             string customError = string `Error while retrieving promotions!`;
             log:printError(customError);
-            return <http:Forbidden>{
+            return <http:InternalServerError>{
                 body: {
                     message: customError
                 }

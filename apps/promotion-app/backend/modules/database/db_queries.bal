@@ -279,8 +279,9 @@ isolated function getFullPromotionRecommendationsQuery(int? id, string? employee
     }
 
     if statusArray is string[] {
-        filters.push(<sql:ParameterizedQuery>` prc.promotion_recommendation_status IN (`,
-                sql:arrayFlattenQuery(statusArray), `)  `);
+        filters.push(sql:queryConcat(
+            <sql:ParameterizedQuery>` prc.promotion_recommendation_status IN (`,
+                sql:arrayFlattenQuery(statusArray), `) `));
     }
 
     if cycleID is int {
