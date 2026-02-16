@@ -26,11 +26,6 @@ export interface EmployeeInfo {
   lastPromotedDate: string | null;
 }
 
-export interface test {
-  test : BasicUserInfo
-  
-}
-
 export interface TimeLineData{
   Title: string;
   Date: string;

@@ -14,17 +14,14 @@ type CustomizedTimelineProps = {
 };
 
 export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineProps ) {
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const user = useAppSelector((state: RootState) => state.user);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const employeeHistory = useAppSelector((state: RootState) => state.employee);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const promotions  = useAppSelector((state: RootState) => state.promotion);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const dispatch = useAppDispatch();
     const timelineData: TimeLineData[] = [];
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
         if (!employeeEmail) return;
         
@@ -337,7 +334,7 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                     </Box>
                 </Box>
             )}
-            {promotions.state === "failed" && 
+            {promotions.state === "failed" || 
             employeeHistory.state === "failed" && (
                 <StateWithImage
                     imageUrl="/error.svg"

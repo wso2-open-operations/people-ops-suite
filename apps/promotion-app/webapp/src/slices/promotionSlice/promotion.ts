@@ -39,47 +39,53 @@ const initialState: Promotion = {
 
 export const fetchPromotions = createAsyncThunk(
   "promotion/fetchPromotions",
-  async ({
+  async (
+    {
       employeeEmail,
       statusArray,
     }: {
       employeeEmail?: string;
       statusArray?: string[];
-    }, { dispatch, rejectWithValue }) => {
+    },
+    { dispatch, rejectWithValue }
+  ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<{promotions: PromotionRequest[]}>((resolve, reject) => {
+
+    return new Promise<{ promotions: PromotionRequest[] }>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.retrieveAllPromotionRequests, {
-            params: {
+          params: {
             employeeEmail,
             statusArray: statusArray?.join(","),
           },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-            resolve({
-                promotions: response.data.promotionRequests
-            });
+          resolve({
+            promotions: response.data.promotionRequests,
+          });
         })
         .catch((error) => {
           if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
+            reject(rejectWithValue("Request canceled"));
+            return;
           }
           dispatch(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchEmployees
+                  ? "Failed to fetch promotions."
                   : "An unknown error occurred.",
               type: "error",
             })
           );
-          reject(error.response.data.message);
+          reject(error.response?.data?.message);
         });
     });
   }
 );
+
 
 const PromotionSlice = createSlice({
   name: "promotion",
