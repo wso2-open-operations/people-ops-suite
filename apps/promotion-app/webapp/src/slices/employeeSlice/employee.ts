@@ -126,7 +126,7 @@ export const fetchEmployeeHistory = createAsyncThunk(
             enqueueSnackbarMessage({
               message:
                 error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchEmployees
+                  ? SnackMessage.error.fetchEmployeeHistory
                   : "An unknown error occurred.",
                 type: "error",
               })
