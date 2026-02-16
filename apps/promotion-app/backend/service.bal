@@ -151,7 +151,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         //Get employee History
-        people:EmployeeHistory|error employeeData = check people:fetchEmployeeHistory(employeeWorkEmail);
+        people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(employeeWorkEmail);
 
         if employeeData is error {
             string customError = string `Error while retrieving Employee Data!`;

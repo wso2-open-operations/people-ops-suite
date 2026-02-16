@@ -67,12 +67,6 @@ public type AppConfig record {|
     SupportTeamEmail[] supportTeamEmails;
 |};
 
-# Response type for GET employee-info.
-public type EmployeeInfo record {
-    # Employee Info record
-    EmployeeInfoWithLead employeeInfo;
-};
-
 # Employee information with reporting lead.
 public type EmployeeInfoWithLead record {
     # WSO2 email

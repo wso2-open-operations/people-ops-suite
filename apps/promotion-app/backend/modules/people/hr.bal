@@ -57,7 +57,6 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
                 jobRole,
                 lastPromotedDate,
                 startDate,
-                team,
                 employeeStatus,
                 businessUnit,
                 department,
