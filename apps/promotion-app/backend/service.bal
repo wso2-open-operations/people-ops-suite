@@ -79,11 +79,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(userInfo.email);
         if employeeData is error {
-            string customError = string `Error occurred while retrieving employee history: ${userInfo.email}!`;
-            log:printError(customError, employeeData);
-            return <http:InternalServerError>{
+            log:printError(`Error occurred while retrieving employee history: ${userInfo.email}!`, employeeData);
+            return {
                 body: {
-                    message: customError
+                    message: "Error occurred while retrieving employee history!"
                 }
             };
         }

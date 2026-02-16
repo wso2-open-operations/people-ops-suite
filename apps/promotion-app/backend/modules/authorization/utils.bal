@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import promotion_app.database;
 import promotion_app.people;
 
@@ -45,7 +46,7 @@ public isolated function getUserPrivileges(string email) returns UserAppPrivileg
     UserAppPrivilege userAppPrivileges = {
         employeeData
     };
-    
+
     if applicationUser !is () {
         userAppPrivileges.roles = applicationUser.roles;
         userAppPrivileges.functionalLeadAccessLevels = applicationUser.functionalLeadAccessLevels;
