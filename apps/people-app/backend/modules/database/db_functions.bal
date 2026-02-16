@@ -174,28 +174,28 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
 # + return - Created employee ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
     transaction {
-        sql:ExecutionResult personalInfoResult 
+        sql:ExecutionResult personalInfoResult
             = check databaseClient->execute(addEmployeePersonalInfoQuery(payload.personalInfo, createdBy));
 
         int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
         EmergencyContact[] contacts = payload.personalInfo.emergencyContacts ?: [];
 
-        sql:ParameterizedQuery[] emergencyInsertQueries 
+        sql:ParameterizedQuery[] emergencyInsertQueries
             = from EmergencyContact contact in contacts
-                select addPersonalInfoEmergencyContactQuery(personalInfoId, contact, createdBy);
+            select addPersonalInfoEmergencyContactQuery(personalInfoId, contact, createdBy);
 
         if emergencyInsertQueries.length() > 0 {
             _ = check databaseClient->batchExecute(emergencyInsertQueries);
         }
 
-        sql:ExecutionResult employeeResult 
+        sql:ExecutionResult employeeResult
             = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
 
         int lastInsertedEmployeeId = check employeeResult.lastInsertId.ensureType(int);
 
-        sql:ParameterizedQuery[] managerInsertQueries 
+        sql:ParameterizedQuery[] managerInsertQueries
             = from string managerEmail in payload.additionalManagerEmails
-                select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
+            select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
 
         if managerInsertQueries.length() > 0 {
             _ = check databaseClient->batchExecute(managerInsertQueries);
@@ -250,14 +250,14 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
 
     transaction {
         sql:ExecutionResult executionResult =
-            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId,payload, updatedBy));
+            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
 
         Email[]? additionalManagerEmails = payload.additionalManagerEmails;
         if additionalManagerEmails is Email[] {
 
-            int|error? pkIdResult = databaseClient->queryRow(
+            int|error pkIdResult = databaseClient->queryRow(
                 `SELECT id FROM employee WHERE employee_id = ${employeeId}`
             );
             int employeePkId = check validateEmployeePkId(pkIdResult, employeeId);

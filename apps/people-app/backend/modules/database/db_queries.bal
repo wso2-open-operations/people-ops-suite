@@ -106,7 +106,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.employee_id = ${employeeId};`;  
+        e.employee_id = ${employeeId};`;
 
 # Fetch continuous service record by work email.
 #

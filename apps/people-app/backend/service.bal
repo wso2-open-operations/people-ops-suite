@@ -131,7 +131,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return employeeInfo;    
+        return employeeInfo;
     }
 
     # Fetch employee personal information.
@@ -443,7 +443,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Employee personal information update payload
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
-            database:UpdateEmployeePersonalInfoPayload payload) 
+            database:UpdateEmployeePersonalInfoPayload payload)
         returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -455,8 +455,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE],userInfo.groups);
-        
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
         database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
             log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
@@ -547,7 +547,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Employee job info update payload
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/job\-info(http:RequestContext ctx,
-            database:UpdateEmployeeJobInfoPayload payload) 
+            database:UpdateEmployeeJobInfoPayload payload)
         returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
