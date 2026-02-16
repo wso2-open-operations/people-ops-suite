@@ -66,7 +66,7 @@ export interface JoinedDetails {
   startedBusinessUnit: string;
   startedTeam: string;
   startedSubTeam: string;
-  startedreportingLead: string;
+  startedReportingLead: string;
 }
 
 const initialState: AuthState = {

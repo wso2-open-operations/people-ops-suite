@@ -334,8 +334,8 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
                     </Box>
                 </Box>
             )}
-            {promotions.state === "failed" || 
-            employeeHistory.state === "failed" && (
+            {(promotions.state === "failed" || 
+            employeeHistory.state === "failed") && (
                 <StateWithImage
                     imageUrl="/error.svg"
                     message="Unable to load promotion history."

@@ -96,16 +96,19 @@ export const fetchEmployees = createAsyncThunk(
 
 export const fetchEmployeeHistory = createAsyncThunk(
   "employee/fetchEmployeeHistory",
-  async ({
-      employeeWorkEmail
+  async (
+    {
+      employeeWorkEmail,
     }: {
       employeeWorkEmail: string;
-    }, { dispatch, rejectWithValue }) => {
+    },
+    { dispatch, rejectWithValue }
+  ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<EmployeeInfoWithLead>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.employeeHistory, {
+        .get(AppConfig.serviceUrls.getEmployeeHistory, {
           params: {
             employeeWorkEmail,
           },
@@ -116,7 +119,8 @@ export const fetchEmployeeHistory = createAsyncThunk(
         })
         .catch((error) => {
           if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
+            reject(rejectWithValue("Request canceled"));
+            return;
           }
           dispatch(
             enqueueSnackbarMessage({
@@ -124,13 +128,14 @@ export const fetchEmployeeHistory = createAsyncThunk(
                 error.response?.status === HttpStatusCode.InternalServerError
                   ? SnackMessage.error.fetchEmployees
                   : "An unknown error occurred.",
-              type: "error",
-            })
-          );
-          reject(error.response.data.message);
+                type: "error",
+              })
+            );
+          reject(error.response?.data?.message);
         });
     });
   }
+
 );
 
 const EmployeeSlice = createSlice({
