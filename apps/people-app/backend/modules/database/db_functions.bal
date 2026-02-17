@@ -260,7 +260,8 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
             int|error pkIdResult = databaseClient->queryRow(
                 `SELECT id FROM employee WHERE employee_id = ${employeeId}`
             );
-            int employeePkId = check validateEmployeePkId(pkIdResult, employeeId);
+
+            int employeePkId = check pkIdResult.ensureType(int);
             _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
 
             sql:ParameterizedQuery[] insertQueries =

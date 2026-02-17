@@ -73,18 +73,3 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
     }
     return;
 }
-
-# Validate and extract employee primary key from query result.
-#
-# + result - Result from database query
-# + employeeId - Employee ID for error message context
-# + return - Employee primary key or error
-public isolated function validateEmployeePkId(int|error? result, string employeeId) returns int|error {
-    if result is () {
-        return error(string `Employee not found with ID: ${employeeId}`);
-    }
-    if result is error {
-        return error(string `Failed to fetch employee primary key for ID: ${employeeId}`, result);
-    }
-    return result;
-}
