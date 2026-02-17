@@ -500,3 +500,149 @@ public type UpdateVehiclePayload record {|
     # User who created the vehicle record
     string updatedBy;
 |};
+
+# [Database] Parking floor (configurable floors with O2C price).
+public type ParkingFloor record {|
+    # Floor identifier
+    int id;
+    # Floor name (e.g. "Ground Floor")
+    string name;
+    # Display order of the floor
+    int displayOrder;
+    # Number of coins per slot on the floor
+    decimal coinsPerSlot;
+    # Whether the floor is active or not
+    boolean isActive;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking floor record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking floor record
+    string updatedBy;
+|};
+
+# [Database] Parking slot (belongs to a floor).
+public type ParkingSlot record {|
+    # Slot identifier (e.g. B-01)
+    string slotId;
+    # Floor identifier
+    int floorId;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking slot record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking slot record
+    string updatedBy;
+|};
+
+# [Database] Parking slot with floor details and O2C price (for API).
+public type ParkingSlotWithFloor record {|
+    # Slot identifier 
+    string slotId;
+    # Floor identifier
+    int floorId;
+    # Floor name 
+    string floorName;
+    # Number of coins per slot
+    decimal coinsPerSlot;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking slot record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking slot record
+    string updatedBy;
+|};
+
+# [Database] Parking reservation.
+public type ParkingReservation record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Payload to create a parking reservation (PENDING).
+public type AddParkingReservationPayload record {|
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # User who created the parking reservation record
+    string createdBy;
+|};
+
+# [Database] Payload to confirm reservation (after payment).
+public type ConfirmParkingReservationPayload record {|
+    # Reservation identifier
+    int reservationId;
+    # Transaction hash
+    string? transactionHash;
+    # User who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Parking reservation with slot and vehicle details (for confirmation/success page).
+public type ParkingReservationDetails record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID 
+    int vehicleId;
+    # Vehicle registration number
+    string vehicleRegistrationNumber;
+    # Vehicle type
+    string? vehicleType;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Floor name (e.g. "Ground Floor")
+    string floorName;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};

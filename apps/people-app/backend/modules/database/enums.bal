@@ -25,3 +25,9 @@ public enum VehicleStatus {
     ACTIVE,
     INACTIVE
 }
+
+# [Database] Enum for parking reservation status.
+public enum ParkingReservationStatus {
+    PENDING,
+    CONFIRMED
+}
