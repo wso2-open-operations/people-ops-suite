@@ -18,18 +18,13 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import { Link, useLocation } from "react-router-dom";
 
 export default function BasicBreadcrumbs() {
-  const MAX_LENGTH = 5;
+  const MAX_LENGTH = 12;
 
   const location = useLocation();
   const theme = useTheme();
 
   const { pathname } = location;
   const pathnames = pathname === "/" ? [] : pathname.split("/");
-
-  // --- HARDCODED COLORS (Fix for Old Theme) ---
-  const isLight = theme.palette.mode === "light";
-  const colorP3 = isLight ? "#666666" : "#ababab"; // Caption / Inactive
-  const colorP2 = isLight ? "#333333" : "#ffffff"; // Hover / Active
 
   const renderBreadCrumbs = () => {
     let routeTo = "";
@@ -41,7 +36,6 @@ export default function BasicBreadcrumbs() {
           sx={{
             "& .MuiBreadcrumbs-separator": {
               mx: "8px",
-              color: colorP3, // Applied here
             },
           }}
         >
@@ -55,8 +49,7 @@ export default function BasicBreadcrumbs() {
                 <Typography
                   key={`${path}-short`}
                   variant="caption"
-                  // FIX 1: Hardcoded Color
-                  sx={{ color: colorP3 }}
+                  sx={{ color: theme.palette.customText.primary.p3.active }}
                 >
                   {path.slice(0, 4)}...
                 </Typography>
@@ -64,8 +57,7 @@ export default function BasicBreadcrumbs() {
                 <Typography
                   key={`${path}-full`}
                   variant="caption"
-                  // FIX 2: Hardcoded Color
-                  sx={{ color: colorP3 }}
+                  sx={{ color: theme.palette.customText.primary.p3.active }}
                 >
                   {path}
                 </Typography>
@@ -84,8 +76,7 @@ export default function BasicBreadcrumbs() {
                     display: "flex",
                     alignItems: "center",
                     "&:hover": {
-                      // FIX 3: Hardcoded Hover Color
-                      color: colorP2,
+                      color: theme.palette.customText.primary.p2.active,
                     },
                   }}
                 >
@@ -105,8 +96,7 @@ export default function BasicBreadcrumbs() {
                   display: "flex",
                   alignItems: "center",
                   "&:hover": {
-                    // FIX 4: Hardcoded Hover Color
-                    color: colorP2,
+                    color: theme.palette.customText.primary.p2.active,
                   },
                 }}
               >
@@ -122,6 +112,7 @@ export default function BasicBreadcrumbs() {
     <Box
       sx={{
         ml: -0.5,
+        display: { xs: "none", md: "flex" },
       }}
     >
       {renderBreadCrumbs()}

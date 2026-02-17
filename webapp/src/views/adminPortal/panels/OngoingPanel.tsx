@@ -129,7 +129,7 @@ const OngoingPanel = () => {
                   flexDirection="column"
                   justifyContent="center"
                   alignItems="center"
-                  sx={{ minHeight: "calc(580px)" }}
+                  sx={{ height: "100%" , textAlign: "center" }}
                 >
                   <Box paddingBottom={2}>PAR cycle not in progress.</Box>
                   <Box>
