@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-const ERROR_USER_INFORMATION_HEADER_NOT_FOUND = "User information header not found";
-const ERROR_PERSONAL_INFO_UPDATE_FAILED = "Failed to update personal information";
-const ERROR_EMPLOYEE_INFO_UPDATE_FAILED = "Failed to update employee job information";
-const ERROR_EMPLOYEE_CREATION_FAILED = "Error occurred while creating a new employee";
+import EmployeeForm from "../EmployeeForm";
+
+export default function EmployeeEdit() {
+  return <EmployeeForm mode="edit" />;
+}

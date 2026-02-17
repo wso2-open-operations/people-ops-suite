@@ -284,7 +284,7 @@ CREATE TABLE `employee` (
   `employment_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
   `work_email` VARCHAR(254) NOT NULL,
-  `start_date` DATE NULL,
+  `start_date` DATE NOT NULL,
   `secondary_job_title` VARCHAR(100) NOT NULL,
   `manager_email` VARCHAR(254) NOT NULL,
   `employee_status` VARCHAR(50) NOT NULL,
@@ -296,11 +296,11 @@ CREATE TABLE `employee` (
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  `employment_type_id` INT NULL,
+  `employment_type_id` INT NOT NULL,
   `designation_id` INT NOT NULL,
   `office_id` INT NOT NULL,
   `team_id` INT NOT NULL,
-  `sub_team_id` INT NULL,
+  `sub_team_id` INT NOT NULL,
   `business_unit_id` INT NOT NULL,
   `unit_id` INT NULL,
   `personal_info_id` INT NOT NULL,
@@ -386,17 +386,17 @@ DELIMITER ;
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `employee_id` INT NOT NULL,
+  `employee_pk_id` INT NOT NULL,
   `additional_manager_email` VARCHAR(254) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_eam_employee_email` (`employee_id`, `additional_manager_email`),
+  UNIQUE KEY `uk_eam_employee_email` (`employee_pk_id`, `additional_manager_email`),
   KEY `idx_eam_manager_email` (`additional_manager_email`),
   CONSTRAINT `fk_eam_employee`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

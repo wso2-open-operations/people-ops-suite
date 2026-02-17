@@ -27,6 +27,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Accordion,
   AccordionDetails,
@@ -67,6 +68,7 @@ import {
   getIn,
 } from "formik";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 
@@ -196,6 +198,7 @@ export default function Me({
   readOnly = false,
 }: { employeeId?: string; readOnly?: boolean } = {}) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { showConfirmation } = useConfirmationModalContext();
   const { userInfo } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
@@ -427,63 +430,84 @@ export default function Me({
           direction={{ xs: "column", sm: "row" }}
           spacing={2.5}
           alignItems={{ xs: "flex-start", sm: "center" }}
+          justifyContent="space-between"
         >
-          <Avatar
-            src={employee?.employeeThumbnail ?? undefined}
-            sx={(theme) => avatarSx(theme)}
+          <Stack
+            direction="row"
+            spacing={2.5}
+            alignItems="center"
+            sx={{ minWidth: 0, flex: 1 }}
           >
-            {employee?.firstName?.[0]?.toUpperCase() ?? "M"}
-          </Avatar>
-
-          <Box sx={{ flex: 1, minWidth: 0, pl: 0.5 }}>
-            <Typography variant="h4" fontWeight={850} noWrap>
-              {employee
-                ? `${employee.firstName} ${employee.lastName}`
-                : "My Profile"}
-            </Typography>
-
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
+            <Avatar
+              src={employee?.employeeThumbnail ?? undefined}
+              sx={(theme) => avatarSx(theme)}
             >
-              {employee?.employeeId && (
-                <Chip
-                  size="medium"
-                  icon={<BadgeOutlined />}
-                  label={`ID: ${employee.employeeId}`}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+              {employee?.firstName?.[0]?.toUpperCase() ?? "M"}
+            </Avatar>
 
-              {employee?.designation && (
-                <Chip
-                  size="medium"
-                  icon={<WorkOutline />}
-                  label={employee.designation}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h4" fontWeight={850} noWrap>
+                {employee
+                  ? `${employee.firstName} ${employee.lastName}`
+                  : "My Profile"}
+              </Typography>
 
-              {employee?.workEmail && (
-                <Chip
-                  size="medium"
-                  icon={<EmailOutlined />}
-                  label={employee.workEmail}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
+              >
+                {employee?.employeeId && (
+                  <Chip
+                    size="medium"
+                    icon={<BadgeOutlined />}
+                    label={`ID: ${employee.employeeId}`}
+                    sx={(theme) => chipSx(theme)}
+                  />
+                )}
 
-              {employee?.businessUnit && (
-                <Chip
-                  size="medium"
-                  icon={<BusinessOutlined />}
-                  label={employee.businessUnit}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
-            </Stack>
-          </Box>
+                {employee?.designation && (
+                  <Chip
+                    size="medium"
+                    icon={<WorkOutline />}
+                    label={employee.designation}
+                    sx={(theme) => chipSx(theme)}
+                  />
+                )}
+
+                {employee?.workEmail && (
+                  <Chip
+                    size="medium"
+                    icon={<EmailOutlined />}
+                    label={employee.workEmail}
+                    sx={(theme) => chipSx(theme)}
+                  />
+                )}
+
+                {employee?.businessUnit && (
+                  <Chip
+                    size="medium"
+                    icon={<BusinessOutlined />}
+                    label={employee.businessUnit}
+                    sx={(theme) => chipSx(theme)}
+                  />
+                )}
+              </Stack>
+            </Box>
+          </Stack>
+          {readOnly && targetEmployeeId && (
+            <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<EditOutlinedIcon />}
+                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
+              >
+                Edit
+              </Button>
+            </Box>
+          )}
         </Stack>
       </Paper>
       <Accordion

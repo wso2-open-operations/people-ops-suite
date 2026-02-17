@@ -30,6 +30,10 @@ const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
 # URL validation regex pattern
 const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 
+# Constrained email string type.
+@constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+public type Email string;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -102,20 +106,36 @@ public type Employee record {|
     string? agreementEndDate;
     # Employment type
     string employmentType;
+    # Employment type ID
+    int employmentTypeId;
+    # Career Function ID
+    int careerFunctionId;
     # Designation
     string designation;
+    # Designation ID
+    int designationId;
     # Job role of the user
     string secondaryJobTitle;
     # Office
     string office;
+    # Office ID
+    int officeId;
     # Business unit
     string businessUnit;
+    # Business unit ID
+    int businessUnitId;
     # Team
     string team;
+    # Team ID
+    int teamId;
     # Sub-team
     string subTeam;
+    # Sub-team ID
+    int subTeamId;
     # Unit
     string? unit;
+    # Unit ID
+    int? unitId;
     # Computed field: number of subordinates this employee manages
     int subordinateCount;
 |};
@@ -380,10 +400,7 @@ public type CreateEmployeePayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string managerEmail;
     # Additional manager emails
-    string[] additionalManagerEmails = [];
-    # Employee status
-    @constraint:String {maxLength: 50}
-    string employeeStatus;
+    Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
     @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
@@ -410,12 +427,35 @@ public type CreateEmployeePayload record {|
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
+    # Employee Status
+    EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};
 
 # Employee personal information update payload.
 public type UpdateEmployeePersonalInfoPayload record {|
+    # National Identity Card number or Passport
+    @constraint:String {maxLength: 100}
+    string? nicOrPassport = ();
+    # First name
+    @constraint:String {maxLength: 100}
+    string? firstName = ();
+    # Last name
+    @constraint:String {maxLength: 100}
+    string? lastName = ();
+    # Title (Mr./Ms./Dr./etc.)
+    @constraint:String {maxLength: 20}
+    string? title = ();
+    # Date of birth
+    @constraint:String {pattern: re `^\d{4}-\d{2}-\d{2}$`}
+    string? dob = ();
+    # Gender of the person
+    @constraint:String {maxLength: 20}
+    string? gender = ();
+    # Nationality
+    @constraint:String {maxLength: 100}
+    string? nationality = ();
     # Personal email address
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
@@ -445,6 +485,61 @@ public type UpdateEmployeePersonalInfoPayload record {|
     string? country = ();
     # Emergency contacts
     EmergencyContact[]? emergencyContacts = ();
+|};
+
+# Employee job information update payload.
+public type UpdateEmployeeJobInfoPayload record {|
+    # Employee's Provident Fund number
+    @constraint:String {maxLength: 45}
+    string? epf = ();
+    # Employee location
+    @constraint:String {maxLength: 255}
+    string? employmentLocation = ();
+    # Work location   
+    @constraint:String {maxLength: 100}
+    string? workLocation = ();
+    # Work email - WARNING: Identity key used for authorization checks
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? workEmail = ();
+    # Start date    
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? startDate = ();
+    # Secondary job title
+    @constraint:String {maxLength: 100}
+    string? secondaryJobTitle = ();
+    # Manager email
+    @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
+    string? managerEmail = ();
+    # Additional manager emails
+    Email[]? additionalManagerEmails = ();
+    # Employee thumbnail URL
+    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
+    string? employeeThumbnail = ();
+    # Probation end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? probationEndDate = ();
+    # Agreement end date
+    @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
+    string? agreementEndDate = ();
+    # Employment type ID
+    int? employmentTypeId = ();
+    # Designation ID
+    int? designationId = ();
+    # Office ID
+    int? officeId = ();
+    # Team ID
+    int? teamId = ();
+    # Sub-team ID
+    int? subTeamId = ();
+    # Business unit ID
+    int? businessUnitId = ();
+    # Unit ID
+    int? unitId = ();
+    # Continuous service record
+    @constraint:String {maxLength: 99}
+    string? continuousServiceRecord = ();
+    # Employee Status
+    EmployeeStatus? employeeStatus = ();
 |};
 
 # [Database] Insert type for vehicle.

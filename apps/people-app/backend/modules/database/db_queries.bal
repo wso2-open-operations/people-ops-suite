@@ -72,23 +72,31 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.probation_end_date AS probationEndDate,
         e.agreement_end_date AS agreementEndDate,
         et.name AS employmentType,
+        e.employment_type_id AS employmentTypeId,
+        d.career_function_id AS careerFunctionId,
         d.designation AS designation,
+        e.designation_id AS designationId,
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
+        e.office_id AS officeId,
         bu.name AS businessUnit,
+        e.business_unit_id AS businessUnitId,
         t.name AS team,
+        e.team_id AS teamId,
         st.name AS subTeam,
-        u.name AS unit
+        e.sub_team_id AS subTeamId,
+        u.name AS unit,
+        e.unit_id AS unitId
     FROM
         employee e
         LEFT JOIN (
             SELECT 
-                employee_id,
+                employee_pk_id,
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
-            GROUP BY employee_id
-        ) eam ON eam.employee_id = e.id
+            GROUP BY employee_pk_id
+        ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -98,7 +106,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
-        e.employee_id = ${employeeId};`;  
+        e.employee_id = ${employeeId};`;
 
 # Fetch continuous service record by work email.
 #
@@ -125,12 +133,12 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
     FROM employee e
         LEFT JOIN (
             SELECT 
-                employee_id,
+                employee_pk_id,
                 GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                 AS additionalManagerEmails
             FROM employee_additional_managers
-            GROUP BY employee_id
-        ) eam ON eam.employee_id = e.id
+            GROUP BY employee_pk_id
+        ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
         INNER JOIN office o ON e.office_id = o.id
@@ -467,70 +475,124 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${createdBy}
         );`;
 
-# Add employee additional manager query.
-#
-# + employeeId - Employee primary key
-# + additionalManagerEmail - Additional manager email
-# + createdBy - Creator of the additional manager record
-# + return - Additional manager insert query
-isolated function addEmployeeAdditionalManagerQuery(int employeeId, string additionalManagerEmail, string createdBy)
-    returns sql:ParameterizedQuery =>
-    `INSERT INTO employee_additional_managers
-        (
-            employee_id,
-            additional_manager_email,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            ${employeeId},
-            ${additionalManagerEmail},
-            ${createdBy},
-            ${createdBy}
-        );`;
-
 # Update employee personal information query.
 #
 # + id - Personal info ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
-# + return - Personal info update query
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy) 
-    returns sql:ParameterizedQuery =>
-    `UPDATE
-        personal_info
-     SET
-        personal_email = ${payload.personalEmail},
-        personal_phone = ${payload.personalPhone},
-        resident_number = ${payload.residentNumber},
-        address_line_1 = ${payload.addressLine1},
-        address_line_2 = ${payload.addressLine2},
-        city = ${payload.city},
-        state_or_province = ${payload.stateOrProvince},
-        postal_code = ${payload.postalCode},
-        country = ${payload.country},
-        updated_by = ${updatedBy}
-     WHERE
-        id = ${id};`;
+# + return - sql:ParameterizedQuery - Update query for personal info
+isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE personal_info SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.nicOrPassport != () {
+        updates.push(`nic_or_passport = ${payload.nicOrPassport}`);
+    }
+
+    if payload.firstName != () {
+        updates.push(`first_name = ${payload.firstName}`);
+    }
+
+    if payload.lastName != () {
+        updates.push(`last_name = ${payload.lastName}`);
+    }
+
+    if payload.title != () {
+        updates.push(`title = ${payload.title}`);
+    }
+
+    if payload.dob != () {
+        updates.push(`dob = ${payload.dob}`);
+    }
+
+    if payload.gender != () {
+        updates.push(`gender = ${payload.gender}`);
+    }
+
+    if payload.nationality != () {
+        updates.push(`nationality = ${payload.nationality}`);
+    }
+
+    if payload.personalEmail is () || payload.personalEmail == "" {
+        updates.push(`personal_email = NULL`);
+    } else {
+        updates.push(`personal_email = ${payload.personalEmail}`);
+    }
+
+    if payload.personalPhone is () || payload.personalPhone == "" {
+        updates.push(`personal_phone = NULL`);
+    } else {
+        updates.push(`personal_phone = ${payload.personalPhone}`);
+    }
+
+    if payload.residentNumber is () || payload.residentNumber == "" {
+        updates.push(`resident_number = NULL`);
+    } else {
+        updates.push(`resident_number = ${payload.residentNumber}`);
+    }
+
+    if payload.addressLine1 is () || payload.addressLine1 == "" {
+        updates.push(`address_line_1 = NULL`);
+    } else {
+        updates.push(`address_line_1 = ${payload.addressLine1}`);
+    }
+
+    if payload.addressLine2 is () || payload.addressLine2 == "" {
+        updates.push(`address_line_2 = NULL`);
+    } else {
+        updates.push(`address_line_2 = ${payload.addressLine2}`);
+    }
+
+    if payload.city is () || payload.city == "" {
+        updates.push(`city = NULL`);
+    } else {
+        updates.push(`city = ${payload.city}`);
+    }
+
+    if payload.stateOrProvince is () || payload.stateOrProvince == "" {
+        updates.push(`state_or_province = NULL`);
+    } else {
+        updates.push(`state_or_province = ${payload.stateOrProvince}`);
+    }
+
+    if payload.postalCode is () || payload.postalCode == "" {
+        updates.push(`postal_code = NULL`);
+    } else {
+        updates.push(`postal_code = ${payload.postalCode}`);
+    }
+
+    if payload.country is () || payload.country == "" {
+        updates.push(`country = NULL`);
+    } else {
+        updates.push(`country = ${payload.country}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE id = ${id}`);
+    return finalQuery;
+}
 
 # Delete emergency contacts by personal info id.
-# 
+#
 # + personalInfoId - Personal info primary key
-# + return - Delete emergency contacts query
+# + return - sql:ParameterizedQuery - Delete query for emergency contacts
 isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
     `DELETE 
         FROM personal_info_emergency_contacts
             WHERE personal_info_id = ${personalInfoId};`;
 
 # Insert an emergency contact for a personal_info id.
-# 
+#
 # + personalInfoId - Personal info primary key
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
-# + return - Insert emergency contact query
+# + return - sql:ParameterizedQuery - Insert query for emergency contacts
 isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
-    string createdBy) returns sql:ParameterizedQuery =>`
+        string createdBy) returns sql:ParameterizedQuery => `
         INSERT INTO personal_info_emergency_contacts
             (
                 personal_info_id,
@@ -551,6 +613,142 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
                 ${createdBy},
                 ${createdBy}
             );`;
+
+# Update employee job information query.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - User performing the update
+# + return - sql:ParameterizedQuery - Update query for employee job info
+isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
+    sql:ParameterizedQuery[] updates = [];
+
+    if payload.epf is () || payload.epf == "" {
+        updates.push(`epf = NULL`);
+    } else {
+        updates.push(`epf = ${payload.epf}`);
+    }
+
+    if payload.employmentLocation != () {
+        updates.push(`employment_location = ${payload.employmentLocation}`);
+    }
+
+    if payload.workLocation != () {
+        updates.push(`work_location = ${payload.workLocation}`);
+    }
+
+    if payload.workEmail != () {
+        updates.push(`work_email = ${payload.workEmail}`);
+    }
+
+    if payload.startDate != () {
+        updates.push(`start_date = ${payload.startDate}`);
+    }
+
+    if payload.secondaryJobTitle != () {
+        updates.push(`secondary_job_title = ${payload.secondaryJobTitle}`);
+    }
+
+    if payload.managerEmail != () {
+        updates.push(`manager_email = ${payload.managerEmail}`);
+    }
+
+    if payload.employeeThumbnail is () || payload.employeeThumbnail == "" {
+        updates.push(`employee_thumbnail = NULL`);
+    } else {
+        updates.push(`employee_thumbnail = ${payload.employeeThumbnail}`);
+    }
+
+    if payload.probationEndDate is () || payload.probationEndDate == "" {
+        updates.push(`probation_end_date = NULL`);
+    } else {
+        updates.push(`probation_end_date = ${payload.probationEndDate}`);
+    }
+
+    if payload.agreementEndDate is () || payload.agreementEndDate == "" {
+        updates.push(`agreement_end_date = NULL`);
+    } else {
+        updates.push(`agreement_end_date = ${payload.agreementEndDate}`);
+    }
+
+    if payload.employmentTypeId != () {
+        updates.push(`employment_type_id = ${payload.employmentTypeId}`);
+    }
+    if payload.designationId != () {
+        updates.push(`designation_id = ${payload.designationId}`);
+    }
+    if payload.officeId != () {
+        updates.push(`office_id = ${payload.officeId}`);
+
+    }
+    if payload.teamId != () {
+        updates.push(`team_id = ${payload.teamId}`);
+
+    }
+    if payload.subTeamId != () {
+        updates.push(`sub_team_id = ${payload.subTeamId}`);
+    }
+
+    if payload.businessUnitId != () {
+        updates.push(`business_unit_id = ${payload.businessUnitId}`);
+    }
+
+    if payload.unitId is () {
+        updates.push(`unit_id = NULL`);
+    } else {
+        updates.push(`unit_id = ${payload.unitId}`);
+    }
+
+    if payload.continuousServiceRecord is () || payload.continuousServiceRecord == "" {
+        updates.push(`continuous_service_record = NULL`);
+    } else {
+        updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
+    }
+
+    if payload.employeeStatus != () {
+        updates.push(`employee_status = ${payload.employeeStatus}`);
+    }
+
+    updates.push(`updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
+    return sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
+}
+
+# Delete additional managers by employee database ID.
+#
+# + employeePkId - Employee ID
+# + return - sql:ParameterizedQuery - Delete query for all additional managers
+isolated function deleteAdditionalManagersByEmployeeIdQuery(int employeePkId) returns sql:ParameterizedQuery =>
+    `DELETE FROM employee_additional_managers
+      WHERE 
+        employee_pk_id = ${employeePkId};`;
+
+# Add an additional manager for an employee.
+#
+# + id - Employee ID
+# + email - Additional manager email address
+# + actor - User creating the additional manager record
+# + return - sql:ParameterizedQuery - Insert query for an additional managers
+isolated function addEmployeeAdditionalManagerQuery(int id, string email, string actor)
+    returns sql:ParameterizedQuery =>
+    `INSERT INTO employee_additional_managers
+        (
+            employee_pk_id,
+            additional_manager_email,
+            created_by,
+            updated_by
+        )
+      VALUES
+        (
+            ${id}, 
+            ${email}, 
+            ${actor}, 
+            ${actor}
+        );`;
 
 # Build query to fetch vehicles.
 #

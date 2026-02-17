@@ -23,8 +23,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
-interface Employee {
-  id: number;
+export interface Employee {
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -48,10 +47,17 @@ interface Employee {
   subTeam: string | null;
   unit: string | null;
   subordinateCount: number;
+  employmentTypeId: number;
+  careerFunctionId: number;
+  designationId: number;
+  officeId: number;
+  businessUnitId: number;
+  teamId: number;
+  subTeamId: number;
+  unitId: number | null;
 }
 
 export interface EmployeeBasicInfo {
-  id: number;
   employeeId: string;
   firstName: string;
   lastName: string;
@@ -90,7 +96,6 @@ export type CreateEmployeePayload = {
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string[];
-  employeeStatus: string;
   employeeThumbnail?: string;
   subordinateCount?: number;
   probationEndDate?: string;
@@ -106,8 +111,29 @@ export type CreateEmployeePayload = {
   personalInfo: CreatePersonalInfoPayload;
 };
 
+export type UpdateEmployeeJobInfoPayload = {
+  epf?: string | null;
+  employmentLocation?: string;
+  workLocation?: string;
+  workEmail?: string;
+  startDate?: string;
+  secondaryJobTitle?: string;
+  managerEmail?: string;
+  additionalManagerEmails?: string[];
+  employeeThumbnail?: string | null;
+  probationEndDate?: string | null;
+  agreementEndDate?: string | null;
+  employmentTypeId?: number | null;
+  designationId?: number | null;
+  officeId?: number | null;
+  teamId?: number | null;
+  subTeamId?: number | null;
+  businessUnitId?: number | null;
+  unitId?: number | null;
+  continuousServiceRecord?: string | null;
+};
+
 export interface ContinuousServiceRecordInfo {
-  id: number;
   employeeId: string;
   firstName: string | null;
   lastName: string | null;
@@ -133,6 +159,8 @@ interface EmployeesState {
   employee: Employee | null;
   employeesBasicInfo: EmployeeBasicInfo[];
   continuousServiceRecord: ContinuousServiceRecordInfo[];
+  updateJobInfoState: State;
+  updateJobInfoMessage: string | null;
 }
 
 const initialState: EmployeesState = {
@@ -143,6 +171,8 @@ const initialState: EmployeesState = {
   employee: null,
   employeesBasicInfo: [],
   continuousServiceRecord: [],
+  updateJobInfoState: State.idle,
+  updateJobInfoMessage: null,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -230,6 +260,45 @@ export const createEmployee = createAsyncThunk(
   },
 );
 
+export const updateEmployeeJobInfo = createAsyncThunk(
+  "employees/updateEmployeeJobInfo",
+  async (
+    params: { employeeId: string; payload: UpdateEmployeeJobInfoPayload },
+    { dispatch, rejectWithValue },
+  ) => {
+    try {
+      await APIService.getInstance().patch(
+        AppConfig.serviceUrls.jobInfo(params.employeeId),
+        params.payload,
+      );
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: "Job information updated successfully!",
+          type: "success",
+        }),
+      );
+
+      return;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Failed to update employee job information"
+          : error.response?.data?.message ||
+            "An unknown error occurred while updating job information.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 export const fetchContinuousServiceRecord = createAsyncThunk(
   "employees/fetchContinuousServiceRecord",
   async (workEmail: string, { dispatch, rejectWithValue }) => {
@@ -274,11 +343,17 @@ const EmployeeSlice = createSlice({
       state.employee = null;
       state.employeesBasicInfo = [];
       state.continuousServiceRecord = [];
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
     },
     resetCreateEmployeeState(state) {
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
+    },
+    resetUpdateEmployeeJobInfoState(state) {
+      state.updateJobInfoState = State.idle;
+      state.updateJobInfoMessage = null;
     },
     resetContinuousService(state) {
       state.continuousServiceRecord = [];
@@ -340,6 +415,21 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Failed to create employee.";
         state.errorMessage = action.payload as string;
       })
+      .addCase(updateEmployeeJobInfo.pending, (state) => {
+        state.updateJobInfoState = State.loading;
+        state.updateJobInfoMessage = "Updating job information...";
+        state.errorMessage = null;
+      })
+      .addCase(updateEmployeeJobInfo.fulfilled, (state) => {
+        state.updateJobInfoState = State.success;
+        state.updateJobInfoMessage = "Job information updated successfully!";
+        state.errorMessage = null;
+      })
+      .addCase(updateEmployeeJobInfo.rejected, (state, action) => {
+        state.updateJobInfoState = State.failed;
+        state.updateJobInfoMessage = "Failed to update job information!";
+        state.errorMessage = action.payload as string;
+      })
       .addCase(fetchContinuousServiceRecord.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Fetching continuous service record...";
@@ -364,6 +454,7 @@ export const {
   resetSubmitState,
   resetEmployee,
   resetCreateEmployeeState,
+  resetUpdateEmployeeJobInfoState,
   resetContinuousService,
 } = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

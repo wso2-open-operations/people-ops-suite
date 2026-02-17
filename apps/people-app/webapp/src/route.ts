@@ -58,7 +58,7 @@ export const routes: RouteObjectWithRole[] = [
     path: "/onboarding",
     text: "Onboarding",
     icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.employees),
+    element: React.createElement(View.employeeOnboarding),
     allowRoles: [Role.ADMIN],
   },
   // Todo: Uncomment when help view is ready
@@ -75,6 +75,14 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.employeeDetails),
+    allowRoles: [Role.ADMIN],
+    hideFromSidebar: true,
+  },
+  {
+    path: "/employees/:employeeId/edit",
+    text: "Edit Employee",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeeEdit),
     allowRoles: [Role.ADMIN],
     hideFromSidebar: true,
   },

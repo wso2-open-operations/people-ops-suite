@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -58,7 +58,7 @@ const SectionHeader = React.memo(
             borderRadius: 1.5,
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.secondary.contrastText,
-              0.15
+              0.15,
             )}, ${alpha(theme.palette.secondary.contrastText, 0.08)})`,
             color: theme.palette.secondary.contrastText,
           }}
@@ -75,7 +75,7 @@ const SectionHeader = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const ReviewField = React.memo(
@@ -109,7 +109,7 @@ const ReviewField = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const MainSectionTitle = React.memo(({ title }: { title: string }) => {
@@ -183,7 +183,7 @@ export default function ReviewStep() {
     }
     if (values.careerFunctionId && values.careerFunctionId !== 0) {
       dispatch(
-        fetchDesignations({ careerFunctionId: values.careerFunctionId })
+        fetchDesignations({ careerFunctionId: values.careerFunctionId }),
       );
     }
   }, [
@@ -209,7 +209,7 @@ export default function ReviewStep() {
           ? alpha(theme.palette.common.white, 0.02)
           : alpha(theme.palette.common.black, 0.01),
     }),
-    [theme]
+    [theme],
   );
 
   const icons = useMemo(
@@ -225,7 +225,7 @@ export default function ReviewStep() {
       supervisor: <SupervisorAccountOutlined fontSize="small" />,
       phone: <PhoneOutlined fontSize="small" />,
     }),
-    []
+    [],
   );
 
   // Map IDs to Names for display
@@ -239,7 +239,7 @@ export default function ReviewStep() {
       designation:
         designations.find((cf) => cf.id === values.designationId)
           ?.designation || null,
-      careerFunctions:
+      careerFunction:
         careerFunctions.find((cf) => cf.id === values.careerFunctionId)
           ?.careerFunction || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
@@ -264,7 +264,7 @@ export default function ReviewStep() {
       values.careerFunctionId,
       values.officeId,
       values.employmentTypeId,
-    ]
+    ],
   );
 
   return (
@@ -440,7 +440,7 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Career Function"
-              value={mappedNames.careerFunctions}
+              value={mappedNames.careerFunction}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>

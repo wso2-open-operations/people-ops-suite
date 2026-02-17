@@ -35,10 +35,10 @@ public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|
 
 # Fetch employee detailed information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Employee detailed information
-public isolated function getEmployeeInfo(string id) returns Employee|error? {
-    Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
+public isolated function getEmployeeInfo(string employeeId) returns Employee|error? {
+    Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(employeeId));
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
 }
 
@@ -174,30 +174,35 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
 # + return - Created employee ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
     transaction {
-        sql:ExecutionResult personalInfoResult = check databaseClient->execute(addEmployeePersonalInfoQuery(
-                payload.personalInfo, createdBy));
-        int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
+        sql:ExecutionResult personalInfoResult
+            = check databaseClient->execute(addEmployeePersonalInfoQuery(payload.personalInfo, createdBy));
 
+        int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
         EmergencyContact[] contacts = payload.personalInfo.emergencyContacts ?: [];
 
-        sql:ParameterizedQuery[] emergencyInsertQueries = from EmergencyContact contact in contacts
+        sql:ParameterizedQuery[] emergencyInsertQueries
+            = from EmergencyContact contact in contacts
             select addPersonalInfoEmergencyContactQuery(personalInfoId, contact, createdBy);
+
         if emergencyInsertQueries.length() > 0 {
             _ = check databaseClient->batchExecute(emergencyInsertQueries);
         }
 
-        sql:ExecutionResult employeeResult = check databaseClient->execute(addEmployeeQuery(payload, createdBy,
-                personalInfoId));
-        int employeeId = check employeeResult.lastInsertId.ensureType(int);
+        sql:ExecutionResult employeeResult
+            = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
 
-        sql:ParameterizedQuery[] managerInsertQueries = from string managerEmail in payload.additionalManagerEmails
-            select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
+        int lastInsertedEmployeeId = check employeeResult.lastInsertId.ensureType(int);
+
+        sql:ParameterizedQuery[] managerInsertQueries
+            = from string managerEmail in payload.additionalManagerEmails
+            select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
+
         if managerInsertQueries.length() > 0 {
             _ = check databaseClient->batchExecute(managerInsertQueries);
         }
 
         check commit;
-        return employeeId;
+        return lastInsertedEmployeeId;
     }
 }
 
@@ -206,7 +211,7 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 # + id - Personal information ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
-# + return - True if the update was successful or error
+# + return - Nil if the update was successful or error
 public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns error? {
 
@@ -215,15 +220,59 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
                 updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
+
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
+
             _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
-            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contactsOpt
-                select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+
+            sql:ParameterizedQuery[] insertQueries =
+                from EmergencyContact contact in contactsOpt
+            select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
             }
         }
+        check commit;
+    }
+    return;
+}
+
+# Update employee job information.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - Updater of the job info record
+# + return - Nil if the update was successful or error
+public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    transaction {
+        sql:ExecutionResult executionResult =
+            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
+
+        check checkAffectedCount(executionResult.affectedRowCount);
+
+        Email[]? additionalManagerEmails = payload.additionalManagerEmails;
+        if additionalManagerEmails is Email[] {
+
+            int|error pkIdResult = databaseClient->queryRow(
+                `SELECT id FROM employee WHERE employee_id = ${employeeId}`
+            );
+
+            int employeePkId = check pkIdResult.ensureType(int);
+            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
+
+            sql:ParameterizedQuery[] insertQueries =
+                from Email email in additionalManagerEmails
+            select addEmployeeAdditionalManagerQuery(employeePkId, email, updatedBy);
+
+            if insertQueries.length() > 0 {
+                _ = check databaseClient->batchExecute(insertQueries);
+            }
+        }
+
         check commit;
     }
     return;
