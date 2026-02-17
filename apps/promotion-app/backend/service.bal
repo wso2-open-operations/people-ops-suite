@@ -97,15 +97,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             workEmail: loggedInUser.workEmail,
             firstName: loggedInUser.firstName,
             lastName: loggedInUser.lastName,
-            joinedDetails: {
-                startDate: employeeData.startDate,
-                startedJobRole: employeeData.joinedJobRole,
-                startedBusinessUnit: employeeData.joinedBusinessUnit,
-                startedTeam: employeeData.joinedDepartment,
-                startedSubTeam: employeeData.joinedTeam,
-                startedReportingLead: employeeData.managerEmail,
-                jobBand: employeeData.jobBand
-            },
             jobRole: loggedInUser.jobRole,
             employeeThumbnail: loggedInUser.employeeThumbnail,
             privileges: privileges
@@ -124,7 +115,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + employeeWorkEmail - employee email
     # + return - Internal Server Error or Unauthorized Error or Employee info object
     resource function GET employee/history(http:RequestContext ctx, string employeeWorkEmail)
-        returns EmployeeInfoWithLead|http:InternalServerError|http:Unauthorized|error? {
+        returns EmployeeJoinedDetails|http:InternalServerError|http:Unauthorized|error? {
 
         // "RequestedBy" is the email of the user access this resource
         // Interceptor set this value after validating the jwt.
@@ -174,7 +165,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         
         string reportingLead = employeeData.managerEmail ?: "";
 
-        EmployeeInfoWithLead employeeInfoWithLead = {
+        EmployeeJoinedDetails employeeInfoWithLead = {
             workEmail: employeeData.workEmail,
             startDate: employeeData.startDate,
             jobBand: employeeData.jobBand,

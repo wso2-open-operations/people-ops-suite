@@ -25,32 +25,12 @@ public type UserInfoResponse record {|
     string firstName;
     # Last name of the employee
     string lastName;
-    # Started Date
-    JoinedDetails joinedDetails;
     # Job role
     string jobRole;
     # Thumbnail of the employee
     string? employeeThumbnail;
     # User Privileges
     int[] privileges;
-|};
-
-# Represents the response structure for retrieving user information.
-public type JoinedDetails record {|
-    # Started Date
-    string startDate;
-    # Started Job Role
-    string? startedJobRole = "";
-    # Started Business Unit
-    string? startedBusinessUnit = "";
-    # Started Team
-    string? startedTeam = "";
-    # Started Sub Team
-    string? startedSubTeam = "";
-    # Reporting Lead
-    string? startedReportingLead = "";
-    # Joined Job Band
-    int? jobBand = ();
 |};
 
 # Represent the name and email address of a support team.
@@ -68,7 +48,7 @@ public type AppConfig record {|
 |};
 
 # Employee information with reporting lead.
-public type EmployeeInfoWithLead record {
+public type EmployeeJoinedDetails record {
     # WSO2 email
     string workEmail;
     # Start Date of at WSO2

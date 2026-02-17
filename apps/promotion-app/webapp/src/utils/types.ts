@@ -12,20 +12,6 @@ export type PromotionRequestType =
   | "TIME_BASED"
   | "INDIVIDUAL_CONTRIBUTOR";
 
-export interface EmployeeInfo {
-  employeeThumbnail: string;
-  reportingLead: string;
-  reportingLeadThumbnail: string;
-  workEmail: string;
-  startDate: string;
-  jobBand: number | null;
-  joinedBusinessUnit: string;
-  joinedDepartment: string;
-  joinedTeam: string;
-  joinedLocation: string;
-  lastPromotedDate: string | null;
-}
-
 export interface TimeLineData{
   Title: string;
   Date: string;

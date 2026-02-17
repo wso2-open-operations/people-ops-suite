@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import DuoIcon from "@mui/icons-material/Duo";
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import CommonPage from "../../layout/pages/CommonPage";
 import HistoryIcon from "@mui/icons-material/History";
 import PromotionHistory from "./panel/historyTimeline";
@@ -23,7 +23,7 @@ export default function Promotion() {
   return (
     <CommonPage
       title="Promotion"
-      icon={<DuoIcon />}
+      icon={<EmojiEventsIcon />}
       commonPageTabs={[
         {
           tabTitle: "Promotion History",

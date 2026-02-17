@@ -30,7 +30,7 @@ interface Employee {
   employeeThumbnail: string | null;
 }
 
-interface EmployeeInfoWithLead {
+interface EmployeeJoinedDetails {
   workEmail: string;
   startDate: string;
   jobBand: number | null;
@@ -49,7 +49,7 @@ interface EmployeesState {
   stateMessage: string | null;
   errorMessage: string | null;
   employees: Employee[] | null;
-  employeeHistory: EmployeeInfoWithLead | null
+  employeeHistory: EmployeeJoinedDetails | null
 }
 
 const initialState: EmployeesState = {
@@ -106,7 +106,7 @@ export const fetchEmployeeHistory = createAsyncThunk(
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
-    return new Promise<EmployeeInfoWithLead>((resolve, reject) => {
+    return new Promise<EmployeeJoinedDetails>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.getEmployeeHistory, {
           params: {
