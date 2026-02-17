@@ -7,7 +7,8 @@ import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/stor
 import { useEffect } from 'react';
 import { fetchPromotions } from '@slices/promotionSlice/promotion';
 import { fetchEmployeeHistory } from "@slices/employeeSlice/employee";
-import StateWithImage from '@root/src/component/ui/StateWithImage';
+import ErrorHandler from './ErrorHandler';
+import PreLoader from './PreLoader';
 
 type CustomizedTimelineProps = {
   employeeEmail: string;
@@ -70,9 +71,8 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
         <>
             {promotions.state === "loading" || 
             employeeHistory.state === "loading" &&(
-                <StateWithImage 
-                    message="Loading Employee History" 
-                    imageUrl="/loading.svg" 
+                <PreLoader 
+                    message="Loading Employee History"
                 />
             )}
 
@@ -334,8 +334,7 @@ export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineP
             )}
             {(promotions.state === "failed" || 
             employeeHistory.state === "failed") && (
-                <StateWithImage
-                    imageUrl="/error.svg"
+                <ErrorHandler
                     message="Unable to load promotion history."
                 />
             )}
