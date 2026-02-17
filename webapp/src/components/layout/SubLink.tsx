@@ -122,8 +122,8 @@ const SubLink = (props: SubLinkProps) => {
               {React.cloneElement(icon as React.ReactElement<any>, {
                 size: 24,
                 style: {
-                  width: "20px",
-                  height: "20px",
+                  width: "17px",
+                  height: "17px",
                   color: isActive
                     ? theme.palette.customNavigation.textClicked
                     : theme.palette.customNavigation.text,
