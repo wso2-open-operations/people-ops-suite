@@ -32,6 +32,8 @@ import {
   Tooltip,
   FormControlLabel,
   Checkbox,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -60,6 +62,7 @@ import {
   EventOutlined,
   SupervisorAccountOutlined,
   PhoneOutlined,
+  HighlightOff as CloseIcon,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -491,9 +494,8 @@ export default function JobInfoStep() {
                         { label: "Employee ID", value: record.employeeId },
                         {
                           label: "Name",
-                          value: `${record.firstName || ""} ${
-                            record.lastName || ""
-                          }`.trim(),
+                          value: `${record.firstName || ""} ${record.lastName || ""
+                            }`.trim(),
                         },
                         { label: "Designation", value: record.designation },
                         {
@@ -753,6 +755,9 @@ export default function JobInfoStep() {
                 ...disabledSx,
               }}
             >
+              <MenuItem value={0}>
+                <em>None</em>
+              </MenuItem>
               {units.length ? (
                 units.map((u) => (
                   <MenuItem key={u.id} value={u.id}>
@@ -1012,6 +1017,7 @@ export default function JobInfoStep() {
                 )
               }
               slotProps={{
+                field: { clearable: true },
                 textField: {
                   fullWidth: true,
                   error: Boolean(
@@ -1037,6 +1043,7 @@ export default function JobInfoStep() {
                 )
               }
               slotProps={{
+                field: { clearable: true },
                 textField: {
                   fullWidth: true,
                   error: Boolean(
@@ -1112,7 +1119,36 @@ export default function JobInfoStep() {
               helperText={
                 touched.additionalManagerEmail && errors.additionalManagerEmail
               }
-              SelectProps={{ multiple: true }}
+              SelectProps={{
+                multiple: true,
+                renderValue: (selected) => (
+                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map((email) => (
+                      <Chip
+                        key={email}
+                        label={email}
+                        size="small"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onDelete={(e) => {
+                          e.stopPropagation();
+                          const updated = (values.additionalManagerEmail || []).filter(
+                            (em) => em !== email
+                          );
+                          setFieldValue("additionalManagerEmail", updated);
+                        }}
+                        deleteIcon={<CloseIcon fontSize="small" sx={{ color: 'error.main' }} aria-label={`Remove ${email}`} />}
+                        sx={{
+                          maxWidth: 200,
+                          '& .MuiChip-label': {
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          },
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                ),
+              }}
               sx={textFieldSx}
             >
               {additionalManagerOptions.length ? (
