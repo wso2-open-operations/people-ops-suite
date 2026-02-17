@@ -123,7 +123,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request Context er Description  
     # + employeeWorkEmail - employee email
     # + return - Internal Server Error or Unauthorized Error or Employee info object
-    resource function GET employee\-info(http:RequestContext ctx, string employeeWorkEmail)
+    resource function GET employee/history(http:RequestContext ctx, string employeeWorkEmail)
         returns EmployeeInfoWithLead|http:InternalServerError|http:Unauthorized|error? {
 
         // "RequestedBy" is the email of the user access this resource

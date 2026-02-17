@@ -7,7 +7,7 @@ import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/stor
 import { useEffect } from 'react';
 import { fetchPromotions } from '@slices/promotionSlice/promotion';
 import { fetchEmployeeHistory } from "@slices/employeeSlice/employee";
-import StateWithImage from '../ui/StateWithImage';
+import StateWithImage from '@root/src/component/ui/StateWithImage';
 
 type CustomizedTimelineProps = {
   employeeEmail: string;
@@ -15,8 +15,6 @@ type CustomizedTimelineProps = {
 
 export default function CustomizedTimeline( {employeeEmail}: CustomizedTimelineProps ) {
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const user = useAppSelector((state: RootState) => state.user);
     const employeeHistory = useAppSelector((state: RootState) => state.employee);
     const promotions  = useAppSelector((state: RootState) => state.promotion);
     const dispatch = useAppDispatch();
