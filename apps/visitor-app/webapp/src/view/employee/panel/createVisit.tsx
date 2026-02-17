@@ -32,12 +32,11 @@ import {
   Card,
   CardContent,
   IconButton,
-  InputAdornment,
   Container,
   Autocomplete,
   Avatar,
   CircularProgress,
-  MenuItem,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -78,7 +77,7 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
-import { customList } from "country-codes-list";
+import { MuiTelInput } from "mui-tel-input";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
@@ -96,12 +95,6 @@ export interface VisitorDetail {
   emailAddress: string;
   status: VisitorStatus;
 }
-
-// Get country codes list with flags
-const COUNTRY_CODES = customList(
-  "countryCode",
-  "{countryNameEn}: +{countryCallingCode}",
-);
 
 const defaultVisitor: VisitorDetail = {
   name: "",
@@ -214,7 +207,6 @@ function CreateVisit() {
       clearTimeout(searchDebounceRef.current);
     }
 
-    // Cleanup function runs on component unmount
     return () => {
       Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
         if (timeout) {
@@ -300,14 +292,30 @@ function CreateVisit() {
 
           const visitorName = draftVisitor.name?.trim() || "";
 
+          let nationalNumber: string | undefined = undefined;
+          if (draftVisitor.contactNumber) {
+            try {
+              const parsed = phoneUtil.parseAndKeepRawInput(
+                draftVisitor.contactNumber,
+              );
+              nationalNumber =
+                parsed.getNationalNumber()?.toString() || undefined;
+            } catch (e) {
+              nationalNumber =
+                draftVisitor.contactNumber.replace(/\D/g, "") || undefined;
+            }
+          }
+
+          const fullContactNumber = nationalNumber
+            ? `${draftVisitor.countryCode}${nationalNumber}`
+            : undefined;
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
             firstName: visitorName.split(" ")[0] || undefined,
             lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
-            contactNumber: draftVisitor.contactNumber
-              ? draftVisitor.countryCode + draftVisitor.contactNumber
-              : undefined,
+            contactNumber: fullContactNumber,
           };
 
           const addVisitorAction = await dispatch(
@@ -357,7 +365,7 @@ function CreateVisit() {
         "Cancel",
       );
     },
-    [dispatch, dialogContext],
+    [dispatch, dialogContext, phoneUtil],
   );
 
   const fetchVisitorByEmail = useCallback(
@@ -368,7 +376,7 @@ function CreateVisit() {
       if (fetchVisitor.fulfilled.match(action)) {
         let countryCode = "+94";
         let nationalNumber = "";
-        const raw = action.payload.contactNumber;
+        const raw = action.payload.contactNumber || "";
         if (raw) {
           try {
             const parsed = phoneUtil.parseAndKeepRawInput(raw);
@@ -377,11 +385,15 @@ function CreateVisit() {
             nationalNumber = parsed.getNationalNumber()?.toString() || "";
           } catch (err) {
             console.warn("Phone parse failed:", raw);
+            nationalNumber = raw.replace(/\D/g, "");
           }
         }
+
         const fetched: VisitorDetail = {
           name: `${action.payload.firstName || ""} ${action.payload.lastName || ""}`.trim(),
-          contactNumber: nationalNumber,
+          contactNumber: nationalNumber
+            ? `${countryCode}${nationalNumber}`
+            : "",
           countryCode,
           emailAddress: action.payload.email || email,
           status: VisitorStatus.Draft,
@@ -459,9 +471,7 @@ function CreateVisit() {
               visitors.filter((v: any) => v.emailAddress === value).length === 1
             );
           }),
-        contactNumber: Yup.string()
-          .matches(/^\d{6,15}$/, "Invalid phone number (6-15 digits)")
-          .nullable(),
+        contactNumber: Yup.string().nullable(),
       }),
     ),
   });
@@ -514,8 +524,8 @@ function CreateVisit() {
                 if (typeof newValue === "object") {
                   const fullName =
                     `${newValue.firstName || ""} ${newValue.lastName || ""}`.trim();
-                  formik.setFieldValue("whoTheyMeet", newValue.workEmail || ""); // email for payload
-                  formik.setFieldValue("whoTheyMeetName", fullName); // name for display
+                  formik.setFieldValue("whoTheyMeet", newValue.workEmail || "");
+                  formik.setFieldValue("whoTheyMeetName", fullName);
                   formik.setFieldValue(
                     "whoTheyMeetThumbnail",
                     newValue.employeeThumbnail || null,
@@ -879,52 +889,34 @@ function CreateVisit() {
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <TextField
+                    <MuiTelInput
                       fullWidth
                       label="Contact Number"
                       name={`visitors.${idx}.contactNumber`}
-                      value={visitor.contactNumber}
-                      onChange={formik.handleChange}
-                      disabled={visitor.status === VisitorStatus.Completed}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <TextField
-                              select
-                              variant="standard"
-                              name={`visitors.${idx}.countryCode`}
-                              value={visitor.countryCode}
-                              onChange={formik.handleChange}
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                              sx={{ minWidth: 120, mr: 1 }}
-                              SelectProps={{
-                                MenuProps: {
-                                  PaperProps: {
-                                    style: {
-                                      maxHeight: 300,
-                                    },
-                                  },
-                                },
-                              }}
-                            >
-                              {Object.entries(COUNTRY_CODES).map(
-                                ([code, name]) => {
-                                  const dialCode = name
-                                    .toString()
-                                    .split("+")[1];
-                                  return (
-                                    <MenuItem key={code} value={`+${dialCode}`}>
-                                      {code} +{dialCode}
-                                    </MenuItem>
-                                  );
-                                },
-                              )}
-                            </TextField>
-                          </InputAdornment>
-                        ),
+                      value={visitor.contactNumber || ""}
+                      onChange={(newValue, info) => {
+                        formik.setFieldValue(
+                          `visitors.${idx}.contactNumber`,
+                          newValue,
+                        );
+                        if (info?.countryCallingCode) {
+                          formik.setFieldValue(
+                            `visitors.${idx}.countryCode`,
+                            `+${info.countryCallingCode}`,
+                          );
+                        }
                       }}
+                      defaultCountry="LK"
+                      forceCallingCode
+                      disabled={visitor.status === VisitorStatus.Completed}
+                      error={
+                        formik.touched.visitors?.[idx]?.contactNumber &&
+                        Boolean(formik.errors.visitors?.[idx]?.contactNumber)
+                      }
+                      helperText={
+                        formik.touched.visitors?.[idx]?.contactNumber &&
+                        formik.errors.visitors?.[idx]?.contactNumber
+                      }
                     />
                   </Grid>
 
@@ -1032,7 +1024,7 @@ function CreateVisit() {
                 {hasSubmitted && (
                   <Box sx={{ mt: 5, textAlign: "center" }}>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       color="inherit"
                       onClick={() =>
                         dialogContext.showConfirmation(
@@ -1045,7 +1037,7 @@ function CreateVisit() {
                         )
                       }
                     >
-                      Finish Visit Registration
+                      Complete
                     </Button>
                   </Box>
                 )}
