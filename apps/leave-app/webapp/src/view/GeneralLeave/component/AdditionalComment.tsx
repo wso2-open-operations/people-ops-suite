@@ -20,7 +20,7 @@ import { useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
-import { selectUser } from "@root/src/slices/userSlice/user";
+import { selectAppConfig } from "@root/src/slices/configSlice/config";
 import { CachedMail } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
@@ -51,13 +51,13 @@ export default function AdditionalComment({
     optionalMails: [],
   });
 
-  const userInfo = useSelector(selectUser);
+  const appConfig = useSelector(selectAppConfig);
 
   useEffect(() => {
-    if (userInfo?.cachedEmails) {
-      setDefaultMails(userInfo.cachedEmails);
+    if (appConfig?.cachedEmails) {
+      setDefaultMails(appConfig.cachedEmails);
     }
-  }, [userInfo]);
+  }, [appConfig]);
 
   const EmailGroupToNotify = defaultMails.mandatoryMails[1]?.email || "";
   return (

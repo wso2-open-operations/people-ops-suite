@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,21 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Application specific role mapping.
-public type AppRoles record {|
-    # Role for all employees (including interns)
-    string[] employeeRoles;
-    # Role for people operations team members
-    string[] peopleOpsTeamRoles;
-    # Role for interns
-    string[] internRoles;
-|};
+import { Outlet } from "react-router-dom";
 
-# User info custom type for Asgardeo token.
-public type CustomJwtPayload record {|
-    # User email 
-    string email;
-    # User groups
-    string[] groups;
-    json...; // Rest descriptor allows additional fields
-|};
+/**
+ * A simple wrapper component that renders the Outlet for nested routes.
+ * Used as a parent element when we only need to render children routes.
+ */
+export default function OutletWrapper() {
+  return <Outlet />;
+}

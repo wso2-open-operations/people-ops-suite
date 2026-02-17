@@ -162,8 +162,8 @@ function Scan({ onClose }: ScanProps) {
     return (
       <Box
         sx={{
-          width: "100vw",
-          height: "100vh",
+          width: "100%",
+          height: "55vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -231,15 +231,6 @@ function Scan({ onClose }: ScanProps) {
                 </Typography>
                 <Typography variant="body1" fontWeight="medium">
                   {currentVisit.contactNumber || "N/A"}
-                </Typography>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <Typography variant="body2" color="textSecondary">
-                  Company Name
-                </Typography>
-                <Typography variant="body1" fontWeight="medium">
-                  {currentVisit.companyName || "N/A"}
                 </Typography>
               </Grid>
 
