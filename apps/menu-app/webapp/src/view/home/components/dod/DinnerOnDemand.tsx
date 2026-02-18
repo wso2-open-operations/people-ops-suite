@@ -95,7 +95,7 @@ export default function DinnerOnDemand() {
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          alignItems: "flex-start",
+          alignItems: "center",
         }}
       >
         <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
