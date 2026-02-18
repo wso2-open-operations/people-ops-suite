@@ -142,3 +142,117 @@ public type DuplicateMealRecordError distinct error;
 
 # Not-found error for operations by id.
 public type MealRecordNotFoundError distinct error;
+
+# Media types for advertisements.
+public enum MediaType {
+    VIDEO_MP4 = "video/mp4",
+    VIDEO_WEBM = "video/webm",
+    IMAGE_JPEG = "image/jpeg",
+    IMAGE_PNG = "image/png",
+    IMAGE_GIF = "image/gif"
+}
+
+# Advertisement record.
+public type Advertisement record {|
+    # Unique id
+    int id;
+    # Media URL
+    string media_url;
+    # Media Type
+    string media_type;
+    # Duration in seconds
+    int duration_seconds;
+    # Thumbnail URL
+    string? thumbnail_url;
+    # Is active status
+    boolean is_active;
+    # Display order
+    int display_order;
+    # Date uploaded
+    string uploaded_date;
+    # Created timestamp
+    string created_on;
+    # Created by
+    string? created_by;
+    # Updated timestamp
+    string updated_on;
+|};
+
+# Payload for creating an advertisement.
+public type CreateAdvertisementPayload record {|
+    # Media URL
+    string media_url;
+    # Media Type
+    MediaType media_type;
+    # Duration in seconds
+    int duration_seconds;
+    # Thumbnail URL
+    string? thumbnail_url;
+|};
+
+# Daily Summary for Analytics.
+public type DailySummary record {|
+    # Date
+    string date;
+    # Total Waste (kg)
+    decimal total_daily_waste_kg;
+    # Total Plates
+    int total_daily_plates;
+    # Average Waste per Plate (g)
+    decimal average_waste_per_plate_grams;
+|};
+
+# Weekly Trend Item.
+public type WeeklyTrendItem record {|
+    # Date
+    string date;
+    # Breakfast Waste (kg)
+    decimal breakfast_waste;
+    # Lunch Waste (kg)
+    decimal lunch_waste;
+|};
+
+# Monthly Trend Item.
+public type MonthlyTrendItem record {|
+    # Month (YYYY-MM)
+    string month;
+    # Breakfast Waste (kg)
+    decimal breakfast_waste;
+    # Lunch Waste (kg)
+    decimal lunch_waste;
+|};
+
+# Date Range Summary.
+public type DateRangeSummary record {|
+    # Start Date
+    string start_date;
+    # End Date
+    string end_date;
+    # Total Waste (kg)
+    decimal total_waste_kg;
+    # Total Plates
+    int total_plates;
+    # Average Waste per Plate (g)
+    decimal average_waste_per_plate_grams;
+    # Highest Waste Day (kg)
+    decimal highest_waste_day_kg;
+    # Highest Waste Date
+    string highest_waste_date;
+|};
+
+# Today's KPI Dashboard Data.
+public type TodayKPIs record {|
+    # Date
+    string date;
+    # Breakfast data
+    MealRecord? breakfast;
+    # Lunch data
+    MealRecord? lunch;
+    # Total Daily Waste (kg)
+    decimal total_daily_waste_kg;
+    # Total Daily Plates
+    int total_daily_plates;
+    # Average Waste per Plate (g)
+    decimal average_waste_per_plate_grams;
+|};
+
