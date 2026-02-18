@@ -95,7 +95,6 @@ export default function DinnerOnDemand() {
           display: "flex",
           flexDirection: "column",
           gap: 3,
-          justifyContent: "left",
           alignItems: "flex-start",
         }}
       >
@@ -113,7 +112,7 @@ export default function DinnerOnDemand() {
             sx={{
               width: 14,
               height: 14,
-              alignItems: "center",
+              alignContent: "center",
             }}
           />
 
