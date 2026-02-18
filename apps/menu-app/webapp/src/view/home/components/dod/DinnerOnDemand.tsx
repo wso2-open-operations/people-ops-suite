@@ -23,7 +23,7 @@ import emptyLogo from "@assets/animations/clock-time.json";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
-import { useRecolorLottie } from "@hooks/useRecolorLottie";
+import { useRecolorLottieSelective } from "@hooks/useRecolorLottie";
 import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
 
 import CancelModal from "./CancelModal";
@@ -60,7 +60,11 @@ export default function DinnerOnDemand() {
     height: "150px",
   };
 
-  const coloredLogo = useRecolorLottie(emptyLogo, theme.palette.customText.primary.p2.active);
+  const coloredLogo = useRecolorLottieSelective(
+    emptyLogo,
+    "#020F30",
+    theme.palette.customText.primary.p2.active,
+  );
 
   const handleMealOptionClick = (mealValue: string) => {
     if (isFormDisabled) return;
