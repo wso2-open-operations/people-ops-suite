@@ -132,3 +132,59 @@ function testGetMealRecordsValidation() returns error? {
         test:assertFail("Client call failed");
     }
 }
+
+// --- New Tests for Expansion ---
+
+// 7. Test Create Advertisement
+@test:Config {}
+function testCreateAdvertisement() returns error? {
+    string token = check getTestJwt(["admin"]);
+    map<string> headers = {"x-jwt-assertion": token};
+    
+    database:CreateAdvertisementPayload payload = {
+        media_url: "http://example.com/ad.mp4",
+        media_type: database:VIDEO_MP4,
+        duration_seconds: 15,
+        thumbnail_url: "http://example.com/thumb.jpg"
+    };
+
+    http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
+    
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 201, "Expected 201 Created for Advertisement");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 8. Test Get Active Advertisement (Initially none or one if created/active)
+@test:Config {}
+function testGetActiveAdvertisement() returns error? {
+    string token = check getTestJwt(["employee"]);
+    map<string> headers = {"x-jwt-assertion": token};
+    
+    http:Response|error response = dashboardClient->get("/advertisements/active", headers);
+    
+    if response is http:Response {
+        // Can be 200 or 404 depending on DB state. 
+        // Test passes if status is valid HTTP code. 
+        test:assertTrue(response.statusCode == 200 || response.statusCode == 404, "Expected 200 or 404");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 9. Test Analytics Today
+@test:Config {}
+function testGetAnalyticsToday() returns error? {
+    string token = check getTestJwt(["employee"]);
+    map<string> headers = {"x-jwt-assertion": token};
+    
+    http:Response|error response = dashboardClient->get("/analytics/today", headers);
+    
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for Analytics Today");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
