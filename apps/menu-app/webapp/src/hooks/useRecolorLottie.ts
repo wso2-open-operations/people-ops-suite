@@ -15,12 +15,7 @@
 // under the License.
 import { useMemo } from "react";
 
-/**
- * Deep-clones a Lottie animation JSON and replaces all fill/stroke colors
- * with the given hex color, enabling theme-aware coloring.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function recolorLottie(anim: any, hex: string): any {
+function hexToLottieColor(hex: string): number[] {
   const cleaned = hex.replace("#", "");
   const full =
     cleaned.length === 3
@@ -30,34 +25,64 @@ function recolorLottie(anim: any, hex: string): any {
           .join("")
       : cleaned;
   const n = parseInt(full, 16);
-  const color = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255);
+}
 
+function colorsMatch(a: number[], b: number[], tolerance = 0.01): boolean {
+  return (
+    a.length >= 3 &&
+    b.length >= 3 &&
+    Math.abs(a[0] - b[0]) < tolerance &&
+    Math.abs(a[1] - b[1]) < tolerance &&
+    Math.abs(a[2] - b[2]) < tolerance
+  );
+}
+
+/**
+ * Deep-clones a Lottie animation JSON and replaces only the fill/stroke
+ * colors that match the given target hex color with the replacement hex color.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function recolorLottieSelective(anim: any, targetHex: string, replacementHex: string): any {
+  const target = hexToLottieColor(targetHex);
+  const replacement = hexToLottieColor(replacementHex);
   const data = JSON.parse(JSON.stringify(anim));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walk = (items: any[]) => {
     items.forEach((it) => {
-      if ((it.ty === "fl" || it.ty === "st") && it.c?.k) {
-        it.c.k = [...color, 1];
+      if ((it.ty === "fl" || it.ty === "st") && Array.isArray(it.c?.k)) {
+        if (colorsMatch(it.c.k, target)) {
+          it.c.k = [...replacement, 1];
+        }
       }
       if (it.it) walk(it.it);
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (data.layers || []).forEach((layer: any) => layer.shapes && walk(layer.shapes));
   return data;
 }
 
 /**
- * Returns a memoized, recolored copy of the given Lottie animation JSON,
- * with all fill and stroke colors replaced by the provided hex color.
- * Re-computes only when the animation data or hex color changes.
+ * Returns a memoized, recolored copy of the Lottie animation JSON,
+ * replacing only the specified target color with the replacement color.
+ * Re-computes only when the animation data or either hex color changes.
  *
- * @param anim - The original Lottie animation JSON object
- * @param hex  - Target hex color string (e.g. "#1a2b3c")
+ * @param anim           - The original Lottie animation JSON object
+ * @param targetHex      - The color to replace (e.g. "#020F30" for navy blue)
+ * @param replacementHex - The new color to use (e.g. "#4A0080")
  * @returns Recolored Lottie animation JSON
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useRecolorLottie(anim: any, hex: string): any {
-  return useMemo(() => recolorLottie(anim, hex), [anim, hex]);
+export function useRecolorLottieSelective(
+  anim: any,
+  targetHex: string,
+  replacementHex: string,
+): any {
+  return useMemo(
+    () => recolorLottieSelective(anim, targetHex, replacementHex),
+    [anim, targetHex, replacementHex],
+  );
 }
