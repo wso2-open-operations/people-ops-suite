@@ -87,14 +87,13 @@ const FeedbackForm = (props: FeedbackFormProps) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on{" "}
+        Feedback is anonymous and accepted only on {"\u00A0"}
         <span style={{ color: theme.palette.customText.primary.p1.active, fontWeight: 600 }}>
           {date}
-        </span>{" "}
-        from
+        </span>
+        {"\u00A0"} from
         <span style={{ color: theme.palette.customText.primary.p1.active, fontWeight: 600 }}>
-          {" "}
-          12:00PM - 04:15PM
+          {"\u00A0"} 12:00PM - 04:15PM
         </span>
       </Typography>
     );
