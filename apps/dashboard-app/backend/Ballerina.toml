@@ -16,7 +16,7 @@
 
 [package]
 org = "wso2"
-name = "sample_app"
+name = "dashboard_app_backend"
 version = "1.0.0"
 distribution = "2201.10.4"
 
