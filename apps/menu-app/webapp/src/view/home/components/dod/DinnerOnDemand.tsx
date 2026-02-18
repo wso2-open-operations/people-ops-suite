@@ -62,6 +62,20 @@ export default function DinnerOnDemand() {
 
   const coloredLogo = useRecolorLottie(emptyLogo, theme.palette.customText.primary.p2.active);
 
+  const handleMealOptionClick = (mealValue: string) => {
+    if (isFormDisabled) return;
+
+    const isCurrentlySelected = formik.values.mealOption === mealValue;
+    const isOriginallyOrdered = mealOptionsDefault === mealValue;
+
+    if (isCurrentlySelected) {
+      if (isOriginallyOrdered && orderPlaced) return;
+      formik.setFieldValue("mealOption", null);
+    } else {
+      formik.setFieldValue("mealOption", mealValue);
+    }
+  };
+
   if (!userInfo) {
     return <ErrorHandler message={"Failed to load user info"} />;
   }
@@ -111,20 +125,6 @@ export default function DinnerOnDemand() {
       </Box>
     );
   }
-
-  const handleMealOptionClick = (mealValue: string) => {
-    if (isFormDisabled) return;
-
-    const isCurrentlySelected = formik.values.mealOption === mealValue;
-    const isOriginallyOrdered = mealOptionsDefault === mealValue;
-
-    if (isCurrentlySelected) {
-      if (isOriginallyOrdered && orderPlaced) return;
-      formik.setFieldValue("mealOption", null);
-    } else {
-      formik.setFieldValue("mealOption", mealValue);
-    }
-  };
 
   return (
     <>
