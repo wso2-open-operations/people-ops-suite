@@ -20,13 +20,13 @@ import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
 import emptyLogo from "@assets/animations/clock-time.json";
-import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
-import { useRecolorLottieSelective } from "@hooks/useRecolorLottie";
+import { useRecolorLottie } from "@hooks/useRecolorLottie";
 import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
 
 import CancelModal from "./CancelModal";
+import DodInfoMessage from "./DodInfoMessage";
 import { MealOptionBox } from "./MealOptionBox";
 import { OrderInfoSection } from "./OrderInfo";
 
@@ -60,11 +60,10 @@ export default function DinnerOnDemand() {
     height: "150px",
   };
 
-  const coloredLogo = useRecolorLottieSelective(
-    emptyLogo,
-    "#020F30",
-    theme.palette.customText.primary.p2.active,
-  );
+  const coloredLogo = useRecolorLottie(emptyLogo, {
+    "#020F30": theme.palette.customText.primary.p2.active,
+    "#F57800": theme.palette.fill.primary.active,
+  });
 
   const handleMealOptionClick = (mealValue: string) => {
     if (isFormDisabled) return;
@@ -108,23 +107,7 @@ export default function DinnerOnDemand() {
 
         <Lottie animationData={coloredLogo} style={logoStyle} />
 
-        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-          <Box
-            component="img"
-            src={infoIcon}
-            alt="info"
-            sx={{
-              width: 14,
-              height: 14,
-              alignContent: "center",
-            }}
-          />
-
-          <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
-            Dinner request option is only available from <strong>04:00pm till 07:00pm</strong> for
-            the given day.
-          </Typography>
-        </Box>
+        <DodInfoMessage />
       </Box>
     );
   }
@@ -182,26 +165,7 @@ export default function DinnerOnDemand() {
             </Box>
 
             {/* Info Message */}
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-              <Box
-                component="img"
-                src={infoIcon}
-                alt="info"
-                sx={{
-                  width: 16,
-                  height: 16,
-                  alignItems: "center",
-                }}
-              />
-
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.customText.primary.p3.active }}
-              >
-                Dinner request option is only available from <strong>04:00pm till 07:00pm</strong>{" "}
-                for the given day.
-              </Typography>
-            </Box>
+            <DodInfoMessage />
 
             {/* Order Info */}
             {mealOptionsDefault && (
