@@ -13,15 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import sample_app.database;
-
-# Collection type.
-public type SampleCollection record {
-    # Number of total records
-    int count;
-    # List of collections
-    database:SampleCollection[] collections;
-};
 
 # Represents the response structure for retrieving user information.
 public type UserInfoResponse record {|
@@ -39,10 +30,4 @@ public type UserInfoResponse record {|
     string? employeeThumbnail;
     # User Privileges
     int[] privileges;
-|};
-
-# AppConfig Type
-public type AppConfig record {|
-    # Sample AppConfig
-    string sampleAppConfig;
 |};
