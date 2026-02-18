@@ -164,3 +164,138 @@ isolated function deleteMealRecordQuery(int id) returns sql:ParameterizedQuery =
     DELETE FROM sample_schema.meal_records
     WHERE meal_record_id = ${id}
 `;
+
+// --- Advertisement Queries ---
+
+# Query to add a new advertisement.
+#
+# + payload - Advertisement payload
+# + createdBy - User creating the ad
+# + return - Parameterized query
+isolated function addAdvertisementQuery(CreateAdvertisementPayload payload, string createdBy) returns sql:ParameterizedQuery {
+    return `
+        INSERT INTO advertisements (
+            media_url, media_type, duration_seconds, thumbnail_url, 
+            is_active, display_order, uploaded_date, created_by
+        ) VALUES (
+            ${payload.media_url}, ${payload.media_type}, ${payload.duration_seconds}, ${payload.thumbnail_url},
+            FALSE, 0, CURRENT_DATE(), ${createdBy}
+        )
+    `;
+}
+
+# Query to fetch all advertisements.
+#
+# + return - Parameterized query
+isolated function getAdvertisementsQuery() returns sql:ParameterizedQuery {
+    return `SELECT * FROM advertisements ORDER BY created_on DESC`;
+}
+
+# Query to fetch the active advertisement.
+#
+# + return - Parameterized query
+isolated function getActiveAdvertisementQuery() returns sql:ParameterizedQuery {
+    return `SELECT * FROM advertisements WHERE is_active = TRUE LIMIT 1`;
+}
+
+# Query to fetch advertisement by ID.
+#
+# + id - Advertisement ID
+# + return - Parameterized query
+isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQuery {
+    return `SELECT * FROM advertisements WHERE id = ${id}`;
+}
+
+# Query to activate an advertisement.
+#
+# + id - Advertisement ID
+# + return - Parameterized query
+isolated function activateAdvertisementQuery(int id) returns sql:ParameterizedQuery {
+    return `UPDATE advertisements SET is_active = TRUE WHERE id = ${id}`;
+}
+
+# Query to delete an advertisement.
+#
+# + id - Advertisement ID
+# + return - Parameterized query
+isolated function deleteAdvertisementQuery(int id) returns sql:ParameterizedQuery {
+    return `DELETE FROM advertisements WHERE id = ${id}`;
+}
+
+// --- Analytics Queries ---
+
+# Query to get data for a specific date range.
+#
+# + startDate - The start date for the query range
+# + endDate - The end date for the query range
+# + return - The parameterized SQL query
+isolated function getMealRecordsByDateRangeQuery(string startDate, string endDate) returns sql:ParameterizedQuery {
+    return `SELECT * FROM meal_records WHERE record_date >= ${startDate} AND record_date <= ${endDate}`;
+}
+
+# Query to get weekly trend (7 days up to end date).
+#
+# + startDate - The start date for the query range
+# + return - The parameterized SQL query
+isolated function getWeeklyTrendQuery(string startDate) returns sql:ParameterizedQuery {
+    // Assuming 7 days from start date
+    return `
+        SELECT 
+            record_date as date,
+            SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) as breakfast_waste,
+            SUM(CASE WHEN meal_type = 'LUNCH' THEN total_waste_kg ELSE 0 END) as lunch_waste
+        FROM meal_records
+        WHERE record_date >= ${startDate} AND record_date < DATE_ADD(${startDate}, INTERVAL 7 DAY)
+        GROUP BY record_date
+        ORDER BY record_date ASC
+    `;
+}
+
+# Query to get monthly trend.
+#
+# + startMonth - The start month for the query range
+# + endMonth - The end month for the query range
+# + return - The parameterized SQL query
+isolated function getMonthlyTrendQuery(string startMonth, string endMonth) returns sql:ParameterizedQuery {
+    return `
+        SELECT 
+            DATE_FORMAT(record_date, '%Y-%m') as month,
+            SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) as breakfast_waste,
+            SUM(CASE WHEN meal_type = 'LUNCH' THEN total_waste_kg ELSE 0 END) as lunch_waste
+        FROM meal_records
+        WHERE DATE_FORMAT(record_date, '%Y-%m') >= ${startMonth} AND DATE_FORMAT(record_date, '%Y-%m') <= ${endMonth}
+        GROUP BY month
+        ORDER BY month ASC
+    `;
+}
+
+# Query to get summary stats for a date range.
+#
+# + startDate - The start date for the query range
+# + endDate - The end date for the query range
+# + return - The parameterized SQL query
+isolated function getDateRangeSummaryStatsQuery(string startDate, string endDate) returns sql:ParameterizedQuery {
+    return `
+        SELECT 
+            COALESCE(SUM(total_waste_kg), 0) as total_waste_kg,
+            COALESCE(SUM(plate_count), 0) as total_plates
+        FROM meal_records
+        WHERE record_date >= ${startDate} AND record_date <= ${endDate}
+    `;
+}
+
+# Query to get the highest waste day in a date range.
+#
+# + startDate - The start date for the query range
+# + endDate - The end date for the query range
+# + return - The parameterized SQL query
+isolated function getHighestWasteDayQuery(string startDate, string endDate) returns sql:ParameterizedQuery {
+    return `
+        SELECT record_date, SUM(total_waste_kg) as daily_total
+        FROM meal_records
+        WHERE record_date >= ${startDate} AND record_date <= ${endDate}
+        GROUP BY record_date
+        ORDER BY daily_total DESC
+        LIMIT 1
+    `;
+}
