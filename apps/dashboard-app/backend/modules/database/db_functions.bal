@@ -138,3 +138,161 @@ public isolated function deleteMealRecord(int id) returns MealRecordNotFoundErro
         return error MealRecordNotFoundError("Meal record not found.");
     }
 }
+
+// --- Advertisement Functions ---
+
+# Add a new advertisement.
+#
+# + payload - Advertisement data
+# + createdBy - User creating the ad
+# + return - Created ID or Error
+public isolated function addAdvertisement(CreateAdvertisementPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult|error result = databaseClient->execute(addAdvertisementQuery(payload, createdBy));
+    if result is error {
+        return result;
+    }
+    return <int>result.lastInsertId;
+}
+
+# Get all advertisements.
+#
+# + return - List of advertisements or Error
+public isolated function getAdvertisements() returns Advertisement[]|error {
+    stream<Advertisement, sql:Error?> resultStream = databaseClient->query(getAdvertisementsQuery());
+    return from Advertisement ad in resultStream select ad;
+}
+
+# Get the currently active advertisement.
+#
+# + return - Active Advertisement or () if none, or Error
+public isolated function getActiveAdvertisement() returns Advertisement|error? {
+    Advertisement|sql:Error result = databaseClient->queryRow(getActiveAdvertisementQuery());
+    if result is sql:NoRowsError {
+        return ();
+    }
+    return result;
+}
+
+# Get advertisement by ID.
+#
+# + id - Ad ID
+# + return - Advertisement or () if not found, or Error
+public isolated function getAdvertisementById(int id) returns Advertisement|error? {
+    Advertisement|sql:Error result = databaseClient->queryRow(getAdvertisementByIdQuery(id));
+    if result is sql:NoRowsError {
+        return ();
+    }
+    return result;
+}
+
+# Activate an advertisement (deactivating others via DB trigger).
+#
+# + id - Advertisement ID
+# + return - Error if failed
+public isolated function activateAdvertisement(int id) returns error? {
+    sql:ExecutionResult|error result = databaseClient->execute(activateAdvertisementQuery(id));
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount == 0 {
+        return error("Advertisement not found or already active");
+    }
+}
+
+# Delete an advertisement.
+#
+# + id - Advertisement ID
+# + return - Error if failed (e.g. active ad cannot be deleted logic should be checked before calling this, or handle DB constraint if any)
+public isolated function deleteAdvertisement(int id) returns error? {
+    // Check if active before deleting?
+    Advertisement|error? ad = getAdvertisementById(id);
+    if ad is Advertisement && ad.is_active {
+         return error("Cannot delete an active advertisement. Deactivate it first.");
+    }
+    
+    sql:ExecutionResult|error result = databaseClient->execute(deleteAdvertisementQuery(id));
+    if result is error {
+        return result;
+    }
+    if result.affectedRowCount == 0 {
+        return error("Advertisement not found");
+    }
+}
+
+// --- Analytics Functions ---
+
+public isolated function getWeeklyTrend(string startDate) returns WeeklyTrendItem[]|error {
+    stream<WeeklyTrendItem, sql:Error?> resultStream = databaseClient->query(getWeeklyTrendQuery(startDate));
+    return from WeeklyTrendItem item in resultStream select item;
+}
+
+public isolated function getMonthlyTrend(string startMonth, string endMonth) returns MonthlyTrendItem[]|error {
+    stream<MonthlyTrendItem, sql:Error?> resultStream = databaseClient->query(getMonthlyTrendQuery(startMonth, endMonth));
+    return from MonthlyTrendItem item in resultStream select item;
+}
+
+public isolated function getDateRangeSummary(string startDate, string endDate) returns DateRangeSummary|error {
+    // 1. Get total stats
+    record {| decimal total_waste_kg; int total_plates; |} stats = 
+        check databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
+
+    // 2. Get highest waste day
+    record {| string record_date; decimal daily_total; |}|sql:Error highest = 
+        databaseClient->queryRow(getHighestWasteDayQuery(startDate, endDate));
+    
+    decimal highest_waste = 0.0d;
+    string highest_date = "";
+    
+    if highest is record {| string record_date; decimal daily_total; |} {
+        highest_waste = highest.daily_total;
+        highest_date = highest.record_date;
+    }
+
+    decimal avg = 0.0d;
+    if stats.total_plates > 0 {
+        avg = (stats.total_waste_kg * 1000.0d) / <decimal>stats.total_plates;
+    }
+
+    return {
+        start_date: startDate,
+        end_date: endDate,
+        total_waste_kg: stats.total_waste_kg,
+        total_plates: stats.total_plates,
+        average_waste_per_plate_grams: avg,
+        highest_waste_day_kg: highest_waste,
+        highest_waste_date: highest_date
+    };
+}
+
+public isolated function getTodayKPIs(string date) returns TodayKPIs|error {
+    DailyMealRecords daily = check fetchDailyMealRecords(date);
+    
+    decimal totalWaste = 0.0d;
+    int totalPlates = 0;
+    
+    MealRecord? breakfast = daily.breakfast;
+    if breakfast is MealRecord {
+        totalWaste += breakfast.total_waste_kg;
+        totalPlates += breakfast.plate_count;
+    }
+    
+    MealRecord? lunch = daily.lunch;
+    if lunch is MealRecord {
+        totalWaste += lunch.total_waste_kg;
+        totalPlates += lunch.plate_count;
+    }
+
+    decimal avg = 0.0d;
+    if totalPlates > 0 {
+        avg = (totalWaste * 1000.0d) / <decimal>totalPlates;
+    }
+
+    return {
+        date: date,
+        breakfast: daily.breakfast,
+        lunch: daily.lunch,
+        total_daily_waste_kg: totalWaste,
+        total_daily_plates: totalPlates,
+        average_waste_per_plate_grams: avg
+    };
+}
