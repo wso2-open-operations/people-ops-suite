@@ -29,3 +29,61 @@ CREATE TABLE `meal_records` (
   KEY `idx_meal_record_date` (`record_date`),
   KEY `idx_meal_record_meal_type` (`meal_type`)
 );
+
+-- Table: advertisements
+CREATE TABLE IF NOT EXISTS advertisements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    media_url VARCHAR(2048) NOT NULL,
+    media_type ENUM('video/mp4', 'video/webm', 'image/jpeg', 'image/png', 'image/gif') NOT NULL,
+    duration_seconds INT NOT NULL DEFAULT 5,
+    thumbnail_url VARCHAR(2048),
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INT DEFAULT 0,
+    uploaded_date DATE NOT NULL,
+    created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_is_active (is_active),
+    INDEX idx_display_order (display_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Trigger to ensure only one active ad at a time
+DELIMITER $$
+CREATE TRIGGER before_ad_activate 
+BEFORE UPDATE ON advertisements
+FOR EACH ROW
+BEGIN
+    IF NEW.is_active = TRUE AND OLD.is_active = FALSE THEN
+        UPDATE advertisements SET is_active = FALSE WHERE is_active = TRUE AND id != NEW.id;
+    END IF;
+END$$
+DELIMITER ;
+
+-- Table: daily_summaries (Materialized view / Pre-aggregation)
+CREATE TABLE IF NOT EXISTS daily_summaries (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    summary_date DATE NOT NULL UNIQUE,
+    total_breakfast_waste_kg DECIMAL(6, 2) NOT NULL DEFAULT 0,
+    total_lunch_waste_kg DECIMAL(6, 2) NOT NULL DEFAULT 0,
+    total_daily_waste_kg DECIMAL(6, 2) GENERATED ALWAYS AS (total_breakfast_waste_kg + total_lunch_waste_kg) STORED,
+    total_breakfast_plates INT NOT NULL DEFAULT 0,
+    total_lunch_plates INT NOT NULL DEFAULT 0,
+    total_daily_plates INT GENERATED ALWAYS AS (total_breakfast_plates + total_lunch_plates) STORED,
+    average_waste_per_plate_grams DECIMAL(6, 1) GENERATED ALWAYS AS ((total_daily_waste_kg * 1000) / NULLIF(total_daily_plates, 0)) STORED,
+    updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_summary_date (summary_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: audit_log
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    table_name VARCHAR(50) NOT NULL,
+    record_id INT NOT NULL,
+    action ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
+    old_values JSON,
+    new_values JSON,
+    changed_by VARCHAR(100),
+    changed_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_table_record (table_name, record_id),
+    INDEX idx_changed_on (changed_on)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
