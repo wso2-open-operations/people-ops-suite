@@ -14,10 +14,12 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
+import Lottie from "lottie-react";
 import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
+import emptyLogo from "@assets/animations/clock-time.json";
 import infoIcon from "@assets/images/info-icon.svg";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
@@ -44,6 +46,7 @@ export default function DinnerOnDemand() {
     isLoading,
     is404,
     formik,
+    isDodTimeActive,
     isFormDisabled,
     mealOptionsDefault,
     orderPlaced,
@@ -51,6 +54,11 @@ export default function DinnerOnDemand() {
     handleOpenCancelDialog,
     handleCloseCancelDialog,
   } = useDinnerOnDemand();
+
+  const logoStyle = {
+    height: "150px",
+    color: theme.palette.customText.primary.p1.active,
+  };
 
   if (!userInfo) {
     return <ErrorHandler message={"Failed to load user info"} />;
@@ -62,6 +70,44 @@ export default function DinnerOnDemand() {
 
   if (error && !is404) {
     return <ErrorHandler message="Failed to load dinner request" />;
+  }
+
+  if (!isDodTimeActive) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+          justifyContent: "left",
+          alignItems: "flex-start",
+        }}
+      >
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
+          Dinner On Demand
+        </Typography>
+
+        <Lottie animationData={emptyLogo} style={logoStyle} />
+
+        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <Box
+            component="img"
+            src={infoIcon}
+            alt="info"
+            sx={{
+              width: 14,
+              height: 14,
+              alignItems: "center",
+            }}
+          />
+
+          <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
+            Dinner request option is only available from <strong>04:00pm till 07:00pm</strong> for
+            the given day.
+          </Typography>
+        </Box>
+      </Box>
+    );
   }
 
   const handleMealOptionClick = (mealValue: string) => {
