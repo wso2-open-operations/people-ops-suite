@@ -79,12 +79,12 @@ export default function DinnerOnDemand() {
     }
   };
 
-  if (!userInfo) {
-    return <ErrorHandler message={"Failed to load user info"} />;
-  }
-
   if (isUserLoading || isLoading) {
     return <BackdropProgress open={isLoading} />;
+  }
+
+  if (!userInfo) {
+    return <ErrorHandler message={"Failed to load user info"} />;
   }
 
   if (error && !is404) {
