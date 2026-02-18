@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-# [Configurable] OAuth2 entity application configuration.
+# OAuth2 entity application configuration.
 type Oauth2Config record {|
     # OAuth2 token endpoint
     string tokenUrl;
@@ -37,8 +37,45 @@ public type GraphQlRetryConfig record {|
 |};
 
 // Get employee graphQL service Responses.
+# Return record for single employee.
+public type Employee record {
+    # Id of the employee 
+    string? employeeId = ();
+    # Last Promoted Date
+    string? lastPromotedDate = ();
+    # Manager email
+    string? managerEmail = ();
+    # First Name
+    string firstName;
+    # is employee a lead
+    boolean lead = false;
+    # Reporting lead's name
+    string? reportsTo = ();
+    # Job Band
+    int? jobBand = ();
+    # Job Role
+    string jobRole;
+    # Last Name
+    string lastName;
+    # Start date at WSO2
+    string startDate;
+    # Employee Status
+    string? employeeStatus = ();
+    # Business unit of the employee
+    string businessUnit;
+    # Employee's department
+    string? department = ();
+    # Employee's Team
+    string? team = ();
+    # Employee's sub team
+    string? subTeam = ();
+    # Employee Thumbnail URL
+    string? employeeThumbnail = ();
+};
+
+// Get employee graphQL service Responses.
 # Employee.
-public type Employee record {|
+public type EmployeesBasicInfo record {|
     # Id of the employee
     string employeeId;
     # Email of the employee
@@ -53,16 +90,22 @@ public type Employee record {|
     string? employeeThumbnail;
 |};
 
-# Employee data.
+# Inner record for single employee.
 type EmployeeData record {
+    # Employee Object
+    Employee? employee = ();
+};
+
+# Employee data.
+type EmployeeInfo record {
     # Employee
-    Employee employee;
+    EmployeesBasicInfo employee;
 };
 
 # Employee response.
 type EmployeeResponse record {
     # Employee data
-    EmployeeData data;
+    EmployeeInfo data;
 };
 
 # The EmployeeFilter record type represents the filter criteria for the employees.
@@ -95,4 +138,66 @@ type EmployeesData record {
 type EmployeesResponse record {
     # Employees data
     EmployeesData data;
+};
+
+# Return record for single employee.
+type EmployeeResults record {
+    # Employee Data Object
+    EmployeeData data;
+};
+
+# Get employee information response.
+public type EmployeeHistory record {
+    # WSO2 email 
+    string workEmail;
+    # Start Date of at WSO2
+    string startDate;
+    # Job band of the employee
+    int? jobBand = ();
+    # Manager email
+    string? managerEmail = "";
+    # Joined Job role
+    string? joinedJobRole = "";
+    # Joined Business Unit
+    string? joinedBusinessUnit = "";
+    # Joined Department 
+    string? joinedDepartment = "";
+    # Joined Team
+    string? joinedTeam = "";
+    # Joined Location
+    string? joinedLocation = "";
+    # Last Promoted Date
+    string? lastPromotedDate = "";
+    # Employee Thumbnail URL
+    string? employeeThumbnail = "";
+};
+
+# Employee history response.
+type EmployeeHistoryResponse record {
+    # Employee history Data
+    EmployeeHistoryData data;
+};
+
+# Employee history data.
+type EmployeeHistoryData record {
+    # Employee history record
+    EmployeeHistory employee;
+};
+
+# Return record for single employee Name.
+type EmployeeThumbnailResult record {
+    # Employee thumbnail Data Object
+    EmployeeThumbnailData data;
+};
+
+# Return record for single employee thumbnail.
+type EmployeeThumbnailData record {
+    # Employee thumbnail Object
+    EmployeeThumbnail? employee = ();
+};
+
+# eturn record for single employee thumbnail.
+public type EmployeeThumbnail record {
+    # Thumbnail of the employee
+    string? employeeThumbnail = "";
 };

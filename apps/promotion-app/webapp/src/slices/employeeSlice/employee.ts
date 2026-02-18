@@ -30,11 +30,26 @@ interface Employee {
   employeeThumbnail: string | null;
 }
 
+interface EmployeeJoinedDetails {
+  workEmail: string;
+  startDate: string;
+  jobBand: number | null;
+  joinedJobRole: string | null;
+  joinedBusinessUnit: string | null;
+  joinedDepartment: string | null;
+  joinedTeam: string | null;
+  joinedLocation: string | null;
+  lastPromotedDate: string | null;
+  employeeThumbnail: string | null;
+  reportingLead: string;
+};
+
 interface EmployeesState {
   state: State;
   stateMessage: string | null;
   errorMessage: string | null;
   employees: Employee[] | null;
+  employeeHistory: EmployeeJoinedDetails | null
 }
 
 const initialState: EmployeesState = {
@@ -42,6 +57,7 @@ const initialState: EmployeesState = {
   stateMessage: null,
   errorMessage: null,
   employees: null,
+  employeeHistory: null,
 };
 
 export const fetchEmployees = createAsyncThunk(
@@ -78,6 +94,50 @@ export const fetchEmployees = createAsyncThunk(
   }
 );
 
+export const fetchEmployeeHistory = createAsyncThunk(
+  "employee/fetchEmployeeHistory",
+  async (
+    {
+      employeeWorkEmail,
+    }: {
+      employeeWorkEmail: string;
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    APIService.getCancelToken().cancel();
+    const newCancelTokenSource = APIService.updateCancelToken();
+    return new Promise<EmployeeJoinedDetails>((resolve, reject) => {
+      APIService.getInstance()
+        .get(AppConfig.serviceUrls.getEmployeeHistory, {
+          params: {
+            employeeWorkEmail,
+          },
+          cancelToken: newCancelTokenSource.token,
+        })
+        .then((response) => {
+          resolve(response.data);
+        })
+        .catch((error) => {
+          if (axios.isCancel(error)) {
+            reject(rejectWithValue("Request canceled"));
+            return;
+          }
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                error.response?.status === HttpStatusCode.InternalServerError
+                  ? SnackMessage.error.fetchEmployeeHistory
+                  : "An unknown error occurred.",
+                type: "error",
+              })
+            );
+          reject(error.response?.data?.message);
+        });
+    });
+  }
+
+);
+
 const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
@@ -98,6 +158,19 @@ const EmployeeSlice = createSlice({
         state.employees = action.payload;
       })
       .addCase(fetchEmployees.rejected, (state) => {
+        state.state = State.failed;
+        state.stateMessage = "Failed to fetch!";
+      })
+      .addCase(fetchEmployeeHistory.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching employee history data...";
+      })
+      .addCase(fetchEmployeeHistory.fulfilled, (state, action) => {
+        state.state = State.success;
+        state.stateMessage = "Successfully fetched!";
+        state.employeeHistory = action.payload;
+      })
+      .addCase(fetchEmployeeHistory.rejected, (state) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
       });

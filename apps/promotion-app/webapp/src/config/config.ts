@@ -41,12 +41,14 @@ export const AsgardeoConfig: BaseURLAuthClientConfig = {
 
 export const APP_NAME = window.config?.APP_NAME ?? "";
 export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
-export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
+export const SERVICE_BASE_URL = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 
 export const AppConfig = {
   serviceUrls: {
-    userInfo: ServiceBaseUrl + "/user-info",
-    employees: ServiceBaseUrl + "/employees",
-    appConfig: ServiceBaseUrl + "/app-config"
+    userInfo: SERVICE_BASE_URL + "/user-info",
+    employees: SERVICE_BASE_URL + "/employees",
+    getEmployeeHistory: SERVICE_BASE_URL + "/employee/history",
+    appConfig: SERVICE_BASE_URL + "/app-config",
+    retrieveAllPromotionRequests: SERVICE_BASE_URL + "/promotions",
   },
 };

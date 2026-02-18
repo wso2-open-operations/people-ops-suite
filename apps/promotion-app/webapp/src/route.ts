@@ -19,6 +19,7 @@ import { View } from "@view/index";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
@@ -42,6 +43,14 @@ interface RouteDetail {
 }
 
 export const routes: RouteObjectWithRole[] = [
+  {
+    path: "",
+    text: "History",
+    icon: React.createElement(EmojiEventsIcon),
+    element: React.createElement(View.history),
+    allowRoles: [Role.ADMIN, Role.TEAM],
+    bottomNav: false,
+  },
   {
     path: "/help",
     text: "Help",
