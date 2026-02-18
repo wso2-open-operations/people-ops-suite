@@ -25,6 +25,7 @@ import { Box, Card, Dialog, DialogContent, IconButton, Typography, useTheme } fr
 import { useState } from "react";
 
 import FeedbackForm from "./FeedbackForm";
+import { alpha } from "@mui/material";
 
 interface MealData {
   title: string | null;
@@ -161,7 +162,7 @@ export default function MenuCard(props: MenuCardProps) {
               color: theme.palette.customText.secondary.p1.active,
               visibility: mealType !== "lunch" ? "hidden" : "visible",
               "&:hover": {
-                backgroundColor: "#F5FDFF",
+                backgroundColor: alpha(theme.palette.fill.secondary_light.active, 0.5),
               },
             }}
           >
