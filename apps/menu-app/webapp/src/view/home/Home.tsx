@@ -27,7 +27,7 @@ export default function Home() {
   if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
       <Menu />
 
       <Divider />
