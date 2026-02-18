@@ -20,12 +20,20 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import CookieOutlinedIcon from "@mui/icons-material/CookieOutlined";
 import DinnerDiningOutlinedIcon from "@mui/icons-material/DinnerDiningOutlined";
 import LunchDiningOutlinedIcon from "@mui/icons-material/LunchDiningOutlined";
-import { Box, Card, Dialog, DialogContent, IconButton, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  Card,
+  Dialog,
+  DialogContent,
+  IconButton,
+  Typography,
+  alpha,
+  useTheme,
+} from "@mui/material";
 
 import { useState } from "react";
 
 import FeedbackForm from "./FeedbackForm";
-import { alpha } from "@mui/material";
 
 interface MealData {
   title: string | null;
