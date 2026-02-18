@@ -471,7 +471,9 @@ function CreateVisit() {
               visitors.filter((v: any) => v.emailAddress === value).length === 1
             );
           }),
-        contactNumber: Yup.string().nullable(),
+        contactNumber: Yup.string()
+          .nullable()
+          .matches(/^\+?\d{10,15}$/, "Invalid contact number"),
       }),
     ),
   });
