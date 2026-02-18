@@ -13,15 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import sample_app.authorization;
-import sample_app.database;
-import sample_app.entity;
+import dashboard_app_backend.authorization;
+import dashboard_app_backend.database;
+import dashboard_app_backend.entity;
 
 import ballerina/cache;
 import ballerina/http;
 import ballerina/log;
-
-public configurable AppConfig appConfig = ?;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -30,8 +28,8 @@ final cache:Cache cache = new ({
 });
 
 @display {
-    label: "Sample Application",
-    id: "domain/sample-application"
+    label: "Dashboard Application",
+    id: "domain/dashboard-application"
 }
 
 service class ErrorInterceptor {
@@ -60,11 +58,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - authorization:JwtInterceptor, ErrorInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor(), new ErrorInterceptor()];
-
-    # Fetch samples AppConfig.
-    #
-    # + return - AppConfig
-    resource function get app\-config() returns AppConfig => appConfig;
 
     # Fetch user information of the logged in users.
     #
@@ -121,122 +114,182 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Fetch all samples from the database.
+    # Create a new breakfast or lunch waste record.
     #
-    # + name - Name to filter
-    # + 'limit - Limit of the data
-    # + offset - Offset of the data
-    # + return - All samples|Error
-    isolated resource function get collections(http:RequestContext ctx, string? name, int? 'limit, int? offset)
-        returns SampleCollection|http:Forbidden|http:BadRequest|http:InternalServerError {
+    # + payload - Meal record payload
+    # + return - Created record|Conflict|Error
+    resource function post meal\-records(http:RequestContext ctx, database:AddMealRecordPayload payload)
+        returns http:Created|http:Conflict|http:Forbidden|http:BadRequest|http:InternalServerError {
 
-        // "requestedBy" is the email of the user access this resource.
-        // interceptor set this value after validating the jwt.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
-            return <http:BadRequest>{
-                body: {
-                    message: "User information header not found!"
-                }
-            };
+            return <http:BadRequest>{body: {message: "User information header not found!"}};
         }
 
-        // [Start] Custom Resource level authorization.
-        if !authorization:checkPermissions([authorization:authorizedRoles.employeeRole],
-                userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: "Insufficient privileges!"
-                }
-            };
-        }
-        // [End] Custom Resource level authorization.
-
-        database:SampleCollection[]|error collections = database:fetchSampleCollections(name, 'limit, offset);
-        if collections is error {
-            string customError = string `Error occurred while retrieving the sample collections!`;
-            log:printError(customError, collections);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+        if !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
         }
 
-        return {
-            count: collections.length(),
-            collections: collections
-        };
+        int|database:DuplicateMealRecordError|error mealRecordId = database:addMealRecord(payload, userInfo.email);
+        if mealRecordId is database:DuplicateMealRecordError {
+            return <http:Conflict>{body: {message: mealRecordId.message()}};
+        }
+        if mealRecordId is error {
+            string customError = "Error occurred while creating meal record!";
+            log:printError(customError, mealRecordId);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+
+        database:MealRecord|error? created = database:fetchMealRecord(mealRecordId);
+        if created is error {
+            string customError = "Error occurred while retrieving created meal record!";
+            log:printError(customError, created);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        if created is () {
+            string customError = "Created meal record is no longer available to access!";
+            log:printError(customError);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+
+        return <http:Created>{body: created};
     }
 
-    # Insert collections.
+    # Get breakfast + lunch data for one specific day.
     #
-    # + collection - New collection
-    # + return - Created|Forbidden|BadRequest|Error
-    resource function post collections(http:RequestContext ctx, database:AddSampleCollection collection)
-        returns http:Created|http:Forbidden|http:BadRequest|http:InternalServerError {
+    # + date - Date (YYYY-MM-DD)
+    # + return - DailyMealRecords or error
+    resource function get meal\-records/daily(http:RequestContext ctx, string date)
+        returns database:DailyMealRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
 
-        // "requestedBy" is the email of the user access this resource.
-        // interceptor set this value after validating the jwt.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
-            return <http:BadRequest>{
-                body: {
-                    message: "User information header not found!"
-                }
-            };
+            return <http:BadRequest>{body: {message: "User information header not found!"}};
         }
 
-        // [Start] Custom Resource level authorization.
-        if !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole],
-                userInfo.groups) {
-
-            return <http:Forbidden>{
-                body: {
-                    message: "Insufficient privileges!"
-                }
-            };
-        }
-        // [End] Custom Resource level authorization.
-
-        // Insert collection.
-        int|error collectionId = database:addSampleCollection(collection, userInfo.email);
-        if collectionId is error {
-            string customError = string `Error occurred while adding sample collection!`;
-            log:printError(customError, collectionId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+        if !authorization:checkPermissions([authorization:authorizedRoles.employeeRole], userInfo.groups) &&
+                !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
         }
 
-        database:SampleCollection|error? addedSampleCollection = database:fetchSampleCollection(collectionId);
-
-        // Handle : database read error.
-        if addedSampleCollection is error {
-            string customError = string `Error occurred while retrieving the added sample collection!`;
-            log:printError(customError, addedSampleCollection);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+        if !database:DATE_REGEX.isFullMatch(date) {
+            return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
         }
 
-        // Handle : no record error.
-        if addedSampleCollection is () {
-            string customError = string `Added sample collection is no longer available to access!`;
-            log:printError(customError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+        database:DailyMealRecords|error daily = database:fetchDailyMealRecords(date);
+        if daily is error {
+            string customError = "Error occurred while fetching daily meal records!";
+            log:printError(customError, daily);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        return daily;
+    }
+
+    # List/filter meal records (paginated).
+    #
+    # + start_date - Start date (YYYY-MM-DD)
+    # + end_date - End date (YYYY-MM-DD)
+    # + meal_type - Meal type (BREAKFAST|LUNCH)
+    # + page - Page number (1-based)
+    # + pageSize - Page size
+    # + return - Paginated list or error
+    resource function get meal\-records(http:RequestContext ctx, string? start_date, string? end_date, string? meal_type,
+            int page = 1, int pageSize = database:DEFAULT_PAGE_SIZE)
+        returns database:PaginatedMealRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:BadRequest>{body: {message: "User information header not found!"}};
         }
 
-        return <http:Created>{
-            body: addedSampleCollection
-        };
+        if !authorization:checkPermissions([authorization:authorizedRoles.employeeRole], userInfo.groups) &&
+                !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
+        }
+
+        if page < 1 {
+            return <http:BadRequest>{body: {message: "page must be >= 1"}};
+        }
+        if pageSize < 1 || pageSize > database:MAX_PAGE_SIZE {
+            return <http:BadRequest>{body: {message: string `pageSize must be between 1 and ${database:MAX_PAGE_SIZE}`}};
+        }
+
+        // Validate meal_type manually since we accept string?
+        if meal_type is string && !(meal_type == "BREAKFAST" || meal_type == "LUNCH") {
+            return <http:BadRequest>{body: {message: "meal_type must be BREAKFAST or LUNCH"}};
+        }
+
+        int offset = (page - 1) * pageSize;
+        database:MealRecordFilters filters = {start_date, end_date, meal_type, 'limit: pageSize, offset};
+        database:PaginatedMealRecords|error pageResult = database:fetchMealRecords(filters, page, pageSize);
+        if pageResult is error {
+            string customError = "Error occurred while listing meal records!";
+            log:printError(customError, pageResult);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        return pageResult;
+    }
+
+    # Update existing meal record.
+    #
+    # + id - Meal record id
+    # + payload - Update payload
+    # + return - Updated record or error
+    resource function put meal\-records/[int id](http:RequestContext ctx, database:UpdateMealRecordPayload payload)
+        returns database:MealRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:BadRequest>{body: {message: "User information header not found!"}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
+        }
+
+        if payload.total_waste_kg is () && payload.plate_count is () {
+            return <http:BadRequest>{body: {message: "At least one of total_waste_kg or plate_count must be provided."}};
+        }
+
+        database:MealRecord|database:MealRecordNotFoundError|error updated =
+            database:updateMealRecord(id, payload, userInfo.email);
+        if updated is database:MealRecordNotFoundError {
+            return <http:NotFound>{body: {message: updated.message()}};
+        }
+        if updated is error {
+            string customError = "Error occurred while updating meal record!";
+            log:printError(customError, updated);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        return updated;
+    }
+
+    # Delete a meal record.
+    #
+    # + id - Meal record id
+    # + return - NoContent or error
+    resource function delete meal\-records/[int id](http:RequestContext ctx)
+        returns http:NoContent|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:BadRequest>{body: {message: "User information header not found!"}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
+            return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
+        }
+
+        database:MealRecordNotFoundError|error? deleted = database:deleteMealRecord(id);
+        if deleted is database:MealRecordNotFoundError {
+            return <http:NotFound>{body: {message: deleted.message()}};
+        }
+        if deleted is error {
+            string customError = "Error occurred while deleting meal record!";
+            log:printError(customError, deleted);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+
+        return <http:NoContent>{};
     }
 }
