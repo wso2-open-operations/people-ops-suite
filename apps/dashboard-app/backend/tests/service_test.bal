@@ -61,7 +61,7 @@ function testForbiddenAccess() returns error? {
 // 3. Test Create Meal Record (Happy Path - Head People Ops)
 @test:Config {}
 function testCreateMealRecord() returns error? {
-    string token = check getTestJwt(["admin"]); // Matches Config.toml headPeopleOperationsRole
+    string token = check getTestJwt(["admin"]); // Matches Config.toml ADMIN_PRIVILEGE
     map<string> headers = {"x-jwt-assertion": token};
 
     database:AddMealRecordPayload payload = {
@@ -89,7 +89,7 @@ function testCreateMealRecord() returns error? {
 // 4. Test Get Daily Meals (Happy Path - Employee or Admin)
 @test:Config {}
 function testGetDailyMeals() returns error? {
-    string token = check getTestJwt(["employee"]); // Matches Config.toml employeeRole
+    string token = check getTestJwt(["employee"]);
     map<string> headers = {"x-jwt-assertion": token};
 
     http:Response|error response = dashboardClient->get("/meal-records/daily?date=2024-01-01", headers);
@@ -140,7 +140,7 @@ function testGetMealRecordsValidation() returns error? {
 function testCreateAdvertisement() returns error? {
     string token = check getTestJwt(["admin"]);
     map<string> headers = {"x-jwt-assertion": token};
-    
+
     database:CreateAdvertisementPayload payload = {
         media_url: "http://example.com/ad.mp4",
         media_type: database:VIDEO_MP4,
@@ -149,7 +149,7 @@ function testCreateAdvertisement() returns error? {
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
-    
+
     if response is http:Response {
         test:assertEquals(response.statusCode, 201, "Expected 201 Created for Advertisement");
     } else {
@@ -162,9 +162,9 @@ function testCreateAdvertisement() returns error? {
 function testGetActiveAdvertisement() returns error? {
     string token = check getTestJwt(["employee"]);
     map<string> headers = {"x-jwt-assertion": token};
-    
+
     http:Response|error response = dashboardClient->get("/advertisements/active", headers);
-    
+
     if response is http:Response {
         // Can be 200 or 404 depending on DB state. 
         // Test passes if status is valid HTTP code. 
@@ -179,9 +179,9 @@ function testGetActiveAdvertisement() returns error? {
 function testGetAnalyticsToday() returns error? {
     string token = check getTestJwt(["employee"]);
     map<string> headers = {"x-jwt-assertion": token};
-    
+
     http:Response|error response = dashboardClient->get("/analytics/today", headers);
-    
+
     if response is http:Response {
         test:assertEquals(response.statusCode, 200, "Expected 200 OK for Analytics Today");
     } else {

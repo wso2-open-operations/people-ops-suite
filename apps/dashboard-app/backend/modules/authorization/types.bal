@@ -16,7 +16,7 @@
 
 # User info custom type for Asgardeo token.
 public type CustomJwtPayload record {
-    # User email
+    # User email 
     string email;
     # User groups
     string[] groups;
@@ -25,7 +25,8 @@ public type CustomJwtPayload record {
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string employeeRole;
-    # Role for the head of people operations
-    string headPeopleOperationsRole;
+    string EMPLOYEE_PRIVILEGE;
+    # Role for the admin
+    string ADMIN_PRIVILEGE;
 |};
+

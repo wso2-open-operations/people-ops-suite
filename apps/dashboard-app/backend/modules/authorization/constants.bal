@@ -14,10 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Authorization Constants.
+# Authorization Constants.
 public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
 public const HEADER_USER_INFO = "user-info";
 
 # Privileges.
-public const EMPLOYEE_ROLE_PRIVILEGE = 987;
-public const HEAD_PEOPLE_OPERATIONS_PRIVILEGE = 762;
+public const SECURITY_ADMIN_PRIVILEGE = 789;
+public const EMPLOYEE_PRIVILEGE = 987;
+
+# Error Messages.
+public const USER_INFO_HEADER_NOT_FOUND_ERROR = "User information header not found!";
+public const INSUFFICIENT_PRIVILEGES_ERROR = "Insufficient privileges!";

@@ -159,7 +159,8 @@ public isolated function addAdvertisement(CreateAdvertisementPayload payload, st
 # + return - List of advertisements or Error
 public isolated function getAdvertisements() returns Advertisement[]|error {
     stream<Advertisement, sql:Error?> resultStream = databaseClient->query(getAdvertisementsQuery());
-    return from Advertisement ad in resultStream select ad;
+    return from Advertisement ad in resultStream
+        select ad;
 }
 
 # Get the currently active advertisement.
@@ -207,9 +208,9 @@ public isolated function deleteAdvertisement(int id) returns error? {
     // Check if active before deleting?
     Advertisement|error? ad = getAdvertisementById(id);
     if ad is Advertisement && ad.is_active {
-         return error("Cannot delete an active advertisement. Deactivate it first.");
+        return error("Cannot delete an active advertisement. Deactivate it first.");
     }
-    
+
     sql:ExecutionResult|error result = databaseClient->execute(deleteAdvertisementQuery(id));
     if result is error {
         return result;
@@ -223,27 +224,29 @@ public isolated function deleteAdvertisement(int id) returns error? {
 
 public isolated function getWeeklyTrend(string startDate) returns WeeklyTrendItem[]|error {
     stream<WeeklyTrendItem, sql:Error?> resultStream = databaseClient->query(getWeeklyTrendQuery(startDate));
-    return from WeeklyTrendItem item in resultStream select item;
+    return from WeeklyTrendItem item in resultStream
+        select item;
 }
 
 public isolated function getMonthlyTrend(string startMonth, string endMonth) returns MonthlyTrendItem[]|error {
     stream<MonthlyTrendItem, sql:Error?> resultStream = databaseClient->query(getMonthlyTrendQuery(startMonth, endMonth));
-    return from MonthlyTrendItem item in resultStream select item;
+    return from MonthlyTrendItem item in resultStream
+        select item;
 }
 
 public isolated function getDateRangeSummary(string startDate, string endDate) returns DateRangeSummary|error {
     // 1. Get total stats
-    record {| decimal total_waste_kg; int total_plates; |} stats = 
+    record {|decimal total_waste_kg; int total_plates;|} stats =
         check databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
 
     // 2. Get highest waste day
-    record {| string record_date; decimal daily_total; |}|sql:Error highest = 
+    record {|string record_date; decimal daily_total;|}|sql:Error highest =
         databaseClient->queryRow(getHighestWasteDayQuery(startDate, endDate));
-    
+
     decimal highest_waste = 0.0d;
     string highest_date = "";
-    
-    if highest is record {| string record_date; decimal daily_total; |} {
+
+    if highest is record {|string record_date; decimal daily_total;|} {
         highest_waste = highest.daily_total;
         highest_date = highest.record_date;
     }
@@ -266,16 +269,16 @@ public isolated function getDateRangeSummary(string startDate, string endDate) r
 
 public isolated function getTodayKPIs(string date) returns TodayKPIs|error {
     DailyMealRecords daily = check fetchDailyMealRecords(date);
-    
+
     decimal totalWaste = 0.0d;
     int totalPlates = 0;
-    
+
     MealRecord? breakfast = daily.breakfast;
     if breakfast is MealRecord {
         totalWaste += breakfast.total_waste_kg;
         totalPlates += breakfast.plate_count;
     }
-    
+
     MealRecord? lunch = daily.lunch;
     if lunch is MealRecord {
         totalWaste += lunch.total_waste_kg;
