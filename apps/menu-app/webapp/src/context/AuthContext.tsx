@@ -189,6 +189,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
 
       case AppState.Unauthenticated:
+        appSignIn();
+
         return (
           <AuthContext.Provider value={authContext}>
             <LoginScreen />
