@@ -664,4 +664,58 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return http:OK;
     }
+
+    resource function patch organization/business\-unit/[int buId](http:RequestContext ctx) 
+        returns http:InternalServerError {
+            
+        log:printInfo("Business unit patch function invoked. Employee id : ", buId = buId);
+
+        return<http:InternalServerError>{
+            body: {
+                message: "Internal server error"
+            }
+        };
+    }
+
+    resource function patch organization/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+
+        log:printInfo("Team patch invoked, teamId : ", teamId = teamId);
+
+        return http:OK;
+    }
+
+    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+
+      log:printInfo("Sub team patch invoked, sub team id : ", subTeamId = subTeamId);
+
+      return http:OK;
+    }
+
+    resource function patch organization/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
+      
+      log:printInfo("Unit patch function invoked, unit id : ", unitId = unitId);
+
+      return http:OK;
+    }
+
+    resource function patch organization/business\-unit/[int buId]/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+
+      log:printInfo("Organization business-unit-team patch invoked, ", buId = buId, teamId = teamId);
+      
+      return http:OK;
+    }
+
+    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+
+      log:printInfo("Organization team-subteam patch invoked, ", teamId = teamId, subTeamId = subTeamId);
+                    
+      return http:OK;
+    }
+
+    resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
+
+      log:printInfo("Organization sub-team-unit patch invoked, ", subTeamId=subTeamId, unitId = unitId);
+
+      return http:OK;
+    }   
 }
