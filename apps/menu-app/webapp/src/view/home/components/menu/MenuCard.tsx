@@ -204,9 +204,11 @@ export default function MenuCard(props: MenuCardProps) {
             justifyContent: "space-between",
             alignItems: "center",
             p: 2,
+            backgroundColor: theme.palette.surface.primary.active,
           }}
         >
           <Typography variant="h5">Lunch Feedback</Typography>
+
           <CloseOutlinedIcon
             onClick={handleCloseFeedback}
             sx={{ cursor: "pointer" }}
@@ -215,6 +217,7 @@ export default function MenuCard(props: MenuCardProps) {
 
         <DialogContent
           sx={{
+            backgroundColor: theme.palette.surface.primary.active,
             color: theme.palette.customText.primary.p2.active,
             p: 2,
             pt: 0,
