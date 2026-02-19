@@ -14,21 +14,34 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useEffect } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
-import { Container } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import {
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  Container,
+  Typography,
+} from "@mui/material";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@root/src/slices/store";
-import { useTheme } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
-import { AsgardeoConfig } from "@src/config/config"; // adjust path if needed
+import { AsgardeoConfig } from "@src/config/config";
 
-function ScanVisit() {
+const ScanVisit: React.FC = () => {
   const dispatch = useAppDispatch();
-  const theme = useTheme();
   const navigate = useNavigate();
 
-  const isValidUrl = (text: string) => {
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const isRunningRef = useRef(false);
+  const hasScannedRef = useRef(false);
+
+  const [isScanning, setIsScanning] = useState(true);
+
+  const readerId = "qr-reader";
+
+  const isValidUrl = (text: string): boolean => {
     try {
       const url = new URL(text);
       const redirectUrl = new URL(AsgardeoConfig.signInRedirectURL);
@@ -40,79 +53,143 @@ function ScanVisit() {
       return false;
     }
   };
+
+  const safeStop = async () => {
+    try {
+      if (html5QrCodeRef.current && isRunningRef.current) {
+        await html5QrCodeRef.current.stop();
+        await html5QrCodeRef.current.clear();
+        isRunningRef.current = false;
+      }
+    } catch {
+      // ignore — prevents "scanner not running" error
+    }
+  };
+
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("reader", { fps: 10 }, false);
-    scanner.render(
-      (decodedText) => {
-        if (isValidUrl(decodedText)) {
-          const url = new URL(decodedText);
-          const safePath =
-            "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
-          navigate(safePath);
-          scanner.clear();
-        } else {
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "Scanned QR is not a valid URL.",
-              type: "error",
-            }),
-          );
-        }
-      },
-      (error) => {},
-    );
-    // Cleanup function to stop scanner on unmount
+    const startScanner = async () => {
+      try {
+        html5QrCodeRef.current = new Html5Qrcode(readerId);
+
+        await html5QrCodeRef.current.start(
+          { facingMode: "environment" },
+          {
+            fps: 12,
+            qrbox: { width: 260, height: 260 },
+            aspectRatio: 1,
+          },
+          async (decodedText: string) => {
+            if (hasScannedRef.current) return;
+            hasScannedRef.current = true;
+
+            if (!isValidUrl(decodedText)) {
+              hasScannedRef.current = false;
+
+              dispatch(
+                enqueueSnackbarMessage({
+                  message: "Invalid visit QR code",
+                  type: "warning",
+                }),
+              );
+              return;
+            }
+
+            setIsScanning(false);
+
+            await safeStop();
+
+            const url = new URL(decodedText);
+            const safePath =
+              "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
+
+            navigate(safePath);
+          },
+          () => {},
+        );
+
+        isRunningRef.current = true;
+      } catch {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "Unable to access camera",
+            type: "error",
+          }),
+        );
+      }
+    };
+
+    startScanner();
+
     return () => {
-      scanner.clear().catch(() => {});
+      safeStop();
     };
   }, [dispatch, navigate]);
 
   return (
-    <Container maxWidth={false} disableGutters>
-      <style>
-        {`
-          /* Start/Stop buttons match theme primary color */
-          #html5-qrcode-button-camera-start,
-          #html5-qrcode-button-camera-stop,
-          #html5-qrcode-button-camera-permission {
-            background-color: ${theme.palette.primary.main};
-            color: ${theme.palette.primary.contrastText || "white"};
-            border: none;
-            padding: 10px 22px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.25s ease;
-          }
+    <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Card
+        elevation={0}
+        sx={{
+          maxWidth: 520,
+          mx: "auto",
+          borderRadius: 2,
+          border: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <CardContent sx={{ p: 4 }}>
+          <Typography variant="h6" fontWeight={600} gutterBottom>
+            Scan Visit QR
+          </Typography>
 
-          #html5-qrcode-button-camera-start:hover,
-          #html5-qrcode-button-camera-stop:hover,
-          #html5-qrcode-button-camera-permission:hover {
-            background-color: ${theme.palette.primary.dark};
-          }
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Ask the visitor to present their QR code. The system will
+            automatically validate once detected.
+          </Typography>
 
-          #html5-qrcode-button-camera-start:disabled,
-          #html5-qrcode-button-camera-stop:disabled,
-          #html5-qrcode-button-camera-permission:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-          }
+          {/* Camera Preview */}
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "1 / 1",
+              bgcolor: "#000",
+              borderRadius: 1,
+              overflow: "hidden",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Box id={readerId} sx={{ width: "100%", height: "100%" }} />
 
-          /* Hide file selection link and info icon */
-          #html5-qrcode-button-file-selection,
-          #reader img[alt="Info icon"] {
-            display: none !important;
-          }
-          /* Hide "Scan an Image File" span */
-      #html5-qrcode-anchor-scan-type-change {
-        display: none !important;
-      }
-        `}
-      </style>
-      <div id="reader" />
+            {/* Loading overlay after scan */}
+            {!isScanning && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "rgba(0,0,0,0.5)",
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            )}
+          </Box>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ display: "block", mt: 2 }}
+          >
+            Ensure the QR code is clear and visible to the camera.
+          </Typography>
+        </CardContent>
+      </Card>
     </Container>
   );
-}
+};
 
 export default ScanVisit;

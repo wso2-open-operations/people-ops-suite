@@ -473,7 +473,41 @@ function CreateVisit() {
           }),
         contactNumber: Yup.string()
           .nullable()
-          .matches(/^\+?\d{10,15}$/, "Invalid contact number"),
+          .test("valid-phone-international", function (value) {
+            const { countryCode } = this.parent;
+
+            if (!value || value.trim() === "") return true;
+
+            if (!value.startsWith("+")) {
+              return this.createError({
+                message: "Phone number must start with country code (e.g. +94)",
+              });
+            }
+
+            try {
+              const parsed = phoneUtil.parseAndKeepRawInput(value);
+              if (!phoneUtil.isValidNumber(parsed)) {
+                return this.createError({
+                  message: "Invalid phone number for the selected country",
+                });
+              }
+
+              if (
+                countryCode &&
+                countryCode !== `+${parsed.getCountryCode()}`
+              ) {
+                return this.createError({
+                  message: `Phone number doesn't match selected country code (${countryCode})`,
+                });
+              }
+
+              return true;
+            } catch (err) {
+              return this.createError({
+                message: "Invalid phone number format",
+              });
+            }
+          }),
       }),
     ),
   });

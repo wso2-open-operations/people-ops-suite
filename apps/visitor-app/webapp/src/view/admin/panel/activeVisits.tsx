@@ -55,7 +55,11 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
-import { fetchVisits, visitStatusUpdate } from "@slices/visitSlice/visit";
+import {
+  fetchVisits,
+  UpdateVisitPayload,
+  visitStatusUpdate,
+} from "@slices/visitSlice/visit";
 import {
   State,
   VisitStatus,
@@ -79,10 +83,8 @@ const toLocalDateTime = (utcString: string) => {
 };
 
 const approvalValidationSchema = Yup.object({
-  passNumber: Yup.string().required("Pass number is required"),
-  selectedFloorsAndRooms: Yup.array()
-    .min(1, "At least one floor and room must be selected")
-    .required("Floor and room selection is required"),
+  passNumber: Yup.string(),
+  selectedFloorsAndRooms: Yup.array(),
 });
 
 const ActiveVisits = () => {
@@ -144,13 +146,15 @@ const ActiveVisits = () => {
     accessibleLocations: { floor: string; rooms: string[] }[],
   ) => {
     try {
-      const payload = {
+      const payload: UpdateVisitPayload = {
         visitId: +visitId,
-        passNumber: passNumber.trim(),
         status: VisitAction.approve,
-        accessibleLocations,
         rejectionReason: null,
       };
+
+      if (accessibleLocations.length > 0)
+        payload.accessibleLocations = accessibleLocations;
+      if (passNumber.trim() !== "") payload.passNumber = passNumber.trim();
 
       await dispatch(visitStatusUpdate(payload));
       setCurrentVisitId(null);
@@ -507,7 +511,7 @@ const ActiveVisits = () => {
                 <Field
                   as={TextField}
                   name="passNumber"
-                  label="Pass Number"
+                  label="Pass Number (Optional)"
                   fullWidth
                   variant="outlined"
                   placeholder="Enter pass number"
