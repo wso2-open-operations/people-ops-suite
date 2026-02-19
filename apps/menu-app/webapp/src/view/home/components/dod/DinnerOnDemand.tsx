@@ -62,7 +62,7 @@ export default function DinnerOnDemand() {
 
   const coloredLogo = useRecolorLottie(emptyLogo, {
     "#020F30": theme.palette.customText.primary.p2.active,
-    "#F57800": theme.palette.fill.primary.active,
+    "#F57800": "F57800",
   });
 
   const handleMealOptionClick = (mealValue: string) => {
@@ -101,7 +101,7 @@ export default function DinnerOnDemand() {
           alignItems: "center",
         }}
       >
-        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p2.active }}>
           Dinner On Demand
         </Typography>
 
