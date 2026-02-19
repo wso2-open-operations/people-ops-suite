@@ -958,7 +958,8 @@ function CreateVisit() {
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Name *"
+                      required
+                      label="Name"
                       name={`visitors.${idx}.name`}
                       value={visitor.name}
                       onChange={formik.handleChange}
