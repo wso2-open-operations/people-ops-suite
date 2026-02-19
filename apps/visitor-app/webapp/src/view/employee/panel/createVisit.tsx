@@ -459,8 +459,7 @@ function CreateVisit() {
       }),
     visitors: Yup.array().of(
       Yup.object({
-        firstName: Yup.string().nullable(),
-        lastName: Yup.string().nullable(),
+        name: Yup.string().required("Name is required").nullable(),
         emailAddress: Yup.string()
           .email("Invalid email")
           .required("Email is required")
@@ -959,11 +958,19 @@ function CreateVisit() {
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="First Name & Last Name"
+                      label="Name *"
                       name={`visitors.${idx}.name`}
                       value={visitor.name}
                       onChange={formik.handleChange}
                       disabled={visitor.status === VisitorStatus.Completed}
+                      error={
+                        formik.touched.visitors?.[idx]?.name &&
+                        Boolean(formik.errors.visitors?.[idx]?.name)
+                      }
+                      helperText={
+                        formik.touched.visitors?.[idx]?.name &&
+                        formik.errors.visitors?.[idx]?.name
+                      }
                     />
                   </Grid>
 
