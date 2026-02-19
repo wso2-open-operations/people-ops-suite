@@ -163,14 +163,14 @@ export default function MenuCard(props: MenuCardProps) {
               display: "flex",
               gap: 1,
               alignItems: "center",
-              border: `1px solid ${theme.palette.customBorder.secondary.active}`,
+              border: `1px solid ${theme.palette.customBorder.brand.active}`,
               px: 1,
               py: 0.5,
               borderRadius: 0.5,
-              color: theme.palette.customText.secondary.p1.active,
+              color: theme.palette.customText.brand.p1.active,
               visibility: mealType !== "lunch" ? "hidden" : "visible",
               "&:hover": {
-                backgroundColor: alpha(theme.palette.fill.secondary_light.active, 0.5),
+                backgroundColor: alpha(theme.palette.fill.primary_light.active, 0.5),
               },
             }}
           >
