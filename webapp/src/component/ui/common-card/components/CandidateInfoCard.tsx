@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Grid, Stack, Typography } from "@mui/material";
+
+import { Grid, Stack, Typography, useTheme } from "@mui/material";
 
 import React from "react";
 
@@ -29,6 +30,7 @@ interface CandidateInfoArray {
 }
 
 const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
+  const theme = useTheme();
   return (
     <Grid
       size={{ xs: 12 }}
@@ -51,7 +53,7 @@ const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
             {React.cloneElement(item.icon, {
               sx: {
                 color: "secondary.dark",
-                fontSize: 15,
+                fontSize: theme.typography.body2.fontSize,
               },
             })}
             <>

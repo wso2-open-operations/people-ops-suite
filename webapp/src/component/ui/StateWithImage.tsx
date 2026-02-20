@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Typography } from "@mui/material";
 
 function StateWithImage(props: { message: string; imageUrl: string; hideImage?: boolean }) {
@@ -21,12 +22,11 @@ function StateWithImage(props: { message: string; imageUrl: string; hideImage?: 
       {!props.hideImage && <img alt="logo" width="140" height="auto" src={props.imageUrl}></img>}
 
       <Typography
-        variant="body1"
-        sx={{
-          fontWeight: 500,
+        variant="h5"
+        sx={(theme) => ({
+          color: theme.palette.grey[500],
           textAlign: "center",
-          color: "text.primary",
-        }}
+        })}
       >
         {props.message}
       </Typography>
