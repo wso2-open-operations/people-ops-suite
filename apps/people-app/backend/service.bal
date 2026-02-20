@@ -308,21 +308,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         return units;
     }
 
-    # Get full organization chart.
+    # Get full organization structure.
     #
-    # + return - Full organization chart
-    resource function get org\-chart() returns database:OrgChartBusinessUnit[]|http:InternalServerError {
-        database:OrgChartBusinessUnit[]|error orgChart = database:getFullOrgChart();
-        if orgChart is error {
-            string customErr = "Error while fetching organization chart";
-            log:printError(customErr, orgChart);
+    # + return - Full organization structure
+    resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
+        database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
+        if orgStructure is error {
+            string customErr = "Error while fetching organization structure";
+            log:printError(customErr, orgStructure);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
             };
         }
-        return orgChart;
+        return orgStructure;
     }
 
     # Get career functions.

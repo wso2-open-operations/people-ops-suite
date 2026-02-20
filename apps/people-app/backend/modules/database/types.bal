@@ -257,41 +257,41 @@ public type Unit record {|
     string name;
 |};
 
-# Organization chart unit.
-public type OrgChartUnit Unit;
+# Organization structure unit.
+public type OrgStructureUnit Unit;
 
-# Organization chart sub-team.
-public type OrgChartSubTeam record {|
+# Organization structure sub-team.
+public type OrgStructureSubTeam record {|
     # SubTeam ID
     int id;
     # SubTeam name
     string name;
     # Units under this sub-team
-    OrgChartUnit[] units = [];
+    OrgStructureUnit[] units = [];
 |};
 
-# Organization chart team.
-public type OrgChartTeam record {|
+# Organization structure team.
+public type OrgStructureTeam record {|
     # Team ID
     int id;
     # Team name
     string name;
     # Sub-teams under this team
-    OrgChartSubTeam[] subTeams = [];
+    OrgStructureSubTeam[] subTeams = [];
 |};
 
-# Organization chart business unit.
-public type OrgChartBusinessUnit record {|
+# Organization structure business unit.
+public type OrgStructureBusinessUnit record {|
     # Business unit ID
     int id;
     # Business unit name
     string name;
     # Teams under this business unit
-    OrgChartTeam[] teams = [];
+    OrgStructureTeam[] teams = [];
 |};
 
 # Raw database result with JSON teams
-type OrgChartBusinessUnitRow record {|
+type OrgStructureBusinessUnitRow record {|
     # Business unit ID
     int id;
     # Business unit name

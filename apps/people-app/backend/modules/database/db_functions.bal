@@ -132,26 +132,26 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
         select unit;
 }
 
-# Fetch organization chart with business units, teams, sub-teams and units.
+# Fetch organization structure with business units, teams, sub-teams and units.
 #
-# + return - Organization chart data or error
-public isolated function getFullOrgChart() returns OrgChartBusinessUnit[]|error {
-    stream<OrgChartBusinessUnitRow, sql:Error?> orgChartStream = databaseClient->query(getFullOrgChartQuery());
+# + return - Organization structure data or error
+public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
+    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream = databaseClient->query(getFullOrgChartQuery());
 
-    OrgChartBusinessUnitRow[] rows = check from OrgChartBusinessUnitRow row in orgChartStream
+    OrgStructureBusinessUnitRow[] rows = check from OrgStructureBusinessUnitRow row in orgStructureStream
         select row;
 
-    OrgChartBusinessUnit[] typedOrgChart = [];
-    foreach OrgChartBusinessUnitRow row in rows {
-        OrgChartTeam[] teams = check jsondata:parseAsType(row.teams);
-        typedOrgChart.push({
+    OrgStructureBusinessUnit[] typedOrgStructure = [];
+    foreach OrgStructureBusinessUnitRow row in rows {
+        OrgStructureTeam[] teams = check jsondata:parseAsType(row.teams);
+        typedOrgStructure.push({
             id: row.id,
             name: row.name,
-            teams: teams
+            teams
         });
     }
 
-    return typedOrgChart;
+    return typedOrgStructure;
 }
 
 # Get career functions.
