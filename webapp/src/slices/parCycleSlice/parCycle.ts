@@ -12,7 +12,7 @@ import {
 } from "@utils/types";
 import { AppConfig } from "@config/config";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { SnackMessage, uiMessages } from "@config/constant";
 import { HttpStatusCode } from "axios";
 import { getErrorMessage } from "@utils/utils";
@@ -96,7 +96,7 @@ export const fetchQuotaPendingParCycle = createAsyncThunk(
   "parCycle/fetchQuotaPendingParCycle",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING_QUOTA}`
       );
 
@@ -139,7 +139,7 @@ export const fetchOpenParCycle = createAsyncThunk(
   "parCycle/fetchOpenParCycle",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.OPEN}`
       );
 
@@ -184,7 +184,7 @@ export const fetchPendingParCycle = createAsyncThunk(
   "parCycle/fetchPendingParCycle",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING}`
       );
 
@@ -217,7 +217,7 @@ export const fetchClosedParCycles = createAsyncThunk(
   "parCycle/fetchClosedParCycles",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.CLOSED}`
       );
 
@@ -251,7 +251,7 @@ export const fetchParCycleById = createAsyncThunk(
   async (parCycleId: number, { dispatch }) => {
     try {
       dispatch(updateStateMessage(uiMessages.loading.fetchCurrentCycleDetails));
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`
       );
 
@@ -287,7 +287,7 @@ export const createParCycle = createAsyncThunk(
   ) => {
     try {
       dispatch(updateStateMessage(uiMessages.loading.parCycleCreation));
-      const response = await APIService.getInstance().post(
+      const response = await ApiService.getInstance().post(
         AppConfig.serviceUrls.parCycles,
         values
       );
@@ -327,7 +327,7 @@ export const updateParCycle = createAsyncThunk(
   async ({ parCycleId, values }: UpdateOpenParCycleRequest, { dispatch }) => {
     try {
       dispatch(updateStateMessage(uiMessages.loading.parCycleCreation));
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
         values
       );
@@ -366,7 +366,7 @@ export const openParCycle = createAsyncThunk(
   "parCycle/openParCycle",
   async (parCycleId: number, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
         {
           parCycleStatus: ParCycleStatus.OPEN,
@@ -407,7 +407,7 @@ export const closeParCycle = createAsyncThunk(
   "parCycle/closeParCycle",
   async (parCycleId: number, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
         {
           parCycleStatus: ParCycleStatus.CLOSED,
