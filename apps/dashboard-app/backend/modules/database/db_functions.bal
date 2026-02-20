@@ -15,15 +15,16 @@
 // under the License.
 import ballerina/sql;
 
-# Add meal record.
+# Add food waste record.
 #
-# + payload - Payload containing the meal record details
+# + payload - Payload containing the food waste record details
 # + createdBy - Person who is creating the record
-# + return - Id of the meal record|DuplicateMealRecordError|Error
-public isolated function addMealRecord(AddMealRecordPayload payload, string createdBy)
-    returns int|DuplicateMealRecordError|error {
+# + return - Id of the food waste record|DuplicateFoodWasteRecordError|Error
+public isolated function addFoodWasteRecord(AddFoodWasteRecordPayload payload, string createdBy)
+    returns int|DuplicateFoodWasteRecordError|error {
 
-    sql:ExecutionResult|error executionResults = databaseClient->execute(addMealRecordQuery(payload, createdBy));
+    sql:ExecutionResult|error executionResults =
+        databaseClient->execute(addFoodWasteRecordQuery(payload, createdBy));
     if executionResults is error {
         // MySQL duplicate key errors bubble up via JDBC with messages like:
         // - "Duplicate entry ... for key ..."
@@ -31,8 +32,9 @@ public isolated function addMealRecord(AddMealRecordPayload payload, string crea
         // We avoid relying on driver-specific structured fields for compatibility.
         string errMsg = executionResults.message();
         if errMsg.includes("Duplicate entry") || errMsg.includes("SQLIntegrityConstraintViolationException") ||
-                errMsg.includes("uniq_meal_record_date_type") {
-            return error DuplicateMealRecordError("Meal record already exists for the given date and meal_type.");
+                errMsg.includes("uniq_food_waste_record_date_type") {
+            return error DuplicateFoodWasteRecordError(
+                "Food waste record already exists for the given date and meal_type.");
         }
         return executionResults;
     }
@@ -40,31 +42,34 @@ public isolated function addMealRecord(AddMealRecordPayload payload, string crea
     return <int>executionResults.lastInsertId;
 }
 
-# Fetch meal record by id.
+# Fetch food waste record by id.
 #
-# + id - Meal record id
-# + return - Meal record|Error or () if not found
-public isolated function fetchMealRecord(int id) returns MealRecord|error? {
-    MealRecord|sql:Error mealRecord = databaseClient->queryRow(getMealRecordByIdQuery(id));
-    if mealRecord is sql:Error && mealRecord is sql:NoRowsError {
+# + id - Food waste record id
+# + return - Food waste record|Error or () if not found
+public isolated function fetchFoodWasteRecord(int id) returns FoodWasteRecord|error? {
+    FoodWasteRecord|sql:Error foodWasteRecord =
+        databaseClient->queryRow(getFoodWasteRecordByIdQuery(id));
+    if foodWasteRecord is sql:Error && foodWasteRecord is sql:NoRowsError {
         return;
     }
-    return mealRecord;
+    return foodWasteRecord;
 }
 
-# Fetch meal records list (paginated).
+# Fetch food waste records list (paginated).
 #
 # + filters - Filters
 # + page - Page number
 # + pageSize - Page size
 # + return - Paginated response|Error
-public isolated function fetchMealRecords(MealRecordFilters filters, int page, int pageSize) returns PaginatedMealRecords|error {
-    stream<MealRecordListRow, sql:Error?> resultStream = databaseClient->query(getMealRecordsQuery(filters));
+public isolated function fetchFoodWasteRecords(FoodWasteRecordFilters filters, int page, int pageSize)
+    returns PaginatedFoodWasteRecords|error {
+    stream<FoodWasteRecordListRow, sql:Error?> resultStream =
+        databaseClient->query(getFoodWasteRecordsQuery(filters));
 
     int totalCount = 0;
-    MealRecord[] records = [];
+    FoodWasteRecord[] records = [];
 
-    check from MealRecordListRow row in resultStream
+    check from FoodWasteRecordListRow row in resultStream
         do {
             totalCount = row.totalCount;
             records.push({
@@ -87,12 +92,13 @@ public isolated function fetchMealRecords(MealRecordFilters filters, int page, i
 #
 # + recordDate - Date (YYYY-MM-DD)
 # + return - Daily response|Error
-public isolated function fetchDailyMealRecords(string recordDate) returns DailyMealRecords|error {
-    stream<MealRecord, sql:Error?> resultStream = databaseClient->query(getMealRecordsByDateQuery(recordDate));
-    MealRecord? breakfast = ();
-    MealRecord? lunch = ();
+public isolated function fetchDailyFoodWasteRecords(string recordDate) returns DailyFoodWasteRecords|error {
+    stream<FoodWasteRecord, sql:Error?> resultStream =
+        databaseClient->query(getFoodWasteRecordsByDateQuery(recordDate));
+    FoodWasteRecord? breakfast = ();
+    FoodWasteRecord? lunch = ();
 
-    check from MealRecord rec in resultStream
+    check from FoodWasteRecord rec in resultStream
         do {
             if rec.meal_type == "BREAKFAST" {
                 breakfast = rec;
@@ -104,38 +110,39 @@ public isolated function fetchDailyMealRecords(string recordDate) returns DailyM
     return {record_date: recordDate, breakfast, lunch};
 }
 
-# Update an existing meal record.
+# Update an existing food waste record.
 #
-# + id - Meal record id
+# + id - Food waste record id
 # + payload - Fields to update
 # + updatedBy - Person who is updating
-# + return - Updated record|MealRecordNotFoundError|Error
-public isolated function updateMealRecord(int id, UpdateMealRecordPayload payload, string updatedBy)
-    returns MealRecord|MealRecordNotFoundError|error {
+# + return - Updated record|FoodWasteRecordNotFoundError|Error
+public isolated function updateFoodWasteRecord(int id, UpdateFoodWasteRecordPayload payload, string updatedBy)
+    returns FoodWasteRecord|FoodWasteRecordNotFoundError|error {
 
-    sql:ExecutionResult executionResult = check databaseClient->execute(updateMealRecordQuery(id, payload, updatedBy));
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(updateFoodWasteRecordQuery(id, payload, updatedBy));
     if executionResult.affectedRowCount < 1 {
-        return error MealRecordNotFoundError("Meal record not found.");
+        return error FoodWasteRecordNotFoundError("Food waste record not found.");
     }
 
-    MealRecord|error? updated = fetchMealRecord(id);
+    FoodWasteRecord|error? updated = fetchFoodWasteRecord(id);
     if updated is error {
         return updated;
     }
     if updated is () {
-        return error MealRecordNotFoundError("Meal record not found.");
+        return error FoodWasteRecordNotFoundError("Food waste record not found.");
     }
     return updated;
 }
 
-# Delete an existing meal record.
+# Delete an existing food waste record.
 #
-# + id - Meal record id
-# + return - MealRecordNotFoundError|Error if deletion failed
-public isolated function deleteMealRecord(int id) returns MealRecordNotFoundError|error? {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteMealRecordQuery(id));
+# + id - Food waste record id
+# + return - FoodWasteRecordNotFoundError|Error if deletion failed
+public isolated function deleteFoodWasteRecord(int id) returns FoodWasteRecordNotFoundError|error? {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteFoodWasteRecordQuery(id));
     if executionResult.affectedRowCount < 1 {
-        return error MealRecordNotFoundError("Meal record not found.");
+        return error FoodWasteRecordNotFoundError("Food waste record not found.");
     }
 }
 
@@ -268,19 +275,19 @@ public isolated function getDateRangeSummary(string startDate, string endDate) r
 }
 
 public isolated function getTodayKPIs(string date) returns TodayKPIs|error {
-    DailyMealRecords daily = check fetchDailyMealRecords(date);
+    DailyFoodWasteRecords daily = check fetchDailyFoodWasteRecords(date);
 
     decimal totalWaste = 0.0d;
     int totalPlates = 0;
 
-    MealRecord? breakfast = daily.breakfast;
-    if breakfast is MealRecord {
+    FoodWasteRecord? breakfast = daily.breakfast;
+    if breakfast is FoodWasteRecord {
         totalWaste += breakfast.total_waste_kg;
         totalPlates += breakfast.plate_count;
     }
 
-    MealRecord? lunch = daily.lunch;
-    if lunch is MealRecord {
+    FoodWasteRecord? lunch = daily.lunch;
+    if lunch is FoodWasteRecord {
         totalWaste += lunch.total_waste_kg;
         totalPlates += lunch.plate_count;
     }
