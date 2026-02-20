@@ -111,12 +111,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Create a new breakfast or lunch waste record.
+    # Create a new breakfast or lunch food waste record.
     #
     # + ctx - Request context
-    # + payload - Meal record payload
+    # + payload - Food waste record payload
     # + return - Created record|Conflict|Forbidden|BadRequest|InternalServerError
-    resource function post meal\-records(http:RequestContext ctx, database:AddMealRecordPayload payload)
+    resource function post food\-waste(http:RequestContext ctx, database:AddFoodWasteRecordPayload payload)
             returns http:Created|http:Conflict|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -137,18 +137,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|database:DuplicateMealRecordError|error mealRecordId =
-            database:addMealRecord(payload, userInfo.email);
-        if mealRecordId is database:DuplicateMealRecordError {
+        int|database:DuplicateFoodWasteRecordError|error foodWasteRecordId =
+            database:addFoodWasteRecord(payload, userInfo.email);
+        if foodWasteRecordId is database:DuplicateFoodWasteRecordError {
             return <http:Conflict>{
                 body: {
-                    message: mealRecordId.message()
+                    message: foodWasteRecordId.message()
                 }
             };
         }
-        if mealRecordId is error {
-            string customError = "Error occurred while creating meal record!";
-            log:printError(customError, mealRecordId);
+        if foodWasteRecordId is error {
+            string customError = "Error occurred while creating food waste record!";
+            log:printError(customError, foodWasteRecordId);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -156,9 +156,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:MealRecord|error? created = database:fetchMealRecord(mealRecordId);
+        database:FoodWasteRecord|error? created = database:fetchFoodWasteRecord(foodWasteRecordId);
         if created is error {
-            string customError = "Error occurred while retrieving created meal record!";
+            string customError = "Error occurred while retrieving created food waste record!";
             log:printError(customError, created);
             return <http:InternalServerError>{
                 body: {
@@ -167,7 +167,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if created is () {
-            string customError = "Created meal record is no longer available to access!";
+            string customError = "Created food waste record is no longer available to access!";
             log:printError(customError);
             return <http:InternalServerError>{
                 body: {
@@ -183,9 +183,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + date - Date (YYYY-MM-DD)
-    # + return - DailyMealRecords|Forbidden|BadRequest|InternalServerError
-    resource function get meal\-records/daily(http:RequestContext ctx, string date)
-            returns database:DailyMealRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
+        # + return - DailyFoodWasteRecords|Forbidden|BadRequest|InternalServerError
+        resource function get food\-waste/daily(http:RequestContext ctx, string date)
+            returns database:DailyFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -214,9 +214,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:DailyMealRecords|error daily = database:fetchDailyMealRecords(date);
+        database:DailyFoodWasteRecords|error daily = database:fetchDailyFoodWasteRecords(date);
         if daily is error {
-            string customError = "Error occurred while fetching daily meal records!";
+            string customError = "Error occurred while fetching daily food waste records!";
             log:printError(customError, daily);
             return <http:InternalServerError>{
                 body: {
@@ -227,7 +227,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return daily;
     }
 
-    # List/filter meal records (paginated).
+    # List/filter food waste records (paginated).
     #
     # + ctx - Request context
     # + start_date - Start date (YYYY-MM-DD)
@@ -235,10 +235,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + meal_type - Meal type (BREAKFAST|LUNCH)
     # + page - Page number (1-based)
     # + pageSize - Page size
-    # + return - Paginated list|Forbidden|BadRequest|InternalServerError
-    resource function get meal\-records(http:RequestContext ctx, string? start_date, string? end_date,
+        # + return - Paginated list|Forbidden|BadRequest|InternalServerError
+        resource function get food\-waste(http:RequestContext ctx, string? start_date, string? end_date,
             string? meal_type, int page = 1, int pageSize = database:DEFAULT_PAGE_SIZE)
-            returns database:PaginatedMealRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
+            returns database:PaginatedFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -283,10 +283,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int offset = (page - 1) * pageSize;
-        database:MealRecordFilters filters = {start_date, end_date, meal_type, 'limit: pageSize, offset};
-        database:PaginatedMealRecords|error pageResult = database:fetchMealRecords(filters, page, pageSize);
+        database:FoodWasteRecordFilters filters = {start_date, end_date, meal_type, 'limit: pageSize, offset};
+        database:PaginatedFoodWasteRecords|error pageResult =
+            database:fetchFoodWasteRecords(filters, page, pageSize);
         if pageResult is error {
-            string customError = "Error occurred while listing meal records!";
+            string customError = "Error occurred while listing food waste records!";
             log:printError(customError, pageResult);
             return <http:InternalServerError>{
                 body: {
@@ -297,14 +298,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         return pageResult;
     }
 
-    # Update an existing meal record.
+    # Update an existing food waste record.
     #
     # + ctx - Request context
-    # + id - Meal record id
+        # + id - Food waste record id
     # + payload - Update payload
     # + return - Updated record|NotFound|Forbidden|BadRequest|InternalServerError
-    resource function put meal\-records/[int id](http:RequestContext ctx, database:UpdateMealRecordPayload payload)
-            returns database:MealRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+        resource function put food\-waste/[int id](http:RequestContext ctx, database:UpdateFoodWasteRecordPayload payload)
+            returns database:FoodWasteRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -332,9 +333,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:MealRecord|database:MealRecordNotFoundError|error updated =
-            database:updateMealRecord(id, payload, userInfo.email);
-        if updated is database:MealRecordNotFoundError {
+        database:FoodWasteRecord|database:FoodWasteRecordNotFoundError|error updated =
+            database:updateFoodWasteRecord(id, payload, userInfo.email);
+        if updated is database:FoodWasteRecordNotFoundError {
             return <http:NotFound>{
                 body: {
                     message: updated.message()
@@ -342,7 +343,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if updated is error {
-            string customError = "Error occurred while updating meal record!";
+            string customError = "Error occurred while updating food waste record!";
             log:printError(customError, updated);
             return <http:InternalServerError>{
                 body: {
@@ -353,12 +354,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         return updated;
     }
 
-    # Delete a meal record.
+    # Delete a food waste record.
     #
     # + ctx - Request context
-    # + id - Meal record id
+    # + id - Food waste record id
     # + return - NoContent|NotFound|Forbidden|BadRequest|InternalServerError
-    resource function delete meal\-records/[int id](http:RequestContext ctx)
+    resource function delete food\-waste/[int id](http:RequestContext ctx)
             returns http:NoContent|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -379,8 +380,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:MealRecordNotFoundError|error? deleted = database:deleteMealRecord(id);
-        if deleted is database:MealRecordNotFoundError {
+        database:FoodWasteRecordNotFoundError|error? deleted = database:deleteFoodWasteRecord(id);
+        if deleted is database:FoodWasteRecordNotFoundError {
             return <http:NotFound>{
                 body: {
                     message: deleted.message()
@@ -388,7 +389,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if deleted is error {
-            string customError = "Error occurred while deleting meal record!";
+            string customError = "Error occurred while deleting food waste record!";
             log:printError(customError, deleted);
             return <http:InternalServerError>{
                 body: {
@@ -663,7 +664,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     // --- Reports Endpoints ---
 
-    # Export meal records as CSV.
+    # Export food waste records as CSV.
     #
     # + ctx - Request context
     # + start_date - Start date (YYYY-MM-DD)
@@ -700,8 +701,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:MealRecordFilters filters = {start_date, end_date, 'limit: 1000, offset: 0};
-        database:PaginatedMealRecords|error records = database:fetchMealRecords(filters, 1, 1000);
+        database:FoodWasteRecordFilters filters = {start_date, end_date, 'limit: 1000, offset: 0};
+        database:PaginatedFoodWasteRecords|error records = database:fetchFoodWasteRecords(filters, 1, 1000);
         if records is error {
             string customError = "Error occurred while fetching data for export!";
             log:printError(customError, records);
@@ -713,7 +714,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string csv = "record_date,meal_type,total_waste_kg,plate_count\n";
-        foreach database:MealRecord rec in records.records {
+        foreach database:FoodWasteRecord rec in records.records {
             csv += string `${rec.record_date},${rec.meal_type},${rec.total_waste_kg},${rec.plate_count}` + "\n";
         }
 
