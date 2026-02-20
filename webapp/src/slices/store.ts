@@ -21,15 +21,15 @@ import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
 import parCycleReducer from "@slices/parCycleSlice/parCycle";
 import appConfigReducer from "@slices/configSlice/config";
-import employeeReducer from "@slices/employeeSlice/employee";
+// import employeeReducer from "@slices/employeeSlice/employee";
 import userReducer from "@slices/userSlice/user";
 import reminderReducer from "@slices/reminderSlice/reminder";
 import metaReducer from "@slices/metaSlice/meta";
 import calendarSlice from "@slices/calendarSlice/calendar";
-import threeSixtyReviewReducer from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
+// import threeSixtyReviewReducer from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+// import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
 import healthReducer from "@slices/healthSlice/health";
-import teamReducer from "@slices/teamSlice/team";
+// import teamReducer from "@slices/teamSlice/team";
 import collectionReducer from "@slices/collections/collection";
 import specialQuotaReducer from "@slices/specialQuotaSlice/specialQuota";
 
@@ -42,15 +42,15 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     parCycle: parCycleReducer,
-    employee: employeeReducer,
+    // employee: employeeReducer,
     appConfig: appConfigReducer,
     reminder: reminderReducer,
     meta: metaReducer,
-    team: teamReducer,
+    // team: teamReducer,
     calendarSlice: calendarSlice,
     health: healthReducer,
-    employeeHistorySlice: employeeHistorySlice,
-    threeSixtyReview: threeSixtyReviewReducer,
+    // employeeHistorySlice: employeeHistorySlice,
+    // threeSixtyReview: threeSixtyReviewReducer,
     collection: collectionReducer,
     specialQuota: specialQuotaReducer,
   },

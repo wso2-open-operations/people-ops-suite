@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 
 import type { NavState } from "../../types/types";
-import SidebarNavItem from "../../components/layout/SidebarNavItem";
+import SidebarNavItem from "../../component/layout/SidebarNavItem";
 import pJson from "../../../package.json";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";

@@ -7,16 +7,15 @@
 
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { UserState } from "../userSlice/index"
+import { UserState } from "@slices/userSlice/user";
 import {
   Role,
   AuthState,
   AuthData,
   AuthFlowState,
   RequestState,
-} from "../../utils/types";
-import { getEmployeeInfo, getUserPrivileges } from "@utils/auth";
-import { adminGroup, employeeGroup } from "@config/config";
+} from "@utils/types";
+
 
 const initialState: AuthState = {
   isAuthenticated: false,
