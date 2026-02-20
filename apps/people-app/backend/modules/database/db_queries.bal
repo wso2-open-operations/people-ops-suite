@@ -296,48 +296,51 @@ isolated function getFullOrgChartQuery() returns sql:ParameterizedQuery =>
         bu.name,
         COALESCE(
             (
-                SELECT JSON_ARRAYAGG(
-                    JSON_OBJECT(
+                SELECT JSON_ARRAYAGG(team_sub.obj)
+                FROM LATERAL (
+                    SELECT JSON_OBJECT(
                         'id', t.id,
                         'name', t.name,
                         'subTeams',
                         COALESCE(
                             (
-                                SELECT JSON_ARRAYAGG(
-                                    JSON_OBJECT(
+                                SELECT JSON_ARRAYAGG(subteam_sub.obj)
+                                FROM LATERAL (
+                                    SELECT JSON_OBJECT(
                                         'id', st.id,
                                         'name', st.name,
                                         'units',
                                         COALESCE(
                                             (
-                                                SELECT JSON_ARRAYAGG(
-                                                    JSON_OBJECT(
+                                                SELECT JSON_ARRAYAGG(unit_sub.obj)
+                                                FROM LATERAL (
+                                                    SELECT JSON_OBJECT(
                                                         'id', u.id,
                                                         'name', u.name
-                                                    )
-                                                )
-                                                FROM business_unit_team_sub_team_unit butstu
-                                                INNER JOIN unit u ON u.id = butstu.unit_id
-                                                WHERE butstu.business_unit_team_sub_team_id = butst.id
-                                                ORDER BY u.name
+                                                    ) AS obj
+                                                    FROM business_unit_team_sub_team_unit butstu
+                                                    INNER JOIN unit u ON u.id = butstu.unit_id
+                                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                    ORDER BY u.name
+                                                ) AS unit_sub
                                             ),
                                             JSON_ARRAY()
                                         )
-                                    )
-                                )
-                                FROM business_unit_team_sub_team butst
-                                INNER JOIN sub_team st ON st.id = butst.sub_team_id
-                                WHERE butst.business_unit_team_id = but.id
-                                ORDER BY st.name
+                                    ) AS obj
+                                    FROM business_unit_team_sub_team butst
+                                    INNER JOIN sub_team st ON st.id = butst.sub_team_id
+                                    WHERE butst.business_unit_team_id = but.id
+                                    ORDER BY st.name
+                                ) AS subteam_sub
                             ),
                             JSON_ARRAY()
                         )
-                    )
-                )
-                FROM business_unit_team but
-                INNER JOIN team t ON t.id = but.team_id
-                WHERE but.business_unit_id = bu.id
-                ORDER BY t.name
+                    ) AS obj
+                    FROM business_unit_team but
+                    INNER JOIN team t ON t.id = but.team_id
+                    WHERE but.business_unit_id = bu.id
+                    ORDER BY t.name
+                ) AS team_sub
             ),
             JSON_ARRAY()
         ) AS teams
