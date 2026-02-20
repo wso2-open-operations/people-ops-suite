@@ -10,7 +10,7 @@ import { RootState } from "@slices/store";
 import { RequestState } from "@utils/types";
 import { AppConfig } from "../../config/config";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
 import { getErrorMessage } from "@utils/utils";
@@ -27,7 +27,7 @@ export const sendAllLeadReminder = createAsyncThunk(
   "reminder/sendAllLeadReminder",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.reminders}/schedule-lead-reminders`
       );
 
@@ -66,7 +66,7 @@ export const sendAllEmployeeReminder = createAsyncThunk(
   "reminder/sendAllEmployeeReminder",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.reminders}/schedule-employee-reminders`
       );
 
@@ -105,7 +105,7 @@ export const sendAllSpecialRatingReminder = createAsyncThunk(
   "reminder/sendAllSpecialRatingReminder",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.reminders}/schedule-special-rating-reminders`
       );
 
@@ -144,7 +144,7 @@ export const sendAllThreeSixtyReminder = createAsyncThunk(
   "reminder/sendAllThreeSixtyReminder",
   async (_, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.reminders}/schedule-360-reminders`
       );
 

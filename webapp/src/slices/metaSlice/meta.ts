@@ -9,7 +9,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { RootState } from "@slices/store";
 import { AppConfig } from "@config/config";
 import { ParConfigurations, RequestState } from "@utils/types";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
@@ -53,7 +53,7 @@ const initialState: ConfigState = {
 
 export const fetchConfigurations = createAsyncThunk("globalConfig/fetchConfigurations", async (_, { dispatch }) => {
   try {
-    const resp = await APIService.getInstance().get(AppConfig.serviceUrls.configurations);
+    const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.configurations);
     if (resp.status === HttpStatusCode.Ok) {
       return resp.data;
     } else {
@@ -75,7 +75,7 @@ export const updateConfigurations = createAsyncThunk(
   "globalConfig/updateConfigurations",
   async (payload: ParConfigurations, { dispatch }) => {
     try {
-      const resp = await APIService.getInstance().put(AppConfig.serviceUrls.configurations, payload);
+      const resp = await ApiService.getInstance().put(AppConfig.serviceUrls.configurations, payload);
       const message =
         resp.status === HttpStatusCode.Ok
           ? SnackMessage.success.updateGlobalParConfigs
@@ -103,7 +103,7 @@ export const updateConfigurations = createAsyncThunk(
 
 export const fetchEmployees = createAsyncThunk("globalConfig/fetchEmployees", async (_, { dispatch }) => {
   try {
-    const resp = await APIService.getInstance().get(AppConfig.serviceUrls.employees);
+    const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.employees);
     if (resp.status === HttpStatusCode.Ok) {
       return resp.data;
     } else {
@@ -129,7 +129,7 @@ export const fetchParticipants = createAsyncThunk(
       if (leadEmail) {
         url.searchParams.append("leadEmail", leadEmail);
       }
-      const resp = await APIService.getInstance().get(url.toString());
+      const resp = await ApiService.getInstance().get(url.toString());
       if (resp.status === HttpStatusCode.Ok) {
         return resp.data;
       } else {
@@ -154,7 +154,7 @@ export const fetchEntityEmployees = createAsyncThunk(
     try {
       const base = AppConfig.serviceUrls.userData;
       const url = leadEmail ? `${base}?leadEmail=${encodeURIComponent(leadEmail)}` : base;
-      const resp = await APIService.getInstance().get(url);
+      const resp = await ApiService.getInstance().get(url);
       if (resp.status === HttpStatusCode.Ok) {
         const list = (resp.data as any[]).map((e) => ({
           workEmail: e.workEmail,

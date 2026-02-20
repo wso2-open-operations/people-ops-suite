@@ -7,7 +7,7 @@
 
 import { RootState } from "@slices/store";
 import axios, { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { getErrorMessage } from "@utils/utils";
 import { AppConfig } from "../../config/config";
 import { SnackMessage } from "@config/constant";
@@ -84,7 +84,7 @@ export const postQuotaGroups = createAsyncThunk(
   "specialQuota/postQuotaGroups",
   async ({ parCycleId, parSpecialRatingGroups, specialRatingQuotas }: ParSpecialRatingQuotaGroups, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().post(
+      const response = await ApiService.getInstance().post(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/special-rating-groups-quota`,
         {
           parSpecialRatingGroups,
@@ -120,7 +120,7 @@ export const fetchQuotaGroups = createAsyncThunk(
   async ({ parCycleId, signal }: GetGroupRequest, { dispatch }) => {
     try {
       const url = `${AppConfig.serviceUrls.parCycles}/${parCycleId}/special-rating-groups`;
-      const resp = await APIService.getInstance().get(url, { signal });
+      const resp = await ApiService.getInstance().get(url, { signal });
       if (resp.status === HttpStatusCode.Ok) {
         return resp.data;
       } else {
@@ -153,7 +153,7 @@ export const fetchQuotaGroupRatings = createAsyncThunk(
         const encodedEmail = encodeURIComponent(leadEmail);
         url += `?leadEmail=${encodedEmail}`;
       }
-      const resp = await APIService.getInstance().get(url);
+      const resp = await ApiService.getInstance().get(url);
       if (resp.status === HttpStatusCode.Ok) {
         return resp.data;
       } else {
