@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,26 +13,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Typography, useTheme } from "@mui/material";
 import { ChevronDown as ChevronDownIcon } from "lucide-react";
 import { ChevronUp as ChevronUpIcon } from "lucide-react";
 
 import React from "react";
 
-import { RouteDetail } from "@root/src/types/types";
+import { RouteDetail } from "../../types/types";
 
 interface ListItemLinkProps {
   icon?: React.ReactElement;
   label: string;
   open: boolean;
   isActive: boolean;
+  isHovered: boolean;
+  isExpanded: boolean;
   hasChildren: boolean;
   route?: RouteDetail;
 }
 
 const LinkItem = (props: ListItemLinkProps) => {
-  const { icon, label, open, isActive, hasChildren } = props;
+  const { icon, label, open, isActive, isExpanded, hasChildren } = props;
   const theme = useTheme();
+  const isActiveOrExpanded = isActive || isExpanded;
 
   return (
     <Box
@@ -44,13 +48,13 @@ const LinkItem = (props: ListItemLinkProps) => {
         borderRadius: "8px",
         justifyContent: "space-between",
         transition: "all 0.2s",
-        backgroundColor: isActive ? theme.palette.customNavigation.clickedBg : "transparent",
+        backgroundColor: isActiveOrExpanded ? theme.palette.customNavigation.clickedBg : "transparent",
         "&:hover": {
-          ...(!isActive && {
+          ...(!isActiveOrExpanded && {
             backgroundColor: theme.palette.customNavigation.hoverBg,
           }),
         },
-        color: isActive
+        color: isActiveOrExpanded
           ? theme.palette.customNavigation.textClicked
           : theme.palette.customNavigation.text 
       }}
@@ -77,7 +81,7 @@ const LinkItem = (props: ListItemLinkProps) => {
         {open && (
           <Typography
             sx={{
-              fontSize: "14px",
+              fontSize: theme.typography.body2.fontSize,
               fontWeight: 500,
               lineHeight: "150%",
               letterSpacing: "-0.03em",
@@ -87,7 +91,7 @@ const LinkItem = (props: ListItemLinkProps) => {
           </Typography>
         )}
       </Box>
-      {hasChildren && open && (isActive ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
+      {hasChildren && open && (isExpanded ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import AppHandler from "@app/AppHandler";
 import { AuthProvider } from "@asgardeo/auth-react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -21,10 +22,10 @@ import { Provider } from "react-redux";
 
 import { createContext, useEffect, useMemo, useState } from "react";
 
-import { APP_NAME, asgardeoConfig } from "@config/config";
+import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
 import { store } from "@slices/store";
-import { themeSettings } from "../src/theme";
+import { themeSettings } from "@root/src/theme";
 import { ThemeMode } from "@utils/types";
 
 import "./index.css";
@@ -82,7 +83,7 @@ function App() {
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
-            <AuthProvider config={asgardeoConfig}>
+            <AuthProvider config={AsgardeoConfig}>
               <AppAuthProvider>
                 <AppHandler />
               </AppAuthProvider>

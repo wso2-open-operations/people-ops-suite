@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,11 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link } from "react-router-dom";
 
-import { RouteDetail } from "@/types/types";
+import { RouteDetail } from "../../types/types";
 
 import LinkItem from "./LinkItem";
 import SidebarSubMenu from "./SidebarSubMenu";
@@ -25,11 +26,15 @@ import SidebarSubMenu from "./SidebarSubMenu";
 function SidebarNavItem({
   route,
   isActive,
+  isHovered,
+  isExpanded,
   open,
   onClick,
 }: {
   route: RouteDetail;
   isActive: boolean;
+  isHovered: boolean;
+  isExpanded: boolean;
   open: boolean;
   onClick: () => void;
 }) {
@@ -59,7 +64,7 @@ function SidebarNavItem({
               color: theme.palette.neutral.white,
               padding: theme.spacing(0.75, 1.5),
               borderRadius: "4px",
-              fontSize: "12px",
+              fontSize: theme.typography.caption.fontSize,
               boxShadow: theme.shadows[8],
             },
           },
@@ -70,17 +75,19 @@ function SidebarNavItem({
           },
         }}
       >
-        {route.element ? (
+        {route.element && !(route.children && route.children.length > 0) ? (
           <Link
             to={route.path}
             style={{ width: "100%", display: "block", textDecoration: "none" }}
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}
+              isHovered={isHovered}
+              isExpanded={isExpanded}
               hasChildren={!!(route.children && route.children.length > 0)}
               route={route}
             />
@@ -98,10 +105,12 @@ function SidebarNavItem({
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}
+              isHovered={isHovered}
+              isExpanded={isExpanded}
               hasChildren={!!(route.children && route.children.length > 0)}
               route={route}
             />
@@ -110,7 +119,7 @@ function SidebarNavItem({
       </Tooltip>
 
       {/* Render expanded children, outside the Tooltip */}
-      {route && route.children?.length && isActive && (
+      {route && route.children?.length && isExpanded && (
         <Box
           key="nested"
           sx={{
@@ -121,7 +130,7 @@ function SidebarNavItem({
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
             borderLeft: open ? `1px solid ${theme.palette.neutral["1000"]}` : "none",
-            paddingX: "8px",
+            px: "8px",
           }}
         >
           <SidebarSubMenu parentRoute={route} open={open} />
