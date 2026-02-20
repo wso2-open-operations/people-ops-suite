@@ -21,8 +21,8 @@ import Typography from "@mui/material/Typography";
 import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
 import { useAppAuthContext } from "@root/src/context/AuthContext";
-import BackgroundImage from "@src/assets/images/app-login-background.png";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
+import BackgroundImage from "@src/assets/images/sample.png";
 import logo from "@src/assets/images/wso2-logo-black.png";
 
 const LoginScreen = () => {
