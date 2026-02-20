@@ -15,6 +15,7 @@
 // under the License.
 
 import { Collection } from "@slices/collections/collection";
+import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 export interface Employee {
   workEmail: string;
@@ -100,4 +101,54 @@ export interface SpecialQuotaTeam {
   headCount: number | null;
   groupNumber: number | null;
   specialRatingQuotaId: number | null;
+}
+
+export enum Role {
+  EMPLOYEE = "EMPLOYEE",
+  ADMIN = "ADMIN",
+  TEAM_LEAD = "TEAM_LEAD",
+}
+
+export interface AuthState {
+  status: RequestState;
+  statusMessage: string | null;
+  isAuthenticated: boolean;
+  userInfo: BasicUserInfo | null;
+  accessToken: string | null;
+  isIdTokenExpired: boolean | null;
+  decodedIdToken: DecodedIDTokenPayload | null;
+  roles: Role[];
+  userPrivileges: number[] | null;
+  errorMessage: string | null;
+  authFlowState: AuthFlowState;
+  userEmail?: string | null;
+  employeeInfoStatus: RequestState;
+  employeeInfo?: EmployeeInfo | null;
+}
+
+export interface AuthData {
+  userInfo: BasicUserInfo;
+  accessToken: string;
+  decodedIdToken: DecodedIDTokenPayload;
+}
+
+export type AuthFlowState =
+  | "start"
+  | "l_user_privileges"
+  | "e_user_privileges"
+  | "end";
+
+  export interface EmployeeInfo {
+  employeeName: string;
+  employeeThumbnail: string;
+  workEmail: string;
+  startDate: string;
+  jobRole: string;
+  businessUnit: string;
+  department: string;
+  team?: string;
+  location: string;
+  isTeamLead: boolean;
+  leadEmail: string | null;
+  lead: boolean | null;
 }

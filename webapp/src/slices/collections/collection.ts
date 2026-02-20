@@ -20,7 +20,7 @@ import axios, { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { State } from "@utils/types";
 
 import { enqueueSnackbarMessage } from "../commonSlice/common";
@@ -64,7 +64,7 @@ export const fetchCollections = createAsyncThunk(
   "collection/fetchCollections",
   async (_, { dispatch, rejectWithValue }) => {
     return new Promise<Collections>((resolve, reject) => {
-      APIService.getInstance()
+      ApiService.getInstance()
         .get(AppConfig.serviceUrls.collections)
         .then((response) => {
           resolve(response.data);
@@ -97,7 +97,7 @@ export const addCollections = createAsyncThunk(
   "collection/addCollections",
   async (payload: AddCollectionPayload, { dispatch }) => {
     return new Promise<AddCollectionPayload>((resolve, reject) => {
-      APIService.getInstance()
+      ApiService.getInstance()
         .post(AppConfig.serviceUrls.collections, payload)
         .then((response) => {
           dispatch(

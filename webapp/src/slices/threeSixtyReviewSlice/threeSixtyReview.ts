@@ -9,7 +9,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { RequestState } from "@root/src/utils/types";
 import { RootState } from "@slices/store";
 import { AppConfig } from "@config/config";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { base64Regex, sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
@@ -98,7 +98,7 @@ export const fetchRejectedReviews = createAsyncThunk(
   "threeSixtyReview/fetchRejectedReviews",
   async ({ parCycleId }: { parCycleId: number }, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/rejected-reviews`
       );
 
@@ -125,7 +125,7 @@ export const fetchReviewers = createAsyncThunk(
   "threeSixtyReview/fetchReviewers",
   async ({ employeeId, parCycleId }: FetchReviewers, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviewers`
       );
 
@@ -152,7 +152,7 @@ export const postReviewers = createAsyncThunk(
   "threeSixtyReview/postReviewers",
   async ({ employeeId, parCycleId, reviewerEmails }: PostReviewers, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().post(
+      const response = await ApiService.getInstance().post(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviewers`,
         {
           reviewerEmails,
@@ -188,7 +188,7 @@ export const fetchRequests = createAsyncThunk(
   "threeSixtyReview/fetchRequests",
   async ({ employeeId, parCycleId }: FetchRequests, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review-requests`
       );
 
@@ -215,7 +215,7 @@ export const postReviews = createAsyncThunk(
   "threeSixtyReview/postReviews",
   async ({ employeeId, parCycleId, values }: PostReviews, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().patch(
+      const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review`,
         values
       );
@@ -243,7 +243,7 @@ export const fetchReviews = createAsyncThunk(
   "threeSixtyReview/fetchReviews",
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`
       );
 
@@ -270,7 +270,7 @@ export const fetchSelectedReview = createAsyncThunk(
   "threeSixtyReview/fetchSelectedReview",
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review`
       );
 

@@ -14,7 +14,7 @@ import { RequestState } from "@root/src/utils/types";
 import { HttpStatusCode } from "axios";
 import { RootState } from "@slices/store";
 import { getErrorMessage } from "@utils/utils";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { base64Regex } from "../../config/constant";
 import { AppConfig, ServiceBaseUrl } from "../../config/config";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -122,7 +122,7 @@ export const fetchHistoryParRatingOfEmployee = createAsyncThunk(
   "employee/fetchHistoryParRatingOfEmployee",
   async ({ employeeId, parCycleId }: FetchEmployeeRatingsParams, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings`
       );
 
@@ -152,7 +152,7 @@ export const fetchHistoryReviews = createAsyncThunk(
   "threeSixtyReview/fetchHistoryReviews",
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`
       );
 
@@ -173,7 +173,7 @@ export const fetchParticipatedParCyclesOfEmployee = createAsyncThunk(
   "employee/fetchParticipatedParCycleOfEmployee",
   async (args: { email?: string; status?: ParCycleStatus } | void, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${args?.status ?? ParCycleStatus.CLOSED}${
           args?.email ? `&email=${encodeURIComponent(args.email)}` : ""
         }`
@@ -202,7 +202,7 @@ export const fetchParRatingSummary = createAsyncThunk(
   "employee/fetchParRatingSummary",
   async (employeeEmail: string, { dispatch }) => {
     try {
-      const response = await APIService.getInstance().get(`${ServiceBaseUrl}/par-ratings/summary/${employeeEmail}`);
+      const response = await ApiService.getInstance().get(`${ServiceBaseUrl}/par-ratings/summary/${employeeEmail}`);
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;

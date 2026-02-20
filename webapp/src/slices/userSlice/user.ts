@@ -7,7 +7,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { ApiService } from "../../utils/apiService";
-import { appConfig } from "../../config/config";
+import { AppConfig } from "../../config/config";
 import { RequestState } from "../../utils/types";
 
 export interface UserInfoInterface {
@@ -47,7 +47,7 @@ export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
   return new Promise<{ UserInfo: UserInfoInterface }>((resolve, reject) => {
     // Assuming 'userInfo' is the endpoint in your config
     ApiService.getInstance()
-      .get(appConfig.serviceUrls.userInfo || "/user-info") 
+      .get(AppConfig.serviceUrls.userInfo || "/user-info") 
       .then((resp) => {
         resolve({ UserInfo: resp.data });
       })

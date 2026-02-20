@@ -7,7 +7,7 @@
 
 import { RootState } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 import { getErrorMessage } from "@utils/utils";
 import { AppConfig } from "../../config/config";
 import { AxiosError, HttpStatusCode } from "axios";
@@ -86,7 +86,7 @@ export const checkAvailability = createAsyncThunk(
     { dispatch }
   ) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.calendar}/busy-times?date=${encodeURIComponent(
           date
         )}`,
@@ -135,7 +135,7 @@ export const createMeeting = createAsyncThunk(
     { dispatch }
   ) => {
     try {
-      const response = await APIService.getInstance().post(
+      const response = await ApiService.getInstance().post(
         `${AppConfig.serviceUrls.calendar}/schedule-f2f`,
         {
           ...meetingDetails,

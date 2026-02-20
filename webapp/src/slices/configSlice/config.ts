@@ -20,7 +20,7 @@ import axios, { HttpStatusCode } from "axios";
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 
 import { State } from "@/types/types";
 
@@ -51,7 +51,7 @@ export const fetchAppConfig = createAsyncThunk(
   "appConfig/fetchAppConfig",
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await ApiService.getInstance().get(
         AppConfig.serviceUrls.appConfig,
       );
       return response.data as AppConfigInfo;

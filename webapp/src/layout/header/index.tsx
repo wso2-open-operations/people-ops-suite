@@ -1,4 +1,4 @@
-// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -23,14 +23,12 @@ import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { useAppSelector } from "@slices/store";
 import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
-import { selectUserInfoData } from "@slices/userSlice";
-import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
+import { selectUserInfoData } from "@slices/userSlice/user";
 
-const Headercontent = () => {
+const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-
   const userInfo = useAppSelector(selectUserInfoData);
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
@@ -165,10 +163,4 @@ const Headercontent = () => {
   );
 };
 
-export default function Header(){
-  return(
-        <NewThemeWrapper>
-          <Headercontent />
-        </NewThemeWrapper>
-  );
-};
+export default Header;

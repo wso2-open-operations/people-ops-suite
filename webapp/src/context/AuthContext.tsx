@@ -23,10 +23,10 @@ import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
-import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
+import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
-import { APIService } from "@utils/apiService";
+import { ApiService } from "@utils/apiService";
 
 type AuthContextType = {
   appSignIn: () => void;
@@ -88,20 +88,29 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   }, []);
 
   const setupAuthenticatedUser = async () => {
-    const [userInfo, idToken, decodedIdToken] = await Promise.all([
+    const [userInfo, idToken, decodedIdToken, accessToken] = await Promise.all([
       getBasicUserInfo(),
       getIDToken(),
       getDecodedIDToken(),
+      getAccessToken(),
     ]);
 
     dispatch(
       setUserAuthData({
         userInfo: userInfo,
+        accessToken: idToken,
         decodedIdToken: decodedIdToken,
       }),
     );
 
-    new APIService(idToken, refreshToken);
+    new ApiService(
+      idToken,
+      async () => {
+        const freshIdToken = await getIDToken();
+        return { idToken: freshIdToken };
+      },
+      dispatch
+    );
 
     await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
@@ -129,7 +138,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         }
       } catch (err) {
         if (mounted) {
-          dispatch(setAuthError());
+          // dispatch(setAuthError());
         }
       }
     };
@@ -141,22 +150,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = async (): Promise<{ accessToken: string }> => {  
+  const refreshToken = async (): Promise<{ accessToken: string }> => {
     if (state.isAuthenticated) {
       const accessToken = await getIDToken();
-      return {accessToken}
+      return { accessToken }
     }
 
-    try {  
-      await refreshAccessToken();  
-      const accessToken = await getAccessToken();  
-      return { accessToken };  
-    } catch (error) {  
-      console.error("Token refresh failed: ",error)
-      await appSignOut();  
-      throw error;  
-    }  
-  };  
+    try {
+      await refreshAccessToken();
+      const accessToken = await getAccessToken();
+      return { accessToken };
+    } catch (error) {
+      console.error("Token refresh failed: ", error)
+      await appSignOut();
+      throw error;
+    }
+  };
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);

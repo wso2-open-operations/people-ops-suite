@@ -6,8 +6,8 @@
 // You may not alter or remove any copyright or other notice from copies of this content.
 
 import { SnackMessage, USER_TIMEZONE_OFFSET } from "@config/constant";
-import { showSnackBarMessage } from "@slices/commonSlice/common";
-import { createSetMaintenanceStatusAction } from "@slices/healthSlice";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { createSetMaintenanceStatusAction } from "@slices/healthSlice/health";
 import axios, { AxiosInstance, AxiosResponse, AxiosError, CancelTokenSource } from "axios";
 import { Dispatch } from "redux";
 import * as rax from "retry-axios";
@@ -42,7 +42,7 @@ export class ApiService {
               dispatch(setMaintenanceStatusAction);
             }
           } catch (parseError) {
-            showSnackBarMessage(snackMessages.error.maintenanceMessageParseError, "error");
+            ShowSnackBarMessage(SnackMessage.error.maintenanceMessageParseError, "error");
           }
         }
         return Promise.reject(error);
