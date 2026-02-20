@@ -287,6 +287,63 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
     return sql:queryConcat(query, `;`);
 }
 
+# Get full org chart query.
+#
+# + return - Full org chart query
+isolated function getFullOrgChartQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        bu.id,
+        bu.name,
+        COALESCE(
+            (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'id', t.id,
+                        'name', t.name,
+                        'subTeams',
+                        COALESCE(
+                            (
+                                SELECT JSON_ARRAYAGG(
+                                    JSON_OBJECT(
+                                        'id', st.id,
+                                        'name', st.name,
+                                        'units',
+                                        COALESCE(
+                                            (
+                                                SELECT JSON_ARRAYAGG(
+                                                    JSON_OBJECT(
+                                                        'id', u.id,
+                                                        'name', u.name
+                                                    )
+                                                )
+                                                FROM business_unit_team_sub_team_unit butstu
+                                                INNER JOIN unit u ON u.id = butstu.unit_id
+                                                WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                ORDER BY u.name
+                                            ),
+                                            JSON_ARRAY()
+                                        )
+                                    )
+                                )
+                                FROM business_unit_team_sub_team butst
+                                INNER JOIN sub_team st ON st.id = butst.sub_team_id
+                                WHERE butst.business_unit_team_id = but.id
+                                ORDER BY st.name
+                            ),
+                            JSON_ARRAY()
+                        )
+                    )
+                )
+                FROM business_unit_team but
+                INNER JOIN team t ON t.id = but.team_id
+                WHERE but.business_unit_id = bu.id
+                ORDER BY t.name
+            ),
+            JSON_ARRAY()
+        ) AS teams
+    FROM business_unit bu
+    ORDER BY bu.name;`;
+
 # Get career functions query.
 #
 # + return - Career functions query
