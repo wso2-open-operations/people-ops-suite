@@ -5,7 +5,7 @@
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
 
-import { snackMessages, USER_TIMEZONE_OFFSET } from "@config/constant";
+import { SnackMessage, USER_TIMEZONE_OFFSET } from "@config/constant";
 import { showSnackBarMessage } from "@slices/commonSlice/common";
 import { createSetMaintenanceStatusAction } from "@slices/healthSlice";
 import axios, { AxiosInstance, AxiosResponse, AxiosError, CancelTokenSource } from "axios";

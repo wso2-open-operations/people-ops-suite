@@ -18,7 +18,7 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import { Link, useLocation } from "react-router-dom";
 
 export default function BasicBreadcrumbs() {
-  const MAX_LENGTH = 12;
+  const MAX_LENGTH = 5;
 
   const location = useLocation();
   const theme = useTheme();
@@ -112,7 +112,6 @@ export default function BasicBreadcrumbs() {
     <Box
       sx={{
         ml: -0.5,
-        display: { xs: "none", md: "flex" },
       }}
     >
       {renderBreadCrumbs()}

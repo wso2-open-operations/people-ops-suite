@@ -1,12 +1,63 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import { PaletteMode } from "@mui/material";
+// MUI Import
+import { type PaletteMode } from "@mui/material";
+
 import designTokens from "./styles/design-tokens.json";
+
+// Helper function to remove 'ff' suffix from hex colors
+const cleanHexColor = (color: string): string => {
+  if (color.endsWith("ff")) {
+    return color.slice(0, -2);
+  }
+  return color;
+};
+
+// Extract and transform color tokens from design tokens
+const extractColors = () => {
+  const { variables } = designTokens;
+
+  return {
+    neutral: Object.entries(variables.colors.neutral).reduce(
+      (acc, [key, token]: [string, any]) => {
+        acc[key] = cleanHexColor(token.value);
+        return acc;
+      },
+      {} as Record<string, string>,
+    ),
+
+    primary: Object.entries(variables.colors.primary).reduce(
+      (acc, [key, token]: [string, any]) => {
+        acc[key] = cleanHexColor(token.value);
+        return acc;
+      },
+      {} as Record<string, string>,
+    ),
+
+    secondary: Object.entries(variables.colors.secondary).reduce(
+      (acc, [key, token]: [string, any]) => {
+        acc[key] = cleanHexColor(token.value);
+        return acc;
+      },
+      {} as Record<string, string>,
+    ),
+  };
+};
+
 // Extract font/typography tokens
 const extractTypography = () => {
   const { font } = designTokens;
@@ -24,287 +75,394 @@ const extractTypography = () => {
     overline: font["p-xs"].value,
   };
 };
-// color design tokens export
-export const tokens = (mode: PaletteMode) => ({
-  ...(mode === "dark"
-    ? {
-        grey: {
-          100: "#e0e0e0",
-          200: "#c2c2c2",
-          300: "#a3a3a3",
-          400: "#858585",
-          500: "#666666",
-          600: "#525252",
-          700: "#3d3d3d",
-          800: "#292929",
-          900: "#141414",
-        },
-        primary: {
-          100: "#d0d1d5",
-          200: "#a1a4ab",
-          300: "#727681",
-          400: "#1F2A40",
-          500: "#141b2d",
-          600: "#101624",
-          700: "#0c101b",
-          800: "#080b12",
-          900: "#040509",
-        },
-        greenAccent: {
-          100: "#dbf5ee",
-          200: "#b7ebde",
-          300: "#94e2cd",
-          400: "#70d8bd",
-          500: "#4cceac",
-          600: "#3da58a",
-          700: "#2e7c67",
-          800: "#1e5245",
-          900: "#0f2922",
-        },
-        redAccent: {
-          100: "#f8dcdb",
-          200: "#f1b9b7",
-          300: "#e99592",
-          400: "#e2726e",
-          500: "#db4f4a",
-          600: "#af3f3b",
-          700: "#832f2c",
-          800: "#58201e",
-          900: "#2c100f",
-        },
-        blueAccent: {
-          100: "#e1e2fe",
-          200: "#c3c6fd",
-          300: "#a4a9fc",
-          400: "#868dfb",
-          500: "#6870fa",
-          600: "#535ac8",
-          700: "#3e4396",
-          800: "#2a2d64",
-          900: "#151632",
-        },
-        yellowAccent: {
-          100: "#fff9c4",
-          200: "#e5e0b0",
-          300: "#ccc79c",
-          400: "#b2ae89",
-          500: "#999575",
-          600: "#7f7c62",
-          700: "#66634e",
-          800: "#4c4a3a",
-          900: "#333126",
-        },
-      }
-    : {
-        grey: {
-          100: "#141414",
-          200: "#292929",
-          300: "#3d3d3d",
-          400: "#525252",
-          500: "#666666",
-          600: "#858585",
-          700: "#a3a3a3",
-          800: "#c2c2c2",
-          900: "#e0e0e0",
-        },
-        primary: {
-          100: "#040509",
-          200: "#080b12",
-          300: "#0c101b",
-          400: "#f2f0f0", // manually changed
-          500: "#141b2d",
-          600: "#1F2A40",
-          700: "#727681",
-          800: "#a1a4ab",
-          900: "#d0d1d5",
-        },
-        greenAccent: {
-          100: "#0f2922",
-          200: "#1e5245",
-          300: "#2e7c67",
-          400: "#3da58a",
-          500: "#4cceac",
-          600: "#70d8bd",
-          700: "#94e2cd",
-          800: "#b7ebde",
-          900: "#dbf5ee",
-        },
-        redAccent: {
-          100: "#2c100f",
-          200: "#58201e",
-          300: "#832f2c",
-          400: "#af3f3b",
-          500: "#db4f4a",
-          600: "#e2726e",
-          700: "#e99592",
-          800: "#f1b9b7",
-          900: "#f8dcdb",
-        },
-        blueAccent: {
-          100: "#151632",
-          200: "#2a2d64",
-          300: "#3e4396",
-          400: "#535ac8",
-          500: "#6870fa",
-          600: "#868dfb",
-          700: "#a4a9fc",
-          800: "#c3c6fd",
-          900: "#e1e2fe",
-        },
-        yellowAccent: {
-          100: "#333126",
-          200: "#4c4a3a",
-          300: "#66634e",
-          400: "#7f7c62",
-          500: "#999575",
-          600: "#b2ae89",
-          700: "#ccc79c",
-          800: "#e5e0b0",
-          900: "#fff9c4",
-        },
-      }),
 
-  customColors: {
-    white: "#ffffff",
-    lightGray: "#e7ebf0",
-    orange: "#ff7300",
-    lightOrange: "#ffe3cc",
-    darkOrange: "#331700",
-    offWhite: "#eeeeee",
-    darkGray: "#0d0d0d",
-    gray: "#919090",
-    green: "#36b37e",
-    darkBlue: "#212a30",
-    secondaryBlue: {
-      main: "#5686e1",
-      light: "#dde6f9",
-      shade: "#3c5d9d",
-      dark: "#2b4370",
-    },
-    primaryBlue: {
-      main: "#021d5f",
-      shade: "#344a7e",
-      pale: "#99a4bf",
-      light: "#e5e8ef",
-    },
-  },
-});
+// Color Design Tokens with mode support
+export const tokens = (mode: PaletteMode) => {
+  const colors = extractColors();
 
-// mui theme settings
+  return {
+    ...(mode === "dark"
+      ? {
+          // Neutral colors
+          neutral: colors.neutral,
+          secondary: colors.secondary,
+          primary: colors.primary,
+
+          // Text colors - Dark mode (from Figma design tokens)
+          text: {
+            primary: {
+              p1: { active: colors.neutral.white, hover: "#ffffff" },
+              p2: { active: colors.neutral["400"], hover: "#ffffff" },
+              p3: { active: colors.neutral["800"], hover: "#ffffff" },
+              p4: { active: colors.neutral["1300"], hover: "#ffffff" },
+            },
+            brand: {
+              p1: { active: colors.primary["1100"], hover: "#FF6A0096" },
+            },
+          },
+
+          // Border colors - Dark mode (from Figma design tokens)
+          border: {
+            primary: {
+              active: colors.neutral.white,
+              hover: colors.neutral.white,
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+            secondary: {
+              active: colors.neutral.white,
+              hover: colors.neutral.white,
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+            territory: {
+              active: colors.neutral["1700"],
+              hover: colors.neutral["1500"],
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+          },
+
+          // Navigation colors - Dark mode
+          navigation: {
+            text: "#ffffff8f",
+            textClicked: "#ffffff",
+            hover: "#ffffffd9",
+            hoverBg: "#ffffff0a",
+            clickedBg: "#ffffff14",
+            border: colors.neutral["1700"],
+          },
+
+          // Surface colors (from color tokens)
+          surface: {
+            primary: {
+              active: colors.neutral["1800"],
+              hover: colors.neutral["1900"],
+            },
+            secondary: {
+              active: colors.secondary["2000"],
+              hover: colors.secondary["1700"],
+            },
+            territory: {
+              active: "#171717",
+            },
+          },
+
+          // Fill colors (from color tokens)
+          fill: {
+            primary: {
+              active: colors.primary["1700"],
+              hover: colors.primary["1600"],
+              clicked: colors.primary["1800"],
+              disabled: "#3D190196",
+            },
+            secondary: {
+              active: colors.secondary["1400"],
+              hover: colors.secondary["1300"],
+              clicked: colors.secondary["1500"],
+              disabled: "#0A475C96",
+            },
+            territory: {
+              active: colors.secondary["1900"],
+            },
+          },
+        }
+      : {
+          // Light mode colors
+          neutral: colors.neutral,
+          primary: colors.primary,
+          secondary: colors.secondary,
+
+          // Text colors - Light mode (from Figma design tokens)
+          text: {
+            primary: {
+              p1: { active: colors.neutral.black, hover: "#ffffff" },
+              p2: { active: colors.neutral["1600"], hover: "#ffffff" },
+              p3: { active: colors.neutral["1200"], hover: "#ffffff" },
+              p4: { active: colors.neutral["700"], hover: "#ffffff" },
+            },
+            brand: {
+              p1: { active: colors.primary["brand"], hover: "#ffffff", disabled: "#ff730096" },
+            },
+          },
+
+          // Border colors - Light mode
+          border: {
+            primary: {
+              active: colors.neutral.black,
+              hover: colors.neutral.white,
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+            secondary: {
+              active: colors.neutral.white,
+              hover: colors.neutral.white,
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+            territory: {
+              active: colors.neutral["200"],
+              hover: colors.neutral["400"],
+              clicked: colors.neutral.white,
+              disabled: colors.neutral.white,
+            },
+          },
+
+          // Surface colors (from color tokens)
+          surface: {
+            primary: {
+              active: colors.neutral.light_white,
+              hover: colors.neutral.white,
+            },
+            secondary: {
+              active: colors.secondary["1500"],
+              hover: "#FFF",
+            },
+            territory: {
+              active: colors.neutral.white,
+            },
+          },
+
+          // Fill colors (from color tokens)
+          fill: {
+            primary: {
+              active: colors.primary.main,
+              hover: colors.primary["900"],
+              clicked: colors.primary["1100"],
+              disabled: "#FF730096",
+            },
+            secondary: {
+              active: colors.secondary.main,
+              hover: colors.secondary["600"],
+              clicked: colors.secondary["800"],
+              disabled: "#00CEFF96",
+            },
+            territory: {
+              active: colors.secondary["1600"],
+            },
+          },
+
+          // Navigation colors - Light mode
+          navigation: {
+            text: "#ffffffbd",
+            textClicked: "#ffffff",
+            hover: "#ffffffd9",
+            hoverBg: "#ffffff0a",
+            clickedBg: colors.secondary["1600"],
+            border: "#2F454C",
+          },
+        }),
+  };
+};
+
+// Extend MUI theme types
+declare module "@mui/material/styles" {
+  interface TypeBackground {
+    primary?: string;
+    secondary?: string;
+    secondaryLight?: string;
+    primaryLight?: string;
+    lightWhite?: string;
+  }
+
+  interface TypeText {
+    brand?: string;
+  }
+
+  interface Palette {
+    neutral: Record<string | number, string | undefined>;
+    primaryShades: Record<string, string>;
+    secondaryShades: Record<string, string>;
+    customBorder: {
+      primary: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+      secondary: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+      territory: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+    };
+    customNavigation: {
+      text: string;
+      textClicked: string;
+      hover: string;
+      hoverBg: string;
+      clicked: string;
+      clickedBg: string;
+      border: string;
+    };
+    surface: {
+      primary: Record<string, string>;
+      secondary: Record<string, string>;
+      territory: Record<string, string>;
+    };
+    fill: {
+      primary: Record<string, string>;
+      secondary: Record<string, string>;
+      territory: Record<string, string>;
+    };
+    customText: {
+      primary: {
+        p1: { active: string; hover: string };
+        p2: { active: string; hover: string };
+        p3: { active: string; hover: string };
+        p4: { active: string; hover: string };
+      };
+      brand: {
+        p1: { active: string; hover: string; disabled?: string };
+      };
+    };
+  }
+
+  interface PaletteOptions {
+    neutral?: Record<string | number, string | undefined>;
+    primaryShades?: Record<string, string>;
+    secondaryShades?: Record<string, string>;
+    customBorder?: {
+      primary?: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+      secondary?: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+      territory?: {
+        active: string;
+        hover: string;
+        clicked: string;
+        disabled: string;
+      };
+    };
+    customNavigation?: {
+      text?: string;
+      textClicked?: string;
+      bg?: string;
+      hover?: string;
+      hoverBg?: string;
+      clicked?: string;
+      clickedBg?: string;
+      border: string;
+    };
+    surface?: {
+      primary?: Record<string, string>;
+      secondary?: Record<string, string>;
+      territory?: Record<string, string>;
+    };
+    fill?: {
+      primary?: Record<string, string>;
+      secondary?: Record<string, string>;
+      territory?: Record<string, string>;
+    };
+    customText?: {
+      primary?: {
+        p1?: { active: string; hover: string };
+        p2?: { active: string; hover: string };
+        p3?: { active: string; hover: string };
+        p4?: { active: string; hover: string };
+      };
+      brand?: {
+        p1?: { active: string; hover: string; disabled?: string };
+      };
+    };
+  }
+}
+
+// MUI Theme Settings
 export const themeSettings = (mode: PaletteMode) => {
-    const typography = extractTypography();
   const colors = tokens(mode);
+  const typography = extractTypography();
+
   return {
     palette: {
       mode: mode,
-      ...(mode === "dark"
-        ? {
-            // palette values for dark mode
-            primary: {
-              main: "#5686e1",
-            },
-            success: {
-              main: "#5686e1",
-            },
-            secondary: {
-              main: "#021d5f",
-              contrastText: "#fff",
-            },
-            neutral: {
-              dark: colors.grey[700],
-              main: colors.grey[500],
-              light: colors.grey[100],
-            },
-            background: {
-              default: colors.grey[900],
-            },
-            customColors: {
-              white: "#ffffff",
-              lightGray: "#e7ebf0",
-              orange: "#ff7300",
-              lightOrange: "#ffe3cc",
-              darkOrange: "#331700",
-              offWhite: "#eeeeee",
-              darkGray: "#0d0d0d",
-              gray: "#919090",
-              green: "#36b37e",
-              darkBlue: "#212a30",
-              secondaryBlue: {
-                main: "#5686e1",
-                light: "#dde6f9",
-                shade: "#3c5d9d",
-                dark: "#2b4370",
-              },
-              primaryBlue: {
-                main: "#021d5f",
-                shade: "#344a7e",
-                pale: "#99a4bf",
-                light: "#e5e8ef",
-              },
-            },
-          }
-        : {
-            // palette values for light mode
-            primary: {
-              main: "#021d5f",
-            },
-            success: {
-              main: "#5686e1",
-              contrastText: "#fff",
-            },
-            secondary: {
-              main: "#5686e1",
-              contrastText: "#fff",
-            },
-            neutral: {
-              dark: colors.grey[700],
-              main: colors.grey[500],
-              light: colors.grey[100],
-            },
-            background: {
-              default: "#f2f2f2",
-              main: "#212a30",
-            },
-            customColors: {
-              white: "#ffffff",
-              lightGray: "#e7ebf0",
-              orange: "#ff7300",
-              lightOrange: "#ffe3cc",
-              darkOrange: "#331700",
-              offWhite: "#eeeeee",
-              darkGray: "#0d0d0d",
-              gray: "#919090",
-              green: "#36b37e",
-              darkBlue: "#212a30",
-              secondaryBlue: {
-                main: "#5686e1",
-                light: "#dde6f9",
-                shade: "#3c5d9d",
-                dark: "#2b4370",
-              },
-              primaryBlue: {
-                main: "#021d5f",
-                shade: "#344a7e",
-                pale: "#99a4bf",
-                light: "#e5e8ef",
-              },
-            },
-          }),
+      primary: {
+        main: colors.primary.main,
+        light: colors.primary["400"],
+        dark: colors.primary["1000"],
+        contrastText: "#ffffff",
+      },
+      secondary: {
+        main: colors.secondary.main,
+        light: colors.secondary["400"],
+        dark: colors.secondary["900"],
+        contrastText: "#ffffff",
+      },
+      error: {
+        main: "#fe4336",
+        light: "#ff6b5e",
+        dark: "#c41c0f",
+      },
+      warning: {
+        main: "#ff9800",
+        light: "#ffb74d",
+        dark: "#f57c00",
+      },
+      info: {
+        main: colors.secondary.main,
+        light: colors.secondary["400"],
+        dark: colors.secondary["900"],
+      },
+      success: {
+        main: "#4caf50",
+        light: "#81c784",
+        dark: "#388e3c",
+      },
+      background: {
+        default: mode === "dark" ? colors.surface.primary.active : colors.neutral.white,
+        paper: mode === "dark" ? colors.surface.primary.hover : colors.neutral.white,
+      },
+      // Custom palette extensions - preserve all color shades
+      neutral: colors.neutral,
+      primaryShades: colors.primary,
+      secondaryShades: colors.secondary,
+      customBorder: colors.border,
+      customNavigation: colors.navigation,
+      surface: colors.surface,
+      fill: colors.fill,
+      customText: colors.text,
     },
     typography: {
-      fontSize: 13,
-      fontFamily: ["Poppins", "sans-serif"].join(","),
+      fontFamily: "Poppins, Arial, sans-serif, Helvetica",
+      fontSize: 14,
       h1: {
-        fontSize: 40,
+        fontSize: typography.h1.fontSize,
+        fontWeight: typography.h1.fontWeight,
+        lineHeight: `${typography.h1.lineHeight}px`,
+        letterSpacing: `${typography.h1.letterSpacing}px`,
       },
       h2: {
-        fontSize: 32,
+        fontSize: typography.h2.fontSize,
+        fontWeight: typography.h2.fontWeight,
+        lineHeight: `${typography.h2.lineHeight}px`,
+        letterSpacing: `${typography.h2.letterSpacing}px`,
       },
       h3: {
-        fontSize: 24,
+        fontSize: typography.h3.fontSize,
+        fontWeight: typography.h3.fontWeight,
+        lineHeight: `${typography.h3.lineHeight}px`,
+        letterSpacing: `${typography.h3.letterSpacing}px`,
       },
       h4: {
-        fontSize: 20,
+        fontSize: typography.h4.fontSize,
+        fontWeight: typography.h4.fontWeight,
+        lineHeight: `${typography.h4.lineHeight}px`,
+        letterSpacing: `${typography.h4.letterSpacing}px`,
       },
       h5: {
         fontSize: typography.h5.fontSize,
@@ -313,137 +471,91 @@ export const themeSettings = (mode: PaletteMode) => {
         letterSpacing: `${typography.h5.letterSpacing}px`,
       },
       h6: {
-        fontSize: 14,
+        fontSize: typography.h6.fontSize,
+        fontWeight: typography.h6.fontWeight,
+        lineHeight: `${typography.h6.lineHeight}px`,
+        letterSpacing: `${typography.h6.letterSpacing}px`,
+      },
+      body1: {
+        fontSize: typography.body1.fontSize,
+        fontWeight: typography.body1.fontWeight,
+        lineHeight: `${typography.body1.lineHeight}px`,
+        letterSpacing: `${typography.body1.letterSpacing}px`,
+      },
+      body2: {
+        fontSize: typography.body2.fontSize,
+        fontWeight: typography.body2.fontWeight,
+        lineHeight: `${typography.body2.lineHeight}px`,
+        letterSpacing: `${typography.body2.letterSpacing}px`,
+      },
+      caption: {
+        fontSize: typography.caption.fontSize,
+        fontWeight: typography.caption.fontWeight,
+        lineHeight: `${typography.caption.lineHeight}px`,
+        letterSpacing: `${typography.caption.letterSpacing}px`,
+      },
+      overline: {
+        fontSize: typography.overline.fontSize,
+        fontWeight: typography.overline.fontWeight,
+        lineHeight: `${typography.overline.lineHeight}px`,
+        letterSpacing: `${typography.overline.letterSpacing}px`,
       },
     },
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: "0.2rem",
+            textTransform: "none" as const,
+            borderRadius: 8,
+            fontWeight: 500,
+            letterSpacing: "0.5px",
           },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            borderColor:
-              mode === "dark"
-                ? colors.primary[400]
-                : colors.customColors.primaryBlue.light,
-          },
-        },
-      },
-      MuiOutlinedInput: {
-        styleOverrides: {
-          root: {
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: `${
-                mode === "dark"
-                  ? colors.customColors.secondaryBlue.dark
-                  : colors.customColors.primaryBlue.pale
-              } !important`,
+          contained: {
+            backgroundColor: colors.primary.main,
+            color: colors.neutral.white,
+            "&:hover": {
+              backgroundColor: colors.primary["800"],
             },
-            "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: `${
-                mode === "dark"
-                  ? colors.customColors.secondaryBlue.shade
-                  : colors.customColors.primaryBlue.shade
-              } !important`,
+            "&:active": {
+              backgroundColor: colors.primary["1000"],
             },
-            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: `${
-                mode === "dark"
-                  ? colors.customColors.secondaryBlue.main
-                  : colors.customColors.primaryBlue.main
-              } !important`,
-            },
-            "&.Mui-error .MuiOutlinedInput-notchedOutline": {
-              borderColor: `${colors.redAccent[500]} !important`,
-            },
-            "&.Mui-error:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: `${colors.redAccent[500]} !important`,
+            "&.Mui-disabled": {
+              backgroundColor: colors.fill.primary.disabled,
+              color: colors.text.brand.p1.disabled,
             },
           },
-        },
-      },
-      MuiAlert: {
-        styleOverrides: {
-          standardSuccess: {
-            backgroundColor: colors.greenAccent[900],
-            color: colors.customColors.green,
-            "& .MuiAlert-icon": {
-              color: colors.customColors.green,
+          outlined: {
+            borderColor: colors.border.primary.active,
+            color: colors.text.primary.p1.active,
+            "&:hover": {
+              borderColor: colors.border.territory.hover,
+              backgroundColor: colors.surface.primary.hover,
             },
           },
-          standardError: {
-            backgroundColor:
-              mode === "dark" ? colors.redAccent[800] : colors.redAccent[900],
-            color:
-              mode === "dark" ? colors.redAccent[400] : colors.redAccent[500],
-            "& .MuiAlert-icon": {
-              color:
-                mode === "dark" ? colors.redAccent[400] : colors.redAccent[500],
+          text: {
+            color: colors.text.primary.p1.active,
+            "&:hover": {
+              backgroundColor: colors.surface.primary.hover,
             },
-          },
-          standardWarning: {
-            backgroundColor:
-              mode === "dark"
-                ? colors.customColors.darkOrange
-                : colors.customColors.lightOrange,
-            color: colors.customColors.orange,
-            "& .MuiAlert-icon": {
-              color: colors.customColors.orange,
-            },
-          },
-          standardInfo: {
-            backgroundColor:
-              mode === "dark"
-                ? colors.customColors.darkBlue
-                : colors.customColors.primaryBlue.light,
-            color:
-              mode === "dark"
-                ? colors.customColors.primaryBlue.light
-                : colors.customColors.primaryBlue.main,
-            "& .MuiAlert-icon": {
-              color:
-                mode === "dark"
-                  ? colors.customColors.primaryBlue.light
-                  : colors.customColors.primaryBlue.main,
-            },
-          },
-        },
-      },
-      MuiDataGrid: {
-        styleOverrides: {
-          root: {
-            "& .MuiDataGrid-cell:focus": {
-              outline: " none",
-            },
-            ".MuiDataGrid-cell:focus-within, .MuiDataGrid-columnHeader:focus": {
-              outline: "none",
-            },
-          },
-        },
-      },
-      MuiTooltip: {
-        styleOverrides: {
-          tooltip: {
-            whiteSpace: "pre-line",
-            fontSize: "0.9rem",
-            backgroundColor:
-              mode === "dark"
-                ? colors.customColors.secondaryBlue.main
-                : colors.customColors.primaryBlue.main,
-          },
-          arrow: {
-            color:
-              mode === "dark"
-                ? colors.customColors.secondaryBlue.main
-                : colors.customColors.primaryBlue.main,
           },
         },
       },
     },
+    breakpoints: {
+      values: {
+        xs: 0,
+        sm: 600,
+        md: 960,
+        lg: 1280,
+        xl: 1920,
+      },
+    },
+    shape: {
+      borderRadius: 8,
+    },
+    spacing: 8,
   };
 };
+
+// Export for convenience
+export default themeSettings;

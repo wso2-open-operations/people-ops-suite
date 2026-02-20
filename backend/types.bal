@@ -19,16 +19,26 @@
 
 # Represents the response structure for retrieving user information.
 public type UserInfoResponse record {|
-    # Id of the employee
-    string employeeId;
-    # Email of the employee
+    # The employee name
+    string employeeName;
+    # The work email
     string workEmail;
-    # First name of the employee
-    string firstName;
-    # Last name of the employee
-    string lastName;
-    # Job role
+    # The start date
+    string startDate?;
+    # The Job role
     string jobRole;
+    # The business unit
+    string businessUnit?;
+    # The department
+    string department?;
+    # The team
+    string team?;
+    # The email of the lead
+    string? leadEmail;
+    # The location
+    string location?;
+    # Whether the employee is a team lead
+    boolean isTeamLead;
     # Thumbnail of the employee
     string? employeeThumbnail;
     # User Privileges

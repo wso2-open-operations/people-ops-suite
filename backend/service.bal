@@ -84,15 +84,14 @@ service http:InterceptableService / on new http:Listener(9093) {
             }
         }
 
-        // Fetch the user information from the entity service.
-        entity:Employeebasic|error loggedInUser = entity:fetchEmployeesBasicInfo(userInfo.email);
-        if loggedInUser is error {
+        // Fetch the user information.
+        types:EmployeeInfo|error fullEmployeeInfo = getEmployeeInfo(userInfo.email);
+
+        if fullEmployeeInfo is error {
             string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
-            log:printError(customError, loggedInUser);
+            log:printError(customError, fullEmployeeInfo);
             return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
+                body: { message: customError }
             };
         }
 
@@ -104,8 +103,24 @@ service http:InterceptableService / on new http:Listener(9093) {
         if authorization:checkPermissions([authorization:authorizedRoles.headPeopleOperationsRole], userInfo.groups) {
             privileges.push(authorization:HEAD_PEOPLE_OPERATIONS_PRIVILEGE);
         }
+        if (fullEmployeeInfo.isTeamLead) {
+            privileges.push(777);
+        }
 
-        UserInfoResponse userInfoResponse = {...loggedInUser, privileges};
+        UserInfoResponse userInfoResponse = {
+            employeeName: fullEmployeeInfo.employeeName,
+            workEmail: fullEmployeeInfo.workEmail,
+            employeeThumbnail: fullEmployeeInfo.employeeThumbnail,
+            startDate: fullEmployeeInfo.startDate,
+            jobRole: fullEmployeeInfo.jobRole ?: "",
+            businessUnit: fullEmployeeInfo.businessUnit,
+            department: fullEmployeeInfo.department,
+            team: fullEmployeeInfo.team,
+            location: fullEmployeeInfo.location,
+            leadEmail: fullEmployeeInfo.leadEmail,
+            isTeamLead: fullEmployeeInfo.isTeamLead,
+            privileges: privileges
+        };
 
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {
@@ -424,34 +439,34 @@ service http:InterceptableService / on new http:Listener(9093) {
         return parTeamDetails;
     }
 
-    # The resource function to get employee information.
-    #
-    # + workEmail - The work email of the employee
-    # + ctx - The request context
-    # + return - The employee information or an error
-    resource function get employees/[string workEmail](http:RequestContext ctx)
-        returns types:EmployeeInfo|http:InternalServerError|http:BadRequest|http:Forbidden {
+    // # The resource function to get employee information.
+    // #
+    // # + workEmail - The work email of the employee
+    // # + ctx - The request context
+    // # + return - The employee information or an error
+    // resource function get employees/[string workEmail](http:RequestContext ctx)
+    //     returns types:EmployeeInfo|http:InternalServerError|http:BadRequest|http:Forbidden {
 
-        types:InvokerDetails|error invokerDetails = utils:getInvokerDetails(ctx);
-        if invokerDetails is error {
-            return utils:createInternalServerErrorResponse(invokerDetails,
-                    "An error occurred while retrieving invoker details.");
-        }
+    //     types:InvokerDetails|error invokerDetails = utils:getInvokerDetails(ctx);
+    //     if invokerDetails is error {
+    //         return utils:createInternalServerErrorResponse(invokerDetails,
+    //                 "An error occurred while retrieving invoker details.");
+    //     }
 
-        boolean isLead = isLeadOfEmployeeInActiveParCycle(invokerDetails.email, workEmail);
-        boolean isSelf = workEmail == invokerDetails.email;
-        boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
-        if !isAdmin && !isLead && !isSelf {
-            return utils:createForbiddenResponse("You are not authorized to get employee information.");
-        }
+    //     boolean isLead = isLeadOfEmployeeInActiveParCycle(invokerDetails.email, workEmail);
+    //     boolean isSelf = workEmail == invokerDetails.email;
+    //     boolean isAdmin = invokerDetails.isAdmin && !isSelf && !isLead;
+    //     if !isAdmin && !isLead && !isSelf {
+    //         return utils:createForbiddenResponse("You are not authorized to get employee information.");
+    //     }
 
-        types:EmployeeInfo|error employeeInfo = getEmployeeInfo(workEmail);
-        if employeeInfo is error {
-            return utils:createInternalServerErrorResponse(employeeInfo,
-                    "An error occurred while retrieving employee information.");
-        }
-        return employeeInfo;
-    }
+    //     types:EmployeeInfo|error employeeInfo = getEmployeeInfo(workEmail);
+    //     if employeeInfo is error {
+    //         return utils:createInternalServerErrorResponse(employeeInfo,
+    //                 "An error occurred while retrieving employee information.");
+    //     }
+    //     return employeeInfo;
+    // }
 
     # The resource function to get 360 reviewers of a given employee in a given par cycle.
     #

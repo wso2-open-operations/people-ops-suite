@@ -13,16 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+import { matchPath, useLocation } from "react-router-dom";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-
-import type { NavState } from "../../types/types";
-import SidebarNavItem from "../../components/layout/SidebarNavItem";
-import pJson from "../../../package.json";
+import type { NavState } from "@/types/types";
+import SidebarNavItem from "@component/layout/SidebarNavItem";
+import pJson from "@root/package.json";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
 
@@ -35,47 +34,20 @@ interface SidebarProps {
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
-  const effectivePath = props.currentPath === "/" ? "/apply/general" : props.currentPath;
-
-  // Determine if route is active based on current path
-  const isRouteActive = (routePath: string) => {
-    if (routePath === "") {
-      return effectivePath === "/" || effectivePath === "";
-    }
-    return effectivePath === `/${routePath}` || effectivePath.startsWith(`/${routePath}/`);
-  };
-
-  const findExpandedIndex = useCallback(() => {
-    const path = effectivePath;
-    const idx = allRoutes.findIndex(
-      (route) =>
-        !route.bottomNav &&
-        route.children &&
-        route.children.length > 0 &&
-        (path === `/${route.path}` || path.startsWith(`/${route.path}/`)),
-    );
-    return idx >= 0 ? idx : null;
-  }, [effectivePath, allRoutes]);
+  const location = useLocation();
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
     active: null,
     hovered: null,
-    expanded: findExpandedIndex(),
+    expanded: null,
   });
-
-  useEffect(() => {
-    const idx = findExpandedIndex();
-    if (idx !== null) {
-      setNavState((prev) => ({ ...prev, expanded: idx }));
-    }
-  }, [findExpandedIndex]);
 
   // Handlers
   const handleClick = (idx: number) => {
     setNavState((prev) => ({
       ...prev,
-      expanded: prev.expanded === idx ? null : idx,
+      active: prev.active === idx ? null : idx,
     }));
   };
 
@@ -96,6 +68,7 @@ const Sidebar = (props: SidebarProps) => {
     const button = (
       <Box
         component="button"
+        type="button"
         onClick={onClick}
         disabled={!onClick}
         aria-label={tooltipTitle}
@@ -142,7 +115,7 @@ const Sidebar = (props: SidebarProps) => {
                 color: theme.palette.neutral.white,
                 padding: theme.spacing(0.75, 1),
                 borderRadius: "4px",
-                fontSize: theme.typography.caption.fontSize,
+                fontSize: "12px",
                 boxShadow: theme.shadows[8],
               },
             },
@@ -170,13 +143,13 @@ const Sidebar = (props: SidebarProps) => {
           <Box
             sx={{
               height: "100%",
-              py: "16px",
-              px: "12px",
+              paddingY: "16px",
+              paddingX: "12px",
               backgroundColor: theme.palette.surface.secondary.active,
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: "fit-content",
+              width: props.open ? "200px" : "fit-content",
               overflow: "visible",
             }}
           >
@@ -189,8 +162,8 @@ const Sidebar = (props: SidebarProps) => {
                 width: props.open ? "100%" : "fit-content",
               }}
             >
-              {allRoutes.map(
-                (route, idx) =>
+              {allRoutes.map((route, idx) => {
+                return (
                   !route.bottomNav && (
                     <Box
                       key={idx}
@@ -204,14 +177,13 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={isRouteActive(route.path)}
-                        isHovered={navState.hovered === idx}
-                        isExpanded={navState.expanded === idx}
+                        isActive={navState.active === null ? idx === 0 : navState.active === idx}
                         onClick={() => handleClick(idx)}
                       />
                     </Box>
-                  ),
-              )}
+                  )
+                );
+              })}
             </Stack>
 
             {/* Spacer */}
@@ -223,7 +195,7 @@ const Sidebar = (props: SidebarProps) => {
               gap={1}
               sx={{
                 paddingBottom: "20px",
-                alignItems: "flex-start",
+                alignItems: "center",
               }}
             >
               {/* Theme Toggle */}

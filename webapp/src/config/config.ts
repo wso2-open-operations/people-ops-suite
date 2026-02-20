@@ -1,96 +1,63 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { BaseURLAuthClientConfig } from "@asgardeo/auth-react";
-
-// Set the application name
-export const APP_NAME: string = "PAR App";
-
-// Send the request to get the user privileges from the backend when loading app
-export const InitialUserPrivilegeRequest = false;
-
-// Send the request to get the user info from the backend when loading app
-export const InitialUserInfoRequest = true;
 
 declare global {
   interface Window {
     config: {
-      BACKEND_BASE_URL: string;
+      APP_NAME: string;
+      APP_DOMAIN: string;
       ASGARDEO_BASE_URL: string;
       ASGARDEO_CLIENT_ID: string;
+      ASGARDEO_REVOKE_ENDPOINT: string;
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
-      DEPLOYED_ENVIRONMENT: string;
-      ADMIN_USER_GROUP: string;
-      EMPLOYEE_USER_GROUP: string;
-      TOP5P20PENABLEDRATING: string;
-      EVIDENCE_ENABLED_RATING: string;
+      REACT_APP_BACKEND_BASE_URL: string;
     };
   }
 }
 
-// Need to dynamically load from .env reading references and will handle.
-export const asgardeoConfig: BaseURLAuthClientConfig = {
+export const AsgardeoConfig: BaseURLAuthClientConfig = {
+  scope: ["openid", "email", "groups"],
+  baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
+  clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
   signInRedirectURL: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
   signOutRedirectURL: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
-  clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
-  baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
-  scope: [
-    "add_360_reviewers",
-    "add_par_cycles",
-    "email",
-    "get_360_review_requests",
-    "get_360_reviewers",
-    "get_360_reviews",
-    "get_configurations",
-    "get_employees",
-    "get_par_cycles",
-    "get_par_ratings_all",
-    "get_par_ratings",
-    "get_par_teams",
-    "groups",
-    "openid",
-    "profile",
-    "schedule_360_reminders",
-    "schedule_auto_reminders",
-    "schedule_employee_reminders",
-    "schedule_lead_reminders",
-    "schedule_special_reminders",
-    "send_reminders",
-    "update_360_reviews",
-    "update_configurations",
-    "update_par_cycles",
-    "update_par_ratings",
-  ],
 };
 
-export const serviceBaseUrl = window.config?.BACKEND_BASE_URL ?? "";
+export const APP_NAME = window.config?.APP_NAME ?? "";
+export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
+export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 
-export const deployedEnvironment = window.config?.DEPLOYED_ENVIRONMENT ?? null;
-
-export const adminGroup = window.config?.ADMIN_USER_GROUP ?? null;
-
-export const employeeGroup = window.config?.EMPLOYEE_USER_GROUP ?? null;
-
-export const top5p20pEnabledRating = window.config?.TOP5P20PENABLEDRATING ?? "Successful";
-
-export const evidenceEnabledRating = window.config?.EVIDENCE_ENABLED_RATING ?? "Needs Improvement";
-
-export const appConfig = {
+export const AppConfig = {
   serviceUrls: {
-    userPrivileges: serviceBaseUrl + "/user-privileges",
-    userInfo: serviceBaseUrl + "/user-info",
-    userData: serviceBaseUrl + "/employees",
-    parCycles: serviceBaseUrl + "/par-cycles",
-    configurations: serviceBaseUrl + "/meta/configurations",
-    employees: serviceBaseUrl + "/meta/employees",
-    emails: serviceBaseUrl + "/employee-emails",
-    reminders: serviceBaseUrl + "/reminders",
-    participants: serviceBaseUrl + "/participants",
-    calendar: serviceBaseUrl + "/calendar",
+    contacts: ServiceBaseUrl + "/contacts",
+    userInfo: ServiceBaseUrl + "/user-info",
+    employees: ServiceBaseUrl + "/employees",
+    appConfig: ServiceBaseUrl + "/app-config",
+    userData: ServiceBaseUrl + "/employees",
+    parCycles: ServiceBaseUrl + "/par-cycles",
+    configurations: ServiceBaseUrl + "/meta/configurations",
+    collections: ServiceBaseUrl + "/collections",
+
+    userPrivileges: ServiceBaseUrl + "/user-privileges",
+    emails: ServiceBaseUrl + "/employee-emails",
+    reminders: ServiceBaseUrl + "/reminders",
+    participants: ServiceBaseUrl + "/participants",
+    calendar: ServiceBaseUrl + "/calendar",
   },
 };

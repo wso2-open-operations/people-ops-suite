@@ -15,20 +15,20 @@ import { Role } from "@utils/types";
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
 export const routes: RouteObjectWithRole[] = [
-  {
-    path: "/",
-    text: "Employee Portal",
-    icon: React.createElement(DataUsageIcon),
-    element: React.createElement(View.OngoingCycleView),
-    allowRoles: [Role.EMPLOYEE],
-  },
-  {
-    path: "/lead-portal",
-    text: "Lead Portal",
-    icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.LeadPortal),
-    allowRoles: [Role.TEAM_LEAD],
-  },
+  // {
+  //   path: "/",
+  //   text: "Employee Portal",
+  //   icon: React.createElement(DataUsageIcon),
+  //   element: React.createElement(View.OngoingCycleView),
+  //   allowRoles: [Role.EMPLOYEE],
+  // },
+  // {
+  //   path: "/lead-portal",
+  //   text: "Lead Portal",
+  //   icon: React.createElement(GroupsIcon),
+  //   element: React.createElement(View.LeadPortal),
+  //   allowRoles: [Role.TEAM_LEAD],
+  // },
   {
     path: "/admin-portal",
     text: "Admin Portal",
@@ -51,13 +51,13 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
-  {
-    path: "/history",
-    text: "PAR History",
-    icon: React.createElement(HistoryIcon),
-    element: React.createElement(View.ParHistory),
-    allowRoles: [Role.EMPLOYEE],
-  },
+  // {
+  //   path: "/history",
+  //   text: "PAR History",
+  //   icon: React.createElement(HistoryIcon),
+  //   element: React.createElement(View.ParHistory),
+  //   allowRoles: [Role.EMPLOYEE],
+  // },
   {
     path: "/settings",
     text: "Settings",

@@ -13,25 +13,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+
 import React from "react";
-import Wso2Logo from "../../assets/images/wso2-logo.svg";
+
+import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
-import { useAppSelector } from "@slices/store";
-import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
-import { selectUserInfoData } from "@slices/userSlice";
-import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
+import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+import { RootState, useAppSelector } from "@slices/store";
 
-const Headercontent = () => {
+const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const user = useAppSelector((state: RootState) => state.user);
 
-  const userInfo = useAppSelector(selectUserInfoData);
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
@@ -43,7 +42,7 @@ const Headercontent = () => {
   return (
     <Box
       sx={{
-        zIndex: 2110,
+        zIndex: 10,
         backgroundColor: theme.palette.surface.territory.active,
         boxShadow: theme.shadows[4],
       }}
@@ -82,7 +81,6 @@ const Headercontent = () => {
           <Typography
             variant="h5"
             sx={{
-              letterSpacing: 0,
               color: theme.palette.customText.primary.p1.active,
             }}
           >
@@ -92,29 +90,9 @@ const Headercontent = () => {
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>
-          {userInfo && (
+          {user.userInfo && (
             <>
               <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
-                <Box sx={{ width: "fit-content" }}>
-                  <Typography
-                    noWrap
-                    variant="body1"
-                    sx={{
-                      color: theme.palette.customText.primary.p2.active,
-                    }}
-                  >
-                    {userInfo?.employeeName}
-                  </Typography>
-                  <Typography
-                    noWrap
-                    variant="body2"
-                    sx={{
-                      color: theme.palette.customText.primary.p3.active,
-                    }}
-                  >
-                    {userInfo?.jobRole}
-                  </Typography>
-                </Box>
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}
@@ -124,12 +102,32 @@ const Headercontent = () => {
                       border: 1,
                       borderColor: theme.palette.customBorder.territory.active,
                     }}
-                    src={userInfo.employeeThumbnail || ""}
-                    alt={userInfo.employeeName || "Avatar"}
+                    src={user.userInfo?.employeeThumbnail || ""}
+                    alt={user.userInfo?.firstName || "Avatar"}
                   >
-                    {userInfo.employeeName?.charAt(0)}
+                    {user.userInfo?.firstName?.charAt(0)}
                   </Avatar>
                 </Tooltip>
+                <Box sx={{ width: "fit-content" }}>
+                  <Typography
+                    noWrap
+                    variant="body1"
+                    sx={{
+                      color: theme.palette.customText.primary.p2.active,
+                    }}
+                  >
+                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
+                  </Typography>
+                  <Typography
+                    noWrap
+                    variant="body2"
+                    sx={{
+                      color: theme.palette.customText.primary.p3.active,
+                    }}
+                  >
+                    {user.userInfo?.jobRole}
+                  </Typography>
+                </Box>
               </Stack>
 
               <Menu
@@ -165,10 +163,4 @@ const Headercontent = () => {
   );
 };
 
-export default function Header(){
-  return(
-        <NewThemeWrapper>
-          <Headercontent />
-        </NewThemeWrapper>
-  );
-};
+export default Header;
