@@ -1,4 +1,4 @@
-// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -19,23 +19,22 @@ import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import PreLoader from "@components/common/PreLoader";
+import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import Header from "./header";
 import Sidebar from "./sidebar";
-import { selectRoles } from "@slices/authSlice";
+import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
-import { NewThemeWrapper } from "@src/theme/NewThemeWrapper";
 
-const LayoutContent = () => {
+export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
-  const theme = useTheme(); 
+  const theme = useTheme();
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -92,7 +91,6 @@ const LayoutContent = () => {
               flex: 1,
               height: "100%",
               padding: theme.spacing(3),
-              boxSizing: "border-box",
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
@@ -102,13 +100,5 @@ const LayoutContent = () => {
         </Box>
       </Box>
     </ConfirmationModalContextProvider>
-  );
-};
-
-export default function Layout() {
-  return (
-    <NewThemeWrapper>
-      <LayoutContent />
-    </NewThemeWrapper>
   );
 }
