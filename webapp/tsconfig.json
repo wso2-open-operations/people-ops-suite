@@ -33,7 +33,7 @@
       "@src/*": ["./src/*"],
       "@app/*": ["./src/app/*"],
       "@assets/*": ["./src/assets/*"],
-      "@component/*": ["./src/component/*"],
+      "@component/*": ["src/component/*"],
       "@config/*": ["./src/config/*"],
       "@context/*": ["./src/context/*"],
       "@layout/*": ["./src/layout/*"],

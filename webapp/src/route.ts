@@ -15,7 +15,7 @@
 // under the License.
 
 import type { RouteObject } from "react-router-dom";
-import { View } from "./views";
+import { View } from "@view/index";
 import React from "react";
 import { isIncludedRole } from "./utils/utils";
 
@@ -72,13 +72,13 @@ export const routes: RouteObjectWithRole[] = [
   //   element: React.createElement(View.ParHistory),
   //   allowRoles: [Role.EMPLOYEE],
   // },
-  {
-    path: "/settings",
-    text: "Settings",
-    icon: React.createElement(SettingsIcon),
-    element: React.createElement(View.GlobalSettings),
-    allowRoles: [Role.ADMIN],
-  },
+  // {
+  //   path: "/settings",
+  //   text: "Settings",
+  //   icon: React.createElement(SettingsIcon),
+  //   element: React.createElement(View.GlobalSettings),
+  //   allowRoles: [Role.ADMIN],
+  // },
 ];
 
 export const getActiveRoutesV2 = (
