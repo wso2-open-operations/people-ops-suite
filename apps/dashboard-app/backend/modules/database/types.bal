@@ -46,9 +46,9 @@ public enum MealType {
     LUNCH
 }
 
-# A single meal waste record.
-public type MealRecord record {|
-    # Unique id of the meal record
+# A single food waste record.
+public type FoodWasteRecord record {|
+    # Unique id of the food waste record
     int id;
     # Date of the record (YYYY-MM-DD)
     string record_date;
@@ -69,14 +69,14 @@ public type MealRecord record {|
 |};
 
 # DB row type for paginated listing (includes totalCount window value).
-type MealRecordListRow record {|
-    *MealRecord;
+type FoodWasteRecordListRow record {|
+    *FoodWasteRecord;
     # Total number of records for the applied filters
     int totalCount;
 |};
 
-# Payload for creating a meal record.
-public type AddMealRecordPayload record {|
+# Payload for creating a food waste record.
+public type AddFoodWasteRecordPayload record {|
     # Record date (YYYY-MM-DD)
     @constraint:String {
         pattern: {
@@ -93,16 +93,16 @@ public type AddMealRecordPayload record {|
     int plate_count;
 |};
 
-# Payload for updating a meal record.
-public type UpdateMealRecordPayload record {|
+# Payload for updating a food waste record.
+public type UpdateFoodWasteRecordPayload record {|
     # Total waste (kg)
     decimal? total_waste_kg = ();
     # Plate count
     int? plate_count = ();
 |};
 
-# Filters for listing meal records.
-public type MealRecordFilters record {|
+# Filters for listing food waste records.
+public type FoodWasteRecordFilters record {|
     # Start date (YYYY-MM-DD)
     string? start_date = ();
     # End date (YYYY-MM-DD)
@@ -115,8 +115,8 @@ public type MealRecordFilters record {|
     int offset;
 |};
 
-# Paginated response for listing meal records.
-public type PaginatedMealRecords record {|
+# Paginated response for listing food waste records.
+public type PaginatedFoodWasteRecords record {|
     # Total number of records for the applied filters
     int totalCount;
     # Current page (1-based)
@@ -124,24 +124,24 @@ public type PaginatedMealRecords record {|
     # Page size
     int pageSize;
     # Records for the page
-    MealRecord[] records;
+    FoodWasteRecord[] records;
 |};
 
 # Daily response: breakfast + lunch for a given date.
-public type DailyMealRecords record {|
+public type DailyFoodWasteRecords record {|
     # Record date (YYYY-MM-DD)
     string record_date;
     # Breakfast record (if exists)
-    MealRecord? breakfast = ();
+    FoodWasteRecord? breakfast = ();
     # Lunch record (if exists)
-    MealRecord? lunch = ();
+    FoodWasteRecord? lunch = ();
 |};
 
 # Duplicate key error for (record_date, meal_type).
-public type DuplicateMealRecordError distinct error;
+public type DuplicateFoodWasteRecordError distinct error;
 
 # Not-found error for operations by id.
-public type MealRecordNotFoundError distinct error;
+public type FoodWasteRecordNotFoundError distinct error;
 
 # Media types for advertisements.
 public enum MediaType {
@@ -245,9 +245,9 @@ public type TodayKPIs record {|
     # Date
     string date;
     # Breakfast data
-    MealRecord? breakfast;
+    FoodWasteRecord? breakfast;
     # Lunch data
-    MealRecord? lunch;
+    FoodWasteRecord? lunch;
     # Total Daily Waste (kg)
     decimal total_daily_waste_kg;
     # Total Daily Plates
