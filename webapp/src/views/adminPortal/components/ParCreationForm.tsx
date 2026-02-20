@@ -235,18 +235,18 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
 
   return (
     <Box alignItems="center" maxHeight={"100%"} sx={{ overflow: "hidden" }}>
-      <Grid item xs={12} sm={12} paddingBottom={1}>
-        <Typography variant="h4" gutterBottom>
+      <Box paddingBottom={1} paddingTop={1}>
+        <Typography variant="h5" gutterBottom>
           Create PAR Cycle
         </Typography>
-        <Divider></Divider>
-      </Grid>
+        <Divider />
+    </Box>
 
       <form onSubmit={handleSubmit}>
         <Grid
           container
           spacing={1}
-          sx={{ overflow: "auto", maxHeight: "calc(100vh - 24rem)" }}
+          sx={{ overflow: "auto", maxHeight: "calc(100vh - 15rem)" }}
         >
           <Grid item xs={12} sm={3}>
             <Typography paddingTop={1}>Name:</Typography>
@@ -586,7 +586,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
           </LocalizationProvider>
 
           {/* PAR Configurations */}
-          <Box p={1}>
+          <Box p={1} pb={0}>
             <Grid container spacing={1}>
               <Grid item xs={12} sm={3}>
                 <Typography paddingTop={1}>
@@ -735,7 +735,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 display="flex"
                 justifyContent="flex-end"
                 gap={2}
-                p={5}
+                pb={5}
               >
                 <Button variant="outlined" onClick={handleFormClose}>
                   Cancel
