@@ -14,8 +14,8 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-CREATE TABLE `meal_records` (
-  `meal_record_id` int NOT NULL AUTO_INCREMENT,
+CREATE TABLE `food_waste_records` (
+    `food_waste_record_id` int NOT NULL AUTO_INCREMENT,
   `record_date` date NOT NULL,
   `meal_type` varchar(20) NOT NULL,
   `total_waste_kg` decimal(10,2) NOT NULL,
@@ -24,10 +24,10 @@ CREATE TABLE `meal_records` (
   `created_by` varchar(100) NOT NULL,
   `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `updated_by` varchar(100) NOT NULL,
-  PRIMARY KEY (`meal_record_id`),
-  UNIQUE KEY `uniq_meal_record_date_type` (`record_date`,`meal_type`),
-  KEY `idx_meal_record_date` (`record_date`),
-  KEY `idx_meal_record_meal_type` (`meal_type`)
+    PRIMARY KEY (`food_waste_record_id`),
+    UNIQUE KEY `uniq_food_waste_record_date_type` (`record_date`,`meal_type`),
+    KEY `idx_food_waste_record_date` (`record_date`),
+    KEY `idx_food_waste_record_meal_type` (`meal_type`)
 );
 
 -- Table: advertisements
