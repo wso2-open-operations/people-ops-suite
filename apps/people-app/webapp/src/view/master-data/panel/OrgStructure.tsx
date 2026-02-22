@@ -28,6 +28,7 @@ import {
   Unit,
   useGetOrgStructureQuery,
 } from "@services/organization";
+import { UnitType } from "@utils/utils";
 
 import { EditModal } from "./components/EditModal";
 import OrgStructureTree from "./components/OrgStructureTree";
@@ -37,12 +38,12 @@ export default function OrgStructure() {
   const [editModal, setEditModal] = useState<{
     open: boolean;
     data: Company | BusinessUnit | Team | SubTeam | Unit | null;
-    type: string;
+    type: UnitType | null;
     parentNode: Company | BusinessUnit | Team | SubTeam | null;
   }>({
     open: false,
     data: null,
-    type: "",
+    type: null,
     parentNode: null,
   });
 
@@ -125,19 +126,17 @@ export default function OrgStructure() {
       setEditModal({
         open: true,
         data: result.node,
-        type,
+        type: type as UnitType,
         parentNode: result.parentNode,
       });
     }
   };
 
-  console.log("Edit modal org structure : ", editModal);
-
   const handleClose = () => {
     setEditModal({
       open: false,
       data: null,
-      type: "",
+      type: null,
       parentNode: null,
     });
   };
@@ -157,7 +156,6 @@ export default function OrgStructure() {
   if (!orgStructure) {
     return <ErrorHandler message="No organization structure data available" />;
   }
-
   return (
     <Box
       sx={{
@@ -188,7 +186,7 @@ export default function OrgStructure() {
         />
       </Box>
 
-      {editModal.open && editModal.data && (
+      {editModal.open && editModal.data && editModal.type && (
         <EditModal
           open={editModal.open}
           data={editModal.data}
