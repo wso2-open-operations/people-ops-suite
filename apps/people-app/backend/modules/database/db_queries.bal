@@ -138,13 +138,21 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
             e.probation_end_date AS probationEndDate,
             e.agreement_end_date AS agreementEndDate,
             et.name AS employmentType,
+            e.employment_type_id AS employmentTypeId,
+            d.career_function_id AS careerFunctionId,
             d.designation AS designation,
+            e.designation_id AS designationId,
             e.secondary_job_title AS secondaryJobTitle,
             o.name AS office,
+            e.office_id AS officeId,
             bu.name AS businessUnit,
+            e.business_unit_id AS businessUnitId,
             t.name AS team,
+            e.team_id AS teamId,
             st.name AS subTeam,
+            e.sub_team_id AS subTeamId,
             u.name AS unit,
+            e.unit_id AS unitId,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
