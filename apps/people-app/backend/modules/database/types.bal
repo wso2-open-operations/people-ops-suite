@@ -158,6 +158,8 @@ public type Filters record {|
     string? personalEmail = ();
     # Personal phone number
     string? personalPhone = ();
+    # Resident number
+    string? residentNumber = ();
     # City
     string? city = ();
     # Country

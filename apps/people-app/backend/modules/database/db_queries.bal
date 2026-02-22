@@ -194,6 +194,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
     appendStringFilter(filters, params.filters.gender, `pi.gender = ${params.filters.gender}`);
     appendStringFilter(filters, params.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail})`);
     appendStringFilter(filters, params.filters.personalPhone, `pi.personal_phone = ${params.filters.personalPhone}`);
+    appendStringFilter(filters, params.filters.residentNumber, `pi.resident_number = ${params.filters.residentNumber}`);
     appendStringFilter(filters, params.filters.city, `LOWER(pi.city) = LOWER(${params.filters.city})`);
     appendStringFilter(filters, params.filters.country, `LOWER(pi.country) = LOWER(${params.filters.country})`);
     appendStringFilter(filters, params.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus})`);
