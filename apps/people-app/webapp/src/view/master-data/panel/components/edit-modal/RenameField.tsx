@@ -19,16 +19,16 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useState } from "react";
 
-export type RenameEntityType = "Business Unit" | "Team" | "Sub-Team" | "Unit";
+import { UnitType } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;
 }
 
 interface RenameFieldProps {
-  entityType: RenameEntityType;
+  entityType: UnitType;
   currentName: string;
-  onRenameSuccess: (payload: any) => void;
+  onRenameSuccess: (entityName: string) => void;
 }
 
 export const RenameField: React.FC<RenameFieldProps> = ({
@@ -50,9 +50,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
   });
 
   const onSubmit = async ({ entityName }: RenameFormValues) => {
-    const payload = { name: entityName };
-
-    onRenameSuccess(payload);
+    onRenameSuccess(entityName);
   };
 
   const handleCancel = () => {
@@ -77,6 +75,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
         sx={{
           color: theme.palette.customText.primary.p3.active,
           fontWeight: 500,
+          textTransform: "capitalize"
         }}
       >
         {entityType} Name
@@ -122,7 +121,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
           )}
         />
 
-        <Button type="submit" variant="outlined" color="error" disabled={!isDirty || !isValid}>
+        <Button type="submit" variant="outlined" disabled={!isDirty || !isValid}>
           Rename
         </Button>
       </Box>
