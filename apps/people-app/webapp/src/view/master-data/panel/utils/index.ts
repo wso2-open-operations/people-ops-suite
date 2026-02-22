@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import { BusinessUnit, Company, SubTeam, Unit, Team } from "@root/src/services/organization";
-import { ChildItem, ChildTypeLabel, OrganizationItem } from "@root/src/utils/utils";
+import { ChildItem, ChildTypeLabel, OrganizationItem, UnitType } from "@root/src/utils/utils";
 
 // Type guards
 export function isCompany(item: OrganizationItem): item is Company {
@@ -74,23 +74,23 @@ export function getChildTypeLabel(item: OrganizationItem): ChildTypeLabel {
 }
 
 // Helper to get the entity type name
-export function getEntityTypeName(item: OrganizationItem): string {
+export function getEntityTypeName(item: OrganizationItem): UnitType | null {
   if (isCompany(item)) {
-    return "Company";
+    return UnitType.Company;
   }
   if (isBusinessUnit(item)) {
-    return "Business Unit";
+    return UnitType.BusinessUnit;
   }
   if (isTeam(item)) {
-    return "Team";
+    return UnitType.Team;
   }
   if (isSubTeam(item)) {
-    return "Sub-Team";
+    return UnitType.SubTeam;
   }
   if (isUnit(item)) {
-    return "Unit";
+    return UnitType.Unit;
   }
-  return "Item";
+  return null;
 }
 
 // Helper function to truncate name if too long
