@@ -43,7 +43,7 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 }
 
 # Fetch employees with filters.
-# 
+#
 # + params - Get employees filter payload
 # + return - List of employees or error
 public isolated function getEmployees(EmployeeSearchPayload params) returns EmployeesResponse|error {
@@ -54,40 +54,12 @@ public isolated function getEmployees(EmployeeSearchPayload params) returns Empl
 
     check from EmployeeRecord employeeRecord in resultStream
         do {
-            totalCount = employeeRecord.totalCount;
-
-            Employee employee = {
-                id: employeeRecord.id,
-                employeeId: employeeRecord.employeeId,
-                firstName: employeeRecord.firstName,
-                lastName: employeeRecord.lastName,
-                workEmail: employeeRecord.workEmail,
-                employeeThumbnail: employeeRecord.employeeThumbnail,
-                epf: employeeRecord.epf,
-                employmentLocation: employeeRecord.employmentLocation,
-                workLocation: employeeRecord.workLocation,
-                startDate: employeeRecord.startDate,
-                managerEmail: employeeRecord.managerEmail,
-                additionalManagerEmails: employeeRecord.additionalManagerEmails,
-                employeeStatus: employeeRecord.employeeStatus,
-                continuousServiceRecord: employeeRecord.continuousServiceRecord,
-                probationEndDate: employeeRecord.probationEndDate,
-                agreementEndDate: employeeRecord.agreementEndDate,
-                employmentType: employeeRecord.employmentType,
-                designation: employeeRecord.designation,
-                secondaryJobTitle: employeeRecord.secondaryJobTitle,
-                office: employeeRecord.office,
-                businessUnit: employeeRecord.businessUnit,
-                team: employeeRecord.team,
-                subTeam: employeeRecord.subTeam,
-                unit: employeeRecord.unit,
-                subordinateCount: employeeRecord.subordinateCount
-            };
-
-            employees.push(employee);
+            EmployeeRecord {totalCount: count, ...employeeData} = employeeRecord;
+            totalCount = count;
+            employees.push(employeeData);
         };
 
-    return { employees, totalCount };
+    return {employees, totalCount};
 }
 
 # Fetch continuous service record by work email.
