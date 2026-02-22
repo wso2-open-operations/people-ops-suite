@@ -150,12 +150,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
             employee e
             LEFT JOIN (
                 SELECT 
-                    employee_id,
+                    employee_pk_id,
                     GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
                     AS additionalManagerEmails
                 FROM employee_additional_managers
-                GROUP BY employee_id
-            ) eam ON eam.employee_id = e.id
+                GROUP BY employee_pk_id
+            ) eam ON eam.employee_pk_id = e.id
 
             LEFT JOIN (
                 SELECT 
