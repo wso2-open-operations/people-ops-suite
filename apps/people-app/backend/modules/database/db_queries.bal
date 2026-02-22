@@ -110,12 +110,12 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 
 # Fetch employees with filters.
 # 
-# + params - Get employees filter payload
+# + payload - Get employees filter payload
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:ParameterizedQuery {
 
-    int page = params.pagination.page;
-    int perPage = params.pagination.perPage;
+    int page = payload.pagination.page;
+    int perPage = payload.pagination.perPage;
     int offset = (page - 1) * perPage;
 
     sql:ParameterizedQuery baseQuery = `
@@ -187,42 +187,42 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
 
     sql:ParameterizedQuery[] filters = [];
 
-    appendStringFilter(filters, params.filters.title, `pi.title = ${params.filters.title}`);
-    appendStringFilter(filters, params.filters.firstName, `LOWER(pi.first_name) = LOWER(${params.filters.firstName})`);
-    appendStringFilter(filters, params.filters.lastName, `LOWER(pi.last_name) = LOWER(${params.filters.lastName})`);
-    appendStringFilter(filters, params.filters.dateOfBirth, `pi.dob = ${params.filters.dateOfBirth}`);
-    appendStringFilter(filters, params.filters.gender, `pi.gender = ${params.filters.gender}`);
-    appendStringFilter(filters, params.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail})`);
-    appendStringFilter(filters, params.filters.personalPhone, `pi.personal_phone = ${params.filters.personalPhone}`);
-    appendStringFilter(filters, params.filters.residentNumber, `pi.resident_number = ${params.filters.residentNumber}`);
-    appendStringFilter(filters, params.filters.city, `LOWER(pi.city) = LOWER(${params.filters.city})`);
-    appendStringFilter(filters, params.filters.country, `LOWER(pi.country) = LOWER(${params.filters.country})`);
-    appendStringFilter(filters, params.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus})`);
+    appendStringFilter(filters, payload.filters.title, `pi.title = ${payload.filters.title}`);
+    appendStringFilter(filters, payload.filters.firstName, `LOWER(pi.first_name) = LOWER(${payload.filters.firstName})`);
+    appendStringFilter(filters, payload.filters.lastName, `LOWER(pi.last_name) = LOWER(${payload.filters.lastName})`);
+    appendStringFilter(filters, payload.filters.dateOfBirth, `pi.dob = ${payload.filters.dateOfBirth}`);
+    appendStringFilter(filters, payload.filters.gender, `pi.gender = ${payload.filters.gender}`);
+    appendStringFilter(filters, payload.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${payload.filters.personalEmail})`);
+    appendStringFilter(filters, payload.filters.personalPhone, `pi.personal_phone = ${payload.filters.personalPhone}`);
+    appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
+    appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
+    appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
+    appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
 
-    if params.filters.managerEmail is string {
-        string escaped = escapeLike(params.filters.managerEmail ?: "");
+    if payload.filters.managerEmail is string {
+        string escaped = escapeLike(payload.filters.managerEmail ?: "");
         filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
     }
-    if params.filters.location is string {
-        string escaped = escapeLike(params.filters.location ?: "");
+    if payload.filters.location is string {
+        string escaped = escapeLike(payload.filters.location ?: "");
         filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
     }
 
-    if params.filters.nicOrPassport is int|string {
-        filters.push(`pi.nic_or_passport = ${params.filters.nicOrPassport}`);
+    if payload.filters.nicOrPassport is int|string {
+        filters.push(`pi.nic_or_passport = ${payload.filters.nicOrPassport}`);
     }
 
-    appendIntFilter(filters, params.filters.companyId, `o.company_id = ${params.filters.companyId}`);
-    appendIntFilter(filters, params.filters.officeId, `e.office_id = ${params.filters.officeId}`);
-    appendIntFilter(filters, params.filters.designationId, `e.designation_id = ${params.filters.designationId}`);
-    appendIntFilter(filters, params.filters.careerFunctionId, `d.career_function_id = ${params.filters.careerFunctionId}`);
-    appendIntFilter(filters, params.filters.businessUnitId, `e.business_unit_id = ${params.filters.businessUnitId}`);
-    appendIntFilter(filters, params.filters.teamId, `e.team_id = ${params.filters.teamId}`);
-    appendIntFilter(filters, params.filters.subTeamId, `e.sub_team_id = ${params.filters.subTeamId}`);
-    appendIntFilter(filters, params.filters.unitId, `e.unit_id = ${params.filters.unitId}`);
-    appendIntFilter(filters, params.filters.employmentTypeId, `e.employment_type_id = ${params.filters.employmentTypeId}`);
+    appendIntFilter(filters, payload.filters.companyId, `o.company_id = ${payload.filters.companyId}`);
+    appendIntFilter(filters, payload.filters.officeId, `e.office_id = ${payload.filters.officeId}`);
+    appendIntFilter(filters, payload.filters.designationId, `e.designation_id = ${payload.filters.designationId}`);
+    appendIntFilter(filters, payload.filters.careerFunctionId, `d.career_function_id = ${payload.filters.careerFunctionId}`);
+    appendIntFilter(filters, payload.filters.businessUnitId, `e.business_unit_id = ${payload.filters.businessUnitId}`);
+    appendIntFilter(filters, payload.filters.teamId, `e.team_id = ${payload.filters.teamId}`);
+    appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
+    appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
+    appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
 
-    string? searchString = params.searchString;
+    string? searchString = payload.searchString;
 
     if searchString is string {
         string[] tokens = tokenizeSearchQuery(searchString);
