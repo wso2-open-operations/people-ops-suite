@@ -35,7 +35,8 @@ import { EmployeeBasicInfo, useGetAllEmployeesQuery } from "@services/employee";
 
 import { truncateName } from "../../utils";
 
-const NAME_TRUNCATE_LENGTH = 12;
+const NAME_TRUNCATE_LENGTH = 16;
+const DESIGNATION_TRUNCATE_LENGTH = 20;
 
 type LeadPanelType = "head" | "functionalLead";
 
@@ -173,7 +174,7 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) =
       <Box sx={{ display: "flex", alignItems: "flex-start" }}>
         <Button
           size="small"
-          variant="primary"
+          variant="outlined"
           disabled={!selected}
           onClick={() => selected && onRequestConfirm(selected)}
         >
@@ -223,9 +224,9 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
 
             <Typography
               variant="caption"
-              sx={{ color: theme.palette.customText.primary.p4.active, textTransform: "uppercase" }}
+              sx={{ color: theme.palette.customText.primary.p4.active, textTransform: "capitalize", fontWeight: 400 }}
             >
-              {truncateName(lead.title, NAME_TRUNCATE_LENGTH)}
+              {truncateName(lead.title, DESIGNATION_TRUNCATE_LENGTH)}
             </Typography>
           </Box>
         </Box>
