@@ -27,9 +27,16 @@ import {
   SubTeam,
   Team,
   Unit,
+  useDeleteBusinessUnitMutation,
+  useDeleteBusinessUnitTeamMutation,
+  useDeleteSubTeamUnitMutation,
+  useDeleteTeamSubTeamMutation,
   useUpdateBusinessUnitMutation,
+  useUpdateBusinessUnitTeamMutation,
   useUpdateSubTeamMutation,
+  useUpdateSubTeamUnitMutation,
   useUpdateTeamMutation,
+  useUpdateTeamSubTeamMutation,
   useUpdateUnitMutation,
 } from "@services/organization";
 
@@ -53,10 +60,19 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
   const theme = useTheme();
   const [selectedChildToDelete, setSelectedChildToDelete] = useState<ChildItem | null>(null);
 
-  const [updateBusinessUnit, { isLoading: isUpdatingBU }] = useUpdateBusinessUnitMutation();
-  const [updateTeam, { isLoading: isUpdatingTeam }] = useUpdateTeamMutation();
-  const [updateSubTeam, { isLoading: isUpdatingSubTeam }] = useUpdateSubTeamMutation();
-  const [updateUnit, { isLoading: isUpdatingUnit }] = useUpdateUnitMutation();
+  const [updateBusinessUnit] = useUpdateBusinessUnitMutation();
+  const [updateTeam] = useUpdateTeamMutation();
+  const [updateSubTeam] = useUpdateSubTeamMutation();
+  const [updateUnit] = useUpdateUnitMutation();
+
+  const [updateBusinessUnitTeam] = useUpdateBusinessUnitTeamMutation();
+  const [updateTeamSubTeam] = useUpdateTeamSubTeamMutation();
+  const [updateSubTeamUnit] = useUpdateSubTeamUnitMutation();
+
+  const [deleteBusinessUnit] = useDeleteBusinessUnitMutation();
+  const [deleteBusinessUnitTeam] = useDeleteBusinessUnitTeamMutation();
+  const [deleteTeamSubTeam] = useDeleteTeamSubTeamMutation();
+  const [deleteSubTeamUnit] = useDeleteSubTeamUnitMutation();
 
   // Get children and their type dynamically
   const children = getChildren(data);
@@ -65,32 +81,68 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
 
   const handleChildTransfer = () => {};
 
-  const handleLeadSwap = (
+  console.log(" data data data : ", data);
+
+  const handleLeadSwap = async (
     entityId: string,
     parentId: string | null,
     selectedEmployee: EmployeeBasicInfo,
   ) => {
-    console.log(
-      `Swap functional lead — entityId: ${entityId}, parentId: ${parentId}, newLead:`,
-      selectedEmployee,
-    );
+    const payload = { functionalLeadEmail: selectedEmployee.workEmail };
+
+    switch (entityTypeName) {
+      case "Team":
+        if (parentId) await updateBusinessUnitTeam({ buId: parentId, teamId: entityId, payload });
+        break;
+      case "Sub-Team":
+        if (parentId) await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
+        break;
+      case "Unit":
+        if (parentId) await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
+        break;
+    }
   };
 
-  const handleHeadSwap = (
+  const handleHeadSwap = async (
     entityType: string,
     entityId: string,
     selectedEmployee: EmployeeBasicInfo,
-    reason: string,
+    _reason: string,
   ) => {
-    console.log(
-      `Swap head — entityType: ${entityType}, entityId: ${entityId}, newHead:`,
-      selectedEmployee,
-    );
+    const payload = { headEmail: selectedEmployee.workEmail };
 
-    console.log("reason : ", reason);
+    switch (entityType) {
+      case "Business Unit":
+        await updateBusinessUnit({ id: entityId, payload });
+        break;
+      case "Team":
+        await updateTeam({ id: entityId, payload });
+        break;
+      case "Sub-Team":
+        await updateSubTeam({ id: entityId, payload });
+        break;
+      case "Unit":
+        await updateUnit({ id: entityId, payload });
+        break;
+    }
   };
 
-  const handleDeleteCurrent = () => {};
+  const handleDeleteCurrent = async () => {
+    switch (entityTypeName) {
+      case "Business Unit":
+        await deleteBusinessUnit({ id: data.id });
+        break;
+      case "Team":
+        if (parentNode) await deleteBusinessUnitTeam({ buId: parentNode.id, teamId: data.id });
+        break;
+      case "Sub-Team":
+        if (parentNode) await deleteTeamSubTeam({ teamId: parentNode.id, subTeamId: data.id });
+        break;
+      case "Unit":
+        if (parentNode) await deleteSubTeamUnit({ subTeamId: parentNode.id, unitId: data.id });
+        break;
+    }
+  };
 
   const handleRenameCurrent = async ({ entityName }: { entityName: string }) => {
     const payload = { name: entityName };
