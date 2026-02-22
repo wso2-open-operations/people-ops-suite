@@ -38,18 +38,14 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
         sx={{
           display: "flex",
           flexDirection: "column",
-          gap: "2px",
+          gap: "4px",
           justifyContent: "center",
-          width: "272px",
+          maxWidth: "320px",
         }}
       >
         <Typography
+          variant="body2"
           sx={{
-            fontSize: "14px",
-            fontFamily: "Geist, sans-serif",
-            fontWeight: 500,
-            lineHeight: 1.5,
-            letterSpacing: "0.14px",
             color: theme.palette.customText.primary.p2.active,
           }}
         >
