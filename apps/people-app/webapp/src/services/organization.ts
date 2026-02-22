@@ -79,6 +79,7 @@ export interface Company {
 interface payloadType {
   name: string;
   headEmail: string;
+  functionalLeadEmail: string;
 }
 
 export const organizationApi = createApi({
@@ -244,6 +245,54 @@ export const organizationApi = createApi({
       },
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
+
+    deleteBusinessUnit: builder.mutation<void, { id: string }>({
+      queryFn: async ({ id }, { getState }, _extraoptions, baseQuery) => {
+        const state = getState() as RootState;
+        const userEmail = state.user.userInfo?.workEmail;
+
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/business-unit/${id}`,
+          method: "DELETE",
+        });
+
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    deleteBusinessUnitTeam: builder.mutation<void, { buId: string; teamId: string }>({
+      queryFn: async ({ buId, teamId }, _api, _extraoptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/business-unit/${buId}/team/${teamId}`,
+          method: "DELETE",
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    deleteTeamSubTeam: builder.mutation<void, { teamId: string; subTeamId: string }>({
+      queryFn: async ({ teamId, subTeamId }, _api, _extraoptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/team/${teamId}/sub-team/${subTeamId}`,
+          method: "DELETE",
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    deleteSubTeamUnit: builder.mutation<void, { subTeamId: string; unitId: string }>({
+      queryFn: async ({ subTeamId, unitId }, _api, _extraoptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/sub-team/${subTeamId}/unit/${unitId}`,
+          method: "DELETE",
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
   }),
 });
 
@@ -256,4 +305,8 @@ export const {
   useUpdateBusinessUnitTeamMutation,
   useUpdateTeamSubTeamMutation,
   useUpdateSubTeamUnitMutation,
+  useDeleteBusinessUnitMutation,
+  useDeleteBusinessUnitTeamMutation,
+  useDeleteTeamSubTeamMutation,
+  useDeleteSubTeamUnitMutation,
 } = organizationApi;
