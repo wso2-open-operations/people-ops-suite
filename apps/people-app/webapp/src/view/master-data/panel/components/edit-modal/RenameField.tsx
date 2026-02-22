@@ -17,6 +17,8 @@ import { Box, Button, TextField, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { Controller, useForm } from "react-hook-form";
 
+import { useState } from "react";
+
 export type RenameEntityType = "Business Unit" | "Team" | "Sub-Team" | "Unit";
 
 interface RenameFormValues {
@@ -35,10 +37,12 @@ export const RenameField: React.FC<RenameFieldProps> = ({
   onRenameSuccess,
 }) => {
   const theme = useTheme();
+  const [isFocused, setIsFocused] = useState(false);
 
   const {
     control,
     handleSubmit,
+    reset,
     formState: { isDirty, isValid },
   } = useForm<RenameFormValues>({
     defaultValues: { entityName: currentName },
@@ -49,6 +53,11 @@ export const RenameField: React.FC<RenameFieldProps> = ({
     const payload = { name: entityName };
 
     onRenameSuccess(payload);
+  };
+
+  const handleCancel = () => {
+    reset({ entityName: currentName });
+    setIsFocused(false);
   };
 
   return (
@@ -89,14 +98,27 @@ export const RenameField: React.FC<RenameFieldProps> = ({
             minLength: { value: 1, message: "Name must not be empty" },
           }}
           render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              placeholder={`Enter ${entityType} name`}
-              variant="outlined"
-              fullWidth
-              error={!!error}
-              helperText={error?.message}
-            />
+            <>
+              <TextField
+                {...field}
+                placeholder={`Enter ${entityType} name`}
+                variant="outlined"
+                fullWidth
+                error={!!error}
+                helperText={error?.message}
+                onFocus={() => setIsFocused(true)}
+              />
+              {isFocused && (
+                <Button
+                  variant="outlined"
+                  color="brand"
+                  onClick={handleCancel}
+                  sx={{ ml: 1, whiteSpace: "nowrap" }}
+                >
+                  Cancel
+                </Button>
+              )}
+            </>
           )}
         />
 
