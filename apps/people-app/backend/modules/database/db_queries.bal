@@ -114,9 +114,8 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # + return - Parameterized query for fetching employees
 isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:ParameterizedQuery {
 
-    int page = payload.pagination.page;
-    int perPage = payload.pagination.perPage;
-    int offset = (page - 1) * perPage;
+    int 'limit = payload.pagination.'limit;
+    int offset = payload.pagination.offset;
 
     sql:ParameterizedQuery baseQuery = `
         SELECT
@@ -235,7 +234,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
 
     retrieveEmployeeQuery = sql:queryConcat(retrieveEmployeeQuery, `
         ORDER BY e.id ASC
-        LIMIT ${perPage} OFFSET ${offset}
+        LIMIT ${'limit} OFFSET ${offset}
     `);
 
     return retrieveEmployeeQuery;

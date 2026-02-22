@@ -190,13 +190,14 @@ public type Filters record {|
     string? employeeStatus = ();
 |};
 
+# Pagination information.
 public type Pagination record {|
-    # Page number
-    @constraint:Int {minValue: 1}
-    int page = DEFAULT_PAGE_NUMBER;
-    # Records per page
+    # Limit of records per page
     @constraint:Int {minValue: 1, maxValue: 100}
-    int perPage = DEFAULT_RECORDS_PER_PAGE;
+    int 'limit = DEFAULT_RECORDS_PER_PAGE;
+    # Offset for pagination
+    @constraint:Int {minValue: 0}
+    int offset = 0;
 |};
 
 # Filter payload for getting employees.
