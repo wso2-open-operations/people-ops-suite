@@ -64,6 +64,28 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
+# Append a string filter to the filters array if the value is not null or empty.
+# 
+# + filters - Array of sub queries to be added to the main query
+# + value - The string value to check and append
+# + condition - The sql:ParameterizedQuery representing the filter condition to append
+isolated function appendStringFilter(sql:ParameterizedQuery[] filters, string? value, sql:ParameterizedQuery condition) {
+    if value is string && value.trim() != "" {
+        filters.push(condition);
+    }
+}
+
+# Append an integer filter to the filters array if the value is not null.
+# 
+# + filters - Array of sub queries to be added to the main query
+# + value - The integer value to check and append
+# + condition - The sql:ParameterizedQuery representing the filter condition to append
+isolated function appendIntFilter(sql:ParameterizedQuery[] filters, int? value, sql:ParameterizedQuery condition) {
+    if value is int {
+        filters.push(condition);
+    }
+}
+
 # Escape special characters in the input string for SQL LIKE queries.
 # 
 # + input - The input string to escape

@@ -187,32 +187,39 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
 
     sql:ParameterizedQuery[] filters = [];
 
-    filters.push(`(${params.filters.title} IS NULL OR pi.title = ${params.filters.title})`);
-    filters.push(`(${params.filters.firstName} IS NULL OR LOWER(pi.first_name) = LOWER(${params.filters.firstName}))`);
-    filters.push(`(${params.filters.lastName} IS NULL OR LOWER(pi.last_name) = LOWER(${params.filters.lastName}))`);
-    filters.push(`(${params.filters.nicOrPassport} IS NULL OR pi.nic_or_passport = ${params.filters.nicOrPassport})`);
-    filters.push(`(${params.filters.dateOfBirth} IS NULL OR pi.dob = ${params.filters.dateOfBirth})`);
-    filters.push(`(${params.filters.gender} IS NULL OR pi.gender = ${params.filters.gender})`);
-    filters.push(`(${params.filters.personalEmail} IS NULL OR LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail}))`);
-    filters.push(`(${params.filters.personalPhone} IS NULL OR pi.personal_phone = ${params.filters.personalPhone})`);
-    filters.push(`(${params.filters.city} IS NULL OR LOWER(pi.city) = LOWER(${params.filters.city}))`);
-    filters.push(`(${params.filters.country} IS NULL OR LOWER(pi.country) = LOWER(${params.filters.country}))`);
+    appendStringFilter(filters, params.filters.title, `pi.title = ${params.filters.title}`);
+    appendStringFilter(filters, params.filters.firstName, `LOWER(pi.first_name) = LOWER(${params.filters.firstName})`);
+    appendStringFilter(filters, params.filters.lastName, `LOWER(pi.last_name) = LOWER(${params.filters.lastName})`);
+    appendStringFilter(filters, params.filters.dateOfBirth, `pi.dob = ${params.filters.dateOfBirth}`);
+    appendStringFilter(filters, params.filters.gender, `pi.gender = ${params.filters.gender}`);
+    appendStringFilter(filters, params.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${params.filters.personalEmail})`);
+    appendStringFilter(filters, params.filters.personalPhone, `pi.personal_phone = ${params.filters.personalPhone}`);
+    appendStringFilter(filters, params.filters.city, `LOWER(pi.city) = LOWER(${params.filters.city})`);
+    appendStringFilter(filters, params.filters.country, `LOWER(pi.country) = LOWER(${params.filters.country})`);
+    appendStringFilter(filters, params.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus})`);
 
-    string escapedManager = escapeLike(params.filters.managerEmail ?: "");
-    string escapedLocation = escapeLike(params.filters.location ?: "");
+    if params.filters.managerEmail is string {
+        string escaped = escapeLike(params.filters.managerEmail ?: "");
+        filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
+    }
+    if params.filters.location is string {
+        string escaped = escapeLike(params.filters.location ?: "");
+        filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
+    }
 
-    filters.push(`(${params.filters.managerEmail} IS NULL OR LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escapedManager}, '%')))`);
-    filters.push(`(${params.filters.companyId} IS NULL OR o.company_id = ${params.filters.companyId})`);
-    filters.push(`(${params.filters.location} IS NULL OR LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escapedLocation}, '%')))`);
-    filters.push(`(${params.filters.officeId} IS NULL OR e.office_id = ${params.filters.officeId})`);
-    filters.push(`(${params.filters.designationId} IS NULL OR e.designation_id = ${params.filters.designationId})`);
-    filters.push(`(${params.filters.careerFunctionId} IS NULL OR d.career_function_id = ${params.filters.careerFunctionId})`);
-    filters.push(`(${params.filters.employeeStatus} IS NULL OR LOWER(e.employee_status) = LOWER(${params.filters.employeeStatus}))`);
-    filters.push(`(${params.filters.businessUnitId} IS NULL OR e.business_unit_id = ${params.filters.businessUnitId})`);
-    filters.push(`(${params.filters.teamId} IS NULL OR e.team_id = ${params.filters.teamId})`);
-    filters.push(`(${params.filters.subTeamId} IS NULL OR e.sub_team_id = ${params.filters.subTeamId})`);
-    filters.push(`(${params.filters.unitId} IS NULL OR e.unit_id = ${params.filters.unitId})`);
-    filters.push(`(${params.filters.employmentTypeId} IS NULL OR e.employment_type_id = ${params.filters.employmentTypeId})`);
+    if params.filters.nicOrPassport is int|string {
+        filters.push(`pi.nic_or_passport = ${params.filters.nicOrPassport}`);
+    }
+
+    appendIntFilter(filters, params.filters.companyId, `o.company_id = ${params.filters.companyId}`);
+    appendIntFilter(filters, params.filters.officeId, `e.office_id = ${params.filters.officeId}`);
+    appendIntFilter(filters, params.filters.designationId, `e.designation_id = ${params.filters.designationId}`);
+    appendIntFilter(filters, params.filters.careerFunctionId, `d.career_function_id = ${params.filters.careerFunctionId}`);
+    appendIntFilter(filters, params.filters.businessUnitId, `e.business_unit_id = ${params.filters.businessUnitId}`);
+    appendIntFilter(filters, params.filters.teamId, `e.team_id = ${params.filters.teamId}`);
+    appendIntFilter(filters, params.filters.subTeamId, `e.sub_team_id = ${params.filters.subTeamId}`);
+    appendIntFilter(filters, params.filters.unitId, `e.unit_id = ${params.filters.unitId}`);
+    appendIntFilter(filters, params.filters.employmentTypeId, `e.employment_type_id = ${params.filters.employmentTypeId}`);
 
     string? searchString = params.searchString;
 
@@ -234,7 +241,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload params) returns sql:Pa
 };
 
 # Fetch distinct managers.
-# 
+#
 # + return - Parameterized query for fetching distinct managers
 isolated function getManagersQuery() returns sql:ParameterizedQuery =>
     `SELECT DISTINCT 
