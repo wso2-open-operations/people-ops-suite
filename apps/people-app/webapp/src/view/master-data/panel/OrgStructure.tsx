@@ -156,6 +156,7 @@ export default function OrgStructure() {
   if (!orgStructure) {
     return <ErrorHandler message="No organization structure data available" />;
   }
+  
   return (
     <Box
       sx={{
