@@ -231,14 +231,14 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
         }
     }
 
-    sql:ParameterizedQuery updated = buildSqlSelectQuery(baseQuery, filters);
+    sql:ParameterizedQuery retrieveEmployeeQuery = buildSqlSelectQuery(baseQuery, filters);
 
-    updated = sql:queryConcat(updated, `
+    retrieveEmployeeQuery = sql:queryConcat(retrieveEmployeeQuery, `
         ORDER BY e.id ASC
         LIMIT ${perPage} OFFSET ${offset}
     `);
 
-    return updated;
+    return retrieveEmployeeQuery;
 };
 
 # Fetch distinct managers.
