@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
@@ -61,10 +60,11 @@ export const formatDate = (dateString?: string | null) => {
 };
 
 export enum UnitType {
-  BusinessUnit = "business-unit",
-  Team = "team",
-  SubTeam = "sub-team",
-  Unit = "unit",
+  Company = "COMPANY",
+  BusinessUnit = "BUSINESS_UNIT",
+  Team = "TEAM",
+  SubTeam = "SUB_TEAM",
+  Unit = "UNIT",
 }
 
 // Union type for all organization items
@@ -75,4 +75,3 @@ export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
 
 // Child type labels
 export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
-
