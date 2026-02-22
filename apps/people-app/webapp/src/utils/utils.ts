@@ -67,6 +67,14 @@ export enum UnitType {
   Unit = "UNIT",
 }
 
+export const UnitTypeLabel: Record<UnitType, string> = {
+  [UnitType.Company]: "Company",
+  [UnitType.BusinessUnit]: "Business Unit",
+  [UnitType.Team]: "Team",
+  [UnitType.SubTeam]: "Sub Team",
+  [UnitType.Unit]: "Unit",
+};
+
 // Union type for all organization items
 export type OrganizationItem = Company | BusinessUnit | Team | SubTeam | Unit;
 
