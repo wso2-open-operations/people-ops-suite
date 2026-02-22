@@ -19,6 +19,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import { NodeType } from "@utils/types";
+import { UnitType } from "@utils/utils"
 
 import ConnectionArrows from "./ConnectionArrows";
 import OrgStructureCard from "./OrgStructureCard";
@@ -27,8 +28,8 @@ interface OrgStructureTreeProps {
   company: Company;
   expandedNodes: Set<string>;
   onToggle: (id: string) => void;
-  onEdit: (id: string, type: string) => void;
-  onAdd: (id: string, type: string) => void;
+  onEdit: (id: string, type: UnitType) => void;
+  onAdd: (id: string, type: UnitType) => void;
 }
 
 interface Connection {
@@ -131,13 +132,13 @@ const OrgStructureTree = ({
           name={unit.name}
           type={NodeType.Unit}
           headCount={unit.headCount}
-          teamHead={unit.teamHead}
-          functionLead={unit.functionLead}
+          teamHead={unit.head}
+          functionLead={unit.functionalLead}
           hasChildren={false}
           isExpanded={false}
-          onCollapse={() => {}}
-          onEdit={() => onEdit(unit.id, "UNIT")}
-          onAdd={() => onAdd(unit.id, "UNIT")}
+          onCollapse={() => { }}
+          onEdit={() => onEdit(unit.id, UnitType.Unit)}
+          onAdd={() => onAdd(unit.id, UnitType.Unit)}
         />
       </Box>
     </Box>
@@ -181,13 +182,13 @@ const OrgStructureTree = ({
             name={subTeam.name}
             type={NodeType.SubTeam}
             headCount={subTeam.headCount}
-            teamHead={subTeam.teamHead}
-            functionLead={subTeam.functionLead}
+            teamHead={subTeam.head}
+            functionLead={subTeam.functionalLead}
             hasChildren={hasUnits}
             isExpanded={isExpanded}
             onCollapse={() => onToggle(subTeam.id)}
-            onEdit={() => onEdit(subTeam.id, "SUB_TEAM")}
-            onAdd={() => onAdd(subTeam.id, "SUB_TEAM")}
+            onEdit={() => onEdit(subTeam.id, UnitType.SubTeam)}
+            onAdd={() => onAdd(subTeam.id, UnitType.SubTeam)}
           />
         </Box>
 
@@ -258,13 +259,13 @@ const OrgStructureTree = ({
             name={team.name}
             type={NodeType.Team}
             headCount={team.headCount}
-            teamHead={team.teamHead}
-            functionLead={team.functionLead}
+            teamHead={team.head}
+            functionLead={team.functionalLead}
             hasChildren={hasSubTeams}
             isExpanded={isExpanded}
             onCollapse={() => onToggle(team.id)}
-            onEdit={() => onEdit(team.id, "TEAM")}
-            onAdd={() => onAdd(team.id, "TEAM")}
+            onEdit={() => onEdit(team.id, UnitType.Team)}
+            onAdd={() => onAdd(team.id, UnitType.Team)}
           />
         </Box>
 
@@ -335,13 +336,13 @@ const OrgStructureTree = ({
             name={bu.name}
             type={NodeType.BusinessUnit}
             headCount={bu.headCount}
-            teamHead={bu.teamHead}
-            functionLead={bu.functionLead}
+            teamHead={bu.head}
+            functionLead={bu.functionalLead}
             hasChildren={hasTeams}
             isExpanded={isExpanded}
             onCollapse={() => onToggle(bu.id)}
-            onEdit={() => onEdit(bu.id, "BUSINESS_UNIT")}
-            onAdd={() => onAdd(bu.id, "BUSINESS_UNIT")}
+            onEdit={() => onEdit(bu.id, UnitType.BusinessUnit)}
+            onAdd={() => onAdd(bu.id, UnitType.BusinessUnit)}
           />
         </Box>
 
@@ -409,13 +410,13 @@ const OrgStructureTree = ({
           name={company.name}
           type={NodeType.Company}
           headCount={company.headCount}
-          teamHead={company.teamHead}
-          functionLead={company.functionLead}
+          teamHead={company.head}
+          functionLead={company.functionalLead}
           hasChildren={hasBusinessUnits}
           isExpanded={isCompanyExpanded}
           onCollapse={() => onToggle(company.id)}
-          onEdit={() => onEdit(company.id, "COMPANY")}
-          onAdd={() => onAdd(company.id, "COMPANY")}
+          onEdit={() => onEdit(company.id, UnitType.Company)}
+          onAdd={() => onAdd(company.id, UnitType.Company)}
         />
       </Box>
 
