@@ -55,6 +55,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
         >
           Delete this business unit
         </Typography>
+
         <Typography
           sx={{
             fontSize: "12px",
@@ -69,6 +70,7 @@ export const DeleteCurrent: React.FC<DeleteCurrentProps> = ({ onDelete }) => {
           Once you delete a business unit, there is no going back. Please be certain.
         </Typography>
       </Box>
+
       <Button variant="outlined" color="error" onClick={onDelete}>
         Delete
       </Button>
