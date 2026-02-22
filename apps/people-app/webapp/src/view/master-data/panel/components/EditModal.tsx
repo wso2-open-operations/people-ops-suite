@@ -17,9 +17,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import { Box, Dialog, DialogContent, DialogTitle, IconButton, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { useState } from "react";
-
-import { ChildItem } from "@root/src/utils/utils";
+import ErrorHandler from "@component/common/ErrorHandler";
+import BackdropProgress from "@component/ui/BackdropProgress";
+import { UnitType } from "@root/src/utils/utils";
 import { EmployeeBasicInfo } from "@services/employee";
 import {
   BusinessUnit,
@@ -40,11 +40,9 @@ import {
   useUpdateUnitMutation,
 } from "@services/organization";
 
-import { getChildTypeLabel, getChildren, getEntityTypeName } from "../utils";
-import { DeleteChild } from "./edit-modal/DeleteChild";
+import { getEntityTypeName } from "../utils";
 import { DeleteCurrent } from "./edit-modal/DeleteCurrent";
-import { ManageChildren } from "./edit-modal/ManageChildren";
-import { type RenameEntityType, RenameField } from "./edit-modal/RenameField";
+import { RenameField } from "./edit-modal/RenameField";
 import { SectionHeader } from "./edit-modal/SectionHeader";
 import { SwapLeads } from "./edit-modal/SwapLeads";
 
@@ -58,30 +56,67 @@ interface EditModalProps {
 
 export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, parentNode }) => {
   const theme = useTheme();
-  const [selectedChildToDelete, setSelectedChildToDelete] = useState<ChildItem | null>(null);
 
-  const [updateBusinessUnit] = useUpdateBusinessUnitMutation();
-  const [updateTeam] = useUpdateTeamMutation();
-  const [updateSubTeam] = useUpdateSubTeamMutation();
-  const [updateUnit] = useUpdateUnitMutation();
+  const [updateBusinessUnit, { isLoading: isUpdatingBU, isError: isErrorUpdatingBU }] =
+    useUpdateBusinessUnitMutation();
+  const [updateTeam, { isLoading: isUpdatingTeam, isError: isErrorUpdatingTeam }] =
+    useUpdateTeamMutation();
+  const [updateSubTeam, { isLoading: isUpdatingSubTeam, isError: isErrorUpdatingSubTeam }] =
+    useUpdateSubTeamMutation();
+  const [updateUnit, { isLoading: isUpdatingUnit, isError: isErrorUpdatingUnit }] =
+    useUpdateUnitMutation();
 
-  const [updateBusinessUnitTeam] = useUpdateBusinessUnitTeamMutation();
-  const [updateTeamSubTeam] = useUpdateTeamSubTeamMutation();
-  const [updateSubTeamUnit] = useUpdateSubTeamUnitMutation();
+  const [updateBusinessUnitTeam, { isLoading: isUpdatingBUTeam, isError: isErrorUpdatingBUTeam }] =
+    useUpdateBusinessUnitTeamMutation();
+  const [
+    updateTeamSubTeam,
+    { isLoading: isUpdatingTeamSubTeam, isError: isErrorUpdatingTeamSubTeam },
+  ] = useUpdateTeamSubTeamMutation();
+  const [
+    updateSubTeamUnit,
+    { isLoading: isUpdatingSubTeamUnit, isError: isErrorUpdatingSubTeamUnit },
+  ] = useUpdateSubTeamUnitMutation();
 
-  const [deleteBusinessUnit] = useDeleteBusinessUnitMutation();
-  const [deleteBusinessUnitTeam] = useDeleteBusinessUnitTeamMutation();
-  const [deleteTeamSubTeam] = useDeleteTeamSubTeamMutation();
-  const [deleteSubTeamUnit] = useDeleteSubTeamUnitMutation();
+  const [deleteBusinessUnit, { isLoading: isDeletingBU, isError: isErrorDeletingBU }] =
+    useDeleteBusinessUnitMutation();
+  const [deleteBusinessUnitTeam, { isLoading: isDeletingBUTeam, isError: isErrorDeletingBUTeam }] =
+    useDeleteBusinessUnitTeamMutation();
+  const [
+    deleteTeamSubTeam,
+    { isLoading: isDeletingTeamSubTeam, isError: isErrorDeletingTeamSubTeam },
+  ] = useDeleteTeamSubTeamMutation();
+  const [
+    deleteSubTeamUnit,
+    { isLoading: isDeletingSubTeamUnit, isError: isErrorDeletingSubTeamUnit },
+  ] = useDeleteSubTeamUnitMutation();
 
-  // Get children and their type dynamically
-  const children = getChildren(data);
-  const childTypeLabel = getChildTypeLabel(data);
+  const isLoading =
+    isUpdatingBU ||
+    isUpdatingTeam ||
+    isUpdatingSubTeam ||
+    isUpdatingUnit ||
+    isUpdatingBUTeam ||
+    isUpdatingTeamSubTeam ||
+    isUpdatingSubTeamUnit ||
+    isDeletingBU ||
+    isDeletingBUTeam ||
+    isDeletingTeamSubTeam ||
+    isDeletingSubTeamUnit;
+
+  const isError =
+    isErrorUpdatingBU ||
+    isErrorUpdatingTeam ||
+    isErrorUpdatingSubTeam ||
+    isErrorUpdatingUnit ||
+    isErrorUpdatingBUTeam ||
+    isErrorUpdatingTeamSubTeam ||
+    isErrorUpdatingSubTeamUnit ||
+    isErrorDeletingBU ||
+    isErrorDeletingBUTeam ||
+    isErrorDeletingTeamSubTeam ||
+    isErrorDeletingSubTeamUnit;
+
   const entityTypeName = getEntityTypeName(data);
-
-  const handleChildTransfer = () => {};
-
-  console.log(" data data data : ", data);
 
   const handleLeadSwap = async (
     entityId: string,
@@ -91,13 +126,13 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
 
     switch (entityTypeName) {
-      case "Team":
+      case UnitType.Team:
         if (parentId) await updateBusinessUnitTeam({ buId: parentId, teamId: entityId, payload });
         break;
-      case "Sub-Team":
+      case UnitType.SubTeam:
         if (parentId) await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
         break;
-      case "Unit":
+      case UnitType.Unit:
         if (parentId) await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
         break;
     }
@@ -112,16 +147,16 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
     const payload = { headEmail: selectedEmployee.workEmail };
 
     switch (entityType) {
-      case "Business Unit":
+      case UnitType.BusinessUnit:
         await updateBusinessUnit({ id: entityId, payload });
         break;
-      case "Team":
+      case UnitType.Team:
         await updateTeam({ id: entityId, payload });
         break;
-      case "Sub-Team":
+      case UnitType.SubTeam:
         await updateSubTeam({ id: entityId, payload });
         break;
-      case "Unit":
+      case UnitType.Unit:
         await updateUnit({ id: entityId, payload });
         break;
     }
@@ -129,39 +164,43 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
 
   const handleDeleteCurrent = async () => {
     switch (entityTypeName) {
-      case "Business Unit":
+      case UnitType.BusinessUnit:
         await deleteBusinessUnit({ id: data.id });
         break;
-      case "Team":
+      case UnitType.Team:
         if (parentNode) await deleteBusinessUnitTeam({ buId: parentNode.id, teamId: data.id });
         break;
-      case "Sub-Team":
+      case UnitType.SubTeam:
         if (parentNode) await deleteTeamSubTeam({ teamId: parentNode.id, subTeamId: data.id });
         break;
-      case "Unit":
+      case UnitType.Unit:
         if (parentNode) await deleteSubTeamUnit({ subTeamId: parentNode.id, unitId: data.id });
         break;
     }
   };
 
-  const handleRenameCurrent = async ({ entityName }: { entityName: string }) => {
+  const handleRenameCurrent = async (entityName: string) => {
     const payload = { name: entityName };
 
     switch (entityTypeName) {
-      case "Business Unit":
+      case UnitType.BusinessUnit:
         await updateBusinessUnit({ id: data.id, payload });
         break;
-      case "Team":
+      case UnitType.Team:
         await updateTeam({ id: data.id, payload });
         break;
-      case "Sub-Team":
+      case UnitType.SubTeam:
         await updateSubTeam({ id: data.id, payload });
         break;
-      case "Unit":
+      case UnitType.Unit:
         await updateUnit({ id: data.id, payload });
         break;
     }
   };
+
+  if (isError || !entityTypeName) {
+    return <ErrorHandler message={"Something went wrong. Please try again..."} />;
+  }
 
   return (
     <Dialog
@@ -171,6 +210,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
       slotProps={{
         paper: {
           sx: {
+            position: "relative",
             width: "700px",
             maxHeight: "600px",
             borderRadius: "8px",
@@ -181,6 +221,15 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
         },
       }}
     >
+      <BackdropProgress
+        open={isLoading}
+        sx={{
+          position: "absolute",
+          zIndex: (theme) => theme.zIndex.modal + 1,
+          borderRadius: "8px",
+        }}
+      />
+
       <DialogTitle
         sx={{
           display: "flex",
@@ -237,7 +286,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
           <SectionHeader title="General" />
 
           <RenameField
-            entityType={entityTypeName as RenameEntityType}
+            entityType={entityTypeName}
             currentName={data.name}
             onRenameSuccess={handleRenameCurrent}
           />
