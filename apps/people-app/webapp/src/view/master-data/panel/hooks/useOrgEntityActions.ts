@@ -46,35 +46,33 @@ export function useOrgEntityActions({ data, parentNode }: UseOrgEntityActionsPar
 
   const entityTypeName = getEntityTypeName(data);
 
-  const handleLeadSwap = async (
-    entityId: string,
-    parentId: string | null,
-    selectedEmployee: EmployeeBasicInfo,
-  ) => {
+  const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo) => {
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
+    const entityId = data.id;
+    const parentId = parentNode?.id ?? null;
 
     switch (entityTypeName) {
       case UnitType.Team:
         if (parentId) await updateBusinessUnitTeam({ buId: parentId, teamId: entityId, payload });
         break;
       case UnitType.SubTeam:
-        if (parentId) await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
+        if (parentId) {
+          await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
+        }
         break;
       case UnitType.Unit:
-        if (parentId) await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
+        if (parentId) {
+          await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
+        }
         break;
     }
   };
 
-  const handleHeadSwap = async (
-    entityType: string,
-    entityId: string,
-    selectedEmployee: EmployeeBasicInfo,
-    _reason: string,
-  ) => {
+  const handleHeadSwap = async (selectedEmployee: EmployeeBasicInfo, _reason: string) => {
     const payload = { headEmail: selectedEmployee.workEmail };
+    const entityId = data.id;
 
-    switch (entityType) {
+    switch (entityTypeName) {
       case UnitType.BusinessUnit:
         await updateBusinessUnit({ id: entityId, payload });
         break;
