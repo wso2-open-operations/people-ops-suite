@@ -141,7 +141,7 @@ public type Employee record {|
 |};
 
 # Filters for getting employees.
-public type Filters record {|
+public type EmployeeFilters record {|
     # Title
     string? title = ();
     # First name
@@ -209,7 +209,7 @@ public type EmployeeSearchPayload record {|
     }
     string? searchString = ();
     # Filters
-    Filters filters;
+    EmployeeFilters filters;
     # Pagination
     Pagination pagination;
 |};
