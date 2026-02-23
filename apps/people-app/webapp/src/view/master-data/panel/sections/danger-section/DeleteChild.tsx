@@ -17,8 +17,8 @@ import { Autocomplete, Box, Button, TextField, Typography } from "@mui/material"
 import { useTheme } from "@mui/material/styles";
 
 import { BusinessUnit, SubTeam, Team, Unit } from "@services/organization";
+import { TeamCard } from "../../components/edit-modal/TeamCard";
 
-import { TeamCard } from "./TeamCard";
 
 // Union type for all possible child types
 type ChildItem = BusinessUnit | Team | SubTeam | Unit;
