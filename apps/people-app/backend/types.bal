@@ -31,13 +31,27 @@ type NewVehicle record {|
     database:VehicleTypes vehicleType;
 |};
 
+type UnitPayloadN record {
+    string updatedBy;
+};
+
 type UnitPayload record {|
     string changedName?;
     string headEmail?;
     string updatedBy;
 |};
 
-type UnitPayloadN record {|
+type UpdateBusinessUnitTeamPayload record {|
+    string functionalLead?;
+    string updatedBy;
+|};
+
+type UpdateTeamSubTeamPayload record {|
+    string functionalLead?;
+    string updatedBy;
+|};
+
+type updateSubTeamUnitPayload record {|
     string functionalLead?;
     string updatedBy;
 |};
