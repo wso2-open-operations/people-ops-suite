@@ -19,32 +19,13 @@ import { useTheme } from "@mui/material/styles";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
-import { UnitType } from "@root/src/utils/utils";
-import { EmployeeBasicInfo } from "@services/employee";
-import {
-  BusinessUnit,
-  Company,
-  SubTeam,
-  Team,
-  Unit,
-  useDeleteBusinessUnitMutation,
-  useDeleteBusinessUnitTeamMutation,
-  useDeleteSubTeamUnitMutation,
-  useDeleteTeamSubTeamMutation,
-  useUpdateBusinessUnitMutation,
-  useUpdateBusinessUnitTeamMutation,
-  useUpdateSubTeamMutation,
-  useUpdateSubTeamUnitMutation,
-  useUpdateTeamMutation,
-  useUpdateTeamSubTeamMutation,
-  useUpdateUnitMutation,
-} from "@services/organization";
+import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 
-import { getEntityTypeName } from "../utils";
-import { RenameField } from "./edit-modal/RenameField";
-import { SectionHeader } from "./edit-modal/SectionHeader";
-import { SwapLeads } from "../sections/leads-section/SwapLeads";
+import { useOrgEntityActions } from "../hooks/useOrgEntityActions";
 import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
+import { RenameField } from "../sections/general-section//RenameField";
+import { SwapLeads } from "../sections/leads-section/SwapLeads";
+import { SectionHeader } from "./edit-modal/SectionHeader";
 
 interface EditModalProps {
   open: boolean;
@@ -57,146 +38,15 @@ interface EditModalProps {
 export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, parentNode }) => {
   const theme = useTheme();
 
-  const [updateBusinessUnit, { isLoading: isUpdatingBU, isError: isErrorUpdatingBU }] =
-    useUpdateBusinessUnitMutation();
-  const [updateTeam, { isLoading: isUpdatingTeam, isError: isErrorUpdatingTeam }] =
-    useUpdateTeamMutation();
-  const [updateSubTeam, { isLoading: isUpdatingSubTeam, isError: isErrorUpdatingSubTeam }] =
-    useUpdateSubTeamMutation();
-  const [updateUnit, { isLoading: isUpdatingUnit, isError: isErrorUpdatingUnit }] =
-    useUpdateUnitMutation();
-
-  const [updateBusinessUnitTeam, { isLoading: isUpdatingBUTeam, isError: isErrorUpdatingBUTeam }] =
-    useUpdateBusinessUnitTeamMutation();
-  const [
-    updateTeamSubTeam,
-    { isLoading: isUpdatingTeamSubTeam, isError: isErrorUpdatingTeamSubTeam },
-  ] = useUpdateTeamSubTeamMutation();
-  const [
-    updateSubTeamUnit,
-    { isLoading: isUpdatingSubTeamUnit, isError: isErrorUpdatingSubTeamUnit },
-  ] = useUpdateSubTeamUnitMutation();
-
-  const [deleteBusinessUnit, { isLoading: isDeletingBU, isError: isErrorDeletingBU }] =
-    useDeleteBusinessUnitMutation();
-  const [deleteBusinessUnitTeam, { isLoading: isDeletingBUTeam, isError: isErrorDeletingBUTeam }] =
-    useDeleteBusinessUnitTeamMutation();
-  const [
-    deleteTeamSubTeam,
-    { isLoading: isDeletingTeamSubTeam, isError: isErrorDeletingTeamSubTeam },
-  ] = useDeleteTeamSubTeamMutation();
-  const [
-    deleteSubTeamUnit,
-    { isLoading: isDeletingSubTeamUnit, isError: isErrorDeletingSubTeamUnit },
-  ] = useDeleteSubTeamUnitMutation();
-
-  const isLoading =
-    isUpdatingBU ||
-    isUpdatingTeam ||
-    isUpdatingSubTeam ||
-    isUpdatingUnit ||
-    isUpdatingBUTeam ||
-    isUpdatingTeamSubTeam ||
-    isUpdatingSubTeamUnit ||
-    isDeletingBU ||
-    isDeletingBUTeam ||
-    isDeletingTeamSubTeam ||
-    isDeletingSubTeamUnit;
-
-  const isError =
-    isErrorUpdatingBU ||
-    isErrorUpdatingTeam ||
-    isErrorUpdatingSubTeam ||
-    isErrorUpdatingUnit ||
-    isErrorUpdatingBUTeam ||
-    isErrorUpdatingTeamSubTeam ||
-    isErrorUpdatingSubTeamUnit ||
-    isErrorDeletingBU ||
-    isErrorDeletingBUTeam ||
-    isErrorDeletingTeamSubTeam ||
-    isErrorDeletingSubTeamUnit;
-
-  const entityTypeName = getEntityTypeName(data);
-
-  const handleLeadSwap = async (
-    entityId: string,
-    parentId: string | null,
-    selectedEmployee: EmployeeBasicInfo,
-  ) => {
-    const payload = { functionalLeadEmail: selectedEmployee.workEmail };
-
-    switch (entityTypeName) {
-      case UnitType.Team:
-        if (parentId) await updateBusinessUnitTeam({ buId: parentId, teamId: entityId, payload });
-        break;
-      case UnitType.SubTeam:
-        if (parentId) await updateTeamSubTeam({ teamId: parentId, subTeamId: entityId, payload });
-        break;
-      case UnitType.Unit:
-        if (parentId) await updateSubTeamUnit({ subTeamId: parentId, unitId: entityId, payload });
-        break;
-    }
-  };
-
-  const handleHeadSwap = async (
-    entityType: string,
-    entityId: string,
-    selectedEmployee: EmployeeBasicInfo,
-    _reason: string,
-  ) => {
-    const payload = { headEmail: selectedEmployee.workEmail };
-
-    switch (entityType) {
-      case UnitType.BusinessUnit:
-        await updateBusinessUnit({ id: entityId, payload });
-        break;
-      case UnitType.Team:
-        await updateTeam({ id: entityId, payload });
-        break;
-      case UnitType.SubTeam:
-        await updateSubTeam({ id: entityId, payload });
-        break;
-      case UnitType.Unit:
-        await updateUnit({ id: entityId, payload });
-        break;
-    }
-  };
-
-  const handleDeleteCurrent = async () => {
-    switch (entityTypeName) {
-      case UnitType.BusinessUnit:
-        await deleteBusinessUnit({ id: data.id });
-        break;
-      case UnitType.Team:
-        if (parentNode) await deleteBusinessUnitTeam({ buId: parentNode.id, teamId: data.id });
-        break;
-      case UnitType.SubTeam:
-        if (parentNode) await deleteTeamSubTeam({ teamId: parentNode.id, subTeamId: data.id });
-        break;
-      case UnitType.Unit:
-        if (parentNode) await deleteSubTeamUnit({ subTeamId: parentNode.id, unitId: data.id });
-        break;
-    }
-  };
-
-  const handleRenameCurrent = async (entityName: string) => {
-    const payload = { name: entityName };
-
-    switch (entityTypeName) {
-      case UnitType.BusinessUnit:
-        await updateBusinessUnit({ id: data.id, payload });
-        break;
-      case UnitType.Team:
-        await updateTeam({ id: data.id, payload });
-        break;
-      case UnitType.SubTeam:
-        await updateSubTeam({ id: data.id, payload });
-        break;
-      case UnitType.Unit:
-        await updateUnit({ id: data.id, payload });
-        break;
-    }
-  };
+  const {
+    entityTypeName,
+    handleLeadSwap,
+    handleHeadSwap,
+    handleDeleteCurrent,
+    handleRenameCurrent,
+    isLoading,
+    isError,
+  } = useOrgEntityActions({ data, parentNode });
 
   if (isError || !entityTypeName) {
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
