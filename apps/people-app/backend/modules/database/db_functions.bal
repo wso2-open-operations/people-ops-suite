@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/data.jsondata;
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -136,22 +135,15 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
 #
 # + return - Organization structure data or error
 public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
-    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream = databaseClient->query(getFullOrgChartQuery());
+    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream = databaseClient->query(getFullOrganizationStructureQuery());
 
-    OrgStructureBusinessUnitRow[] rows = check from OrgStructureBusinessUnitRow row in orgStructureStream
-        select row;
-
-    OrgStructureBusinessUnit[] typedOrgStructure = [];
-    foreach OrgStructureBusinessUnitRow row in rows {
-        OrgStructureTeam[] teams = check jsondata:parseAsType(row.teams);
-        typedOrgStructure.push({
+    return from OrgStructureBusinessUnitRow row in orgStructureStream
+        let OrgStructureTeam[] teams = check row.teams.fromJsonWithType()
+        select {
             id: row.id,
             name: row.name,
             teams
-        });
-    }
-
-    return typedOrgStructure;
+        };
 }
 
 # Get career functions.

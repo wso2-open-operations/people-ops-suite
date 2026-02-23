@@ -290,7 +290,7 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
 # Get full org chart query.
 #
 # + return - Full org chart query
-isolated function getFullOrgChartQuery() returns sql:ParameterizedQuery =>
+isolated function getFullOrganizationStructureQuery() returns sql:ParameterizedQuery =>
     `SELECT
         bu.id,
         bu.name,
