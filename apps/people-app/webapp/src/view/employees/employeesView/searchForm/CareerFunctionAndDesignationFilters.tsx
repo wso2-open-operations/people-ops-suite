@@ -44,24 +44,22 @@ export function CareerFunctionAndDesignationFilters({
 }: CareerFunctionAndDesignationFiltersProps) {
   const treeItemSx = {
     position: "relative",
-    pl: 3,
-    pt: 2,
-    // horizontal connector
+    pl: 2,
+    pt: 1,
     "&::before": {
       content: '""',
       position: "absolute",
-      top: "48px",
-      left: "12px",
-      width: "12px",
+      top: "38px",
+      left: "8px",
+      width: "8px",
       height: "1px",
       bgcolor: "text.disabled",
     },
-    // vertical connector
     "&::after": {
       content: '""',
       position: "absolute",
       top: 0,
-      left: "12px",
+      left: "8px",
       width: "1px",
       bottom: 0,
       bgcolor: "text.disabled",
@@ -95,9 +93,7 @@ export function CareerFunctionAndDesignationFilters({
                 {...params}
                 size="small"
                 label="Career Function"
-                sx={{
-                      mt: 2,
-                    }}
+                sx={{ mt: 1 }}
               />
             )}
           />
@@ -115,9 +111,7 @@ export function CareerFunctionAndDesignationFilters({
                     {...params}
                     size="small"
                     label="Designation"
-                    sx={{
-                      mt: 2,
-                    }}
+                    sx={{ mt: 1 }}
                   />
                 )}
               />

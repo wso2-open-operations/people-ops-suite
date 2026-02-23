@@ -123,9 +123,9 @@ export function FilterDrawer({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            pl: 4,
+            pl: 3,
             pr: 2,
-            py: 1.5,
+            py: 1,
             borderBottom: 1,
             borderColor: "divider",
           }}
@@ -148,8 +148,8 @@ export function FilterDrawer({
           </IconButton>
         </Box>
 
-        <Box sx={{ flex: 1, overflowY: "auto", px: 4, py: 2 }}>
-          <Grid container direction="column" spacing={4}>
+        <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 1.5 }}>
+          <Grid container direction="column" spacing={2}>
             <Grid item>
               <OrganizationTreeFilters
                 value={
@@ -324,8 +324,8 @@ export function FilterDrawer({
 
         <Box
           sx={{
-            mt: 2,
-            pt: 3,
+            mt: 1,
+            pt: 2,
             px: 2,
             width: "100%",
             display: "flex",

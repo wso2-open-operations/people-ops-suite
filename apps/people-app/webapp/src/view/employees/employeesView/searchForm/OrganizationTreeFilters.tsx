@@ -57,15 +57,15 @@ export function OrganizationTreeFilters({
 }: OrganizationTreeFiltersProps) {
   const treeItemSx = {
     position: "relative",
-    pl: 3,
-    pt: 2,
+    pl: 2,
+    pt: 1,
     // horizontal connector
     "&::before": {
       content: '""',
       position: "absolute",
-      top: "48px",
-      left: "12px",
-      width: "12px",
+      top: "38px",
+      left: "8px",
+      width: "8px",
       height: "1px",
       bgcolor: "text.disabled",
     },
@@ -74,7 +74,7 @@ export function OrganizationTreeFilters({
       content: '""',
       position: "absolute",
       top: 0,
-      left: "12px",
+      left: "8px",
       width: "1px",
       bottom: 0,
       bgcolor: "text.disabled",
@@ -108,9 +108,7 @@ export function OrganizationTreeFilters({
                 {...params}
                 size="small"
                 label="Business Unit"
-                sx={{
-                      mt: 2,
-                    }}
+                sx={{ mt: 1 }}
               />
             )}
           />
@@ -128,9 +126,7 @@ export function OrganizationTreeFilters({
                     {...params}
                     size="small"
                     label="Team"
-                    sx={{
-                      mt: 2,
-                    }}
+                    sx={{ mt: 1 }}
                   />
                 )}
               />
@@ -150,9 +146,7 @@ export function OrganizationTreeFilters({
                         {...params}
                         size="small"
                         label="Sub Team"
-                        sx={{
-                          mt: 2,
-                        }}
+                        sx={{ mt: 1 }}
                       />
                     )}
                   />
@@ -170,9 +164,7 @@ export function OrganizationTreeFilters({
                             {...params}
                             size="small"
                             label="Unit"
-                            sx={{
-                              mt: 2,
-                            }}
+                            sx={{ mt: 1 }}
                           />
                         )}
                       />
