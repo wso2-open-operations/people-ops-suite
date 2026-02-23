@@ -665,56 +665,18 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Update a business unit by ID.
+    #
+    # + buId - ID of the business unit to update
+    # + payload - Fields to update in the business unit
+    # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if payload.updatedBy != workEmail {
-            log:printWarn("API call invoked user and identified users are different");
-            return <http:InternalServerError>{
-                body: {
-                    message: "oops something went wrong ..."
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to create new employees", invokerEmail = workEmail);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to create new employees"
-                }
-            };
-        }
-
-        if payload.changedName is () && payload.headEmail is () {
-            string customErr = "At least one field should be provided for update";
-            log:printWarn(customErr, buId = buId);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
         }
 
         error? updateResult = database:updateBusinessUnit(payload, buId);
@@ -734,25 +696,97 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
+    # Update a team by ID.
+    #
+    # + teamId - ID of the team to update
+    # + payload - Fields to update in the team
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Team patch invoked, teamId : ", teamId = teamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error? updateResult = database:updateTeam(payload, teamId);
+        if updateResult is error {
+            log:printError("Error while updating team : ", updateResult, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the team"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the team"
+            }
+        };
     }
 
-    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
+    # Update a sub team by ID.
+    #
+    # + subTeamId - ID of the sub team to update
+    # + payload - Fields to update in the sub team
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Sub team patch invoked, sub team id : ", subTeamId = subTeamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error? updateResult = database:updateSubTeam(payload, subTeamId);
+        if updateResult is error {
+            log:printError("Error while updating sub team : ", updateResult, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the sub team"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the sub team"
+            }
+        };
     }
 
-    resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
+    # Update a unit by ID.
+    #
+    # + unitId - ID of the unit to update
+    # + payload - Fields to update in the unit
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Unit patch function invoked, unit id : ", unitId = unitId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error? updateResult = database:updateUnit(payload, unitId);
+        if updateResult is error {
+            log:printError("Error while updating unit : ", updateResult, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the unit"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the unit"
+            }
+        };
     }
 
     resource function patch organization/business\-unit/[int buId]/team/[int teamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
