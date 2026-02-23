@@ -944,11 +944,44 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function delete organization/business\-unit/[int businessUnitId](http:RequestContext ctx) returns http:Ok {
+    # Delete a business unit by ID.
+    #
+    # + buId - ID of the business unit to delete
+    # + payload - Fields for the deletion (updatedBy)
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function delete organization/business\-unit/[int buId](http:RequestContext ctx, DeleteBusinessUnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization business unit delete endpoint invoked ", businessUnitId = businessUnitId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean deleteResult = database:deleteBusinessUnit(payload, buId);
+        if deleteResult is error {
+            log:printError("Error while deleting business unit : ", deleteResult, buId = buId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while deleting the business unit"
+                }
+            };
+        }
+
+        if deleteResult == false {
+            log:printError(string `No business unit found with ID ${buId}`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No business unit found to delete"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully deleted the business unit"
+            }
+        };
     }
 
     resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
