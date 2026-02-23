@@ -17,15 +17,15 @@ import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
 import { Avatar, Box, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
-import { TeamHead } from "@services/organization";
+import { FunctionalLead, Head } from "@services/organization";
 
 import { truncateName } from "../../utils";
 
 interface TeamCardProps {
   teamName: string;
   headCount: number;
-  teamHead?: TeamHead;
-  functionLead?: TeamHead;
+  teamHead?: Head;
+  functionLead?: FunctionalLead;
 }
 
 const MAX_LENGTH = 12;
