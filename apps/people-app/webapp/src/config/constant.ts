@@ -20,6 +20,7 @@ export const SnackMessage = {
   },
   error: {
     fetchEmployee: "Error while fetching employee",
+    fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
     insufficientPrivileges:
       "You don't have sufficient privileges to access this resource",

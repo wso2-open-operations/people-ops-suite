@@ -329,9 +329,9 @@ export const fetchFilteredEmployees = createAsyncThunk<
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
-          ? SnackMessage.error.fetchEmployee
+          ? SnackMessage.error.fetchEmployees
           : error.response?.data?.message ||
-          "An unknown error occurred while fetching employee information.";
+          "An unknown error occurred while fetching employees.";
 
       dispatch(
         enqueueSnackbarMessage({
