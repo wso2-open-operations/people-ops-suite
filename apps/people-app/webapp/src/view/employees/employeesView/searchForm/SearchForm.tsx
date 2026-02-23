@@ -15,8 +15,8 @@
 // under the License.
 
 import {
-  DEFAULT_PAGE_VALUE,
-  DEFAULT_PER_PAGE_VALUE,
+  DEFAULT_LIMIT_VALUE,
+  DEFAULT_OFFSET_VALUE,
   EmployeeGenders,
 } from "@config/constant";
 import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
@@ -158,8 +158,8 @@ export function SearchForm() {
         searchString: searchText,
         filters: {},
         pagination: {
-          page: DEFAULT_PAGE_VALUE,
-          perPage: DEFAULT_PER_PAGE_VALUE,
+          limit: DEFAULT_LIMIT_VALUE,
+          offset: DEFAULT_OFFSET_VALUE,
         },
       } satisfies EmployeeSearchPayload),
     );

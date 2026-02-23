@@ -15,8 +15,8 @@
 // under the License.
 
 import {
-  DEFAULT_PAGE_VALUE,
-  DEFAULT_PER_PAGE_VALUE,
+  DEFAULT_LIMIT_VALUE,
+  DEFAULT_OFFSET_VALUE,
   EmployeeGenders,
 } from "@config/constant";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -352,8 +352,8 @@ export function FilterDrawer({
                   ...draft.filters,
                 },
                 pagination: {
-                  page: DEFAULT_PAGE_VALUE,
-                  perPage: DEFAULT_PER_PAGE_VALUE,
+                  limit: DEFAULT_LIMIT_VALUE,
+                  offset: DEFAULT_OFFSET_VALUE,
                 },
               };  
               onApply(nextDraft);  

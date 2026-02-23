@@ -120,8 +120,8 @@ export type Filters = {
 };
 
 export type Pagination = {
-  page?: number;
-  perPage?: number;
+  limit?: number;
+  offset?: number;
 };
 
 export type EmployeeSearchPayload = {

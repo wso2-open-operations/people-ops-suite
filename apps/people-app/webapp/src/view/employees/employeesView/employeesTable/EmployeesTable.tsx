@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { DEFAULT_PER_PAGE_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
 import { Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
@@ -36,15 +36,15 @@ export default function EmployeesTable() {
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: DEFAULT_PER_PAGE_VALUE,
+    pageSize: DEFAULT_LIMIT_VALUE,
   });
 
   const appliedFilter = useMemo(
     () => ({
       ...employeeState.employeeFilter,
       pagination: {
-        page: paginationModel.page + 1,
-        perPage: paginationModel.pageSize,
+        limit: paginationModel.pageSize,
+        offset: paginationModel.page,
       },
     } as EmployeeSearchPayload),
     [employeeState.employeeFilter, paginationModel],
