@@ -70,3 +70,27 @@ type UpdateSubTeamUnitPayload record {|
     # Email of the user performing the update
     string updatedBy;
 |};
+
+# Payload for deleting a business unit.
+public type DeleteBusinessUnitPayload record {|
+    # Email of the user performing the deletion
+    string updatedBy;
+|};
+
+# Payload for deleting a business unit-team mapping.
+public type DeleteBusinessUnitTeamPayload record {|
+    # Email of the user performing the deletion
+    string updatedBy;
+|};
+
+# Payload for deleting a team-sub team mapping.
+public type DeleteTeamSubTeamPayload record {|
+    # Email of the user performing the deletion
+    string updatedBy;
+|};
+
+# Payload for deleting a sub team-unit mapping.
+public type DeleteSubTeamUnitPayload record {|
+    # Email of the user performing the deletion
+    string updatedBy;
+|};
