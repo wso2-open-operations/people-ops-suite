@@ -200,6 +200,7 @@ interface EmployeesState {
   state: State;
   employeeBasicInfoState: State;
   managers: Manager[];
+  managersState: State;
   employeeFilter: EmployeeSearchPayload;
   filteredEmployeesResponseState: State;
   filterAppliedOnce: boolean;
@@ -217,6 +218,7 @@ const initialState: EmployeesState = {
   state: State.idle,
   employeeBasicInfoState: State.idle,
   managers: [],
+  managersState: State.idle,
   employeeFilter: {
     filters: {
       employeeStatus: EmployeeStatus.Active
@@ -571,19 +573,16 @@ const EmployeeSlice = createSlice({
         state.errorMessage = action.payload as string;
       })
       .addCase(fetchManagers.pending, (state) => {
-        state.state = State.loading;
-        state.stateMessage = "Fetching manager emails...";
+        state.managersState = State.loading;
         state.errorMessage = null;
       })
       .addCase(fetchManagers.fulfilled, (state, action) => {
-        state.state = State.success;
-        state.stateMessage = "Successfully fetched manager emails!";
+        state.managersState = State.success;
         state.managers = action.payload;
         state.errorMessage = null;
       })
       .addCase(fetchManagers.rejected, (state, action) => {
-        state.state = State.failed;
-        state.stateMessage = "Failed to fetch manager emails!";
+        state.managersState = State.failed;
         state.managers = [];
         state.errorMessage = action.payload as string;
       })
