@@ -34,6 +34,8 @@ export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
+export const SEARCH_REGEX = /^[a-zA-Z0-9\s@._-]*$/;
+
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
 export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];

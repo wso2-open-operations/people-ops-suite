@@ -18,6 +18,7 @@ import {
   DEFAULT_LIMIT_VALUE,
   DEFAULT_OFFSET_VALUE,
   EmployeeGenders,
+  SEARCH_REGEX,
 } from "@config/constant";
 import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -109,6 +110,7 @@ export function SearchForm() {
   const [searchText, setSearchText] = useState(
     filterPayload.searchString ?? "",
   );
+  const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
     setSearchText(filterPayload.searchString ?? "");
@@ -501,8 +503,15 @@ export function SearchForm() {
             name="searchString"
             label="Search"
             value={searchText}
+            error={searchError}
+            helperText={searchError ? "Only letters, numbers, spaces and @ . _ - are allowed" : undefined}
             onChange={(e) => {
               const value = e.target.value;
+              if (!SEARCH_REGEX.test(value)) {
+                setSearchError(true);
+                return;
+              }
+              setSearchError(false);
               setSearchText(value);
               if (debounceRef.current) window.clearTimeout(debounceRef.current);
               debounceRef.current = window.setTimeout(() => {
@@ -525,6 +534,7 @@ export function SearchForm() {
                     onClick={() => {
                       if (debounceRef.current)
                         window.clearTimeout(debounceRef.current);
+                      setSearchError(false);
                       setSearchText("");
                       updateSearchPayload({ searchString: "" });
                     }}
