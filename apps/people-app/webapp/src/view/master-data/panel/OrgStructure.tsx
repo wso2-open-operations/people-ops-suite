@@ -53,6 +53,18 @@ export default function OrgStructure() {
   });
 
   useEffect(() => {
+    if (!orgStructure) return;
+
+    const rootNodeKey = `${UnitType.Company}:${orgStructure.id}`;
+    setExpandedNodes((previous) => {
+      if (previous.has(rootNodeKey)) return previous;
+      const next = new Set(previous);
+      next.add(rootNodeKey);
+      return next;
+    });
+  }, [orgStructure]);
+
+  useEffect(() => {
     sessionStorage.setItem(EXPANDED_NODES_KEY, JSON.stringify(Array.from(expandedNodes)));
   }, [expandedNodes]);
 
@@ -142,6 +154,8 @@ export default function OrgStructure() {
   };
 
   const handleAdd = (id: string, type: string) => {
+    void id;
+    void type;
     // Implement add functionality here
   };
 
