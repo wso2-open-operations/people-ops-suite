@@ -501,50 +501,73 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
+# Payload for updating an organization unit.
 public type UpdateUnitPayload record {|
-    @sql:Column {
-        name: "name"
-    }
+    # New name for the unit
+    @sql:Column {name: "name"}
     string changedName?;
-    @sql:Column {
-        name: "head_email"
-    }
+    # Email of the new head of the unit
+    @sql:Column {name: "head_email"}
     string headEmail?;
-    @sql:Column {
-        name: "updated_by"
-    }
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
     string updatedBy;
 |};
 
+# Payload for updating a business unit-team mapping.
 public type UpdateBusinessUnitTeamPayload record {|
-    @sql:Column {
-        name: "head_email"
-    }
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
     string functionalLead?;
-    @sql:Column {
-        name: "updated_by"
-    }
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
     string updatedBy;
 |};
 
+# Payload for updating a team-sub team mapping.
 public type UpdateTeamSubTeamPayload record {|
-    @sql:Column {
-        name: "head_email"
-    }
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
     string functionalLead?;
-    @sql:Column {
-        name: "updated_by"
-    }
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
     string updatedBy;
 |};
 
-public type updateSubTeamUnitPayload record {|
-    @sql:Column {
-        name: "head_email"
-    }
+# Payload for updating a sub team-unit mapping.
+public type UpdateSubTeamUnitPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
     string functionalLead?;
-    @sql:Column {
-        name: "updated_by"
-    }
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for deleting a business unit.
+public type DeleteBusinessUnitPayload record {|
+    # Email of the user performing the deletion
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for deleting a business unit-team mapping.
+public type DeleteBusinessUnitTeamPayload record {|
+    # Email of the user performing the deletion
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for deleting a team-sub team mapping.
+public type DeleteTeamSubTeamPayload record {|
+    # Email of the user performing the deletion
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for deleting a sub team-unit mapping.
+public type DeleteSubTeamUnitPayload record {|
+    # Email of the user performing the deletion
+    @sql:Column {name: "updated_by"}
     string updatedBy;
 |};
