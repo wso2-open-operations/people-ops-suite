@@ -18,7 +18,7 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import TabsPage from "@layout/pages/TabsPage";
 
 import OrgStructure from "./panel/OrgStructure";
-import Test from "./panel/Test.tsx"
+import Test from "./panel/Test.tsx";
 
 export default function MasterData() {
   return (
