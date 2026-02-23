@@ -2,20 +2,22 @@
 EMPLOYEE_PRIVILEGE = 
 ADMIN_PRIVILEGE =
 
-[wso2.dashboard_app_backend.database]
-connectTimeout = 
-[wso2.dashboard_app_backend.database.databaseConfig]
+[wso2.dashboard_app_backend.database.dbConfig]
 database = 
 host = 
 password = 
 port = 
 user = 
-[wso2.dashboard_app_backend.database.databaseConfig.connectionPool]
+
+[wso2.dashboard_app_backend.database.dbConfig.connectionPool]
 maxConnectionLifeTime = 
 maxOpenConnections = 
 minIdleConnections = 
 
-[wso2.dashboard_app_backend.entity] 
+[wso2.dashboard_app_backend.database.dbConfig.options]
+connectTimeout = 
+
+[wso2.dashboard_app_backend.entity]
 hrEntityBaseUrl = 
 [wso2.dashboard_app_backend.entity.oauthConfig]
 clientId = 
