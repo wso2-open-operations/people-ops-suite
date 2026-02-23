@@ -41,10 +41,10 @@ import {
 } from "@services/organization";
 
 import { getEntityTypeName } from "../utils";
-import { DeleteCurrent } from "./edit-modal/DeleteCurrent";
 import { RenameField } from "./edit-modal/RenameField";
 import { SectionHeader } from "./edit-modal/SectionHeader";
-import { SwapLeads } from "./edit-modal/SwapLeads";
+import { SwapLeads } from "../sections/leads-section/SwapLeads";
+import { DeleteCurrent } from "../sections/danger-section/DeleteCurrent";
 
 interface EditModalProps {
   open: boolean;
