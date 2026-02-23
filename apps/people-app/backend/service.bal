@@ -872,11 +872,40 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
-    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
+    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId]
+        (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization team-subteam patch invoked, ", teamId = teamId, subTeamId = subTeamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean updateResult = database:updateTeamSubTeam(payload, teamId, subTeamId);
+        if updateResult is error {
+            log:printError("Error while updating team_sub_team : ", updateResult, teamId = teamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the unit"
+                }
+            };
+        }
+
+        if updateResult == false {
+            log:printError(string `No sub team is found with teamId ${teamId} and subTeamId = ${subTeamId} to update!`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No sub team found to update"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the sub team"
+            }
+        };
     }
 
     resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
