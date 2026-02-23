@@ -19,7 +19,7 @@ configurable string calendarBaseUrl = ?;
 configurable CalendarRetryConfig retryConfig = ?;
 configurable Oauth2Config oauthConfig = ?;
 
-# Hr Entity -> HRIS Calendar Event Service Credentials.
+# HRIS Calendar Event Service.
 @display {
     label: "Calendar Event Service",
     id: "hris/calendar-event-service"

@@ -28,10 +28,10 @@ public isolated function getBusy(string minTime, string maxTime, string[] users,
     return userBusyResponse;
 }
 
-# Retrieves meeting room resources.
+# Retrieves building resources.
 #
 # + return - Array of filtered calendar resources or error
-public isolated function getMeetingRooms() returns FilteredCalendarResource[]|error {
+public isolated function getBuildingResources() returns FilteredCalendarResource[]|error {
     FilteredCalendarResource[] calendarResponse = check calendarClient->/calendar\-resources.get();
     return calendarResponse;
 }

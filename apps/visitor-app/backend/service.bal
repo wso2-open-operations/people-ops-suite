@@ -1091,11 +1091,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return allEmployees;
     }
 
-    # Get meeting room resources.
+    # Get building resources.
     #
     # + ctx - Request context
-    # + return - Meeting room resources or error
-    resource function get meeting\-rooms(http:RequestContext ctx)
+    # + return - Building resources or error
+    resource function get building\-resources(http:RequestContext ctx)
         returns calendar:FilteredCalendarResource[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1108,9 +1108,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        calendar:FilteredCalendarResource[]|error result = calendar:getMeetingRooms();
+        calendar:FilteredCalendarResource[]|error result = calendar:getBuildingResources();
         if result is error {
-            string customError = "Error retrieving meeting rooms";
+            string customError = "Error retrieving building resources";
             log:printError(customError, result);
             return <http:InternalServerError>{
                 body: {message: customError}
