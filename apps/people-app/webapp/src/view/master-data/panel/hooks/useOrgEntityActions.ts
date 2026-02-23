@@ -90,7 +90,7 @@ export function useOrgEntityActions({ data, parentNode }: UseOrgEntityActionsPar
     }
   };
 
-  const handleDeleteCurrent = async () => {
+  const handleDeleteCurrent = async (_reason: string) => {
     switch (entityTypeName) {
       case UnitType.BusinessUnit:
         await deleteBusinessUnit({ id: data.id });
