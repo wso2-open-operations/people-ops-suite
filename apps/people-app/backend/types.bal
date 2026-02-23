@@ -30,3 +30,15 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
+
+type UnitPayload record {|
+    string changedName?;
+    string headEmail?;
+    string updatedBy;
+|};
+
+type UnitPayloadN record {|
+    string changedName?;
+    string functionalLead?;
+    string updatedBy;
+|};
