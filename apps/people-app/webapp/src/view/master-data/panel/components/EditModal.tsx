@@ -153,9 +153,6 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
           <SectionHeader title="Manage Leads" />
 
           <SwapLeads
-            entityType={entityTypeName}
-            entityId={data.id}
-            parentNode={parentNode}
             head={data.head}
             functionalLead={data.functionalLead}
             onSwapHead={handleHeadSwap}
