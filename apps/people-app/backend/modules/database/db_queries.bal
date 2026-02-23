@@ -622,3 +622,63 @@ isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payl
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+# Build query to update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team mapping
+isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLead is string {
+        filters.push(` head_email = ${payload.functionalLead}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
+isolated function updateSubTeamUnitQuery(updateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLead is string {
+        filters.push(` head_email = ${payload.functionalLead}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
