@@ -14,6 +14,9 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
+CREATE DATABASE IF NOT EXISTS dashboard_app_db;
+USE dashboard_app_db;
+
 CREATE TABLE `food_waste_records` (
     `food_waste_record_id` int NOT NULL AUTO_INCREMENT,
   `record_date` date NOT NULL,
@@ -32,29 +35,30 @@ CREATE TABLE `food_waste_records` (
 
 -- Table: advertisements
 CREATE TABLE IF NOT EXISTS advertisements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    advertisement_id INT AUTO_INCREMENT PRIMARY KEY,
     media_url VARCHAR(2048) NOT NULL,
     media_type ENUM('video/mp4', 'video/webm', 'image/jpeg', 'image/png', 'image/gif') NOT NULL,
     duration_seconds INT NOT NULL DEFAULT 5,
     thumbnail_url VARCHAR(2048),
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     display_order INT DEFAULT 0,
-    uploaded_date DATE NOT NULL,
+    uploaded_date DATE NOT NULL DEFAULT (CURRENT_DATE),
     created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(100),
     updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by VARCHAR(100),
     INDEX idx_is_active (is_active),
     INDEX idx_display_order (display_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Trigger to ensure only one active ad at a time
 DELIMITER $$
-CREATE TRIGGER before_ad_activate 
+CREATE TRIGGER before_ad_activate
 BEFORE UPDATE ON advertisements
 FOR EACH ROW
 BEGIN
     IF NEW.is_active = TRUE AND OLD.is_active = FALSE THEN
-        UPDATE advertisements SET is_active = FALSE WHERE is_active = TRUE AND id != NEW.id;
+        UPDATE advertisements SET is_active = FALSE WHERE is_active = TRUE AND advertisement_id != NEW.advertisement_id;
     END IF;
 END$$
 DELIMITER ;
