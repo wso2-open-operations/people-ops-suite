@@ -19,7 +19,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 
-import { FunctionLead, TeamHead } from "@root/src/services/organization";
+import { FunctionalLead, Head } from "@root/src/services/organization";
 import { NodeType } from "@utils/types";
 
 import PersonCard from "./edit-modal/PersonCard";
@@ -28,8 +28,8 @@ interface OrgStructureCardProps {
   name: string;
   type: NodeType;
   headCount: number;
-  teamHead?: TeamHead;
-  functionLead?: FunctionLead;
+  teamHead?: Head;
+  functionLead?: FunctionalLead;
   hasChildren?: boolean;
   isExpanded?: boolean;
   onCollapse?: () => void;
