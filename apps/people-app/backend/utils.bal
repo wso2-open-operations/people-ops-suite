@@ -26,7 +26,7 @@ import ballerina/regex;
 # + ctx - Request context
 # + payload - Patch payload
 # + return - `()` when valid, otherwise corresponding http error response
-function validateOrganizationPatchRequest(http:RequestContext ctx, UnitPayload payload)
+function validateOrganizationPatchRequest(http:RequestContext ctx, UnitPayload|UnitPayloadN payload)
     returns http:InternalServerError|http:Forbidden|http:BadRequest? {
 
     authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -51,7 +51,7 @@ function validateOrganizationPatchRequest(http:RequestContext ctx, UnitPayload p
 
     if payload.updatedBy != workEmail {
         log:printWarn("Payload updatedBy does not match authenticated user", payloadUpdater = payload.updatedBy,
-            authenticatedUser = workEmail);
+                authenticatedUser = workEmail);
         return <http:Forbidden>{
             body: {
                 message: "You are not authorized to update data for another user"
@@ -65,16 +65,6 @@ function validateOrganizationPatchRequest(http:RequestContext ctx, UnitPayload p
         return <http:Forbidden>{
             body: {
                 message: "You are not authorized to update organization hierarchy"
-            }
-        };
-    }
-
-    if payload.changedName is () && payload.headEmail is () {
-        string customErr = "At least one field should be provided for update";
-        log:printWarn(customErr, updatedBy = payload.updatedBy);
-        return <http:BadRequest>{
-            body: {
-                message: customErr
             }
         };
     }
