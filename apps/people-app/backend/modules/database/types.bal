@@ -205,7 +205,7 @@ public type EmployeeSearchPayload record {|
     # Search query
     @constraint:String {
         maxLength: 100,
-        pattern: re `^[a-zA-Z0-9\s@._-]*$`
+        pattern: re `^[\p{L}\p{M}0-9\s@._'+-]*$`
     }
     string? searchString = ();
     # Filters
