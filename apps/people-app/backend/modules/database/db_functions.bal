@@ -233,3 +233,7 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     }
     return false;
 }
+
+public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId) returns error? {
+    _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
+}
