@@ -31,27 +31,42 @@ type NewVehicle record {|
     database:VehicleTypes vehicleType;
 |};
 
-type UnitPayloadN record {
+# Base open payload for all organization hierarchy PATCH requests.
+type OrgPatchPayload record {
+    # Email of the user performing the update
     string updatedBy;
 };
 
+# Payload for updating a standalone organization unit.
 type UnitPayload record {|
+    # New name for the unit
     string changedName?;
+    # Email of the new head of the unit
     string headEmail?;
+    # Email of the user performing the update
     string updatedBy;
 |};
 
+# Payload for updating a business unit-team mapping.
 type UpdateBusinessUnitTeamPayload record {|
+    # Email of the functional lead for the mapping
     string functionalLead?;
+    # Email of the user performing the update
     string updatedBy;
 |};
 
+# Payload for updating a team-sub team mapping.
 type UpdateTeamSubTeamPayload record {|
+    # Email of the functional lead for the mapping
     string functionalLead?;
+    # Email of the user performing the update
     string updatedBy;
 |};
 
-type updateSubTeamUnitPayload record {|
+# Payload for updating a sub team-unit mapping.
+type UpdateSubTeamUnitPayload record {|
+    # Email of the functional lead for the mapping
     string functionalLead?;
+    # Email of the user performing the update
     string updatedBy;
 |};
