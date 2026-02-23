@@ -13,59 +13,52 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerina/constraint;
 import ballerina/sql;
 import ballerinax/mysql;
 
-# [Configurable] database configs.
+# [Configurable] Database configs.
 type DatabaseConfig record {|
-    # Database User 
+    # Database user
     string user;
-    # Database Password
+    # Database password
     string password;
-    # Database Name
+    # Database name
     string database;
-    # Database Host
+    # Database host
     string host;
     # Database port
     int port;
-    # Database connection pool
-    sql:ConnectionPool connectionPool;
+    # MySQL connection options
+    mysql:Options options?;
+    # Connection pool config
+    sql:ConnectionPool connectionPool?;
 |};
 
-# Database config record.
-type DatabaseClientConfig record {|
-    *DatabaseConfig;
-    # Additional configurations related to the MySQL database connection
-    mysql:Options? options;
+# Common audit fields shared by all database records.
+public type AuditFields record {|
+    # User who created the record
+    string createdBy;
+    # Timestamp when the record was created
+    string createdOn;
+    # User who last updated the record
+    string updatedBy;
+    # Timestamp when the record was last updated
+    string updatedOn;
 |};
-
-# Breakfast/lunch type.
-public enum MealType {
-    BREAKFAST,
-    LUNCH
-}
 
 # A single food waste record.
 public type FoodWasteRecord record {|
     # Unique id of the food waste record
     int id;
     # Date of the record (YYYY-MM-DD)
-    string record_date;
+    string recordDate;
     # Meal type (BREAKFAST|LUNCH)
-    string meal_type;
+    string mealType;
     # Total waste (kg)
-    decimal total_waste_kg;
+    decimal totalWasteKg;
     # Plate count
-    int plate_count;
-    # Timestamp when created
-    string created_on;
-    # User who created the record
-    string created_by;
-    # Timestamp when updated
-    string updated_on;
-    # User who updated the record
-    string updated_by;
+    int plateCount;
+    *AuditFields;
 |};
 
 # DB row type for paginated listing (includes totalCount window value).
@@ -78,37 +71,31 @@ type FoodWasteRecordListRow record {|
 # Payload for creating a food waste record.
 public type AddFoodWasteRecordPayload record {|
     # Record date (YYYY-MM-DD)
-    @constraint:String {
-        pattern: {
-            value: DATE_REGEX,
-            message: "record_date must be a valid date string (YYYY-MM-DD)."
-        }
-    }
-    string record_date;
+    string recordDate;
     # Meal type
-    MealType meal_type;
+    MealType mealType;
     # Total waste (kg)
-    decimal total_waste_kg;
+    decimal totalWasteKg;
     # Plate count
-    int plate_count;
+    int plateCount;
 |};
 
 # Payload for updating a food waste record.
 public type UpdateFoodWasteRecordPayload record {|
     # Total waste (kg)
-    decimal? total_waste_kg = ();
+    decimal? totalWasteKg = ();
     # Plate count
-    int? plate_count = ();
+    int? plateCount = ();
 |};
 
 # Filters for listing food waste records.
 public type FoodWasteRecordFilters record {|
     # Start date (YYYY-MM-DD)
-    string? start_date = ();
+    string? startDate = ();
     # End date (YYYY-MM-DD)
-    string? end_date = ();
+    string? endDate = ();
     # Meal type filter (BREAKFAST|LUNCH)
-    string? meal_type = ();
+    string? mealType = ();
     # SQL LIMIT
     int 'limit;
     # SQL OFFSET
@@ -130,117 +117,102 @@ public type PaginatedFoodWasteRecords record {|
 # Daily response: breakfast + lunch for a given date.
 public type DailyFoodWasteRecords record {|
     # Record date (YYYY-MM-DD)
-    string record_date;
+    string recordDate;
     # Breakfast record (if exists)
     FoodWasteRecord? breakfast = ();
     # Lunch record (if exists)
     FoodWasteRecord? lunch = ();
 |};
 
-# Duplicate key error for (record_date, meal_type).
+# Duplicate key error for (recordDate, mealType).
 public type DuplicateFoodWasteRecordError distinct error;
 
-# Not-found error for operations by id.
+# Not-found error for food waste record operations.
 public type FoodWasteRecordNotFoundError distinct error;
-
-# Media types for advertisements.
-public enum MediaType {
-    VIDEO_MP4 = "video/mp4",
-    VIDEO_WEBM = "video/webm",
-    IMAGE_JPEG = "image/jpeg",
-    IMAGE_PNG = "image/png",
-    IMAGE_GIF = "image/gif"
-}
 
 # Advertisement record.
 public type Advertisement record {|
     # Unique id
     int id;
     # Media URL
-    string media_url;
-    # Media Type
-    string media_type;
+    string mediaUrl;
+    # Media type
+    string mediaType;
     # Duration in seconds
-    int duration_seconds;
+    int durationSeconds;
     # Thumbnail URL
-    string? thumbnail_url;
-    # Is active status
-    boolean is_active;
+    string? thumbnailUrl;
+    # Whether this advertisement is currently active
+    boolean isActive;
     # Display order
-    int display_order;
+    int displayOrder;
     # Date uploaded
-    string uploaded_date;
+    string uploadedDate;
     # Created timestamp
-    string created_on;
+    string createdOn;
     # Created by
-    string? created_by;
+    string? createdBy;
     # Updated timestamp
-    string updated_on;
+    string updatedOn;
 |};
 
 # Payload for creating an advertisement.
 public type CreateAdvertisementPayload record {|
     # Media URL
-    string media_url;
-    # Media Type
-    MediaType media_type;
+    string mediaUrl;
+    # Media type
+    MediaType mediaType;
     # Duration in seconds
-    int duration_seconds;
+    int durationSeconds;
     # Thumbnail URL
-    string? thumbnail_url;
+    string? thumbnailUrl;
 |};
 
-# Daily Summary for Analytics.
-public type DailySummary record {|
-    # Date
-    string date;
-    # Total Waste (kg)
-    decimal total_daily_waste_kg;
-    # Total Plates
-    int total_daily_plates;
-    # Average Waste per Plate (g)
-    decimal average_waste_per_plate_grams;
-|};
+# Not-found error for advertisement operations.
+public type AdvertisementNotFoundError distinct error;
+
+# Error raised when attempting to delete an active advertisement.
+public type ActiveAdvertisementError distinct error;
 
 # Weekly Trend Item.
 public type WeeklyTrendItem record {|
     # Date
     string date;
-    # Breakfast Waste (kg)
-    decimal breakfast_waste;
-    # Lunch Waste (kg)
-    decimal lunch_waste;
+    # Breakfast waste (kg)
+    decimal breakfastWaste;
+    # Lunch waste (kg)
+    decimal lunchWaste;
 |};
 
 # Monthly Trend Item.
 public type MonthlyTrendItem record {|
     # Month (YYYY-MM)
     string month;
-    # Breakfast Waste (kg)
-    decimal breakfast_waste;
-    # Lunch Waste (kg)
-    decimal lunch_waste;
+    # Breakfast waste (kg)
+    decimal breakfastWaste;
+    # Lunch waste (kg)
+    decimal lunchWaste;
 |};
 
-# Date Range Summary.
+# Date range summary.
 public type DateRangeSummary record {|
-    # Start Date
-    string start_date;
-    # End Date
-    string end_date;
-    # Total Waste (kg)
-    decimal total_waste_kg;
-    # Total Plates
-    int total_plates;
-    # Average Waste per Plate (g)
-    decimal average_waste_per_plate_grams;
-    # Highest Waste Day (kg)
-    decimal highest_waste_day_kg;
-    # Highest Waste Date
-    string highest_waste_date;
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Total waste (kg)
+    decimal totalWasteKg;
+    # Total plates
+    int totalPlates;
+    # Average waste per plate (g)
+    decimal averageWastePerPlateGrams;
+    # Highest single-day waste (kg)
+    decimal highestWasteDayKg;
+    # Date of highest single-day waste
+    string highestWasteDate;
 |};
 
-# Today's KPI Dashboard Data.
+# Today's KPI dashboard data.
 public type TodayKPIs record {|
     # Date
     string date;
@@ -248,11 +220,10 @@ public type TodayKPIs record {|
     FoodWasteRecord? breakfast;
     # Lunch data
     FoodWasteRecord? lunch;
-    # Total Daily Waste (kg)
-    decimal total_daily_waste_kg;
-    # Total Daily Plates
-    int total_daily_plates;
-    # Average Waste per Plate (g)
-    decimal average_waste_per_plate_grams;
+    # Total daily waste (kg)
+    decimal totalDailyWasteKg;
+    # Total daily plates
+    int totalDailyPlates;
+    # Average waste per plate (g)
+    decimal averageWastePerPlateGrams;
 |};
-
