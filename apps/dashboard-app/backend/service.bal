@@ -16,6 +16,7 @@
 import dashboard_app_backend.authorization;
 import dashboard_app_backend.database;
 import dashboard_app_backend.entity;
+import dashboard_app_backend.operation;
 
 import ballerina/cache;
 import ballerina/http;
@@ -30,34 +31,15 @@ final cache:Cache cache = new ({
 
 @display {
     label: "Dashboard Application",
-    id: "domain/dashboard-application"
+    id: "people-ops-suite/dashboard-service"
 }
-
-service class ErrorInterceptor {
-    *http:ResponseErrorInterceptor;
-
-    remote function interceptResponseError(error err, http:RequestContext ctx)
-            returns http:BadRequest|error {
-        if err is http:PayloadBindingError {
-            string customError = string `Payload binding failed!`;
-            log:printError(customError, err);
-            return {
-                body: {
-                    message: customError
-                }
-            };
-        }
-        return err;
-    }
-}
-
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
-    # + return - authorization:JwtInterceptor, ErrorInterceptor
+    # + return - authorization:JwtInterceptor, BadRequestInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
-        [new authorization:JwtInterceptor(), new ErrorInterceptor()];
+        [new authorization:JwtInterceptor(), new BadRequestInterceptor()];
 
     # Fetch user information of the logged-in user.
     #
@@ -69,11 +51,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:InternalServerError>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if cache.hasKey(userInfo.email) {
@@ -87,11 +65,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if loggedInUser is error {
             string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
             log:printError(customError, loggedInUser);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
 
         int[] privileges = [];
@@ -103,7 +77,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         UserInfoResponse userInfoResponse = {...loggedInUser, privileges};
-
         error? cacheError = cache.put(userInfo.email, userInfoResponse);
         if cacheError is error {
             log:printError("An error occurred while writing user info to the cache", cacheError);
@@ -111,71 +84,48 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
+    // --- Food Waste Endpoints ---
+
     # Create a new breakfast or lunch food waste record.
     #
     # + ctx - Request context
     # + payload - Food waste record payload
     # + return - Created record|Conflict|Forbidden|BadRequest|InternalServerError
-    resource function post food\-waste(http:RequestContext ctx, database:AddFoodWasteRecordPayload payload)
+    resource function post food\-waste(http:RequestContext ctx, AddFoodWasteRecordPayload payload)
             returns http:Created|http:Conflict|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
         int|database:DuplicateFoodWasteRecordError|error foodWasteRecordId =
             database:addFoodWasteRecord(payload, userInfo.email);
         if foodWasteRecordId is database:DuplicateFoodWasteRecordError {
-            return <http:Conflict>{
-                body: {
-                    message: foodWasteRecordId.message()
-                }
-            };
+            return <http:Conflict>{body: {message: foodWasteRecordId.message()}};
         }
         if foodWasteRecordId is error {
             string customError = "Error occurred while creating food waste record!";
             log:printError(customError, foodWasteRecordId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
 
-        database:FoodWasteRecord|error? created = database:fetchFoodWasteRecord(foodWasteRecordId);
+        FoodWasteRecord|error? created = database:fetchFoodWasteRecord(foodWasteRecordId);
         if created is error {
             string customError = "Error occurred while retrieving created food waste record!";
             log:printError(customError, created);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         if created is () {
             string customError = "Created food waste record is no longer available to access!";
             log:printError(customError);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
         return <http:Created>{body: created};
     }
 
@@ -183,117 +133,156 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + date - Date (YYYY-MM-DD)
-        # + return - DailyFoodWasteRecords|Forbidden|BadRequest|InternalServerError
-        resource function get food\-waste/daily(http:RequestContext ctx, string date)
-            returns database:DailyFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
+    # + return - DailyFoodWasteRecords|Forbidden|BadRequest|InternalServerError
+    resource function get food\-waste/daily(http:RequestContext ctx, string date)
+            returns DailyFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
                 !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
         if !database:DATE_REGEX.isFullMatch(date) {
-            return <http:BadRequest>{
-                body: {
-                    message: "Invalid date string. Expected YYYY-MM-DD."
-                }
-            };
+            return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
         }
 
-        database:DailyFoodWasteRecords|error daily = database:fetchDailyFoodWasteRecords(date);
+        DailyFoodWasteRecords|error daily = database:fetchDailyFoodWasteRecords(date);
         if daily is error {
             string customError = "Error occurred while fetching daily food waste records!";
             log:printError(customError, daily);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         return daily;
     }
 
-    # List/filter food waste records (paginated).
+    # List/filter food waste records with pagination.
     #
     # + ctx - Request context
-    # + start_date - Start date (YYYY-MM-DD)
-    # + end_date - End date (YYYY-MM-DD)
-    # + meal_type - Meal type (BREAKFAST|LUNCH)
-    # + page - Page number (1-based)
-    # + pageSize - Page size
-        # + return - Paginated list|Forbidden|BadRequest|InternalServerError
-        resource function get food\-waste(http:RequestContext ctx, string? start_date, string? end_date,
-            string? meal_type, int page = 1, int pageSize = database:DEFAULT_PAGE_SIZE)
-            returns database:PaginatedFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
+    # + startDate - Start date (YYYY-MM-DD) - optional
+    # + endDate - End date (YYYY-MM-DD) - optional
+    # + mealType - Meal type (BREAKFAST|LUNCH) - optional
+    # + duration - Analytics duration (yearly|monthly|weekly) - optional
+    # + latest - Get only the most recent record - optional
+    # + limit - Maximum number of records to return - optional
+    # + offset - Number of records to skip - optional
+    # + return - Paginated list|latest KPI summary|analytics data|Forbidden|BadRequest|InternalServerError
+    resource function get food\-waste(http:RequestContext ctx, string? startDate = (), string? endDate = (),
+            string? mealType = (), string? duration = (), boolean latest = false, int? 'limit = (),
+            int? offset = ())
+            returns PaginatedFoodWasteRecords|TodayKPIs|WeeklyTrendItem[]|
+                MonthlyTrendItem[]|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
                 !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        if page < 1 {
-            return <http:BadRequest>{
-                body: {
-                    message: "page must be >= 1"
+        if duration is string {
+            if !(duration == "yearly" || duration == "monthly" || duration == "weekly") {
+                return <http:BadRequest>{body: {message: "duration must be yearly, monthly, or weekly"}};
+            }
+
+            if duration == "weekly" {
+                WeeklyTrendItem[]|error weeklyData = operation:getWeeklyTrendData();
+                if weeklyData is error {
+                    string customError = "Error occurred while fetching weekly analytics!";
+                    log:printError(customError, weeklyData);
+                    return <http:InternalServerError>{body: {message: customError}};
                 }
-            };
-        }
-        if pageSize < 1 || pageSize > database:MAX_PAGE_SIZE {
-            return <http:BadRequest>{
-                body: {
-                    message: string `pageSize must be between 1 and ${database:MAX_PAGE_SIZE}`
+                return weeklyData;
+            } else if duration == "monthly" {
+                MonthlyTrendItem[]|error monthlyData = operation:getMonthlyTrendData();
+                if monthlyData is error {
+                    string customError = "Error occurred while fetching monthly analytics!";
+                    log:printError(customError, monthlyData);
+                    return <http:InternalServerError>{body: {message: customError}};
                 }
-            };
+                return monthlyData;
+            }
+
+            MonthlyTrendItem[]|error yearlyData = operation:getYearlyTrendData();
+            if yearlyData is error {
+                string customError = "Error occurred while fetching yearly analytics!";
+                log:printError(customError, yearlyData);
+                return <http:InternalServerError>{body: {message: customError}};
+            }
+            return yearlyData;
         }
 
-        if meal_type is string && !(meal_type == "BREAKFAST" || meal_type == "LUNCH") {
-            return <http:BadRequest>{
-                body: {
-                    message: "meal_type must be BREAKFAST or LUNCH"
-                }
-            };
+        if mealType is string && !(mealType == "BREAKFAST" || mealType == "LUNCH") {
+            return <http:BadRequest>{body: {message: "mealType must be BREAKFAST or LUNCH"}};
         }
 
-        int offset = (page - 1) * pageSize;
-        database:FoodWasteRecordFilters filters = {start_date, end_date, meal_type, 'limit: pageSize, offset};
-        database:PaginatedFoodWasteRecords|error pageResult =
-            database:fetchFoodWasteRecords(filters, page, pageSize);
+        int limitValue = 'limit ?: database:DEFAULT_PAGE_SIZE;
+        int offsetValue = offset ?: 0;
+
+        if limitValue < 1 || limitValue > database:MAX_PAGE_SIZE {
+            return <http:BadRequest>{
+                body: {message: string `limit must be between 1 and ${database:MAX_PAGE_SIZE}`}
+            };
+        }
+        if offsetValue < 0 {
+            return <http:BadRequest>{body: {message: "offset must be >= 0"}};
+        }
+
+        if latest {
+            database:FoodWasteRecordFilters latestFilters = {startDate, endDate, mealType, 'limit: 1, offset: 0};
+            PaginatedFoodWasteRecords|error result =
+                database:fetchFoodWasteRecords(latestFilters, 1, 1);
+            if result is error {
+                string customError = "Error occurred while fetching latest food waste KPI!";
+                log:printError(customError, result);
+                return <http:InternalServerError>{body: {message: customError}};
+            }
+
+            string kpiDate = endDate ?: string:substring(time:utcToString(time:utcNow()), 0, 10);
+            if result.records.length() == 0 {
+                return {
+                    date: kpiDate,
+                    breakfast: (),
+                    lunch: (),
+                    totalDailyWasteKg: 0.0d,
+                    totalDailyPlates: 0,
+                    averageWastePerPlateGrams: 0.0d
+                };
+            }
+
+            kpiDate = result.records[0].recordDate;
+            TodayKPIs|error latestKpi = operation:getTodayKpis(kpiDate);
+            if latestKpi is error {
+                string customError = "Error occurred while fetching latest food waste KPI!";
+                log:printError(customError, latestKpi);
+                return <http:InternalServerError>{body: {message: customError}};
+            }
+            return latestKpi;
+        }
+
+        database:FoodWasteRecordFilters filters = {
+            startDate,
+            endDate,
+            mealType,
+            'limit: limitValue,
+            offset: offsetValue
+        };
+        int page = (offsetValue / limitValue) + 1;
+        PaginatedFoodWasteRecords|error pageResult =
+            database:fetchFoodWasteRecords(filters, page, limitValue);
         if pageResult is error {
             string customError = "Error occurred while listing food waste records!";
             log:printError(customError, pageResult);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         return pageResult;
     }
@@ -301,55 +290,37 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Update an existing food waste record.
     #
     # + ctx - Request context
-        # + id - Food waste record id
+    # + id - Food waste record id
     # + payload - Update payload
     # + return - Updated record|NotFound|Forbidden|BadRequest|InternalServerError
-        resource function put food\-waste/[int id](http:RequestContext ctx, database:UpdateFoodWasteRecordPayload payload)
-            returns database:FoodWasteRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+    resource function put food\-waste/[int id](http:RequestContext ctx, UpdateFoodWasteRecordPayload payload)
+            returns FoodWasteRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        if payload.total_waste_kg is () && payload.plate_count is () {
+        if payload.totalWasteKg is () && payload.plateCount is () {
             return <http:BadRequest>{
-                body: {
-                    message: "At least one of total_waste_kg or plate_count must be provided."
-                }
+                body: {message: "At least one of totalWasteKg or plateCount must be provided."}
             };
         }
 
-        database:FoodWasteRecord|database:FoodWasteRecordNotFoundError|error updated =
-            database:updateFoodWasteRecord(id, payload, userInfo.email);
+        FoodWasteRecord|database:FoodWasteRecordNotFoundError|error updated =
+            operation:updateFoodWasteRecord(id, payload, userInfo.email);
         if updated is database:FoodWasteRecordNotFoundError {
-            return <http:NotFound>{
-                body: {
-                    message: updated.message()
-                }
-            };
+            return <http:NotFound>{body: {message: updated.message()}};
         }
         if updated is error {
             string customError = "Error occurred while updating food waste record!";
             log:printError(customError, updated);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         return updated;
     }
@@ -365,81 +336,51 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
         database:FoodWasteRecordNotFoundError|error? deleted = database:deleteFoodWasteRecord(id);
         if deleted is database:FoodWasteRecordNotFoundError {
-            return <http:NotFound>{
-                body: {
-                    message: deleted.message()
-                }
-            };
+            return <http:NotFound>{body: {message: deleted.message()}};
         }
         if deleted is error {
             string customError = "Error occurred while deleting food waste record!";
             log:printError(customError, deleted);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
         return <http:NoContent>{};
     }
 
-    // --- Advertisements Endpoints ---
+    // --- Advertisement Endpoints ---
 
     # Create a new advertisement.
     #
     # + ctx - Request context
     # + payload - Advertisement payload
-    # + return - Created advertisement ID|Forbidden|BadRequest|InternalServerError
-    resource function post advertisements(http:RequestContext ctx, database:CreateAdvertisementPayload payload)
+    # + return - Created advertisement|Forbidden|BadRequest|InternalServerError
+    resource function post advertisements(http:RequestContext ctx, CreateAdvertisementPayload payload)
             returns http:Created|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
         int|error adId = database:addAdvertisement(payload, userInfo.email);
         if adId is error {
             string customError = "Error occurred while creating advertisement!";
             log:printError(customError, adId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
         return <http:Created>{body: {id: adId}};
     }
 
@@ -448,36 +389,24 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - List of advertisements|Forbidden|BadRequest|InternalServerError
     resource function get advertisements(http:RequestContext ctx)
-            returns database:Advertisement[]|http:Forbidden|http:BadRequest|http:InternalServerError {
+            returns Advertisement[]|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
                 !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        database:Advertisement[]|error ads = database:getAdvertisements();
+        Advertisement[]|error ads = database:getAdvertisements();
         if ads is error {
             string customError = "Error occurred while fetching advertisements!";
             log:printError(customError, ads);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         return ads;
     }
@@ -487,34 +416,22 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + return - Active advertisement|NotFound|Forbidden|BadRequest|InternalServerError
     resource function get advertisements/active(http:RequestContext ctx)
-            returns database:Advertisement|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+            returns Advertisement|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
-        database:Advertisement|error? ad = database:getActiveAdvertisement();
+        Advertisement|error? ad = database:getActiveAdvertisement();
         if ad is error {
             string customError = "Error occurred while fetching active advertisement!";
             log:printError(customError, ad);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
         if ad is () {
-            return <http:NotFound>{
-                body: {
-                    message: "No active advertisement found."
-                }
-            };
+            return <http:NotFound>{body: {message: "No active advertisement found."}};
         }
         return ad;
     }
@@ -530,39 +447,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        error? result = database:activateAdvertisement(id);
+        database:AdvertisementNotFoundError|error? result = database:activateAdvertisement(id);
+        if result is database:AdvertisementNotFoundError {
+            return <http:NotFound>{body: {message: result.message()}};
+        }
         if result is error {
-            if result.message().includes("not found") {
-                return <http:NotFound>{
-                    body: {
-                        message: result.message()
-                    }
-                };
-            }
             string customError = "Error occurred while activating advertisement!";
             log:printError(customError, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
         return <http:Ok>{body: {message: "Advertisement activated successfully"}};
     }
 
@@ -577,150 +477,61 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        error? result = database:deleteAdvertisement(id);
+        database:ActiveAdvertisementError|database:AdvertisementNotFoundError|error? result =
+            operation:deleteAdvertisement(id);
+        if result is database:ActiveAdvertisementError {
+            return <http:BadRequest>{body: {message: result.message()}};
+        }
+        if result is database:AdvertisementNotFoundError {
+            return <http:NotFound>{body: {message: result.message()}};
+        }
         if result is error {
-            if result.message().includes("active advertisement") {
-                return <http:BadRequest>{
-                    body: {
-                        message: result.message()
-                    }
-                };
-            }
-            if result.message().includes("not found") {
-                return <http:NotFound>{
-                    body: {
-                        message: result.message()
-                    }
-                };
-            }
             string customError = "Error occurred while deleting advertisement!";
             log:printError(customError, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
         return <http:NoContent>{};
     }
 
-    // --- Analytics Endpoints ---
+    // --- Date Range Summary Endpoint ---
 
-    # Get today's KPIs.
+    # Get summary statistics for a date range.
     #
     # + ctx - Request context
-    # + return - Today's KPIs|Forbidden|BadRequest|InternalServerError
-    resource function get analytics/today(http:RequestContext ctx)
-            returns database:TodayKPIs|http:Forbidden|http:BadRequest|http:InternalServerError {
+    # + startDate - Start date (YYYY-MM-DD)
+    # + endDate - End date (YYYY-MM-DD)
+    # + return - DateRangeSummary|Forbidden|BadRequest|InternalServerError
+    resource function get food\-waste/summary(http:RequestContext ctx, string startDate, string endDate)
+            returns DateRangeSummary|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
                 !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
-        string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
-        database:TodayKPIs|error kpis = database:getTodayKPIs(date);
-        if kpis is error {
-            string customError = "Error occurred while fetching today's KPIs!";
-            log:printError(customError, kpis);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-        return kpis;
-    }
-
-    // --- Reports Endpoints ---
-
-    # Export food waste records as CSV.
-    #
-    # + ctx - Request context
-    # + start_date - Start date (YYYY-MM-DD)
-    # + end_date - End date (YYYY-MM-DD)
-    # + format - Export format (default: csv)
-    # + return - CSV response|Forbidden|BadRequest|InternalServerError
-    resource function get reports/export(http:RequestContext ctx, string start_date, string end_date,
-            string format = "csv")
-            returns http:Response|http:Forbidden|http:BadRequest|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{
-                body: {
-                    message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR
-                }
-            };
+        if !database:DATE_REGEX.isFullMatch(startDate) || !database:DATE_REGEX.isFullMatch(endDate) {
+            return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
         }
 
-        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
-            return <http:Forbidden>{
-                body: {
-                    message: authorization:INSUFFICIENT_PRIVILEGES_ERROR
-                }
-            };
+        DateRangeSummary|error summary = operation:getDateRangeSummary(startDate, endDate);
+        if summary is error {
+            string customError = "Error occurred while fetching date range summary!";
+            log:printError(customError, summary);
+            return <http:InternalServerError>{body: {message: customError}};
         }
-
-        if format != "csv" {
-            return <http:BadRequest>{
-                body: {
-                    message: "Only 'csv' format is supported."
-                }
-            };
-        }
-
-        database:FoodWasteRecordFilters filters = {start_date, end_date, 'limit: 1000, offset: 0};
-        database:PaginatedFoodWasteRecords|error records = database:fetchFoodWasteRecords(filters, 1, 1000);
-        if records is error {
-            string customError = "Error occurred while fetching data for export!";
-            log:printError(customError, records);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
-
-        string csv = "record_date,meal_type,total_waste_kg,plate_count\n";
-        foreach database:FoodWasteRecord rec in records.records {
-            csv += string `${rec.record_date},${rec.meal_type},${rec.total_waste_kg},${rec.plate_count}` + "\n";
-        }
-
-        http:Response response = new;
-        response.setTextPayload(csv, contentType = "text/csv");
-        response.setHeader("Content-Disposition", string `attachment; filename="report-${start_date}.csv"`);
-        return response;
+        return summary;
     }
 }
