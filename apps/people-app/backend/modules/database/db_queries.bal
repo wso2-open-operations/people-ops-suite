@@ -702,3 +702,69 @@ isolated function deleteBusinessUnitQuery(DeleteBusinessUnitPayload payload, int
 
     return query;
 };
+
+# Build query to soft delete a business unit-team mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitTeamQuery(DeleteBusinessUnitTeamPayload payload, int buId, int teamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team
+      SET
+        is_active = 0,
+        updated_by = ${payload.updatedBy},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a team-sub team mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteTeamSubTeamQuery(DeleteTeamSubTeamPayload payload, int teamId, int subTeamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+        is_active = 0,
+        updated_by = ${payload.updatedBy},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a sub team-unit mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteSubTeamUnitQuery(DeleteSubTeamUnitPayload payload, int subTeamId, int unitId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+        is_active = 0,
+        updated_by = ${payload.updatedBy},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    return query;
+}
