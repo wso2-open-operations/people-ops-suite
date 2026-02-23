@@ -15,42 +15,36 @@
 // under the License.
 import ballerina/sql;
 
-# Add food waste record.
+// --- Food Waste Functions ---
+
+# Add a food waste record.
 #
 # + payload - Payload containing the food waste record details
 # + createdBy - Person who is creating the record
-# + return - Id of the food waste record|DuplicateFoodWasteRecordError|Error
+# + return - Id of the inserted record|DuplicateFoodWasteRecordError|Error
 public isolated function addFoodWasteRecord(AddFoodWasteRecordPayload payload, string createdBy)
     returns int|DuplicateFoodWasteRecordError|error {
 
-    sql:ExecutionResult|error executionResults =
-        databaseClient->execute(addFoodWasteRecordQuery(payload, createdBy));
+    sql:ExecutionResult|error executionResults = databaseClient->execute(addFoodWasteRecordQuery(payload, createdBy));
     if executionResults is error {
-        // MySQL duplicate key errors bubble up via JDBC with messages like:
-        // - "Duplicate entry ... for key ..."
-        // - "SQLIntegrityConstraintViolationException"
-        // We avoid relying on driver-specific structured fields for compatibility.
         string errMsg = executionResults.message();
-        if errMsg.includes("Duplicate entry") || errMsg.includes("SQLIntegrityConstraintViolationException") ||
-                errMsg.includes("uniq_food_waste_record_date_type") {
+        if errMsg.includes("Duplicate entry") || errMsg.includes("uniq_food_waste_record_date_type") {
             return error DuplicateFoodWasteRecordError(
-                "Food waste record already exists for the given date and meal_type.");
+                "Food waste record already exists for the given date and meal type.");
         }
         return executionResults;
     }
-
     return <int>executionResults.lastInsertId;
 }
 
 # Fetch food waste record by id.
 #
 # + id - Food waste record id
-# + return - Food waste record|Error or () if not found
+# + return - FoodWasteRecord|Error or () if not found
 public isolated function fetchFoodWasteRecord(int id) returns FoodWasteRecord|error? {
-    FoodWasteRecord|sql:Error foodWasteRecord =
-        databaseClient->queryRow(getFoodWasteRecordByIdQuery(id));
-    if foodWasteRecord is sql:Error && foodWasteRecord is sql:NoRowsError {
-        return;
+    FoodWasteRecord|sql:Error foodWasteRecord = databaseClient->queryRow(getFoodWasteRecordByIdQuery(id));
+    if foodWasteRecord is sql:NoRowsError {
+        return ();
     }
     return foodWasteRecord;
 }
@@ -60,12 +54,12 @@ public isolated function fetchFoodWasteRecord(int id) returns FoodWasteRecord|er
 # + filters - Filters
 # + page - Page number
 # + pageSize - Page size
-# + return - Paginated response|Error
+# + return - PaginatedFoodWasteRecords|Error
 public isolated function fetchFoodWasteRecords(FoodWasteRecordFilters filters, int page, int pageSize)
     returns PaginatedFoodWasteRecords|error {
+
     stream<FoodWasteRecordListRow, sql:Error?> resultStream =
         databaseClient->query(getFoodWasteRecordsQuery(filters));
-
     int totalCount = 0;
     FoodWasteRecord[] records = [];
 
@@ -74,14 +68,14 @@ public isolated function fetchFoodWasteRecords(FoodWasteRecordFilters filters, i
             totalCount = row.totalCount;
             records.push({
                 id: row.id,
-                record_date: row.record_date,
-                meal_type: row.meal_type,
-                total_waste_kg: row.total_waste_kg,
-                plate_count: row.plate_count,
-                created_on: row.created_on,
-                created_by: row.created_by,
-                updated_on: row.updated_on,
-                updated_by: row.updated_by
+                recordDate: row.recordDate,
+                mealType: row.mealType,
+                totalWasteKg: row.totalWasteKg,
+                plateCount: row.plateCount,
+                createdOn: row.createdOn,
+                createdBy: row.createdBy,
+                updatedOn: row.updatedOn,
+                updatedBy: row.updatedBy
             });
         };
 
@@ -100,14 +94,14 @@ public isolated function fetchDailyFoodWasteRecords(string recordDate) returns D
 
     check from FoodWasteRecord rec in resultStream
         do {
-            if rec.meal_type == "BREAKFAST" {
+            if rec.mealType == "BREAKFAST" {
                 breakfast = rec;
-            } else if rec.meal_type == "LUNCH" {
+            } else if rec.mealType == "LUNCH" {
                 lunch = rec;
             }
         };
 
-    return {record_date: recordDate, breakfast, lunch};
+    return {recordDate, breakfast, lunch};
 }
 
 # Update an existing food waste record.
@@ -115,24 +109,15 @@ public isolated function fetchDailyFoodWasteRecords(string recordDate) returns D
 # + id - Food waste record id
 # + payload - Fields to update
 # + updatedBy - Person who is updating
-# + return - Updated record|FoodWasteRecordNotFoundError|Error
+# + return - FoodWasteRecordNotFoundError|Error if update failed
 public isolated function updateFoodWasteRecord(int id, UpdateFoodWasteRecordPayload payload, string updatedBy)
-    returns FoodWasteRecord|FoodWasteRecordNotFoundError|error {
+    returns FoodWasteRecordNotFoundError|error? {
 
     sql:ExecutionResult executionResult =
         check databaseClient->execute(updateFoodWasteRecordQuery(id, payload, updatedBy));
     if executionResult.affectedRowCount < 1 {
         return error FoodWasteRecordNotFoundError("Food waste record not found.");
     }
-
-    FoodWasteRecord|error? updated = fetchFoodWasteRecord(id);
-    if updated is error {
-        return updated;
-    }
-    if updated is () {
-        return error FoodWasteRecordNotFoundError("Food waste record not found.");
-    }
-    return updated;
 }
 
 # Delete an existing food waste record.
@@ -152,18 +137,15 @@ public isolated function deleteFoodWasteRecord(int id) returns FoodWasteRecordNo
 #
 # + payload - Advertisement data
 # + createdBy - User creating the ad
-# + return - Created ID or Error
+# + return - Created ID|Error
 public isolated function addAdvertisement(CreateAdvertisementPayload payload, string createdBy) returns int|error {
-    sql:ExecutionResult|error result = databaseClient->execute(addAdvertisementQuery(payload, createdBy));
-    if result is error {
-        return result;
-    }
+    sql:ExecutionResult result = check databaseClient->execute(addAdvertisementQuery(payload, createdBy));
     return <int>result.lastInsertId;
 }
 
 # Get all advertisements.
 #
-# + return - List of advertisements or Error
+# + return - List of advertisements|Error
 public isolated function getAdvertisements() returns Advertisement[]|error {
     stream<Advertisement, sql:Error?> resultStream = databaseClient->query(getAdvertisementsQuery());
     return from Advertisement ad in resultStream
@@ -172,7 +154,7 @@ public isolated function getAdvertisements() returns Advertisement[]|error {
 
 # Get the currently active advertisement.
 #
-# + return - Active Advertisement or () if none, or Error
+# + return - Active Advertisement|() if none|Error
 public isolated function getActiveAdvertisement() returns Advertisement|error? {
     Advertisement|sql:Error result = databaseClient->queryRow(getActiveAdvertisementQuery());
     if result is sql:NoRowsError {
@@ -184,7 +166,7 @@ public isolated function getActiveAdvertisement() returns Advertisement|error? {
 # Get advertisement by ID.
 #
 # + id - Ad ID
-# + return - Advertisement or () if not found, or Error
+# + return - Advertisement|() if not found|Error
 public isolated function getAdvertisementById(int id) returns Advertisement|error? {
     Advertisement|sql:Error result = databaseClient->queryRow(getAdvertisementByIdQuery(id));
     if result is sql:NoRowsError {
@@ -193,116 +175,73 @@ public isolated function getAdvertisementById(int id) returns Advertisement|erro
     return result;
 }
 
-# Activate an advertisement (deactivating others via DB trigger).
+# Activate an advertisement (DB trigger deactivates others).
 #
 # + id - Advertisement ID
-# + return - Error if failed
-public isolated function activateAdvertisement(int id) returns error? {
-    sql:ExecutionResult|error result = databaseClient->execute(activateAdvertisementQuery(id));
-    if result is error {
-        return result;
-    }
+# + return - AdvertisementNotFoundError|Error if failed
+public isolated function activateAdvertisement(int id) returns AdvertisementNotFoundError|error? {
+    sql:ExecutionResult result = check databaseClient->execute(activateAdvertisementQuery(id));
     if result.affectedRowCount == 0 {
-        return error("Advertisement not found or already active");
+        return error AdvertisementNotFoundError("Advertisement not found.");
     }
 }
 
-# Delete an advertisement.
+# Delete an advertisement (active-ad guard is in the operation layer).
 #
 # + id - Advertisement ID
-# + return - Error if failed (e.g. active ad cannot be deleted logic should be checked before calling this, or handle DB constraint if any)
-public isolated function deleteAdvertisement(int id) returns error? {
-    // Check if active before deleting?
-    Advertisement|error? ad = getAdvertisementById(id);
-    if ad is Advertisement && ad.is_active {
-        return error("Cannot delete an active advertisement. Deactivate it first.");
-    }
-
-    sql:ExecutionResult|error result = databaseClient->execute(deleteAdvertisementQuery(id));
-    if result is error {
-        return result;
-    }
+# + return - AdvertisementNotFoundError|Error if failed
+public isolated function deleteAdvertisement(int id) returns AdvertisementNotFoundError|error? {
+    sql:ExecutionResult result = check databaseClient->execute(deleteAdvertisementQuery(id));
     if result.affectedRowCount == 0 {
-        return error("Advertisement not found");
+        return error AdvertisementNotFoundError("Advertisement not found.");
     }
 }
 
 // --- Analytics Functions ---
 
+# Get weekly food waste trend.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + return - Weekly trend items|Error
 public isolated function getWeeklyTrend(string startDate) returns WeeklyTrendItem[]|error {
     stream<WeeklyTrendItem, sql:Error?> resultStream = databaseClient->query(getWeeklyTrendQuery(startDate));
     return from WeeklyTrendItem item in resultStream
         select item;
 }
 
+# Get monthly food waste trend.
+#
+# + startMonth - Start month (YYYY-MM)
+# + endMonth - End month (YYYY-MM)
+# + return - Monthly trend items|Error
 public isolated function getMonthlyTrend(string startMonth, string endMonth) returns MonthlyTrendItem[]|error {
-    stream<MonthlyTrendItem, sql:Error?> resultStream = databaseClient->query(getMonthlyTrendQuery(startMonth, endMonth));
+    stream<MonthlyTrendItem, sql:Error?> resultStream =
+        databaseClient->query(getMonthlyTrendQuery(startMonth, endMonth));
     return from MonthlyTrendItem item in resultStream
         select item;
 }
 
-public isolated function getDateRangeSummary(string startDate, string endDate) returns DateRangeSummary|error {
-    // 1. Get total stats
-    record {|decimal total_waste_kg; int total_plates;|} stats =
-        check databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
-
-    // 2. Get highest waste day
-    record {|string record_date; decimal daily_total;|}|sql:Error highest =
-        databaseClient->queryRow(getHighestWasteDayQuery(startDate, endDate));
-
-    decimal highest_waste = 0.0d;
-    string highest_date = "";
-
-    if highest is record {|string record_date; decimal daily_total;|} {
-        highest_waste = highest.daily_total;
-        highest_date = highest.record_date;
-    }
-
-    decimal avg = 0.0d;
-    if stats.total_plates > 0 {
-        avg = (stats.total_waste_kg * 1000.0d) / <decimal>stats.total_plates;
-    }
-
-    return {
-        start_date: startDate,
-        end_date: endDate,
-        total_waste_kg: stats.total_waste_kg,
-        total_plates: stats.total_plates,
-        average_waste_per_plate_grams: avg,
-        highest_waste_day_kg: highest_waste,
-        highest_waste_date: highest_date
-    };
+# Fetch total waste and plate count for a date range.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + endDate - End date (YYYY-MM-DD)
+# + return - Aggregated stats|Error
+public isolated function fetchDateRangeSummaryStats(string startDate, string endDate)
+    returns record {|decimal totalWasteKg; int totalPlates;|}|error {
+    return databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
 }
 
-public isolated function getTodayKPIs(string date) returns TodayKPIs|error {
-    DailyFoodWasteRecords daily = check fetchDailyFoodWasteRecords(date);
-
-    decimal totalWaste = 0.0d;
-    int totalPlates = 0;
-
-    FoodWasteRecord? breakfast = daily.breakfast;
-    if breakfast is FoodWasteRecord {
-        totalWaste += breakfast.total_waste_kg;
-        totalPlates += breakfast.plate_count;
+# Fetch the highest waste day in a date range.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + endDate - End date (YYYY-MM-DD)
+# + return - Highest waste day|() if no data|Error
+public isolated function fetchHighestWasteDay(string startDate, string endDate)
+    returns record {|string recordDate; decimal dailyTotal;|}|error? {
+    record {|string recordDate; decimal dailyTotal;|}|sql:Error result =
+        databaseClient->queryRow(getHighestWasteDayQuery(startDate, endDate));
+    if result is sql:NoRowsError {
+        return ();
     }
-
-    FoodWasteRecord? lunch = daily.lunch;
-    if lunch is FoodWasteRecord {
-        totalWaste += lunch.total_waste_kg;
-        totalPlates += lunch.plate_count;
-    }
-
-    decimal avg = 0.0d;
-    if totalPlates > 0 {
-        avg = (totalWaste * 1000.0d) / <decimal>totalPlates;
-    }
-
-    return {
-        date: date,
-        breakfast: daily.breakfast,
-        lunch: daily.lunch,
-        total_daily_waste_kg: totalWaste,
-        total_daily_plates: totalPlates,
-        average_waste_per_plate_grams: avg
-    };
+    return result;
 }
