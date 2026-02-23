@@ -234,6 +234,38 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     return false;
 }
 
+# Update business unit.
+#
+# + payload - Update payload  
+# + buId - Business unit ID
+# + return - Error when update fails
 public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId) returns error? {
     _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
+}
+
+# Update team.
+#
+# + payload - Update payload
+# + teamId - Team ID
+# + return - Error when update fails
+public isolated function updateTeam(UpdateUnitPayload payload, int teamId) returns error? {
+    _ = check databaseClient->execute(updateTeamQuery(payload, teamId));
+}
+
+# Update sub team.
+#
+# + payload - Update payload
+# + subTeamId - Sub team ID
+# + return - Error when update fails
+public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId) returns error? {
+    _ = check databaseClient->execute(updateSubTeamQuery(payload, subTeamId));
+}
+
+# Update unit.
+#
+# + payload - Update payload
+# + unitId - Unit ID
+# + return - Error when update fails
+public isolated function updateUnit(UpdateUnitPayload payload, int unitId) returns error? {
+     _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
 }
