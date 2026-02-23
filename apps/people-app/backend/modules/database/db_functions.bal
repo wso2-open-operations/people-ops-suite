@@ -324,3 +324,46 @@ public isolated function deleteBusinessUnit(DeleteBusinessUnitPayload payload, i
     }
     return false;
 }
+
+# Delete a business unit-team mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnitTeam(DeleteBusinessUnitTeamPayload payload, int buId, int teamId)
+    returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitTeamQuery(payload, buId, teamId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a team-sub team mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteTeamSubTeam(DeleteTeamSubTeamPayload payload, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteTeamSubTeamQuery(payload, teamId, subTeamId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a sub team-unit mapping.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteSubTeamUnit(DeleteSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteSubTeamUnitQuery(payload, subTeamId, unitId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
