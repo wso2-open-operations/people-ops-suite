@@ -16,7 +16,7 @@
 
 import React from "react";
 
-import { NonIndexRouteObject } from "react-router-dom";
+import { NonIndexRouteObject, Outlet, useLocation, useNavigate } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import GroupsIcon from "@mui/icons-material/Groups";
 import { Role } from "@slices/authSlice/auth";
@@ -46,6 +46,16 @@ export interface RouteDetail {
   hideFromSidebar?: boolean;
 }
 
+const EmployeesRoot = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  if (pathname === "/employees") {
+    navigate("/employees/view", { replace: true });
+    return null;
+  }
+  return React.createElement(Outlet);
+};
+
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
@@ -58,14 +68,14 @@ export const routes: RouteObjectWithRole[] = [
     path: "/employees",
     text: "Employees",
     icon: React.createElement(GroupsIcon),
+    element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
     children:[
       {
         path: "/employees/view",
         text: "Employees",
         element: React.createElement(View.employeesList),
-        icon: React.createElement(GroupsIcon),
-           
+        icon: React.createElement(GroupsIcon),   
         allowRoles: [Role.ADMIN],
       },
       {
