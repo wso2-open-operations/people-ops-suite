@@ -267,5 +267,19 @@ public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId)
 # + unitId - Unit ID
 # + return - Error when update fails
 public isolated function updateUnit(UpdateUnitPayload payload, int unitId) returns error? {
-     _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
+    _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
+}
+
+# Update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Nil on success, error if the update fails
+public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
 }
