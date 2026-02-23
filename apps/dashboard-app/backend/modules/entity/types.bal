@@ -54,13 +54,13 @@ public type Employee record {|
 |};
 
 # Employee data.
-type EmployeeData record {
+public type EmployeeData record {|
     # Employee
     Employee employee;
-};
+|};
 
 # Employee response.
-type EmployeeResponse record {
+public type EmployeeResponse record {|
     # Employee data
     EmployeeData data;
-};
+|};
