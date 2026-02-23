@@ -30,7 +30,7 @@ import { useTheme } from "@mui/material/styles";
 import { useState } from "react";
 
 import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
-import { BusinessUnit, Company, Head, SubTeam, Team } from "@root/src/services/organization";
+import { Head } from "@root/src/services/organization";
 import { EmployeeBasicInfo, useGetAllEmployeesQuery } from "@services/employee";
 
 import { truncateName } from "../../utils";
@@ -224,7 +224,11 @@ const LeadRow: React.FC<LeadRowProps> = ({ label, lead, isExpanded, onToggle }) 
 
             <Typography
               variant="caption"
-              sx={{ color: theme.palette.customText.primary.p4.active, textTransform: "capitalize", fontWeight: 400 }}
+              sx={{
+                color: theme.palette.customText.primary.p4.active,
+                textTransform: "capitalize",
+                fontWeight: 400,
+              }}
             >
               {truncateName(lead.title, DESIGNATION_TRUNCATE_LENGTH)}
             </Typography>
@@ -292,28 +296,13 @@ const SwappableLead: React.FC<SwappableLeadProps> = ({
 );
 
 export interface SwapLeadsProps {
-  entityType: string;
-  entityId: string;
-  parentNode: Company | BusinessUnit | Team | SubTeam | null;
   head?: Head;
   functionalLead?: Head;
-  onSwapHead: (
-    entityType: string,
-    entityId: string,
-    employee: EmployeeBasicInfo,
-    reason: string,
-  ) => void;
-  onSwapFunctionalLead: (
-    entityType: string,
-    entityId: string,
-    employee: EmployeeBasicInfo,
-    reason: string,
-  ) => void;
+  onSwapHead: (employee: EmployeeBasicInfo, reason: string) => void;
+  onSwapFunctionalLead: (employee: EmployeeBasicInfo, reason: string) => void;
 }
 
 export const SwapLeads: React.FC<SwapLeadsProps> = ({
-  entityType,
-  entityId,
   head,
   functionalLead,
   onSwapHead,
@@ -331,9 +320,9 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
     const { panel, employee } = pendingSwap;
 
     if (panel === "head") {
-      onSwapHead(entityType, entityId, employee, _reason);
+      onSwapHead(employee, _reason);
     } else {
-      onSwapFunctionalLead(entityType, entityId, employee, _reason);
+      onSwapFunctionalLead(employee, _reason);
     }
 
     setPendingSwap(null);
