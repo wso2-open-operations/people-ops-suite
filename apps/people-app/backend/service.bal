@@ -707,7 +707,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return<http:InternalServerError>{
         if payload.changedName is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
             log:printWarn(customErr, buId = buId);
@@ -735,45 +734,73 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function patch organization/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+    resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
 
         log:printInfo("Team patch invoked, teamId : ", teamId = teamId);
 
         return http:OK;
     }
 
-    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
 
-      log:printInfo("Sub team patch invoked, sub team id : ", subTeamId = subTeamId);
+        log:printInfo("Sub team patch invoked, sub team id : ", subTeamId = subTeamId);
 
-      return http:OK;
+        return http:OK;
     }
 
-    resource function patch organization/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
-      
-      log:printInfo("Unit patch function invoked, unit id : ", unitId = unitId);
+    resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload) returns http:Ok {
 
-      return http:OK;
+        log:printInfo("Unit patch function invoked, unit id : ", unitId = unitId);
+
+        return http:OK;
     }
 
-    resource function patch organization/business\-unit/[int buId]/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+    resource function patch organization/business\-unit/[int buId]/team/[int teamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
 
-      log:printInfo("Organization business-unit-team patch invoked, ", buId = buId, teamId = teamId);
-      
-      return http:OK;
+        log:printInfo("Organization business-unit-team patch invoked, ", buId = buId, teamId = teamId);
+
+        return http:OK;
     }
 
-    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
 
-      log:printInfo("Organization team-subteam patch invoked, ", teamId = teamId, subTeamId = subTeamId);
-                    
-      return http:OK;
+        log:printInfo("Organization team-subteam patch invoked, ", teamId = teamId, subTeamId = subTeamId);
+
+        return http:OK;
     }
 
-    resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
+    resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
 
-      log:printInfo("Organization sub-team-unit patch invoked, ", subTeamId=subTeamId, unitId = unitId);
+        log:printInfo("Organization sub-team-unit patch invoked, ", subTeamId = subTeamId, unitId = unitId);
 
-      return http:OK;
-    }   
+        return http:OK;
+    }
+
+    resource function delete organization/business\-unit/[int businessUnitId](http:RequestContext ctx) returns http:Ok {
+
+        log:printInfo("Organization business unit delete endpoint invoked ", businessUnitId = businessUnitId);
+
+        return http:OK;
+    }
+
+    resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+
+        log:printInfo("Organization team subteam delete endpoint invoked ", teamId = teamId, subTeamId = subTeamId);
+
+        return http:OK;
+    }
+
+    resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
+
+        log:printInfo("Organization team subteam delete endpoint invoked ", subTeamId = subTeamId, unitId = unitId);
+
+        return http:OK;
+    }
+
+    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+
+        log:printInfo("Organization team subteam delete endpoint invoked ", businessUnitId = businessUnitId, teamId = teamId);
+
+        return http:OK;
+    }
 }
