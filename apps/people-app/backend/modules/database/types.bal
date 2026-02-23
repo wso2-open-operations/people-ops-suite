@@ -500,3 +500,35 @@ public type UpdateVehiclePayload record {|
     # User who created the vehicle record
     string updatedBy;
 |};
+
+public type UpdateUnitPayload record {|
+    @sql:Column {
+        name: "name"
+    }
+    string changedName?;
+    @sql:Column {
+        name: "head_email"
+    }
+    string headEmail?;
+    @sql:Column {
+        name: "updated_by"
+    }
+    string updatedBy;
+|};
+
+public type UpdateUnitPaylaod UpdateUnitPayload;
+
+public type UpdateMappingUnitPayload record {|
+    @sql:Column {
+        name: "name"
+    }
+    string changedName?;
+    @sql:Column {
+        name: "functional_lead "
+    }
+    string functionalLead?;
+    @sql:Column {
+        name: "updated_by"
+    }
+    string updatedBy;
+|};
