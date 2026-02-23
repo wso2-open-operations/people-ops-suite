@@ -836,7 +836,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Fields to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/business\-unit/[int buId]/team/[int teamId]
-        (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload) 
+            (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
@@ -859,7 +859,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(string `No team is found with businessUnitId ${buId} and teamId = ${teamId} to update!`);
             return <http:BadRequest>{
                 body: {
-                    message: "No team found to update" 
+                    message: "No team found to update"
                 }
             };
         }
@@ -873,7 +873,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId]
-        (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
+            (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
@@ -909,7 +909,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId]
-        (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
+            (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
