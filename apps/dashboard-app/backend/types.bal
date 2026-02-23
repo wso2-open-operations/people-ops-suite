@@ -13,21 +13,168 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import dashboard_app_backend.database;
+import dashboard_app_backend.entity;
 
-# Represents the response structure for retrieving user information.
-public type UserInfoResponse record {|
-    # Id of the employee
-    string employeeId;
-    # Email of the employee
-    string workEmail;
-    # First name of the employee
-    string firstName;
-    # Last name of the employee
-    string lastName;
-    # Job role
-    string jobRole;
-    # Thumbnail of the employee
-    string? employeeThumbnail;
-    # User Privileges
+# Response for retrieving logged-in user information.
+public type UserInfoResponse record {
+    *entity:Employee;
+    # Privileges assigned to the user
     int[] privileges;
+};
+
+# A single food waste record.
+public type FoodWasteRecord record {|
+    # Unique id of the food waste record
+    int id;
+    # Date of the record (YYYY-MM-DD)
+    string recordDate;
+    # Meal type (BREAKFAST|LUNCH)
+    string mealType;
+    # Total waste (kg)
+    decimal totalWasteKg;
+    # Plate count
+    int plateCount;
+    # User who created the record
+    string createdBy;
+    # Timestamp when the record was created
+    string createdOn;
+    # User who last updated the record
+    string updatedBy;
+    # Timestamp when the record was last updated
+    string updatedOn;
+|};
+
+# Payload for creating a food waste record.
+public type AddFoodWasteRecordPayload record {|
+    # Record date (YYYY-MM-DD)
+    string recordDate;
+    # Meal type
+    database:MealType mealType;
+    # Total waste (kg)
+    decimal totalWasteKg;
+    # Plate count
+    int plateCount;
+|};
+
+# Payload for updating a food waste record.
+public type UpdateFoodWasteRecordPayload record {|
+    # Total waste (kg)
+    decimal? totalWasteKg = ();
+    # Plate count
+    int? plateCount = ();
+|};
+
+# Paginated response for listing food waste records.
+public type PaginatedFoodWasteRecords record {|
+    # Total number of records for the applied filters
+    int totalCount;
+    # Current page (1-based)
+    int page;
+    # Page size
+    int pageSize;
+    # Records for the page
+    FoodWasteRecord[] records;
+|};
+
+# Daily response: breakfast + lunch for a given date.
+public type DailyFoodWasteRecords record {|
+    # Record date (YYYY-MM-DD)
+    string recordDate;
+    # Breakfast record (if exists)
+    FoodWasteRecord? breakfast = ();
+    # Lunch record (if exists)
+    FoodWasteRecord? lunch = ();
+|};
+
+# Advertisement record.
+public type Advertisement record {|
+    # Unique id
+    int id;
+    # Media URL
+    string mediaUrl;
+    # Media type
+    string mediaType;
+    # Duration in seconds
+    int durationSeconds;
+    # Thumbnail URL
+    string? thumbnailUrl;
+    # Whether this advertisement is currently active
+    boolean isActive;
+    # Display order
+    int displayOrder;
+    # Date uploaded
+    string uploadedDate;
+    # Created timestamp
+    string createdOn;
+    # Created by
+    string? createdBy;
+    # Updated timestamp
+    string updatedOn;
+|};
+
+# Payload for creating an advertisement.
+public type CreateAdvertisementPayload record {|
+    # Media URL
+    string mediaUrl;
+    # Media type
+    database:MediaType mediaType;
+    # Duration in seconds
+    int durationSeconds;
+    # Thumbnail URL
+    string? thumbnailUrl;
+|};
+
+# Weekly trend item.
+public type WeeklyTrendItem record {|
+    # Date
+    string date;
+    # Breakfast waste (kg)
+    decimal breakfastWaste;
+    # Lunch waste (kg)
+    decimal lunchWaste;
+|};
+
+# Monthly trend item.
+public type MonthlyTrendItem record {|
+    # Month (YYYY-MM)
+    string month;
+    # Breakfast waste (kg)
+    decimal breakfastWaste;
+    # Lunch waste (kg)
+    decimal lunchWaste;
+|};
+
+# Date range summary.
+public type DateRangeSummary record {|
+    # Start date
+    string startDate;
+    # End date
+    string endDate;
+    # Total waste (kg)
+    decimal totalWasteKg;
+    # Total plates
+    int totalPlates;
+    # Average waste per plate (g)
+    decimal averageWastePerPlateGrams;
+    # Highest single-day waste (kg)
+    decimal highestWasteDayKg;
+    # Date of highest single-day waste
+    string highestWasteDate;
+|};
+
+# Today's KPI dashboard data.
+public type TodayKPIs record {|
+    # Date
+    string date;
+    # Breakfast data
+    FoodWasteRecord? breakfast;
+    # Lunch data
+    FoodWasteRecord? lunch;
+    # Total daily waste (kg)
+    decimal totalDailyWasteKg;
+    # Total daily plates
+    int totalDailyPlates;
+    # Average waste per plate (g)
+    decimal averageWastePerPlateGrams;
 |};
