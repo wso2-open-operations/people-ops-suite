@@ -13,27 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerinax/java.jdbc;
 import ballerinax/mysql;
 import ballerinax/mysql.driver as _;
 
-# Database Client Configuration.
-configurable DatabaseConfig databaseConfig = ?;
+# Database client configuration.
+configurable DatabaseConfig dbConfig = ?;
 
-configurable decimal connectTimeout = ?;
-
-DatabaseClientConfig databaseClientConfig = {
-    ...databaseConfig,
-    options: {
-        ssl: {
-            mode: mysql:SSL_REQUIRED
-        },
-        connectTimeout: connectTimeout
-    }
-};
-
-function initSampleDbClient() returns mysql:Client|error
-=> new (...databaseClientConfig);
-
-# Database Client.
-final jdbc:Client databaseClient = check initSampleDbClient();
+# Database client.
+final mysql:Client databaseClient = check new (...dbConfig);
