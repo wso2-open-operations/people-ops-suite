@@ -139,10 +139,20 @@ export function SearchForm() {
     filterRef.current = filterPayload;
   }, [filterPayload]);
 
+  const normalizeSearchString = (value?: string): string | undefined => {
+    if (value === undefined) return undefined;
+    return value.trim().length > 0 ? value : undefined;
+  };
+
   const updateSearchPayload = useCallback(
     (patch: Partial<EmployeeSearchPayload>) => {
+      const normalizedSearchString = normalizeSearchString(
+        patch.searchString !== undefined
+          ? patch.searchString
+          : filterRef.current.searchString,
+      );
       const nextPayload = {
-        searchString: patch.searchString ?? filterRef.current.searchString,
+        searchString: normalizedSearchString,
         filters: {
           ...filterRef.current.filters,
           ...patch.filters,
@@ -156,9 +166,10 @@ export function SearchForm() {
 
   const clearAll = () => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    const normalizedSearchString = normalizeSearchString(searchText);
     dispatch(
       setEmployeeFilter({
-        searchString: searchText,
+        searchString: normalizedSearchString,
         filters: {},
         pagination: {
           limit: DEFAULT_LIMIT_VALUE,

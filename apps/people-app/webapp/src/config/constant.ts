@@ -34,7 +34,7 @@ export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
-export const SEARCH_REGEX = /^[a-zA-Z0-9\s@._-]*$/;
+export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
 export const SEARCH_MAX_LENGTH = 100;
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
