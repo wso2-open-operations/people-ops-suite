@@ -516,13 +516,7 @@ public type UpdateUnitPayload record {|
     string updatedBy;
 |};
 
-public type UpdateUnitPaylaod UpdateUnitPayload;
-
 public type UpdateMappingUnitPayload record {|
-    @sql:Column {
-        name: "name"
-    }
-    string changedName?;
     @sql:Column {
         name: "functional_lead "
     }
