@@ -19,7 +19,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useState } from "react";
 
-import { UnitType } from "@utils/utils";
+import { UnitType, UnitTypeLabel } from "@utils/utils";
 
 interface RenameFormValues {
   entityName: string;
@@ -78,7 +78,7 @@ export const RenameField: React.FC<RenameFieldProps> = ({
           textTransform: "capitalize"
         }}
       >
-        {entityType} Name
+        {UnitTypeLabel[entityType]} Name
       </Typography>
 
       <Box
