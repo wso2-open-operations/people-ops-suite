@@ -62,3 +62,30 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 
     return updatedQuery;
 }
+
+# Build a parameterized UPDATE query for an organization hierarchy table.
+#
+# + mainQuery - Base UPDATE query with the target table name
+# + payload - Fields to update (name, head email, updated by)
+# + id - ID of the record to update
+# + return - Complete parameterized UPDATE query with SET clauses and WHERE condition
+isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateUnitPayload payload, int id)
+    returns sql:ParameterizedQuery {
+    UpdateUnitPayload {changedName, headEmail, updatedBy} = payload;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if changedName is string {
+        filters.push(` name = ${changedName}`);
+    }
+
+    if headEmail is string {
+        filters.push(` head_email = ${headEmail}`);
+    }
+
+    filters.push(` updated_by = ${updatedBy}`);
+
+    sql:ParameterizedQuery updatedQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(updatedQuery, ` WHERE id = ${id}`);
+}
