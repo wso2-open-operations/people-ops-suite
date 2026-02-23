@@ -283,3 +283,31 @@ public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload pa
     }
     return false;
 }
+
+# Update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Nil on success, error if the update fails
+public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Nil on success, error if the update fails
+public isolated function updateSubTeamUnit(updateSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
