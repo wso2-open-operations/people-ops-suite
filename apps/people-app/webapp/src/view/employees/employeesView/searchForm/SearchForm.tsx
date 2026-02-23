@@ -19,6 +19,7 @@ import {
   DEFAULT_OFFSET_VALUE,
   EmployeeGenders,
   SEARCH_REGEX,
+  SEARCH_MAX_LENGTH,
 } from "@config/constant";
 import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -504,10 +505,21 @@ export function SearchForm() {
             label="Search"
             value={searchText}
             error={searchError}
-            helperText={searchError ? "Only letters, numbers, spaces and @ . _ - are allowed" : undefined}
+            helperText={
+              searchError
+                ? searchText.length > SEARCH_MAX_LENGTH
+                  ? `Maximum ${SEARCH_MAX_LENGTH} characters allowed`
+                  : "Only letters, numbers, spaces and @ . _ - are allowed"
+                : undefined
+            }
+            inputProps={{ maxLength: SEARCH_MAX_LENGTH + 1 }}
             onChange={(e) => {
               const value = e.target.value;
               if (!SEARCH_REGEX.test(value)) {
+                setSearchError(true);
+                return;
+              }
+              if (value.length > SEARCH_MAX_LENGTH) {
                 setSearchError(true);
                 return;
               }
