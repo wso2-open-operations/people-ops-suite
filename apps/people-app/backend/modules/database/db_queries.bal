@@ -592,3 +592,33 @@ isolated function updateUnitQuery(UpdateUnitPayload payload, int unitId) returns
     `;
     return buildOrganizationUnitUpdateQuery(mainQuery, payload, unitId);
 }
+
+# Build query to update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for the business_unit_team mapping
+isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLead is string {
+        filters.push(` head_email = ${payload.functionalLead}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
