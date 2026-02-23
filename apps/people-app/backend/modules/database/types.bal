@@ -203,6 +203,10 @@ public type Pagination record {|
 # Filter payload for getting employees.
 public type EmployeeSearchPayload record {|
     # Search query
+    @constraint:String {
+        maxLength: 100,
+        pattern: re `^[a-zA-Z0-9\s@._-]*$`
+    }
     string? searchString = ();
     # Filters
     Filters filters;
