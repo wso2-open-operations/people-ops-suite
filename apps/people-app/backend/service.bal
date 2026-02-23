@@ -679,6 +679,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
+        if payload.changedName is () && payload.headEmail is () {
+            string customErr = "At least one field should be provided for update";
+            log:printWarn(customErr, updatedBy = payload.updatedBy);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
         error? updateResult = database:updateBusinessUnit(payload, buId);
         if updateResult is error {
             log:printError("Error while updating business unit : ", updateResult);
@@ -710,6 +720,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
+        if payload.changedName is () && payload.headEmail is () {
+            string customErr = "At least one field should be provided for update";
+            log:printWarn(customErr, updatedBy = payload.updatedBy);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
         error? updateResult = database:updateTeam(payload, teamId);
         if updateResult is error {
             log:printError("Error while updating team : ", updateResult, teamId = teamId);
@@ -739,6 +759,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             validateOrganizationPatchRequest(ctx, payload);
         if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validationResult;
+        }
+
+        if payload.changedName is () && payload.headEmail is () {
+            string customErr = "At least one field should be provided for update";
+            log:printWarn(customErr, updatedBy = payload.updatedBy);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
         }
 
         error? updateResult = database:updateSubTeam(payload, subTeamId);
