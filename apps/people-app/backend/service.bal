@@ -909,7 +909,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     }
 
     resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId]
-        (http:RequestContext ctx, updateSubTeamUnitPayload payload)
+        (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
