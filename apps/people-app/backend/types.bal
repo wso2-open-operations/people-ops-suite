@@ -38,7 +38,6 @@ type UnitPayload record {|
 |};
 
 type UnitPayloadN record {|
-    string changedName?;
     string functionalLead?;
     string updatedBy;
 |};
