@@ -802,6 +802,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
+        if payload.changedName is () && payload.headEmail is () {
+            string customErr = "At least one field should be provided for update";
+            log:printWarn(customErr, updatedBy = payload.updatedBy);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
         error? updateResult = database:updateUnit(payload, unitId);
         if updateResult is error {
             log:printError("Error while updating unit : ", updateResult, unitId = unitId);
