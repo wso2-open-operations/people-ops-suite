@@ -536,3 +536,33 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+isolated function updateBusinessUnitQuery(UpdateUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+    UpdateUnitPayload {changedName, headEmail, updatedBy} = payload;
+
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE id = ${buId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if changedName is string {
+        filters.push(` name = ${changedName}`);
+    }
+
+    if headEmail is string {
+        filters.push(` head_email = ${headEmail}`);
+    }
+
+    filters.push(` updated_by = ${updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
