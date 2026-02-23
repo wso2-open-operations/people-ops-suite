@@ -26,7 +26,7 @@ import ballerina/regex;
 # + ctx - Request context
 # + payload - Patch payload
 # + return - `()` when valid, otherwise corresponding http error response
-function validateOrganizationPatchRequest(http:RequestContext ctx, UnitPayload|UnitPayloadN payload)
+function validateOrganizationPatchRequest(http:RequestContext ctx, OrgPatchPayload payload)
     returns http:InternalServerError|http:Forbidden|http:BadRequest? {
 
     authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
