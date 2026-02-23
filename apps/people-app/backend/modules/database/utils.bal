@@ -101,34 +101,6 @@ isolated function escapeLike(string input) returns string {
     return escaped;
 }
 
-# Tokenize the search query string into individual tokens.
-# 
-# + searchString - The search query string to tokenize
-# + return - Array of string tokens
-isolated function tokenizeSearchQuery(string searchString) returns string[] {
-    string[] tokens = [];
-    string normalized = searchString.trim().toLowerAscii();
-    if normalized == "" {
-        return tokens;
-    }
-
-    string[] parts = regexp:split( re `\s+`, normalized);
-
-    foreach string part in parts {
-        string trimmed = part.trim();
-        if trimmed == "" {
-            continue;
-        }
-
-        tokens.push(trimmed);
-        if tokens.length() >= MAX_TOKEN_COUNT {
-            break;
-        }
-    }
-
-    return tokens;
-}
-
 # Build the text token filter for the search query.
 # 
 # + token - The text token to build the filter for

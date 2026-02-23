@@ -224,10 +224,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
     string? searchString = payload.searchString;
 
     if searchString is string {
-        string[] tokens = tokenizeSearchQuery(searchString);
-        foreach string token in tokens {
-            filters.push(buildTextTokenFilter(token));
-        }
+        filters.push(buildTextTokenFilter(searchString));
     }
 
     sql:ParameterizedQuery retrieveEmployeeQuery = buildSqlSelectQuery(baseQuery, filters);
