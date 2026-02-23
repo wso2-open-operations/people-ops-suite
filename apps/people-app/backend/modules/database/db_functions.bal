@@ -44,10 +44,10 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 
 # Fetch employees with filters.
 #
-# + params - Get employees filter payload
+# + payload - Get employees filter payload
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchPayload params) returns EmployeesResponse|error {
-    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(params));
+public isolated function getEmployees(EmployeeSearchPayload payload) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload));
 
     int totalCount = 0;
     Employee[] employees = [];
