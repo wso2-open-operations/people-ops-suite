@@ -141,6 +141,7 @@ const OrgStructureCard = ({
               gap: "16px",
               alignItems: "flex-start",
               mr: 4,
+              width: "100%"
             }}
           >
             {/* Team Head */}
