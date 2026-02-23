@@ -665,14 +665,72 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
-    resource function patch organization/business\-unit/[int buId](http:RequestContext ctx) 
-        returns http:InternalServerError {
-            
-        log:printInfo("Business unit patch function invoked. Employee id : ", buId = buId);
+    resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if payload.updatedBy != workEmail {
+            log:printWarn("API call invoked user and identified users are different");
+            return <http:InternalServerError>{
+                body: {
+                    message: "oops something went wrong ..."
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to create new employees", invokerEmail = workEmail);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to create new employees"
+                }
+            };
+        }
 
         return<http:InternalServerError>{
+        if payload.changedName is () && payload.headEmail is () {
+            string customErr = "At least one field should be provided for update";
+            log:printWarn(customErr, buId = buId);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        error? updateResult = database:updateBusinessUnit(payload, buId);
+        if updateResult is error {
+            log:printError("Error while updating business unit : ", updateResult);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the business unit"
+                }
+            };
+        }
+
+        return <http:Ok>{
             body: {
-                message: "Internal server error"
+                message: "Successfully updated the business unit"
             }
         };
     }
