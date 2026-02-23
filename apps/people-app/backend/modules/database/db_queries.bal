@@ -537,18 +537,71 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     return sql:queryConcat(mainQuery, subQuery);
 }
 
+# Build query to update a business unit.
+#
+# + payload - Fields to update in the business unit
+# + buId - ID of the business unit to update
+# + return - Parameterized UPDATE query for the business unit
 isolated function updateBusinessUnitQuery(UpdateUnitPayload payload, int buId) returns sql:ParameterizedQuery {
-    UpdateUnitPayload {changedName, headEmail, updatedBy} = payload;
-
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit
       SET
     `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, buId);
+}
 
-    sql:ParameterizedQuery subQuery = `
-      WHERE id = ${buId}
+# Build query to update a team.
+#
+# + payload - Fields to update in the team
+# + teamId - ID of the team to update
+# + return - Parameterized UPDATE query for the team
+isolated function updateTeamQuery(UpdateUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        team
+      SET
     `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, teamId);
+}
+
+# Build query to update a sub team.
+#
+# + payload - Fields to update in the sub team
+# + subTeamId - ID of the sub team to update
+# + return - Parameterized UPDATE query for the sub team
+isolated function updateSubTeamQuery(UpdateUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        sub_team
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, subTeamId);
+}
+
+# Build query to update a unit.
+#
+# + payload - Fields to update in the unit
+# + unitId - ID of the unit to update
+# + return - Parameterized UPDATE query for the unit
+isolated function updateUnitQuery(UpdateUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        unit
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, unitId);
+}
+
+# Build a parameterized UPDATE query for an organization hierarchy table.
+#
+# + mainQuery - Base UPDATE query with the target table name
+# + payload - Fields to update (name, head email, updated by)
+# + id - ID of the record to update
+# + return - Complete parameterized UPDATE query with SET clauses and WHERE condition
+isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateUnitPayload payload, int id)
+    returns sql:ParameterizedQuery {
+    UpdateUnitPayload {changedName, headEmail, updatedBy} = payload;
 
     sql:ParameterizedQuery[] filters = [];
 
@@ -562,7 +615,7 @@ isolated function updateBusinessUnitQuery(UpdateUnitPayload payload, int buId) r
 
     filters.push(` updated_by = ${updatedBy}`);
 
-    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+    sql:ParameterizedQuery updatedQuery = buildSqlUpdateQuery(mainQuery, filters);
 
-    return sql:queryConcat(mainQuery, subQuery);
+    return sql:queryConcat(updatedQuery, ` WHERE id = ${id}`);
 }
