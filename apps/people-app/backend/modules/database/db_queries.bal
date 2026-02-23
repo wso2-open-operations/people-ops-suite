@@ -659,7 +659,7 @@ isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int t
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
-isolated function updateSubTeamUnitQuery(updateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
+isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit_team_sub_team_unit
@@ -682,3 +682,23 @@ isolated function updateSubTeamUnitQuery(updateSubTeamUnitPayload payload, int s
 
     return sql:queryConcat(mainQuery, subQuery);
 }
+
+# Build query to soft delete a business unit.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + buId - ID of the business unit to delete
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitQuery(DeleteBusinessUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit
+      SET
+        is_active = 0,
+        updated_by = ${payload.updatedBy},
+        updated_on = current_timestamp
+      WHERE 
+        business_unit_id = ${buId}
+    `;
+
+    return query;
+};
