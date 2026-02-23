@@ -25,7 +25,7 @@ import ballerina/sql;
 isolated function addFoodWasteRecordQuery(AddFoodWasteRecordPayload payload, string createdBy)
     returns sql:ParameterizedQuery =>
 `
-    INSERT INTO sample_schema.food_waste_records
+    INSERT INTO dashboard_app_db.food_waste_records
         (record_date, meal_type, total_waste_kg, plate_count, created_by, updated_by)
     VALUES
         (${payload.recordDate}, ${payload.mealType.toString()}, ${payload.totalWasteKg},
@@ -48,7 +48,7 @@ isolated function getFoodWasteRecordByIdQuery(int id) returns sql:ParameterizedQ
         created_by           AS createdBy,
         updated_on           AS updatedOn,
         updated_by           AS updatedBy
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE food_waste_record_id = ${id}
 `;
 
@@ -68,7 +68,7 @@ isolated function getFoodWasteRecordsByDateQuery(string recordDate) returns sql:
         created_by           AS createdBy,
         updated_on           AS updatedOn,
         updated_by           AS updatedBy
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE record_date = ${recordDate}
 `;
 
@@ -90,7 +90,7 @@ isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters) retur
         updated_on           AS updatedOn,
         updated_by           AS updatedBy,
         COUNT(*) OVER ()     AS totalCount
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE 1=1
 `;
     if filters.startDate is string {
@@ -103,7 +103,7 @@ isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters) retur
         baseQuery = sql:queryConcat(baseQuery, ` AND meal_type = ${filters.mealType}`);
     }
     return sql:queryConcat(baseQuery,
-        ` ORDER BY record_date DESC LIMIT ${filters.'limit} OFFSET ${filters.offset}`);
+            ` ORDER BY record_date DESC LIMIT ${filters.'limit} OFFSET ${filters.offset}`);
 }
 
 # Build query to update a food waste record.
@@ -114,7 +114,7 @@ isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters) retur
 # + return - Parameterized update query
 isolated function updateFoodWasteRecordQuery(int id, UpdateFoodWasteRecordPayload payload, string updatedBy)
     returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery baseQuery = `UPDATE sample_schema.food_waste_records SET updated_by = ${updatedBy}`;
+    sql:ParameterizedQuery baseQuery = `UPDATE dashboard_app_db.food_waste_records SET updated_by = ${updatedBy}`;
     if payload.totalWasteKg is decimal {
         baseQuery = sql:queryConcat(baseQuery, `, total_waste_kg = ${payload.totalWasteKg}`);
     }
@@ -129,7 +129,7 @@ isolated function updateFoodWasteRecordQuery(int id, UpdateFoodWasteRecordPayloa
 # + id - Food waste record id
 # + return - Parameterized delete query
 isolated function deleteFoodWasteRecordQuery(int id) returns sql:ParameterizedQuery =>
-    `DELETE FROM sample_schema.food_waste_records WHERE food_waste_record_id = ${id}`;
+    `DELETE FROM dashboard_app_db.food_waste_records WHERE food_waste_record_id = ${id}`;
 
 // --- Advertisement Queries ---
 
@@ -141,7 +141,7 @@ isolated function deleteFoodWasteRecordQuery(int id) returns sql:ParameterizedQu
 isolated function addAdvertisementQuery(CreateAdvertisementPayload payload, string createdBy)
     returns sql:ParameterizedQuery =>
 `
-    INSERT INTO sample_schema.advertisements
+    INSERT INTO dashboard_app_db.advertisements
         (media_url, media_type, duration_seconds, thumbnail_url, created_by, updated_by)
     VALUES
         (${payload.mediaUrl}, ${payload.mediaType.toString()}, ${payload.durationSeconds},
@@ -165,7 +165,7 @@ isolated function getAdvertisementsQuery() returns sql:ParameterizedQuery =>
         created_on       AS createdOn,
         created_by       AS createdBy,
         updated_on       AS updatedOn
-    FROM  sample_schema.advertisements
+    FROM  dashboard_app_db.advertisements
     ORDER BY display_order ASC
 `;
 
@@ -186,7 +186,7 @@ isolated function getActiveAdvertisementQuery() returns sql:ParameterizedQuery =
         created_on       AS createdOn,
         created_by       AS createdBy,
         updated_on       AS updatedOn
-    FROM  sample_schema.advertisements
+    FROM  dashboard_app_db.advertisements
     WHERE is_active = TRUE
     LIMIT 1
 `;
@@ -209,7 +209,7 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
         created_on       AS createdOn,
         created_by       AS createdBy,
         updated_on       AS updatedOn
-    FROM  sample_schema.advertisements
+    FROM  dashboard_app_db.advertisements
     WHERE advertisement_id = ${id}
 `;
 
@@ -218,14 +218,14 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
 # + id - Advertisement id
 # + return - Parameterized update query
 isolated function activateAdvertisementQuery(int id) returns sql:ParameterizedQuery =>
-    `UPDATE sample_schema.advertisements SET is_active = TRUE WHERE advertisement_id = ${id}`;
+    `UPDATE dashboard_app_db.advertisements SET is_active = TRUE WHERE advertisement_id = ${id}`;
 
 # Build query to delete an advertisement.
 #
 # + id - Advertisement id
 # + return - Parameterized delete query
 isolated function deleteAdvertisementQuery(int id) returns sql:ParameterizedQuery =>
-    `DELETE FROM sample_schema.advertisements WHERE advertisement_id = ${id}`;
+    `DELETE FROM dashboard_app_db.advertisements WHERE advertisement_id = ${id}`;
 
 // --- Analytics Queries ---
 
@@ -239,7 +239,7 @@ isolated function getWeeklyTrendQuery(string startDate) returns sql:Parameterize
         record_date AS date,
         SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) AS breakfastWaste,
         SUM(CASE WHEN meal_type = 'LUNCH'     THEN total_waste_kg ELSE 0 END) AS lunchWaste
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE record_date >= ${startDate}
     GROUP BY record_date
     ORDER BY record_date ASC
@@ -256,7 +256,7 @@ isolated function getMonthlyTrendQuery(string startMonth, string endMonth) retur
         DATE_FORMAT(record_date, '%Y-%m') AS month,
         SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) AS breakfastWaste,
         SUM(CASE WHEN meal_type = 'LUNCH'     THEN total_waste_kg ELSE 0 END) AS lunchWaste
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE DATE_FORMAT(record_date, '%Y-%m') BETWEEN ${startMonth} AND ${endMonth}
     GROUP BY DATE_FORMAT(record_date, '%Y-%m')
     ORDER BY month ASC
@@ -273,7 +273,7 @@ isolated function getDateRangeSummaryStatsQuery(string startDate, string endDate
     SELECT
         COALESCE(SUM(total_waste_kg), 0) AS totalWasteKg,
         COALESCE(SUM(plate_count), 0)    AS totalPlates
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE record_date BETWEEN ${startDate} AND ${endDate}
 `;
 
@@ -288,7 +288,7 @@ isolated function getHighestWasteDayQuery(string startDate, string endDate)
     SELECT
         record_date         AS recordDate,
         SUM(total_waste_kg) AS dailyTotal
-    FROM  sample_schema.food_waste_records
+    FROM  dashboard_app_db.food_waste_records
     WHERE record_date BETWEEN ${startDate} AND ${endDate}
     GROUP BY record_date
     ORDER BY dailyTotal DESC
