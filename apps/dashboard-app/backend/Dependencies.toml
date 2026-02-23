@@ -40,9 +40,6 @@ version = "1.5.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
 ]
-modules = [
-	{org = "ballerina", packageName = "constraint", moduleName = "constraint"}
-]
 
 [[package]]
 org = "ballerina"
@@ -399,21 +396,6 @@ modules = [
 
 [[package]]
 org = "ballerinax"
-name = "java.jdbc"
-version = "1.12.1"
-dependencies = [
-	{org = "ballerina", name = "io"},
-	{org = "ballerina", name = "jballerina.java"},
-	{org = "ballerina", name = "lang.string"},
-	{org = "ballerina", name = "sql"},
-	{org = "ballerina", name = "time"}
-]
-modules = [
-	{org = "ballerinax", packageName = "java.jdbc", moduleName = "java.jdbc"}
-]
-
-[[package]]
-org = "ballerinax"
 name = "mysql"
 version = "1.13.1"
 dependencies = [
@@ -441,7 +423,6 @@ name = "dashboard_app_backend"
 version = "1.0.0"
 dependencies = [
 	{org = "ballerina", name = "cache"},
-	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "graphql"},
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "jwt"},
@@ -450,7 +431,6 @@ dependencies = [
 	{org = "ballerina", name = "test"},
 	{org = "ballerina", name = "time"},
 	{org = "ballerinai", name = "observe"},
-	{org = "ballerinax", name = "java.jdbc"},
 	{org = "ballerinax", name = "mysql"},
 	{org = "ballerinax", name = "mysql.driver"}
 ]
@@ -458,6 +438,7 @@ modules = [
 	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend"},
 	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend.authorization"},
 	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend.database"},
-	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend.entity"}
+	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend.entity"},
+	{org = "wso2", packageName = "dashboard_app_backend", moduleName = "dashboard_app_backend.operation"}
 ]
 
