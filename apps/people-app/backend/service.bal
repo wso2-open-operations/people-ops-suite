@@ -91,8 +91,11 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        int[] privileges = [authorization:ADMIN_PRIVILEGE, authorization:EMPLOYEE_PRIVILEGE];
+
         // TODO: Fetch privileges and return along with the basic info
-        return {...employeeBasicInfo, privileges: []};
+        return {...employeeBasicInfo, privileges};
     }
 
     # Fetch employee detailed information.
@@ -984,24 +987,129 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx) returns http:Ok {
+    # Delete a team-sub team mapping by IDs.
+    #
+    # + teamId - ID of the team
+    # + subTeamId - ID of the sub team
+    # + payload - Fields for the deletion (updatedBy)
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId]
+        (http:RequestContext ctx, DeleteTeamSubTeamPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization team subteam delete endpoint invoked ", teamId = teamId, subTeamId = subTeamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean deleteResult = database:deleteTeamSubTeam(payload, teamId, subTeamId);
+        if deleteResult is error {
+            log:printError("Error while deleting team_sub_team : ", deleteResult, teamId = teamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while deleting the team sub team mapping"
+                }
+            };
+        }
+
+        if deleteResult == false {
+            log:printError(string `No team sub team mapping found with teamId ${teamId} and subTeamId ${subTeamId}`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No team sub team mapping found to delete"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully deleted the team sub team mapping"
+            }
+        };
     }
 
-    resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId](http:RequestContext ctx) returns http:Ok {
+    # Delete a sub team-unit mapping by IDs.
+    #
+    # + subTeamId - ID of the sub team
+    # + unitId - ID of the unit
+    # + payload - Fields for the deletion (updatedBy)
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId]
+        (http:RequestContext ctx, DeleteSubTeamUnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization team subteam delete endpoint invoked ", subTeamId = subTeamId, unitId = unitId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean deleteResult = database:deleteSubTeamUnit(payload, subTeamId, unitId);
+        if deleteResult is error {
+            log:printError("Error while deleting sub_team_unit : ", deleteResult, subTeamId = subTeamId, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while deleting the sub team unit mapping"
+                }
+            };
+        }
+
+        if deleteResult == false {
+            log:printError(string `No sub team unit mapping found with subTeamId ${subTeamId} and unitId ${unitId}`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No sub team unit mapping found to delete"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully deleted the sub team unit mapping"
+            }
+        };
     }
 
-    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId](http:RequestContext ctx) returns http:Ok {
+    # Delete a business unit-team mapping by IDs.
+    #
+    # + businessUnitId - ID of the business unit
+    # + teamId - ID of the team
+    # + payload - Fields for the deletion (updatedBy)
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
+        (http:RequestContext ctx, DeleteBusinessUnitTeamPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization team subteam delete endpoint invoked ", businessUnitId = businessUnitId, teamId = teamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean deleteResult = database:deleteBusinessUnitTeam(payload, businessUnitId, teamId);
+        if deleteResult is error {
+            log:printError("Error while deleting business_unit_team : ", deleteResult, buId = businessUnitId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while deleting the business unit team mapping"
+                }
+            };
+        }
+
+        if deleteResult == false {
+            log:printError(string `No business unit team mapping found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No team mapping found to delete"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully deleted the team"
+            }
+        };
     }
 }
