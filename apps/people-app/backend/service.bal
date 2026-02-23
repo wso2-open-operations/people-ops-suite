@@ -819,11 +819,47 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function patch organization/business\-unit/[int buId]/team/[int teamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
+    # Update the functional lead of a business unit-team mapping.
+    #
+    # + buId - ID of the business unit
+    # + teamId - ID of the team
+    # + payload - Fields to update in the mapping
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function patch organization/business\-unit/[int buId]/team/[int teamId]
+        (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload) 
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        log:printInfo("Organization business-unit-team patch invoked, ", buId = buId, teamId = teamId);
+        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
+            validateOrganizationPatchRequest(ctx, payload);
+        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validationResult;
+        }
 
-        return http:OK;
+        error|boolean updateResult = database:updateBusinessUnitTeam(payload, buId, teamId);
+        if updateResult is error {
+            log:printError("Error while updating business_unit_team : ", updateResult, buId = buId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the unit"
+                }
+            };
+        }
+
+        if updateResult == false {
+            log:printError(string `No team is found with businessUnitId ${buId} and teamId = ${teamId} to update!`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No team found to update" 
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully updated the team"
+            }
+        };
+
     }
 
     resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayloadN payload) returns http:Ok {
