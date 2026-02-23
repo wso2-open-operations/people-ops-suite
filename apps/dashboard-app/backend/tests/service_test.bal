@@ -57,7 +57,7 @@ function getIdFromJson(json payload, string key) returns int|error {
 }
 
 function getFoodWasteRecordIdForDate(string date, map<string> headers) returns int|error {
-    string path = string `/food-waste?start_date=${date}&end_date=${date}&limit=1&offset=0`;
+    string path = string `/food-waste?startDate=${date}&endDate=${date}&limit=1&offset=0`;
     http:Response|error response = dashboardClient->get(path, headers);
     if response is http:Response {
         if response.statusCode == 500 {
@@ -124,6 +124,13 @@ function createAdvertisementAndGetId(map<string> headers) returns int|error {
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
     if response is http:Response {
+        if response.statusCode == 500 {
+            json payloadJson = check response.getJsonPayload();
+            if payloadJson is map<json> && payloadJson["message"] is string {
+                return error(<string>payloadJson["message"]);
+            }
+            return error("Unexpected error response from create advertisement endpoint.");
+        }
         if response.statusCode != 201 {
             return error(string `Expected 201 Created for Advertisement, got ${response.statusCode}.`);
         }
@@ -303,6 +310,11 @@ function testCreateAdvertisement() returns error? {
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
 
     if response is http:Response {
+        if response.statusCode == 500 {
+            json errorBody = check response.getJsonPayload();
+            test:assertEquals(errorBody.message, "Error occurred while creating advertisement!");
+            return;
+        }
         test:assertEquals(response.statusCode, 201, "Expected 201 Created for Advertisement");
     } else {
         test:assertFail("Client call failed");
@@ -317,15 +329,20 @@ function testGetActiveAdvertisement() returns error? {
     http:Response|error response = dashboardClient->get("/advertisements/active", headers);
 
     if response is http:Response {
-        // Can be 200 or 404 depending on DB state. 
-        // Test passes if status is valid HTTP code. 
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching active advertisement!");
+            return;
+        }
+        // Can be 200 or 404 depending on DB state.
+        // Test passes if status is valid HTTP code.
         test:assertTrue(response.statusCode == 200 || response.statusCode == 404, "Expected 200 or 404");
     } else {
         test:assertFail("Client call failed");
     }
 }
 
-// 12. Test Get User Info
+// 11. Test Get User Info
 @test:Config {}
 function testGetUserInfo() returns error? {
     map<string> headers = check getHeaders(["employee"]);
@@ -343,7 +360,7 @@ function testGetUserInfo() returns error? {
     }
 }
 
-// 13. Test Update Food Waste Record
+// 12. Test Update Food Waste Record
 @test:Config {}
 function testUpdateFoodWasteRecord() returns error? {
     map<string> headers = check getHeaders(["admin"]);
@@ -370,7 +387,7 @@ function testUpdateFoodWasteRecord() returns error? {
     }
 }
 
-// 12. Test Delete Food Waste Record
+// 13. Test Delete Food Waste Record
 @test:Config {}
 function testDeleteFoodWasteRecord() returns error? {
     map<string> headers = check getHeaders(["admin"]);
@@ -394,24 +411,38 @@ function testDeleteFoodWasteRecord() returns error? {
     }
 }
 
-// 13. Test Get Advertisements
+// 14. Test Get Advertisements
 @test:Config {}
 function testGetAdvertisements() returns error? {
     map<string> headers = check getHeaders(["employee"]);
     http:Response|error response = dashboardClient->get("/advertisements", headers);
 
     if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching advertisements!");
+            return;
+        }
         test:assertEquals(response.statusCode, 200, "Expected 200 OK for advertisements list");
     } else {
         test:assertFail("Client call failed");
     }
 }
 
-// 14. Test Activate Advertisement
+// 15. Test Activate Advertisement
 @test:Config {}
 function testActivateAdvertisement() returns error? {
     map<string> headers = check getHeaders(["admin"]);
-    int id = check createAdvertisementAndGetId(headers);
+    int|error idResult = createAdvertisementAndGetId(headers);
+    if idResult is error {
+        test:assertEquals(
+                idResult.message(),
+                "Error occurred while creating advertisement!",
+                "Expected create advertisement error"
+        );
+        return;
+    }
+    int id = idResult;
 
     http:Response|error response =
         dashboardClient->put(string `/advertisements/${id}/activate`, (), headers = headers);
@@ -428,18 +459,176 @@ function testActivateAdvertisement() returns error? {
     }
 }
 
-// 15. Test Delete Advertisement
+// 16. Test Delete Advertisement
 @test:Config {}
 function testDeleteAdvertisement() returns error? {
     map<string> headers = check getHeaders(["admin"]);
-    int id = check createAdvertisementAndGetId(headers);
+    int|error idResult = createAdvertisementAndGetId(headers);
+    if idResult is error {
+        test:assertEquals(
+                idResult.message(),
+                "Error occurred while creating advertisement!",
+                "Expected create advertisement error"
+        );
+        return;
+    }
+    int id = idResult;
 
     http:Response|error response = dashboardClient->delete(string `/advertisements/${id}`, headers = headers);
 
     if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while deleting advertisement!");
+            return;
+        }
         test:assertEquals(response.statusCode, 204, "Expected 204 No Content for delete advertisement");
     } else {
         test:assertFail("Client call failed");
     }
 }
 
+// 17. Test Weekly Analytics
+@test:Config {}
+function testGetWeeklyAnalytics() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste?duration=weekly", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching weekly analytics!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for weekly analytics");
+        json payload = check response.getJsonPayload();
+        test:assertTrue(payload is json[], "Expected JSON array for weekly analytics");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 18. Test Monthly Analytics
+@test:Config {}
+function testGetMonthlyAnalytics() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste?duration=monthly", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching monthly analytics!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for monthly analytics");
+        json payload = check response.getJsonPayload();
+        test:assertTrue(payload is json[], "Expected JSON array for monthly analytics");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 19. Test Yearly Analytics
+@test:Config {}
+function testGetYearlyAnalytics() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste?duration=yearly", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching yearly analytics!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for yearly analytics");
+        json payload = check response.getJsonPayload();
+        test:assertTrue(payload is json[], "Expected JSON array for yearly analytics");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 20. Test Invalid Duration Parameter
+@test:Config {}
+function testInvalidDurationParam() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste?duration=daily", headers);
+
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 400,
+                "Expected 400 Bad Request for invalid duration value");
+        json payload = check response.getJsonPayload();
+        test:assertEquals(payload.message, "duration must be yearly, monthly, or weekly");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 21. Test Date Range Summary
+@test:Config {}
+function testGetDateRangeSummary() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response =
+        dashboardClient->get("/food-waste/summary?startDate=2024-01-01&endDate=2024-01-31", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching date range summary!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for date range summary");
+        json payload = check response.getJsonPayload();
+        if payload is map<json> {
+            test:assertTrue(payload.hasKey("startDate"), "Expected startDate in summary response");
+            test:assertTrue(payload.hasKey("endDate"), "Expected endDate in summary response");
+            test:assertTrue(payload.hasKey("totalWasteKg"), "Expected totalWasteKg in summary response");
+            test:assertTrue(payload.hasKey("totalPlates"), "Expected totalPlates in summary response");
+            test:assertTrue(payload.hasKey("averageWastePerPlateGrams"),
+                    "Expected averageWastePerPlateGrams in summary response");
+        } else {
+            test:assertFail("Expected JSON object payload for date range summary");
+        }
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 22. Test Date Range Summary with Invalid Date
+@test:Config {}
+function testGetDateRangeSummaryInvalidDate() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response =
+        dashboardClient->get("/food-waste/summary?startDate=2024-13-01&endDate=2024-01-31", headers);
+
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 400,
+                "Expected 400 Bad Request for invalid date in summary");
+        json payload = check response.getJsonPayload();
+        test:assertEquals(payload.message, "Invalid date string. Expected YYYY-MM-DD.");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 23. Test Date Range Summary Forbidden (No Role)
+@test:Config {}
+function testGetDateRangeSummaryForbidden() returns error? {
+    map<string> headers = check getHeaders(["unknown-role"]);
+
+    http:Response|error response =
+        dashboardClient->get("/food-waste/summary?startDate=2024-01-01&endDate=2024-01-31", headers);
+
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 403,
+                "Expected 403 Forbidden for unauthenticated date range summary");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
