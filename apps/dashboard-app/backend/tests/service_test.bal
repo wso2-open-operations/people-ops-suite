@@ -57,7 +57,7 @@ function getIdFromJson(json payload, string key) returns int|error {
 }
 
 function getFoodWasteRecordIdForDate(string date, map<string> headers) returns int|error {
-    string path = string `/food-waste?start_date=${date}&end_date=${date}&page=1&pageSize=1`;
+    string path = string `/food-waste?start_date=${date}&end_date=${date}&limit=1&offset=0`;
     http:Response|error response = dashboardClient->get(path, headers);
     if response is http:Response {
         if response.statusCode == 500 {
@@ -86,11 +86,11 @@ function getFoodWasteRecordIdForDate(string date, map<string> headers) returns i
 }
 
 function createFoodWasteRecordAndGetId(string date, map<string> headers) returns int|error {
-    database:AddFoodWasteRecordPayload payload = {
-        record_date: date,
-        meal_type: database:BREAKFAST,
-        total_waste_kg: 5.5,
-        plate_count: 50
+    AddFoodWasteRecordPayload payload = {
+        recordDate: date,
+        mealType: database:BREAKFAST,
+        totalWasteKg: 5.5,
+        plateCount: 50
     };
 
     http:Response|error response = dashboardClient->post("/food-waste", payload, headers);
@@ -115,11 +115,11 @@ function createFoodWasteRecordAndGetId(string date, map<string> headers) returns
 }
 
 function createAdvertisementAndGetId(map<string> headers) returns int|error {
-    database:CreateAdvertisementPayload payload = {
-        media_url: "http://example.com/ad.mp4",
-        media_type: database:VIDEO_MP4,
-        duration_seconds: 15,
-        thumbnail_url: "http://example.com/thumb.jpg"
+    CreateAdvertisementPayload payload = {
+        mediaUrl: "http://example.com/ad.mp4",
+        mediaType: database:VIDEO_MP4,
+        durationSeconds: 15,
+        thumbnailUrl: "http://example.com/thumb.jpg"
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
@@ -162,11 +162,11 @@ function testForbiddenAccess() returns error? {
 function testCreateFoodWasteRecord() returns error? {
     map<string> headers = check getHeaders(["admin"]); // Matches Config.toml ADMIN_PRIVILEGE
 
-    database:AddFoodWasteRecordPayload payload = {
-        record_date: "2024-01-01",
-        meal_type: database:BREAKFAST,
-        total_waste_kg: 5.5,
-        plate_count: 50
+    AddFoodWasteRecordPayload payload = {
+        recordDate: "2024-01-01",
+        mealType: database:BREAKFAST,
+        totalWasteKg: 5.5,
+        plateCount: 50
     };
 
     http:Response|error response = dashboardClient->post("/food-waste", payload, headers);
@@ -229,7 +229,7 @@ function testInvalidDate() returns error? {
 function testGetFoodWasteRecordsValidation() returns error? {
     map<string> headers = check getHeaders(["employee"]);
 
-    http:Response|error response = dashboardClient->get("/food-waste?meal_type=DINNER", headers);
+    http:Response|error response = dashboardClient->get("/food-waste?mealType=DINNER", headers);
 
     if response is http:Response {
         test:assertEquals(response.statusCode, 400, "Expected 400 Bad Request for invalid meal type");
@@ -238,18 +238,66 @@ function testGetFoodWasteRecordsValidation() returns error? {
     }
 }
 
+// 7. Test Get Food Waste Records (All Query Params Optional)
+@test:Config {}
+function testGetFoodWasteRecordsWithoutParams() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while listing food waste records!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for /food-waste without query params");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 8. Test Get Latest Food Waste Record
+@test:Config {}
+function testGetLatestFoodWasteRecord() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste?latest=true", headers);
+
+    if response is http:Response {
+        if response.statusCode == 500 {
+            json payload = check response.getJsonPayload();
+            test:assertEquals(payload.message, "Error occurred while fetching latest food waste KPI!");
+            return;
+        }
+        test:assertEquals(response.statusCode, 200, "Expected 200 OK for latest food waste KPI");
+        json payload = check response.getJsonPayload();
+        if payload is map<json> {
+            test:assertTrue(payload.hasKey("date"), "Expected date in KPI response");
+            test:assertTrue(payload.hasKey("totalDailyWasteKg"), "Expected totalDailyWasteKg in KPI response");
+            test:assertTrue(payload.hasKey("totalDailyPlates"), "Expected totalDailyPlates in KPI response");
+            test:assertTrue(payload.hasKey("averageWastePerPlateGrams"),
+                    "Expected averageWastePerPlateGrams in KPI response");
+        } else {
+            test:assertFail("Expected JSON object payload for KPI response");
+        }
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
 // --- New Tests for Expansion ---
 
-// 7. Test Create Advertisement
+// 9. Test Create Advertisement
 @test:Config {}
 function testCreateAdvertisement() returns error? {
     map<string> headers = check getHeaders(["admin"]);
 
-    database:CreateAdvertisementPayload payload = {
-        media_url: "http://example.com/ad.mp4",
-        media_type: database:VIDEO_MP4,
-        duration_seconds: 15,
-        thumbnail_url: "http://example.com/thumb.jpg"
+    CreateAdvertisementPayload payload = {
+        mediaUrl: "http://example.com/ad.mp4",
+        mediaType: database:VIDEO_MP4,
+        durationSeconds: 15,
+        thumbnailUrl: "http://example.com/thumb.jpg"
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
@@ -261,7 +309,7 @@ function testCreateAdvertisement() returns error? {
     }
 }
 
-// 8. Test Get Active Advertisement (Initially none or one if created/active)
+// 10. Test Get Active Advertisement (Initially none or one if created/active)
 @test:Config {}
 function testGetActiveAdvertisement() returns error? {
     map<string> headers = check getHeaders(["employee"]);
@@ -277,26 +325,7 @@ function testGetActiveAdvertisement() returns error? {
     }
 }
 
-// 9. Test Analytics Today
-@test:Config {}
-function testGetAnalyticsToday() returns error? {
-    map<string> headers = check getHeaders(["employee"]);
-
-    http:Response|error response = dashboardClient->get("/analytics/today", headers);
-
-    if response is http:Response {
-        if response.statusCode == 500 {
-            json payload = check response.getJsonPayload();
-            test:assertEquals(payload.message, "Error occurred while fetching today's KPIs!");
-            return;
-        }
-        test:assertEquals(response.statusCode, 200, "Expected 200 OK for Analytics Today");
-    } else {
-        test:assertFail("Client call failed");
-    }
-}
-
-// 10. Test Get User Info
+// 12. Test Get User Info
 @test:Config {}
 function testGetUserInfo() returns error? {
     map<string> headers = check getHeaders(["employee"]);
@@ -314,22 +343,22 @@ function testGetUserInfo() returns error? {
     }
 }
 
-// 11. Test Update Food Waste Record
+// 13. Test Update Food Waste Record
 @test:Config {}
 function testUpdateFoodWasteRecord() returns error? {
     map<string> headers = check getHeaders(["admin"]);
     int|error idResult = createFoodWasteRecordAndGetId("2024-01-02", headers);
     if idResult is error {
         test:assertEquals(
-            idResult.message(),
-            "Error occurred while creating food waste record!",
-            "Expected create endpoint error"
+                idResult.message(),
+                "Error occurred while creating food waste record!",
+                "Expected create endpoint error"
         );
         return;
     }
     int id = idResult;
-    database:UpdateFoodWasteRecordPayload payload = {
-        total_waste_kg: 6.5
+    UpdateFoodWasteRecordPayload payload = {
+        totalWasteKg: 6.5
     };
 
     http:Response|error response = dashboardClient->put(string `/food-waste/${id}`, payload, headers);
@@ -348,9 +377,9 @@ function testDeleteFoodWasteRecord() returns error? {
     int|error idResult = createFoodWasteRecordAndGetId("2024-01-03", headers);
     if idResult is error {
         test:assertEquals(
-            idResult.message(),
-            "Error occurred while creating food waste record!",
-            "Expected create endpoint error"
+                idResult.message(),
+                "Error occurred while creating food waste record!",
+                "Expected create endpoint error"
         );
         return;
     }
@@ -414,23 +443,3 @@ function testDeleteAdvertisement() returns error? {
     }
 }
 
-// 16. Test Reports Export
-@test:Config {}
-function testReportsExport() returns error? {
-    map<string> headers = check getHeaders(["admin"]);
-    string path = "/reports/export?start_date=2024-01-01&end_date=2024-01-03&format=csv";
-    http:Response|error response = dashboardClient->get(path, headers);
-
-    if response is http:Response {
-        if response.statusCode == 500 {
-            json payload = check response.getJsonPayload();
-            test:assertEquals(payload.message, "Error occurred while fetching data for export!");
-            return;
-        }
-        test:assertEquals(response.statusCode, 200, "Expected 200 OK for reports export");
-        string payload = check response.getTextPayload();
-        test:assertTrue(payload.startsWith("record_date,meal_type"), "Expected CSV header in response");
-    } else {
-        test:assertFail("Client call failed");
-    }
-}
