@@ -199,12 +199,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
     appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
 
     if payload.filters.managerEmail is string {
-        string escaped = escapeLike(payload.filters.managerEmail ?: "");
-        filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
+        filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
     }
     if payload.filters.location is string {
-        string escaped = escapeLike(payload.filters.location ?: "");
-        filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${escaped}, '%'))`);
+        filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${payload.filters.location}, '%'))`);
     }
 
     if payload.filters.nicOrPassport is int|string {

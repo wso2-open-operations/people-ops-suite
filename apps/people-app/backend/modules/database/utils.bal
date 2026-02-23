@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 import ballerina/sql;
-import ballerina/lang.regexp;
 
 # Build the database select query with dynamic filter attributes.
 #
@@ -86,28 +85,12 @@ isolated function appendIntFilter(sql:ParameterizedQuery[] filters, int? value, 
     }
 }
 
-# Escape special characters in the input string for SQL LIKE queries.
-# 
-# + input - The input string to escape
-# + return - The escaped string
-isolated function escapeLike(string input) returns string {
-    string escaped = input;
-
-    // Escape backslash
-    escaped = regexp:replaceAll(re `\\`, escaped, "\\\\");
-    // Escape SQL LIKE wildcards
-    escaped = regexp:replaceAll(re `%`, escaped, "\\%");
-    escaped = regexp:replaceAll(re `_`, escaped, "\\_");
-    return escaped;
-}
-
 # Build the text token filter for the search query.
 # 
 # + token - The text token to build the filter for
 # + return - sql:ParameterizedQuery representing the text token filter
 isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQuery {
-    string escapedToken = escapeLike(token);
-    string likeValue = "%" + escapedToken + "%";
+    string likeValue = "%" + token + "%";
 
     return `
         (
