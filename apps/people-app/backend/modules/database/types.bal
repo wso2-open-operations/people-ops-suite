@@ -516,9 +516,31 @@ public type UpdateUnitPayload record {|
     string updatedBy;
 |};
 
-public type UpdateMappingUnitPayload record {|
+public type UpdateBusinessUnitTeamPayload record {|
     @sql:Column {
-        name: "functional_lead "
+        name: "head_email"
+    }
+    string functionalLead?;
+    @sql:Column {
+        name: "updated_by"
+    }
+    string updatedBy;
+|};
+
+public type UpdateTeamSubTeamPayload record {|
+    @sql:Column {
+        name: "head_email"
+    }
+    string functionalLead?;
+    @sql:Column {
+        name: "updated_by"
+    }
+    string updatedBy;
+|};
+
+public type updateSubTeamUnitPayload record {|
+    @sql:Column {
+        name: "head_email"
     }
     string functionalLead?;
     @sql:Column {
