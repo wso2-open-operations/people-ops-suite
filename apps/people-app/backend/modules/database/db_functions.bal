@@ -304,9 +304,22 @@ public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - Nil on success, error if the update fails
-public isolated function updateSubTeamUnit(updateSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
+public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
     sql:ExecutionResult executionResults = check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
     if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a business unit.
+#
+# + payload - Fields for the deletion (updatedBy)
+# + buId - ID of the business unit to delete
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnit(DeleteBusinessUnitPayload payload, int buId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitQuery(payload, buId));
+    if executionResult.affectedRowCount > 0 {
         return true;
     }
     return false;
