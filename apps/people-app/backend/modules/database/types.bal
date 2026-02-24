@@ -24,8 +24,8 @@ public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z
 # Phone number validation regex pattern
 const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
 
-# Date validation regex pattern (YYYY-MM-DD format)
-const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
+# Date validation regex pattern (YYYY-MM-DD format), e.g. for parking booking_date.
+public const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
 
 # URL validation regex pattern
 const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
@@ -529,34 +529,12 @@ public type ParkingSlot record {|
     string slotId;
     # Floor identifier
     int floorId;
-    # Timestamp when created
-    string createdOn;
-    # Person who created the parking slot record
-    string createdBy;
-    # Timestamp when updated
-    string updatedOn;
-    # Person who updated the parking slot record
-    string updatedBy;
-|};
-
-# [Database] Parking slot with floor details and O2C price (for API).
-public type ParkingSlotWithFloor record {|
-    # Slot identifier 
-    string slotId;
-    # Floor identifier
-    int floorId;
-    # Floor name 
+    # Floor name
     string floorName;
     # Number of coins per slot
     decimal coinsPerSlot;
-    # Timestamp when created
-    string createdOn;
-    # Person who created the parking slot record
-    string createdBy;
-    # Timestamp when updated
-    string updatedOn;
-    # Person who updated the parking slot record
-    string updatedBy;
+    # Availability status for the given date
+    boolean isBooked;
 |};
 
 # [Database] Parking reservation.
