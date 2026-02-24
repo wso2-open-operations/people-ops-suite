@@ -138,18 +138,12 @@ public isolated function getFullOrganizationStructure() returns OrgStructureBusi
     stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream =
         databaseClient->query(getFullOrganizationStructureQuery());
 
-    OrgStructureBusinessUnit[] businessUnits = [];
-    _ = check from OrgStructureBusinessUnitRow row in orgStructureStream
-        do {
-            OrgStructureBusinessUnit businessUnit = {
-                id: row.id,
-                name: row.name,
-                teams: check row.teams.fromJsonWithType()
-            };
-            businessUnits.push(businessUnit);
+    return from OrgStructureBusinessUnitRow row in orgStructureStream
+        select {
+            id: row.id,
+            name: row.name,
+            teams: check row.teams.fromJsonWithType()
         };
-
-    return businessUnits;
 }
 
 # Get career functions.
