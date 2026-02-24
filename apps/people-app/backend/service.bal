@@ -682,7 +682,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
-        if payload.changedName is () && payload.headEmail is () {
+        if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
             log:printWarn(customErr, updatedBy = payload.updatedBy);
             return <http:BadRequest>{
@@ -744,7 +744,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
-        if payload.changedName is () && payload.headEmail is () {
+        if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
             log:printWarn(customErr, updatedBy = payload.updatedBy);
             return <http:BadRequest>{
@@ -785,7 +785,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
-        if payload.changedName is () && payload.headEmail is () {
+        if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
             log:printWarn(customErr, updatedBy = payload.updatedBy);
             return <http:BadRequest>{
@@ -826,7 +826,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validationResult;
         }
 
-        if payload.changedName is () && payload.headEmail is () {
+        if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
             log:printWarn(customErr, updatedBy = payload.updatedBy);
             return <http:BadRequest>{
@@ -1015,7 +1015,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId]
-        (http:RequestContext ctx, DeleteTeamSubTeamPayload payload)
+            (http:RequestContext ctx, DeleteTeamSubTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
@@ -1057,7 +1057,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId]
-        (http:RequestContext ctx, DeleteSubTeamUnitPayload payload)
+            (http:RequestContext ctx, DeleteSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
@@ -1099,7 +1099,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
-        (http:RequestContext ctx, DeleteBusinessUnitTeamPayload payload)
+            (http:RequestContext ctx, DeleteBusinessUnitTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
