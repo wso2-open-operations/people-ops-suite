@@ -30,6 +30,7 @@ export const SnackMessage = {
   },
   warning: {},
 };
+export const ADMIN_PRIVILEGE = 999;
 export const DEFAULT_LIMIT_VALUE = 10;
 export const DEFAULT_OFFSET_VALUE = 0;
 export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];

@@ -16,7 +16,7 @@
 
 import { State } from "@/types/types";
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
-import { SnackMessage } from "@config/constant";
+import { ADMIN_PRIVILEGE, SnackMessage } from "@config/constant";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
@@ -89,7 +89,7 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [Role.EMPLOYEE];
 
-    if (userPrivileges.includes(999)) {
+    if (userPrivileges.includes(ADMIN_PRIVILEGE)) {
       roles.push(Role.ADMIN);
     }
     return { roles };
