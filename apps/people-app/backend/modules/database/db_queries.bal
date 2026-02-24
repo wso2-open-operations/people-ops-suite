@@ -569,20 +569,23 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
     WHERE is_active = 1
     ORDER BY display_order ASC, id ASC`;
 
-isolated function getParkingSlotsByFloorQuery(int floorId) returns sql:ParameterizedQuery =>
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        DATE_FORMAT(ps.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        ps.created_by as 'createdBy',
-        DATE_FORMAT(ps.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        ps.updated_by as 'updatedBy'
+        CASE WHEN EXISTS (
+            SELECT 1 FROM parking_reservation pr
+            WHERE pr.slot_id = ps.slot_id
+              AND pr.booking_date = ${bookingDate}
+              AND pr.status = 'CONFIRMED'
+        ) THEN 1 ELSE 0 END as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
-    ORDER BY ps.slot_id ASC`;
+    ORDER BY ps.slot_id ASC
+`;
 
 isolated function getParkingSlotByIdQuery(string slotId) returns sql:ParameterizedQuery =>
     `SELECT
@@ -590,10 +593,7 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        DATE_FORMAT(ps.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        ps.created_by as 'createdBy',
-        DATE_FORMAT(ps.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        ps.updated_by as 'updatedBy'
+        0 as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
@@ -608,11 +608,30 @@ isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, 
     LIMIT 1`;
 
 isolated function addParkingReservationQuery(AddParkingReservationPayload payload) returns sql:ParameterizedQuery =>
-    `INSERT INTO parking_reservation
-    (slot_id, booking_date, employee_email, vehicle_id, status, coins_amount, created_by, updated_by)
+    `
+    INSERT INTO parking_reservation
+    (
+        slot_id, 
+        booking_date, 
+        employee_email, 
+        vehicle_id, 
+        status, 
+        coins_amount, 
+        created_by, 
+        updated_by
+    )
     VALUES
-    (${payload.slotId}, ${payload.bookingDate}, ${payload.employeeEmail}, ${payload.vehicleId},
-     'PENDING', ${payload.coinsAmount}, ${payload.createdBy}, ${payload.createdBy})`;
+    (
+        ${payload.slotId},
+        ${payload.bookingDate}, 
+        ${payload.employeeEmail}, 
+        ${payload.vehicleId},
+        'PENDING', 
+        ${payload.coinsAmount}, 
+        ${payload.createdBy}, 
+        ${payload.createdBy}
+    );
+`;
 
 isolated function getParkingReservationByIdQuery(int reservationId) returns sql:ParameterizedQuery =>
     `SELECT
@@ -637,43 +656,25 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
-isolated function getParkingReservationByTxHashQuery(string transactionHash) returns sql:ParameterizedQuery =>
-    `SELECT
-        pr.id,
-        pr.slot_id as 'slotId',
-        pr.booking_date as 'bookingDate',
-        pr.employee_email as 'employeeEmail',
-        pr.vehicle_id as 'vehicleId',
-        v.vehicle_registration_number as 'vehicleRegistrationNumber',
-        v.vehicle_type as 'vehicleType',
-        pr.status,
-        pr.transaction_hash as 'transactionHash',
-        pr.coins_amount as 'coinsAmount',
-        pf.name as 'floorName',
-        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        pr.created_by as 'createdBy',
-        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        pr.updated_by as 'updatedBy'
-    FROM parking_reservation pr
-    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
-    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
-    WHERE pr.transaction_hash = ${transactionHash}
-    LIMIT 1`;
-
 isolated function updateParkingReservationStatusQuery(int reservationId, ParkingReservationStatus status,
         string? transactionHash, string updatedBy) returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
+
     sql:ParameterizedQuery[] setClauses = [` status = ${status}`, ` updated_by = ${updatedBy}`];
+
     if transactionHash is string {
         setClauses.push(` transaction_hash = ${transactionHash}`);
     }
+
     mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
+
     return sql:queryConcat(mainQuery, ` WHERE id = ${reservationId}`);
 }
 
 isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, string? fromDate, string? toDate)
     returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
     SELECT
         pr.id,
@@ -694,17 +695,18 @@ isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, st
     FROM parking_reservation pr
     INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
-    WHERE pr.employee_email = ${employeeEmail}`;
-    sql:ParameterizedQuery[] filters = [];
+    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id`;
+
+    sql:ParameterizedQuery[] filters = [` pr.employee_email = ${employeeEmail}`];
+
     if fromDate is string {
         filters.push(` pr.booking_date >= ${fromDate}`);
     }
     if toDate is string {
         filters.push(` pr.booking_date <= ${toDate}`);
     }
-    if filters.length() > 0 {
-        mainQuery = buildSqlSelectQuery(mainQuery, filters);
-    }
+
+    mainQuery = buildSqlSelectQuery(mainQuery, filters);
+
     return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
