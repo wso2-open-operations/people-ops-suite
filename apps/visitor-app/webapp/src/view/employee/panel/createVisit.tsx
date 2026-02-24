@@ -268,11 +268,10 @@ function CreateVisit() {
           );
 
           const visitUUID = uuidv4();
-          const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/admin-panel?tab=active-visits&uuid=${visitUUID}`;
           let qrCodeByteArray: number[] | undefined = undefined;
 
           try {
-            const qrCodeBase64 = await QRCode.toDataURL(qrLink, {
+            const qrCodeBase64 = await QRCode.toDataURL(visitUUID, {
               width: 300,
               margin: 2,
               color: { dark: "#000000", light: "#ffffff" },
@@ -343,7 +342,7 @@ function CreateVisit() {
             visitDate: values.visitDate,
             timeOfEntry: timeOfEntryUTC,
             timeOfDeparture: timeOfDepartureUTC,
-            idHash: hashedId,
+            visitorIdHash: hashedId,
             whomTheyMeet: values.whoTheyMeet || undefined,
             companyName: values.companyName || undefined,
             accessibleLocations: values.accessibleLocations?.length

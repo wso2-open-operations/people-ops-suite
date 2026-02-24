@@ -18,16 +18,19 @@ import React, { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
   Box,
+  Button,
   Card,
   CardContent,
   CircularProgress,
   Container,
+  Tab,
+  Tabs,
+  TextField,
   Typography,
 } from "@mui/material";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@root/src/slices/store";
 import { useNavigate } from "react-router-dom";
-import { AsgardeoConfig } from "@src/config/config";
 
 const ScanVisit: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -37,22 +40,11 @@ const ScanVisit: React.FC = () => {
   const isRunningRef = useRef(false);
   const hasScannedRef = useRef(false);
 
-  const [isScanning, setIsScanning] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
+  const [pin, setPin] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
 
   const readerId = "qr-reader";
-
-  const isValidUrl = (text: string): boolean => {
-    try {
-      const url = new URL(text);
-      const redirectUrl = new URL(AsgardeoConfig.signInRedirectURL);
-      return (
-        url.origin === redirectUrl.origin &&
-        url.pathname.startsWith(redirectUrl.pathname)
-      );
-    } catch {
-      return false;
-    }
-  };
 
   const safeStop = async () => {
     try {
@@ -66,8 +58,33 @@ const ScanVisit: React.FC = () => {
     }
   };
 
+  const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+    setPin(value);
+  };
+
+  const handlePinSubmit = async () => {
+    navigate(`/admin-panel?tab=active-visits&uuid=${pin}`);
+  };
+
+  const handleTabChange = async (_: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+
+    if (newValue === 1) {
+      // Switching to PIN mode - stop scanner
+      await safeStop();
+    } else {
+      // Switching to QR mode - restart scanner
+      setPin("");
+      setIsValidating(false);
+    }
+  };
+
   useEffect(() => {
     const startScanner = async () => {
+      // Only start scanner if on QR tab
+      if (activeTab !== 0) return;
+
       try {
         html5QrCodeRef.current = new Html5Qrcode(readerId);
 
@@ -82,27 +99,9 @@ const ScanVisit: React.FC = () => {
             if (hasScannedRef.current) return;
             hasScannedRef.current = true;
 
-            if (!isValidUrl(decodedText)) {
-              hasScannedRef.current = false;
-
-              dispatch(
-                enqueueSnackbarMessage({
-                  message: "Invalid visit QR code",
-                  type: "warning",
-                }),
-              );
-              return;
-            }
-
-            setIsScanning(false);
-
             await safeStop();
 
-            const url = new URL(decodedText);
-            const safePath =
-              "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
-
-            navigate(safePath);
+            navigate(`/admin-panel?tab=active-visits&uuid=${decodedText}`);
           },
           () => {},
         );
@@ -123,7 +122,7 @@ const ScanVisit: React.FC = () => {
     return () => {
       safeStop();
     };
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, activeTab]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
@@ -139,53 +138,103 @@ const ScanVisit: React.FC = () => {
       >
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h6" fontWeight={600} gutterBottom>
-            Scan Visit QR
+            Verify Visit
           </Typography>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Ask the visitor to present their QR code. The system will
-            automatically validate once detected.
+            {activeTab === 0
+              ? "Ask the visitor to present their QR code. The system will automatically validate once detected."
+              : "Enter the 6-digit PIN provided to the visitor."}
           </Typography>
 
-          {/* Camera Preview */}
-          <Box
-            sx={{
-              position: "relative",
-              width: "100%",
-              aspectRatio: "1 / 1",
-              bgcolor: "#000",
-              borderRadius: 1,
-              overflow: "hidden",
-              border: "1px solid",
-              borderColor: "divider",
-            }}
+          {/* Tabs for QR / PIN */}
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
           >
-            <Box id={readerId} sx={{ width: "100%", height: "100%" }} />
+            <Tab label="Scan QR Code" />
+            <Tab label="Enter PIN" />
+          </Tabs>
 
-            {/* Loading overlay after scan */}
-            {!isScanning && (
+          {/* QR Scanner */}
+          {activeTab === 0 && (
+            <>
               <Box
                 sx={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  bgcolor: "rgba(0,0,0,0.5)",
+                  position: "relative",
+                  width: "100%",
+                  aspectRatio: "1 / 1",
+                  bgcolor: "#000",
+                  borderRadius: 1,
+                  overflow: "hidden",
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               >
-                <CircularProgress />
+                <Box id={readerId} sx={{ width: "100%", height: "100%" }} />
               </Box>
-            )}
-          </Box>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block", mt: 2 }}
-          >
-            Ensure the QR code is clear and visible to the camera.
-          </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 2 }}
+              >
+                Ensure the QR code is clear and visible to the camera.
+              </Typography>
+            </>
+          )}
+
+          {/* PIN Input */}
+          {activeTab === 1 && (
+            <Box sx={{ py: 2 }}>
+              <TextField
+                fullWidth
+                label="Enter 6-digit PIN"
+                value={pin}
+                onChange={handlePinChange}
+                placeholder="000000"
+                inputProps={{
+                  maxLength: 6,
+                  style: {
+                    fontSize: "1.5rem",
+                    textAlign: "center",
+                    letterSpacing: "0.5rem",
+                  },
+                }}
+                sx={{ mb: 3 }}
+                disabled={isValidating}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    handlePinSubmit();
+                  }
+                }}
+              />
+
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                onClick={handlePinSubmit}
+                disabled={pin.length !== 6 || isValidating}
+                sx={{ py: 1.5 }}
+              >
+                {isValidating ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Verify PIN"
+                )}
+              </Button>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: "block", mt: 2, textAlign: "center" }}
+              >
+                The PIN is shared with the visitor via email or SMS.
+              </Typography>
+            </Box>
+          )}
         </CardContent>
       </Card>
     </Container>
