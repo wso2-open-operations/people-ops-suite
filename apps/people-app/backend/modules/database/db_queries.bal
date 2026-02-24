@@ -240,7 +240,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
 # + return - Parameterized query for fetching distinct managers
 isolated function getManagersQuery() returns sql:ParameterizedQuery =>
     `SELECT DISTINCT 
-        m.id, 
         m.employee_id, 
         m.work_email
     FROM employee e

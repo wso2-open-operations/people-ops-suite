@@ -390,8 +390,6 @@ public type EmploymentType record {|
 
 # Manager payload.
 public type Manager record {|
-    # Manager ID
-    int id;
     # Employee ID of the manager
     @sql:Column {name: "employee_id"}
     string employeeId;
