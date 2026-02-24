@@ -581,16 +581,6 @@ public type AddParkingReservationPayload record {|
     string createdBy;
 |};
 
-# [Database] Payload to confirm reservation (after payment).
-public type ConfirmParkingReservationPayload record {|
-    # Reservation identifier
-    int reservationId;
-    # Transaction hash
-    string? transactionHash;
-    # User who updated the parking reservation record
-    string updatedBy;
-|};
-
 # [Database] Parking reservation with slot and vehicle details (for confirmation/success page).
 public type ParkingReservationDetails record {|
     # Reservation identifier
