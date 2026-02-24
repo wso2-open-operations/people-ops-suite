@@ -32,12 +32,11 @@ import {
   Card,
   CardContent,
   IconButton,
-  InputAdornment,
-  MenuItem,
   Container,
   Autocomplete,
   Avatar,
   CircularProgress,
+  InputAdornment,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -78,6 +77,7 @@ import {
   fetchEmployees,
   loadMoreEmployees,
 } from "@root/src/slices/employeeSlice/employees";
+import { MuiTelInput } from "mui-tel-input";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
@@ -95,68 +95,6 @@ export interface VisitorDetail {
   emailAddress: string;
   status: VisitorStatus;
 }
-
-const AVAILABLE_FLOORS_AND_ROOMS = [
-  { floor: "1st Floor", rooms: ["Cafeteria"] },
-  { floor: "6th Floor", rooms: ["The Launchpad"] },
-  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
-  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
-  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
-  { floor: "9th and 10th", rooms: ["The Circuit"] },
-  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
-  { floor: "11th Floor", rooms: ["Tinker Room"] },
-  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
-  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
-  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
-  { floor: "15th Floor", rooms: ["Common Area"] },
-  { floor: "Rooftop", rooms: ["Basketball Court"] },
-];
-
-const COUNTRY_CODES = [
-  { code: "+1", country: "US/CA", flag: "🇺🇸" },
-  { code: "+44", country: "GB", flag: "🇬🇧" },
-  { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+86", country: "CN", flag: "🇨🇳" },
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+33", country: "FR", flag: "🇫🇷" },
-  { code: "+81", country: "JP", flag: "🇯🇵" },
-  { code: "+82", country: "KR", flag: "🇰🇷" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+55", country: "BR", flag: "🇧🇷" },
-  { code: "+7", country: "RU/KZ", flag: "🇷🇺" },
-  { code: "+20", country: "EG", flag: "🇪🇬" },
-  { code: "+27", country: "ZA", flag: "🇿🇦" },
-  { code: "+34", country: "ES", flag: "🇪🇸" },
-  { code: "+39", country: "IT", flag: "🇮🇹" },
-  { code: "+31", country: "NL", flag: "🇳🇱" },
-  { code: "+32", country: "BE", flag: "🇧🇪" },
-  { code: "+46", country: "SE", flag: "🇸🇪" },
-  { code: "+47", country: "NO", flag: "🇳🇴" },
-  { code: "+48", country: "PL", flag: "🇵🇱" },
-  { code: "+351", country: "PT", flag: "🇵🇹" },
-  { code: "+41", country: "CH", flag: "🇨🇭" },
-  { code: "+43", country: "AT", flag: "🇦🇹" },
-  { code: "+60", country: "MY", flag: "🇲🇾" },
-  { code: "+62", country: "ID", flag: "🇮🇩" },
-  { code: "+63", country: "PH", flag: "🇵🇭" },
-  { code: "+64", country: "NZ", flag: "🇳🇿" },
-  { code: "+66", country: "TH", flag: "🇹🇭" },
-  { code: "+90", country: "TR", flag: "🇹🇷" },
-  { code: "+92", country: "PK", flag: "🇵🇰" },
-  { code: "+95", country: "MM", flag: "🇲🇲" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+972", country: "IL", flag: "🇮🇱" },
-  { code: "+973", country: "BH", flag: "🇧🇭" },
-  { code: "+974", country: "QA", flag: "🇶🇦" },
-  { code: "+975", country: "BT", flag: "🇧🇹" },
-  { code: "+976", country: "MN", flag: "🇲🇳" },
-  { code: "+977", country: "NP", flag: "🇳🇵" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+886", country: "TW", flag: "🇹🇼" },
-  { code: "+880", country: "BD", flag: "🇧🇩" },
-  { code: "+84", country: "VN", flag: "🇻🇳" },
-  { code: "+94", country: "LK", flag: "🇱🇰" },
-];
 
 const defaultVisitor: VisitorDetail = {
   name: "",
@@ -269,7 +207,6 @@ function CreateVisit() {
       clearTimeout(searchDebounceRef.current);
     }
 
-    // Cleanup function runs on component unmount
     return () => {
       Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
         if (timeout) {
@@ -355,14 +292,30 @@ function CreateVisit() {
 
           const visitorName = draftVisitor.name?.trim() || "";
 
+          let nationalNumber: string | undefined = undefined;
+          if (draftVisitor.contactNumber) {
+            try {
+              const parsed = phoneUtil.parseAndKeepRawInput(
+                draftVisitor.contactNumber,
+              );
+              nationalNumber =
+                parsed.getNationalNumber()?.toString() || undefined;
+            } catch (e) {
+              nationalNumber =
+                draftVisitor.contactNumber.replace(/\D/g, "") || undefined;
+            }
+          }
+
+          const fullContactNumber = nationalNumber
+            ? `${draftVisitor.countryCode}${nationalNumber}`
+            : undefined;
+
           const addVisitorPayload: AddVisitorPayload = {
             emailHash: hashedEmail,
             email: draftVisitor.emailAddress,
             firstName: visitorName.split(" ")[0] || undefined,
             lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
-            contactNumber: draftVisitor.contactNumber
-              ? draftVisitor.countryCode + draftVisitor.contactNumber
-              : undefined,
+            contactNumber: fullContactNumber,
           };
 
           const addVisitorAction = await dispatch(
@@ -412,7 +365,7 @@ function CreateVisit() {
         "Cancel",
       );
     },
-    [dispatch, dialogContext],
+    [dispatch, dialogContext, phoneUtil],
   );
 
   const fetchVisitorByEmail = useCallback(
@@ -423,7 +376,7 @@ function CreateVisit() {
       if (fetchVisitor.fulfilled.match(action)) {
         let countryCode = "+94";
         let nationalNumber = "";
-        const raw = action.payload.contactNumber;
+        const raw = action.payload.contactNumber || "";
         if (raw) {
           try {
             const parsed = phoneUtil.parseAndKeepRawInput(raw);
@@ -432,11 +385,15 @@ function CreateVisit() {
             nationalNumber = parsed.getNationalNumber()?.toString() || "";
           } catch (err) {
             console.warn("Phone parse failed:", raw);
+            nationalNumber = raw.replace(/\D/g, "");
           }
         }
+
         const fetched: VisitorDetail = {
           name: `${action.payload.firstName || ""} ${action.payload.lastName || ""}`.trim(),
-          contactNumber: nationalNumber,
+          contactNumber: nationalNumber
+            ? `${countryCode}${nationalNumber}`
+            : "",
           countryCode,
           emailAddress: action.payload.email || email,
           status: VisitorStatus.Draft,
@@ -502,8 +459,7 @@ function CreateVisit() {
       }),
     visitors: Yup.array().of(
       Yup.object({
-        firstName: Yup.string().nullable(),
-        lastName: Yup.string().nullable(),
+        name: Yup.string().required("Name is required").nullable(),
         emailAddress: Yup.string()
           .email("Invalid email")
           .required("Email is required")
@@ -515,8 +471,42 @@ function CreateVisit() {
             );
           }),
         contactNumber: Yup.string()
-          .matches(/^\d{6,15}$/, "Invalid phone number (6-15 digits)")
-          .nullable(),
+          .nullable()
+          .test("valid-phone-international", function (value) {
+            const { countryCode } = this.parent;
+
+            if (!value || value.trim() === "") return true;
+
+            if (!value.startsWith("+")) {
+              return this.createError({
+                message: "Phone number must start with country code (e.g. +94)",
+              });
+            }
+
+            try {
+              const parsed = phoneUtil.parseAndKeepRawInput(value);
+              if (!phoneUtil.isValidNumber(parsed)) {
+                return this.createError({
+                  message: "Invalid phone number for the selected country",
+                });
+              }
+
+              if (
+                countryCode &&
+                countryCode !== `+${parsed.getCountryCode()}`
+              ) {
+                return this.createError({
+                  message: `Phone number doesn't match selected country code (${countryCode})`,
+                });
+              }
+
+              return true;
+            } catch (err) {
+              return this.createError({
+                message: "Invalid phone number format",
+              });
+            }
+          }),
       }),
     ),
   });
@@ -569,8 +559,8 @@ function CreateVisit() {
                 if (typeof newValue === "object") {
                   const fullName =
                     `${newValue.firstName || ""} ${newValue.lastName || ""}`.trim();
-                  formik.setFieldValue("whoTheyMeet", newValue.workEmail || ""); // email for payload
-                  formik.setFieldValue("whoTheyMeetName", fullName); // name for display
+                  formik.setFieldValue("whoTheyMeet", newValue.workEmail || "");
+                  formik.setFieldValue("whoTheyMeetName", fullName);
                   formik.setFieldValue(
                     "whoTheyMeetThumbnail",
                     newValue.employeeThumbnail || null,
@@ -719,7 +709,6 @@ function CreateVisit() {
         </Typography>
 
         <FloorRoomSelector
-          availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
           selectedFloorsAndRooms={formik.values.accessibleLocations}
           onChange={(val) =>
             !locked && formik.setFieldValue("accessibleLocations", val)
@@ -935,47 +924,54 @@ function CreateVisit() {
                   </Grid>
 
                   <Grid item xs={12} md={6}>
-                    <TextField
+                    <MuiTelInput
                       fullWidth
                       label="Contact Number"
                       name={`visitors.${idx}.contactNumber`}
-                      value={visitor.contactNumber}
-                      onChange={formik.handleChange}
-                      disabled={visitor.status === VisitorStatus.Completed}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <TextField
-                              select
-                              variant="standard"
-                              name={`visitors.${idx}.countryCode`}
-                              value={visitor.countryCode}
-                              onChange={formik.handleChange}
-                              disabled={
-                                visitor.status === VisitorStatus.Completed
-                              }
-                              sx={{ minWidth: 80, mr: 1 }}
-                            >
-                              {COUNTRY_CODES.map((c) => (
-                                <MenuItem key={c.code} value={c.code}>
-                                  {c.flag} {c.code}
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                          </InputAdornment>
-                        ),
+                      value={visitor.contactNumber || ""}
+                      onChange={(newValue, info) => {
+                        formik.setFieldValue(
+                          `visitors.${idx}.contactNumber`,
+                          newValue,
+                        );
+                        if (info?.countryCallingCode) {
+                          formik.setFieldValue(
+                            `visitors.${idx}.countryCode`,
+                            `+${info.countryCallingCode}`,
+                          );
+                        }
                       }}
+                      defaultCountry="LK"
+                      forceCallingCode
+                      disabled={visitor.status === VisitorStatus.Completed}
+                      error={
+                        formik.touched.visitors?.[idx]?.contactNumber &&
+                        Boolean(formik.errors.visitors?.[idx]?.contactNumber)
+                      }
+                      helperText={
+                        formik.touched.visitors?.[idx]?.contactNumber &&
+                        formik.errors.visitors?.[idx]?.contactNumber
+                      }
                     />
                   </Grid>
 
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="First Name & Last Name"
+                      required
+                      label="Name"
                       name={`visitors.${idx}.name`}
                       value={visitor.name}
                       onChange={formik.handleChange}
                       disabled={visitor.status === VisitorStatus.Completed}
+                      error={
+                        formik.touched.visitors?.[idx]?.name &&
+                        Boolean(formik.errors.visitors?.[idx]?.name)
+                      }
+                      helperText={
+                        formik.touched.visitors?.[idx]?.name &&
+                        formik.errors.visitors?.[idx]?.name
+                      }
                     />
                   </Grid>
 
@@ -988,7 +984,7 @@ function CreateVisit() {
                         startIcon={<CheckIcon />}
                         disabled={formik.isSubmitting}
                       >
-                        Submit Visitor
+                        Submit
                       </Button>
                     </Grid>
                   )}
@@ -1065,14 +1061,14 @@ function CreateVisit() {
                     onClick={() => addNewVisitorBlock(formik)}
                     disabled={!canAddMore}
                   >
-                    Add Another Visitor
+                    Add Visitor
                   </Button>
                 </Box>
 
                 {hasSubmitted && (
                   <Box sx={{ mt: 5, textAlign: "center" }}>
                     <Button
-                      variant="outlined"
+                      variant="contained"
                       color="inherit"
                       onClick={() =>
                         dialogContext.showConfirmation(
@@ -1085,7 +1081,7 @@ function CreateVisit() {
                         )
                       }
                     >
-                      Finish & Close Visit
+                      Complete
                     </Button>
                   </Box>
                 )}

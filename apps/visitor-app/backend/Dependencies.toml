@@ -465,6 +465,7 @@ dependencies = [
 modules = [
 	{org = "wso2", packageName = "visitor", moduleName = "visitor"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.authorization"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.calendar"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.database"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.email"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.people"}
