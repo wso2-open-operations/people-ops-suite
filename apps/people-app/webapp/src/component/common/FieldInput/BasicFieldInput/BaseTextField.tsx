@@ -14,26 +14,21 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import * as React from "react";
 import { TextField, TextFieldProps } from "@mui/material";
+import { forwardRef } from "react";
 
-export type BaseTextFieldProps = Omit<TextFieldProps, "label" | "variant" | "fullWidth"> & {
+export type BaseTextFieldProps = Omit<
+  TextFieldProps,
+  "label" | "variant" | "fullWidth"
+> & {
   label: string;
   isRequired?: boolean;
 };
 
-export const BaseTextField = React.forwardRef<HTMLDivElement, BaseTextFieldProps>(
+export const BaseTextField = forwardRef<HTMLDivElement, BaseTextFieldProps>(
   function BaseTextField(
-    {
-      label,
-      isRequired,
-      InputProps,
-      InputLabelProps,
-      sx,
-      children,
-      ...rest
-    },
-    ref
+    { label, isRequired, InputProps, InputLabelProps, sx, children, ...rest },
+    ref,
   ) {
     const labelWithAsterisk = isRequired ? `${label} *` : label;
 
@@ -61,5 +56,5 @@ export const BaseTextField = React.forwardRef<HTMLDivElement, BaseTextFieldProps
         {children}
       </TextField>
     );
-  }
+  },
 );
