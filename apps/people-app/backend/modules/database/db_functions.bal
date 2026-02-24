@@ -134,16 +134,23 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
 # Fetch organization structure with business units, teams, sub-teams and units.
 #
 # + return - Organization structure data or error
-public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
+public isolated function getFullOrganizationStructure() returns OrgStructure|error {
     stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream = databaseClient->query(getFullOrganizationStructureQuery());
 
-    return from OrgStructureBusinessUnitRow row in orgStructureStream
-        let OrgStructureTeam[] teams = check row.teams.fromJsonWithType()
-        select {
-            id: row.id,
-            name: row.name,
-            teams
+    OrgStructureBusinessUnit[] businessUnits = [];
+    _ = check from OrgStructureBusinessUnitRow row in orgStructureStream
+        do {
+            OrgStructureBusinessUnit businessUnit = {
+                id: row.id,
+                name: row.name,
+                teams: check row.teams.fromJsonWithType()
+            };
+            businessUnits.push(businessUnit);
         };
+
+    return {
+        businessUnits: businessUnits
+    };
 }
 
 # Get career functions.
