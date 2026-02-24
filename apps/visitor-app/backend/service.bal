@@ -227,7 +227,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Verify existing visitor.
-        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.emailHash);
+        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.visitorIdHash);
         if existingVisitor is error {
             string customError = "Error occurred while fetching existing visitor!";
             log:printError(customError, existingVisitor);
@@ -240,14 +240,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         if existingVisitor is () {
             return <http:BadRequest>{
                 body: {
-                    message: "No visitor found with the provided email hash!"
+                    message: "No visitor found with the provided visitor ID hash!"
                 }
             };
 
         }
 
         error? visitError = database:addVisit({
-                                                  emailHash: payload.emailHash,
+                                                  visitorIdHash: payload.visitorIdHash,
                                                   companyName: payload.companyName,
                                                   passNumber: payload.passNumber,
                                                   whomTheyMeet: payload.whomTheyMeet,

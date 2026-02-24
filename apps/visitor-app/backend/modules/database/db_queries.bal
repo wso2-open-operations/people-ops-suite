@@ -53,15 +53,15 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
 
 # Build query to fetch a visitor by hashed email.
 #
-# + hashedEmail - Filter : Hashed email of the visitor
+# + idHash - Filter : Hashed email or contact number of the visitor
 # + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email
-isolated function fetchVisitorByEmailQuery(string hashedEmail) returns sql:ParameterizedQuery
+isolated function fetchVisitorByIdHashQuery(string idHash) returns sql:ParameterizedQuery
     => `
         SELECT         
             first_name as firstName,
             last_name as lastName,
             contact_number as contactNumber,
-            email_hash as emailHash,  
+            id_hash as idHash,
             email,
             created_by as createdBy,
             created_on as createdOn,
@@ -70,7 +70,7 @@ isolated function fetchVisitorByEmailQuery(string hashedEmail) returns sql:Param
         FROM 
             visitor
         WHERE 
-            email_hash = ${hashedEmail};
+            id_hash = ${idHash};
         `;
 
 # Build query to create a new invitation.
@@ -138,7 +138,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         INSERT INTO visit
         (
             uuid,
-            email_hash,
+            visitor_id_hash,
             pass_number,
             company_name,
             whom_they_meet,
@@ -156,7 +156,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         VALUES
         (
             ${payload.uuid},
-            ${payload.emailHash},
+            ${payload.visitorIdHash},
             ${payload.passNumber},
             ${payload.companyName},
             ${payload.whomTheyMeet},
@@ -185,7 +185,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.time_of_departure as timeOfDeparture,
             v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.email_hash as emailHash,
+            v.visitor_id_hash as visitorIdHash,
             vs.first_name as firstName,
             vs.last_name as lastName,
             vs.email,
@@ -206,7 +206,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         LEFT JOIN
             visitor vs
         ON
-            v.email_hash = vs.email_hash
+            v.visitor_id_hash = vs.visitor_id_hash
     `;
 
     // Setting the filters based on the inputs.

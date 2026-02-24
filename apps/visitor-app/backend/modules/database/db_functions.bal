@@ -36,10 +36,10 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
 
 # Fetch Visitor.
 #
-# + hashedEmail - Filter :  hashed email of the visitor
+# + idHash - Filter : Hashed email or contact number of the visitor
 # + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedEmail) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByEmailQuery(hashedEmail));
+public isolated function fetchVisitor(string idHash) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByIdHashQuery(idHash));
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
@@ -157,7 +157,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = ()) return
 
     return {
         id: visit.id,
-        emailHash: visit.emailHash,
+        visitorIdHash: visit.visitorIdHash,
         companyName: visit.companyName,
         passNumber: visit.passNumber,
         whomTheyMeet: visit.whomTheyMeet,
@@ -208,7 +208,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                 timeOfDeparture: timeOfDeparture is string ?
                         timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) : timeOfDeparture : (),
                 passNumber: visit.passNumber,
-                emailHash: visit.emailHash,
+                visitorIdHash: visit.visitorIdHash,
                 firstName: firstName is string ? check decrypt(firstName) : (),
                 lastName: lastName is string ? check decrypt(lastName) : (),
                 email: check decrypt(visit.email),

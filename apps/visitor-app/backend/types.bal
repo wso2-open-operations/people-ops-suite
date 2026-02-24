@@ -27,14 +27,14 @@ type UserInfo record {
 
 # Payload for adding a new visit.
 public type AddVisitPayload record {|
-    # Email Hash of the visitor
+    # Visitor ID Hash
     @constraint:String {
         pattern: {
             value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The email Hash should be a non-empty string with printable characters."
+            message: "The visitor ID Hash should be a non-empty string with printable characters."
         }
     }
-    string emailHash;
+    string visitorIdHash;
     # Company name of visitor
     @constraint:String {
         pattern: {

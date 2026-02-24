@@ -108,8 +108,8 @@ public type Floor record {|
 
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Company name of visitor
     string? companyName = ();
     # Number in the tag given to visitor
@@ -143,8 +143,8 @@ public type VisitRecord record {|
     string? lastName;
     # Working phone number of visitor
     string? contactNumber;
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Email of the visitor
     string email;
     # Company name of visitor
@@ -176,8 +176,8 @@ public type Visit record {|
     *AuditFields;
     # Unique identifier for the visit
     int id;
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash
+    string visitorIdHash;
     # Company name of visitor
     string? companyName = ();
     # Number in the tag given to visitor

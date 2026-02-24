@@ -17,3 +17,11 @@
 ALTER TABLE `people_ops_suite`.`visitor` 
 CHANGE COLUMN `email_hash` `id_hash` VARCHAR(255) NOT NULL ;
 
+ALTER TABLE `people_ops_suite`.`visit` 
+DROP FOREIGN KEY `email_hash`;
+ALTER TABLE `people_ops_suite`.`visit` 
+CHANGE COLUMN `email_hash` `visitor_id_hash` VARCHAR(255) NOT NULL ;
+ALTER TABLE `people_ops_suite`.`visit` 
+ADD CONSTRAINT `email_hash`
+  FOREIGN KEY (`visitor_id_hash`)
+  REFERENCES `people_ops_suite`.`visitor` (`id_hash`);
