@@ -74,7 +74,6 @@ export interface EmployeeBasicInfo {
 }
 
 export interface Manager {
-  id: number;
   employeeId: string;
   workEmail: string;
 }
