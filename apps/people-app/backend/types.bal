@@ -40,7 +40,7 @@ type OrgPatchPayload record {
 # Payload for updating a standalone organization unit.
 type UnitPayload record {|
     # New name for the unit
-    string changedName?;
+    string name?;
     # Email of the new head of the unit
     string headEmail?;
     # Email of the user performing the update
@@ -50,7 +50,7 @@ type UnitPayload record {|
 # Payload for updating a business unit-team mapping.
 type UpdateBusinessUnitTeamPayload record {|
     # Email of the functional lead for the mapping
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     string updatedBy;
 |};
@@ -58,7 +58,7 @@ type UpdateBusinessUnitTeamPayload record {|
 # Payload for updating a team-sub team mapping.
 type UpdateTeamSubTeamPayload record {|
     # Email of the functional lead for the mapping
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     string updatedBy;
 |};
@@ -66,7 +66,7 @@ type UpdateTeamSubTeamPayload record {|
 # Payload for updating a sub team-unit mapping.
 type UpdateSubTeamUnitPayload record {|
     # Email of the functional lead for the mapping
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     string updatedBy;
 |};
