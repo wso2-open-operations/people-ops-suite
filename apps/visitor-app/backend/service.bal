@@ -1087,7 +1087,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        people:EmployeeBasic[]|error allEmployees = people:getEmployees(search, 'limit, offset);
+        people:EmployeeBasic[]|error allEmployees = people:fetchEmployees(search, 'limit, offset);
         if allEmployees is error {
             string customError = "Error occurred while fetching employees!";
             log:printError(customError, allEmployees);
