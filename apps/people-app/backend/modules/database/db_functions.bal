@@ -134,8 +134,9 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
 # Fetch organization structure with business units, teams, sub-teams and units.
 #
 # + return - Organization structure data or error
-public isolated function getFullOrganizationStructure() returns OrgStructure|error {
-    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream = databaseClient->query(getFullOrganizationStructureQuery());
+public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
+    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream =
+        databaseClient->query(getFullOrganizationStructureQuery());
 
     OrgStructureBusinessUnit[] businessUnits = [];
     _ = check from OrgStructureBusinessUnitRow row in orgStructureStream
@@ -148,9 +149,7 @@ public isolated function getFullOrganizationStructure() returns OrgStructure|err
             businessUnits.push(businessUnit);
         };
 
-    return {
-        businessUnits: businessUnits
-    };
+    return businessUnits;
 }
 
 # Get career functions.

@@ -290,12 +290,6 @@ public type OrgStructureBusinessUnit record {|
     OrgStructureTeam[] teams = [];
 |};
 
-# Organization structure.
-public type OrgStructure record {|
-    # Business units in the organization
-    OrgStructureBusinessUnit[] businessUnits = [];
-|};
-
 # Raw database result with JSON teams that needs to be parsed
 type OrgStructureBusinessUnitRow record {|
     # Business unit ID

@@ -311,8 +311,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get full organization structure.
     #
     # + return - Full organization structure
-    resource function get organization\-structure() returns database:OrgStructure|http:InternalServerError {
-        database:OrgStructure|error orgStructure = database:getFullOrganizationStructure();
+    resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
+        database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
         if orgStructure is error {
             string customErr = "Error while fetching organization structure";
             log:printError(customErr, orgStructure);
