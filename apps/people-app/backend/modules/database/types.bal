@@ -501,7 +501,7 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
-# [Database] Parking floor (configurable floors with O2C price).
+# [Database] Parking floor.
 public type ParkingFloor record {|
     # Floor identifier
     int id;
@@ -523,7 +523,7 @@ public type ParkingFloor record {|
     string updatedBy;
 |};
 
-# [Database] Parking slot (belongs to a floor).
+# [Database] Parking slot.
 public type ParkingSlot record {|
     # Slot identifier (e.g. B-01)
     string slotId;
@@ -565,7 +565,7 @@ public type ParkingReservation record {|
     string updatedBy;
 |};
 
-# [Database] Payload to create a parking reservation (PENDING).
+# [Database] Payload to create parking reservation.
 public type AddParkingReservationPayload record {|
     # Slot identifier
     string slotId;
@@ -581,7 +581,7 @@ public type AddParkingReservationPayload record {|
     string createdBy;
 |};
 
-# [Database] Parking reservation with slot and vehicle details (for confirmation/success page).
+# [Database] Parking reservation details (slot, floor, vehicle).
 public type ParkingReservationDetails record {|
     # Reservation identifier
     int id;
@@ -615,7 +615,7 @@ public type ParkingReservationDetails record {|
     string updatedBy;
 |};
 
-# [Database] Row shape for reservation existence check.
+# [Database] Reservation id row (existence check).
 public type ReservationIdRow record {|
     # Reservation identifier
     int id;

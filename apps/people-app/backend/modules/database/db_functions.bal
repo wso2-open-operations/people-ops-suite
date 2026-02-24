@@ -250,39 +250,39 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     return false;
 }
 
-# Get active parking floors (ordered by display_order).
+# Get active parking floors.
 #
-# + return - List of parking floors or error
+# + return - Parking floors
 public isolated function getParkingFloors() returns ParkingFloor[]|error {
     stream<ParkingFloor, error?> floorStream = databaseClient->query(getParkingFloorsQuery());
     return from ParkingFloor f in floorStream
         select f;
 }
 
-# Get parking slots for a floor with availability for a given date.
+# Get parking slots for a floor for a date.
 #
-# + floorId - Floor identifier
+# + floorId - Floor id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - List of parking slots with availability status or error
+# + return - Parking slots (with isBooked)
 public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
     stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
     return from ParkingSlot s in slotStream select s;
 }
 
-# Get a single parking slot by ID with floor details.
+# Get parking slot by ID.
 #
-# + slotId - Slot identifier
-# + return - Parking slot with floor details or error
+# + slotId - Slot id
+# + return - Parking slot or nil
 public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
     ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
     return row is sql:NoRowsError ? () : row;
 }
 
-# Check if a slot is already confirmed for the given date.
+# Check if slot is booked for date.
 #
-# + slotId - Slot identifier
+# + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - True if the slot is booked for the date, false if not, or error
+# + return - True if booked, false otherwise, or error
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
         getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
@@ -295,31 +295,31 @@ public isolated function isParkingSlotBookedForDate(string slotId, string bookin
     return true;
 }
 
-# Create a PENDING parking reservation.
+# Create parking reservation (PENDING).
 #
-# + payload - Payload containing the reservation details
-# + return - Created reservation ID and amount to be paid in coins, or error
+# + payload - Reservation payload
+# + return - New reservation id
 public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
     sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
     return result.lastInsertId.ensureType(int);
 }
 
-# Get parking reservation by ID with slot, floor, and vehicle details.
+# Get parking reservation by ID.
 #
-# + reservationId - Reservation identifier
-# + return - Parking reservation details or error
+# + reservationId - Reservation id
+# + return - Reservation details or nil
 public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
     ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
     return row is sql:NoRowsError ? () : row;
 }
 
-# Update reservation status (e.g. PENDING -> CONFIRMED) and optionally set transaction_hash.
+# Update reservation status and optional transaction_hash.
 #
-# + reservationId - Reservation identifier
-# + status - New reservation status
-# + transactionHash - Transaction hash (optional, for CONFIRMED status)
-# + updatedBy - User who updates the reservation status
-# + return - True if the update was successful, false if no rows were updated, or
+# + reservationId - Reservation id
+# + status - New status
+# + transactionHash - Transaction hash (optional)
+# + updatedBy - Updated by
+# + return - True if updated
 public isolated function updateParkingReservationStatus(int reservationId, ParkingReservationStatus status,
         string? transactionHash, string updatedBy) returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(
@@ -327,12 +327,12 @@ public isolated function updateParkingReservationStatus(int reservationId, Parki
     return result.affectedRowCount > 0;
 }
 
-# Get parking reservations for an employee, optionally filtered by date range.
+# Get parking reservations by employee.
 #
-# + employeeEmail - Employee email to fetch reservations for
-# + fromDate - Start date for filtering (YYYY-MM-DD, optional)
-# + toDate - End date for filtering (YYYY-MM-DD, optional)
-# + return - List of parking reservations with details or error
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Reservations
 public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
         string? toDate = ()) returns ParkingReservationDetails[]|error {
     stream<ParkingReservationDetails, error?> resStream = databaseClient->query(

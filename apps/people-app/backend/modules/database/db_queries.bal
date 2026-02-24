@@ -551,9 +551,9 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     return sql:queryConcat(mainQuery, subQuery);
 }
 
-# Parking floor queries.
+# Get parking floors.
 #
-# + return - Query to get parking floors information
+# + return - Query to get parking floors
 isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
     `SELECT
         id,
@@ -569,6 +569,11 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
     WHERE is_active = 1
     ORDER BY display_order ASC, id ASC`;
 
+# Get parking slots for a floor for a date.
+#
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get parking slots with isBooked
 isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
@@ -587,6 +592,10 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
     ORDER BY ps.slot_id ASC
 `;
 
+# Get parking slot by id.
+#
+# + slotId - Slot id
+# + return - Query to get parking slot
 isolated function getParkingSlotByIdQuery(string slotId) returns sql:ParameterizedQuery =>
     `SELECT
         ps.slot_id as 'slotId',
@@ -598,6 +607,11 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
 
+# Get confirmed reservation id for slot and date (existence check).
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get reservation id if booked
 isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
     returns sql:ParameterizedQuery =>
     `SELECT id
@@ -607,6 +621,10 @@ isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, 
       AND status = 'CONFIRMED'
     LIMIT 1`;
 
+# Insert parking reservation (PENDING).
+#
+# + payload - Reservation payload
+# + return - Query to insert parking reservation
 isolated function addParkingReservationQuery(AddParkingReservationPayload payload) returns sql:ParameterizedQuery =>
     `
     INSERT INTO parking_reservation
@@ -633,6 +651,10 @@ isolated function addParkingReservationQuery(AddParkingReservationPayload payloa
     );
 `;
 
+# Get parking reservation by id.
+#
+# + reservationId - Reservation id
+# + return - Query to get reservation details
 isolated function getParkingReservationByIdQuery(int reservationId) returns sql:ParameterizedQuery =>
     `SELECT
         pr.id,
@@ -656,6 +678,13 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
+# Update parking reservation status and optional transaction_hash.
+#
+# + reservationId - Reservation id
+# + status - New status
+# + transactionHash - Transaction hash (optional)
+# + updatedBy - Updated by
+# + return - Query to update reservation
 isolated function updateParkingReservationStatusQuery(int reservationId, ParkingReservationStatus status,
         string? transactionHash, string updatedBy) returns sql:ParameterizedQuery {
 
@@ -672,6 +701,12 @@ isolated function updateParkingReservationStatusQuery(int reservationId, Parking
     return sql:queryConcat(mainQuery, ` WHERE id = ${reservationId}`);
 }
 
+# Get parking reservations by employee.
+#
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Query to get reservations
 isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, string? fromDate, string? toDate)
     returns sql:ParameterizedQuery {
 
