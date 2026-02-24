@@ -736,8 +736,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         time:Utc nowUtc = time:utcNow();
-        time:Utc sriLankaTime = time:utcAddSeconds(nowUtc, 19800);
-        string today = time:utcToString(sriLankaTime).substring(0, 10);
+        string today;
+        time:Zone? sriLankaZone = time:getZone("Asia/Colombo");
+        if sriLankaZone is time:Zone {
+            time:Civil civil = sriLankaZone.utcToCivil(nowUtc);
+            string|error civilStr = time:civilToString(civil);
+            today = civilStr is string ? civilStr.substring(0, 10) : time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+        } else {
+            today = time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+        }
         if body.bookingDate != today {
             return <http:BadRequest>{
                 body: {message: "Reservations are only allowed for the same day. Use date " + today + "."}
