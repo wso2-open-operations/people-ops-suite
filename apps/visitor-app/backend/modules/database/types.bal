@@ -56,14 +56,14 @@ public type Visitor record {|
 
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
-    # Encrypted email hash of the visitor
+    # Email or phone number hash of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The email Hash should be a non-empty string with printable characters."
+            message: "The ID Hash should be a non-empty string with printable characters."
         }
     }
-    string emailHash;
+    string idHash;
     # First name of the visitor
     @constraint:String {
         pattern: {
@@ -95,7 +95,7 @@ public type AddVisitorPayload record {|
             message: "The email should be a valid email address."
         }
     }
-    string email;
+    string? email = ();
 |};
 
 # [Database] Floor record.

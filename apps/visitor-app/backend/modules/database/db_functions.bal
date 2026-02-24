@@ -24,11 +24,12 @@ public isolated function addVisitor(AddVisitorPayload payload, string createdBy)
     string? firstName = payload.firstName;
     string? lastName = payload.lastName;
     string? contactNumber = payload.contactNumber;
+    string? email = payload.email;
 
     payload.firstName = firstName is string ? check encrypt(firstName) : ();
     payload.lastName = lastName is string ? check encrypt(lastName) : ();
     payload.contactNumber = contactNumber is string ? check encrypt(contactNumber) : ();
-    payload.email = check encrypt(payload.email);
+    payload.email = email is string ? check encrypt(email) : ();
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
@@ -46,6 +47,7 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
     string? first_name = visitor.firstName;
     string? last_name = visitor.lastName;
     string? contact_number = visitor.contactNumber;
+    string? email = visitor.email;
 
     if first_name is string {
         visitor.firstName = check decrypt(first_name);
@@ -57,7 +59,9 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
         visitor.contactNumber = check decrypt(contact_number);
     }
 
-    visitor.email = check decrypt(visitor.email);
+    if email is string {
+        visitor.email = check decrypt(email);
+    }
 
     return visitor;
 }

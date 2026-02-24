@@ -27,7 +27,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         (
             first_name,
             last_name,
-            email_hash,
+            id_hash,
             email,
             contact_number,
             created_by,
@@ -37,7 +37,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         (
             ${payload.firstName},
             ${payload.lastName},
-            ${payload.emailHash},
+            ${payload.idHash},
             ${payload.email},
             ${payload.contactNumber},
             ${createdBy},
@@ -47,6 +47,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
             first_name = COALESCE(${payload.firstName}, first_name),
             last_name = COALESCE(${payload.lastName}, last_name),
             contact_number = COALESCE(${payload.contactNumber}, contact_number),
+            email = COALESCE(${payload.email}, email),
             updated_by = ${createdBy}
         ;`;
 

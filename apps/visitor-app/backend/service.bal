@@ -148,7 +148,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
-        returns http:Created|http:InternalServerError|http:Conflict {
+        returns http:Created|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -156,6 +156,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
+
+        if payload.email !is string && payload.contactNumber !is string {
+            return <http:BadRequest>{
+                body: {
+                    message: "At least one of email or contact number should be provided!"
                 }
             };
         }
@@ -278,37 +286,38 @@ service http:InterceptableService / on new http:Listener(9090) {
                 log:printError(customError, formattedToDate);
             }
         }
+        string? visitorEmail = existingVisitor.email;
+        if visitorEmail is string {
 
-        string? firstName = existingVisitor.firstName;
-        string? lastName = existingVisitor.lastName;
-        string visitorEmail = existingVisitor.email;
-        string? purposeOfVisit = payload.purposeOfVisit;
-        string? whomTheyMeet = payload.whomTheyMeet;
-        database:Floor[]? accessibleLocations = payload.accessibleLocations;
-        string? accessibleLocationString = accessibleLocations is database:Floor[] ?
-            organizeLocations(accessibleLocations) : ();
+            string? firstName = existingVisitor.firstName;
+            string? lastName = existingVisitor.lastName;
+            string? purposeOfVisit = payload.purposeOfVisit;
+            string? whomTheyMeet = payload.whomTheyMeet;
+            database:Floor[]? accessibleLocations = payload.accessibleLocations;
+            string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                organizeLocations(accessibleLocations) : ();
 
-        if whomTheyMeet is string {
-            people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
-            if hostEmployee is error {
-                string customError = "An error occurred while fetching host employee details!";
-                log:printError(customError, hostEmployee);
+            if whomTheyMeet is string {
+                people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
+                if hostEmployee is error {
+                    string customError = "An error occurred while fetching host employee details!";
+                    log:printError(customError, hostEmployee);
+                }
+                if hostEmployee is () {
+                    string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
+                    log:printError(customError);
+                }
+                if hostEmployee is people:Employee {
+                    whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
+                }
             }
-            if hostEmployee is () {
-                string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
-                log:printError(customError);
-            }
-            if hostEmployee is people:Employee {
-                whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
-            }
-        }
-        string|error content = email:bindKeyValues(
-                email:inviteTemplate,
-                {
-                    NAME: firstName is string && lastName is string ?
-                        generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                    VISIT_DATE: payload.visitDate,
-                    TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+            string|error content = email:bindKeyValues(
+                    email:inviteTemplate,
+                    {
+                        NAME: firstName is string && lastName is string ?
+                            generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                        VISIT_DATE: payload.visitDate,
+                        TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -321,7 +330,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                    TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                        TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -334,7 +343,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                    PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                        PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -347,7 +356,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${purposeOfVisit}</span>
                                 </p>
                               </li>` : "",
-                    WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
+                        WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -360,7 +369,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${whomTheyMeet}</span>
                                 </p>
                               </li>` : "",
-                    ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                        ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -375,39 +384,40 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                    CONTACT_EMAIL: email:contactUsEmail,
-                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
-                }
-        );
+                        CONTACT_EMAIL: email:contactUsEmail,
+                        YEAR: time:utcToCivil(time:utcNow()).year.toString()
+                    }
+            );
 
-        if content is error {
-            string customError = "An error occurred while binding values to the email template!";
-            log:printError(customError, content);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
-        }
+            if content is error {
+                string customError = "An error occurred while binding values to the email template!";
+                log:printError(customError, content);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
 
-        error? emailError = email:sendEmail({
-                                                attachments: [
-                                                    {
-                                                        attachment: payload.qrCode,
-                                                        contentName: "visitor-pass.png",
-                                                        contentType: "image/png"
-                                                    }
-                                                ],
-                                                to: [existingVisitor.email],
-                                                'from: email:fromEmailAddress,
-                                                subject: email:VISIT_INVITATION_SUBJECT,
-                                                template: content,
-                                                cc: [email:receptionEmail]
-                                            });
+            error? emailError = email:sendEmail({
+                                                    attachments: [
+                                                        {
+                                                            attachment: payload.qrCode,
+                                                            contentName: "visitor-pass.png",
+                                                            contentType: "image/png"
+                                                        }
+                                                    ],
+                                                    to: [visitorEmail],
+                                                    'from: email:fromEmailAddress,
+                                                    subject: email:VISIT_INVITATION_SUBJECT,
+                                                    template: content,
+                                                    cc: [email:receptionEmail]
+                                                });
 
-        if emailError is error {
-            string customError = "Error occurred while sending the email!";
-            log:printError(customError, emailError);
+            if emailError is error {
+                string customError = "Error occurred while sending the email!";
+                log:printError(customError, emailError);
+            }
         }
 
         return <http:Created>{
