@@ -612,8 +612,8 @@ isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payl
 
     sql:ParameterizedQuery[] filters = [];
 
-    if payload.functionalLead is string {
-        filters.push(` head_email = ${payload.functionalLead}`);
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
     }
 
     filters.push(` updated_by = ${payload.updatedBy}`);
@@ -642,8 +642,8 @@ isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int t
 
     sql:ParameterizedQuery[] filters = [];
 
-    if payload.functionalLead is string {
-        filters.push(` head_email = ${payload.functionalLead}`);
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
     }
 
     filters.push(` updated_by = ${payload.updatedBy}`);
@@ -672,8 +672,8 @@ isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int s
 
     sql:ParameterizedQuery[] filters = [];
 
-    if payload.functionalLead is string {
-        filters.push(` head_email = ${payload.functionalLead}`);
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
     }
 
     filters.push(` updated_by = ${payload.updatedBy}`);
