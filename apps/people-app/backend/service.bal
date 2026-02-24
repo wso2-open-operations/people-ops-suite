@@ -911,8 +911,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error updated = database:updateParkingReservationStatus(
-                reservation.id, database:CONFIRMED, body.transactionHash, userInfo.email);
+        boolean|error updated = database:updateParkingReservationStatus({
+            reservationId: reservation.id,
+            status: database:CONFIRMED,
+            transactionHash: body.transactionHash,
+            updatedBy: userInfo.email
+        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{

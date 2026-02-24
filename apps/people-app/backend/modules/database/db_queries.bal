@@ -676,25 +676,22 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
 
 # Update parking reservation status and optional transaction_hash.
 #
-# + reservationId - Reservation id
-# + status - New status
-# + transactionHash - Transaction hash (optional)
-# + updatedBy - Updated by
+# + payload - Update payload
 # + return - Query to update reservation
-isolated function updateParkingReservationStatusQuery(int reservationId, ParkingReservationStatus status,
-        string? transactionHash, string updatedBy) returns sql:ParameterizedQuery {
+isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
+    returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
 
-    sql:ParameterizedQuery[] setClauses = [` status = ${status}`, ` updated_by = ${updatedBy}`];
+    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
 
-    if transactionHash is string {
-        setClauses.push(` transaction_hash = ${transactionHash}`);
+    if payload.transactionHash is string {
+        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
     }
 
     mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
 
-    return sql:queryConcat(mainQuery, ` WHERE id = ${reservationId}`);
+    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
 }
 
 # Get parking reservations by employee.

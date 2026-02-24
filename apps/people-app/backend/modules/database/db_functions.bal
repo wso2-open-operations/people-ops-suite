@@ -315,15 +315,12 @@ public isolated function getParkingReservationById(int reservationId) returns Pa
 
 # Update reservation status and optional transaction_hash.
 #
-# + reservationId - Reservation id
-# + status - New status
-# + transactionHash - Transaction hash (optional)
-# + updatedBy - Updated by
+# + payload - Update payload
 # + return - True if updated
-public isolated function updateParkingReservationStatus(int reservationId, ParkingReservationStatus status,
-        string? transactionHash, string updatedBy) returns boolean|error {
+public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
+    returns boolean|error {
     sql:ExecutionResult result = check databaseClient->execute(
-        updateParkingReservationStatusQuery(reservationId, status, transactionHash, updatedBy));
+        updateParkingReservationStatusQuery(payload));
     return result.affectedRowCount > 0;
 }
 
