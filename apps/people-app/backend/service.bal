@@ -670,7 +670,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # List parking floors.
     #
     # + return - List of parking floors or error response
-    resource function get parking/floors(http:RequestContext ctx)
+    resource function get parkings/floors(http:RequestContext ctx)
         returns database:ParkingFloor[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -692,11 +692,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # List parking slots for a floor with availability for a given date.
     #
-    # + floorId - Floor identifier
+    # + id - Floor identifier
     # + date - Booking date
     # + return - List of parking slots with availability status or error response
-    resource function get parking/floors/[int floorId]/slots(http:RequestContext ctx, string? date)
-        returns ParkingSlotAvailability[]|http:InternalServerError|http:BadRequest {
+    resource function get parkings/floors/[int id]/slots(http:RequestContext ctx, string date)
+        returns database:ParkingSlot[]|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -705,69 +705,27 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if date is () || date == "" {
+        if !regex:matches(date, database:DATE_PATTERN_STRING) {
             return <http:BadRequest>{
-                body: {message: "Query parameter 'date' (YYYY-MM-DD) is required."}
+                body: {message: "Query parameter 'date' must be in YYYY-MM-DD format."}
             };
         }
 
-        database:ParkingSlotWithFloor[]|error slots = database:getParkingSlotsByFloor(floorId);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
         if slots is error {
             log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while fetching parking slots."}
             };
         }
-
-        ParkingSlotAvailability[] result = [];
-        foreach database:ParkingSlotWithFloor s in slots {
-            boolean|error booked = database:isParkingSlotBookedForDate(s.slotId, date);
-            boolean isBooked = booked is boolean ? booked : true;
-            result.push({
-                slotId: s.slotId,
-                floorId: s.floorId,
-                floorName: s.floorName,
-                coinsPerSlot: s.coinsPerSlot,
-                isBooked
-            });
-        }
-        return result;
-    }
-
-    # Get a single parking slot details.
-    #
-    # + slotId - Slot identifier
-    # + return - Parking slot details or error response
-    resource function get parking/slots/[string slotId](http:RequestContext ctx)
-        returns database:ParkingSlotWithFloor|http:InternalServerError|http:NotFound {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
-            };
-        }
-
-        database:ParkingSlotWithFloor|error? slot = database:getParkingSlotById(slotId);
-        if slot is error {
-            log:printError("Error fetching parking slot", slot);
-            return <http:InternalServerError>{
-                body: {message: "Error occurred while fetching parking slot."}
-            };
-        }
-        if slot is () {
-            return <http:NotFound>{
-                body: {message: string `Parking slot '${slotId}' not found.`}
-            };
-        }
-        return slot;
+        return slots;
     }
 
     # Create a parking reservation.
     #
     # + body - Reservation creation details
     # + return - Reservation ID and amount to be paid in coins, or error response
-    resource function post parking/reservations(http:RequestContext ctx, CreateParkingReservationRequest body)
+    resource function post parkings/reservations(http:RequestContext ctx, CreateParkingReservationRequest body)
         returns CreateParkingReservationResponse|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -777,7 +735,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string today = time:utcToString(time:utcNow()).substring(0, 10);
+        time:Utc nowUtc = time:utcNow();
+        time:Utc sriLankaTime = time:utcAddSeconds(nowUtc, 19800);
+        string today = time:utcToString(sriLankaTime).substring(0, 10);
         if body.bookingDate != today {
             return <http:BadRequest>{
                 body: {message: "Reservations are only allowed for the same day. Use date " + today + "."}
@@ -797,7 +757,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingSlotWithFloor|error? slot = database:getParkingSlotById(body.slotId);
+        database:ParkingSlot|error? slot = database:getParkingSlotById(body.slotId);
         if slot is error {
             log:printError("Error fetching slot for reservation", slot);
             return <http:InternalServerError>{
@@ -810,14 +770,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        boolean|error alreadyBooked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
-        if alreadyBooked is error {
-            log:printError("Error checking slot availability", alreadyBooked);
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        if booked is error {
+            log:printError("Error checking slot availability", booked);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while checking slot availability."}
             };
         }
-        if alreadyBooked is boolean && alreadyBooked {
+        if booked {
             return <http:BadRequest>{
                 body: {message: string `Slot ${body.slotId} is already booked for ${body.bookingDate}.`}
             };
@@ -849,7 +809,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + fromDate - Filter reservations from this date
     # + toDate - Filter reservations up to this date
     # + return - List of parking reservations or error response
-    resource function get parking/reservations(http:RequestContext ctx, string? fromDate, string? toDate)
+    resource function get parkings/reservations(http:RequestContext ctx, string? fromDate, string? toDate)
         returns database:ParkingReservationDetails[]|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -872,9 +832,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get a single reservation.
     #
-    # + reservationId - Reservation identifier
+    # + id - Reservation identifier
     # + return - Parking reservation details or error response
-    resource function get parking/reservations/[int reservationId](http:RequestContext ctx)
+    resource function get parkings/reservations/[int id](http:RequestContext ctx)
         returns database:ParkingReservationDetails|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -884,7 +844,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(reservationId);
+        database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(id);
         if reservation is error {
             log:printError("Error fetching parking reservation", reservation);
             return <http:InternalServerError>{
@@ -893,7 +853,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if reservation is () {
             return <http:NotFound>{
-                body: {message: string `Reservation ${reservationId} not found.`}
+                body: {message: string `Reservation ${id} not found.`}
             };
         }
         if reservation.employeeEmail != userInfo.email {
@@ -908,7 +868,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + body - Request containing transaction hash and optional reservation ID
     # + return - Reservation details with CONFIRMED status or error response
-    resource function post parking/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
+    resource function post parkings/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
         returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -918,28 +878,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:ParkingReservationDetails reservation;
-        
-        database:ParkingReservationDetails|error? res = ();
-        int? reservationId = body.reservationId;
-        if reservationId is int {
-            res = database:getParkingReservationById(reservationId);
-        } else {
-            res = database:getParkingReservationByTxHash(body.transactionHash);
-        }
-        
-        if res is error {
-            log:printError("Error fetching reservation", res);
+        database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(body.reservationId);
+
+        if reservation is error {
+            log:printError("Error fetching reservation", reservation);
             return <http:InternalServerError>{
                 body: {message: "Error occurred while confirming reservation."}
             };
         }
-        if res is () {
+        if reservation is () {
             return <http:NotFound>{
-                body: {message: "Reservation not found for the provided transaction hash or reservation ID."}
+                body: {message: "Reservation not found for the provided reservation ID."}
             };
         }
-        reservation = res;
 
         if reservation.employeeEmail != userInfo.email {
             return <http:Forbidden>{
@@ -961,7 +912,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: "Error occurred while confirming reservation."}
             };
         }
-        if updated is boolean && !updated {
+        if !updated {
             return <http:InternalServerError>{
                 body: {message: "Failed to update reservation status."}
             };
