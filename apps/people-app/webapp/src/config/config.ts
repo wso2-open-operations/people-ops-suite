@@ -46,25 +46,27 @@ export const SERVICE_BASE_URL = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
 export const AppConfig = {
   serviceUrls: {
     userInfo: SERVICE_BASE_URL + "/user-info",
+    appConfig: SERVICE_BASE_URL + "/app-config",
+
+    employees: SERVICE_BASE_URL + "/employees",
+    employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
+    searchEmployees: SERVICE_BASE_URL + "/employees/search",
+    managers: SERVICE_BASE_URL + "/employees/managers",
+    continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
     employee: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}`,
     employeePersonalInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
-    appConfig: SERVICE_BASE_URL + "/app-config",
+
     businessUnits: SERVICE_BASE_URL + "/business-units",
+    careerFunctions: SERVICE_BASE_URL + "/career-functions",
+    designations: SERVICE_BASE_URL + "/designations",
+    employmentTypes: SERVICE_BASE_URL + "/employment-types",
     teams: SERVICE_BASE_URL + "/teams",
     subTeams: SERVICE_BASE_URL + "/sub-teams",
     units: SERVICE_BASE_URL + "/units",
     offices: SERVICE_BASE_URL + "/offices",
-    careerFunctions: SERVICE_BASE_URL + "/career-functions",
-    designations: SERVICE_BASE_URL + "/designations",
-    employmentTypes: SERVICE_BASE_URL + "/employment-types",
-    employeesBasicInfo: SERVICE_BASE_URL + "/employees/basic-info",
-    employees: SERVICE_BASE_URL + "/employees",
-    searchEmployees: SERVICE_BASE_URL + "/employees/search",
-    managers: SERVICE_BASE_URL + "/employees/managers",
-    continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
   },
 };
