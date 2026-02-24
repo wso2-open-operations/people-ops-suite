@@ -36,7 +36,7 @@ type CreateParkingReservationRequest record {|
     # Slot identifier (e.g. B-01)
     string slotId;
     # Booking date (YYYY-MM-DD), same-day only
-    @constraint:String {pattern: re `^\\d{4}-\\d{2}-\\d{2}$`}
+    @constraint:String {pattern: re `${database:DATE_PATTERN_STRING}`}
     string bookingDate;
     # Registered vehicle ID (car only)
     int vehicleId;
@@ -52,22 +52,8 @@ type CreateParkingReservationResponse record {|
 
 # Request body for confirming reservation with transaction hash.
 type ConfirmParkingReservationRequest record {|
-    # Transaction hash
+    # Reservation identifier (from create response)
+    int reservationId;
+    # Transaction hash from payment
     string transactionHash;
-    # Reservation identifier
-    int? reservationId;
-|};
-
-# Parking slot with availability for a given date.
-type ParkingSlotAvailability record {|
-    # Slot identifier
-    string slotId;
-    # Floor identifier
-    int floorId;
-    # Floor name (e.g. "Ground Floor")
-    string floorName;
-    # Number of coins per slot
-    decimal coinsPerSlot;
-    # Availability status for the given date
-    boolean isBooked;
 |};
