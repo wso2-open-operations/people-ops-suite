@@ -504,8 +504,7 @@ public type UpdateVehiclePayload record {|
 # Payload for updating an organization unit.
 public type UpdateUnitPayload record {|
     # New name for the unit
-    @sql:Column {name: "name"}
-    string changedName?;
+    string name?;
     # Email of the new head of the unit
     @sql:Column {name: "head_email"}
     string headEmail?;
@@ -518,7 +517,7 @@ public type UpdateUnitPayload record {|
 public type UpdateBusinessUnitTeamPayload record {|
     # Email of the functional lead for the mapping
     @sql:Column {name: "head_email"}
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     @sql:Column {name: "updated_by"}
     string updatedBy;
@@ -528,7 +527,7 @@ public type UpdateBusinessUnitTeamPayload record {|
 public type UpdateTeamSubTeamPayload record {|
     # Email of the functional lead for the mapping
     @sql:Column {name: "head_email"}
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     @sql:Column {name: "updated_by"}
     string updatedBy;
@@ -538,7 +537,7 @@ public type UpdateTeamSubTeamPayload record {|
 public type UpdateSubTeamUnitPayload record {|
     # Email of the functional lead for the mapping
     @sql:Column {name: "head_email"}
-    string functionalLead?;
+    string functionalLeadEmail?;
     # Email of the user performing the update
     @sql:Column {name: "updated_by"}
     string updatedBy;
