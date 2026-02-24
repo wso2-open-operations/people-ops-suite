@@ -203,16 +203,11 @@ function CreateVisit() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (searchDebounceRef.current) {
-      clearTimeout(searchDebounceRef.current);
-    }
-
     return () => {
-      Object.values(visitorEmailDebounceRefs.current).forEach((timeout) => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-      });
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      Object.values(visitorEmailDebounceRefs.current).forEach(
+        (t) => t && clearTimeout(t),
+      );
     };
   }, []);
 
@@ -268,7 +263,9 @@ function CreateVisit() {
         "Please note, this will add the visitor's information to the system.",
         ConfirmationType.accept,
         async () => {
-          const hashedEmail = await hash(draftVisitor.emailAddress);
+          const hashedId = await hash(
+            draftVisitor.emailAddress || draftVisitor.contactNumber,
+          );
 
           const visitUUID = uuidv4();
           const qrLink = `${window.config.AUTH_SIGN_IN_REDIRECT_URL}/admin-panel?tab=active-visits&uuid=${visitUUID}`;
@@ -311,7 +308,7 @@ function CreateVisit() {
             : undefined;
 
           const addVisitorPayload: AddVisitorPayload = {
-            emailHash: hashedEmail,
+            idHash: hashedId,
             email: draftVisitor.emailAddress,
             firstName: visitorName.split(" ")[0] || undefined,
             lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
@@ -346,7 +343,7 @@ function CreateVisit() {
             visitDate: values.visitDate,
             timeOfEntry: timeOfEntryUTC,
             timeOfDeparture: timeOfDepartureUTC,
-            emailHash: hashedEmail,
+            idHash: hashedId,
             whomTheyMeet: values.whoTheyMeet || undefined,
             companyName: values.companyName || undefined,
             accessibleLocations: values.accessibleLocations?.length
@@ -368,11 +365,12 @@ function CreateVisit() {
     [dispatch, dialogContext, phoneUtil],
   );
 
-  const fetchVisitorByEmail = useCallback(
-    async (email: string, index: number, formik: any) => {
-      if (!email?.trim()) return;
-      const emailHash = await hash(email);
-      const action = await dispatch(fetchVisitor(emailHash));
+  const fetchVisitorByEmailOrContact = useCallback(
+    async (emailOrContact: string, index: number, formik: any) => {
+      console.log(emailOrContact);
+      if (!emailOrContact?.trim()) return;
+      const idHash = await hash(emailOrContact);
+      const action = await dispatch(fetchVisitor(idHash));
       if (fetchVisitor.fulfilled.match(action)) {
         let countryCode = "+94";
         let nationalNumber = "";
@@ -395,7 +393,7 @@ function CreateVisit() {
             ? `${countryCode}${nationalNumber}`
             : "",
           countryCode,
-          emailAddress: action.payload.email || email,
+          emailAddress: action.payload.email,
           status: VisitorStatus.Draft,
         };
         formik.setFieldValue(`visitors.${index}`, fetched);
@@ -459,19 +457,25 @@ function CreateVisit() {
       }),
     visitors: Yup.array().of(
       Yup.object({
-        name: Yup.string().required("Name is required").nullable(),
+        name: Yup.string().required("Name is required"),
         emailAddress: Yup.string()
-          .email("Invalid email")
-          .required("Email is required")
+          .email("Invalid email format")
           .test("unique-email", "Email must be unique", function (value) {
+            // `this.options.context` is available in Formik when using `validationSchema` with context
             const visitors = this.options.context?.visitors || [];
             return (
               !value ||
               visitors.filter((v: any) => v.emailAddress === value).length === 1
             );
+          })
+          .when("contactNumber", {
+            is: (contact: string) => !contact?.trim(),
+            then: (schema) =>
+              schema.required("Email address or contact number is required"),
+            otherwise: (schema) => schema.nullable(),
           }),
+
         contactNumber: Yup.string()
-          .nullable()
           .test("valid-phone-international", function (value) {
             const { countryCode } = this.parent;
 
@@ -506,16 +510,14 @@ function CreateVisit() {
                 message: "Invalid phone number format",
               });
             }
-          }),
+          })
+          .nullable(),
+        countryCode: Yup.string().nullable(),
       }),
     ),
   });
 
-  const formikRef = useRef<any>(null);
-
   const renderVisitDetails = (formik: any) => {
-    formikRef.current = formik;
-
     const locked = isAnySubmittedVisitor(formik);
 
     return (
@@ -548,14 +550,12 @@ function CreateVisit() {
               value={formik.values.whoTheyMeet || null}
               onChange={(_, newValue) => {
                 if (locked) return;
-
                 if (newValue === null) {
                   formik.setFieldValue("whoTheyMeet", "");
                   formik.setFieldValue("whoTheyMeetName", "");
                   formik.setFieldValue("whoTheyMeetThumbnail", null);
                   return;
                 }
-
                 if (typeof newValue === "object") {
                   const fullName =
                     `${newValue.firstName || ""} ${newValue.lastName || ""}`.trim();
@@ -570,18 +570,11 @@ function CreateVisit() {
               inputValue={inputValue}
               onInputChange={(event, newInputValue, reason) => {
                 setInputValue(newInputValue);
-
                 if (reason === "input") {
-                  formikRef.current?.setFieldValue(
-                    "whoTheyMeetThumbnail",
-                    null,
-                  );
+                  formik.setFieldValue("whoTheyMeetThumbnail", null);
                 }
-
                 if (reason === "reset") return;
-
                 const trimmed = newInputValue.trim();
-
                 if (trimmed.length === 0) {
                   debouncedEmployeeSearch("");
                 } else if (trimmed.length >= 2) {
@@ -625,7 +618,6 @@ function CreateVisit() {
               )}
               renderInput={(params) => {
                 const thumbnail = formik.values.whoTheyMeetThumbnail;
-
                 let initial = "?";
                 if (formik.values.whoTheyMeetName) {
                   initial = formik.values.whoTheyMeetName
@@ -843,155 +835,208 @@ function CreateVisit() {
     <FieldArray name="visitors">
       {({ remove }) => (
         <div>
-          {formik.values.visitors.map((visitor: VisitorDetail, idx: number) => (
-            <Card key={idx} variant="outlined" sx={{ mb: 3 }}>
-              <CardContent>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Typography
-                    variant="h6"
-                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+          {formik.values.visitors.map((visitor: VisitorDetail, idx: number) => {
+            const visitorErrors = formik.errors.visitors?.[idx];
+            const visitorTouched = formik.touched.visitors?.[idx];
+
+            return (
+              <Card key={idx} variant="outlined" sx={{ mb: 3 }}>
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mb: 2,
+                    }}
                   >
-                    <PersonIcon color="primary" />
-                    Visitor {idx + 1}
-                    {visitor.status === VisitorStatus.Completed && (
-                      <LockIcon fontSize="small" color="action" />
-                    )}
-                  </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      <PersonIcon color="primary" />
+                      Visitor {idx + 1}
+                      {visitor.status === VisitorStatus.Completed && (
+                        <LockIcon fontSize="small" color="action" />
+                      )}
+                    </Typography>
 
-                  {formik.values.visitors.length > 1 &&
-                    visitor.status === VisitorStatus.Draft && (
-                      <IconButton
-                        color="error"
-                        size="small"
-                        onClick={() => remove(idx)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    )}
-                </Box>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      required
-                      label="Email Address"
-                      name={`visitors.${idx}.emailAddress`}
-                      value={visitor.emailAddress}
-                      onChange={(e) => {
-                        formik.handleChange(e);
-                        const email = e.target.value.trim();
+                    {formik.values.visitors.length > 1 &&
+                      visitor.status === VisitorStatus.Draft && (
+                        <IconButton
+                          color="error"
+                          size="small"
+                          onClick={() => remove(idx)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      )}
+                  </Box>
 
-                        if (visitorEmailDebounceRefs.current[idx]) {
-                          clearTimeout(visitorEmailDebounceRefs.current[idx]!);
-                        }
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        label="Email Address"
+                        name={`visitors.${idx}.emailAddress`}
+                        value={visitor.emailAddress}
+                        onChange={(e) => {
+                          formik.handleChange(e);
+                          const email = e.target.value.trim();
 
-                        visitorEmailDebounceRefs.current[idx] = setTimeout(
-                          () => {
-                            if (
-                              visitor.status === VisitorStatus.Draft &&
-                              email &&
-                              email.includes("@") &&
-                              email.length >= 6
-                            ) {
-                              formik.setFieldValue(`visitors.${idx}.name`, "");
-                              formik.setFieldValue(
-                                `visitors.${idx}.contactNumber`,
-                                "",
-                              );
-                              fetchVisitorByEmail(email, idx, formik);
-                            }
-                            delete visitorEmailDebounceRefs.current[idx];
-                          },
-                          600,
-                        );
-                      }}
-                      disabled={visitor.status === VisitorStatus.Completed}
-                      error={
-                        formik.touched.visitors?.[idx]?.emailAddress &&
-                        Boolean(formik.errors.visitors?.[idx]?.emailAddress)
-                      }
-                      helperText={
-                        formik.touched.visitors?.[idx]?.emailAddress &&
-                        formik.errors.visitors?.[idx]?.emailAddress
-                      }
-                    />
-                  </Grid>
+                          if (visitorEmailDebounceRefs.current[idx]) {
+                            clearTimeout(
+                              visitorEmailDebounceRefs.current[idx]!,
+                            );
+                          }
 
-                  <Grid item xs={12} md={6}>
-                    <MuiTelInput
-                      fullWidth
-                      label="Contact Number"
-                      name={`visitors.${idx}.contactNumber`}
-                      value={visitor.contactNumber || ""}
-                      onChange={(newValue, info) => {
-                        formik.setFieldValue(
-                          `visitors.${idx}.contactNumber`,
-                          newValue,
-                        );
-                        if (info?.countryCallingCode) {
-                          formik.setFieldValue(
-                            `visitors.${idx}.countryCode`,
-                            `+${info.countryCallingCode}`,
+                          visitorEmailDebounceRefs.current[idx] = setTimeout(
+                            () => {
+                              if (
+                                visitor.status === VisitorStatus.Draft &&
+                                email &&
+                                email.includes("@") &&
+                                email.length >= 6
+                              ) {
+                                formik.setFieldValue(
+                                  `visitors.${idx}.name`,
+                                  "",
+                                );
+                                formik.setFieldValue(
+                                  `visitors.${idx}.contactNumber`,
+                                  "",
+                                );
+                                fetchVisitorByEmailOrContact(
+                                  email,
+                                  idx,
+                                  formik,
+                                );
+                              }
+                              delete visitorEmailDebounceRefs.current[idx];
+                            },
+                            600,
                           );
+                        }}
+                        disabled={visitor.status === VisitorStatus.Completed}
+                        error={
+                          (visitorTouched?.emailAddress &&
+                            !!visitorErrors?.emailAddress) ||
+                          (formik.submitCount > 0 &&
+                            !visitor.emailAddress?.trim() &&
+                            !visitor.contactNumber?.trim())
                         }
-                      }}
-                      defaultCountry="LK"
-                      forceCallingCode
-                      disabled={visitor.status === VisitorStatus.Completed}
-                      error={
-                        formik.touched.visitors?.[idx]?.contactNumber &&
-                        Boolean(formik.errors.visitors?.[idx]?.contactNumber)
-                      }
-                      helperText={
-                        formik.touched.visitors?.[idx]?.contactNumber &&
-                        formik.errors.visitors?.[idx]?.contactNumber
-                      }
-                    />
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      required
-                      label="Name"
-                      name={`visitors.${idx}.name`}
-                      value={visitor.name}
-                      onChange={formik.handleChange}
-                      disabled={visitor.status === VisitorStatus.Completed}
-                      error={
-                        formik.touched.visitors?.[idx]?.name &&
-                        Boolean(formik.errors.visitors?.[idx]?.name)
-                      }
-                      helperText={
-                        formik.touched.visitors?.[idx]?.name &&
-                        formik.errors.visitors?.[idx]?.name
-                      }
-                    />
-                  </Grid>
-
-                  {visitor.status === VisitorStatus.Draft && (
-                    <Grid item xs={12} sx={{ textAlign: "right" }}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        color="success"
-                        startIcon={<CheckIcon />}
-                        disabled={formik.isSubmitting}
-                      >
-                        Submit
-                      </Button>
+                        helperText={
+                          visitorTouched?.emailAddress &&
+                          visitorErrors?.emailAddress
+                            ? visitorErrors.emailAddress
+                            : formik.submitCount > 0 &&
+                                !visitor.emailAddress?.trim() &&
+                                !visitor.contactNumber?.trim()
+                              ? "Email address or contact number is required"
+                              : ""
+                        }
+                      />
                     </Grid>
-                  )}
-                </Grid>
-              </CardContent>
-            </Card>
-          ))}
+
+                    <Grid item xs={12} md={6}>
+                      <MuiTelInput
+                        fullWidth
+                        label="Contact Number"
+                        name={`visitors.${idx}.contactNumber`}
+                        value={visitor.contactNumber || ""}
+                        onChange={(newValue, info) => {
+                          formik.setFieldValue(
+                            `visitors.${idx}.contactNumber`,
+                            newValue,
+                          );
+                          if (info?.countryCallingCode) {
+                            formik.setFieldValue(
+                              `visitors.${idx}.countryCode`,
+                              `+${info.countryCallingCode}`,
+                            );
+                          }
+
+                          if (formik.values.visitors[idx].emailAddress) return;
+
+                          const contact = newValue.replace(/\D/g, "");
+
+                          if (visitorEmailDebounceRefs.current[idx]) {
+                            clearTimeout(
+                              visitorEmailDebounceRefs.current[idx]!,
+                            );
+                          }
+                          visitorEmailDebounceRefs.current[idx] = setTimeout(
+                            () => {
+                              if (
+                                visitor.status === VisitorStatus.Draft &&
+                                contact
+                              ) {
+                                formik.setFieldValue(
+                                  `visitors.${idx}.name`,
+                                  "",
+                                );
+                                formik.setFieldValue(
+                                  `visitors.${idx}.emailAddress`,
+                                  "",
+                                );
+                                fetchVisitorByEmailOrContact(
+                                  `+${contact}`,
+                                  idx,
+                                  formik,
+                                );
+                              }
+                              delete visitorEmailDebounceRefs.current[idx];
+                            },
+                            600,
+                          );
+                        }}
+                        defaultCountry="LK"
+                        forceCallingCode
+                        disabled={visitor.status === VisitorStatus.Completed}
+                        error={
+                          visitorTouched?.contactNumber &&
+                          !!visitorErrors?.contactNumber
+                        }
+                        helperText={
+                          visitorTouched?.contactNumber &&
+                          visitorErrors?.contactNumber
+                            ? visitorErrors.contactNumber
+                            : ""
+                        }
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        required
+                        label="Name"
+                        name={`visitors.${idx}.name`}
+                        value={visitor.name}
+                        onChange={formik.handleChange}
+                        disabled={visitor.status === VisitorStatus.Completed}
+                        error={visitorTouched?.name && !!visitorErrors?.name}
+                        helperText={visitorTouched?.name && visitorErrors?.name}
+                      />
+                    </Grid>
+
+                    {visitor.status === VisitorStatus.Draft && (
+                      <Grid item xs={12} sx={{ textAlign: "right" }}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          color="success"
+                          startIcon={<CheckIcon />}
+                          disabled={formik.isSubmitting}
+                        >
+                          Submit Visitor
+                        </Button>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </FieldArray>

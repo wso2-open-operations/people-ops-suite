@@ -49,7 +49,7 @@ export interface AddVisitPayload {
   accessibleLocations?: FloorRoom[] | null;
   timeOfEntry?: string;
   timeOfDeparture?: string;
-  emailHash: string;
+  idHash: string;
   visitDate: string;
   uuid: string;
   qrCode?: number[];
