@@ -259,22 +259,22 @@ public isolated function getParkingFloors() returns ParkingFloor[]|error {
         select f;
 }
 
-# Get parking slots for a floor with floor name and O2C price.
+# Get parking slots for a floor with availability for a given date.
 #
 # + floorId - Floor identifier
-# + return - List of parking slots with floor details or error
-public isolated function getParkingSlotsByFloor(int floorId) returns ParkingSlotWithFloor[]|error {
-    stream<ParkingSlotWithFloor, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId));
-    return from ParkingSlotWithFloor s in slotStream
-        select s;
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - List of parking slots with availability status or error
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
+    stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+    return from ParkingSlot s in slotStream select s;
 }
 
 # Get a single parking slot by ID with floor details.
 #
 # + slotId - Slot identifier
 # + return - Parking slot with floor details or error
-public isolated function getParkingSlotById(string slotId) returns ParkingSlotWithFloor|error? {
-    ParkingSlotWithFloor|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
+public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
+    ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
     return row is sql:NoRowsError ? () : row;
 }
 
@@ -284,9 +284,15 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlotWi
 # + bookingDate - Booking date (YYYY-MM-DD)
 # + return - True if the slot is booked for the date, false if not, or error
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
-    record {|int id;|}|error row = databaseClient->queryRow(
+    ReservationIdRow|error row = databaseClient->queryRow(
         getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
-    return row is sql:NoRowsError ? false : true;
+    if row is sql:NoRowsError {
+        return false;
+    }
+    if row is error {
+        return row;
+    }
+    return true;
 }
 
 # Create a PENDING parking reservation.
@@ -304,15 +310,6 @@ public isolated function addParkingReservation(AddParkingReservationPayload payl
 # + return - Parking reservation details or error
 public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
     ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
-    return row is sql:NoRowsError ? () : row;
-}
-
-# Get parking reservation by transaction hash (for callback).
-#
-# + transactionHash - Transaction hash from the transaction service callback
-# + return - Parking reservation details or error
-public isolated function getParkingReservationByTxHash(string transactionHash) returns ParkingReservationDetails|error? {
-    ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByTxHashQuery(transactionHash));
     return row is sql:NoRowsError ? () : row;
 }
 

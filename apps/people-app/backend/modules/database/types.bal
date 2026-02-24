@@ -614,3 +614,9 @@ public type ParkingReservationDetails record {|
     # Person who updated the parking reservation record
     string updatedBy;
 |};
+
+# [Database] Row shape for reservation existence check.
+public type ReservationIdRow record {|
+    # Reservation identifier
+    int id;
+|};
