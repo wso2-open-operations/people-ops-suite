@@ -94,3 +94,18 @@ public type DeleteSubTeamUnitPayload record {|
     # Email of the user performing the deletion
     string updatedBy;
 |};
+
+# Employee basic information.
+public type EmployeeBasicInfo record {|
+    # Employee ID of the user
+    string employeeId;
+    # First name of the user
+    string firstName;
+    # Last name of the user
+    string lastName;
+    # Work email of the user
+    string workEmail;
+    # Thumbnail URL of the user
+    string? employeeThumbnail;
+|};
+
