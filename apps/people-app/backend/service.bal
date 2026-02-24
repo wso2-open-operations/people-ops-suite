@@ -692,15 +692,36 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateBusinessUnit(payload, buId);
-        if updateResult is error {
-            log:printError("Error while updating business unit : ", updateResult);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the business unit"
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
                 }
-            };
+            }
+
+            if headsBasicInfo is () {
+              return <http:BadRequest>{
+                body: {
+                    message: "No head is found for given email"
+                  }    
+              };
+            }
         }
+    }
+
+    error? updateResult = database:updateBusinessUnit(payload, buId);
+    if updateResult is error{
+        log:printError("Error while updating business unit : " , updateResult);
+        return <http:InternalServerError>{
+            body:{
+                message:"Error while updating the business unit"
+            }
+        };
+    }
 
         return <http:Ok>{
             body: {
