@@ -560,11 +560,7 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
         name,
         display_order as 'displayOrder',
         coins_per_slot as 'coinsPerSlot',
-        is_active as 'isActive',
-        DATE_FORMAT(created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        created_by as 'createdBy',
-        DATE_FORMAT(updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        updated_by as 'updatedBy'
+        is_active as 'isActive'
     FROM parking_floor
     WHERE is_active = 1
     ORDER BY display_order ASC, id ASC`;

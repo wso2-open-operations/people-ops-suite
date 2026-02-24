@@ -513,14 +513,6 @@ public type ParkingFloor record {|
     decimal coinsPerSlot;
     # Whether the floor is active or not
     boolean isActive;
-    # Timestamp when created
-    string createdOn;
-    # Person who created the parking floor record
-    string createdBy;
-    # Timestamp when updated
-    string updatedOn;
-    # Person who updated the parking floor record
-    string updatedBy;
 |};
 
 # [Database] Parking slot.
