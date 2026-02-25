@@ -571,7 +571,6 @@ public type DeleteSubTeamUnitPayload record {|
     string updatedBy;
 |};
 
-
 # Represents a head or leader of an organization unit.
 public type Head record {|
     # Display name of the head
@@ -666,6 +665,18 @@ public type OrgBusinessUnitRaw record {|
     json teams = [];
 |};
 
+# Represents the top-level company in the organization hierarchy.
+public type Company record {|
+    # Unique identifier of the company
+    string id;
+    # Display name of the company
+    string name;
+    # Total number of employees or members in the company
+    int headCount;
+    # List of business units belonging to the company
+    OrgBusinessUnit[] businessUnits = [];
+|};
+
 # Raw database row type for the top-level company organization response.
 public type CompanyRaw record {|
     # Unique identifier of the company
@@ -678,14 +689,3 @@ public type CompanyRaw record {|
     json businessUnits = [];
 |};
 
-# Represents the top-level company in the organization hierarchy.
-public type Company record {|
-    # Unique identifier of the company
-    string id;
-    # Display name of the company
-    string name;
-    # Total number of employees or members in the company
-    int headCount;
-    # List of business units belonging to the company
-    OrgBusinessUnit[] businessUnits = [];
-|};
