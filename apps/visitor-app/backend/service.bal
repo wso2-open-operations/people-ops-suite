@@ -106,7 +106,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Fetches a specific visitor by hashed Email.
+    # Fetches a specific visitor by hashed email or contact number.
     #
     # + idHash - Hashed Email or contact number of the visitor
     # + return - Visitor or error
