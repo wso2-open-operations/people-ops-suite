@@ -109,6 +109,7 @@ public type EmployeeBasicInfo record {|
     string? employeeThumbnail;
 |};
 
+# Represents the database organization business unit.
 public type OrgBusinessUnit record {|
     *database:OrgBusinessUnit;
 |};
