@@ -203,40 +203,80 @@ public isolated function getManagers() returns Manager[]|error {
 # + return - Created employee ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
     transaction {
-        sql:ExecutionResult personalInfoResult
-            = check databaseClient->execute(addEmployeePersonalInfoQuery(payload.personalInfo, createdBy));
-
-        int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
-
-        sql:ExecutionResult employeeResult
-            = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
-
-        int lastInsertedEmployeeId = check employeeResult.lastInsertId.ensureType(int);
-
-        string employeeId = check databaseClient->queryRow(
-            `SELECT employee_id FROM employee WHERE id = ${lastInsertedEmployeeId}`
-        );
-
-        EmergencyContact[] contacts = payload.personalInfo.emergencyContacts ?: [];
-        sql:ParameterizedQuery[] emergencyInsertQueries
-            = from EmergencyContact contact in contacts
-                select addPersonalInfoEmergencyContactQuery(employeeId, contact, createdBy);
-
-        if emergencyInsertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(emergencyInsertQueries);
-        }
-
-        sql:ParameterizedQuery[] managerInsertQueries
-            = from string managerEmail in payload.additionalManagerEmails
-            select addEmployeeAdditionalManagerQuery(lastInsertedEmployeeId, managerEmail, createdBy);
-
-        if managerInsertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(managerInsertQueries);
-        }
-
+        int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
+        int lastInsertedEmployeeId = check addEmployeeRecord(payload, createdBy, personalInfoId);
+        string employeeId = check getGeneratedEmployeeId(lastInsertedEmployeeId);
+        check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+        check addAdditionalManagers(lastInsertedEmployeeId, payload.additionalManagerEmails, createdBy);
         check commit;
         return lastInsertedEmployeeId;
     }
+}
+
+# Add employee personal information.
+# 
+# + personalInfo - Personal information of the employee
+# + createdBy - Creator of the personal info record
+# + return - Created personal info ID or error
+isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string createdBy) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Add employee record.
+# 
+# + payload - Add employee payload
+# + createdBy - Creator of the employee record
+# + personalInfoId - Personal info ID to be linked with the employee record
+# + return - Created employee ID or error
+isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId) 
+    returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Get the generated employee ID based on the last inserted employee record ID.
+# 
+# + lastInsertedEmployeeId - Last inserted employee record ID
+# + return - Generated employee ID or error
+isolated function getGeneratedEmployeeId(int lastInsertedEmployeeId) returns string|error {
+    return check databaseClient->queryRow(getEmployeeIdQuery(lastInsertedEmployeeId));
+}
+
+# Add emergency contacts for the employee.
+# 
+# + employeeId - Employee ID
+# + contacts - Emergency contacts to be added
+# + createdBy - Creator of the emergency contact records
+# + return - Nil if the operation was successful or error
+isolated function addEmergencyContacts(string employeeId, EmergencyContact[] contacts, string createdBy) 
+    returns error? {
+    sql:ParameterizedQuery[] emergencyInsertQueries =
+        from EmergencyContact contact in contacts
+        select addPersonalInfoEmergencyContactQuery(employeeId, contact, createdBy);
+
+    if emergencyInsertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(emergencyInsertQueries);
+    }
+    return;
+}
+
+# Add additional managers for the employee.
+# 
+# + employeeId - Employee ID
+# + additionalManagerEmails - List of additional manager email addresses to be added
+# + createdBy - Creator of the additional manager records
+# + return - Nil if the operation was successful or error
+isolated function addAdditionalManagers(int employeeId, Email[] additionalManagerEmails, string createdBy) 
+    returns error? {
+    sql:ParameterizedQuery[] managerInsertQueries =
+        from Email managerEmail in additionalManagerEmails
+        select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
+
+    if managerInsertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(managerInsertQueries);
+    }
+    return;
 }
 
 # Update employee personal information.
