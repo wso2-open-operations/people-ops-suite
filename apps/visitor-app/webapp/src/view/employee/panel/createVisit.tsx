@@ -471,7 +471,6 @@ function CreateVisit() {
         emailAddress: Yup.string()
           .email("Invalid email format")
           .test("unique-email", "Email must be unique", function (value) {
-            // `this.options.context` is available in Formik when using `validationSchema` with context
             const visitors = this.options.context?.visitors || [];
             return (
               !value ||
