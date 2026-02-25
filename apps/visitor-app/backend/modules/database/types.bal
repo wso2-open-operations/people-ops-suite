@@ -74,7 +74,7 @@ public type AddVisitorPayload record {|
             message: "The first name should be in international format."
         }
     }
-    string? firstName = ();
+    string firstName;
     # Last name of the visitor
     @constraint:String {
         pattern: {
@@ -141,7 +141,7 @@ public type VisitRecord record {|
     # Unique identifier for the visit
     int id;
     # First name of the visitor
-    string? firstName;
+    string firstName;
     # Last name of the visitor
     string? lastName;
     # Working phone number of visitor
@@ -200,7 +200,7 @@ public type Visit record {|
     # Status of the visit
     Status status;
     # First name of the visitor
-    string? firstName = ();
+    string firstName;
     # Last name of the visitor
     string? lastName = ();
     # Working phone number of visitor

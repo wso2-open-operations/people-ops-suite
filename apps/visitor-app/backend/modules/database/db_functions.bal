@@ -22,12 +22,11 @@ import ballerina/sql;
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    string? firstName = payload.firstName;
     string? lastName = payload.lastName;
     string? contactNumber = payload.contactNumber;
     string? email = payload.email;
 
-    payload.firstName = firstName is string ? check encrypt(firstName) : ();
+    payload.firstName = check encrypt(payload.firstName);
     payload.lastName = lastName is string ? check encrypt(lastName) : ();
     payload.contactNumber = contactNumber is string ? check encrypt(contactNumber) : ();
     payload.email = email is string ? check encrypt(email) : ();
@@ -45,14 +44,12 @@ public isolated function fetchVisitor(string idHash) returns Visitor|error? {
         return visitor is sql:NoRowsError ? () : visitor;
     }
 
-    string? first_name = visitor.firstName;
     string? last_name = visitor.lastName;
     string? contact_number = visitor.contactNumber;
     string? email = visitor.email;
 
-    if first_name is string {
-        visitor.firstName = check decrypt(first_name);
-    }
+    visitor.firstName = check decrypt(visitor.firstName);
+
     if last_name is string {
         visitor.lastName = check decrypt(last_name);
     }
@@ -150,7 +147,6 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
         return visit is sql:NoRowsError ? () : visit;
     }
 
-    string? firstName = visit.firstName;
     string? lastName = visit.lastName;
     string? contactNumber = visit.contactNumber;
     string? timeOfEntry = visit.timeOfEntry;
@@ -174,7 +170,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
                 timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) :
                 timeOfDeparture : (),
         status: visit.status,
-        firstName: firstName is string ? check decrypt(firstName) : (),
+        firstName: check decrypt(visit.firstName),
         lastName: lastName is string ? check decrypt(lastName) : (),
         contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
         email: email is string ? check decrypt(email) : (),
@@ -200,7 +196,6 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
             string? accessibleLocations = visit.accessibleLocations;
             string? timeOfEntry = visit.timeOfEntry;
             string? timeOfDeparture = visit.timeOfDeparture;
-            string? firstName = visit.firstName;
             string? lastName = visit.lastName;
             string? contactNumber = visit.contactNumber;
             string? email = visit.email;
@@ -213,7 +208,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                         timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) : timeOfDeparture : (),
                 passNumber: visit.passNumber,
                 visitorIdHash: visit.visitorIdHash,
-                firstName: firstName is string ? check decrypt(firstName) : (),
+                firstName: check decrypt(visit.firstName),
                 lastName: lastName is string ? check decrypt(lastName) : (),
                 email: email is string ? check decrypt(email) : (),
                 contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),

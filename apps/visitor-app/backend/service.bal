@@ -108,9 +108,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Fetches a specific visitor by hashed Email.
     #
-    # + hashedEmail - Hashed Email of the visitor
+    # + idHash - Hashed Email or contact number of the visitor
     # + return - Visitor or error
-    resource function get visitors/[string hashedEmail](http:RequestContext ctx)
+    resource function get visitors/[string idHash](http:RequestContext ctx)
         returns database:Visitor|http:InternalServerError|http:NotFound {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -123,7 +123,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Visitor|error? visitor = database:fetchVisitor(hashedEmail);
+        database:Visitor|error? visitor = database:fetchVisitor(idHash);
         if visitor is error {
             string customError = "Error occurred while fetching visitor!";
             log:printError(customError, visitor);
@@ -134,7 +134,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visitor is () {
-            log:printError(string `No visitor information found for the hashed Email: ${hashedEmail}!`);
+            log:printError(string `No visitor information found for the Id Hash: ${idHash}!`);
             return <http:NotFound>{
                 body: {
                     message: "No visitor found!"
@@ -294,8 +294,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         // Sent the QR only if the visitor email is available.
         if visitorEmail is string {
 
-            string? firstName = existingVisitor.firstName;
-            string? lastName = existingVisitor.lastName;
             string? purposeOfVisit = payload.purposeOfVisit;
             string? whomTheyMeet = payload.whomTheyMeet;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
@@ -320,8 +318,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     email:inviteTemplate,
                     {
                         CONTENT_ID: visitId.toString(),
-                        NAME: firstName is string && lastName is string ?
-                            generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                        NAME: existingVisitor.firstName,
                         VISIT_DATE: payload.visitDate,
                         TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
@@ -406,8 +403,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             string[] ccList = [email:receptionEmail, invokerInfo.email];
-            if whomTheyMeet is string {
-                ccList.push(whomTheyMeet);
+            string? whoTheyMeetEmail = payload.whomTheyMeet;
+            if whoTheyMeetEmail is string {
+                ccList.push(whoTheyMeetEmail);
             }
             error? emailError = email:sendEmail({
                                                     attachments: [
@@ -594,8 +592,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
-            string? visitorFirstName = visit.firstName;
-            string? visitorLastName = visit.lastName;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                 organizeLocations(accessibleLocations) : ();
             string? purposeOfVisit = visit.purposeOfVisit;
@@ -606,6 +602,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 return <http:InternalServerError>{
                     body: {
                         message: customError
+                    }
+                };
+            }
+
+            // Validate the visit date.
+            if visit.visitDate != formatDate(time:utcToString(time:utcNow()), "Asia/Colombo", false) {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Visit date should be the current date for approval!"
                     }
                 };
             }
@@ -664,14 +669,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is string && lastName is string ?
-                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -751,12 +754,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             if hostEmployee is people:Employee && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
-                            HOST_NAME:
-                                generateSalutation(hostEmployee.firstName + " " + hostEmployee.lastName),
-                            VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
-                                generateSalutation(visitorFirstName + " " + visitorLastName) :
-                                    visitorFirstName is string ? visitorFirstName :
-                                        visitorLastName is string ? visitorLastName : visitorEmail ?: "Visitor",
+                            HOST_NAME: hostEmployee.firstName,
+                            VISITOR_NAME: visit.firstName,
                             CHECK_IN_TIME: checkInTime,
                             LOCATION: accessibleLocationString is string ? string `<li>
                                 <p
@@ -868,14 +867,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is string && lastName is string ?
-                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            NAME: visit.firstName + (lastName is string ? " " + lastName : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -988,13 +985,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
