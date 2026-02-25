@@ -570,3 +570,114 @@ public type DeleteSubTeamUnitPayload record {|
     @sql:Column {name: "updated_by"}
     string updatedBy;
 |};
+
+
+# Represents a head or leader of an organization unit.
+public type Head record {|
+    # Display name of the head
+    string name;
+    # Work email of the head
+    string email;
+    # Optional URL to the head's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a functional lead responsible for an organization unit.
+public type FunctionalLead record {|
+    # Display name of the functional lead
+    string name;
+    # Work email of the functional lead
+    string email;
+    # Optional URL to the functional lead's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a unit within the organization hierarchy.
+public type OrgUnit record {|
+    # Unique identifier of the unit
+    string id;
+    # Display name of the unit
+    string name;
+    # Total number of employees or members in the unit
+    int headCount;
+    # Optional head or direct manager of the unit
+    Head? head = ();
+    # Optional functional lead overseeing the unit
+    FunctionalLead? functionalLead = ();
+|};
+
+# Represents a sub-team within the organization hierarchy.
+public type OrgSubTeam record {|
+    # Unique identifier of the sub-team
+    string id;
+    # Display name of the sub-team
+    string name;
+    # Total number of employees or members in the sub-team
+    int headCount;
+    # Optional head or direct manager of the sub-team
+    Head? head = ();
+    # Optional functional lead overseeing the sub-team
+    FunctionalLead? functionalLead = ();
+    # List of units belonging to this sub-team
+    OrgUnit[] units = [];
+|};
+
+# Represents a team within the organization hierarchy.
+public type OrgTeam record {|
+    # Unique identifier of the team
+    string id;
+    # Display name of the team
+    string name;
+    # Total number of employees or members in the team
+    int headCount;
+    # Optional head or direct manager of the team
+    Head? head = ();
+    # Optional functional lead overseeing the team
+    FunctionalLead? functionalLead = ();
+    # List of sub-teams belonging to this team
+    OrgSubTeam[] subTeams = [];
+|};
+
+# Represents a business unit within the organization hierarchy.
+public type OrgBusinessUnit record {|
+    # Unique identifier of the business unit
+    string id;
+    # Display name of the business unit
+    string name;
+    # Total number of employees or members in the business unit
+    int headCount;
+    # Optional head or direct manager of the business unit
+    Head? head = ();
+    # List of teams belonging to this business unit
+    OrgTeam[] teams = [];
+|};
+
+# Represents a business unit within the organization hierarchy.
+public type OrgBusinessUnitRaw record {|
+    # Unique identifier of the business unit
+    string id;
+    # Display name of the business unit
+    string name;
+    # Total number of employees or members in the business unit
+    int headCount;
+    # Optional head or direct manager of the business unit
+    json? head = ();
+    # List of teams belonging to this business unit
+    json teams = [];
+|};
+
+# Represents the top-level company in the organization hierarchy.
+public type Company record {|
+    # Unique identifier of the company
+    string id;
+    # Display name of the company
+    string name;
+    # Total number of employees or members in the company
+    int headCount;
+    # Optional head or CEO of the company
+    Head? head = ();
+    # Optional functional lead at the company level
+    FunctionalLead? functionalLead = ();
+    # List of business units belonging to the company
+    OrgBusinessUnit[] businessUnits = [];
+|};
