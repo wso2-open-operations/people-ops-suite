@@ -937,7 +937,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         status: database:COMPLETED,
                         actionedBy: invokerInfo.email,
-                        timeOfDeparture: time:utcNow()
+                        timeOfDeparture: time:utcNow(),
+                        smsVerificationCode: null
                     }, invokerInfo.email);
 
             if response is error {

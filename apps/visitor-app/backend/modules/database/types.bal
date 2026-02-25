@@ -298,7 +298,7 @@ public type UpdateVisitPayload record {|
     # Time of departure
     time:Utc? timeOfDeparture = ();
     # SMS verification code for check-in/check-out
-    int? smsVerificationCode = ();
+    int? smsVerificationCode?;
 |};
 
 # Payload to update Invitation details.

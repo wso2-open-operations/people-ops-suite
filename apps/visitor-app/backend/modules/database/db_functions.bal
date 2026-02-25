@@ -144,9 +144,6 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
 # + smsVerificationCode - SMS verification code of the visit to fetch
 # + return - Visit object or error
 public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? smsVerificationCode = ()) returns Visit|error? {
-    if visitId is () && uuid is () {
-        return error("Either visitId or uuid must be provided.");
-    }
 
     VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid, smsVerificationCode}));
     if visit is error {

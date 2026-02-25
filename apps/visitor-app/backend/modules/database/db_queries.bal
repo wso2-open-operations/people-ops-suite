@@ -303,8 +303,8 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
     if payload.timeOfDeparture is time:Utc {
         filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
     }
-    if payload.smsVerificationCode is int {
-        filters.push(`sms_verification_code = ${payload.smsVerificationCode}`);
+    if payload.hasKey("smsVerificationCode") {
+        filters.push(`sms_verification_code = ${payload?.smsVerificationCode}`);
     }
 
     // Setting the updated_by field to record who performed the update, for audit purposes.
