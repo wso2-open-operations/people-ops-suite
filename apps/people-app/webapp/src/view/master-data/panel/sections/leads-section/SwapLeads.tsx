@@ -31,7 +31,7 @@ import { useState } from "react";
 
 import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
 import { Head } from "@root/src/services/organization";
-import { EmployeeBasicInfo, useGetAllEmployeesQuery } from "@services/employee";
+import { EmployeeBasicInfo, useGetAllEmployeesQuery, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
 import { truncateName } from "../../utils";
 
@@ -127,7 +127,7 @@ interface SelectLeadPanelProps {
 
 const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) => {
   const [selected, setSelected] = useState<EmployeeBasicInfo | null>(null);
-  const { data: employees = [], isLoading } = useGetAllEmployeesQuery();
+  const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
 
   return (
     <Box
@@ -344,7 +344,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
         onCancel={handleCancel}
       />
 
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, width: "100%", px: 0.5 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5 }}>
         {head && (
           <SwappableLead
             label="Business Unit Head"
