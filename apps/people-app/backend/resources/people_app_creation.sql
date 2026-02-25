@@ -462,6 +462,7 @@ CREATE TABLE `personal_info_audit` (
   `personal_info_pk_id` int DEFAULT NULL,
   `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
   `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
   `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `data` json NOT NULL,
   PRIMARY KEY (`id`),
@@ -477,6 +478,7 @@ CREATE TABLE `employee_audit` (
   `employee_pk_id` int DEFAULT NULL,
   `action_type` enum('INSERT', 'UPDATE', 'DELETE') NOT NULL,
   `action_by` varchar(254) NOT NULL,
+  `db_user` varchar(254) NULL,
   `action_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `data` json NOT NULL,
   PRIMARY KEY (`id`),
@@ -492,11 +494,16 @@ CREATE TRIGGER `trg_personal_info_audit_insert`
 AFTER INSERT ON `personal_info`
 FOR EACH ROW
 BEGIN
-  INSERT INTO personal_info_audit (personal_info_pk_id, action_type, action_by, action_on, data)
+  DECLARE v_db_user VARCHAR(254);
+  
+  SET v_db_user = USER();
+  
+  INSERT INTO personal_info_audit (personal_info_pk_id, action_type, action_by, db_user, action_on, data)
   VALUES (
     NEW.id,
     'INSERT',
     NEW.created_by,
+    v_db_user,
     CURRENT_TIMESTAMP(6),
     JSON_OBJECT(
       'id', NEW.id,
@@ -531,11 +538,16 @@ CREATE TRIGGER `trg_personal_info_audit_update`
 AFTER UPDATE ON `personal_info`
 FOR EACH ROW
 BEGIN
-  INSERT INTO personal_info_audit (personal_info_pk_id, action_type, action_by, action_on, data)
+  DECLARE v_db_user VARCHAR(254);
+  
+  SET v_db_user = USER();
+  
+  INSERT INTO personal_info_audit (personal_info_pk_id, action_type, action_by, db_user, action_on, data)
   VALUES (
     NEW.id,
     'UPDATE',
     NEW.updated_by,
+    v_db_user,
     CURRENT_TIMESTAMP(6),
     JSON_OBJECT(
       'id', NEW.id,
@@ -661,11 +673,16 @@ CREATE TRIGGER `trg_employee_audit_insert`
 AFTER INSERT ON `employee`
 FOR EACH ROW
 BEGIN
-  INSERT INTO employee_audit (employee_pk_id, action_type, action_by, action_on, data)
+  DECLARE v_db_user VARCHAR(254);
+  
+  SET v_db_user = USER();
+  
+  INSERT INTO employee_audit (employee_pk_id, action_type, action_by, db_user, action_on, data)
   VALUES (
     NEW.id,
     'INSERT',
     NEW.created_by,
+    v_db_user,
     CURRENT_TIMESTAMP(6),
     JSON_OBJECT(
       'id', NEW.id,
@@ -707,11 +724,16 @@ CREATE TRIGGER `trg_employee_audit_update`
 AFTER UPDATE ON `employee`
 FOR EACH ROW
 BEGIN
-  INSERT INTO employee_audit (employee_pk_id, action_type, action_by, action_on, data)
+  DECLARE v_db_user VARCHAR(254);
+  
+  SET v_db_user = USER();
+  
+  INSERT INTO employee_audit (employee_pk_id, action_type, action_by, db_user, action_on, data)
   VALUES (
     NEW.id,
     'UPDATE',
     NEW.updated_by,
+    v_db_user,
     CURRENT_TIMESTAMP(6),
     JSON_OBJECT(
       'id', NEW.id,
