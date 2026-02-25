@@ -465,7 +465,7 @@ public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployee
             );
 
             int employeePkId = check pkIdResult.ensureType(int);
-            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
+            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId, updatedBy));
 
             sql:ParameterizedQuery[] insertQueries =
                 from Email email in additionalManagerEmails
