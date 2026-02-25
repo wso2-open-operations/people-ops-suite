@@ -434,8 +434,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         if contactNumber is string {
             // TODO SMS sending logic here
             boolean isUniqueCode = false;
+            int maxRetries = 5;
+            int retryCount = 0;
             int|error verificationCode = error("Uninitialized verification code");
-            while !isUniqueCode {
+            while !isUniqueCode && retryCount <= maxRetries {
+                retryCount += 1;
                 // Generate a random 6-digit code for SMS content.
                 verificationCode = random:createIntInRange(100000, 1000000);
                 if verificationCode is error {
