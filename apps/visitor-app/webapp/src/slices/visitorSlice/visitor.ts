@@ -53,7 +53,7 @@ export interface AddVisitorPayload {
   lastName?: string;
   idHash: string;
   contactNumber?: string;
-  email: string;
+  email?: string;
 }
 
 export const fetchVisitor = createAsyncThunk(

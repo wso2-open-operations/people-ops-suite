@@ -90,17 +90,17 @@ enum VisitorStatus {
 
 export interface VisitorDetail {
   name?: string;
-  contactNumber: string;
+  contactNumber: string | undefined;
   countryCode: string;
-  emailAddress: string;
+  emailAddress: string | undefined;
   status: VisitorStatus;
 }
 
 const defaultVisitor: VisitorDetail = {
   name: "",
-  contactNumber: "",
+  contactNumber: undefined,
   countryCode: "+94",
-  emailAddress: "",
+  emailAddress: undefined,
   status: VisitorStatus.Draft,
 };
 
@@ -134,6 +134,13 @@ const getDurationLabel = (
   if (hours === 0) return `${minutes} mins`;
   if (minutes === 0) return `${hours} hr${hours > 1 ? "s" : ""}`;
   return `${hours} hr${hours > 1 ? "s" : ""} ${minutes} mins`;
+};
+
+const extractEmailFromString = (input: string): string => {
+  const trimmed = input.trim();
+  const match = trimmed.match(/<([^>]+)>/);
+  if (match && match[1]) return match[1].trim();
+  return trimmed;
 };
 
 const CustomListbox = forwardRef<
@@ -181,6 +188,7 @@ function CreateVisit() {
     currentSearchTerm,
     state: employeesState,
   } = useAppSelector((state: RootState) => state.employees);
+  const userInfo = useAppSelector((state: RootState) => state.user.userInfo);
 
   const dialogContext = useConfirmationModalContext();
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -308,11 +316,14 @@ function CreateVisit() {
 
           const addVisitorPayload: AddVisitorPayload = {
             idHash: hashedId,
-            email: draftVisitor.emailAddress,
             firstName: visitorName.split(" ")[0] || undefined,
             lastName: visitorName.split(" ").slice(1).join(" ") || undefined,
-            contactNumber: fullContactNumber,
           };
+
+          if (fullContactNumber)
+            addVisitorPayload.contactNumber = fullContactNumber;
+          if (draftVisitor.emailAddress)
+            addVisitorPayload.email = draftVisitor.emailAddress;
 
           const addVisitorAction = await dispatch(
             addVisitor(addVisitorPayload),
@@ -879,8 +890,16 @@ function CreateVisit() {
                         name={`visitors.${idx}.emailAddress`}
                         value={visitor.emailAddress}
                         onChange={(e) => {
-                          formik.handleChange(e);
-                          const email = e.target.value.trim();
+                          const extractedEmail = extractEmailFromString(
+                            e.target.value,
+                          );
+
+                          formik.setFieldValue(
+                            `visitors.${idx}.emailAddress`,
+                            extractedEmail,
+                          );
+
+                          const email = extractedEmail.trim();
 
                           if (visitorEmailDebounceRefs.current[idx]) {
                             clearTimeout(
@@ -1046,9 +1065,11 @@ function CreateVisit() {
       <Formik
         initialValues={{
           companyName: "",
-          whoTheyMeet: "",
-          whoTheyMeetName: "",
-          whoTheyMeetThumbnail: null as string | null,
+          whoTheyMeet: userInfo?.workEmail || "",
+          whoTheyMeetName: userInfo
+            ? `${userInfo.firstName} ${userInfo.lastName}`
+            : "",
+          whoTheyMeetThumbnail: userInfo?.employeeThumbnail || null,
           purposeOfVisit: "",
           accessibleLocations: [],
           visitDate: "",
