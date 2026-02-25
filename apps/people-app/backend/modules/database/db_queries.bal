@@ -831,13 +831,13 @@ isolated function addPersonalInfoEmergencyContactQuery(string employeeId, Emerge
             1,
             ${actor},
             ${actor}
-        )
+        ) AS new_contact
     ON DUPLICATE KEY UPDATE
         is_active = 1,
-        name = VALUES(name),
-        telephone = VALUES(telephone),
-        relationship = VALUES(relationship),
-        updated_by = VALUES(updated_by),
+        name = new_contact.name,
+        telephone = new_contact.telephone,
+        relationship = new_contact.relationship,
+        updated_by = new_contact.updated_by,
         updated_on = CURRENT_TIMESTAMP(6);`;
 
 # Update employee job information query.
@@ -981,7 +981,7 @@ isolated function addEmployeeAdditionalManagerQuery(int id, string email, string
             1,
             ${actor}, 
             ${actor}
-        )
+        ) AS new_manager
     ON DUPLICATE KEY UPDATE
         is_active = 1,
         updated_by = ${actor},
