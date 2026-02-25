@@ -21,7 +21,6 @@ import ballerina/sql;
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
         employee_id,
         first_name,
         last_name,
@@ -35,7 +34,6 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
         employee_id,
         first_name,
         last_name,
@@ -49,7 +47,6 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 # + return - Query to get employee detailed information
 isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
@@ -119,7 +116,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
 
     sql:ParameterizedQuery baseQuery = `
         SELECT
-            e.id AS id,
             e.employee_id AS employeeId,
             e.first_name AS firstName,
             e.last_name AS lastName,
@@ -252,7 +248,6 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
@@ -330,7 +325,6 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
 # + return - Query to get employee personal information
 isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
-        p.id AS id,
         nic_or_passport,
         p.first_name AS firstName,
         p.last_name AS lastName,
@@ -353,16 +347,17 @@ isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:Pa
 
 # Fetch emergency contacts by personal info ID.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + return - Query to fetch emergency contacts
-isolated function getEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT
-        name,
-        relationship,
-        mobile,
-        telephone
-    FROM personal_info_emergency_contacts
-    WHERE personal_info_id = ${personalInfoId};`;
+        piec.name,
+        piec.relationship,
+        piec.mobile,
+        piec.telephone
+    FROM personal_info_emergency_contacts piec
+    INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+    WHERE e.employee_id = ${employeeId};`;
 
 # Get business units query.
 # + return - Business units query
@@ -531,11 +526,11 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
 
 # Add emergency contact query.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
 # + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact, string createdBy)
+isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
     returns sql:ParameterizedQuery =>
     `INSERT INTO personal_info_emergency_contacts
         (
@@ -549,7 +544,7 @@ isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, Emerg
         )
      VALUES
         (
-            ${personalInfoId},
+            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
             ${contact.name},
             ${contact.mobile},
             ${contact.telephone},
@@ -623,11 +618,11 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
 
 # Update employee personal information query.
 #
-# + id - Personal info ID
+# + employeeId - Personal info ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
 # + return - sql:ParameterizedQuery - Update query for personal info
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE personal_info SET `;
@@ -718,26 +713,27 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE id = ${id}`);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
     return finalQuery;
 }
 
 # Delete emergency contacts by personal info id.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
-    `DELETE 
-        FROM personal_info_emergency_contacts
-            WHERE personal_info_id = ${personalInfoId};`;
+isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE piec
+        FROM personal_info_emergency_contacts piec
+        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+        WHERE e.employee_id = ${employeeId};`;
 
 # Insert an emergency contact for a personal_info id.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
 # + return - sql:ParameterizedQuery - Insert query for emergency contacts
-isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
+isolated function updatePersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact,
         string createdBy) returns sql:ParameterizedQuery => `
         INSERT INTO personal_info_emergency_contacts
             (
@@ -751,7 +747,7 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
             )
         VALUES
             (
-                ${personalInfoId},
+                (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
                 ${contact.name},
                 ${contact.relationship},
                 ${contact.mobile},

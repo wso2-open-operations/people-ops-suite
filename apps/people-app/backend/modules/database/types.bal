@@ -54,9 +54,6 @@ type DatabaseConfig record {|
 
 # Employee basic information.
 public type EmployeeBasicInfo record {|
-    # Primary key ID
-    @sql:Column {name: "id"}
-    int id;
     # Employee ID of the user
     @sql:Column {name: "employee_id"}
     string employeeId;
@@ -231,8 +228,6 @@ public type EmployeesResponse record {|
 
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
-    # Primary key ID
-    int id;
     # National Identity Card number
     @sql:Column {name: "nic_or_passport"}
     string nicOrPassport;
@@ -279,9 +274,6 @@ public type EmployeePersonalInfo record {|
 
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
-    # Primary key ID
-    @sql:Column {name: "id"}
-    int id;
     # Employee ID of the user
     string employeeId;
     # First name
