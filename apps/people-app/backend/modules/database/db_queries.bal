@@ -775,154 +775,159 @@ isolated function deleteSubTeamUnitQuery(DeleteSubTeamUnitPayload payload, int s
 # + return - Query to get the full organization hierarchy
 isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-        CAST(bu.id AS CHAR) AS id,
-        bu.name AS name,
+        CAST(c.id AS CHAR) AS id,
+        c.name AS name,
         COALESCE((
-            SELECT COUNT(*) FROM employee e WHERE e.business_unit_id = bu.id
+            SELECT COUNT(*)
+            FROM employee e
+            INNER JOIN office o ON e.office_id = o.id
+            WHERE o.company_id = c.id
         ), 0) AS headCount,
-        CASE 
-            WHEN bu_head.work_email IS NOT NULL THEN JSON_OBJECT(
-                'name', CONCAT(bu_head.first_name, ' ', bu_head.last_name),
-                'email', bu_head.work_email,
-                'avatar', bu_head.employee_thumbnail
-            )
-            ELSE CAST('null' AS JSON)
-        END AS head,
         COALESCE(
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', CAST(t.id AS CHAR),
-                    'name', t.name,
+                    'id', CAST(bu.id AS CHAR),
+                    'name', bu.name,
                     'headCount', COALESCE((
                         SELECT COUNT(*) FROM employee e
-                        WHERE e.team_id = t.id AND e.business_unit_id = bu.id
+                        WHERE e.business_unit_id = bu.id
                     ), 0),
                     'head', CASE 
-                        WHEN t_head.work_email IS NOT NULL THEN JSON_OBJECT(
-                            'name', CONCAT(t_head.first_name, ' ', t_head.last_name),
-                            'email', t_head.work_email,
-                            'avatar', t_head.employee_thumbnail
+                        WHEN bu_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                            'name', CONCAT(bu_head.first_name, ' ', bu_head.last_name),
+                            'email', bu_head.work_email,
+                            'avatar', bu_head.employee_thumbnail
                         )
-                        ELSE NULL
+                        ELSE CAST('null' AS JSON)
                     END,
-                    'functionalLead', CASE 
-                        WHEN t_fl.work_email IS NOT NULL THEN JSON_OBJECT(
-                            'name', CONCAT(t_fl.first_name, ' ', t_fl.last_name),
-                            'email', t_fl.work_email,
-                            'avatar', t_fl.employee_thumbnail
-                        )
-                        ELSE NULL
-                    END,
-                    'subTeams', COALESCE(
+                    'teams', COALESCE(
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                                'id', CAST(st.id AS CHAR),
-                                'name', st.name,
+                                'id', CAST(t.id AS CHAR),
+                                'name', t.name,
                                 'headCount', COALESCE((
                                     SELECT COUNT(*) FROM employee e
-                                    WHERE e.sub_team_id = st.id
-                                      AND e.team_id = t.id
+                                    WHERE e.team_id = t.id
                                       AND e.business_unit_id = bu.id
                                 ), 0),
                                 'head', CASE 
-                                    WHEN st_head.work_email IS NOT NULL THEN JSON_OBJECT(
-                                        'name', CONCAT(st_head.first_name, ' ', st_head.last_name),
-                                        'email', st_head.work_email,
-                                        'avatar', st_head.employee_thumbnail
+                                    WHEN t_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                        'name', CONCAT(t_head.first_name, ' ', t_head.last_name),
+                                        'email', t_head.work_email,
+                                        'avatar', t_head.employee_thumbnail
                                     )
-                                    ELSE NULL
+                                    ELSE CAST('null' AS JSON)
                                 END,
                                 'functionalLead', CASE 
-                                    WHEN st_fl.work_email IS NOT NULL THEN JSON_OBJECT(
-                                        'name', CONCAT(st_fl.first_name, ' ', st_fl.last_name),
-                                        'email', st_fl.work_email,
-                                        'avatar', st_fl.employee_thumbnail
+                                    WHEN t_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                        'name', CONCAT(t_fl.first_name, ' ', t_fl.last_name),
+                                        'email', t_fl.work_email,
+                                        'avatar', t_fl.employee_thumbnail
                                     )
-                                    ELSE NULL
+                                    ELSE CAST('null' AS JSON)
                                 END,
-                                'units', COALESCE(
+                                'subTeams', COALESCE(
                                     (
                                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                                            'id', CAST(u.id AS CHAR),
-                                            'name', u.name,
+                                            'id', CAST(st.id AS CHAR),
+                                            'name', st.name,
                                             'headCount', COALESCE((
                                                 SELECT COUNT(*) FROM employee e
-                                                WHERE e.unit_id = u.id
-                                                  AND e.sub_team_id = st.id
+                                                WHERE e.sub_team_id = st.id
                                                   AND e.team_id = t.id
                                                   AND e.business_unit_id = bu.id
                                             ), 0),
                                             'head', CASE 
-                                                WHEN u_head.work_email IS NOT NULL THEN JSON_OBJECT(
-                                                    'name', CONCAT(u_head.first_name, ' ', u_head.last_name),
-                                                    'email', u_head.work_email,
-                                                    'avatar', u_head.employee_thumbnail
+                                                WHEN st_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                    'name', CONCAT(st_head.first_name, ' ', st_head.last_name),
+                                                    'email', st_head.work_email,
+                                                    'avatar', st_head.employee_thumbnail
                                                 )
-                                                ELSE NULL
+                                                ELSE CAST('null' AS JSON)
                                             END,
                                             'functionalLead', CASE 
-                                                WHEN u_fl.work_email IS NOT NULL THEN JSON_OBJECT(
-                                                    'name', CONCAT(u_fl.first_name, ' ', u_fl.last_name),
-                                                    'email', u_fl.work_email,
-                                                    'avatar', u_fl.employee_thumbnail
+                                                WHEN st_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                    'name', CONCAT(st_fl.first_name, ' ', st_fl.last_name),
+                                                    'email', st_fl.work_email,
+                                                    'avatar', st_fl.employee_thumbnail
                                                 )
-                                                ELSE NULL
+                                                ELSE CAST('null' AS JSON)
                                             END
+                                            ,
+                                            'units', COALESCE(
+                                                (
+                                                    SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                                        'id', CAST(u.id AS CHAR),
+                                                        'name', u.name,
+                                                        'headCount', COALESCE((
+                                                            SELECT COUNT(*) FROM employee e
+                                                            WHERE e.unit_id = u.id
+                                                              AND e.sub_team_id = st.id
+                                                              AND e.team_id = t.id
+                                                              AND e.business_unit_id = bu.id
+                                                        ), 0),
+                                                        'head', CASE 
+                                                            WHEN u_head.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                                'name', CONCAT(u_head.first_name, ' ', u_head.last_name),
+                                                                'email', u_head.work_email,
+                                                                'avatar', u_head.employee_thumbnail
+                                                            )
+                                                            ELSE CAST('null' AS JSON)
+                                                        END,
+                                                        'functionalLead', CASE 
+                                                            WHEN u_fl.work_email IS NOT NULL THEN JSON_OBJECT(
+                                                                'name', CONCAT(u_fl.first_name, ' ', u_fl.last_name),
+                                                                'email', u_fl.work_email,
+                                                                'avatar', u_fl.employee_thumbnail
+                                                            )
+                                                            ELSE CAST('null' AS JSON)
+                                                        END
+                                                    ))
+                                                    FROM unit u
+                                                    INNER JOIN business_unit_team_sub_team_unit butstu
+                                                        ON u.id = butstu.unit_id AND butstu.is_active = 1
+                                                    LEFT JOIN employee u_head
+                                                        ON u.head_email = u_head.work_email
+                                                    LEFT JOIN employee u_fl
+                                                        ON butstu.head_email = u_fl.work_email
+                                                    WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                                ),
+                                                JSON_ARRAY()
+                                            )
                                         ))
-                                        FROM unit u
-                                        INNER JOIN business_unit_team_sub_team_unit butstu
-                                            ON u.id = butstu.unit_id AND butstu.is_active = 1
-                                        LEFT JOIN employee u_head
-                                            ON u.head_email = u_head.work_email
-                                        LEFT JOIN designation u_head_des
-                                            ON u_head.designation_id = u_head_des.id
-                                        LEFT JOIN employee u_fl
-                                            ON butstu.head_email = u_fl.work_email
-                                        LEFT JOIN designation u_fl_des
-                                            ON u_fl.designation_id = u_fl_des.id
-                                        WHERE butstu.business_unit_team_sub_team_id = butst.id
+                                        FROM sub_team st
+                                        INNER JOIN business_unit_team_sub_team butst
+                                            ON st.id = butst.sub_team_id AND butst.is_active = 1
+                                        LEFT JOIN employee st_head
+                                            ON st.head_email = st_head.work_email
+                                        LEFT JOIN employee st_fl
+                                            ON butst.head_email = st_fl.work_email
+                                        WHERE butst.business_unit_team_id = but.id
                                     ),
                                     JSON_ARRAY()
                                 )
                             ))
-                            FROM sub_team st
-                            INNER JOIN business_unit_team_sub_team butst
-                                ON st.id = butst.sub_team_id AND butst.is_active = 1
-                            LEFT JOIN employee st_head
-                                ON st.head_email = st_head.work_email
-                            LEFT JOIN designation st_head_des
-                                ON st_head.designation_id = st_head_des.id
-                            LEFT JOIN employee st_fl
-                                ON butst.head_email = st_fl.work_email
-                            LEFT JOIN designation st_fl_des
-                                ON st_fl.designation_id = st_fl_des.id
-                            WHERE butst.business_unit_team_id = but.id
+                            FROM team t
+                            INNER JOIN business_unit_team but
+                                ON t.id = but.team_id AND but.is_active = 1
+                            LEFT JOIN employee t_head
+                                ON t.head_email = t_head.work_email
+                            LEFT JOIN employee t_fl
+                                ON but.head_email = t_fl.work_email
+                            WHERE but.business_unit_id = bu.id
                         ),
                         JSON_ARRAY()
                     )
                 ))
-                FROM team t
-                INNER JOIN business_unit_team but
-                    ON t.id = but.team_id AND but.is_active = 1
-                LEFT JOIN employee t_head
-                    ON t.head_email = t_head.work_email
-                LEFT JOIN designation t_head_des
-                    ON t_head.designation_id = t_head_des.id
-                LEFT JOIN employee t_fl
-                    ON but.head_email = t_fl.work_email
-                LEFT JOIN designation t_fl_des
-                    ON t_fl.designation_id = t_fl_des.id
-                WHERE but.business_unit_id = bu.id
+                FROM 
+                    business_unit bu
+                    LEFT JOIN employee bu_head ON bu.head_email = bu_head.work_email
+                WHERE bu.is_active = 1
             ),
             JSON_ARRAY()
-        ) AS teams
+        ) AS businessUnits
     FROM 
-        business_unit bu
-        LEFT JOIN employee bu_head ON bu.head_email = bu_head.work_email
-        LEFT JOIN designation bu_head_des ON bu_head.designation_id = bu_head_des.id
+        company c
     WHERE
-        bu.id IN (
-            SELECT DISTINCT business_unit_id
-            FROM business_unit_team
-            WHERE is_active = 1
-        )`;
+        c.is_active = 1
+    LIMIT 1`;
