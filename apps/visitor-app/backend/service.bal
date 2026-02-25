@@ -293,7 +293,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Sent the QR only if the visitor email is available.
         if visitorEmail is string {
-
+            string? lastName = existingVisitor.lastName;
             string? purposeOfVisit = payload.purposeOfVisit;
             string? whomTheyMeet = payload.whomTheyMeet;
             database:Floor[]? accessibleLocations = payload.accessibleLocations;
@@ -318,7 +318,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     email:inviteTemplate,
                     {
                         CONTENT_ID: visitId.toString(),
-                        NAME: existingVisitor.firstName,
+                        FIRST_NAME: existingVisitor.firstName,
+                        NAME: existingVisitor.firstName + (lastName is string ? string ` ${lastName}` : ""),
                         VISIT_DATE: payload.visitDate,
                         TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
@@ -579,6 +580,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Get visitor email for sending notifications
         string? visitorEmail = visit.email;
+        string? visitorLastName = visit.lastName;
 
         // Approve a visit.
         if action == APPROVE {
@@ -648,6 +650,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+
+            // Send notification to the visitor about visit approval
             if visitorEmail is string {
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
@@ -669,12 +673,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
+                            FIRST_NAME: visit.firstName,
+                            NAME: visit.firstName + (visitorLastName is string ? string ` ${visitorLastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -751,11 +755,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
+            // Send notification to the host about visitor arrival
             if hostEmployee is people:Employee && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
                             HOST_NAME: hostEmployee.firstName,
-                            VISITOR_NAME: visit.firstName,
+                            VISITOR_NAME: visit.firstName + (visitorLastName is string ? string ` ${visitorLastName}` : ""),
                             CHECK_IN_TIME: checkInTime,
                             LOCATION: accessibleLocationString is string ? string `<li>
                                 <p
@@ -784,7 +789,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <strong>Purpose of Visit :</strong>
                                   <span>${purposeOfVisit}</span>
                                 </p>
-                              </li>` : ""
+                              </li>` : "",
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
 
                 if content is error {
@@ -794,6 +801,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                             {
                                 to: [hostEmail],
+                                cc: [email:receptionEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:EMPLOYEE_VISITOR_ARRIVAL_SUBJECT,
                                 template: content
@@ -834,7 +842,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         status: database:REJECTED,
                         rejectionReason: payload.rejectionReason,
-                        actionedBy: invokerInfo.email
+                        actionedBy: invokerInfo.email,
+                        smsVerificationCode: null
                     }, invokerInfo.email);
 
             if response is error {
@@ -872,7 +881,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: visit.firstName + (lastName is string ? " " + lastName : ""),
+                            FIRST_NAME: visit.firstName,
+                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -906,13 +916,18 @@ service http:InterceptableService / on new http:Listener(9090) {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
                 } else {
+                    string? hostEmail = visit.whomTheyMeet;
+                    string[] ccList = [email:receptionEmail];
+                    if hostEmail is string {
+                        ccList.push(hostEmail);
+                    }
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visitorEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:VISIT_REJECTED_SUBJECT,
                                 template: content,
-                                cc: [email:receptionEmail]
+                                cc: ccList
                             });
                     if emailError is error {
                         string customError = "An error occurred while sending the rejection email!";
@@ -990,6 +1005,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
+                            FIRST_NAME: visit.firstName,
                             NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
@@ -1045,19 +1061,25 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            CONTACT_EMAIL: email:contactUsEmail
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
                 } else {
+                    string? hostEmail = visit.whomTheyMeet;
+                    string[] ccList = [email:receptionEmail];
+                    if hostEmail is string {
+                        ccList.push(hostEmail);
+                    }
                     error? emailError = email:sendEmail(
                             {
                                 to: [visitorEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:VISIT_COMPLETION_SUBJECT,
                                 template: content,
-                                cc: [email:receptionEmail]
+                                cc: ccList
                             });
 
                     if emailError is error {
