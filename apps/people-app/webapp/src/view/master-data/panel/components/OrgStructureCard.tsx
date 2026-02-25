@@ -45,6 +45,19 @@ const TYPE_LABELS = {
   UNIT: "Unit",
 };
 
+const STATIC_COMPANY_LEADERS = {
+  chairman: {
+    name: "Nimal Perera",
+    title: "Chairman",
+    avatar: undefined,
+  },
+  ceo: {
+    name: "Anushka Fernando",
+    title: "CEO",
+    avatar: undefined,
+  },
+};
+
 const OrgStructureCard = ({
   name,
   type,
@@ -58,6 +71,10 @@ const OrgStructureCard = ({
   onAdd,
 }: OrgStructureCardProps) => {
   const theme = useTheme();
+  const isCompanyNode = type === NodeType.Company;
+  const primaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.chairman : teamHead;
+  const secondaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.ceo : functionLead;
+  const shouldRenderPeopleSection = Boolean(primaryPerson || secondaryPerson);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,6 +102,7 @@ const OrgStructureCard = ({
         padding: "12px",
         boxShadow: "0px 1px 6px 0px rgba(0, 0, 0, 0.12)",
         display: "flex",
+        cursor: "pointer",
         flexDirection: "column",
         gap: "16px",
       }}
@@ -134,7 +152,7 @@ const OrgStructureCard = ({
         </Box>
 
         {/* Team Head and Function Lead */}
-        {(teamHead || functionLead) && (
+        {shouldRenderPeopleSection && (
           <Box
             sx={{
               display: "flex",
@@ -145,22 +163,20 @@ const OrgStructureCard = ({
             }}
           >
             {/* Team Head */}
-            {teamHead && (
+            {primaryPerson && (
               <PersonCard
-                name={teamHead.name}
-                title={teamHead.title}
-                avatar={teamHead.avatar}
-                maxNameLength={15}
+                name={primaryPerson.name}
+                title={primaryPerson.title}
+                avatar={primaryPerson.avatar}
               />
             )}
 
             {/* Function Lead */}
-            {functionLead && (
+            {secondaryPerson && (
               <PersonCard
-                name={functionLead.name}
-                title={functionLead.title}
-                avatar={functionLead.avatar}
-                maxNameLength={12}
+                name={secondaryPerson.name}
+                title={secondaryPerson.title}
+                avatar={secondaryPerson.avatar}
               />
             )}
           </Box>
@@ -168,7 +184,7 @@ const OrgStructureCard = ({
       </Box>
 
       {/* Divider - Only for types with heads/leads */}
-      {(teamHead || functionLead) && (
+      {shouldRenderPeopleSection && (
         <Box
           sx={{
             height: "1px",
@@ -196,7 +212,7 @@ const OrgStructureCard = ({
           {/* Type Badge */}
           <Box
             sx={{
-              backgroundColor: "#FFF1E5",
+              backgroundColor: theme.palette.fill.primary.light.active,
               padding: "4px 8px",
               borderRadius: "4px",
               display: "flex",
