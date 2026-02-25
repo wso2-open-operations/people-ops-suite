@@ -64,6 +64,7 @@ const ScanVisit: React.FC = () => {
   };
 
   const handlePinSubmit = async () => {
+    setIsValidating(true);
     navigate(`/admin-panel?tab=active-visits&visitVerificationCode=${pin}`);
   };
 
@@ -75,6 +76,7 @@ const ScanVisit: React.FC = () => {
       await safeStop();
     } else {
       // Switching to QR mode - restart scanner
+      hasScannedRef.current = false;
       setPin("");
       setIsValidating(false);
     }

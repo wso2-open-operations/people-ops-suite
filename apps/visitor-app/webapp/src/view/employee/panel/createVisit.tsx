@@ -213,9 +213,9 @@ function CreateVisit() {
   useEffect(() => {
     return () => {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-      Object.values(visitorEmailDebounceRefs.current).forEach(
-        (t) => t && clearTimeout(t),
-      );
+      Object.values(visitorEmailDebounceRefs.current).forEach((t) => {
+        if (t) clearTimeout(t);
+      });
     };
   }, []);
 
@@ -249,6 +249,7 @@ function CreateVisit() {
     },
     [dispatch, isLoadingMore, hasMore, inputValue, employeesState],
   );
+  const normalizeContact = (raw: string) => `+${raw.replace(/\D/g, "")}`;
 
   const addNewVisitorBlock = useCallback((formik: any) => {
     formik.setFieldValue("visitors", [
@@ -271,9 +272,13 @@ function CreateVisit() {
         "Please note, this will add the visitor's information to the system.",
         ConfirmationType.accept,
         async () => {
-          const hashedId = await hash(
-            draftVisitor.emailAddress || draftVisitor.contactNumber,
-          );
+          const idInput =
+            draftVisitor.emailAddress ||
+            (draftVisitor.contactNumber
+              ? normalizeContact(draftVisitor.contactNumber)
+              : undefined);
+          if (!idInput) return;
+          const hashedId = await hash(idInput);
 
           const visitUUID = uuidv4();
           let qrCodeByteArray: number[] | undefined = undefined;
@@ -995,7 +1000,7 @@ function CreateVisit() {
                                   "",
                                 );
                                 fetchVisitorByEmailOrContact(
-                                  `+${contact}`,
+                                  normalizeContact(newValue),
                                   idx,
                                   formik,
                                 );
