@@ -149,7 +149,7 @@ public type VisitRecord record {|
     # Visitor ID Hash of the visitor
     string visitorIdHash;
     # Email of the visitor
-    string email;
+    string? email = ();
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -206,7 +206,7 @@ public type Visit record {|
     # Working phone number of visitor
     string? contactNumber = ();
     # Email of the visitor
-    string email;
+    string? email = ();
     # Invitation ID associated with the visit
     int? invitationId = ();
 |};

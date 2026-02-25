@@ -319,6 +319,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             string|error content = email:bindKeyValues(
                     email:inviteTemplate,
                     {
+                        CONTENT_ID: visitId.toString(),
                         NAME: firstName is string && lastName is string ?
                             generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
                         VISIT_DATE: payload.visitDate,
@@ -409,7 +410,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                         {
                                                             attachment: payload.qrCode,
                                                             contentName: "visitor-pass.png",
-                                                            contentType: "image/png"
+                                                            contentType: "image/png",
+                                                            contentId: visitId.toString()
                                                         }
                                                     ],
                                                     to: [visitorEmail],
@@ -750,7 +752,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                             VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
                                 generateSalutation(visitorFirstName + " " + visitorLastName) :
                                     visitorFirstName is string ? visitorFirstName :
-                                        visitorLastName is string ? visitorLastName : visit.email,
+                                        visitorLastName is string ? visitorLastName : visitorEmail ?: "Visitor",
                             CHECK_IN_TIME: checkInTime,
                             LOCATION: accessibleLocationString is string ? string `<li>
                                 <p

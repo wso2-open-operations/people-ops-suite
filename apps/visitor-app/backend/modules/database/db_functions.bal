@@ -156,6 +156,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
     string? timeOfEntry = visit.timeOfEntry;
     string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
+    string? email = visit.email;
 
     return {
         id: visit.id,
@@ -176,7 +177,7 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? s
         firstName: firstName is string ? check decrypt(firstName) : (),
         lastName: lastName is string ? check decrypt(lastName) : (),
         contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
-        email: check decrypt(visit.email),
+        email: email is string ? check decrypt(email) : (),
         invitationId: visit.invitationId,
         createdBy: visit.createdBy,
         createdOn: visit.createdOn,
@@ -202,6 +203,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
             string? firstName = visit.firstName;
             string? lastName = visit.lastName;
             string? contactNumber = visit.contactNumber;
+            string? email = visit.email;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
@@ -213,7 +215,7 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                 visitorIdHash: visit.visitorIdHash,
                 firstName: firstName is string ? check decrypt(firstName) : (),
                 lastName: lastName is string ? check decrypt(lastName) : (),
-                email: check decrypt(visit.email),
+                email: email is string ? check decrypt(email) : (),
                 contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,

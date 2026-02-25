@@ -964,6 +964,8 @@ public final string inviteTemplate = string `
                               <!-- [ALLOWED_FLOORS] -->
                             </ul>
 
+                            <img src="cid:<!-- [CONTENT_ID] -->" alt="QR Code" width="400" height="400" />
+
                             <p
                               style="
                                 font-family: 'Roboto', Helvetica, sans-serif;
