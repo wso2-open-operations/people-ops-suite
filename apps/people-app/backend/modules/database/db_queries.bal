@@ -41,6 +41,13 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
         employee_thumbnail
     FROM employee;`;
 
+# Fetch employee ID by primary key ID.
+# 
+# + id - Primary key ID of the employee record
+# + return - Query to get employee ID
+isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT employee_id FROM employee WHERE id = ${id};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
