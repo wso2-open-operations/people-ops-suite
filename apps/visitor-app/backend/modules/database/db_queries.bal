@@ -185,7 +185,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.time_of_departure as timeOfDeparture,
             v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.id_hash as visitorIdHash,
+            vs.id_hash as visitorIdHash,
             vs.first_name as firstName,
             vs.last_name as lastName,
             vs.email,
@@ -206,7 +206,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         LEFT JOIN
             visitor vs
         ON
-            v.id_hash = vs.visitor_id_hash
+            vs.id_hash = v.visitor_id_hash
     `;
 
     // Setting the filters based on the inputs.
@@ -232,6 +232,10 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     if filters.uuid is string {
         filterQueries.push(` v.uuid = ${filters.uuid}`);
+    }
+
+    if filters.smsVerificationCode is int {
+        filterQueries.push(` v.sms_verification_code = ${filters.smsVerificationCode}`);
     }
 
     // Build main query with the filters.

@@ -1088,7 +1088,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        database:Visit|error? visit = database:fetchVisit(uuid = uuid);
+
+        int|error smsVerificationCode = int:fromString(uuid);
+        database:Visit|error? visit = error("Uninitialized visit retrieval");
+        if smsVerificationCode is error {
+            visit = database:fetchVisit(uuid = uuid);
+        } else {
+            visit = database:fetchVisit(smsVerificationCode = smsVerificationCode);
+        }
+
         if visit is error {
             string customError = "Error occurred while fetching visit by UUID!";
             log:printError(customError, visit);

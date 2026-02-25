@@ -326,4 +326,6 @@ public type VisitFilters record {|
     int? offset = ();
     # UUID of the visit
     string? uuid = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode = ();
 |};
