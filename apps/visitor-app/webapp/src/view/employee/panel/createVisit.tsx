@@ -1153,7 +1153,7 @@ function CreateVisit() {
                           "Visit details are already locked. No more changes allowed.",
                           ConfirmationType.accept,
                           () => formik.resetForm(),
-                          "Yes, Finish",
+                          "Yes",
                           "Cancel",
                         )
                       }
