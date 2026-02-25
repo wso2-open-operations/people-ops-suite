@@ -117,29 +117,6 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
         select unit;
 }
 
-# Get organization details with business units, teams, sub-teams, units,
-# including head, functional lead, and headcount for each node.
-#
-# + return - Organization details
-public isolated function getOrganizationDetails() returns Company|error {
-    CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
-    if companyRow is sql:NoRowsError {
-        return error("Organization details not found");
-    }
-    if companyRow is error {
-        return companyRow;
-    }
-
-    OrgBusinessUnit[] businessUnits = check companyRow.businessUnits.fromJsonWithType();
-
-    return {
-        id: companyRow.id,
-        name: companyRow.name,
-        headCount: companyRow.headCount,
-        businessUnits
-    };
-}
-
 # Get career functions.
 # + return - Career functions
 public isolated function getCareerFunctions() returns CareerFunction[]|error {
@@ -388,4 +365,27 @@ public isolated function deleteSubTeamUnit(DeleteSubTeamUnitPayload payload, int
         return true;
     }
     return false;
+}
+
+# Get organization details with business units, teams, sub-teams, units,
+# including head, functional lead, and headcount for each node.
+#
+# + return - Organization details
+public isolated function getOrganizationDetails() returns Company|error {
+    CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
+    if companyRow is sql:NoRowsError {
+        return error("Organization details not found");
+    }
+    if companyRow is error {
+        return companyRow;
+    }
+
+    OrgBusinessUnit[] businessUnits = check companyRow.businessUnits.fromJsonWithType();
+
+    return {
+        id: companyRow.id,
+        name: companyRow.name,
+        headCount: companyRow.headCount,
+        businessUnits
+    };
 }
