@@ -17,31 +17,29 @@ import { Avatar, Box, Tooltip, Typography, useTheme } from "@mui/material";
 
 import { memo } from "react";
 
-import { truncateName } from "../../utils";
-
 interface PersonCardProps {
   name: string;
   title: string;
   avatar?: string;
-  maxNameLength?: number;
 }
 
 /**
  * Reusable component for displaying person information (Team Head or Function Lead)
  * Shows avatar, name, and title in a compact card format
  */
-const PersonCard = memo<PersonCardProps>(({ name, title, avatar, maxNameLength = 15 }) => {
+const PersonCard = memo<PersonCardProps>(({ name, title, avatar }) => {
   const theme = useTheme();
 
   return (
     <Box
       sx={{
-        backgroundColor: "#FFFFFF",
         display: "flex",
         gap: "8px",
         alignItems: "center",
         padding: "4px",
         borderRadius: "4px",
+        flex: 1,
+        minWidth: 0,
       }}
     >
       <Avatar
@@ -59,20 +57,27 @@ const PersonCard = memo<PersonCardProps>(({ name, title, avatar, maxNameLength =
         sx={{
           display: "flex",
           flexDirection: "column",
+          minWidth: 0,
+          width: "100%",
         }}
       >
-        <Typography
-          sx={{
-            fontSize: "14px",
-            fontWeight: 500,
-            lineHeight: 1.6,
-            letterSpacing: "0.12px",
-            color: theme.palette.customText.primary.p2.active,
-            textTransform: "capitalize",
-          }}
-        >
-          {truncateName(name, maxNameLength)}
-        </Typography>
+        <Tooltip title={name} placement="top">
+          <Typography
+            sx={{
+              fontSize: "14px",
+              fontWeight: 500,
+              lineHeight: 1.6,
+              letterSpacing: "0.12px",
+              color: theme.palette.customText.primary.p2.active,
+              textTransform: "capitalize",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {name}
+          </Typography>
+        </Tooltip>
 
         <Tooltip title={title} placement="top">
           <Typography
@@ -81,9 +86,12 @@ const PersonCard = memo<PersonCardProps>(({ name, title, avatar, maxNameLength =
               fontWeight: 400,
               lineHeight: 1.6,
               color: theme.palette.customText.primary.p4.active,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
-            {truncateName(title, maxNameLength)}
+            {title}
           </Typography>
         </Tooltip>
       </Box>
