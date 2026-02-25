@@ -185,7 +185,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.time_of_departure as timeOfDeparture,
             v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.visitor_id_hash as visitorIdHash,
+            v.id_hash as visitorIdHash,
             vs.first_name as firstName,
             vs.last_name as lastName,
             vs.email,
@@ -206,7 +206,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         LEFT JOIN
             visitor vs
         ON
-            v.visitor_id_hash = vs.visitor_id_hash
+            v.id_hash = vs.visitor_id_hash
     `;
 
     // Setting the filters based on the inputs.
@@ -298,6 +298,9 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
 
     if payload.timeOfDeparture is time:Utc {
         filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
+    }
+    if payload.smsVerificationCode is int {
+        filters.push(`sms_verification_code = ${payload.smsVerificationCode}`);
     }
 
     // Setting the updated_by field to record who performed the update, for audit purposes.

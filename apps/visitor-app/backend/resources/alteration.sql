@@ -25,3 +25,8 @@ ALTER TABLE `people_ops_suite`.`visit`
 ADD CONSTRAINT `email_hash`
   FOREIGN KEY (`visitor_id_hash`)
   REFERENCES `people_ops_suite`.`visitor` (`id_hash`);
+
+ALTER TABLE `people_ops_suite`.`visit` 
+ADD COLUMN `sms_verification_code` INT(6) NULL DEFAULT NULL AFTER `invited_by`,
+ADD UNIQUE INDEX `sms_verification_code_UNIQUE` (`sms_verification_code` ASC) VISIBLE;
+;

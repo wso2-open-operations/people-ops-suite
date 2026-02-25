@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/sql;
 
 # Add new visitor.
@@ -128,9 +129,12 @@ public isolated function updateInvitation(int invitationId, UpdateInvitationPayl
 # + invitationId - Invitation ID associated with the visit
 # + return - Error if the insertion failed
 public isolated function addVisit(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId = ())
-    returns error? {
+    returns int|error {
 
-    _ = check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
+
+    return <int>executionResult.lastInsertId;
 }
 
 # Fetch visit by ID or UUID.
@@ -238,7 +242,16 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
 # + updatedBy - Person who is updating the visit
 # + return - Error if the update failed or no rows were affected
 public isolated function updateVisit(int visitId, UpdateVisitPayload payload, string updatedBy) returns error? {
-    sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
+    sql:ExecutionResult|error executionResult = databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
+    if executionResult is error {
+        if executionResult is sql:DatabaseError {
+            int errorCode = executionResult.detail().errorCode;
+            if errorCode == 1062 { // MySQL error code for duplicate entry
+                return error DuplicateEntryError(executionResult.message());
+            }
+        }
+        return executionResult;
+    }
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");
     }

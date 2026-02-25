@@ -18,6 +18,9 @@ import ballerina/sql;
 import ballerina/time;
 import ballerinax/mysql;
 
+# Error type for duplicate database entry (MySQL error code 1062).
+public type DuplicateEntryError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -294,6 +297,8 @@ public type UpdateVisitPayload record {|
     time:Utc? timeOfEntry = ();
     # Time of departure
     time:Utc? timeOfDeparture = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode = ();
 |};
 
 # Payload to update Invitation details.

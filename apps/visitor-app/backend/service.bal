@@ -18,11 +18,13 @@ import visitor.calendar;
 import visitor.database;
 import visitor.email;
 import visitor.people;
+import visitor.sms;
 
 import ballerina/cache;
 import ballerina/http;
 import ballerina/lang.regexp;
 import ballerina/log;
+import ballerina/random;
 import ballerina/time;
 
 configurable string webAppUrl = ?;
@@ -190,7 +192,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Created {
+        returns http:Created|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -246,7 +248,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         }
 
-        error? visitError = database:addVisit({
+        int|error visitId = database:addVisit({
                                                   visitorIdHash: payload.visitorIdHash,
                                                   companyName: payload.companyName,
                                                   passNumber: payload.passNumber,
@@ -259,9 +261,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   visitDate: payload.visitDate,
                                                   uuid: payload.uuid
                                               }, invokerInfo.email, invokerInfo.email);
-        if visitError is error {
+        if visitId is error {
             string customError = "Error occurred while adding visit!";
-            log:printError(customError, visitError);
+            log:printError(customError, visitId);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -269,7 +271,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error formattedFromDate = "N/A";
+        string|error? formattedFromDate = ();
         if timeOfEntry is string {
             formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo", false);
             if formattedFromDate is error {
@@ -278,7 +280,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        string|error formattedToDate = "N/A";
+        string|error? formattedToDate = ();
         if timeOfDeparture is string {
             formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
             if formattedToDate is error {
@@ -287,6 +289,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
         string? visitorEmail = existingVisitor.email;
+        string? contactNumber = existingVisitor.contactNumber;
+
+        // Sent the QR only if the visitor email is available.
         if visitorEmail is string {
 
             string? firstName = existingVisitor.firstName;
@@ -418,6 +423,51 @@ service http:InterceptableService / on new http:Listener(9090) {
                 string customError = "Error occurred while sending the email!";
                 log:printError(customError, emailError);
             }
+        }
+
+        // Send the SMS only if the contact number is available.
+        if contactNumber is string {
+            // TODO SMS sending logic here
+            boolean isUniqueCode = false;
+            int|error verificationCode = error("Uninitialized verification code");
+            while !isUniqueCode {
+                // Generate a random 6-digit code for SMS content.
+                verificationCode = random:createIntInRange(100000, 1000000);
+                if verificationCode is error {
+                    string customError = "Error occurred while generating the random code for SMS!";
+                    log:printError(customError, verificationCode);
+                    continue;
+                }
+
+                // Check if the generated code is unique in the database.
+                error? visit = database:updateVisit(visitId, {smsVerificationCode: verificationCode}, invokerInfo.email);
+                if visit is error {
+                    if visit is database:DuplicateEntryError {
+                        log:printError("Generated SMS verification code is not unique, regenerating...");
+                        continue;
+                    }
+                    string customError = "Error occurred while inserting visit with the SMS verification code!";
+                    log:printError(customError, visit);
+                }
+                isUniqueCode = true;
+            }
+
+            if verificationCode is int {
+                //Send the SMS with the generated code.
+                error? sendSms = sms:sendSms(
+                        {
+                            phoneNumber: contactNumber,
+                            message: sms:generateMessage(verificationCode,
+                                        formattedFromDate is string ? formattedFromDate : payload.visitDate)
+                        }
+                );
+
+                if sendSms is error {
+                    string customError = "Error occurred while sending the SMS!";
+                    log:printError(customError, sendSms);
+                }
+            }
+
         }
 
         return <http:Created>{
