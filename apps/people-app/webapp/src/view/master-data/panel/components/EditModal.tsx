@@ -143,30 +143,32 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
         </Box>
 
         {/* Leads Section */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 2.5,
-          }}
-        >
-          <SectionHeader title="Manage Leads" />
+        {(data.head || data.functionalLead) && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2.5,
+            }}
+          >
+            <SectionHeader title="Manage Leads" />
 
-          <SwapLeads
-            head={data.head}
-            functionalLead={data.functionalLead}
-            onSwapHead={handleHeadSwap}
-            onSwapFunctionalLead={handleLeadSwap}
-          />
+            <SwapLeads
+              head={data.head}
+              functionalLead={data.functionalLead}
+              onSwapHead={handleHeadSwap}
+              onSwapFunctionalLead={handleLeadSwap}
+            />
 
-          {/* {children.length > 0 && (
+            {/* {children.length > 0 && (
               <ManageChildren
                 children={children}
                 childType={childTypeLabel}
                 onTransfer={handleChildTransfer}
               />
             )} */}
-        </Box>
+          </Box>
+        )}
 
         {/* Danger Zone Section */}
         <Box
@@ -209,6 +211,6 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
           </Box>
         </Box>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 };
