@@ -51,10 +51,10 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
             updated_by = ${createdBy}
         ;`;
 
-# Build query to fetch a visitor by hashed email.
+# Build query to fetch a visitor by hashed email or contact number.
 #
 # + idHash - Filter : Hashed email or contact number of the visitor
-# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email
+# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email or contact number
 isolated function fetchVisitorByIdHashQuery(string idHash) returns sql:ParameterizedQuery
     => `
         SELECT         
