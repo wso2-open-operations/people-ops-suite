@@ -54,7 +54,7 @@ public isolated function formatDateTime(string dateTimeStr, string timeZone, boo
     }
 
     time:Utc utcFromString = check time:utcFromString(timeString);
-    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800);
+    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800); //TODO : Replace the hardcoded seconds with dynamic calculation based on the provided timeZone
     time:Civil utcToCivil = time:utcToCivil(newUtcTime);
 
     // Format with proper zero-padding for all components
@@ -83,7 +83,7 @@ public isolated function formatDate(string dateTimeStr, string timeZone, boolean
     }
 
     time:Utc utcFromString = check time:utcFromString(timeString);
-    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800);
+    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800); // TODO : Replace the hardcoded seconds with dynamic calculation based on the provided timeZone
     time:Civil utcToCivil = time:utcToCivil(newUtcTime);
 
     // Format with proper zero-padding for all components
