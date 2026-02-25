@@ -131,7 +131,11 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
     sql:ExecutionResult executionResult =
         check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
 
-    return <int>executionResult.lastInsertId;
+    int|string? lastInsertId = executionResult.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+    return error("Failed to retrieve last inserted visit ID");
 }
 
 # Fetch visit by ID or UUID.
