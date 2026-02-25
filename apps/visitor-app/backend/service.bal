@@ -1105,7 +1105,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + uuid - UUID of the visit to be fetched
     # + return - Visit object or error
     resource function get visits/[string uuid](http:RequestContext ctx)
-        returns database:Visit|http:NotFound|http:InternalServerError {
+        returns database:Visit|http:NotFound|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -1113,6 +1113,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            string customError = "You are not authorized to access visit details!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
                 }
             };
         }
