@@ -22,12 +22,14 @@ import { baseQueryWithRetry } from "./BaseQuery.ts";
 
 export interface Head {
   name: string;
+  email: string;
   title: string;
   avatar?: string;
 }
 
 export interface FunctionalLead {
   name: string;
+  email: string;
   title: string;
   avatar?: string;
 }
@@ -90,18 +92,34 @@ export const organizationApi = createApi({
     getOrgStructure: builder.query<Company, void>({
       query: () => AppConfig.serviceUrls.organization,
       transformResponse: (response: Company) => {
+        const companyHeadTitle = `${response.name} Head`;
+        const companyLeadTitle = `${response.name} Lead`;
+        if (response.head) response.head.title = companyHeadTitle;
+        if (response.functionalLead) response.functionalLead.title = companyLeadTitle;
+
         response.businessUnits.forEach((bu) => {
+          const buHeadTitle = `${bu.name} Head`;
+          const buLeadTitle = `${bu.name} Lead`;
+          if (bu.head) bu.head.title = buHeadTitle;
+          if (bu.functionalLead) bu.functionalLead.title = buLeadTitle;
+
           bu.teams.forEach((team) => {
+            const teamHeadTitle = `${bu.name} ${team.name} Head`;
             const teamLeadTitle = `${bu.name} ${team.name} Lead`;
-            if (team.functionalLead?.title) team.functionalLead.title = teamLeadTitle;
+            if (team.head) team.head.title = teamHeadTitle;
+            if (team.functionalLead) team.functionalLead.title = teamLeadTitle;
 
             team.subTeams.forEach((subTeam) => {
+              const subTeamHeadTitle = `${teamHeadTitle} ${subTeam.name} Head`;
               const subTeamLeadTitle = `${teamLeadTitle} ${subTeam.name} Lead`;
-              if (subTeam.functionalLead?.title) subTeam.functionalLead.title = subTeamLeadTitle;
+              if (subTeam.head) subTeam.head.title = subTeamHeadTitle;
+              if (subTeam.functionalLead) subTeam.functionalLead.title = subTeamLeadTitle;
 
               subTeam.units.forEach((unit) => {
+                const unitHeadTitle = `${subTeamHeadTitle} ${unit.name} Head`;
                 const unitLeadTitle = `${subTeamLeadTitle} ${unit.name} Lead`;
-                if (unit.functionalLead?.title) unit.functionalLead.title = unitLeadTitle;
+                if (unit.head) unit.head.title = unitHeadTitle;
+                if (unit.functionalLead) unit.functionalLead.title = unitLeadTitle;
               });
             });
           });
