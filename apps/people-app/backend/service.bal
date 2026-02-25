@@ -1136,7 +1136,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get organization details (full hierarchy with business units, teams, sub-teams, units).
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get org\-details(http:RequestContext ctx) returns http:BadRequest|http:InternalServerError|database:Company {
+    resource function get org\-details(http:RequestContext ctx) returns http:BadRequest|http:InternalServerError|Company {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
