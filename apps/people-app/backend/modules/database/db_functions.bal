@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -128,6 +129,21 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
     stream<Unit, error?> unitStream = databaseClient->query(getUnitsQuery(subTeamId));
     return from Unit unit in unitStream
         select unit;
+}
+
+# Fetch organization structure with business units, teams, sub-teams and units.
+#
+# + return - Organization structure data or error
+public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
+    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream =
+        databaseClient->query(getFullOrganizationStructureQuery());
+
+    return from OrgStructureBusinessUnitRow row in orgStructureStream
+        select {
+            id: row.id,
+            name: row.name,
+            teams: check row.teams.fromJsonWithType()
+        };
 }
 
 # Get career functions.

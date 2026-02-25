@@ -257,6 +257,49 @@ public type Unit record {|
     string name;
 |};
 
+# Organization structure unit.
+public type OrgStructureUnit Unit;
+
+# Organization structure sub-team.
+public type OrgStructureSubTeam record {|
+    # SubTeam ID
+    int id;
+    # SubTeam name
+    string name;
+    # Units under this sub-team
+    OrgStructureUnit[] units = [];
+|};
+
+# Organization structure team.
+public type OrgStructureTeam record {|
+    # Team ID
+    int id;
+    # Team name
+    string name;
+    # Sub-teams under this team
+    OrgStructureSubTeam[] subTeams = [];
+|};
+
+# Organization structure business unit.
+public type OrgStructureBusinessUnit record {|
+    # Business unit ID
+    int id;
+    # Business unit name
+    string name;
+    # Teams under this business unit
+    OrgStructureTeam[] teams = [];
+|};
+
+# Raw database result with JSON teams that needs to be parsed
+type OrgStructureBusinessUnitRow record {|
+    # Business unit ID
+    int id;
+    # Business unit name
+    string name;
+    # Teams under this business unit with their nested sub-teams and units
+    json teams;
+|};
+
 # Career function.
 public type CareerFunction record {|
     # Career function ID
