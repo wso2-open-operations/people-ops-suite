@@ -195,7 +195,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if duration == "weekly" {
-                WeeklyTrendItem[]|error weeklyData = operation:getWeeklyTrendData();
+                WeeklyTrendItem[]|error weeklyData;
+                if startDate is string && endDate is string {
+                    weeklyData = operation:getWeeklyTrendData(startDate, endDate);
+                } else {
+                    weeklyData = operation:getWeeklyTrendDataDefault();
+                }
                 if weeklyData is error {
                     string customError = "Error occurred while fetching weekly analytics!";
                     log:printError(customError, weeklyData);

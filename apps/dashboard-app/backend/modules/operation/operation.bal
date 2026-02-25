@@ -158,7 +158,19 @@ public isolated function deleteAdvertisement(int id)
 # Get weekly food waste trend for the current rolling 7-day window.
 #
 # + return - Weekly trend items|Error
-public isolated function getWeeklyTrendData() returns database:WeeklyTrendItem[]|error {
+# Get weekly food waste trend from endDate going back to startDate.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + endDate - End date (YYYY-MM-DD)
+# + return - Weekly trend items|Error
+public isolated function getWeeklyTrendData(string startDate, string endDate) returns database:WeeklyTrendItem[]|error {
+    return database:getWeeklyTrendDateRange(startDate, endDate);
+}
+
+# Get weekly food waste trend for the current date going back 7 days.
+#
+# + return - Weekly trend items|Error
+public isolated function getWeeklyTrendDataDefault() returns database:WeeklyTrendItem[]|error {
     string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
     return database:getWeeklyTrend(date);
 }

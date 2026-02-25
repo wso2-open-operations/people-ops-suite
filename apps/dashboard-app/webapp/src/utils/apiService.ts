@@ -13,9 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import * as rax from "retry-axios";
 import axios, { AxiosInstance, CancelTokenSource } from "axios";
+import * as rax from "retry-axios";
 
 export class APIService {
   private static _instance: AxiosInstance;
@@ -37,15 +36,7 @@ export class APIService {
     (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
       retry: 3,
       instance: APIService._instance,
-      httpMethodsToRetry: [
-        "GET",
-        "HEAD",
-        "OPTIONS",
-        "DELETE",
-        "POST",
-        "PATCH",
-        "PUT",
-      ],
+      httpMethodsToRetry: ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH", "PUT"],
       statusCodesToRetry: [[401, 401]],
       retryDelay: 100,
 
@@ -89,24 +80,26 @@ export class APIService {
   private static updateRequestInterceptor() {
     APIService._instance.interceptors.request.use(
       (config) => {
-        // config.headers.set("Authorization", "Bearer " + APIService._idToken);
-        config.headers.set("x-jwt-assertion", APIService._idToken);
+        config.headers.set("Authorization", "Bearer " + APIService._idToken);
 
+        // Create a unique key including URL and query params
         const endpoint = config.url || "";
+        const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : "";
+        const endpointKey = `${endpoint}${params}`;
 
-        const existingToken = APIService._cancelTokenMap.get(endpoint);
+        const existingToken = APIService._cancelTokenMap.get(endpointKey);
         if (existingToken) {
-          existingToken.cancel(`Request cancelled for endpoint: ${endpoint}`);
+          existingToken.cancel(`Request cancelled for endpoint: ${endpointKey}`);
         }
 
         const newTokenSource = axios.CancelToken.source();
-        APIService._cancelTokenMap.set(endpoint, newTokenSource);
+        APIService._cancelTokenMap.set(endpointKey, newTokenSource);
         config.cancelToken = newTokenSource.token;
         return config;
       },
       (error) => {
         return Promise.reject(error);
-      }
+      },
     );
   }
 }

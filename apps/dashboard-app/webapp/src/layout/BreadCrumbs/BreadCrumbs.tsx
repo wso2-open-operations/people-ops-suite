@@ -30,64 +30,44 @@ export default function BasicBreadcrumbs() {
     let routeTo = "";
 
     return (
-        <Breadcrumbs
-          separator="›"
-          aria-label="breadcrumb"
-          sx={{
-            "& .MuiBreadcrumbs-separator": {
-              mx: "8px",
-            },
-          }}
-        >
-          {pathnames.map((path, index) => {
-            const isLong = path.length > MAX_LENGTH;
-            const isLast = pathnames.length - 1 === index;
-            routeTo += `${path}/`;
+      <Breadcrumbs
+        separator="›"
+        aria-label="breadcrumb"
+        sx={{
+          "& .MuiBreadcrumbs-separator": {
+            mx: "8px",
+          },
+        }}
+      >
+        {pathnames.map((path, index) => {
+          const isLong = path.length > MAX_LENGTH;
+          const isLast = pathnames.length - 1 === index;
+          routeTo += `${path}/`;
 
-            const label =
-              !isLast && isLong ? (
-                <Typography
-                  key={`${path}-short`}
-                  variant="caption"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
-                >
-                  {path.slice(0, 4)}...
-                </Typography>
-              ) : (
-                <Typography
-                  key={`${path}-full`}
-                  variant="caption"
-                  sx={{ color: theme.palette.customText.primary.p3.active }}
-                >
-                  {path}
-                </Typography>
-              );
-
-            return isLong && !isLast ? (
-              <Tooltip key={path} title={path} placement="bottom">
-                <Box
-                  component={Link}
-                  to={routeTo}
-                  sx={{
-                    textDecoration: "none",
-                    padding: theme.spacing(0.5),
-                    borderRadius: "4px",
-                    transition: "all 0.2s",
-                    display: "flex",
-                    alignItems: "center",
-                    "&:hover": {
-                      color: theme.palette.customText.primary.p2.active,
-                    },
-                  }}
-                >
-                  {label}
-                </Box>
-              </Tooltip>
+          const label =
+            !isLast && isLong ? (
+              <Typography
+                key={`${path}-short`}
+                variant="caption"
+                sx={{ color: theme.palette.customText.primary.p3.active }}
+              >
+                {path.slice(0, 4)}...
+              </Typography>
             ) : (
+              <Typography
+                key={`${path}-full`}
+                variant="caption"
+                sx={{ color: theme.palette.customText.primary.p3.active }}
+              >
+                {path}
+              </Typography>
+            );
+
+          return isLong && !isLast ? (
+            <Tooltip key={path} title={path} placement="bottom">
               <Box
                 component={Link}
                 to={routeTo}
-                key={index}
                 sx={{
                   textDecoration: "none",
                   padding: theme.spacing(0.5),
@@ -102,9 +82,29 @@ export default function BasicBreadcrumbs() {
               >
                 {label}
               </Box>
-            );
-          })}
-        </Breadcrumbs>
+            </Tooltip>
+          ) : (
+            <Box
+              component={Link}
+              to={routeTo}
+              key={index}
+              sx={{
+                textDecoration: "none",
+                padding: theme.spacing(0.5),
+                borderRadius: "4px",
+                transition: "all 0.2s",
+                display: "flex",
+                alignItems: "center",
+                "&:hover": {
+                  color: theme.palette.customText.primary.p2.active,
+                },
+              }}
+            >
+              {label}
+            </Box>
+          );
+        })}
+      </Breadcrumbs>
     );
   };
 

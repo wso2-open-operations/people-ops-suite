@@ -13,15 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import axios, { HttpStatusCode } from "axios";
 
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import axios, { HttpStatusCode } from "axios";
-import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import type { UserState } from "@slices/authSlice/auth";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { APIService } from "@utils/apiService";
 
 interface Employee {
   firstName: string;
@@ -53,7 +53,7 @@ export const fetchEmployees = createAsyncThunk(
         .get(AppConfig.serviceUrls.employees)
         .then((response) => {
           const filteredEmployees = response.data.filter(
-            (emp: Employee) => emp.workEmail !== userInfo?.workEmail
+            (emp: Employee) => emp.workEmail !== userInfo?.workEmail,
           );
           resolve(filteredEmployees);
         })
@@ -68,12 +68,12 @@ export const fetchEmployees = createAsyncThunk(
                   ? SnackMessage.error.fetchEmployees
                   : "An unknown error occurred.",
               type: "error",
-            })
+            }),
           );
           reject(error.response.data.message);
         });
     });
-  }
+  },
 );
 
 const EmployeeSlice = createSlice({

@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 import { Role } from "@slices/authSlice/auth";
@@ -79,6 +78,6 @@ export enum ConfirmationType {
 
 export interface CommonCardProps {
   collection: Collection;
-  actions: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  actions: React.ReactElement;
   dataCardIndex: number;
 }

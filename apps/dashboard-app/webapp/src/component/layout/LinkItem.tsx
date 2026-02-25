@@ -52,7 +52,7 @@ const LinkItem = (props: ListItemLinkProps) => {
         },
         color: isActive
           ? theme.palette.customNavigation.textClicked
-          : theme.palette.customNavigation.text 
+          : theme.palette.customNavigation.text,
       }}
     >
       <Box
@@ -87,7 +87,9 @@ const LinkItem = (props: ListItemLinkProps) => {
           </Typography>
         )}
       </Box>
-      {hasChildren && open && (isActive ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
+      {hasChildren &&
+        open &&
+        (isActive ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
     </Box>
   );
 };

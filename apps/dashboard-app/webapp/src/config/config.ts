@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { BaseURLAuthClientConfig } from "@asgardeo/auth-react";
 
 declare global {
@@ -49,6 +48,10 @@ export const AppConfig = {
     userInfo: ServiceBaseUrl + "/user-info",
     employees: ServiceBaseUrl + "/employees",
     appConfig: ServiceBaseUrl + "/app-config",
-    collections: ServiceBaseUrl + "/collections"
+    collections: ServiceBaseUrl + "/collections",
+    foodWaste: ServiceBaseUrl + "/food-waste",
+    foodWasteDaily: ServiceBaseUrl + "/food-waste/daily",
+    advertisements: ServiceBaseUrl + "/advertisements",
+    advertisementsActive: ServiceBaseUrl + "/advertisements/active",
   },
 };

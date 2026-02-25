@@ -36,7 +36,6 @@ const item = {
 };
 
 function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open: boolean }) {
-
   return (
     <AnimatePresence>
       {parentRoute.children && parentRoute.children.length > 0 && (
@@ -55,11 +54,7 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
           }}
         >
           {parentRoute.children!.map((child) => (
-            <motion.div
-              key={child.path}
-              variants={item}
-              style={{ width: "100%" }}
-            >
+            <motion.div key={child.path} variants={item} style={{ width: "100%" }}>
               <SubLink
                 to={child.path as string}
                 parentPath={parentRoute.path}

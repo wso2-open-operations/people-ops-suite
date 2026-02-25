@@ -51,7 +51,9 @@ const SubLink = (props: SubLinkProps) => {
             borderRadius: "8px",
             justifyContent: "flex-start",
             textDecoration: "none",
-            color: isActive ? theme.palette.customNavigation.textClicked : theme.palette.customNavigation.text,
+            color: isActive
+              ? theme.palette.customNavigation.textClicked
+              : theme.palette.customNavigation.text,
             "&:hover": {
               ...(!isActive && {
                 backgroundColor: theme.palette.customNavigation.hoverBg,
@@ -117,7 +119,7 @@ const SubLink = (props: SubLinkProps) => {
                 },
               }}
             >
-              {React.cloneElement(icon as React.ReactElement<any>, {
+              {React.cloneElement(icon as React.ReactElement<{ size?: number; style?: React.CSSProperties }>, {
                 size: 24,
                 style: {
                   width: "20px",

@@ -37,6 +37,7 @@
       "@config/*": ["./src/config/*"],
       "@context/*": ["./src/context/*"],
       "@layout/*": ["./src/layout/*"],
+      "@services/*": ["./src/services/*"],
       "@slices/*": ["./src/slices/*"],
       "@view/*": ["./src/view/*"],
       "@utils/*": ["./src/utils/*"],
@@ -44,5 +45,5 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "src/**/*", "src/vite-env.d.ts"],
+  "include": ["src", "src/**/*", "src/vite-env.d.ts"]
 }

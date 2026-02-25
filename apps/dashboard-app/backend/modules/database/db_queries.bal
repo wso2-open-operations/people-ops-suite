@@ -245,6 +245,23 @@ isolated function getWeeklyTrendQuery(string startDate) returns sql:Parameterize
     ORDER BY record_date ASC
 `;
 
+# Build query to retrieve weekly trend data for a specific date range.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + endDate - End date (YYYY-MM-DD)
+# + return - Parameterized select query
+isolated function getWeeklyTrendRangeQuery(string startDate, string endDate) returns sql:ParameterizedQuery =>
+`
+    SELECT
+        record_date AS date,
+        SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) AS breakfastWaste,
+        SUM(CASE WHEN meal_type = 'LUNCH'     THEN total_waste_kg ELSE 0 END) AS lunchWaste
+    FROM  dashboard_app_db.food_waste_records
+    WHERE record_date BETWEEN ${startDate} AND ${endDate}
+    GROUP BY record_date
+    ORDER BY record_date ASC
+`;
+
 # Build query to retrieve monthly trend data.
 #
 # + startMonth - Start month (YYYY-MM)

@@ -18,6 +18,7 @@ export default defineConfig({
       "@config": resolve(__dirname, "src/config"),
       "@context": resolve(__dirname, "src/context"),
       "@layout": resolve(__dirname, "src/layout"),
+      "@services": resolve(__dirname, "src/services"),
       "@slices": resolve(__dirname, "src/slices"),
       "@view": resolve(__dirname, "src/view"),
       "@utils": resolve(__dirname, "src/utils"),

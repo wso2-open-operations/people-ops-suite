@@ -87,7 +87,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   const [content, setContent] = useState<{
     title: string;
     message: string | React.ReactNode;
-    type: ConfirmationType
+    type: ConfirmationType;
     action: (value?: string) => void;
     okText?: string;
     cancelText?: string;

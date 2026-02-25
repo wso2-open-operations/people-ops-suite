@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Backdrop, CircularProgress, useTheme } from "@mui/material";
 
 type BackdropProgressProps = {
@@ -23,10 +22,7 @@ type BackdropProgressProps = {
 const BackdropProgress = ({ open }: BackdropProgressProps) => {
   const theme = useTheme();
   return (
-    <Backdrop
-      sx={{ zIndex: 500 + 1, color: theme.palette.secondary.contrastText }}
-      open={open}
-    >
+    <Backdrop sx={{ zIndex: 500 + 1, color: theme.palette.secondary.contrastText }} open={open}>
       <CircularProgress />
     </Backdrop>
   );

@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -39,7 +38,7 @@ export enum ConfirmationType {
 export interface RouteDetail {
   path: string;
   allowRoles: string[];
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  icon: React.ReactElement | undefined;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
@@ -48,7 +47,7 @@ export interface RouteDetail {
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>> | undefined;
+  icon: React.ReactElement | undefined;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;

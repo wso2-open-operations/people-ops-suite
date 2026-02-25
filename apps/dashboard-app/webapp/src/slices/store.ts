@@ -22,6 +22,7 @@ import collectionReducer from "@slices/collections/collection";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
+import foodWasteReducer from "@slices/foodWasteSlice/foodWaste";
 import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
@@ -34,8 +35,8 @@ export const store = configureStore({
     employee: employeeReducer,
     collection: collectionReducer,
     appConfig: appConfigReducer,
+    foodWaste: foodWasteReducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

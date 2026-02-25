@@ -48,8 +48,7 @@ function App() {
 
       localStorage.setItem("internal-app-theme", systemTheme);
       return systemTheme;
-    } catch (err) {
-      console.error("Theme detection failed, defaulting to light mode.", err);
+    } catch {
       return ThemeMode.Light;
     }
   };

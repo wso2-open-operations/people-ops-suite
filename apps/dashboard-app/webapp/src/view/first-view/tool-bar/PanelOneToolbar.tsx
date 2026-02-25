@@ -13,12 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import { Button, IconButton, Stack } from "@mui/material";
 
-import { useConfirmationModalContext } from "@context/DialogContext";
+import useConfirmationModalContext from "@context/confirmationModalContext";
 import { ConfirmationType } from "@utils/types";
 
 const PanelOneToolbar = () => {

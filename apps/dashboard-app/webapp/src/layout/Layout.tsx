@@ -13,20 +13,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, useTheme } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
+import { ColorModeContext } from "@src/App";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { selectRoles } from "@slices/authSlice/auth";
 import { type RootState, useAppSelector } from "@slices/store";
+
+import MobileBottomBar from "./MobileBottomBar/MobileBottomBar";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -36,6 +39,9 @@ export default function Layout() {
   const [open, setOpen] = useState(false);
   const roles = useSelector(selectRoles);
   const theme = useTheme();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const colorMode = useContext(ColorModeContext);
 
   const showSnackbar = useCallback(() => {
     if (common.timestamp !== null) {
@@ -59,6 +65,30 @@ export default function Layout() {
     }
   }, [navigate]);
 
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const sidebar = useMemo(
+    () => (
+      <Sidebar
+        roles={roles}
+        currentPath={location.pathname}
+        open={open}
+        handleDrawer={() => setOpen(!open)}
+      />
+    ),
+    [roles, location.pathname, open],
+  );
+
   return (
     <ConfirmationModalContextProvider>
       {/* Full screen container */}
@@ -69,22 +99,60 @@ export default function Layout() {
           height: "100vh",
           width: "100vw",
           backgroundColor: theme.palette.surface.primary.active,
+          overflow: "hidden",
         }}
       >
         {/* Header */}
-        <Header />
+        {!isFullscreen && <Header />}
 
         {/* Main content container */}
-        <Box sx={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flex: 1,
+            minHeight: 0,
+            backgroundColor: theme.palette.surface.primary.active,
+            overflow: "hidden",
+            position: "relative",
+          }}
+        >
           {/* Sidebar */}
-          <Box sx={{ width: "fit-content", height: "100%" }}>
-            <Sidebar
-              roles={roles}
-              currentPath={location.pathname}
-              open={open}
-              handleDrawer={() => setOpen(!open)}
-            />
-          </Box>
+          {!isFullscreen &&
+            (isMobile ? (
+              <>
+                {open && (
+                  <Box
+                    onClick={() => setOpen(false)}
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(0, 0, 0, 0.5)",
+                      zIndex: 999,
+                    }}
+                  />
+                )}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    zIndex: 1000,
+                    transform: open ? "translateX(0)" : "translateX(-100%)",
+                    transition: "transform 0.3s ease-in-out",
+                  }}
+                >
+                  {sidebar}
+                </Box>
+              </>
+            ) : (
+              <Box sx={{ width: "fit-content", height: "100%", alignSelf: "stretch" }}>
+                {sidebar}
+              </Box>
+            ))}
 
           {/* Main content area */}
           <Box
@@ -92,12 +160,25 @@ export default function Layout() {
               flex: 1,
               height: "100%",
               padding: theme.spacing(3),
+              paddingBottom: isMobile ? "80px" : theme.spacing(3),
+              overflowY: "auto",
+              minHeight: 0,
+              backgroundColor: theme.palette.surface.primary.active,
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
               <Outlet />
             </Suspense>
           </Box>
+
+          {!isFullscreen && isMobile && (
+            <MobileBottomBar
+              onMenuClick={() => setOpen(!open)}
+              onThemeToggle={colorMode.toggleColorMode}
+              open={open}
+              mode={colorMode.mode}
+            />
+          )}
         </Box>
       </Box>
     </ConfirmationModalContextProvider>

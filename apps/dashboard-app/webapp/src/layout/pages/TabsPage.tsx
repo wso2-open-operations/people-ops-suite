@@ -157,7 +157,6 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
               {React.cloneElement(tab.icon)}
             </Box>
             <Box component="span">{tab.tabTitle}</Box>
-
           </Button>
         ))}
       </Box>

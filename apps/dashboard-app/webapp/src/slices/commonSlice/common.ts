@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import type { VariantType } from "notistack";
+
 import type { AppDispatch } from "@slices/store";
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface CommonState {
   message: string;
@@ -38,8 +38,8 @@ export const CommonSlice = createSlice({
       state,
       action: PayloadAction<{
         message: string;
-        type: VariantType
-      }>
+        type: VariantType;
+      }>,
     ) => {
       state.message = action.payload.message;
       state.type = action.payload.type;

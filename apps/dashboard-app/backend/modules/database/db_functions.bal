@@ -209,6 +209,17 @@ public isolated function getWeeklyTrend(string startDate) returns WeeklyTrendIte
         select item;
 }
 
+# Get weekly food waste trend for a specific date range.
+#
+# + startDate - Start date (YYYY-MM-DD)
+# + endDate - End date (YYYY-MM-DD)
+# + return - Weekly trend items|Error
+public isolated function getWeeklyTrendDateRange(string startDate, string endDate) returns WeeklyTrendItem[]|error {
+    stream<WeeklyTrendItem, sql:Error?> resultStream = databaseClient->query(getWeeklyTrendRangeQuery(startDate, endDate));
+    return from WeeklyTrendItem item in resultStream
+        select item;
+}
+
 # Get monthly food waste trend.
 #
 # + startMonth - Start month (YYYY-MM)

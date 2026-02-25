@@ -25,7 +25,7 @@ interface CandidateInfoCardProps {
 interface CandidateInfoArray {
   title: string;
   subTitle?: string;
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  icon: React.ReactElement<{ sx?: object }>;
 }
 
 const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {

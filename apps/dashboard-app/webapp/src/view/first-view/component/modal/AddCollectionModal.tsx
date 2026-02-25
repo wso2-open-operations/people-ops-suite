@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import CloseIcon from "@mui/icons-material/Close";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
@@ -37,10 +36,15 @@ import * as yup from "yup";
 
 import React, { useEffect } from "react";
 
-import { useConfirmationModalContext } from "@context/DialogContext";
+import useConfirmationModalContext from "@context/confirmationModalContext";
 import { addCollections, resetSubmitState } from "@slices/collections/collection";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { ConfirmationType, State } from "@utils/types";
+
+interface AddCollectionFormValues {
+  collectionName: string;
+  collectionType: string;
+}
 
 const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose }) => {
   const dispatch = useAppDispatch();
@@ -57,15 +61,15 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
       dispatch(resetSubmitState()); // Resetting the submit state
       toggleClose();
     }
-}, [collection.submitState, dispatch, toggleClose]);
-  const formik = useFormik({
+  }, [collection.submitState, dispatch, toggleClose]);
+  const formik = useFormik<AddCollectionFormValues>({
     initialValues: {
       collectionName: "",
       collectionType: "",
     },
     validationSchema: validationSchema,
 
-    onSubmit: (values: any) => {
+    onSubmit: (values) => {
       dialogContext.showConfirmation(
         "Do you want to Action 1?",
         "Please note that once done, this cannot be undone.",
