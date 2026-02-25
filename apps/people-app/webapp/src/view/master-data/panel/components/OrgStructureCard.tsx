@@ -47,12 +47,12 @@ const TYPE_LABELS = {
 
 const STATIC_COMPANY_LEADERS = {
   chairman: {
-    name: "Nimal Perera",
+    name: "Jonas Persson",
     title: "Chairman",
     avatar: undefined,
   },
   ceo: {
-    name: "Anushka Fernando",
+    name: "Sanjiva Weerawarana",
     title: "CEO",
     avatar: undefined,
   },
