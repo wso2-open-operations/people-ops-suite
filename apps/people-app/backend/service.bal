@@ -719,7 +719,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body:{
                     message:"Error while updating the business unit"
                 }
-            };
+            };  
         }
 
         return <http:Ok>{
@@ -1132,4 +1132,22 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     }
+
+    # Get organization details (full hierarchy with business units, teams, sub-teams, units).
+    #
+    # + return - Organization hierarchy with head, functional lead, and headcount per node
+    resource function get org\-details() returns database:OrgBusinessUnit[]|http:InternalServerError {
+        database:OrgBusinessUnit[]|error orgStructure = database:getOrganizationDetails();
+        if orgStructure is error {
+            string customErr = "Error while fetching organization details";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return orgStructure;
+}
 }
