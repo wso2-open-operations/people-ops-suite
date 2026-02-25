@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Button, Card, CardContent, IconButton, TextField, Typography } from "@wso2/oxygen-ui";
-import { Calendar, Moon, Save, Sun, X } from "@wso2/oxygen-ui-icons-react";
+import { Box, Button, Card, CardContent, TextField, Typography } from "@wso2/oxygen-ui";
+import { Calendar, Save, X } from "@wso2/oxygen-ui-icons-react";
 
 import { useEffect, useState } from "react";
 
@@ -23,7 +23,7 @@ import { APIService } from "@utils/apiService";
 
 export default function DataEntry() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [darkMode, setDarkMode] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const [breakfastId, setBreakfastId] = useState<number | null>(null);
   const [breakfastWaste, setBreakfastWaste] = useState("");
@@ -45,6 +45,7 @@ export default function DataEntry() {
         };
 
         if (daily.breakfast) {
+          setLoadError("");
           setBreakfastId(daily.breakfast.id ?? null);
           setBreakfastWaste(String(daily.breakfast.totalWasteKg));
           setBreakfastPlates(String(daily.breakfast.plateCount));
@@ -63,7 +64,16 @@ export default function DataEntry() {
           setLunchWaste("");
           setLunchPlates("");
         }
-      } catch {}
+      } catch (err) {
+        console.error("Failed to load daily records", err);
+        setLoadError("Failed to load daily records. Please try again.");
+        setBreakfastId(null);
+        setBreakfastWaste("");
+        setBreakfastPlates("");
+        setLunchId(null);
+        setLunchWaste("");
+        setLunchPlates("");
+      }
     };
 
     loadDailyRecords();
@@ -86,7 +96,7 @@ export default function DataEntry() {
         plateCount: parseInt(breakfastPlates, 10),
       };
 
-      if (breakfastId) {
+      if (breakfastId != null) {
         // Update existing record
         requests.push(
           APIService.getInstance().put(
@@ -112,7 +122,7 @@ export default function DataEntry() {
         plateCount: parseInt(lunchPlates, 10),
       };
 
-      if (lunchId) {
+      if (lunchId != null) {
         // Update existing record
         requests.push(
           APIService.getInstance().put(
@@ -139,7 +149,7 @@ export default function DataEntry() {
 
         if (failed === 0) {
           alert(
-            `Daily record saved for ${new Date(selectedDate).toLocaleDateString("en-US", {
+            `Daily record saved for ${getLocalDateFromSelectedDate(selectedDate).toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
               year: "numeric",
@@ -174,6 +184,11 @@ export default function DataEntry() {
     return "0.0";
   };
 
+  const getLocalDateFromSelectedDate = (date: string): Date => {
+    const [year, month, day] = date.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", px: 3, py: 4 }}>
       <Box
@@ -192,9 +207,6 @@ export default function DataEntry() {
             Record daily food waste metrics for breakfast and lunch services
           </Typography>
         </Box>
-        <IconButton onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
-          {darkMode ? <Sun size={24} /> : <Moon size={24} />}
-        </IconButton>
       </Box>
 
       <Card sx={{ mb: 3 }}>
@@ -218,13 +230,18 @@ export default function DataEntry() {
                 Selected Date
               </Typography>
               <Typography variant="h6">
-                {new Date(selectedDate).toLocaleDateString("en-US", {
+                {getLocalDateFromSelectedDate(selectedDate).toLocaleDateString("en-US", {
                   weekday: "long",
                   month: "long",
                   day: "numeric",
                   year: "numeric",
                 })}
               </Typography>
+              {loadError && (
+                <Typography variant="body2" sx={{ color: "error.main", mt: 1 }}>
+                  {loadError}
+                </Typography>
+              )}
             </Box>
           </Box>
         </CardContent>
@@ -390,7 +407,7 @@ export default function DataEntry() {
                 Total Plates Served
               </Typography>
               <Typography variant="h4">
-                {parseInt(breakfastPlates || "0") + parseInt(lunchPlates || "0")}
+                {parseInt(breakfastPlates || "0", 10) + parseInt(lunchPlates || "0", 10)}
               </Typography>
             </Box>
             <Box>
@@ -402,7 +419,7 @@ export default function DataEntry() {
                   const totalWaste =
                     parseFloat(breakfastWaste || "0") + parseFloat(lunchWaste || "0");
                   const totalPlates =
-                    parseInt(breakfastPlates || "0") + parseInt(lunchPlates || "0");
+                    parseInt(breakfastPlates || "0", 10) + parseInt(lunchPlates || "0", 10);
 
                   return totalPlates > 0 ? ((totalWaste * 1000) / totalPlates).toFixed(1) : "0.0";
                 })()}{" "}
