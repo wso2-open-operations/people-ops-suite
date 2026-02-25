@@ -196,12 +196,12 @@ export const fetchVisits = createAsyncThunk(
 
 export const fetchSingleVisit = createAsyncThunk(
   "visit/fetchSingleVisit",
-  async (uuid: string, { dispatch, rejectWithValue }) => {
+  async (visitVerificationCode: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visit>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.visits}/${uuid}`, {
+        .get(`${AppConfig.serviceUrls.visits}/${visitVerificationCode}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

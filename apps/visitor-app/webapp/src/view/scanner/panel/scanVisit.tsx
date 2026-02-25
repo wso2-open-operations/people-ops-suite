@@ -64,7 +64,7 @@ const ScanVisit: React.FC = () => {
   };
 
   const handlePinSubmit = async () => {
-    navigate(`/admin-panel?tab=active-visits&uuid=${pin}`);
+    navigate(`/admin-panel?tab=active-visits&visitVerificationCode=${pin}`);
   };
 
   const handleTabChange = async (_: React.SyntheticEvent, newValue: number) => {
@@ -101,7 +101,9 @@ const ScanVisit: React.FC = () => {
 
             await safeStop();
 
-            navigate(`/admin-panel?tab=active-visits&uuid=${decodedText}`);
+            navigate(
+              `/admin-panel?tab=active-visits&visitVerificationCode=${decodedText}`,
+            );
           },
           () => {},
         );

@@ -377,7 +377,6 @@ function CreateVisit() {
 
   const fetchVisitorByEmailOrContact = useCallback(
     async (emailOrContact: string, index: number, formik: any) => {
-      console.log(emailOrContact);
       if (!emailOrContact?.trim()) return;
       const idHash = await hash(emailOrContact);
       const action = await dispatch(fetchVisitor(idHash));
@@ -887,7 +886,7 @@ function CreateVisit() {
                         fullWidth
                         label="Email Address"
                         name={`visitors.${idx}.emailAddress`}
-                        value={visitor.emailAddress}
+                        value={visitor.emailAddress || ""}
                         onChange={(e) => {
                           const extractedEmail = extractEmailFromString(
                             e.target.value,
@@ -1029,7 +1028,16 @@ function CreateVisit() {
                         label="Name"
                         name={`visitors.${idx}.name`}
                         value={visitor.name}
-                        onChange={formik.handleChange}
+                        onChange={(e) => {
+                          const onlyLettersAndSpaces = e.target.value.replace(
+                            /[^A-Za-z\s]/g,
+                            "",
+                          );
+                          formik.setFieldValue(
+                            `visitors.${idx}.name`,
+                            onlyLettersAndSpaces,
+                          );
+                        }}
                         disabled={visitor.status === VisitorStatus.Completed}
                         error={visitorTouched?.name && !!visitorErrors?.name}
                         helperText={visitorTouched?.name && visitorErrors?.name}

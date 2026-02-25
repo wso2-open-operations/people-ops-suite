@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
 } from "@mui/material";
 import { useParams, useSearchParams } from "react-router-dom";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
@@ -58,13 +59,16 @@ interface ScanProps {
 }
 
 function Scan({ onClose }: ScanProps) {
-  const { uuid: uuidFromParams } = useParams<{ uuid: string }>();
+  const { visitVerificationCode: visitVerificationCodeFromParams } = useParams<{
+    visitVerificationCode: string;
+  }>();
   const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const dialogContext = useConfirmationModalContext();
 
-  // Get UUID from either URL params (for direct route) or search params (for modal)
-  const uuid = uuidFromParams || searchParams.get("uuid");
+  const visitVerificationCode =
+    visitVerificationCodeFromParams ||
+    searchParams.get("visitVerificationCode");
 
   const { currentVisit, currentVisitState, submitState, stateMessage } =
     useAppSelector((state: RootState) => state.visit);
@@ -73,14 +77,13 @@ function Scan({ onClose }: ScanProps) {
   const [viewAccessibleFloors, setViewAccessibleFloors] = useState(false);
   const [accessibleFloors, setAccessibleFloors] = useState<FloorRoom[]>([]);
 
-  // Check if component is being used in a modal (has searchParams uuid)
-  const isInModal = !!searchParams.get("uuid");
+  const isInModal = !!searchParams.get("visitVerificationCode");
 
   useEffect(() => {
-    if (uuid) {
-      dispatch(fetchSingleVisit(uuid));
+    if (visitVerificationCode) {
+      dispatch(fetchSingleVisit(visitVerificationCode));
     }
-  }, [dispatch, uuid]);
+  }, [dispatch, visitVerificationCode]);
 
   const handleStartVisit = async (
     passNumber: string,
@@ -297,18 +300,34 @@ function Scan({ onClose }: ScanProps) {
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
-              {isRequested && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  onClick={() => setIsApprovalModalOpen(true)}
-                  disabled={submitState === State.loading}
-                >
-                  Start Visit
-                </Button>
+            {isRequested &&
+              currentVisit.visitDate !==
+                new Date().toISOString().split("T")[0] && (
+                <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+                  <Typography variant="body1">
+                    This visit is scheduled for{" "}
+                    <strong>{currentVisit.visitDate}</strong>.
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5 }}>
+                    You can only start the visit on the scheduled date.
+                  </Typography>
+                </Alert>
               )}
+
+            <Box sx={{ mt: 4, display: "flex", gap: 2 }}>
+              {isRequested &&
+                currentVisit.visitDate ===
+                  new Date().toISOString().split("T")[0] && (
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    onClick={() => setIsApprovalModalOpen(true)}
+                    disabled={submitState === State.loading}
+                  >
+                    Start Visit
+                  </Button>
+                )}
 
               {isApproved && (
                 <Button

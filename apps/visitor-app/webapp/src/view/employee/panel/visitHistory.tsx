@@ -111,12 +111,14 @@ function VisitHistory() {
       headerName: "Contact Number",
       minWidth: 160,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "email",
       headerName: "Email Address",
       minWidth: 200,
       flex: 2,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "purposeOfVisit",
