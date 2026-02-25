@@ -15,6 +15,7 @@
 // under the License. 
 import people.authorization;
 import people.database;
+import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
@@ -908,6 +909,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         if reservation.status != database:PENDING {
             return <http:BadRequest>{
                 body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        error? confirmErr = tx:confirmTransaction(body.transactionHash);
+        if confirmErr is error {
+            log:printError("Error confirming transaction", confirmErr);
+            return <http:BadRequest>{
+                body: {message: "Transaction verification failed."}
             };
         }
 
