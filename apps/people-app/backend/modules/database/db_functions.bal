@@ -117,8 +117,37 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
         select unit;
 }
 
-# Get career functions.
+# Get organization details with business units, teams, sub-teams, units,
+# including head, functional lead, and headcount for each node.
 #
+# + return - Organization details
+public isolated function getOrganizationDetails() returns OrgBusinessUnit[]|error {
+    stream<OrgBusinessUnitRaw, error?> streamName = databaseClient->query(getOrganizationStructureQuery());
+
+    OrgBusinessUnit[] businessUnits = [];
+
+    error? result = from OrgBusinessUnitRaw org in streamName
+        do {
+            OrgTeam[] teams = check org.teams.fromJsonWithType();
+            Head? head = check org.head.fromJsonWithType();
+
+            businessUnits.push({
+                id: org.id,
+                name: org.name,
+                headCount: org.headCount,
+                head: head,
+                teams: teams
+            });
+        };
+
+        if result is error {
+            return error("Error while fetching organization details", result);
+        }
+
+        return businessUnits;
+}
+
+# Get career functions.
 # + return - Career functions
 public isolated function getCareerFunctions() returns CareerFunction[]|error {
     stream<CareerFunction, error?> careerFunctionStream = databaseClient->query(getCareerFunctionsQuery());
