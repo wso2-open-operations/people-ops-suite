@@ -64,6 +64,7 @@ const ScanVisit: React.FC = () => {
   };
 
   const handlePinSubmit = async () => {
+    if (pin.length !== 6) return;
     setIsValidating(true);
     navigate(`/admin-panel?tab=active-visits&visitVerificationCode=${pin}`);
   };
