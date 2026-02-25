@@ -30,3 +30,6 @@ ALTER TABLE `people_ops_suite`.`visit`
 ADD COLUMN `sms_verification_code` INT(6) NULL DEFAULT NULL AFTER `invited_by`,
 ADD UNIQUE INDEX `sms_verification_code_UNIQUE` (`sms_verification_code` ASC) VISIBLE;
 ;
+
+ALTER TABLE `people_ops_suite`.`visit` 
+CHANGE COLUMN `visit_date` `visit_date` CHAR(10) NOT NULL ;
