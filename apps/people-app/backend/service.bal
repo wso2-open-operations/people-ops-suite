@@ -713,13 +713,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateBusinessUnit(payload, buId);
-        if updateResult is error{
-            log:printError("Error while updating business unit : " , updateResult);
+        if updateResult is error {
+            log:printError("Error while updating business unit : ", updateResult);
             return <http:InternalServerError>{
-                body:{
-                    message:"Error while updating the business unit"
+                body: {
+                    message: "Error while updating the business unit"
                 }
-            };  
+            };
         }
 
         return <http:Ok>{
@@ -1136,8 +1136,30 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get organization details (full hierarchy with business units, teams, sub-teams, units).
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get org\-details() returns database:OrgBusinessUnit[]|http:InternalServerError {
+    resource function get org\-details(http:RequestContext ctx) returns http:BadRequest|http:InternalServerError|database:OrgBusinessUnit[] {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
         database:OrgBusinessUnit[]|error orgStructure = database:getOrganizationDetails();
+
         if orgStructure is error {
             string customErr = "Error while fetching organization details";
             log:printError(customErr, orgStructure);
@@ -1149,5 +1171,5 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         return orgStructure;
-}
+    }
 }
