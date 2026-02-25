@@ -70,16 +70,16 @@ public type AddVisitorPayload record {|
     # First name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The first name should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The first name should be in international format."
         }
     }
     string? firstName = ();
     # Last name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The last name should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The last name should be in international format."
         }
     }
     string? lastName = ();

@@ -405,6 +405,10 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
+            string[] ccList = [email:receptionEmail, invokerInfo.email];
+            if whomTheyMeet is string {
+                ccList.push(whomTheyMeet);
+            }
             error? emailError = email:sendEmail({
                                                     attachments: [
                                                         {
@@ -418,7 +422,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                     'from: email:fromEmailAddress,
                                                     subject: email:VISIT_INVITATION_SUBJECT,
                                                     template: content,
-                                                    cc: [email:receptionEmail]
+                                                    cc: ccList
                                                 });
 
             if emailError is error {
