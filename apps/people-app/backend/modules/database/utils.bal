@@ -63,6 +63,73 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
     return updatedQuery;
 }
 
+# Append a string filter to the filters array if the value is not null or empty.
+# 
+# + filters - Array of sub queries to be added to the main query
+# + value - The string value to check and append
+# + condition - The sql:ParameterizedQuery representing the filter condition to append
+isolated function appendStringFilter(sql:ParameterizedQuery[] filters, string? value, sql:ParameterizedQuery condition) {
+    if value is string && value.trim() != "" {
+        filters.push(condition);
+    }
+}
+
+# Append an integer filter to the filters array if the value is not null.
+# 
+# + filters - Array of sub queries to be added to the main query
+# + value - The integer value to check and append
+# + condition - The sql:ParameterizedQuery representing the filter condition to append
+isolated function appendIntFilter(sql:ParameterizedQuery[] filters, int? value, sql:ParameterizedQuery condition) {
+    if value is int {
+        filters.push(condition);
+    }
+}
+
+# Build the text token filter for the search query.
+# 
+# + token - The text token to build the filter for
+# + return - sql:ParameterizedQuery representing the text token filter
+isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQuery {
+    string likeValue = "%" + token + "%";
+
+    return `
+        (
+            LOWER(CONCAT(IFNULL(e.first_name, ''), ' ', IFNULL(e.last_name, '')))
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.employee_id)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.first_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.last_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.first_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.last_name)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.work_email)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.personal_email)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.nic_or_passport)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.personal_phone)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.resident_number)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.city)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.state_or_province)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(pi.country)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.epf)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+            OR LOWER(e.secondary_job_title)
+                LIKE LOWER(${likeValue}) ESCAPE '\\'
+        )
+    `;
+}
+
 # Check the affected row count after an update operation.
 #
 # + affectedRowCount - Number of rows affected by the update operation

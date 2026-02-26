@@ -21,7 +21,6 @@ import ballerina/sql;
 # + return - Query to get employee basic information
 isolated function getEmployeeBasicInfoQuery(string email) returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
         employee_id,
         first_name,
         last_name,
@@ -35,7 +34,6 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
         employee_id,
         first_name,
         last_name,
@@ -43,13 +41,19 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
         employee_thumbnail
     FROM employee;`;
 
+# Fetch employee ID by primary key ID.
+# 
+# + id - Primary key ID of the employee record
+# + return - Query to get employee ID
+isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
+    `SELECT employee_id FROM employee WHERE id = ${id};`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
 # + return - Query to get employee detailed information
 isolated function getEmployeeInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
@@ -108,13 +112,149 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
     WHERE
         e.employee_id = ${employeeId};`;
 
+# Fetch employees with filters.
+# 
+# + payload - Get employees filter payload
+# + return - Parameterized query for fetching employees
+isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:ParameterizedQuery {
+
+    int 'limit = payload.pagination.'limit;
+    int offset = payload.pagination.offset;
+
+    sql:ParameterizedQuery baseQuery = `
+        SELECT
+            e.employee_id AS employeeId,
+            e.first_name AS firstName,
+            e.last_name AS lastName,
+            e.work_email AS workEmail,
+            e.employee_thumbnail AS employeeThumbnail,
+            e.epf AS epf,
+            e.employment_location AS employmentLocation,
+            e.work_location AS workLocation,
+            e.start_date AS startDate,
+            e.manager_email AS managerEmail,
+            COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+            COALESCE(sc.subordinateCount, 0) AS subordinateCount,
+            e.employee_status AS employeeStatus,
+            e.continuous_service_record AS continuousServiceRecord,
+            e.probation_end_date AS probationEndDate,
+            e.agreement_end_date AS agreementEndDate,
+            et.name AS employmentType,
+            e.employment_type_id AS employmentTypeId,
+            d.career_function_id AS careerFunctionId,
+            d.designation AS designation,
+            e.designation_id AS designationId,
+            e.secondary_job_title AS secondaryJobTitle,
+            o.name AS office,
+            e.office_id AS officeId,
+            bu.name AS businessUnit,
+            e.business_unit_id AS businessUnitId,
+            t.name AS team,
+            e.team_id AS teamId,
+            st.name AS subTeam,
+            e.sub_team_id AS subTeamId,
+            u.name AS unit,
+            e.unit_id AS unitId,
+            COUNT(*) OVER() AS totalCount
+        FROM
+            employee e
+            LEFT JOIN (
+                SELECT 
+                    employee_pk_id,
+                    GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                    AS additionalManagerEmails
+                FROM employee_additional_managers
+                GROUP BY employee_pk_id
+            ) eam ON eam.employee_pk_id = e.id
+
+            LEFT JOIN (
+                SELECT 
+                    LOWER(manager_email) AS managerEmail,
+                    COUNT(*) AS subordinateCount
+                FROM employee
+                WHERE manager_email IS NOT NULL AND manager_email <> ''
+                GROUP BY LOWER(manager_email)
+            ) sc ON sc.managerEmail = LOWER(e.work_email)
+            
+            INNER JOIN personal_info pi ON pi.id = e.personal_info_id
+            INNER JOIN employment_type et ON et.id = e.employment_type_id
+            INNER JOIN designation d ON d.id = e.designation_id
+            INNER JOIN office o ON o.id = e.office_id
+            INNER JOIN business_unit bu ON bu.id = e.business_unit_id
+            INNER JOIN team t ON t.id = e.team_id
+            INNER JOIN sub_team st ON st.id = e.sub_team_id
+            INNER JOIN company c ON c.id = o.company_id
+            LEFT JOIN unit u ON u.id = e.unit_id
+        `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    appendStringFilter(filters, payload.filters.title, `pi.title = ${payload.filters.title}`);
+    appendStringFilter(filters, payload.filters.firstName, `LOWER(pi.first_name) = LOWER(${payload.filters.firstName})`);
+    appendStringFilter(filters, payload.filters.lastName, `LOWER(pi.last_name) = LOWER(${payload.filters.lastName})`);
+    appendStringFilter(filters, payload.filters.dateOfBirth, `pi.dob = ${payload.filters.dateOfBirth}`);
+    appendStringFilter(filters, payload.filters.gender, `pi.gender = ${payload.filters.gender}`);
+    appendStringFilter(filters, payload.filters.personalEmail, `LOWER(pi.personal_email) = LOWER(${payload.filters.personalEmail})`);
+    appendStringFilter(filters, payload.filters.personalPhone, `pi.personal_phone = ${payload.filters.personalPhone}`);
+    appendStringFilter(filters, payload.filters.residentNumber, `pi.resident_number = ${payload.filters.residentNumber}`);
+    appendStringFilter(filters, payload.filters.city, `LOWER(pi.city) = LOWER(${payload.filters.city})`);
+    appendStringFilter(filters, payload.filters.country, `LOWER(pi.country) = LOWER(${payload.filters.country})`);
+    appendStringFilter(filters, payload.filters.employeeStatus, `LOWER(e.employee_status) = LOWER(${payload.filters.employeeStatus})`);
+
+    if payload.filters.managerEmail is string {
+        filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
+    }
+    if payload.filters.location is string {
+        filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${payload.filters.location}, '%'))`);
+    }
+
+    if payload.filters.nicOrPassport is int|string {
+        filters.push(`pi.nic_or_passport = ${payload.filters.nicOrPassport}`);
+    }
+
+    appendIntFilter(filters, payload.filters.companyId, `o.company_id = ${payload.filters.companyId}`);
+    appendIntFilter(filters, payload.filters.officeId, `e.office_id = ${payload.filters.officeId}`);
+    appendIntFilter(filters, payload.filters.designationId, `e.designation_id = ${payload.filters.designationId}`);
+    appendIntFilter(filters, payload.filters.careerFunctionId, `d.career_function_id = ${payload.filters.careerFunctionId}`);
+    appendIntFilter(filters, payload.filters.businessUnitId, `e.business_unit_id = ${payload.filters.businessUnitId}`);
+    appendIntFilter(filters, payload.filters.teamId, `e.team_id = ${payload.filters.teamId}`);
+    appendIntFilter(filters, payload.filters.subTeamId, `e.sub_team_id = ${payload.filters.subTeamId}`);
+    appendIntFilter(filters, payload.filters.unitId, `e.unit_id = ${payload.filters.unitId}`);
+    appendIntFilter(filters, payload.filters.employmentTypeId, `e.employment_type_id = ${payload.filters.employmentTypeId}`);
+
+    string? searchString = payload.searchString;
+
+    if searchString is string {
+        filters.push(buildTextTokenFilter(searchString));
+    }
+
+    sql:ParameterizedQuery retrieveEmployeeQuery = buildSqlSelectQuery(baseQuery, filters);
+
+    retrieveEmployeeQuery = sql:queryConcat(retrieveEmployeeQuery, `
+        ORDER BY e.id ASC
+        LIMIT ${'limit} OFFSET ${offset}
+    `);
+
+    return retrieveEmployeeQuery;
+};
+
+# Fetch distinct managers.
+#
+# + return - Parameterized query for fetching distinct managers
+isolated function getManagersQuery() returns sql:ParameterizedQuery =>
+    `SELECT DISTINCT 
+        m.employee_id, 
+        m.work_email
+    FROM employee e
+    JOIN employee m ON e.manager_email = m.work_email
+    WHERE e.manager_email IS NOT NULL AND e.manager_email <> '';`;
+
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee
 # + return - Parameterized query for continuous service record
 isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:ParameterizedQuery =>
     `SELECT 
-        e.id AS id,
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
@@ -192,7 +332,6 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
 # + return - Query to get employee personal information
 isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT 
-        p.id AS id,
         nic_or_passport,
         p.first_name AS firstName,
         p.last_name AS lastName,
@@ -215,16 +354,17 @@ isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:Pa
 
 # Fetch emergency contacts by personal info ID.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + return - Query to fetch emergency contacts
-isolated function getEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
+isolated function getEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
     `SELECT
-        name,
-        relationship,
-        mobile,
-        telephone
-    FROM personal_info_emergency_contacts
-    WHERE personal_info_id = ${personalInfoId};`;
+        piec.name,
+        piec.relationship,
+        piec.mobile,
+        piec.telephone
+    FROM personal_info_emergency_contacts piec
+    INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+    WHERE e.employee_id = ${employeeId};`;
 
 # Get business units query.
 # + return - Business units query
@@ -243,12 +383,14 @@ isolated function getTeamsQuery(int? buId = ()) returns sql:ParameterizedQuery {
         SELECT
             t.id, t.name
         FROM
-            team t
-        LEFT JOIN 
-            business_unit_team but ON but.team_id = t.id`;
+            team t`;
 
     if buId is int {
-        query = sql:queryConcat(query, ` WHERE but.business_unit_id = ${buId}`);
+        query = sql:queryConcat(query, `
+            LEFT JOIN 
+                business_unit_team but ON but.team_id = t.id
+            WHERE 
+                but.business_unit_id = ${buId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -262,10 +404,13 @@ isolated function getSubTeamsQuery(int? teamId = ()) returns sql:ParameterizedQu
         SELECT
             st.id, st.name
         FROM
-            sub_team st
-        LEFT JOIN business_unit_team_sub_team butst ON butst.sub_team_id = st.id`;
+            sub_team st`;
     if teamId is int {
-        query = sql:queryConcat(query, ` WHERE butst.business_unit_team_id = ${teamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team butst ON butst.sub_team_id = st.id
+            WHERE 
+                butst.business_unit_team_id = ${teamId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -279,10 +424,13 @@ isolated function getUnitsQuery(int? subTeamId = ()) returns sql:ParameterizedQu
         SELECT
             u.id, u.name
         FROM
-            unit u
-        LEFT JOIN business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id`;
+            unit u`;
     if subTeamId is int {
-        query = sql:queryConcat(query, ` WHERE butstu.business_unit_team_sub_team_id = ${subTeamId}`);
+        query = sql:queryConcat(query, ` 
+            LEFT JOIN 
+                business_unit_team_sub_team_unit butstu ON butstu.unit_id = u.id
+            WHERE 
+                butstu.business_unit_team_sub_team_id = ${subTeamId}`);
     }
     return sql:queryConcat(query, `;`);
 }
@@ -445,11 +593,11 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
 
 # Add emergency contact query.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
 # + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact, string createdBy)
+isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
     returns sql:ParameterizedQuery =>
     `INSERT INTO personal_info_emergency_contacts
         (
@@ -463,7 +611,7 @@ isolated function addPersonalInfoEmergencyContactQuery(int personalInfoId, Emerg
         )
      VALUES
         (
-            ${personalInfoId},
+            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
             ${contact.name},
             ${contact.mobile},
             ${contact.telephone},
@@ -537,11 +685,11 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
 
 # Update employee personal information query.
 #
-# + id - Personal info ID
+# + employeeId - Personal info ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
 # + return - sql:ParameterizedQuery - Update query for personal info
-isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `UPDATE personal_info SET `;
@@ -632,26 +780,27 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE id = ${id}`);
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
     return finalQuery;
 }
 
 # Delete emergency contacts by personal info id.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByPersonalInfoIdQuery(int personalInfoId) returns sql:ParameterizedQuery =>
-    `DELETE 
-        FROM personal_info_emergency_contacts
-            WHERE personal_info_id = ${personalInfoId};`;
+isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId) returns sql:ParameterizedQuery =>
+    `DELETE piec
+        FROM personal_info_emergency_contacts piec
+        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+        WHERE e.employee_id = ${employeeId};`;
 
 # Insert an emergency contact for a personal_info id.
 #
-# + personalInfoId - Personal info primary key
+# + employeeId - Employee ID
 # + contact - Emergency contact details
 # + createdBy - Creator of the emergency contact record
 # + return - sql:ParameterizedQuery - Insert query for emergency contacts
-isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, EmergencyContact contact,
+isolated function updatePersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact,
         string createdBy) returns sql:ParameterizedQuery => `
         INSERT INTO personal_info_emergency_contacts
             (
@@ -665,7 +814,7 @@ isolated function updatePersonalInfoEmergencyContactQuery(int personalInfoId, Em
             )
         VALUES
             (
-                ${personalInfoId},
+                (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
                 ${contact.name},
                 ${contact.relationship},
                 ${contact.mobile},

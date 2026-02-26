@@ -54,9 +54,6 @@ type DatabaseConfig record {|
 
 # Employee basic information.
 public type EmployeeBasicInfo record {|
-    # Primary key ID
-    @sql:Column {name: "id"}
-    int id;
     # Employee ID of the user
     @sql:Column {name: "employee_id"}
     string employeeId;
@@ -140,10 +137,97 @@ public type Employee record {|
     int subordinateCount;
 |};
 
+# Filters for getting employees.
+public type EmployeeFilters record {|
+    # Title
+    string? title = ();
+    # First name
+    string? firstName = ();
+    # Last name
+    string? lastName = ();
+    # National Identity Card number or Passport
+    int|string? nicOrPassport = ();
+    # Date of birth
+    string? dateOfBirth = ();
+    # Gender
+    string? gender = ();
+    # Personal email
+    string? personalEmail = ();
+    # Personal phone number
+    string? personalPhone = ();
+    # Resident number
+    string? residentNumber = ();
+    # City
+    string? city = ();
+    # Country
+    string? country = ();
+    # Career function ID
+    int? careerFunctionId = ();
+    # Manager email
+    string? managerEmail = ();
+    # Company ID
+    int? companyId = ();
+    # Employment location
+    string? location = ();
+    # Office ID
+    int? officeId = ();
+    # Business unit ID
+    int? businessUnitId = ();
+    # Team ID
+    int? teamId = ();
+    # Sub-team ID
+    int? subTeamId = ();
+    # Unit ID
+    int? unitId = ();
+    # Designation ID
+    int? designationId = ();
+    # Employment type ID
+    int? employmentTypeId = ();
+    # Employee Status
+    string? employeeStatus = ();
+|};
+
+# Pagination information.
+public type Pagination record {|
+    # Limit of records per page
+    @constraint:Int {minValue: 1, maxValue: 100}
+    int 'limit = DEFAULT_RECORDS_PER_PAGE;
+    # Offset for pagination
+    @constraint:Int {minValue: 0}
+    int offset = 0;
+|};
+
+# Filter payload for getting employees.
+public type EmployeeSearchPayload record {|
+    # Search query
+    @constraint:String {
+        maxLength: 100,
+        pattern: re `^[\p{L}\p{M}0-9\s@._'+-]*$`
+    }
+    string? searchString = ();
+    # Filters
+    EmployeeFilters filters;
+    # Pagination
+    Pagination pagination;
+|};
+
+# Employee record with total count.
+public type EmployeeRecord record {|
+    *Employee;
+    # Total count of matching employees
+    int totalCount;
+|};
+
+# Filtered employees response with total count.
+public type EmployeesResponse record {|
+    # List of filtered employees
+    Employee[] employees;
+    # Total count of matching employees
+    int totalCount;
+|};
+
 # Personal information of an employee.
 public type EmployeePersonalInfo record {|
-    # Primary key ID
-    int id;
     # National Identity Card number
     @sql:Column {name: "nic_or_passport"}
     string nicOrPassport;
@@ -190,9 +274,6 @@ public type EmployeePersonalInfo record {|
 
 # Continuous service record information.
 public type ContinuousServiceRecordInfo record {|
-    # Primary key ID
-    @sql:Column {name: "id"}
-    int id;
     # Employee ID of the user
     string employeeId;
     # First name
@@ -340,6 +421,16 @@ public type EmploymentType record {|
     int id;
     # Name of the employment type
     string name;
+|};
+
+# Manager payload.
+public type Manager record {|
+    # Employee ID of the manager
+    @sql:Column {name: "employee_id"}
+    string employeeId;
+    # Manager work email
+    @sql:Column {name: "work_email"}
+    string workEmail;
 |};
 
 # Search employee personal information payload.
