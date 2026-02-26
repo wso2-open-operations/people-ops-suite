@@ -594,34 +594,6 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${createdBy}
         );`;
 
-# Add emergency contact query.
-#
-# + employeeId - Employee ID
-# + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
-# + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
-    returns sql:ParameterizedQuery =>
-    `INSERT INTO personal_info_emergency_contacts
-        (
-            personal_info_id,
-            name,
-            mobile,
-            telephone,
-            relationship,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-            ${contact.name},
-            ${contact.mobile},
-            ${contact.telephone},
-            ${contact.relationship},
-            ${createdBy},
-            ${createdBy}
-        );`;
 
 # Add employee query.
 #
@@ -783,7 +755,9 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
+    sql:ParameterizedQuery finalQuery 
+        = sql:queryConcat(query, ` WHERE id = (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId})`);
+
     return finalQuery;
 }
 
@@ -792,16 +766,17 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
 # + employeeId - Employee ID
 # + actor - User performing the delete operation
 # + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId, string actor) returns sql:ParameterizedQuery =>
-    `UPDATE piec
-      SET is_active = 0,
-          updated_by = ${actor},
-          updated_on = CURRENT_TIMESTAMP(6)
-      FROM personal_info_emergency_contacts piec
-        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-        WHERE 
-            e.employee_id = ${employeeId}
-            AND is_active = 1;`;
+isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId, string actor) 
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+      SET 
+        piec.is_active = 0,
+        piec.updated_by = ${actor},
+        piec.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE 
+        e.employee_id = ${employeeId}
+        AND piec.is_active = 1;`;
 
 # Add emergency contact query.
 #

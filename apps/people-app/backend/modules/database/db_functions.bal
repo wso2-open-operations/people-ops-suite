@@ -301,19 +301,20 @@ isolated function addAdditionalManagers(int employeeId, Email[] additionalManage
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
 # + return - Nil if the update was successful or error
-public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmployeePersonalInfoPayload payload, 
+        string updatedBy)
     returns error? {
 
     transaction {
-        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(employeeId, payload,
-                updatedBy));
+        sql:ExecutionResult executionResult 
+            = check databaseClient->execute(updateEmployeePersonalInfoQuery(employeeId, payload, updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
 
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
 
-            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId));
+            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId, updatedBy));
 
             sql:ParameterizedQuery[] insertQueries =
                 from EmergencyContact contact in contactsOpt
