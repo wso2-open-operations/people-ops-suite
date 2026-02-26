@@ -15,6 +15,38 @@
 -- under the License. 
 
 ALTER TABLE `people_ops_suite`.`visitor` 
-RENAME TO  `people_ops_suite`.`visitor_old` ;
+CHANGE COLUMN `email_hash` `id_hash` VARCHAR(255) NOT NULL ;
+
 ALTER TABLE `people_ops_suite`.`visit` 
-RENAME TO  `people_ops_suite`.`visit_old` ;
+DROP FOREIGN KEY `email_hash`;
+ALTER TABLE `people_ops_suite`.`visit` 
+CHANGE COLUMN `email_hash` `visitor_id_hash` VARCHAR(255) NOT NULL ;
+ALTER TABLE `people_ops_suite`.`visit` 
+ADD CONSTRAINT `email_hash`
+  FOREIGN KEY (`visitor_id_hash`)
+  REFERENCES `people_ops_suite`.`visitor` (`id_hash`);
+
+ALTER TABLE `people_ops_suite`.`visit` 
+ADD COLUMN `sms_verification_code` INT(6) NULL DEFAULT NULL AFTER `invited_by`,
+ADD UNIQUE INDEX `sms_verification_code_UNIQUE` (`sms_verification_code` ASC) VISIBLE;
+
+ALTER TABLE `people_ops_suite`.`visit` 
+CHANGE COLUMN `visit_date` `visit_date` CHAR(10) NOT NULL ;
+
+ALTER TABLE `people_ops_suite`.`visit` ;
+ALTER TABLE `people_ops_suite`.`visit` RENAME INDEX `email_hash_idx` TO `id_hash_idx`;
+ALTER TABLE `people_ops_suite`.`visit` ALTER INDEX `id_hash_idx` VISIBLE;
+
+ALTER TABLE `people_ops_suite`.`visitor` ;
+ALTER TABLE `people_ops_suite`.`visitor` RENAME INDEX `email_hash_UNIQUE` TO `id_hash_UNIQUE`;
+ALTER TABLE `people_ops_suite`.`visitor` ALTER INDEX `id_hash_UNIQUE` VISIBLE;
+
+ALTER TABLE `people_ops_suite`.`visitor` 
+CHANGE COLUMN `updated_on` `updated_on` TIMESTAMP(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6);
+
+ALTER TABLE `people_ops_suite`.`visit` 
+DROP FOREIGN KEY `email_hash`;
+ALTER TABLE `people_ops_suite`.`visit` 
+ADD CONSTRAINT `visitor_id_hash`
+  FOREIGN KEY (`visitor_id_hash`)
+  REFERENCES `people_ops_suite`.`visitor` (`id_hash`);
