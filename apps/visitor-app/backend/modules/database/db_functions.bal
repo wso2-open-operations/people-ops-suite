@@ -124,7 +124,7 @@ public isolated function updateInvitation(int invitationId, UpdateInvitationPayl
 # + invitedBy - The person who invited the visitor  
 # + createdBy - Person who is creating the visit  
 # + invitationId - Invitation ID associated with the visit
-# + return - Error if the insertion failed
+# + return - Last inserted visit ID or error
 public isolated function addVisit(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId = ())
     returns int|error {
 
