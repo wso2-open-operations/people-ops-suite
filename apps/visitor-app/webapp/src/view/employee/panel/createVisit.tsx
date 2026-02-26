@@ -901,15 +901,48 @@ function CreateVisit() {
                         label="Email Address"
                         name={`visitors.${idx}.emailAddress`}
                         value={visitor.emailAddress || ""}
-                        onChange={(e) => {
-                          const extractedEmail = handlePaste(e.target.value);
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedText =
+                            e.clipboardData?.getData("text") || "";
+                          const extractedEmail = handlePaste(pastedText);
 
                           formik.setFieldValue(
                             `visitors.${idx}.emailAddress`,
                             extractedEmail,
                           );
 
-                          const email = extractedEmail.trim();
+                          if (
+                            visitor.status === VisitorStatus.Draft &&
+                            extractedEmail &&
+                            extractedEmail.includes("@") &&
+                            extractedEmail.length >= 6
+                          ) {
+                            formik.setFieldValue(`visitors.${idx}.name`, "");
+                            formik.setFieldValue(
+                              `visitors.${idx}.contactNumber`,
+                              "",
+                            );
+                            fetchVisitorByEmailOrContact(
+                              extractedEmail,
+                              idx,
+                              formik,
+                            );
+                          }
+                        }}
+                        onChange={(e) => {
+                          if (
+                            e.nativeEvent &&
+                            (e.nativeEvent as InputEvent).inputType ===
+                              "insertFromPaste"
+                          )
+                            return;
+
+                          const email = e.target.value.trim();
+                          formik.setFieldValue(
+                            `visitors.${idx}.emailAddress`,
+                            email,
+                          );
 
                           if (visitorEmailDebounceRefs.current[idx]) {
                             clearTimeout(
