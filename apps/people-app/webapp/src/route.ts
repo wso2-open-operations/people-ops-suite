@@ -16,7 +16,7 @@
 
 import React from "react";
 
-import { NonIndexRouteObject } from "react-router-dom";
+import { NonIndexRouteObject, Outlet, useLocation, useNavigate } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import GroupsIcon from "@mui/icons-material/Groups";
 import { Role } from "@slices/authSlice/auth";
@@ -46,20 +46,47 @@ export interface RouteDetail {
   hideFromSidebar?: boolean;
 }
 
+const EmployeesRoot = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  if (pathname === "/employees") {
+    navigate("/employees/view", { replace: true });
+    return null;
+  }
+  return React.createElement(Outlet);
+};
+
 export const routes: RouteObjectWithRole[] = [
   {
     path: "/",
     text: "Me",
     icon: React.createElement(AccountCircleIcon),
     element: React.createElement(View.me),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/onboarding",
-    text: "Onboarding",
+    path: "/employees",
+    text: "Employees",
     icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.employeeOnboarding),
+    element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
+    children:[
+      {
+        path: "/employees/view",
+        text: "Employees",
+        element: React.createElement(View.employeesList),
+        icon: React.createElement(GroupsIcon),   
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/employees/onboarding",
+        text: "Onboarding",
+        icon: React.createElement(GroupsIcon),
+        element: React.createElement(View.employeeOnboarding),
+        allowRoles: [Role.ADMIN],
+      },
+      
+    ]
   },
   // Todo: Uncomment when help view is ready
   // {

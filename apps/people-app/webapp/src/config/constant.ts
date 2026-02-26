@@ -20,6 +20,7 @@ export const SnackMessage = {
   },
   error: {
     fetchEmployee: "Error while fetching employee",
+    fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
     insufficientPrivileges:
       "You don't have sufficient privileges to access this resource",
@@ -29,6 +30,13 @@ export const SnackMessage = {
   },
   warning: {},
 };
+export const ADMIN_PRIVILEGE = 999;
+export const DEFAULT_LIMIT_VALUE = 10;
+export const DEFAULT_OFFSET_VALUE = 0;
+export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
+
+export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
+export const SEARCH_MAX_LENGTH = 100;
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 

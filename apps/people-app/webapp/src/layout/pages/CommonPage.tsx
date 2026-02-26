@@ -14,16 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React from "react";
-import { useEffect, useState } from "react";
+import { Box, Stack, Tab, Tabs } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Box, Stack, Tab, Tabs, Typography } from "@mui/material";
 
 interface CommonPageProps {
   title: string;
   commonPageTabs: TabProps[];
   icon?: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  page?: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 }
 
 interface TabProps {
@@ -33,20 +33,27 @@ interface TabProps {
   page: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 }
 
-const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
+const CommonPage = ({ title, commonPageTabs, icon, page }: CommonPageProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [value, setValue] = useState<number>(0);
-  const tabs = commonPageTabs.map((tab) => tab.tabPath);
+  const tabs = useMemo(
+    () => commonPageTabs.map((tab) => tab.tabPath),
+    [commonPageTabs],
+  );
+  const hasTabs = commonPageTabs.length > 0;
 
   useEffect(() => {
+    if (!hasTabs) {
+      return;
+    }
     const currentTab = searchParams.get("tab");
     if (currentTab && tabs.indexOf(currentTab) !== -1) {
       setValue(tabs.indexOf(currentTab));
     } else {
-      searchParams.set("tab", tabs[0]);
-      setSearchParams(searchParams);
+      setSearchParams({ tab: tabs[0] });
+      setValue(0);
     }
-  }, [searchParams, setSearchParams, tabs]);
+  }, [hasTabs, searchParams, setSearchParams, tabs]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -58,76 +65,57 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
         height: "100%",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 0.5,
-          alignItems: "center",
-        }}
-      >
-        {icon && <Box sx={{ ml: 0.8, mt: 0.5 }}>{icon}</Box>}
-        <Stack
-          sx={{
-            p: 0.8,
-          }}
-          flexDirection="row"
-          gap={1}
-        >
-          <Typography variant="h5" fontWeight="bold">
-            {title}
-          </Typography>
-          <Typography variant="h6" color={"secondary.main"}>
-            /{searchParams.get("tab")}
-          </Typography>
-        </Stack>
-      </Box>
-
       {/* -------Tabs--------- */}
-      <Stack flexDirection="row" sx={{ mt: 0.7 }}>
-        <Tabs
-          value={value}
-          onChange={handleChange}
-          sx={{
-            alignItems: "center",
-            "&.MuiTabs-root": {
-              minHeight: 0,
-              borderTopLeftRadius: 5,
-            },
-            ".MuiTab-root": {
-              borderTopLeftRadius: 5,
-              borderTopRightRadius: 5,
-            },
-            "& .MuiTabs-indicator": {
-              display: "none",
-            },
-          }}
-        >
-          {commonPageTabs.map((tab, index) => (
-            <Tab
-              key={index}
-              icon={tab.icon}
-              label={tab.tabTitle}
-              onClick={() => setSearchParams({ tab: tabs[index] })}
-              iconPosition="start"
-              sx={(theme) => ({
+      {hasTabs && (
+        <Stack flexDirection="row" sx={{ mt: 0.7 }}>
+          <Tabs
+            value={value}
+            onChange={handleChange}
+            sx={{
+              alignItems: "center",
+              "&.MuiTabs-root": {
                 minHeight: 0,
-                lineHeight: 0,
-                py: 0.7,
-                background:
-                  tabs[index] === searchParams.get("tab")
-                    ? alpha(theme.palette.primary.light, 0.2)
-                    : "inherit",
-              })}
-            />
-          ))}
-        </Tabs>
-      </Stack>
-      {commonPageTabs.map((tab, index) => (
-        <TabPanel key={tab.tabPath || index} value={value} index={index}>
-          {tab.page}
-        </TabPanel>
-      ))}
+                borderTopLeftRadius: 5,
+              },
+              ".MuiTab-root": {
+                borderTopLeftRadius: 5,
+                borderTopRightRadius: 5,
+              },
+              "& .MuiTabs-indicator": {
+                display: "none",
+              },
+            }}
+          >
+            {commonPageTabs.map((tab, index) => (
+              <Tab
+                key={index}
+                icon={tab.icon}
+                label={tab.tabTitle}
+                onClick={() => setSearchParams({ tab: tabs[index] })}
+                iconPosition="start"
+                sx={(theme) => ({
+                  minHeight: 0,
+                  lineHeight: 0,
+                  py: 0.7,
+                  background:
+                    tabs[index] === searchParams.get("tab")
+                      ? alpha(theme.palette.primary.light, 0.2)
+                      : "inherit",
+                })}
+              />
+            ))}
+          </Tabs>
+        </Stack>
+      )}
+      {hasTabs ? (
+        commonPageTabs.map((tab, index) => (
+          <TabPanel key={tab.tabPath || index} value={value} index={index}>
+            {tab.page}
+          </TabPanel>
+        ))
+      ) : (
+        page
+      )}
     </Box>
   );
 };
