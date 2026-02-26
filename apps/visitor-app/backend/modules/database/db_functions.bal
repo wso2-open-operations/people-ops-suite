@@ -146,6 +146,10 @@ public isolated function addVisit(AddVisitPayload payload, string invitedBy, str
 # + return - Visit object or error
 public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? smsVerificationCode = ()) returns Visit|error? {
 
+    if visitId is () && uuid is () && smsVerificationCode is () {
+        return error("At least one filter (visitId, uuid or smsVerificationCode) must be provided");
+    }
+
     VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid, smsVerificationCode}));
     if visit is error {
         return visit is sql:NoRowsError ? () : visit;
