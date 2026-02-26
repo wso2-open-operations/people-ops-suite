@@ -39,6 +39,7 @@ import {
   fetchUnits,
   fetchCareerFunctions,
   fetchDesignations,
+  fetchCompanies,
   fetchOffices,
   fetchEmploymentTypes,
 } from "@slices/organizationSlice/organization";
@@ -158,6 +159,7 @@ export default function ReviewStep() {
     units,
     careerFunctions,
     designations,
+    companies,
     offices,
     employmentTypes,
   } = useAppSelector((s) => s.organization);
@@ -167,7 +169,7 @@ export default function ReviewStep() {
   // Fetch all necessary data when component mounts
   useEffect(() => {
     dispatch(fetchBusinessUnits());
-    dispatch(fetchOffices());
+    dispatch(fetchCompanies());
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmploymentTypes());
 
@@ -186,12 +188,16 @@ export default function ReviewStep() {
         fetchDesignations({ careerFunctionId: values.careerFunctionId }),
       );
     }
+    if (values.companyId && values.companyId !== 0) {
+      dispatch(fetchOffices({ id: values.companyId }));
+    }
   }, [
     dispatch,
     values.businessUnitId,
     values.teamId,
     values.subTeamId,
     values.careerFunctionId,
+    values.companyId,
     values.employmentTypeId,
   ]);
 
@@ -242,6 +248,7 @@ export default function ReviewStep() {
       careerFunction:
         careerFunctions.find((cf) => cf.id === values.careerFunctionId)
           ?.careerFunction || null,
+      company: companies.find((c) => c.id === values.companyId)?.name || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
       employmentType:
         employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
@@ -254,6 +261,7 @@ export default function ReviewStep() {
       units,
       designations,
       careerFunctions,
+      companies,
       offices,
       employmentTypes,
       values.businessUnitId,
@@ -262,6 +270,7 @@ export default function ReviewStep() {
       values.unitId,
       values.designationId,
       values.careerFunctionId,
+      values.companyId,
       values.officeId,
       values.employmentTypeId,
     ],
@@ -453,6 +462,9 @@ export default function ReviewStep() {
       <Box sx={sectionBoxSx}>
         <SectionHeader icon={icons.location} title="Location & Office" />
         <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="Company" value={mappedNames.company} />
+          </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Office" value={mappedNames.office} />
           </Grid>

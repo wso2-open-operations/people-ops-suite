@@ -50,6 +50,7 @@ import {
   fetchUnits,
   fetchCareerFunctions,
   fetchDesignations,
+  fetchCompanies,
   fetchOffices,
   fetchEmploymentTypes,
 } from "@slices/organizationSlice/organization";
@@ -75,8 +76,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .max(45, "EPF must be at most 45 characters")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
-  secondaryJobTitle: Yup.string()
-    .required("Secondary job title is required"),
+  secondaryJobTitle: Yup.string().required("Secondary job title is required"),
   businessUnitId: Yup.number()
     .required("Business unit is required")
     .min(1, "Select a valid business unit"),
@@ -95,6 +95,9 @@ export const jobInfoValidationSchema = Yup.object().shape({
   designationId: Yup.number()
     .required("Designation is required")
     .min(1, "Select a valid designation"),
+  companyId: Yup.number()
+    .required("Company is required")
+    .min(1, "Select a valid company"),
   officeId: Yup.number()
     .required("Office is required")
     .min(1, "Select a valid office"),
@@ -182,6 +185,7 @@ export default function JobInfoStep() {
     units,
     careerFunctions,
     designations,
+    companies,
     offices,
     employmentTypes,
   } = useAppSelector((state) => state.organization);
@@ -271,7 +275,7 @@ export default function JobInfoStep() {
 
   useEffect(() => {
     dispatch(fetchBusinessUnits());
-    dispatch(fetchOffices());
+    dispatch(fetchCompanies());
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
@@ -287,6 +291,25 @@ export default function JobInfoStep() {
 
     dispatch(fetchDesignations({ careerFunctionId: id }));
   }, [dispatch, values.careerFunctionId]);
+
+  // Fetch offices when company is selected
+  const prevCompanyId = useRef(values.companyId);
+  useEffect(() => {
+    if (values.companyId) {
+      dispatch(fetchOffices({ id: values.companyId }));
+
+      if (prevCompanyId.current !== values.companyId) {
+        setFieldValue("officeId", 0);
+        setFieldValue("employmentLocation", "");
+        setFieldValue("workLocation", "");
+      }
+      prevCompanyId.current = values.companyId;
+    } else {
+      setFieldValue("officeId", 0);
+      setFieldValue("employmentLocation", "");
+      setFieldValue("workLocation", "");
+    }
+  }, [values.companyId, dispatch, setFieldValue]);
 
   // Update employmentLocation automatically based on selected office
   const prevBusinessUnitId = React.useRef(values.businessUnitId);
@@ -494,8 +517,9 @@ export default function JobInfoStep() {
                         { label: "Employee ID", value: record.employeeId },
                         {
                           label: "Name",
-                          value: `${record.firstName || ""} ${record.lastName || ""
-                            }`.trim(),
+                          value: `${record.firstName || ""} ${
+                            record.lastName || ""
+                          }`.trim(),
                         },
                         { label: "Designation", value: record.designation },
                         {
@@ -807,7 +831,6 @@ export default function JobInfoStep() {
                 </MenuItem>
               )}
             </TextField>
-
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField
@@ -864,6 +887,37 @@ export default function JobInfoStep() {
               select
               fullWidth
               required
+              label="Company"
+              name="companyId"
+              value={values.companyId || ""}
+              onChange={(e) =>
+                setFieldValue("companyId", Number(e.target.value))
+              }
+              onBlur={handleBlur}
+              error={Boolean(touched.companyId && errors.companyId)}
+              helperText={touched.companyId && errors.companyId}
+              sx={textFieldSx}
+            >
+              {companies.length ? (
+                companies.map((company) => (
+                  <MenuItem key={company.id} value={company.id}>
+                    {company.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {organizationState === "loading"
+                    ? "Loading companies..."
+                    : "No companies found"}
+                </MenuItem>
+              )}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              fullWidth
+              required
               label="Office"
               name="officeId"
               value={values.officeId || ""}
@@ -873,7 +927,11 @@ export default function JobInfoStep() {
               onBlur={handleBlur}
               error={Boolean(touched.officeId && errors.officeId)}
               helperText={touched.officeId && errors.officeId}
-              sx={textFieldSx}
+              disabled={!values.companyId || values.companyId === 0}
+              sx={{
+                ...textFieldSx,
+                ...disabledSx,
+              }}
             >
               {offices.length ? (
                 offices.map((office) => (
@@ -883,9 +941,11 @@ export default function JobInfoStep() {
                 ))
               ) : (
                 <MenuItem disabled>
-                  {organizationState === "loading"
-                    ? "Loading offices..."
-                    : "No offices found"}
+                  {!values.companyId || values.companyId === 0
+                    ? "Select company first"
+                    : organizationState === "loading"
+                      ? "Loading offices..."
+                      : "No offices found"}
                 </MenuItem>
               )}
             </TextField>
@@ -1122,7 +1182,11 @@ export default function JobInfoStep() {
               SelectProps={{
                 multiple: true,
                 renderValue: (selected) => (
-                  <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    sx={{ flexWrap: "wrap", gap: 0.5 }}
+                  >
                     {(selected as string[]).map((email) => (
                       <Chip
                         key={email}
@@ -1131,17 +1195,23 @@ export default function JobInfoStep() {
                         onMouseDown={(e) => e.stopPropagation()}
                         onDelete={(e) => {
                           e.stopPropagation();
-                          const updated = (values.additionalManagerEmail || []).filter(
-                            (em) => em !== email
-                          );
+                          const updated = (
+                            values.additionalManagerEmail || []
+                          ).filter((em) => em !== email);
                           setFieldValue("additionalManagerEmail", updated);
                         }}
-                        deleteIcon={<CloseIcon fontSize="small" sx={{ color: 'error.main' }} aria-label={`Remove ${email}`} />}
+                        deleteIcon={
+                          <CloseIcon
+                            fontSize="small"
+                            sx={{ color: "error.main" }}
+                            aria-label={`Remove ${email}`}
+                          />
+                        }
                         sx={{
                           maxWidth: 200,
-                          '& .MuiChip-label': {
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
+                          "& .MuiChip-label": {
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
                           },
                         }}
                       />
