@@ -878,7 +878,15 @@ function CreateVisit() {
                         <IconButton
                           color="error"
                           size="small"
-                          onClick={() => remove(idx)}
+                          onClick={() => {
+                            Object.values(
+                              visitorEmailDebounceRefs.current,
+                            ).forEach((t) => {
+                              if (t) clearTimeout(t);
+                            });
+                            visitorEmailDebounceRefs.current = {};
+                            remove(idx);
+                          }}
                         >
                           <DeleteIcon />
                         </IconButton>

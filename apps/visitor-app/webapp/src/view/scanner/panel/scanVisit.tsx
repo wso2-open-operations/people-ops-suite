@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
   Box,
@@ -46,7 +46,7 @@ const ScanVisit: React.FC = () => {
 
   const readerId = "qr-reader";
 
-  const safeStop = async () => {
+  const safeStop = useCallback(async () => {
     try {
       if (html5QrCodeRef.current && isRunningRef.current) {
         await html5QrCodeRef.current.stop();
@@ -56,7 +56,7 @@ const ScanVisit: React.FC = () => {
     } catch {
       // ignore — prevents "scanner not running" error
     }
-  };
+  }, []);
 
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 6);
@@ -127,7 +127,7 @@ const ScanVisit: React.FC = () => {
     return () => {
       safeStop();
     };
-  }, [dispatch, navigate, activeTab]);
+  }, [dispatch, navigate, activeTab, safeStop]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
@@ -209,7 +209,7 @@ const ScanVisit: React.FC = () => {
                 }}
                 sx={{ mb: 3 }}
                 disabled={isValidating}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handlePinSubmit();
                   }
