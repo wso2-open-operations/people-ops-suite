@@ -760,34 +760,57 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${createdBy}
         );`;
 
-# Add emergency contact query.
+
+# Fetch company prefix and employment type required for generating the next employee ID.
 #
-# + employeeId - Employee ID
-# + contact - Emergency contact details
-# + createdBy - Creator of the emergency contact record
-# + return - Emergency contact insert query
-isolated function addPersonalInfoEmergencyContactQuery(string employeeId, EmergencyContact contact, string createdBy)
+# + companyId - Company ID of the new employee
+# + employmentTypeId - Employment type ID of the new employee
+# + return - Query returning `companyPrefix` and `employmentType` columns
+isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
     returns sql:ParameterizedQuery =>
-    `INSERT INTO personal_info_emergency_contacts
-        (
-            personal_info_id,
-            name,
-            mobile,
-            telephone,
-            relationship,
-            created_by,
-            updated_by
-        )
-     VALUES
-        (
-            (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId}),
-            ${contact.name},
-            ${contact.mobile},
-            ${contact.telephone},
-            ${contact.relationship},
-            ${createdBy},
-            ${createdBy}
-        );`;
+    `SELECT
+        c.prefix        AS companyPrefix,
+        UPPER(et.name)  AS employmentType
+    FROM employment_type et
+    JOIN company c ON c.id = ${companyId}
+    WHERE et.id = ${employmentTypeId}`;
+
+# Lock the employee sequence for the provided prefix and return the last numeric ID.
+#
+# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
+# + employmentTypes - The employment type names that share this sequence
+# + return - Query to lock the sequence and return the last numeric ID
+isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< employmentTypes.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+        `SELECT
+            COALESCE(
+                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+                0
+            ) AS lastNumericId
+        FROM employee e
+        JOIN employment_type et ON et.id = e.employment_type_id
+        WHERE
+            e.employee_id LIKE ${prefix + "%"}
+            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
+            AND UPPER(et.name) IN (`,
+            inClause,
+            `)
+        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+        LIMIT 1
+        FOR UPDATE`
+    );
+}
 
 # Fetch company prefix and employment type required for generating the next employee ID.
 #
@@ -1040,16 +1063,17 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
 # + employeeId - Employee ID
 # + actor - User performing the delete operation
 # + return - sql:ParameterizedQuery - Delete query for emergency contacts
-isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId, string actor) returns sql:ParameterizedQuery =>
-    `UPDATE piec
-      SET is_active = 0,
-          updated_by = ${actor},
-          updated_on = CURRENT_TIMESTAMP(6)
-      FROM personal_info_emergency_contacts piec
-        INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
-        WHERE 
-            e.employee_id = ${employeeId}
-            AND is_active = 1;`;
+isolated function deleteEmergencyContactsByEmployeeIdQuery(string employeeId, string actor) 
+    returns sql:ParameterizedQuery =>
+    `UPDATE personal_info_emergency_contacts piec
+      INNER JOIN employee e ON e.personal_info_id = piec.personal_info_id
+      SET 
+        piec.is_active = 0,
+        piec.updated_by = ${actor},
+        piec.updated_on = CURRENT_TIMESTAMP(6)
+      WHERE 
+        e.employee_id = ${employeeId}
+        AND piec.is_active = 1;`;
 
 # Add emergency contact query.
 #

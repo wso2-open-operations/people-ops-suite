@@ -427,7 +427,7 @@ public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmp
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
 
-            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId));
+            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId, updatedBy));
 
             sql:ParameterizedQuery[] insertQueries =
                 from EmergencyContact contact in contactsOpt
