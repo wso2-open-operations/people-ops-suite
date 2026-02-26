@@ -14,22 +14,7 @@
 -- specific language governing permissions and limitations
 -- under the License. 
 
-CREATE TABLE `visitor` (
-  `id_hash` varchar(255) NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `first_name` varchar(255) DEFAULT NULL,
-  `last_name` varchar(255) DEFAULT NULL,
-  `contact_number` varchar(255) DEFAULT NULL,
-  `created_by` varchar(255) DEFAULT NULL,
-  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  `updated_by` varchar(255) DEFAULT NULL,
-  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6),
-  PRIMARY KEY (`id_hash`),
-  UNIQUE KEY `email_hash_UNIQUE` (`id_hash`),
-  UNIQUE KEY `email_UNIQUE` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
- CREATE TABLE `visit` (
+CREATE TABLE `visit` (
   `visit_id` int NOT NULL AUTO_INCREMENT,
   `uuid` char(36) NOT NULL,
   `visitor_id_hash` varchar(255) NOT NULL,
@@ -55,6 +40,22 @@ CREATE TABLE `visitor` (
   UNIQUE KEY `uuid_UNIQUE` (`uuid`),
   UNIQUE KEY `sms_verification_code_UNIQUE` (`sms_verification_code`),
   KEY `fk_invitation_id_idx` (`invitation_id`),
-  KEY `email_hash_idx` (`visitor_id_hash`),
-  CONSTRAINT `email_hash` FOREIGN KEY (`visitor_id_hash`) REFERENCES `visitor` (`id_hash`)
+  KEY `id_hash_idx` (`visitor_id_hash`),
+  CONSTRAINT `visitor_id_hash` FOREIGN KEY (`visitor_id_hash`) REFERENCES `visitor` (`id_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `visitor` (
+  `id_hash` varchar(255) NOT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `first_name` varchar(255) DEFAULT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
+  `contact_number` varchar(255) DEFAULT NULL,
+  `created_by` varchar(255) DEFAULT NULL,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(255) DEFAULT NULL,
+  `updated_on` timestamp(6) NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id_hash`),
+  UNIQUE KEY `id_hash_UNIQUE` (`id_hash`),
+  UNIQUE KEY `email_UNIQUE` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
