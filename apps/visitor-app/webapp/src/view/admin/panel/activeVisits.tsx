@@ -106,8 +106,7 @@ const ActiveVisits = () => {
   >([]);
   const dialogContext = useConfirmationModalContext();
 
-  // Check for uuid parameter in URL
-  const uuidParam = searchParams.get("uuid");
+  const visitVerificationCodeParam = searchParams.get("visitVerificationCode");
   const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
 
   const visitsList = visits?.visits ?? [];
@@ -123,19 +122,19 @@ const ActiveVisits = () => {
     );
   }, [dispatch, page, pageSize, isScanModalOpen]);
 
-  // Handle UUID parameter for opening scan modal
+  // Handle visitVerificationCode parameter for opening scan modal
   useEffect(() => {
-    if (uuidParam) {
+    if (visitVerificationCodeParam) {
       setIsScanModalOpen(true);
     } else {
       setIsScanModalOpen(false);
     }
-  }, [uuidParam]);
+  }, [visitVerificationCodeParam]);
 
   const handleCloseScanModal = () => {
-    // Remove uuid parameter from URL
+    // Remove visitVerificationCode parameter from URL
     const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.delete("uuid");
+    newSearchParams.delete("visitVerificationCode");
     setSearchParams(newSearchParams);
     setIsScanModalOpen(false);
   };
@@ -273,8 +272,15 @@ const ActiveVisits = () => {
       headerName: "Contact Number",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
+    {
+      field: "email",
+      headerName: "Visitor Email",
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "passNumber",
       headerName: "Pass Number",
@@ -419,7 +425,7 @@ const ActiveVisits = () => {
         }
       />
 
-      {/* Scan Modal - Shows when uuid parameter is present */}
+      {/* Scan Modal - Shows when visitVerificationCode parameter is present */}
       {isScanModalOpen && (
         <Modal
           open
