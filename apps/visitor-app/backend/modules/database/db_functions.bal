@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/sql;
 
 # Add new visitor.
@@ -21,35 +22,34 @@ import ballerina/sql;
 # + createdBy - Person who is creating the visitor
 # + return - Error if the insertion failed
 public isolated function addVisitor(AddVisitorPayload payload, string createdBy) returns error? {
-    string? firstName = payload.firstName;
     string? lastName = payload.lastName;
     string? contactNumber = payload.contactNumber;
+    string? email = payload.email;
 
-    payload.firstName = firstName is string ? check encrypt(firstName) : ();
+    payload.firstName = check encrypt(payload.firstName);
     payload.lastName = lastName is string ? check encrypt(lastName) : ();
     payload.contactNumber = contactNumber is string ? check encrypt(contactNumber) : ();
-    payload.email = check encrypt(payload.email);
+    payload.email = email is string ? check encrypt(email) : ();
 
     _ = check databaseClient->execute(addVisitorQuery(payload, createdBy));
 }
 
 # Fetch Visitor.
 #
-# + hashedEmail - Filter :  hashed email of the visitor
+# + idHash - Filter : Hashed email or contact number of the visitor
 # + return - Visitor object or error if so
-public isolated function fetchVisitor(string hashedEmail) returns Visitor|error? {
-    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByEmailQuery(hashedEmail));
+public isolated function fetchVisitor(string idHash) returns Visitor|error? {
+    Visitor|error visitor = databaseClient->queryRow(fetchVisitorByIdHashQuery(idHash));
     if visitor is error {
         return visitor is sql:NoRowsError ? () : visitor;
     }
 
-    string? first_name = visitor.firstName;
     string? last_name = visitor.lastName;
     string? contact_number = visitor.contactNumber;
+    string? email = visitor.email;
 
-    if first_name is string {
-        visitor.firstName = check decrypt(first_name);
-    }
+    visitor.firstName = check decrypt(visitor.firstName);
+
     if last_name is string {
         visitor.lastName = check decrypt(last_name);
     }
@@ -57,7 +57,9 @@ public isolated function fetchVisitor(string hashedEmail) returns Visitor|error?
         visitor.contactNumber = check decrypt(contact_number);
     }
 
-    visitor.email = check decrypt(visitor.email);
+    if email is string {
+        visitor.email = check decrypt(email);
+    }
 
     return visitor;
 }
@@ -122,38 +124,47 @@ public isolated function updateInvitation(int invitationId, UpdateInvitationPayl
 # + invitedBy - The person who invited the visitor  
 # + createdBy - Person who is creating the visit  
 # + invitationId - Invitation ID associated with the visit
-# + return - Error if the insertion failed
+# + return - Last inserted visit ID or error
 public isolated function addVisit(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId = ())
-    returns error? {
+    returns int|error {
 
-    _ = check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
+    sql:ExecutionResult executionResult =
+        check databaseClient->execute(addVisitQuery(payload, invitedBy, createdBy, invitationId));
+
+    int|string? lastInsertId = executionResult.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+    return error("Failed to retrieve last inserted visit ID");
 }
 
 # Fetch visit by ID or UUID.
 #
 # + visitId - ID of the visit to fetch
 # + uuid - UUID of the visit to fetch
+# + smsVerificationCode - SMS verification code of the visit to fetch
 # + return - Visit object or error
-public isolated function fetchVisit(int? visitId = (), string? uuid = ()) returns Visit|error? {
-    if visitId is () && uuid is () {
-        return error("Either visitId or uuid must be provided.");
+public isolated function fetchVisit(int? visitId = (), string? uuid = (), int? smsVerificationCode = ()) returns Visit|error? {
+
+    if visitId is () && uuid is () && smsVerificationCode is () {
+        return error("At least one filter (visitId, uuid or smsVerificationCode) must be provided");
     }
 
-    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid}));
+    VisitRecord|error visit = databaseClient->queryRow(fetchVisitsQuery({visitId, uuid, smsVerificationCode}));
     if visit is error {
         return visit is sql:NoRowsError ? () : visit;
     }
 
-    string? firstName = visit.firstName;
     string? lastName = visit.lastName;
     string? contactNumber = visit.contactNumber;
     string? timeOfEntry = visit.timeOfEntry;
     string? timeOfDeparture = visit.timeOfDeparture;
     string? accessibleLocations = visit.accessibleLocations;
+    string? email = visit.email;
 
     return {
         id: visit.id,
-        emailHash: visit.emailHash,
+        visitorIdHash: visit.visitorIdHash,
         companyName: visit.companyName,
         passNumber: visit.passNumber,
         whomTheyMeet: visit.whomTheyMeet,
@@ -167,10 +178,10 @@ public isolated function fetchVisit(int? visitId = (), string? uuid = ()) return
                 timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) :
                 timeOfDeparture : (),
         status: visit.status,
-        firstName: firstName is string ? check decrypt(firstName) : (),
+        firstName: check decrypt(visit.firstName),
         lastName: lastName is string ? check decrypt(lastName) : (),
         contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
-        email: check decrypt(visit.email),
+        email: email is string ? check decrypt(email) : (),
         invitationId: visit.invitationId,
         createdBy: visit.createdBy,
         createdOn: visit.createdOn,
@@ -193,9 +204,9 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
             string? accessibleLocations = visit.accessibleLocations;
             string? timeOfEntry = visit.timeOfEntry;
             string? timeOfDeparture = visit.timeOfDeparture;
-            string? firstName = visit.firstName;
             string? lastName = visit.lastName;
             string? contactNumber = visit.contactNumber;
+            string? email = visit.email;
             totalCount = visit.totalCount;
             visits.push({
                 id: visit.id,
@@ -204,10 +215,10 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
                 timeOfDeparture: timeOfDeparture is string ?
                         timeOfDeparture.endsWith(".0") ? timeOfDeparture.substring(0, timeOfDeparture.length() - 2) : timeOfDeparture : (),
                 passNumber: visit.passNumber,
-                emailHash: visit.emailHash,
-                firstName: firstName is string ? check decrypt(firstName) : (),
+                visitorIdHash: visit.visitorIdHash,
+                firstName: check decrypt(visit.firstName),
                 lastName: lastName is string ? check decrypt(lastName) : (),
-                email: check decrypt(visit.email),
+                email: email is string ? check decrypt(email) : (),
                 contactNumber: contactNumber is string ? check decrypt(contactNumber) : (),
                 companyName: visit.companyName,
                 whomTheyMeet: visit.whomTheyMeet,
@@ -234,7 +245,16 @@ public isolated function fetchVisits(VisitFilters filters) returns VisitsRespons
 # + updatedBy - Person who is updating the visit
 # + return - Error if the update failed or no rows were affected
 public isolated function updateVisit(int visitId, UpdateVisitPayload payload, string updatedBy) returns error? {
-    sql:ExecutionResult executionResult = check databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
+    sql:ExecutionResult|error executionResult = databaseClient->execute(updateVisitQuery(visitId, payload, updatedBy));
+    if executionResult is error {
+        if executionResult is sql:DatabaseError {
+            int errorCode = executionResult.detail().errorCode;
+            if errorCode == 1062 { // MySQL error code for duplicate entry
+                return error DuplicateEntryError(executionResult.message());
+            }
+        }
+        return executionResult;
+    }
     if executionResult.affectedRowCount < 1 {
         return error("No row was updated!");
     }

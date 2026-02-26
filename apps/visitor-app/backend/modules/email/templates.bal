@@ -889,7 +889,7 @@ public final string inviteTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
@@ -963,6 +963,8 @@ public final string inviteTemplate = string `
                               <!-- [WHO_THEY_MEET] -->
                               <!-- [ALLOWED_FLOORS] -->
                             </ul>
+
+                            <img src="cid:<!-- [CONTENT_ID] -->" alt="QR Code" width="400" height="400" />
 
                             <p
                               style="
@@ -2230,7 +2232,7 @@ public final string visitorCompletionTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
@@ -3573,7 +3575,7 @@ public final string visitorApproveTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
@@ -4900,7 +4902,7 @@ public final string visitorRejectingTemplate = string `
                               "
                             >
                               Dear
-                              <!-- [NAME] -->,
+                              <!-- [FIRST_NAME] -->,
                             </p>
                             <p
                               style="
@@ -6354,8 +6356,7 @@ public final string employeeVisitorArrivalTemplate = string `
 
                             <p
                               style="
-                                font-family:
-                                  &quot;Roboto&quot;, Helvetica, sans-serif;
+                                font-family: 'Roboto', Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -6366,14 +6367,14 @@ public final string employeeVisitorArrivalTemplate = string `
                                 text-align: left;
                               "
                             >
-                              If you have any questions or require assistance,
-                              please contact the reception desk. Best regards,
+                              If you require any further assistance, please do
+                              not hesitate to contact us at
+                              <!-- [CONTACT_EMAIL] -->.
                             </p>
 
-                            <p
+                             <p
                               style="
-                                font-family:
-                                  &quot;Roboto&quot;, Helvetica, sans-serif;
+                                font-family: 'Roboto', Helvetica, sans-serif;
                                 font-size: 17px;
                                 line-height: 28px;
                                 padding-top: 0;
@@ -6386,8 +6387,7 @@ public final string employeeVisitorArrivalTemplate = string `
                               "
                             >
                               Best regards,<br />
-                              <b>WSO2 Visitor Management System</b><br />
-                              WSO2 LLC
+                              Administration Team
                             </p>
                           </td>
                         </tr>

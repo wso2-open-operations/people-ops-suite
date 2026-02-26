@@ -18,11 +18,13 @@ import visitor.calendar;
 import visitor.database;
 import visitor.email;
 import visitor.people;
+import visitor.sms;
 
 import ballerina/cache;
 import ballerina/http;
 import ballerina/lang.regexp;
 import ballerina/log;
+import ballerina/random;
 import ballerina/time;
 
 configurable string webAppUrl = ?;
@@ -104,11 +106,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Fetches a specific visitor by hashed Email.
+    # Fetches a specific visitor by hashed email or contact number.
     #
-    # + hashedEmail - Hashed Email of the visitor
+    # + idHash - Hashed Email or contact number of the visitor
     # + return - Visitor or error
-    resource function get visitors/[string hashedEmail](http:RequestContext ctx)
+    resource function get visitors/[string idHash](http:RequestContext ctx)
         returns database:Visitor|http:InternalServerError|http:NotFound {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -121,7 +123,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Visitor|error? visitor = database:fetchVisitor(hashedEmail);
+        database:Visitor|error? visitor = database:fetchVisitor(idHash);
         if visitor is error {
             string customError = "Error occurred while fetching visitor!";
             log:printError(customError, visitor);
@@ -132,7 +134,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if visitor is () {
-            log:printError(string `No visitor information found for the hashed Email: ${hashedEmail}!`);
+            log:printError(string `No visitor information found for the Id Hash: ${idHash}!`);
             return <http:NotFound>{
                 body: {
                     message: "No visitor found!"
@@ -148,7 +150,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visitor details
     # + return - Successfully created or error
     resource function post visitors(http:RequestContext ctx, database:AddVisitorPayload payload)
-        returns http:Created|http:InternalServerError|http:Conflict {
+        returns http:Created|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -156,6 +158,14 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: {
                     message: USER_INFO_HEADER_NOT_FOUND_ERROR
+                }
+            };
+        }
+
+        if payload.email !is string && payload.contactNumber !is string {
+            return <http:BadRequest>{
+                body: {
+                    message: "At least one of email or contact number should be provided!"
                 }
             };
         }
@@ -182,7 +192,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing the visit details
     # + return - Successfully created or error
     resource function post visits(http:RequestContext ctx, AddVisitPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Created {
+        returns http:Created|http:InternalServerError|http:BadRequest {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -219,7 +229,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Verify existing visitor.
-        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.emailHash);
+        database:Visitor|error? existingVisitor = database:fetchVisitor(payload.visitorIdHash);
         if existingVisitor is error {
             string customError = "Error occurred while fetching existing visitor!";
             log:printError(customError, existingVisitor);
@@ -232,14 +242,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         if existingVisitor is () {
             return <http:BadRequest>{
                 body: {
-                    message: "No visitor found with the provided email hash!"
+                    message: "No visitor found with the provided visitor ID hash!"
                 }
             };
 
         }
 
-        error? visitError = database:addVisit({
-                                                  emailHash: payload.emailHash,
+        int|error visitId = database:addVisit({
+                                                  visitorIdHash: payload.visitorIdHash,
                                                   companyName: payload.companyName,
                                                   passNumber: payload.passNumber,
                                                   whomTheyMeet: payload.whomTheyMeet,
@@ -251,9 +261,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                                                   visitDate: payload.visitDate,
                                                   uuid: payload.uuid
                                               }, invokerInfo.email, invokerInfo.email);
-        if visitError is error {
+        if visitId is error {
             string customError = "Error occurred while adding visit!";
-            log:printError(customError, visitError);
+            log:printError(customError, visitId);
             return <http:InternalServerError>{
                 body: {
                     message: customError
@@ -261,7 +271,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error formattedFromDate = "N/A";
+        string|error? formattedFromDate = ();
         if timeOfEntry is string {
             formattedFromDate = formatDateTime(timeOfEntry, "Asia/Colombo", false);
             if formattedFromDate is error {
@@ -270,7 +280,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        string|error formattedToDate = "N/A";
+        string|error? formattedToDate = ();
         if timeOfDeparture is string {
             formattedToDate = formatDateTime(timeOfDeparture, "Asia/Colombo", false);
             if formattedToDate is error {
@@ -278,37 +288,40 @@ service http:InterceptableService / on new http:Listener(9090) {
                 log:printError(customError, formattedToDate);
             }
         }
+        string? visitorEmail = existingVisitor.email;
+        string? contactNumber = existingVisitor.contactNumber;
 
-        string? firstName = existingVisitor.firstName;
-        string? lastName = existingVisitor.lastName;
-        string visitorEmail = existingVisitor.email;
-        string? purposeOfVisit = payload.purposeOfVisit;
-        string? whomTheyMeet = payload.whomTheyMeet;
-        database:Floor[]? accessibleLocations = payload.accessibleLocations;
-        string? accessibleLocationString = accessibleLocations is database:Floor[] ?
-            organizeLocations(accessibleLocations) : ();
+        // Sent the QR only if the visitor email is available.
+        if visitorEmail is string {
+            string? lastName = existingVisitor.lastName;
+            string? purposeOfVisit = payload.purposeOfVisit;
+            string? whomTheyMeet = payload.whomTheyMeet;
+            database:Floor[]? accessibleLocations = payload.accessibleLocations;
+            string? accessibleLocationString = accessibleLocations is database:Floor[] ?
+                organizeLocations(accessibleLocations) : ();
 
-        if whomTheyMeet is string {
-            people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
-            if hostEmployee is error {
-                string customError = "An error occurred while fetching host employee details!";
-                log:printError(customError, hostEmployee);
+            if whomTheyMeet is string {
+                people:Employee|error? hostEmployee = people:fetchEmployee(whomTheyMeet);
+                if hostEmployee is error {
+                    string customError = "An error occurred while fetching host employee details!";
+                    log:printError(customError, hostEmployee);
+                }
+                if hostEmployee is () {
+                    string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
+                    log:printError(customError);
+                }
+                if hostEmployee is people:Employee {
+                    whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
+                }
             }
-            if hostEmployee is () {
-                string customError = string `No employee information found for the host: ${whomTheyMeet}!`;
-                log:printError(customError);
-            }
-            if hostEmployee is people:Employee {
-                whomTheyMeet = hostEmployee.firstName + " " + hostEmployee.lastName + " [" + hostEmployee.workEmail + "]";
-            }
-        }
-        string|error content = email:bindKeyValues(
-                email:inviteTemplate,
-                {
-                    NAME: firstName is string && lastName is string ?
-                        generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
-                    VISIT_DATE: payload.visitDate,
-                    TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
+            string|error content = email:bindKeyValues(
+                    email:inviteTemplate,
+                    {
+                        CONTENT_ID: visitId.toString(),
+                        FIRST_NAME: existingVisitor.firstName,
+                        NAME: existingVisitor.firstName + (lastName is string ? string ` ${lastName}` : ""),
+                        VISIT_DATE: payload.visitDate,
+                        TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -321,7 +334,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedFromDate}</span>
                                 </p>
                               </li>` : "",
-                    TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
+                        TIME_OF_DEPARTURE: timeOfDeparture is string && formattedToDate is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -334,7 +347,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${formattedToDate}</span>
                                 </p>
                               </li>` : "",
-                    PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
+                        PURPOSE_OF_VISIT: purposeOfVisit is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -347,7 +360,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${purposeOfVisit}</span>
                                 </p>
                               </li>` : "",
-                    WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
+                        WHO_THEY_MEET: whomTheyMeet is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -360,7 +373,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${whomTheyMeet}</span>
                                 </p>
                               </li>` : "",
-                    ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
+                        ALLOWED_FLOORS: accessibleLocationString is string ? string `<li>
                                 <p
                                   style="
                                     font-family: 'Roboto', Helvetica, sans-serif;
@@ -375,39 +388,94 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   ${accessibleLocationString}
                                 </ul>
                               </li>` : "",
-                    CONTACT_EMAIL: email:contactUsEmail,
-                    YEAR: time:utcToCivil(time:utcNow()).year.toString()
-                }
-        );
+                        CONTACT_EMAIL: email:contactUsEmail,
+                        YEAR: time:utcToCivil(time:utcNow()).year.toString()
+                    }
+            );
 
-        if content is error {
-            string customError = "An error occurred while binding values to the email template!";
-            log:printError(customError, content);
-            return <http:InternalServerError>{
-                body: {
-                    message: customError
-                }
-            };
+            if content is error {
+                string customError = "An error occurred while binding values to the email template!";
+                log:printError(customError, content);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customError
+                    }
+                };
+            }
+
+            string[] ccList = [email:receptionEmail, invokerInfo.email];
+            string? whoTheyMeetEmail = payload.whomTheyMeet;
+            if whoTheyMeetEmail is string {
+                ccList.push(whoTheyMeetEmail);
+            }
+            error? emailError = email:sendEmail({
+                                                    attachments: [
+                                                        {
+                                                            attachment: payload.qrCode,
+                                                            contentName: "visitor-pass.png",
+                                                            contentType: "image/png",
+                                                            contentId: visitId.toString()
+                                                        }
+                                                    ],
+                                                    to: [visitorEmail],
+                                                    'from: email:fromEmailAddress,
+                                                    subject: email:VISIT_INVITATION_SUBJECT,
+                                                    template: content,
+                                                    cc: ccList
+                                                });
+
+            if emailError is error {
+                string customError = "Error occurred while sending the email!";
+                log:printError(customError, emailError);
+            }
         }
 
-        error? emailError = email:sendEmail({
-                                                attachments: [
-                                                    {
-                                                        attachment: payload.qrCode,
-                                                        contentName: "visitor-pass.png",
-                                                        contentType: "image/png"
-                                                    }
-                                                ],
-                                                to: [existingVisitor.email],
-                                                'from: email:fromEmailAddress,
-                                                subject: email:VISIT_INVITATION_SUBJECT,
-                                                template: content,
-                                                cc: [email:receptionEmail]
-                                            });
+        // Send the SMS only if the contact number is available.
+        if contactNumber is string {
+            // TODO SMS sending logic here
+            boolean isUniqueCode = false;
+            int maxRetries = 5;
+            int retryCount = 0;
+            int|error verificationCode = error("Uninitialized verification code");
+            while !isUniqueCode && retryCount <= maxRetries {
+                retryCount += 1;
+                // Generate a random 6-digit code for SMS content.
+                verificationCode = random:createIntInRange(100000, 1000000);
+                if verificationCode is error {
+                    string customError = "Error occurred while generating the random code for SMS!";
+                    log:printError(customError, verificationCode);
+                    continue;
+                }
 
-        if emailError is error {
-            string customError = "Error occurred while sending the email!";
-            log:printError(customError, emailError);
+                // Check if the generated code is unique in the database.
+                error? visit = database:updateVisit(visitId, {smsVerificationCode: verificationCode}, invokerInfo.email);
+                if visit is error {
+                    if visit is database:DuplicateEntryError {
+                        log:printError("Generated SMS verification code is not unique, regenerating...");
+                        continue;
+                    }
+                    string customError = "Error occurred while inserting visit with the SMS verification code!";
+                    log:printError(customError, visit);
+                }
+                isUniqueCode = true;
+            }
+
+            if verificationCode is int {
+                //Send the SMS with the generated code.
+                error? sendSms = sms:sendSms(
+                        {
+                            phoneNumber: contactNumber,
+                            message: sms:generateMessage(verificationCode,
+                                        formattedFromDate is string ? formattedFromDate : payload.visitDate)
+                        }
+                );
+
+                if sendSms is error {
+                    string customError = "Error occurred while sending the SMS!";
+                    log:printError(customError, sendSms);
+                }
+            }
+
         }
 
         return <http:Created>{
@@ -515,6 +583,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Get visitor email for sending notifications
         string? visitorEmail = visit.email;
+        string? visitorLastName = visit.lastName;
 
         // Approve a visit.
         if action == APPROVE {
@@ -528,8 +597,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             string? passNumber = payload.passNumber;
             database:Floor[]? accessibleLocations = payload.accessibleLocations ?: visit.accessibleLocations;
-            string? visitorFirstName = visit.firstName;
-            string? visitorLastName = visit.lastName;
             string? accessibleLocationString = accessibleLocations is database:Floor[] ?
                 organizeLocations(accessibleLocations) : ();
             string? purposeOfVisit = visit.purposeOfVisit;
@@ -540,6 +607,15 @@ service http:InterceptableService / on new http:Listener(9090) {
                 return <http:InternalServerError>{
                     body: {
                         message: customError
+                    }
+                };
+            }
+
+            // Validate the visit date.
+            if visit.visitDate != formatDate(time:utcToString(time:utcNow()), "Asia/Colombo", false) {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Visit date should be the current date for approval!"
                     }
                 };
             }
@@ -577,6 +653,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+
+            // Send notification to the visitor about visit approval
             if visitorEmail is string {
                 // https://github.com/wso2-open-operations/people-ops-suite/pull/31#discussion_r2414681918
                 string? timeOfEntry = visit.timeOfEntry;
@@ -598,14 +676,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
-                string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorApproveTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is string && lastName is string ?
-                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            FIRST_NAME: visit.firstName,
+                            NAME: visit.firstName + (visitorLastName is string ? string ` ${visitorLastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -682,15 +758,12 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             }
 
+            // Send notification to the host about visitor arrival
             if hostEmployee is people:Employee && hostEmail is string {
                 string|error content = email:bindKeyValues(email:employeeVisitorArrivalTemplate,
                         {
-                            HOST_NAME:
-                                generateSalutation(hostEmployee.firstName + " " + hostEmployee.lastName),
-                            VISITOR_NAME: visitorFirstName is string && visitorLastName is string ?
-                                generateSalutation(visitorFirstName + " " + visitorLastName) :
-                                    visitorFirstName is string ? visitorFirstName :
-                                        visitorLastName is string ? visitorLastName : visit.email,
+                            HOST_NAME: hostEmployee.firstName,
+                            VISITOR_NAME: visit.firstName + (visitorLastName is string ? string ` ${visitorLastName}` : ""),
                             CHECK_IN_TIME: checkInTime,
                             LOCATION: accessibleLocationString is string ? string `<li>
                                 <p
@@ -719,7 +792,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <strong>Purpose of Visit :</strong>
                                   <span>${purposeOfVisit}</span>
                                 </p>
-                              </li>` : ""
+                              </li>` : "",
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
 
                 if content is error {
@@ -729,6 +804,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     error? emailError = email:sendEmail(
                             {
                                 to: [hostEmail],
+                                cc: [email:receptionEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:EMPLOYEE_VISITOR_ARRIVAL_SUBJECT,
                                 template: content
@@ -769,7 +845,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         status: database:REJECTED,
                         rejectionReason: payload.rejectionReason,
-                        actionedBy: invokerInfo.email
+                        actionedBy: invokerInfo.email,
+                        smsVerificationCode: null
                     }, invokerInfo.email);
 
             if response is error {
@@ -802,14 +879,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorRejectingTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is string && lastName is string ?
-                                generateSalutation(firstName + " " + lastName) : firstName is string ? firstName : lastName is string ? lastName : visitorEmail,
+                            FIRST_NAME: visit.firstName,
+                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -843,13 +919,18 @@ service http:InterceptableService / on new http:Listener(9090) {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
                 } else {
+                    string? hostEmail = visit.whomTheyMeet;
+                    string[] ccList = [email:receptionEmail];
+                    if hostEmail is string {
+                        ccList.push(hostEmail);
+                    }
                     error? emailError = email:sendEmail(
                                 {
                                 to: [visitorEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:VISIT_REJECTED_SUBJECT,
                                 template: content,
-                                cc: [email:receptionEmail]
+                                cc: ccList
                             });
                     if emailError is error {
                         string customError = "An error occurred while sending the rejection email!";
@@ -877,7 +958,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                     {
                         status: database:COMPLETED,
                         actionedBy: invokerInfo.email,
-                        timeOfDeparture: time:utcNow()
+                        timeOfDeparture: time:utcNow(),
+                        smsVerificationCode: null
                     }, invokerInfo.email);
 
             if response is error {
@@ -921,13 +1003,13 @@ service http:InterceptableService / on new http:Listener(9090) {
                         log:printError(customError, formattedToDate);
                     }
                 }
-                string? firstName = visit.firstName;
                 string? lastName = visit.lastName;
                 string|error content = email:bindKeyValues(email:visitorCompletionTemplate,
                         {
                             TIME: time:utcToEmailString(time:utcNow()),
                             EMAIL: visitorEmail,
-                            NAME: firstName is () || lastName is () ? visitorEmail : generateSalutation(firstName + " " + lastName),
+                            FIRST_NAME: visit.firstName,
+                            NAME: visit.firstName + (lastName is string ? string ` ${lastName}` : ""),
                             TIME_OF_ENTRY: timeOfEntry is string && formattedFromDate is string ? string `<li>
                                 <p
                                   style="
@@ -982,19 +1064,25 @@ service http:InterceptableService / on new http:Listener(9090) {
                                   <span>${passNumber}</span>
                                 </p>
                               </li>` : "",
-                            CONTACT_EMAIL: email:contactUsEmail
+                            CONTACT_EMAIL: email:contactUsEmail,
+                            YEAR: time:utcToCivil(time:utcNow()).year.toString()
                         });
                 if content is error {
                     string customError = "An error occurred while binding values to the email template!";
                     log:printError(customError, content);
                 } else {
+                    string? hostEmail = visit.whomTheyMeet;
+                    string[] ccList = [email:receptionEmail];
+                    if hostEmail is string {
+                        ccList.push(hostEmail);
+                    }
                     error? emailError = email:sendEmail(
                             {
                                 to: [visitorEmail],
                                 'from: email:fromEmailAddress,
                                 subject: email:VISIT_COMPLETION_SUBJECT,
                                 template: content,
-                                cc: [email:receptionEmail]
+                                cc: ccList
                             });
 
                     if emailError is error {
@@ -1017,7 +1105,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + uuid - UUID of the visit to be fetched
     # + return - Visit object or error
     resource function get visits/[string uuid](http:RequestContext ctx)
-        returns database:Visit|http:NotFound|http:InternalServerError {
+        returns database:Visit|http:NotFound|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error invokerInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if invokerInfo is error {
@@ -1028,7 +1116,25 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        database:Visit|error? visit = database:fetchVisit(uuid = uuid);
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], invokerInfo.groups) {
+            string customError = "You are not authorized to access visit details!";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        int|error smsVerificationCode = int:fromString(uuid);
+        database:Visit|error? visit = error("Uninitialized visit retrieval");
+        if smsVerificationCode is error {
+            visit = database:fetchVisit(uuid = uuid);
+        } else {
+            visit = database:fetchVisit(smsVerificationCode = smsVerificationCode);
+        }
+
         if visit is error {
             string customError = "Error occurred while fetching visit by UUID!";
             log:printError(customError, visit);
@@ -1077,7 +1183,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        people:EmployeeBasic[]|error allEmployees = people:getEmployees(search, 'limit, offset);
+        people:EmployeeBasic[]|error allEmployees = people:fetchEmployees(search, 'limit, offset);
         if allEmployees is error {
             string customError = "Error occurred while fetching employees!";
             log:printError(customError, allEmployees);

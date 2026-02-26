@@ -27,7 +27,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         (
             first_name,
             last_name,
-            email_hash,
+            id_hash,
             email,
             contact_number,
             created_by,
@@ -37,7 +37,7 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         (
             ${payload.firstName},
             ${payload.lastName},
-            ${payload.emailHash},
+            ${payload.idHash},
             ${payload.email},
             ${payload.contactNumber},
             ${createdBy},
@@ -47,20 +47,21 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
             first_name = COALESCE(${payload.firstName}, first_name),
             last_name = COALESCE(${payload.lastName}, last_name),
             contact_number = COALESCE(${payload.contactNumber}, contact_number),
+            email = COALESCE(${payload.email}, email),
             updated_by = ${createdBy}
         ;`;
 
-# Build query to fetch a visitor by hashed email.
+# Build query to fetch a visitor by hashed email or contact number.
 #
-# + hashedEmail - Filter : Hashed email of the visitor
-# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email
-isolated function fetchVisitorByEmailQuery(string hashedEmail) returns sql:ParameterizedQuery
+# + idHash - Filter : Hashed email or contact number of the visitor
+# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email or contact number
+isolated function fetchVisitorByIdHashQuery(string idHash) returns sql:ParameterizedQuery
     => `
         SELECT         
             first_name as firstName,
             last_name as lastName,
             contact_number as contactNumber,
-            email_hash as emailHash,  
+            id_hash as idHash,
             email,
             created_by as createdBy,
             created_on as createdOn,
@@ -69,7 +70,7 @@ isolated function fetchVisitorByEmailQuery(string hashedEmail) returns sql:Param
         FROM 
             visitor
         WHERE 
-            email_hash = ${hashedEmail};
+            id_hash = ${idHash};
         `;
 
 # Build query to create a new invitation.
@@ -137,7 +138,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         INSERT INTO visit
         (
             uuid,
-            email_hash,
+            visitor_id_hash,
             pass_number,
             company_name,
             whom_they_meet,
@@ -155,7 +156,7 @@ isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, strin
         VALUES
         (
             ${payload.uuid},
-            ${payload.emailHash},
+            ${payload.visitorIdHash},
             ${payload.passNumber},
             ${payload.companyName},
             ${payload.whomTheyMeet},
@@ -184,7 +185,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.time_of_departure as timeOfDeparture,
             v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.email_hash as emailHash,
+            vs.id_hash as visitorIdHash,
             vs.first_name as firstName,
             vs.last_name as lastName,
             vs.email,
@@ -205,7 +206,7 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
         LEFT JOIN
             visitor vs
         ON
-            v.email_hash = vs.email_hash
+            vs.id_hash = v.visitor_id_hash
     `;
 
     // Setting the filters based on the inputs.
@@ -231,6 +232,10 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     if filters.uuid is string {
         filterQueries.push(` v.uuid = ${filters.uuid}`);
+    }
+
+    if filters.smsVerificationCode is int {
+        filterQueries.push(` v.sms_verification_code = ${filters.smsVerificationCode}`);
     }
 
     // Build main query with the filters.
@@ -297,6 +302,9 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
 
     if payload.timeOfDeparture is time:Utc {
         filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
+    }
+    if payload.hasKey("smsVerificationCode") {
+        filters.push(`sms_verification_code = ${payload?.smsVerificationCode}`);
     }
 
     // Setting the updated_by field to record who performed the update, for audit purposes.
