@@ -401,6 +401,19 @@ public type Designation record {|
     int jobBand;
 |};
 
+# Company.
+public type Company record {|
+    # Company ID
+    int id;
+    # Company name
+    string name;
+    # Company prefix
+    string prefix;
+    # Company location
+    @sql:Column {name: "location"}
+    string location;
+|};
+
 # Office.
 public type Office record {|
     # Office ID

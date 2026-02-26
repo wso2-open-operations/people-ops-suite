@@ -521,16 +521,34 @@ isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:P
     return sql:queryConcat(query, `;`);
 }
 
-# Get offices query.
+# Get companies query.
 #
-# + return - Offices query
-isolated function getOfficesQuery() returns sql:ParameterizedQuery =>
+# + return - Companies query
+isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
         id,
         name,
-        location,
-        working_locations
-    FROM office;`;
+        prefix,
+        location
+    FROM company;`;
+
+# Get offices query.
+#
+# + companyId - Company ID (optional)
+# + return - Offices query
+isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            id,
+            name,
+            location,
+            working_locations
+        FROM office`;
+    if companyId is int {
+        query = sql:queryConcat(query, ` WHERE company_id = ${companyId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 
 # Get employment types query.
 #
