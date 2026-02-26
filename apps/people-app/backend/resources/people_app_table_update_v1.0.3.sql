@@ -9,7 +9,8 @@ ALTER TABLE personal_info
 ALTER TABLE employee
   MODIFY COLUMN start_date           DATE NOT NULL,
   MODIFY COLUMN employment_type_id   INT NOT NULL,
-  MODIFY COLUMN sub_team_id          INT NOT NULL;
+  MODIFY COLUMN sub_team_id          INT NOT NULL,
+  MODIFY COLUMN office_id INT NULL;
 
 ALTER TABLE employee DROP COLUMN additional_manager_emails;
 

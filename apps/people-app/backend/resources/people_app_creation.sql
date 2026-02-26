@@ -298,7 +298,7 @@ CREATE TABLE `employee` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `employment_type_id` INT NOT NULL,
   `designation_id` INT NOT NULL,
-  `office_id` INT NOT NULL,
+  `office_id` INT NULL,
   `team_id` INT NOT NULL,
   `sub_team_id` INT NOT NULL,
   `business_unit_id` INT NOT NULL,

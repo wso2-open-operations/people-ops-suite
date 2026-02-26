@@ -114,9 +114,9 @@ public type Employee record {|
     # Job role of the user
     string secondaryJobTitle;
     # Office
-    string office;
+    string? office;
     # Office ID
-    int officeId;
+    int? officeId;
     # Business unit
     string businessUnit;
     # Business unit ID
@@ -562,7 +562,7 @@ public type CreateEmployeePayload record {|
     # Designation ID
     int designationId;
     # Office ID
-    int officeId;
+    int? officeId = ();
     # Team ID
     int teamId;
     # Sub-team ID

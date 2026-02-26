@@ -99,8 +99,8 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .required("Company is required")
     .min(1, "Select a valid company"),
   officeId: Yup.number()
-    .required("Office is required")
-    .min(1, "Select a valid office"),
+    .transform((value) => (value === 0 ? null : value))
+    .nullable(),
   employmentLocation: Yup.string().required("Employment location is required"),
   workLocation: Yup.string().required("Work location is required"),
   employmentTypeId: Yup.number()
@@ -917,7 +917,6 @@ export default function JobInfoStep() {
             <TextField
               select
               fullWidth
-              required
               label="Office"
               name="officeId"
               value={values.officeId || ""}
