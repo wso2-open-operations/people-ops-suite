@@ -136,11 +136,11 @@ const getDurationLabel = (
   return `${hours} hr${hours > 1 ? "s" : ""} ${minutes} mins`;
 };
 
-const extractEmailFromString = (input: string): string => {
-  const trimmed = input.trim();
-  const match = trimmed.match(/<([^>]+)>/);
-  if (match && match[1]) return match[1].trim();
-  return trimmed;
+const handlePaste = (text: string): string => {
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+  const match = text.match(emailRegex);
+  const firstEmail = match?.[0]?.trim();
+  return firstEmail || "";
 };
 
 const CustomListbox = forwardRef<
@@ -176,6 +176,8 @@ const CustomListbox = forwardRef<
     </>
   );
 });
+
+const normalizeContact = (raw: string) => `+${raw.replace(/\D/g, "")}`;
 
 function CreateVisit() {
   const dispatch = useAppDispatch();
@@ -249,7 +251,6 @@ function CreateVisit() {
     },
     [dispatch, isLoadingMore, hasMore, inputValue, employeesState],
   );
-  const normalizeContact = (raw: string) => `+${raw.replace(/\D/g, "")}`;
 
   const addNewVisitorBlock = useCallback((formik: any) => {
     formik.setFieldValue("visitors", [
@@ -901,9 +902,7 @@ function CreateVisit() {
                         name={`visitors.${idx}.emailAddress`}
                         value={visitor.emailAddress || ""}
                         onChange={(e) => {
-                          const extractedEmail = extractEmailFromString(
-                            e.target.value,
-                          );
+                          const extractedEmail = handlePaste(e.target.value);
 
                           formik.setFieldValue(
                             `visitors.${idx}.emailAddress`,
