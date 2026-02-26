@@ -68,7 +68,7 @@ export interface CreateEmployeeFormValues {
   subTeamId: number;
   unitId: number;
   companyId: number;
-  officeId: number;
+  officeId: number | null;
   employmentLocation: string;
   workLocation: string;
   employmentTypeId: number;

@@ -40,7 +40,7 @@ export interface Employee {
   agreementEndDate: string | null;
   employmentType: string;
   designation: string;
-  office: string;
+  office: string | null;
   businessUnit: string;
   team: string;
   subTeam: string | null;
@@ -49,7 +49,7 @@ export interface Employee {
   employmentTypeId: number;
   careerFunctionId: number;
   designationId: number;
-  officeId: number;
+  officeId: number | null;
   businessUnitId: number;
   teamId: number;
   subTeamId: number;
@@ -146,7 +146,7 @@ export type CreateEmployeePayload = {
   agreementEndDate?: string;
   employmentTypeId?: number;
   designationId: number;
-  officeId: number;
+  officeId?: number;
   teamId: number;
   subTeamId: number;
   businessUnitId: number;
