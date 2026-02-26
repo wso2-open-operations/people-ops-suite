@@ -114,11 +114,45 @@ public type AddVisitPayload record {|
 # Payload for updating an existing visit.
 public type ActionPayload record {|
     # Reason for rejecting the visit
-    string? rejectionReason = ();
-    # Status of the visit
-    string? passNumber = ();
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The rejection reason should be a non-empty string with printable characters."
+        }
+    }
+    string rejectionReason?;
+    # Number in the tag given to visitor
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The pass number should be a non-empty string with printable characters."
+        }
+    }
+    string passNumber?;
     # The floors and rooms that the visitor can access
-    database:Floor[]? accessibleLocations = ();
+    @constraint:Array {
+        minLength: {
+            value: 1,
+            message: "At least one accessible location should be provided."
+        }
+    }
+    database:Floor[] accessibleLocations?;
+    # Purpose of the visit
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "Purpose of visit should be a non-empty string with printable characters."
+        }
+    }
+    string purposeOfVisit?;
+    # The person the visitor is supposed to meet
+    @constraint:String {
+        pattern: {
+            value: database:NONE_EMPTY_PRINTABLE_STRING_REGEX,
+            message: "The person they meet should be a non-empty string with printable characters."
+        }
+    }
+    string whomTheyMeet?;
 |};
 
 # Payload for adding a new visit invitation.

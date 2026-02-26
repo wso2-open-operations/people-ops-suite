@@ -18,6 +18,7 @@ import visitor.calendar;
 import visitor.database;
 import visitor.email;
 import visitor.people;
+import visitor.wifi;
 import visitor.sms;
 
 import ballerina/cache;
@@ -619,6 +620,20 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            if purposeOfVisit is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Purpose of visit is required when approving a visit!"
+                    }
+                };
+            }
+            if whomTheyMeet is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "The person they meet is required when approving a visit!"
+                    }
+                };
+            }
 
             string? hostEmail = visit.whomTheyMeet;
             people:Employee|error? hostEmployee = ();
@@ -641,7 +656,9 @@ service http:InterceptableService / on new http:Listener(9090) {
                         passNumber: payload.passNumber,
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
-                        timeOfEntry: time:utcNow()
+                        timeOfEntry: time:utcNow(),
+                        purposeOfVisit: payload.purposeOfVisit,
+                        whomTheyMeet: payload.whomTheyMeet
                     }, invokerInfo.email);
 
             if response is error {
@@ -1099,6 +1116,54 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
     }
+
+    # Create a WiFi account for the user.
+    #
+    # + payload - Payload containing WiFi account details
+    # + return - Successfully created or error
+    resource function post wifi/accounts(http:RequestContext ctx, @http:Payload wifi:CreateWifiAccountPayload payload)
+    returns http:Ok|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo =
+        ctx.getWithType(authorization:HEADER_USER_INFO);
+
+        if userInfo is error {
+            return <http:Forbidden>{
+                body: {message: "Unauthorized"}
+            };
+        }
+
+        // Check if user has permission to create WiFi accounts
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            string customError = "Insufficient permissions to create WiFi accounts";
+            log:printError(customError);
+            return <http:Forbidden>{
+                body: {
+                    message: customError
+                }
+            };
+        }
+
+        wifi:CreateWifiAccountPayload wifiPayload = {
+            username: payload.username,
+            password: payload.password,
+            email: userInfo.email
+        };
+
+        error? result = wifi:createWifiAccount(wifiPayload);
+
+        if result is error {
+            log:printError("WiFi account creation failed", result);
+            return <http:InternalServerError>{
+                body: {message: "Failed to create WiFi account"}
+            };
+        }
+
+        return <http:Ok>{
+            body: {message: "WiFi account created successfully"}
+        };
+    }
+}
 
     # Fetch a visit by its UUID.
     #
