@@ -36,7 +36,7 @@ import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
 
 const Header = () => {
-  const authContext = useAppAuthContext();
+  const { appSignOut } = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
@@ -66,7 +66,8 @@ const Header = () => {
           display: "flex",
           gap: 0.5,
           "&.MuiToolbar-root": {
-            pl: 0.3,
+            p: 0.5,
+            pr: 2,
           },
         }}
       >
@@ -104,7 +105,33 @@ const Header = () => {
         <Box sx={{ flexGrow: 0 }}>
           {user && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
+              <Stack flexDirection={"row"} alignItems={"center"} gap={1.5}>
+                {!isMobile && (
+                  <Box sx={{ width: "fit-content" }}>
+                    <Typography
+                      noWrap
+                      variant="body1"
+                      sx={{
+                        textAlign: "right",
+                        color: theme.palette.customText.primary.p2.active,
+                      }}
+                    >
+                      {[user.firstName, user.lastName].filter(Boolean).join(" ")}
+                    </Typography>
+
+                    <Typography
+                      noWrap
+                      variant="body2"
+                      sx={{
+                        textAlign: "right",
+                        color: theme.palette.customText.primary.p3.active,
+                      }}
+                    >
+                      {user.jobRole}
+                    </Typography>
+                  </Box>
+                )}
+
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}
@@ -120,30 +147,6 @@ const Header = () => {
                     {user.firstName?.charAt(0)}
                   </Avatar>
                 </Tooltip>
-
-                {!isMobile && (
-                  <Box sx={{ width: "fit-content" }}>
-                    <Typography
-                      noWrap
-                      variant="body1"
-                      sx={{
-                        color: theme.palette.customText.primary.p2.active,
-                      }}
-                    >
-                      {[user.firstName, user.lastName].filter(Boolean).join(" ")}
-                    </Typography>
-
-                    <Typography
-                      noWrap
-                      variant="body2"
-                      sx={{
-                        color: theme.palette.customText.primary.p3.active,
-                      }}
-                    >
-                      {user.jobRole}
-                    </Typography>
-                  </Box>
-                )}
               </Stack>
 
               <Menu
@@ -165,7 +168,7 @@ const Header = () => {
                 <MenuItem
                   key={"logout"}
                   onClick={() => {
-                    authContext.appSignOut();
+                    appSignOut();
                   }}
                 >
                   <Typography textAlign="center">Logout</Typography>

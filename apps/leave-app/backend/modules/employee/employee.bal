@@ -103,7 +103,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
     Employee[] employees = [];
     boolean fetchMore = true;
     int offset = 0;
-    int defaultLimit = 500;
+    int defaultLimit = 100;
 
     while fetchMore {
         MultipleEmployeesResponse|graphql:ClientError response = hrClient->execute(

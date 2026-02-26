@@ -18,8 +18,8 @@ import { Box, Divider } from "@mui/material";
 import { MicroAppType } from "@/types/types";
 import { isMicroApp } from "@config/config";
 
-import DinnerOnDemand from "./components/DinnerOnDemand";
-import Menu from "./components/Menu";
+import DinnerOnDemand from "./components/dod/DinnerOnDemand";
+import Menu from "./components/menu/Menu";
 
 export default function Home() {
   if (isMicroApp === MicroAppType.Menu) return <Menu />;
@@ -27,7 +27,7 @@ export default function Home() {
   if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
       <Menu />
 
       <Divider />

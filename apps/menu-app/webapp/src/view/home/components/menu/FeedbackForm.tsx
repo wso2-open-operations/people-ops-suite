@@ -17,20 +17,20 @@ import { Box, Button, TextField, Typography, useTheme } from "@mui/material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { menuApi, useSubmitFeedbackMutation } from "@services/menu.api";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { formatMenuData } from "@utils/utils";
+import { useFeedback } from "@view/home/hooks/useFeedBack";
 
-interface FeedbackForm {
+interface FeedbackFormProps {
   handleCloseFeedback: () => void;
 }
 
-const FeedbackForm = (props: FeedbackForm) => {
+const FeedbackForm = (props: FeedbackFormProps) => {
   const { handleCloseFeedback } = props;
-
   const theme = useTheme();
   const [submitFeedback] = useSubmitFeedbackMutation();
   const menu = useAppSelector((state) => menuApi.endpoints.getMenu.select()(state)?.data);
@@ -38,19 +38,19 @@ const FeedbackForm = (props: FeedbackForm) => {
 
   const [isFocused, setIsFocused] = useState(false);
 
-  const now = new Date();
-  const startTime = new Date(now);
-  startTime.setHours(12, 0, 0, 0);
-  const endTime = new Date(now);
-  endTime.setHours(16, 15, 0, 0);
-
-  const validationSchema = Yup.object({
-    message: Yup.string()
-      .min(10, "Feedback must be at least 10 characters")
-      .required("Feedback is required"),
-  });
+  const { useFeedbackTime } = useFeedback();
 
   const date = formatMenuData(menu?.date) ?? "";
+
+  const validationSchema = useMemo(
+    () =>
+      Yup.object({
+        message: Yup.string()
+          .min(10, "Feedback must be at least 10 characters")
+          .required("Feedback is required"),
+      }),
+    [],
+  );
 
   const formik = useFormik({
     initialValues: { message: "" },
@@ -74,7 +74,7 @@ const FeedbackForm = (props: FeedbackForm) => {
     },
   });
 
-  const isFeedbackTime = now >= startTime && now <= endTime;
+  const isFeedbackTime = useFeedbackTime();
 
   if (!isFeedbackTime) {
     return (
@@ -87,8 +87,14 @@ const FeedbackForm = (props: FeedbackForm) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on <strong>{date}</strong> from
-        <strong> 12:00PM - 04:15PM</strong>
+        Feedback is anonymous and accepted only on {"\u00A0"}
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
+          {date}
+        </span>
+        {"\u00A0"} from
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
+          {"\u00A0"} 12:00PM - 04:15PM
+        </span>
       </Typography>
     );
   }
@@ -144,14 +150,14 @@ const FeedbackForm = (props: FeedbackForm) => {
           "& .MuiInputLabel-root.Mui-focused": {
             color: theme.palette.customBorder.secondary.active,
           },
-          // Label when filled (shrunk state)
+          // Label when filled
           "& .MuiInputLabel-shrink": {
             color: theme.palette.customBorder.secondary.active,
           },
         }}
       />
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "right", gap: 2 }}>
         <Button
           variant="outlined"
           onClick={() => {
@@ -162,6 +168,7 @@ const FeedbackForm = (props: FeedbackForm) => {
         >
           Cancel
         </Button>
+
         <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
           {formik.isSubmitting ? "Submitting..." : "Submit"}
         </Button>

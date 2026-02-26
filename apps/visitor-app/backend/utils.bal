@@ -43,15 +43,18 @@ public isolated function organizeLocations(database:Floor[] accessibleLocations)
 #
 # + dateTimeStr - UTC date-time string in "YYYY-MM-DD HH:MM" format  
 # + timeZone - UTC time zone string
+# + lenientParse - Boolean flag to enable lenient parsing (default: true)
 # + return - formatted date-time string in "YYYY-MM-DD HH:MM:SS (Time Zone)" format
-public isolated function formatDateTime(string dateTimeStr, string timeZone) returns string|error {
+public isolated function formatDateTime(string dateTimeStr, string timeZone, boolean lenientParse = true) returns string|error {
     string timeString = dateTimeStr;
 
-    timeString = regexp:replace(re ` `, timeString, "T");
-    timeString = timeString + ".00Z";
+    if (lenientParse) {
+        timeString = regexp:replace(re ` `, timeString, "T");
+        timeString = timeString + ".00Z";
+    }
 
     time:Utc utcFromString = check time:utcFromString(timeString);
-    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800);
+    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800); //TODO : Replace the hardcoded seconds with dynamic calculation based on the provided timeZone
     time:Civil utcToCivil = time:utcToCivil(newUtcTime);
 
     // Format with proper zero-padding for all components
@@ -65,23 +68,36 @@ public isolated function formatDateTime(string dateTimeStr, string timeZone) ret
     return string `${year}-${month}-${day} ${hour}:${minute}:${second} (${timeZone})`;
 }
 
+# Helper function to format date strings in Ballerina
+#
+# + dateTimeStr - UTC date-time string in "YYYY-MM-DD HH:MM" format  
+# + timeZone - UTC time zone string
+# + lenientParse - Boolean flag to enable lenient parsing (default: true)
+# + return - formatted date-time string in "YYYY-MM-DD" format
+public isolated function formatDate(string dateTimeStr, string timeZone, boolean lenientParse = true) returns string|error {
+    string timeString = dateTimeStr;
+
+    if (lenientParse) {
+        timeString = regexp:replace(re ` `, timeString, "T");
+        timeString = timeString + ".00Z";
+    }
+
+    time:Utc utcFromString = check time:utcFromString(timeString);
+    time:Utc newUtcTime = time:utcAddSeconds(utcFromString, 19800); // TODO : Replace the hardcoded seconds with dynamic calculation based on the provided timeZone
+    time:Civil utcToCivil = time:utcToCivil(newUtcTime);
+
+    // Format with proper zero-padding for all components
+    string year = utcToCivil.year.toString();
+    string month = padZero(utcToCivil.month);
+    string day = padZero(utcToCivil.day);
+
+    return string `${year}-${month}-${day}`;
+}
+
 # Helper function to pad numbers with leading zero.
 #
 # + num - Integer number to be padded
 # + return - Padded string representation of the number
 isolated function padZero(int num) returns string {
     return num < 10 ? string `0${num}` : num.toString();
-}
-
-# Generate a salutation for a given name.
-#
-# + name - given name
-# + return - formatted salutation
-isolated function generateSalutation(string name) returns string {
-    string[] names = regexp:split(re `\s+`, name);
-    string firstName = names.length() > 1 ? names[0] : name;
-    firstName = regexp:replace(re `\s+`, firstName, "");
-    string firstChar = firstName.substring(0, 1).toUpperAscii();
-    string rest = firstName.substring(1);
-    return firstChar + rest;
 }

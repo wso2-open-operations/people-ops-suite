@@ -42,6 +42,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         return new authentication:JwtInterceptor();
     }
 
+    function init() {
+        Menu|error menu = sheets:getMenu();
+        if menu is error {
+            log:printError("Error retrieving menu data", menu);
+        }
+
+        log:printInfo("Menu Application service started.");
+    }
+
     # Fetch logged-in user's details.
     #
     # + return - User information or InternalServerError
@@ -101,15 +110,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(customError, cacheError);
         }
         return userInfoResponse;
-    }
-
-    function init() {
-        Menu|error menu = sheets:getMenu();
-        if menu is error {
-            log:printError("Error retrieving menu data", menu);
-        }
-
-        log:printInfo("Menu Application service started.");
     }
 
     # Fetch meta info.
@@ -217,12 +217,49 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Dinner request data (email, date, meal option)
     # + return - Dinner request success response or error response
-    resource function post dinner(http:RequestContext ctx, @http:Payload DinnerRequest payload) 
-        returns http:BadRequest|http:InternalServerError|http:Created {
+    resource function post dinner(http:RequestContext ctx, @http:Payload DinnerRequestPayload payload) 
+        returns http:BadRequest|http:InternalServerError|http:Forbidden|http:Created {
 
         string|http:BadRequest userEmail = authentication:getUserEmailFromRequestContext(ctx);
         if userEmail is http:BadRequest {
             return userEmail;
+        }
+
+        // Validate that the dinner request exists before updating
+        // This prevents creating duplicate records with invalid IDs during upsert operations
+        int? requestId = payload.id;
+        if requestId != () {
+            DinnerRequest|error? existingDinnerRequest = database:getDinnerRequestById(requestId);
+            
+            if existingDinnerRequest is error {
+                log:printError(string `Error retrieving dinner request with ID ${requestId} for user ${userEmail}`, 
+                    existingDinnerRequest);
+                return <http:InternalServerError> {
+                    body:  {
+                        message: "Failed to retrieve existing dinner request for update."
+                    }
+                };
+            }
+
+            if existingDinnerRequest is () {
+                log:printError(string `Dinner request with ID ${requestId} not found for user ${userEmail}`);
+                return <http:BadRequest> {
+                    body:  {
+                        message: "Dinner request not found. Invalid request ID provided."
+                    }
+                };
+            }
+
+            // Ensure the authenticated user owns the dinner request they're trying to update
+            if userEmail !== existingDinnerRequest.userEmail {
+                log:printWarn(string `Authorization failed: User ${userEmail} attempted to modify dinner request ${
+                    requestId} belonging to ${existingDinnerRequest.userEmail}`);
+                return <http:Forbidden> {
+                    body:  {
+                        message: "You are not authorized to modify this dinner request."
+                    }
+                };
+            }
         }
 
         transaction {

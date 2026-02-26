@@ -33,7 +33,10 @@ public type DatabaseConfig record {|
 # Dinner request data.
 public type DinnerRequest record {|
     # Request Id 
-    string id?;
+    int id;
+    # User email
+    @sql:Column {name: "email"}
+    string userEmail;
     # Meal option
     @sql:Column {name: "meal_option"}
     string mealOption;
@@ -50,6 +53,28 @@ public type DinnerRequest record {|
     @sql:Column {name: "_timestamp"}
     string timestamp?;
 |};
+
+# Dinner request payload data.
+public type DinnerRequestPayload record {|
+    # Request Id 
+    int id?;
+    # Meal option
+    @sql:Column {name: "meal_option"}
+    string mealOption;
+    # Date of meal request
+    string date;
+    # Department of employee
+    string department;
+    # Team of employee
+    string? team;
+    # Manager email
+    @sql:Column {name: "manager_email"}
+    string managerEmail;
+    # Timestamp of the request
+    @sql:Column {name: "_timestamp"}
+    string timestamp?;
+|};
+
 
 # Employee information.
 public type Employee record {|

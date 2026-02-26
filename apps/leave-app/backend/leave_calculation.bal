@@ -274,40 +274,43 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
 #
 # + leaves - Leaves to be used to generate report content
 # + return - Report content
-isolated function getLeaveReportContent(LeaveResponse[] leaves) returns ReportContent {
+isolated function getLeaveReportContent(database:Leave[] leaves) returns ReportContent {
 
     ReportContent reportContent = {};
-    foreach LeaveResponse leave in leaves {
-        string leaveType = leave.leaveType;
-        if leaveType == TOTAL_LEAVE_TYPE {
-            // This type is not supported and should not exist
-            break;
+    foreach database:Leave leave in leaves {
+        string? leaveType = leave.leaveType;
+        float? numberOfDays = leave.numberOfDays;
+        string email = leave.email;
+        // Skip if essential data is missing
+        if leaveType is () || numberOfDays is () {
+            continue;
         }
-
-        // Handling sick leave as casual leave
-        if leaveType is database:SICK_LEAVE {
-            leaveType = database:CASUAL_LEAVE;
+        string processedLeaveType = leaveType;
+        if processedLeaveType == TOTAL_LEAVE_TYPE {
+            continue;
         }
-
-        map<float>? employeeLeaveMap = reportContent[leave.email];
+        if processedLeaveType is database:SICK_LEAVE {
+            processedLeaveType = database:CASUAL_LEAVE;
+        }
+        map<float>? employeeLeaveMap = reportContent[email];
         if employeeLeaveMap is map<float> {
-            float? leaveTypeCount = employeeLeaveMap[leaveType];
+            float? leaveTypeCount = employeeLeaveMap[processedLeaveType];
             if leaveTypeCount is float {
-                employeeLeaveMap[leaveType] = leaveTypeCount + leave.numberOfDays;
+                employeeLeaveMap[processedLeaveType] = leaveTypeCount + numberOfDays;
             } else {
-                employeeLeaveMap[leaveType] = leave.numberOfDays;
+                employeeLeaveMap[processedLeaveType] = numberOfDays;
             }
 
-            employeeLeaveMap[TOTAL_LEAVE_TYPE] = leave.numberOfDays + employeeLeaveMap.get(TOTAL_LEAVE_TYPE);
-            if leaveType !is database:LIEU_LEAVE {
-                employeeLeaveMap[TOTAL_EXCLUDING_LIEU_LEAVE_TYPE] = leave.numberOfDays +
+            employeeLeaveMap[TOTAL_LEAVE_TYPE] = numberOfDays + employeeLeaveMap.get(TOTAL_LEAVE_TYPE);
+            if processedLeaveType !is database:LIEU_LEAVE {
+                employeeLeaveMap[TOTAL_EXCLUDING_LIEU_LEAVE_TYPE] = numberOfDays +
                     employeeLeaveMap.get(TOTAL_EXCLUDING_LIEU_LEAVE_TYPE);
             }
         } else {
-            reportContent[leave.email] = {
-                [leaveType]: leave.numberOfDays,
-                [TOTAL_LEAVE_TYPE]: leave.numberOfDays,
-                [TOTAL_EXCLUDING_LIEU_LEAVE_TYPE]: leaveType is database:LIEU_LEAVE ? 0 : leave.numberOfDays
+            reportContent[email] = {
+                [processedLeaveType]: numberOfDays,
+                [TOTAL_LEAVE_TYPE]: numberOfDays,
+                [TOTAL_EXCLUDING_LIEU_LEAVE_TYPE]: processedLeaveType is database:LIEU_LEAVE ? 0 : numberOfDays
             };
         }
     }
