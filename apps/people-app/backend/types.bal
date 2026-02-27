@@ -30,3 +30,30 @@ type NewVehicle record {|
     # Type of the vehicle
     database:VehicleTypes vehicleType;
 |};
+
+# Request body for creating a parking reservation (before payment).
+type CreateParkingReservationRequest record {|
+    # Slot identifier (e.g. B-01)
+    string slotId;
+    # Booking date (YYYY-MM-DD), same-day only
+    @constraint:String {pattern: re `${database:DATE_PATTERN_STRING}`}
+    string bookingDate;
+    # Registered vehicle ID (car only)
+    int vehicleId;
+|};
+
+# Response after creating a PENDING reservation.
+type CreateParkingReservationResponse record {|
+    # Reservation identifier
+    int reservationId;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+|};
+
+# Request body for confirming reservation with transaction hash.
+type ConfirmParkingReservationRequest record {|
+    # Reservation identifier (from create response)
+    int reservationId;
+    # Transaction hash from payment
+    string transactionHash;
+|};

@@ -24,8 +24,8 @@ public const EMAIL_PATTERN_STRING = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z
 # Phone number validation regex pattern
 const PHONE_PATTERN_STRING = "^[0-9+\\-()\\s]*[0-9][0-9+\\-()\\s]*$";
 
-# Date validation regex pattern (YYYY-MM-DD format)
-const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
+# Date validation regex pattern (YYYY-MM-DD format), e.g. for parking booking_date.
+public const DATE_PATTERN_STRING = "^\\d{4}-\\d{2}-\\d{2}$";
 
 # URL validation regex pattern
 const URL_PATTERN_STRING = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
@@ -499,4 +499,128 @@ public type UpdateVehiclePayload record {|
     VehicleStatus? vehicleStatus;
     # User who created the vehicle record
     string updatedBy;
+|};
+
+# [Database] Parking floor.
+public type ParkingFloor record {|
+    # Floor identifier
+    int id;
+    # Floor name (e.g. "Ground Floor")
+    string name;
+    # Display order of the floor
+    int displayOrder;
+    # Number of coins per slot on the floor
+    decimal coinsPerSlot;
+    # Whether the floor is active or not
+    boolean isActive;
+|};
+
+# [Database] Parking slot.
+public type ParkingSlot record {|
+    # Slot identifier (e.g. B-01)
+    string slotId;
+    # Floor identifier
+    int floorId;
+    # Floor name
+    string floorName;
+    # Number of coins per slot
+    decimal coinsPerSlot;
+    # Availability status for the given date
+    boolean isBooked;
+|};
+
+# [Database] Parking reservation.
+public type ParkingReservation record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Payload to create parking reservation.
+public type AddParkingReservationPayload record {|
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # User who created the parking reservation record
+    string createdBy;
+|};
+
+# [Database] Payload to update parking reservation status.
+public type UpdateParkingReservationStatusPayload record {|
+    # Reservation id
+    int reservationId;
+    # New status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Updated by
+    string updatedBy;
+|};
+
+# [Database] Parking reservation details (slot, floor, vehicle).
+public type ParkingReservationDetails record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID 
+    int vehicleId;
+    # Vehicle registration number
+    string vehicleRegistrationNumber;
+    # Vehicle type
+    string? vehicleType;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Floor name (e.g. "Ground Floor")
+    string floorName;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Reservation id row (existence check).
+public type ReservationIdRow record {|
+    # Reservation identifier
+    int id;
 |};
