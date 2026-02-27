@@ -51,13 +51,7 @@ export const CommonSlice = createSlice({
 
 export function ShowSnackBarMessage(message: string, type: VariantType) {
   return (dispatch: AppDispatch) => {
-    dispatch({
-      type: "common/enqueueSnackbarMessage",
-      payload: {
-        message: message,
-        type: "success",
-      },
-    });
+    dispatch(enqueueSnackbarMessage({ message, type: type as "success" | "error" | "warning" }));
   };
 }
 
