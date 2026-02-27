@@ -139,6 +139,7 @@ const ScanVisit: React.FC = () => {
           borderRadius: 2,
           border: "1px solid",
           borderColor: "divider",
+          backgroundColor: "inherit",
         }}
       >
         <CardContent sx={{ p: 4 }}>
@@ -236,7 +237,7 @@ const ScanVisit: React.FC = () => {
                 color="text.secondary"
                 sx={{ display: "block", mt: 2, textAlign: "center" }}
               >
-                The PIN is shared with the visitor via email or SMS.
+                The PIN is shared with the visitor via SMS.
               </Typography>
             </Box>
           )}

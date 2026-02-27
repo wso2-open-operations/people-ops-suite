@@ -188,7 +188,7 @@ function Scan({ onClose }: ScanProps) {
           Visit Details
         </Typography>
 
-        <Card sx={{ mb: 3, mt: 2 }}>
+        <Card sx={{ mb: 3, mt: 2, backgroundColor: "inherit" }}>
           <CardContent>
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
