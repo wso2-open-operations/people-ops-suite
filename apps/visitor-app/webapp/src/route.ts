@@ -19,7 +19,8 @@ import { View } from "@view/index";
 import { Role } from "@slices/authSlice/auth";
 import DomainAddIcon from "@mui/icons-material/DomainAdd";
 import { isIncludedRole } from "@utils/utils";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+// Temporarily hiding the Help route until we have the content ready
+// import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { RouteObject, NonIndexRouteObject } from "react-router-dom";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner";
@@ -66,14 +67,15 @@ export const routes: RouteObjectWithRole[] = [
     element: React.createElement(View.scanner),
     allowRoles: [Role.ADMIN],
   },
-  {
-    path: "/help",
-    text: "Help",
-    icon: React.createElement(HelpOutlineIcon),
-    element: React.createElement(View.help),
-    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
-    bottomNav: true,
-  },
+  // Temporarily hiding the Help route until we have the content ready
+  // {
+  //   path: "/help",
+  //   text: "Help",
+  //   icon: React.createElement(HelpOutlineIcon),
+  //   element: React.createElement(View.help),
+  //   allowRoles: [Role.ADMIN, Role.EMPLOYEE],
+  //   bottomNav: true,
+  // },
 ];
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,

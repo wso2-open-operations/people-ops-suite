@@ -854,7 +854,14 @@ function CreateVisit() {
             const visitorTouched = formik.touched.visitors?.[idx];
 
             return (
-              <Card key={idx} variant="outlined" sx={{ mb: 3 }}>
+              <Card
+                key={idx}
+                variant="outlined"
+                sx={{
+                  mb: 3,
+                  backgroundColor: "inherit",
+                }}
+              >
                 <CardContent>
                   <Box
                     sx={{
