@@ -167,7 +167,38 @@ function Scan({ onClose }: ScanProps) {
 
   if (currentVisitState === State.failed || !currentVisit) {
     return (
-      <ErrorHandler message={stateMessage || "Failed to load visit details!"} />
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: "55vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 4,
+          textAlign: "center",
+        }}
+      >
+        <Alert
+          severity="error"
+          sx={{
+            maxWidth: 520,
+            width: "100%",
+            mb: 3,
+            "& .MuiAlert-message": { width: "100%" },
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            The QR code is expired or invalid.
+          </Typography>
+          <Typography variant="body2" gutterBottom>
+            QR කේතය කල් ඉකුත් වී ඇත හෝ වලංගු නොවේ.
+          </Typography>
+          <Typography variant="body2">
+            QR குறியீடு காலாவதியானது அல்லது செல்லாதது.
+          </Typography>
+        </Alert>
+      </Box>
     );
   }
 

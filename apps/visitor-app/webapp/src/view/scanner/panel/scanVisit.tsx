@@ -23,14 +23,24 @@ import {
   CardContent,
   CircularProgress,
   Container,
+  IconButton,
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import {
+  CameraFront,
+  CameraRear,
+  Close as CloseIcon,
+  Fullscreen as FullscreenIcon,
+} from "@mui/icons-material";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@root/src/slices/store";
 import { useNavigate } from "react-router-dom";
+
+type FacingMode = "environment" | "user";
 
 const ScanVisit: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -43,6 +53,8 @@ const ScanVisit: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [pin, setPin] = useState("");
   const [isValidating, setIsValidating] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [facingMode, setFacingMode] = useState<FacingMode>("environment");
 
   const readerId = "qr-reader";
 
@@ -75,6 +87,7 @@ const ScanVisit: React.FC = () => {
     if (newValue === 1) {
       // Switching to PIN mode - stop scanner
       await safeStop();
+      setIsFullscreen(false);
     } else {
       // Switching to QR mode - restart scanner
       hasScannedRef.current = false;
@@ -83,26 +96,44 @@ const ScanVisit: React.FC = () => {
     }
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen((prev) => !prev);
+  };
+
+  const toggleCamera = async () => {
+    await safeStop();
+    hasScannedRef.current = false;
+    setFacingMode((prev) => (prev === "environment" ? "user" : "environment"));
+  };
+
   useEffect(() => {
     const startScanner = async () => {
       // Only start scanner if on QR tab
       if (activeTab !== 0) return;
 
+      // Small delay to ensure the DOM element is rendered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const readerElement = document.getElementById(readerId);
+      if (!readerElement) return;
+
       try {
         html5QrCodeRef.current = new Html5Qrcode(readerId);
 
+        const qrboxSize = { width: 900, height: 600 };
+
         await html5QrCodeRef.current.start(
-          { facingMode: "environment" },
+          { facingMode },
           {
             fps: 12,
-            qrbox: { width: 260, height: 260 },
-            aspectRatio: 1,
+            qrbox: qrboxSize,
           },
           async (decodedText: string) => {
             if (hasScannedRef.current) return;
             hasScannedRef.current = true;
 
             await safeStop();
+            setIsFullscreen(false);
 
             navigate(
               `/admin-panel?tab=active-visits&visitVerificationCode=${decodedText}`,
@@ -127,14 +158,115 @@ const ScanVisit: React.FC = () => {
     return () => {
       safeStop();
     };
-  }, [dispatch, navigate, activeTab, safeStop]);
+  }, [dispatch, navigate, activeTab, safeStop, facingMode, isFullscreen]);
+
+  // Fullscreen QR Scanner overlay
+  if (isFullscreen && activeTab === 0) {
+    return (
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          bgcolor: "#000",
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Top bar with controls */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            p: 2,
+            zIndex: 10000,
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)",
+          }}
+        >
+          <Tooltip title="Close fullscreen">
+            <IconButton onClick={toggleFullscreen} sx={{ color: "#fff" }}>
+              <CloseIcon />
+            </IconButton>
+          </Tooltip>
+
+          <Typography
+            variant="subtitle1"
+            sx={{ color: "#fff", fontWeight: 600 }}
+          >
+            Scan QR Code
+          </Typography>
+
+          <Tooltip
+            title={
+              facingMode === "environment"
+                ? "Switch to front camera"
+                : "Switch to back camera"
+            }
+          >
+            <IconButton onClick={toggleCamera} sx={{ color: "#fff" }}>
+              {facingMode === "environment" ? <CameraFront /> : <CameraRear />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        {/* Scanner view */}
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            id={readerId}
+            sx={{
+              width: "100%",
+              height: "100%",
+              "& video": {
+                objectFit: "cover !important",
+                width: "100% !important",
+                height: "100% !important",
+              },
+            }}
+          />
+        </Box>
+
+        {/* Bottom hint */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            p: 3,
+            textAlign: "center",
+            background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+          }}
+        >
+          <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.8)" }}>
+            Position the QR code within the frame
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 5 }}>
+    <Container maxWidth="xl" sx={{ py: 2 }}>
       <Card
         elevation={0}
         sx={{
-          maxWidth: 520,
           mx: "auto",
           borderRadius: 2,
           border: "1px solid",
@@ -142,22 +274,31 @@ const ScanVisit: React.FC = () => {
           backgroundColor: "inherit",
         }}
       >
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
-            Verify Visit
-          </Typography>
-
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {activeTab === 0
-              ? "Ask the visitor to present their QR code. The system will automatically validate once detected."
-              : "Enter the 6-digit PIN provided to the visitor."}
-          </Typography>
+        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 1,
+            }}
+          >
+            <Typography variant="subtitle1" fontWeight={600}>
+              Verify Visit
+            </Typography>
+          </Box>
 
           {/* Tabs for QR / PIN */}
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
-            sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
+            sx={{
+              mb: 2,
+              borderBottom: 1,
+              borderColor: "divider",
+              minHeight: 36,
+              "& .MuiTab-root": { minHeight: 36, py: 0.5, fontSize: "0.85rem" },
+            }}
           >
             <Tab label="Scan QR Code" />
             <Tab label="Enter PIN" />
@@ -170,7 +311,7 @@ const ScanVisit: React.FC = () => {
                 sx={{
                   position: "relative",
                   width: "100%",
-                  aspectRatio: "1 / 1",
+                  height: { xs: "60vh", sm: "65vh", md: "70vh" },
                   bgcolor: "#000",
                   borderRadius: 1,
                   overflow: "hidden",
@@ -178,22 +319,72 @@ const ScanVisit: React.FC = () => {
                   borderColor: "divider",
                 }}
               >
-                <Box id={readerId} sx={{ width: "100%", height: "100%" }} />
+                <Box
+                  id={readerId}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    "& video": {
+                      objectFit: "cover !important",
+                      width: "100% !important",
+                      height: "100% !important",
+                    },
+                  }}
+                />
               </Box>
 
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: "block", mt: 2 }}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mt: 2,
+                }}
               >
-                Ensure the QR code is clear and visible to the camera.
-              </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Ensure the QR code is clear and visible to the camera.
+                </Typography>
+
+                <Box sx={{ display: "flex", gap: 0.5 }}>
+                  <Tooltip
+                    title={
+                      facingMode === "environment"
+                        ? "Switch to front camera"
+                        : "Switch to back camera"
+                    }
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={toggleCamera}
+                      color="primary"
+                    >
+                      {facingMode === "environment" ? (
+                        <CameraFront />
+                      ) : (
+                        <CameraRear />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Fullscreen scanner">
+                    <IconButton
+                      size="small"
+                      onClick={toggleFullscreen}
+                      color="primary"
+                    >
+                      <FullscreenIcon />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
             </>
           )}
 
           {/* PIN Input */}
           {activeTab === 1 && (
-            <Box sx={{ py: 2 }}>
+            <Box sx={{ maxWidth: 520, mx: "auto", py: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Enter the 6-digit PIN provided to the visitor.
+              </Typography>
               <TextField
                 fullWidth
                 label="Enter 6-digit PIN"
