@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS sub_team;
 DROP TABLE IF EXISTS team;
 DROP TABLE IF EXISTS business_unit;
 DROP TABLE IF EXISTS office;
+DROP TABLE IF EXISTS companies_allowed_locations;
 DROP TABLE IF EXISTS company;
 DROP TABLE IF EXISTS designation;
 DROP TABLE IF EXISTS career_function;
@@ -281,7 +282,6 @@ CREATE TABLE `employee` (
   `first_name` VARCHAR(150) NOT NULL,
   `last_name` VARCHAR(150) NOT NULL,
   `epf` VARCHAR(45) NULL,
-  `employment_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
   `work_email` VARCHAR(254) NOT NULL,
   `start_date` DATE NOT NULL,
@@ -298,7 +298,8 @@ CREATE TABLE `employee` (
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   `employment_type_id` INT NOT NULL,
   `designation_id` INT NOT NULL,
-  `office_id` INT NOT NULL,
+  `company_id` int NOT NULL,
+  `office_id` INT NULL,
   `team_id` INT NOT NULL,
   `sub_team_id` INT NOT NULL,
   `business_unit_id` INT NOT NULL,
@@ -310,6 +311,8 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`),
   CONSTRAINT `fk_emp_designation`
     FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
+  CONSTRAINT `fk_emp_company`
+    FOREIGN KEY (`company_id`) REFERENCES `company` (`id`),
   CONSTRAINT `fk_emp_office`
     FOREIGN KEY (`office_id`) REFERENCES `office` (`id`),
   CONSTRAINT `fk_emp_team`
@@ -346,12 +349,11 @@ BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
   DECLARE v_prefix VARCHAR(20);
-  -- Look up the company prefix once for this office
+  -- Look up the company prefix from the company
   SELECT c.prefix
     INTO v_prefix
-    FROM office o
-    JOIN company c ON c.id = o.company_id
-   WHERE o.id = NEW.office_id
+    FROM company c
+   WHERE c.id = NEW.company_id
    LIMIT 1;
 
   IF NEW.employee_id IS NOT NULL AND TRIM(NEW.employee_id) <> '' THEN
@@ -368,7 +370,7 @@ BEGIN
     -- No employee_id supplied: require a prefix and auto-generate
     IF v_prefix IS NULL OR v_prefix = '' THEN
       SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid company_id or missing company prefix.';
     END IF;
 
     SET NEW.employee_id = CONCAT(
@@ -417,5 +419,24 @@ CREATE TABLE `personal_info_emergency_contacts` (
   KEY `idx_ec_mobile` (`mobile`),
   CONSTRAINT `fk_ec_personal_info`
     FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Companies allowed locations table
+CREATE TABLE `companies_allowed_locations` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `company_id` INT NOT NULL,
+  `allowed_location` VARCHAR(255) NOT NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_cal_company_location` (`company_id`, `allowed_location`),
+  KEY `idx_cal_company_id` (`company_id`),
+  KEY `idx_cal_location` (`allowed_location`),
+  CONSTRAINT `fk_cal_company`
+    FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
