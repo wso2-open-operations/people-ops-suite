@@ -11,13 +11,13 @@ DROP TABLE IF EXISTS sub_team;
 DROP TABLE IF EXISTS team;
 DROP TABLE IF EXISTS business_unit;
 DROP TABLE IF EXISTS office;
+DROP TABLE IF EXISTS companies_allowed_locations;
 DROP TABLE IF EXISTS company;
 DROP TABLE IF EXISTS designation;
 DROP TABLE IF EXISTS career_function;
 DROP TABLE IF EXISTS employment_type;
 DROP TABLE IF EXISTS personal_info_emergency_contacts;
 DROP TABLE IF EXISTS personal_info;
-DROP TABLE IF EXISTS companies_allowed_locations;
 
 CREATE TABLE `vehicle` (
   `vehicle_id` int NOT NULL AUTO_INCREMENT,
@@ -349,12 +349,11 @@ BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
   DECLARE v_prefix VARCHAR(20);
-  -- Look up the company prefix once for this office
+  -- Look up the company prefix from the company
   SELECT c.prefix
     INTO v_prefix
-    FROM office o
-    JOIN company c ON c.id = o.company_id
-   WHERE o.id = NEW.office_id
+    FROM company c
+   WHERE c.id = NEW.company_id
    LIMIT 1;
 
   IF NEW.employee_id IS NOT NULL AND TRIM(NEW.employee_id) <> '' THEN
@@ -371,7 +370,7 @@ BEGIN
     -- No employee_id supplied: require a prefix and auto-generate
     IF v_prefix IS NULL OR v_prefix = '' THEN
       SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid company_id or missing company prefix.';
     END IF;
 
     SET NEW.employee_id = CONCAT(
