@@ -482,12 +482,15 @@ function CreateVisit() {
               visitors.filter((v: any) => v.emailAddress === value).length === 1
             );
           })
-          .when("contactNumber", {
-            is: (contact: string) => !contact?.trim(),
-            then: (schema) =>
-              schema.required("Email address or contact number is required"),
-            otherwise: (schema) => schema.nullable(),
-          }),
+          .test(
+            "email-or-contact-required",
+            "Email address or contact number is required",
+            function (value) {
+              const { contactNumber } = this.parent;
+              return !!(value?.trim() || contactNumber?.trim());
+            },
+          )
+          .nullable(),
 
         contactNumber: Yup.string()
           .test("valid-phone-international", function (value) {
@@ -525,6 +528,14 @@ function CreateVisit() {
               });
             }
           })
+          .test(
+            "contact-or-email-required",
+            "Email address or contact number is required",
+            function (value) {
+              const { emailAddress } = this.parent;
+              return !!(value?.trim() || emailAddress?.trim());
+            },
+          )
           .nullable(),
         countryCode: Yup.string().nullable(),
       }),
@@ -1068,7 +1079,11 @@ function CreateVisit() {
                           visitorTouched?.contactNumber &&
                           visitorErrors?.contactNumber
                             ? visitorErrors.contactNumber
-                            : ""
+                            : formik.submitCount > 0 &&
+                                !visitor.emailAddress?.trim() &&
+                                !visitor.contactNumber?.trim()
+                              ? "Email address or contact number is required"
+                              : ""
                         }
                       />
                     </Grid>
