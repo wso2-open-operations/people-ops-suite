@@ -698,8 +698,9 @@ function CreateVisit() {
                       e.preventDefault();
                       const pastedText = e.clipboardData?.getData("text") || "";
                       const extractedEmail = handlePaste(pastedText);
-                      setInputValue(extractedEmail);
-                      if (extractedEmail) {
+                      const valueToUse = extractedEmail || pastedText.trim();
+                      setInputValue(valueToUse);
+                      if (valueToUse.length >= 2) {
                         debouncedEmployeeSearch(extractedEmail);
                       }
                     }}
