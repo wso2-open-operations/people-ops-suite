@@ -694,6 +694,15 @@ function CreateVisit() {
                     helperText={
                       formik.touched.whoTheyMeet && formik.errors.whoTheyMeet
                     }
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData?.getData("text") || "";
+                      const extractedEmail = handlePaste(pastedText);
+                      setInputValue(extractedEmail);
+                      if (extractedEmail) {
+                        debouncedEmployeeSearch(extractedEmail);
+                      }
+                    }}
                   />
                 );
               }}
