@@ -842,7 +842,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Request payload
     # + return - Leave report or lead-specific leave report
     resource function post leaves/report(http:RequestContext ctx, ReportPayload payload)
-        returns ReportContent|http:Forbidden|http:InternalServerError {
+        returns ReportContent|http:BadRequest|http:Forbidden|http:InternalServerError {
 
         do {
             authorization:CustomJwtPayload {email, groups} = check ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -874,11 +874,22 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
+            string? reportStartDate = payload.startDate;
+            string? reportEndDate = payload.endDate;
+            if reportStartDate is () || reportEndDate is () {
+                string errMsg = "Start date and end date are required to generate the leave report.";
+                log:printError(errMsg);
+                return <http:BadRequest>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
             final database:Leave[]|error leaves = database:getLeaves(
                     {
                         emails,
-                        startDate: payload.startDate,
-                        endDate: payload.endDate,
+                        startDate: reportStartDate,
+                        endDate: reportEndDate,
                         statuses: [database:APPROVED]
                     }
                     );
@@ -886,8 +897,17 @@ service http:InterceptableService / on new http:Listener(9090) {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
 
-            return getLeaveReportContent(leaves);
-
+            ReportContent|error report = getLeaveReportContent(leaves, reportStartDate, reportEndDate);
+            if report is error {
+                string errMsg = "Error occurred while generating leave report!";
+                log:printError(errMsg, report);
+                return <http:InternalServerError>{
+                    body: {
+                        message: errMsg
+                    }
+                };
+            }
+            return report;
         } on fail error internalErr {
             string errMsg = "Error occurred while generating leave report";
             log:printError(errMsg, internalErr);
