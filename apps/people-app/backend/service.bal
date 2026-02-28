@@ -452,11 +452,29 @@ service http:InterceptableService / on new http:Listener(9090) {
         return designations;
     }
 
+    # Get companies.
+    #
+    # + return - Companies
+    resource function get companies() returns database:Company[]|http:InternalServerError {
+        database:Company[]|error companies = database:getCompanies();
+        if companies is error {
+            string customErr = "Error while fetching Companies";
+            log:printError(customErr, companies);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return companies;
+    }
+
     # Get offices.
     #
+    # + companyId - Company ID (optional)
     # + return - Offices
-    resource function get offices() returns database:Office[]|http:InternalServerError {
-        database:Office[]|error offices = database:getOffices();
+    resource function get offices(int? companyId = ()) returns database:Office[]|http:InternalServerError {
+        database:Office[]|error offices = database:getOffices(companyId);
         if offices is error {
             string customErr = "Error while fetching Offices";
             log:printError(customErr, offices);

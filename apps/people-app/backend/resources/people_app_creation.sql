@@ -382,7 +382,6 @@ BEGIN
     );
   END IF;
 END//
-//
 DELIMITER ;
 
 -- Additional_managers table

@@ -83,8 +83,10 @@ public type Employee record {|
     *EmployeeBasicInfo;
     # Employees' provident fund number
     string? epf;
-    # Employment location
-    string employmentLocation;
+    # Company name
+    string company;
+    # Company ID
+    int companyId;
     # Work location
     string workLocation;
     # Start date
@@ -114,9 +116,10 @@ public type Employee record {|
     # Job role of the user
     string secondaryJobTitle;
     # Office
-    string office;
+    string? office;
+    string? office;
     # Office ID
-    int officeId;
+    int? officeId;
     # Business unit
     string businessUnit;
     # Business unit ID
@@ -280,8 +283,6 @@ public type ContinuousServiceRecordInfo record {|
     string firstName;
     # Last name
     string lastName;
-    # Employment location
-    string employmentLocation;
     # Work location
     string workLocation;
     # Start date
@@ -295,7 +296,7 @@ public type ContinuousServiceRecordInfo record {|
     # Job role of the user
     string secondaryJobTitle;
     # Office
-    string office;
+    string? office;
     # Business unit
     string businessUnit;
     # Team
@@ -399,6 +400,21 @@ public type Designation record {|
     # Job band
     @sql:Column {name: "job_band"}
     int jobBand;
+|};
+
+# Company.
+public type Company record {|
+    # Company ID
+    int id;
+    # Company name
+    string name;
+    # Company prefix
+    string prefix;
+    # Company location
+    @sql:Column {name: "location"}
+    string location;
+    # Allowed locations
+    string? allowedLocations;
 |};
 
 # Office.
@@ -515,9 +531,8 @@ public type CreateEmployeePayload record {|
     # Employee's Provident Fund number
     @constraint:String {maxLength: 45}
     string? epf = ();
-    # Employee location
-    @constraint:String {maxLength: 255}
-    string employmentLocation;
+    # Company ID
+    int companyId;
     # Work location
     @constraint:String {maxLength: 100}
     string workLocation;
@@ -549,7 +564,8 @@ public type CreateEmployeePayload record {|
     # Designation ID
     int designationId;
     # Office ID
-    int officeId;
+    int? officeId = ();
+    int? officeId = ();
     # Team ID
     int teamId;
     # Sub-team ID
@@ -626,9 +642,8 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Employee's Provident Fund number
     @constraint:String {maxLength: 45}
     string? epf = ();
-    # Employee location
-    @constraint:String {maxLength: 255}
-    string? employmentLocation = ();
+    # Company ID
+    int? companyId = ();
     # Work location   
     @constraint:String {maxLength: 100}
     string? workLocation = ();

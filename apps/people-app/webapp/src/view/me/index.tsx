@@ -634,18 +634,18 @@ export default function Me({
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Office
+                    Company
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.office || "-"}
+                    {employee.company || "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Employment Location
+                    Office
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.employmentLocation || "-"}
+                    {employee.office || "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>

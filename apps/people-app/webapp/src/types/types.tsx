@@ -67,8 +67,8 @@ export interface CreateEmployeeFormValues {
   teamId: number;
   subTeamId: number;
   unitId: number;
-  officeId: number;
-  employmentLocation: string;
+  companyId: number;
+  officeId: number | null;
   workLocation: string;
   employmentTypeId: number;
   startDate: string;
@@ -109,8 +109,8 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   teamId: 0,
   subTeamId: 0,
   unitId: 0,
+  companyId: 0,
   officeId: 0,
-  employmentLocation: "",
   workLocation: "",
   employmentTypeId: 0,
   startDate: "",
