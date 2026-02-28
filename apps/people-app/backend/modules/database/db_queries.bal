@@ -538,7 +538,21 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
 # Get offices query.
 #
 # + companyId - Company ID (optional)
+# + companyId - Company ID (optional)
 # + return - Offices query
+isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+        SELECT 
+            id,
+            name,
+            location,
+            working_locations
+        FROM office`;
+    if companyId is int {
+        query = sql:queryConcat(query, ` WHERE company_id = ${companyId}`);
+    }
+    return sql:queryConcat(query, `;`);
+}
 isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
         SELECT 
