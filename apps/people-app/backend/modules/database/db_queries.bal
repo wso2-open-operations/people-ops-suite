@@ -553,19 +553,6 @@ isolated function getOfficesQuery(int? companyId = ()) returns sql:Parameterized
     }
     return sql:queryConcat(query, `;`);
 }
-isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-        SELECT 
-            id,
-            name,
-            location,
-            working_locations
-        FROM office`;
-    if companyId is int {
-        query = sql:queryConcat(query, ` WHERE company_id = ${companyId}`);
-    }
-    return sql:queryConcat(query, `;`);
-}
 
 # Get employment types query.
 #

@@ -120,7 +120,6 @@ public type Employee record {|
     string? office;
     # Office ID
     int? officeId;
-    int? officeId;
     # Business unit
     string businessUnit;
     # Business unit ID
