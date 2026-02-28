@@ -60,7 +60,8 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.work_email AS workEmail,
         e.employee_thumbnail AS employeeThumbnail,
         e.epf AS epf,
-        c.location AS employmentLocation,
+        c.name AS company,
+        e.company_id AS companyId,
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
@@ -103,8 +104,8 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
-        INNER JOIN office o ON e.office_id = o.id
-        INNER JOIN company c ON c.id = o.company_id
+        LEFT JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = e.company_id
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
@@ -258,7 +259,6 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.employee_id AS employeeId,
         e.first_name AS firstName,
         e.last_name AS lastName,
-        c.location AS employmentLocation,
         e.work_location AS workLocation,
         e.start_date AS startDate,
         e.manager_email AS managerEmail,
@@ -281,8 +281,8 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         ) eam ON eam.employee_pk_id = e.id
         INNER JOIN employment_type et ON e.employment_type_id = et.id
         INNER JOIN designation d ON e.designation_id = d.id
-        INNER JOIN office o ON e.office_id = o.id
-        INNER JOIN company c ON c.id = o.company_id
+        LEFT JOIN office o ON e.office_id = o.id
+        INNER JOIN company c ON c.id = e.company_id
         INNER JOIN team t ON e.team_id = t.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN sub_team st ON e.sub_team_id = st.id
@@ -300,7 +300,6 @@ isolated function searchEmployeePersonalInfoQuery(SearchEmployeePersonalInfoPayl
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
         SELECT 
-            p.id AS id,
             nic_or_passport,
             p.first_name AS firstName,
             p.last_name AS lastName,
@@ -526,11 +525,15 @@ isolated function getDesignationsQuery(int? careerFunctionId = ()) returns sql:P
 # + return - Companies query
 isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-        id,
-        name,
-        prefix,
-        location
-    FROM company;`;
+        c.id,
+        c.name,
+        c.prefix,
+        c.location,
+        GROUP_CONCAT(cal.allowed_location ORDER BY cal.allowed_location SEPARATOR ',') AS allowedLocations
+    FROM company c
+    LEFT JOIN companies_allowed_locations cal 
+        ON c.id = cal.company_id AND cal.is_active = 1
+    GROUP BY c.id, c.name, c.prefix, c.location;`;
 
 # Get offices query.
 #
@@ -651,7 +654,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             first_name,
             last_name,
             epf,
-            employment_location,
+            company_id,
             work_location,
             work_email,
             start_date,
@@ -678,7 +681,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.firstName},
             ${payload.lastName},
             ${payload.epf},
-            ${payload.employmentLocation},
+            ${payload.companyId},
             ${payload.workLocation},
             ${payload.workEmail},
             ${payload.startDate},
@@ -798,7 +801,11 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
+
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, `
+        WHERE id = (SELECT personal_info_id FROM employee WHERE employee_id = ${employeeId})
+    `);
+
     return finalQuery;
 }
 
@@ -859,11 +866,13 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`epf = ${payload.epf}`);
     }
 
-    if payload.employmentLocation != () {
-        updates.push(`employment_location = ${payload.employmentLocation}`);
+    if payload.companyId != () {
+        updates.push(`company_id = ${payload.companyId}`);
     }
 
-    if payload.workLocation != () {
+    if payload.workLocation is () || payload.workLocation == "" {
+        updates.push(`work_location = NULL`);
+    } else {
         updates.push(`work_location = ${payload.workLocation}`);
     }
 

@@ -50,3 +50,31 @@ CREATE TABLE `personal_info_emergency_contacts` (
     FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `companies_allowed_locations` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `company_id` INT NOT NULL,
+  `allowed_location` VARCHAR(255) NOT NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_cal_company_location` (`company_id`, `allowed_location`),
+  KEY `idx_cal_company_id` (`company_id`),
+  KEY `idx_cal_location` (`allowed_location`),
+  CONSTRAINT `fk_cal_company`
+    FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+ALTER TABLE `employee` DROP COLUMN `employment_location`;
+ALTER TABLE `employee` MODIFY COLUMN `office_id` INT NULL;
+
+ALTER TABLE `employee` 
+ADD COLUMN `company_id` INT NOT NULL DEFAULT 1 AFTER `designation_id`;
+
+ALTER TABLE `employee`
+ADD CONSTRAINT `fk_emp_company`
+  FOREIGN KEY (`company_id`) REFERENCES `company` (`id`);
