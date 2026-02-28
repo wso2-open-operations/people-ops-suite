@@ -871,9 +871,7 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`company_id = ${payload.companyId}`);
     }
 
-    if payload.workLocation is () || payload.workLocation == "" {
-        updates.push(`work_location = NULL`);
-    } else {
+    if payload.workLocation != () {
         updates.push(`work_location = ${payload.workLocation}`);
     }
 
@@ -917,10 +915,13 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     if payload.designationId != () {
         updates.push(`designation_id = ${payload.designationId}`);
     }
-    if payload.officeId != () {
+    
+    if payload.officeId is () {
+        updates.push(`office_id = NULL`);
+    } else{
         updates.push(`office_id = ${payload.officeId}`);
-
     }
+
     if payload.teamId != () {
         updates.push(`team_id = ${payload.teamId}`);
 

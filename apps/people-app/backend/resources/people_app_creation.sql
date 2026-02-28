@@ -381,7 +381,6 @@ BEGIN
           AND TABLE_NAME   = 'employee')
     );
   END IF;
-END IF;
 END//
 DELIMITER ;
 
