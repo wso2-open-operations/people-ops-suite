@@ -30,7 +30,6 @@ export interface Employee {
   employeeThumbnail: string | null;
   secondaryJobTitle: string;
   epf: string;
-  employmentLocation: string;
   workLocation: string;
   startDate: string;
   managerEmail: string;
@@ -40,6 +39,7 @@ export interface Employee {
   agreementEndDate: string | null;
   employmentType: string;
   designation: string;
+  company: string;
   office: string | null;
   businessUnit: string;
   team: string;
@@ -49,6 +49,7 @@ export interface Employee {
   employmentTypeId: number;
   careerFunctionId: number;
   designationId: number;
+  companyId: number;
   officeId: number | null;
   businessUnitId: number;
   teamId: number;
@@ -134,7 +135,6 @@ export type CreateEmployeePayload = {
   lastName: string;
   epf?: string;
   secondaryJobTitle: string;
-  employmentLocation: string;
   workLocation: string;
   workEmail: string;
   startDate: string;
@@ -146,6 +146,7 @@ export type CreateEmployeePayload = {
   agreementEndDate?: string;
   employmentTypeId?: number;
   designationId: number;
+  companyId: number;
   officeId?: number;
   teamId: number;
   subTeamId: number;
@@ -157,7 +158,6 @@ export type CreateEmployeePayload = {
 
 export type UpdateEmployeeJobInfoPayload = {
   epf?: string | null;
-  employmentLocation?: string;
   workLocation?: string;
   workEmail?: string;
   startDate?: string;
@@ -169,6 +169,7 @@ export type UpdateEmployeeJobInfoPayload = {
   agreementEndDate?: string | null;
   employmentTypeId?: number | null;
   designationId?: number | null;
+  companyId?: number | null;
   officeId?: number | null;
   teamId?: number | null;
   subTeamId?: number | null;
@@ -181,14 +182,14 @@ export interface ContinuousServiceRecordInfo {
   employeeId: string;
   firstName: string | null;
   lastName: string | null;
-  employmentLocation: string;
   workLocation: string;
   startDate: string;
   managerEmail: string;
   additionalManagerEmails?: string | null;
   designation: string;
-  secondaryJobTitle?: string;
-  office: string;
+  secondaryJobTitle: string;
+  company: string;
+  office?: string | null;
   businessUnit: string;
   team: string;
   subTeam: string | null;
@@ -220,8 +221,8 @@ const initialState: EmployeesState = {
   managersState: State.idle,
   employeeFilter: {
     filters: {
-      employeeStatus: EmployeeStatus.Active
-    }
+      employeeStatus: EmployeeStatus.Active,
+    },
   },
   filteredEmployeesResponseState: State.idle,
   filterAppliedOnce: false,
@@ -229,9 +230,9 @@ const initialState: EmployeesState = {
   errorMessage: null,
   employee: null,
   employeesBasicInfo: [],
-  filteredEmployeesResponse: { 
-    employees: [], 
-    totalCount: 0
+  filteredEmployeesResponse: {
+    employees: [],
+    totalCount: 0,
   },
   continuousServiceRecord: [],
   updateJobInfoState: State.idle,
@@ -278,7 +279,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employees' basic information"
           : error.response?.data?.message ||
-          "An unknown error occurred while fetching employees' basic information.";
+            "An unknown error occurred while fetching employees' basic information.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
@@ -291,11 +292,12 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
   },
 );
 
-export const fetchManagers = createAsyncThunk<Manager[]>("employees/fetchManagers",
-  async (_, {dispatch, rejectWithValue}) => {
+export const fetchManagers = createAsyncThunk<Manager[]>(
+  "employees/fetchManagers",
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.managers}`
+        `${AppConfig.serviceUrls.managers}`,
       );
       return resp.data as Manager[];
     } catch (error: any) {
@@ -303,28 +305,31 @@ export const fetchManagers = createAsyncThunk<Manager[]>("employees/fetchManager
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching manager emails"
           : error.response?.data?.message ||
-          "An unknown error occurred while fetching manager emails.";
+            "An unknown error occurred while fetching manager emails.";
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
-)
+  },
+);
 
 export const fetchFilteredEmployees = createAsyncThunk<
   FilteredEmployeesResponse,
   EmployeeSearchPayload
 >(
   "employees/fetchFilteredEmployees",
-  async (filterAttributes: EmployeeSearchPayload, { dispatch, rejectWithValue }) => {
+  async (
+    filterAttributes: EmployeeSearchPayload,
+    { dispatch, rejectWithValue },
+  ) => {
     try {
       const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.searchEmployees,
-        filterAttributes
+        filterAttributes,
       );
       return response.data as FilteredEmployeesResponse;
     } catch (error: any) {
@@ -332,18 +337,18 @@ export const fetchFilteredEmployees = createAsyncThunk<
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployees
           : error.response?.data?.message ||
-          "An unknown error occurred while fetching employees.";
+            "An unknown error occurred while fetching employees.";
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 export const createEmployee = createAsyncThunk(

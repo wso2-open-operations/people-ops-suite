@@ -62,6 +62,7 @@ export interface Company {
   name: string;
   prefix: string;
   location: string;
+  allowedLocations: string[];
 }
 
 export interface Office {
@@ -315,7 +316,35 @@ export const fetchCompanies = createAsyncThunk(
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: companies should be an array");
       }
-      return resp.data as Company[];
+      const companies: Company[] = resp.data.map((c: any) => {
+        let allowed: string[] = [];
+
+        if (Array.isArray(c.allowedLocations)) {
+          allowed = c.allowedLocations;
+        } else if (Array.isArray(c.allowed_locations)) {
+          allowed = c.allowed_locations;
+        } else if (typeof c.allowedLocations === "string") {
+          allowed = c.allowedLocations
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean);
+        } else if (typeof c.allowed_locations === "string") {
+          allowed = c.allowed_locations
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean);
+        }
+
+        return {
+          id: c.id,
+          name: c.name,
+          prefix: c.prefix,
+          location: c.location,
+          allowedLocations: allowed,
+        };
+      });
+
+      return companies;
     } catch (error: any) {
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
@@ -425,6 +454,7 @@ export const organizationSlice = createSlice({
       state.units = [];
       state.careerFunctions = [];
       state.designations = [];
+      state.companies = [];
       state.offices = [];
       state.employmentTypes = [];
     },

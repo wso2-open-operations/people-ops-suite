@@ -45,13 +45,21 @@ import {
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import dayjs from "dayjs";
 
+const PERSONAL_INFO_ICONS = {
+  person: <PersonOutline />,
+  cake: <CakeOutlined />,
+  contact: <ContactPhoneOutlined />,
+  home: <HomeOutlined />,
+  emergency: <ContactEmergencyOutlined />,
+};
+
 export const personalInfoValidationSchema = Yup.object().shape({
   personalInfo: Yup.object().shape({
     nicOrPassport: Yup.string()
       .required("NIC/Passport is required")
       .matches(
         /^[A-Za-z0-9\- ]{5,20}$/,
-        "NIC/Passport must contain only letters, numbers, hyphens, or spaces (5-20 characters)"
+        "NIC/Passport must contain only letters, numbers, hyphens, or spaces (5-20 characters)",
       )
       .max(20, "NIC/Passport must be at most 20 characters"),
 
@@ -67,7 +75,7 @@ export const personalInfoValidationSchema = Yup.object().shape({
       .oneOf(EmployeeGenders, "Invalid gender selected"),
     dob: Yup.string()
       .transform((value, originalValue) =>
-        originalValue === null ? "" : value
+        originalValue === null ? "" : value,
       )
       .required("Date of birth is required"),
     personalEmail: Yup.string()
@@ -78,14 +86,14 @@ export const personalInfoValidationSchema = Yup.object().shape({
     personalPhone: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid personal phone number format"
+        "Invalid personal phone number format",
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
     residentNumber: Yup.string()
       .matches(
         /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-        "Invalid resident number format"
+        "Invalid resident number format",
       )
       .transform((value) => (value === "" ? null : value))
       .nullable(),
@@ -128,16 +136,16 @@ export const personalInfoValidationSchema = Yup.object().shape({
           telephone: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid telephone number format"
+              "Invalid telephone number format",
             )
             .required("Telephone is required"),
           mobile: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
-              "Invalid mobile number format"
+              "Invalid mobile number format",
             )
             .required("Mobile is required"),
-        })
+        }),
       )
       .max(4, "Maximum 4 emergency contacts allowed")
       .nullable(),
@@ -168,7 +176,7 @@ const MemoizedTextField = React.memo(
       helperText={helperText}
       sx={textFieldSx}
     />
-  )
+  ),
 );
 
 const SectionHeader = React.memo(({ icon, title }: any) => {
@@ -185,7 +193,7 @@ const SectionHeader = React.memo(({ icon, title }: any) => {
           borderRadius: 2,
           background: `linear-gradient(135deg, ${alpha(
             theme.palette.secondary.contrastText,
-            0.2
+            0.2,
           )}, ${alpha(theme.palette.secondary.contrastText, 0.1)})`,
           color: theme.palette.secondary.contrastText,
         }}
@@ -218,14 +226,14 @@ export default function PersonalInfoStep() {
         color: theme.palette.secondary.contrastText,
       },
     }),
-    [theme]
+    [theme],
   );
 
   const renderField = useCallback(
     (
       field: keyof CreateEmployeeFormValues["personalInfo"],
       label: string,
-      required = false
+      required = false,
     ) => (
       <MemoizedTextField
         name={`personalInfo.${field}`}
@@ -235,7 +243,7 @@ export default function PersonalInfoStep() {
         onChange={handleChange}
         onBlur={handleBlur}
         error={Boolean(
-          touched.personalInfo?.[field] && errors.personalInfo?.[field]
+          touched.personalInfo?.[field] && errors.personalInfo?.[field],
         )}
         helperText={
           touched.personalInfo?.[field] && errors.personalInfo?.[field]
@@ -243,24 +251,13 @@ export default function PersonalInfoStep() {
         textFieldSx={textFieldSx}
       />
     ),
-    [values, errors, touched, handleChange, handleBlur, textFieldSx]
-  );
-
-  const icons = useMemo(
-    () => ({
-      person: <PersonOutline />,
-      cake: <CakeOutlined />,
-      contact: <ContactPhoneOutlined />,
-      home: <HomeOutlined />,
-      emergency: <ContactEmergencyOutlined />,
-    }),
-    []
+    [values, errors, touched, handleChange, handleBlur, textFieldSx],
   );
 
   return (
     <Box sx={{ width: "100%", px: 0 }}>
       <Box sx={{ mt: 1 }}>
-        <SectionHeader icon={icons.person} title="Identity" />
+        <SectionHeader icon={PERSONAL_INFO_ICONS.person} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
@@ -273,7 +270,7 @@ export default function PersonalInfoStep() {
               onChange={handleChange}
               onBlur={handleBlur}
               error={Boolean(
-                touched.personalInfo?.title && errors.personalInfo?.title
+                touched.personalInfo?.title && errors.personalInfo?.title,
               )}
               helperText={
                 touched.personalInfo?.title && errors.personalInfo?.title
@@ -297,7 +294,7 @@ export default function PersonalInfoStep() {
                   : f
                       .replace(/([A-Z])/g, " $1")
                       .replace(/^./, (str) => str.toUpperCase()),
-                f === "firstName" || f === "lastName" || f === "nicOrPassport"
+                f === "firstName" || f === "lastName" || f === "nicOrPassport",
               )}
             </Grid>
           ))}
@@ -305,7 +302,10 @@ export default function PersonalInfoStep() {
       </Box>
 
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={icons.cake} title="Birth & Nationality" />
+        <SectionHeader
+          icon={PERSONAL_INFO_ICONS.cake}
+          title="Birth & Nationality"
+        />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <DatePicker
@@ -316,7 +316,7 @@ export default function PersonalInfoStep() {
               onChange={(val) =>
                 setFieldValue(
                   "personalInfo.dob",
-                  val ? val.format("YYYY-MM-DD") : null
+                  val ? val.format("YYYY-MM-DD") : null,
                 )
               }
               format="YYYY-MM-DD"
@@ -326,7 +326,7 @@ export default function PersonalInfoStep() {
                   sx: textFieldSx,
                   required: true,
                   error: Boolean(
-                    touched.personalInfo?.dob && errors.personalInfo?.dob
+                    touched.personalInfo?.dob && errors.personalInfo?.dob,
                   ),
                   helperText:
                     touched.personalInfo?.dob && errors.personalInfo?.dob,
@@ -345,7 +345,7 @@ export default function PersonalInfoStep() {
               onChange={handleChange}
               onBlur={handleBlur}
               error={Boolean(
-                touched.personalInfo?.gender && errors.personalInfo?.gender
+                touched.personalInfo?.gender && errors.personalInfo?.gender,
               )}
               helperText={
                 touched.personalInfo?.gender && errors.personalInfo?.gender
@@ -364,7 +364,7 @@ export default function PersonalInfoStep() {
               {renderField(
                 f as keyof CreateEmployeeFormValues["personalInfo"],
                 f[0].toUpperCase() + f.slice(1),
-                f === "nationality"
+                f === "nationality",
               )}
             </Grid>
           ))}
@@ -372,7 +372,7 @@ export default function PersonalInfoStep() {
       </Box>
 
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={icons.contact} title="Contact" />
+        <SectionHeader icon={PERSONAL_INFO_ICONS.contact} title="Contact" />
         <Grid container spacing={3}>
           {["personalEmail", "personalPhone", "residentNumber"].map((f) => (
             <Grid item xs={12} sm={6} md={4} key={f}>
@@ -380,7 +380,7 @@ export default function PersonalInfoStep() {
                 f as keyof CreateEmployeeFormValues["personalInfo"],
                 f
                   .replace(/([A-Z])/g, " $1")
-                  .replace(/^./, (str) => str.toUpperCase())
+                  .replace(/^./, (str) => str.toUpperCase()),
               )}
             </Grid>
           ))}
@@ -388,7 +388,7 @@ export default function PersonalInfoStep() {
       </Box>
 
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={icons.home} title="Address" />
+        <SectionHeader icon={PERSONAL_INFO_ICONS.home} title="Address" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             {renderField("addressLine1", "Address Line 1")}
@@ -415,7 +415,7 @@ export default function PersonalInfoStep() {
               onChange={handleChange}
               onBlur={handleBlur}
               error={Boolean(
-                touched.personalInfo?.country && errors.personalInfo?.country
+                touched.personalInfo?.country && errors.personalInfo?.country,
               )}
               helperText={
                 touched.personalInfo?.country && errors.personalInfo?.country
@@ -432,7 +432,10 @@ export default function PersonalInfoStep() {
         </Grid>
       </Box>
       <Box sx={{ mt: 5 }}>
-        <SectionHeader icon={icons.emergency} title="Emergency Contacts" />
+        <SectionHeader
+          icon={PERSONAL_INFO_ICONS.emergency}
+          title="Emergency Contacts"
+        />
         <FieldArray name="personalInfo.emergencyContacts">
           {({ push, remove }) => (
             <>
@@ -470,7 +473,7 @@ export default function PersonalInfoStep() {
                               />
                             </Grid>
                           );
-                        }
+                        },
                       )}
                     </Grid>
                     <Box
@@ -502,7 +505,9 @@ export default function PersonalInfoStep() {
                       mobile: "",
                     })
                   }
-                  disabled={(values.personalInfo.emergencyContacts?.length ?? 0) >= 4}
+                  disabled={
+                    (values.personalInfo.emergencyContacts?.length ?? 0) >= 4
+                  }
                   sx={{
                     color: theme.palette.secondary.contrastText,
                     display: "flex",
@@ -515,7 +520,7 @@ export default function PersonalInfoStep() {
                     "&:hover": {
                       backgroundColor: alpha(
                         theme.palette.secondary.contrastText,
-                        0.1
+                        0.1,
                       ),
                     },
                   }}

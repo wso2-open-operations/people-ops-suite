@@ -81,8 +81,8 @@ const toFormValues = (
     base.teamId = employee.teamId ?? 0;
     base.subTeamId = employee.subTeamId ?? 0;
     base.unitId = employee.unitId ?? 0;
+    base.companyId = employee.companyId ?? 0;
     base.officeId = employee.officeId ?? 0;
-    base.employmentLocation = employee.employmentLocation ?? "";
     base.workLocation = employee.workLocation ?? "";
     base.employmentTypeId = employee.employmentTypeId ?? 0;
     base.startDate = employee.startDate ?? "";
@@ -132,7 +132,6 @@ const toJobUpdatePayload = (
   values: CreateEmployeeFormValues,
 ): UpdateEmployeeJobInfoPayload => ({
   epf: values.epf === "" ? null : values.epf,
-  employmentLocation: values.employmentLocation,
   workLocation: values.workLocation,
   workEmail: values.workEmail,
   startDate: values.startDate,
@@ -144,7 +143,9 @@ const toJobUpdatePayload = (
   employmentTypeId:
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
-  officeId: values.officeId > 0 ? values.officeId : null,
+  companyId: values.companyId > 0 ? values.companyId : null,
+  officeId:
+    values.officeId != null && values.officeId > 0 ? values.officeId : null,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
@@ -324,8 +325,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       dispatch(resetEmployee());
       dispatch(resetPersonalInfo());
       if (isEditMode) {
-      dispatch(resetUpdateEmployeeJobInfoState());
-    }
+        dispatch(resetUpdateEmployeeJobInfoState());
+      }
     };
   }, [dispatch, isEditMode]);
 
@@ -499,7 +500,6 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 lastName: values.personalInfo.lastName || "",
                 epf: values.epf || undefined,
                 secondaryJobTitle: values.secondaryJobTitle || "",
-                employmentLocation: values.employmentLocation,
                 workLocation: values.workLocation,
                 workEmail: values.workEmail,
                 startDate: values.startDate,
@@ -514,7 +514,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     ? values.employmentTypeId
                     : undefined,
                 designationId: values.designationId,
-                officeId: values.officeId,
+                companyId: values.companyId,
+                officeId:
+                  values.officeId && values.officeId > 0
+                    ? values.officeId
+                    : undefined,
                 teamId: values.teamId,
                 subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
@@ -709,8 +713,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                   color="secondary"
                   type="button"
                   disabled={
-                    isSubmitting || 
-                    employeeSlice.state === State.loading || 
+                    isSubmitting ||
+                    employeeSlice.state === State.loading ||
                     employeeSlice.updateJobInfoState === State.loading
                   }
                   onClick={async () => {
@@ -726,8 +730,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     }
                   }}
                 >
-                  {employeeSlice.state === State.loading || 
-                   employeeSlice.updateJobInfoState === State.loading
+                  {employeeSlice.state === State.loading ||
+                  employeeSlice.updateJobInfoState === State.loading
                     ? "Saving..."
                     : activeStep === EmployeeFormSteps.length - 1
                       ? isEditMode
