@@ -13,21 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { FEEDBACK_TIME } from "@config/constant";
+import ballerina/http;
 
-export const useFeedback = () => {
-  // FeedBack time
-  const useFeedbackTime = () => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(...FEEDBACK_TIME.START);
-    const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.END);
+configurable string smsServiceEndpoint = ?;
+configurable ClientAuthConfig clientAuthConfig = ?;
 
-    return now >= startTime && now <= endTime;
-  };
-
-  return {
-    useFeedbackTime,
-  };
-};
+final http:Client smsClient = check new (smsServiceEndpoint, {
+    auth: {
+        ...clientAuthConfig
+    },
+    timeout: 10.0,
+    retryConfig: {
+        count: 3,
+        interval: 5.0,
+        statusCodes: [
+            http:STATUS_INTERNAL_SERVER_ERROR,
+            http:STATUS_REQUEST_TIMEOUT,
+            http:STATUS_BAD_GATEWAY,
+            http:STATUS_SERVICE_UNAVAILABLE,
+            http:STATUS_GATEWAY_TIMEOUT
+        ]
+    }
+});

@@ -14,16 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
+import Lottie from "lottie-react";
 import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
-import infoIcon from "@assets/images/info-icon.svg";
+import emptyLogo from "@assets/animations/clock-time.json";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
+import { useRecolorLottie } from "@hooks/useRecolorLottie";
 import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
 
 import CancelModal from "./CancelModal";
+import DodInfoMessage from "./DodInfoMessage";
 import { MealOptionBox } from "./MealOptionBox";
 import { OrderInfoSection } from "./OrderInfo";
 
@@ -44,6 +47,7 @@ export default function DinnerOnDemand() {
     isLoading,
     is404,
     formik,
+    isDodTimeActive,
     isFormDisabled,
     mealOptionsDefault,
     orderPlaced,
@@ -52,17 +56,14 @@ export default function DinnerOnDemand() {
     handleCloseCancelDialog,
   } = useDinnerOnDemand();
 
-  if (!userInfo) {
-    return <ErrorHandler message={"Failed to load user info"} />;
-  }
+  const logoStyle = {
+    height: "150px",
+  };
 
-  if (isUserLoading || isLoading) {
-    return <BackdropProgress open={isLoading} />;
-  }
-
-  if (error && !is404) {
-    return <ErrorHandler message="Failed to load dinner request" />;
-  }
+  const coloredLogo = useRecolorLottie(emptyLogo, {
+    "#020F30": theme.palette.customText.primary.p2.active,
+    "#F57800": "F57800",
+  });
 
   const handleMealOptionClick = (mealValue: string) => {
     if (isFormDisabled) return;
@@ -77,6 +78,39 @@ export default function DinnerOnDemand() {
       formik.setFieldValue("mealOption", mealValue);
     }
   };
+
+  if (isUserLoading || isLoading) {
+    return <BackdropProgress open={isLoading} />;
+  }
+
+  if (!userInfo) {
+    return <ErrorHandler message={"Failed to load user info"} />;
+  }
+
+  if (error && !is404) {
+    return <ErrorHandler message="Failed to load dinner request" />;
+  }
+
+  if (!isDodTimeActive) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p2.active }}>
+          Dinner On Demand
+        </Typography>
+
+        <Lottie animationData={coloredLogo} style={logoStyle} />
+
+        <DodInfoMessage />
+      </Box>
+    );
+  }
 
   return (
     <>
@@ -131,26 +165,7 @@ export default function DinnerOnDemand() {
             </Box>
 
             {/* Info Message */}
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-              <Box
-                component="img"
-                src={infoIcon}
-                alt="info"
-                sx={{
-                  width: 16,
-                  height: 16,
-                  alignItems: "center",
-                }}
-              />
-
-              <Typography
-                variant="body2"
-                sx={{ color: theme.palette.customText.primary.p3.active }}
-              >
-                Dinner request option is only available from <strong>04:00pm till 07:00pm</strong>{" "}
-                for the given day.
-              </Typography>
-            </Box>
+            <DodInfoMessage />
 
             {/* Order Info */}
             {mealOptionsDefault && (

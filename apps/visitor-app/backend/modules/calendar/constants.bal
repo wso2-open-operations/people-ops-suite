@@ -13,21 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { FEEDBACK_TIME } from "@config/constant";
 
-export const useFeedback = () => {
-  // FeedBack time
-  const useFeedbackTime = () => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(...FEEDBACK_TIME.START);
-    const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.END);
+# client retry configuration for max retry attempts.
+public const RETRY_COUNT = 3;
 
-    return now >= startTime && now <= endTime;
-  };
+# client retry configuration for wait interval in seconds.
+public const RETRY_INTERVAL = 3.0d;
 
-  return {
-    useFeedbackTime,
-  };
-};
+# client retry configuration for interval increment in seconds.
+public const RETRY_BACKOFF_FACTOR = 2.0;
+
+# client retry configuration for maximum wait interval in seconds.
+public const RETRY_MAX_INTERVAL = 20.0d;

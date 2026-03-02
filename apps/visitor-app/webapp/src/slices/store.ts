@@ -24,6 +24,7 @@ import visitorReducer from "@slices/visitorSlice/visitor";
 import visitReducer from "@slices/visitSlice/visit";
 import invitationReducer from "@slices/invitationSlice/invitation";
 import employeesReducer from "@slices/employeeSlice/employees";
+import buildingResourcesReducer from "@slices/buildingResourcesSlice/buildingResources";
 
 enableMapSet();
 
@@ -37,6 +38,7 @@ export const store = configureStore({
     visit: visitReducer,
     invitation: invitationReducer,
     employees: employeesReducer,
+    buildingResources: buildingResourcesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

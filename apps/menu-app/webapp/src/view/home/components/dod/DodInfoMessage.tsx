@@ -13,26 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box, Divider } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 
-import { MicroAppType } from "@/types/types";
-import { isMicroApp } from "@config/config";
+import infoIcon from "@assets/images/info-icon.svg";
 
-import DinnerOnDemand from "./components/dod/DinnerOnDemand";
-import Menu from "./components/menu/Menu";
-
-export default function Home() {
-  if (isMicroApp === MicroAppType.Menu) return <Menu />;
-
-  if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
+export default function DodInfoMessage() {
+  const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <Menu />
-
-      <Divider />
-
-      <DinnerOnDemand />
+    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+      <Box
+        component="img"
+        src={infoIcon}
+        alt="info"
+        sx={{ width: 14, height: 14, alignContent: "center" }}
+      />
+      <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
+        Dinner request option is only available from <strong>04:00pm till 07:00pm</strong> for the
+        given day.
+      </Typography>
     </Box>
   );
 }

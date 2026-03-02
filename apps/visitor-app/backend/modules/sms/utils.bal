@@ -13,21 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { FEEDBACK_TIME } from "@config/constant";
 
-export const useFeedback = () => {
-  // FeedBack time
-  const useFeedbackTime = () => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(...FEEDBACK_TIME.START);
-    const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.END);
-
-    return now >= startTime && now <= endTime;
-  };
-
-  return {
-    useFeedbackTime,
-  };
-};
+# Generate a message for the SMS service.
+#
+# + verificationCode - The verification code to be included in the message
+# + date - The date of the visit
+# + return - The generated message string
+public isolated function generateMessage(int verificationCode, string date) returns string {
+    return string `You are invited to visit WSO2
+Date: ${date}
+Verification Code: ${verificationCode}
+Please present this at the security desk.`;
+}

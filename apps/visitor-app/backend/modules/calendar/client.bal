@@ -13,21 +13,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { FEEDBACK_TIME } from "@config/constant";
+import ballerina/http;
 
-export const useFeedback = () => {
-  // FeedBack time
-  const useFeedbackTime = () => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(...FEEDBACK_TIME.START);
-    const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.END);
+configurable string calendarBaseUrl = ?;
+configurable CalendarRetryConfig retryConfig = ?;
+configurable Oauth2Config oauthConfig = ?;
 
-    return now >= startTime && now <= endTime;
-  };
-
-  return {
-    useFeedbackTime,
-  };
-};
+# HRIS Calendar Event Service.
+@display {
+    label: "Calendar Event Service",
+    id: "hris/calendar-event-service"
+}
+final http:Client calendarClient = check new (calendarBaseUrl, {
+    auth: {
+        ...oauthConfig
+    },
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {keepAlive: http:KEEPALIVE_NEVER},
+    retryConfig: {
+        ...retryConfig
+    }
+});

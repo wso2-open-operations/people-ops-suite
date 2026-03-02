@@ -49,7 +49,7 @@ export interface AddVisitPayload {
   accessibleLocations?: FloorRoom[] | null;
   timeOfEntry?: string;
   timeOfDeparture?: string;
-  emailHash: string;
+  visitorIdHash: string;
   visitDate: string;
   uuid: string;
   qrCode?: number[];
@@ -85,8 +85,8 @@ export interface FetchVisitsResponse {
 
 export interface UpdateVisitPayload {
   rejectionReason: string | null | undefined;
-  passNumber: string | null;
-  accessibleLocations: FloorRoom[] | null;
+  passNumber?: string | null;
+  accessibleLocations?: FloorRoom[] | null;
   visitId: number;
   status: string;
 }
@@ -196,12 +196,12 @@ export const fetchVisits = createAsyncThunk(
 
 export const fetchSingleVisit = createAsyncThunk(
   "visit/fetchSingleVisit",
-  async (uuid: string, { dispatch, rejectWithValue }) => {
+  async (visitVerificationCode: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visit>((resolve, reject) => {
       APIService.getInstance()
-        .get(`${AppConfig.serviceUrls.visits}/${uuid}`, {
+        .get(`${AppConfig.serviceUrls.visits}/${visitVerificationCode}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

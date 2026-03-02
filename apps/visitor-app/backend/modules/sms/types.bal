@@ -13,21 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { FEEDBACK_TIME } from "@config/constant";
+# OAuth2 client auth configurations.
+public type ClientAuthConfig record {|
+    # Token URL
+    string tokenUrl;
+    # Client ID
+    string clientId;
+    # Client Secret
+    string clientSecret;
+|};
 
-export const useFeedback = () => {
-  // FeedBack time
-  const useFeedbackTime = () => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(...FEEDBACK_TIME.START);
-    const endTime = new Date(now);
-    endTime.setHours(...FEEDBACK_TIME.END);
-
-    return now >= startTime && now <= endTime;
-  };
-
-  return {
-    useFeedbackTime,
-  };
-};
+# Payload of the SMS service.
+public type SMSPayload record {|
+    # Recipient phone number as string 
+    string phoneNumber;
+    # Message to be sent
+    string message;
+|};

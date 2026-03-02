@@ -16,6 +16,7 @@
 public const DEFAULT_LIMIT = 500;
 public const HEX_DIGITS = "0123456789abcdef";
 
+public final string:RegExp INTERNATIONAL_NAME_REGEX = re `^[\p{L}]+(?:[ .'\-][\p{L}]+)*$`;
 public final string:RegExp NONE_EMPTY_PRINTABLE_STRING_REGEX = re `^(?:.*\S)[ -~]+$`;
 public final string:RegExp INTERNATIONAL_CONTACT_NUMBER_REGEX = re `^\+[1-9]\d{1,14}$`;
 public final string:RegExp PRINTABLE_NUMERIC_STRING_REGEX = re `^[0-9 ]+$`;
