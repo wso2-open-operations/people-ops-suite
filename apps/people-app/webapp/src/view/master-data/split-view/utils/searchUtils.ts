@@ -28,7 +28,7 @@ export const searchOrgItem = <T extends { name: string; head?: { name: string; e
   const headEmail = item.head?.email?.toLowerCase() || "";
   const leadName = item.functionalLead?.name?.toLowerCase() || "";
   const leadEmail = item.functionalLead?.email?.toLowerCase() || "";
-  
+
   return (
     name.includes(lowerQuery) ||
     headName.includes(lowerQuery) ||
