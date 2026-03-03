@@ -16,7 +16,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { Box, Container, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, IconButton, Tooltip, Typography } from "@mui/material";
 import {
   CameraFront,
   CameraRear,
@@ -217,12 +217,14 @@ const QrScanner: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 2 }}>
+    <Box
+      sx={{ height: "100%", display: "flex", flexDirection: "column", p: 1 }}
+    >
       <Box
         sx={{
           position: "relative",
           width: "100%",
-          height: { xs: "60vh", sm: "65vh", md: "70vh" },
+          flex: 1,
           bgcolor: "#000",
           borderRadius: 1,
           overflow: "hidden",
@@ -292,11 +294,11 @@ const QrScanner: React.FC = () => {
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ mt: 1, display: "block" }}
+        sx={{ mt: 0.5, display: "block" }}
       >
         Ensure the QR code is clear and visible to the camera.
       </Typography>
-    </Container>
+    </Box>
   );
 };
 

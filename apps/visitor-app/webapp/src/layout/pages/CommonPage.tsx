@@ -63,13 +63,12 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
       {isSingleTab ? (
         <Box
           sx={(theme) => ({
-            mt: 0.7,
             boxShadow:
               theme.palette.mode === "dark"
                 ? "0px 3px 10px rgba(120, 125, 129, 0.5)"
                 : 10,
             overflow: "auto",
-            height: "calc(100% - 50px)",
+            height: "100%",
             background: "background.paper",
             borderRadius: 3,
           })}
@@ -145,7 +144,7 @@ function TabPanel(props: TabPanelProps) {
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}
-      style={{ height: `calc(100% - 70px)` }}
+      style={{ height: `calc(100% - 40px)` }}
     >
       {value === index && (
         <Box

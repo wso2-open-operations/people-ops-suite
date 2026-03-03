@@ -16,11 +16,10 @@
 
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
-import pJson from "@root/package.json";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
 import { CircularProgress, Typography } from "@mui/material";
-import { Box, alpha } from "@mui/material";
+import { Box } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { selectRoles } from "@slices/authSlice/auth";
@@ -81,9 +80,9 @@ export default function Layout() {
           sx={{
             flexGrow: 1,
             height: "100vh",
-            p: 3,
-            pt: 7.5,
-            pb: 4.5,
+            p: 1.5,
+            pt: 7,
+            pb: 1.5,
           }}
         >
           <Suspense
@@ -102,23 +101,6 @@ export default function Layout() {
           >
             <Outlet />
           </Suspense>
-          <Box
-            className="layout-note"
-            sx={{
-              background:
-                theme.palette.mode === "light"
-                  ? (theme) =>
-                      alpha(
-                        theme.palette.secondary.main,
-                        theme.palette.action.activatedOpacity,
-                      )
-                  : (theme) => alpha(theme.palette.common.black, 0.4),
-            }}
-          >
-            <Typography variant="h6" sx={{ color: "#919090" }}>
-              v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
-            </Typography>
-          </Box>
         </Box>
       </Box>
     </ConfirmationModalContextProvider>
