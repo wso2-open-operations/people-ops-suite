@@ -112,6 +112,7 @@ export enum Role {
 export interface AuthState {
   status: RequestState;
   statusMessage: string | null;
+  mode: "active" | "maintenance";
   isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
   accessToken: string | null;
@@ -151,4 +152,11 @@ export type AuthFlowState =
   isTeamLead: boolean;
   leadEmail: string | null;
   lead: boolean | null;
+}
+
+export enum ParCycleStatus {
+  PENDING = "PENDING",
+  OPEN = "OPEN",
+  CLOSED = "CLOSED",
+  PENDING_QUOTA = "PENDING_QUOTA",
 }
