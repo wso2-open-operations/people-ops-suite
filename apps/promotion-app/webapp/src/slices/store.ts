@@ -21,6 +21,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
+import promotionReducer from "@slices/promotionSlice/promotion";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 enableMapSet();
@@ -31,6 +32,7 @@ export const store = configureStore({
     user: userReducer,
     common: commonReducer,
     employee: employeeReducer,
+    promotion: promotionReducer,
     appConfig: appConfigReducer,
   },
   middleware: (getDefaultMiddleware) =>

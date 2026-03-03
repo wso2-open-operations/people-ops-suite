@@ -14,6 +14,9 @@
 // specific language governing permissions and limitations
 // under the License. 
 
+import promotion_app.database;
+import promotion_app.people;
+
 # User info custom type for Asgardeo token.
 public type CustomJwtPayload record {
     # User email 
@@ -25,5 +28,15 @@ public type CustomJwtPayload record {
 # Application specific role mapping.
 public type AppRoles record {|
     # Role for the employee
-    string EMPLOYEE;
+    string EMPLOYEE_ROLE;
+|};
+
+# Return record for user privileges.
+public type UserAppPrivilege record {|
+    #Application role list 
+    database:Role[] roles = [];
+    #functional lead permission
+    database:FunctionalLeadAccessLevels? functionalLeadAccessLevels = ();
+    #functional lead permission
+    people:Employee employeeData;
 |};

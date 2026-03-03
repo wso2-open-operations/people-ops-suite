@@ -14,12 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { lazy } from "react";
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import CommonPage from "../../layout/pages/CommonPage";
+import HistoryIcon from "@mui/icons-material/History";
+import PromotionHistory from "./panel/historyTimeline";
 
-const help = lazy(() => import("@view/help/help"));
-const history = lazy(() => import("@view/history/promotionHistory"));
-
-export const View = {
-  help,
-  history,
-};
+export default function Promotion() {
+  return (
+    <CommonPage
+      title="Promotion"
+      icon={<EmojiEventsIcon />}
+      commonPageTabs={[
+        {
+          tabTitle: "Promotion History",
+          tabPath: "promotion-history",
+          icon: <HistoryIcon />,
+          page: <PromotionHistory />,
+        },
+      ]}
+    />
+  );
+}

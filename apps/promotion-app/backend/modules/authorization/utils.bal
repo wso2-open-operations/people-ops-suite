@@ -14,6 +14,9 @@
 // specific language governing permissions and limitations
 // under the License. 
 
+import promotion_app.database;
+import promotion_app.people;
+
 # Helper function to user has roles.
 #
 # + requiredRoles - Required Role list
@@ -26,4 +29,33 @@ public isolated function checkPermissions(string[] requiredRoles, string[] userR
 
     final string[] & readonly userRolesReadOnly = userRoles.cloneReadOnly();
     return requiredRoles.every(role => userRolesReadOnly.indexOf(role) !is ());
+}
+
+# Split Lead Email.
+#
+# + email - User's email address
+# + return - Object containing user's roles, employee data, and access levels
+public isolated function getUserPrivileges(string email) returns UserAppPrivilege|error {
+
+    // Fetch user record from the database using the provided email.
+    database:User? applicationUser = check database:getUser(email = email);
+
+    // Retrieve corresponding employee data from the People service using the same email.
+    people:Employee employeeData = check people:getEmployee(workEmail = email);
+
+    UserAppPrivilege userAppPrivileges = {
+        employeeData
+    };
+
+    if applicationUser !is () {
+        userAppPrivileges.roles = applicationUser.roles;
+        userAppPrivileges.functionalLeadAccessLevels = applicationUser.functionalLeadAccessLevels;
+    }
+
+    // If the employee is marked as a lead, append the LEAD role to their roles list.
+    if employeeData.lead {
+        userAppPrivileges.roles.push(<database:Role>database:LEAD);
+    }
+
+    return userAppPrivileges;
 }

@@ -26,6 +26,7 @@ export const SnackMessage = {
     insufficientPrivileges: "Insufficient Privileges",
     fetchPromotion: "Unable to retrieve list of Promotion",
     fetchEmployees: "Unable to retrieve list of Employees",
+    fetchEmployeeHistory: "Unable to retrieve Employee History",
     fetchAttachments: "Unable to retrieve list of Attachments",
     fetchPromotionTypes: "Unable to retrieve list of Promotion Types",
     fetchAppConfigMessage: "Unable to retrieve app configurations",
