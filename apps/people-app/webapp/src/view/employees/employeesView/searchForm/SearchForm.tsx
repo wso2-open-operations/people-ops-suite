@@ -128,6 +128,13 @@ export function SearchForm() {
     dispatch(fetchCompanies());
   }, [dispatch]);
 
+  const initialCompanyId = useRef<number | undefined>(filterPayload.filters.companyId);
+  useEffect(() => {
+    if (initialCompanyId.current) {
+      dispatch(fetchOffices({ id: initialCompanyId.current }));
+    }
+  }, [dispatch, initialCompanyId]);
+
   const filterRef = useRef<EmployeeSearchPayload>(filterPayload);
   useEffect(() => {
     filterRef.current = filterPayload;
