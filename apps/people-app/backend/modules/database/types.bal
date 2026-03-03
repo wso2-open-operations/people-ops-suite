@@ -78,6 +78,7 @@ public type UserInfo record {|
     int[] privileges = [];
 |};
 
+# TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|
     *EmployeeBasicInfo;
@@ -423,7 +424,6 @@ public type Office record {|
     # Office name
     string name;
     # Office location
-    @sql:Column {name: "location"}
     string location;
     # Working locations
     @sql:Column {name: "working_locations"}
