@@ -185,11 +185,21 @@ public isolated function getDesignations(int? careerFunctionId = ()) returns Des
         select designation;
 }
 
+# Get companies.
+#
+# + return - Companies
+public isolated function getCompanies() returns Company[]|error {
+    stream<Company, error?> companyStream = databaseClient->query(getCompaniesQuery());
+    return from Company company in companyStream
+        select company;
+}
+
 # Get offices.
 #
+# + companyId - Company ID (optional)
 # + return - Offices
-public isolated function getOffices() returns Office[]|error {
-    stream<Office, error?> officeStream = databaseClient->query(getOfficesQuery());
+public isolated function getOffices(int? companyId = ()) returns Office[]|error {
+    stream<Office, error?> officeStream = databaseClient->query(getOfficesQuery(companyId));
     return from Office office in officeStream
         select office;
 }

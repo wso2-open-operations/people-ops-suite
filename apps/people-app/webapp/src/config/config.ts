@@ -63,6 +63,7 @@ export const AppConfig = {
     businessUnits: SERVICE_BASE_URL + "/business-units",
     careerFunctions: SERVICE_BASE_URL + "/career-functions",
     designations: SERVICE_BASE_URL + "/designations",
+    companies: SERVICE_BASE_URL + "/companies",
     employmentTypes: SERVICE_BASE_URL + "/employment-types",
     teams: SERVICE_BASE_URL + "/teams",
     subTeams: SERVICE_BASE_URL + "/sub-teams",
