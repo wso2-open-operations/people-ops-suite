@@ -27,22 +27,20 @@ import {
   selectIsParCycleOngoing,
   selectParCycleState,
   selectIsQuotaPending,
-} from "@slices/parCycleSlice";
-import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice";
+} from "@slices/parCycleSlice/parCycle";
+import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice/meta";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { ParCycleStatus, RequestState } from "@utils/types";
-import { snackMessages, uiMessages } from "@config/constant";
+import { SnackMessage, uiMessages } from "@config/constant";
 
-import { FormContainer } from "../../components/common/FormContainer";
-import Title from "../../components/common/Title";
-import { NewThemeWrapper } from "../../theme/NewThemeWrapper";
-import { LoadingEffect } from "@components/ui/Loading";
+import { FormContainer } from "../../component/common/FormContainer";
+import Title from "../../component/common/Title";
+import { LoadingEffect } from "@component/ui/Loading";
 import { ParCreationForm } from "..//adminPortal/components/ParCreationForm";
 import { OrgSummary } from "..//adminPortal/components/OrgSummary";
 import { AssignQuota } from "..//adminPortal/components/AssignQuota";
-import { Padding } from "@mui/icons-material";
 
-const AdminOngoingContent = () => {
+export default function AdminOngoingView() {
   const isParCycleOngoing = useAppSelector(selectIsParCycleOngoing);
   const globalConfigStatus = useAppSelector(selectConfigStatus);
   const parCyclesLoadingState = useAppSelector(selectParCycleState);
@@ -87,7 +85,7 @@ const AdminOngoingContent = () => {
       } catch (error) {
         dispatch(
           enqueueSnackbarMessage({
-            message: snackMessages.error.common,
+            message: SnackMessage.error.common,
             type: "error",
           })
         );
@@ -168,11 +166,3 @@ const AdminOngoingContent = () => {
     </Fade>
   );
 };
-
-export default function AdminOngoingView() {
-  return (
-    <NewThemeWrapper>
-      <AdminOngoingContent />
-    </NewThemeWrapper>
-  );
-}

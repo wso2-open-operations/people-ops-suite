@@ -38,18 +38,17 @@ import {
   fetchParCycleById,
   selectAllCycles,
   selectParCycleState,
-} from "@slices/parCycleSlice";
+} from "@slices/parCycleSlice/parCycle";
 
 import { RequestState } from "@utils/types";
 import { shortDateFormat, uiMessages } from "@config/constant";
 
-import { FormContainer } from "../../components/common/FormContainer";
-import Title from "../../components/common/Title";
-import { NewThemeWrapper } from "../../theme/NewThemeWrapper";
-import { LoadingEffect } from "@components/ui/Loading";
+import { FormContainer } from "../../component/common/FormContainer";
+import Title from "../../component/common/Title";
+import { LoadingEffect } from "@component/ui/Loading";
 import { OrgSummary } from "..//adminPortal/components/OrgSummary";
 
-const AdminHistoryContent = () => {
+export default function AdminHistoryView() {
   const dispatch = useAppDispatch();
   const allCycles = useAppSelector(selectAllCycles);
   const cycleLoadingState = useAppSelector(selectParCycleState);
@@ -177,11 +176,3 @@ const AdminHistoryContent = () => {
     </Fade>
   );
 };
-
-export default function AdminHistoryView() {
-  return (
-    <NewThemeWrapper>
-      <AdminHistoryContent />
-    </NewThemeWrapper>
-  );
-}
