@@ -57,7 +57,7 @@ import {
 import {
   CompanyAndOfficeFilters,
   CompanyAndOfficeSelection,
-} from "./LocationAndOfficeFilters";
+} from "./CompanyAndOfficeFilters";
 import {
   OrganizationSelection,
   OrganizationTreeFilters,
