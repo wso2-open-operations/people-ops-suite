@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -26,7 +35,7 @@ import {
 import { DataGrid, GridRenderCellParams, GridToolbar, GridToolbarExportContainer } from "@mui/x-data-grid";
 import { useLocation } from "react-router-dom";
 import { alpha } from "@mui/material/styles";
-import useDebounce from './useDebounce';
+import { useDebounce } from "use-debounce";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -45,23 +54,24 @@ import {
 } from "@slices/metaSlice/meta";
 import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
 import { ParCycleSettingsForm } from "./ParCycleSettingsForm";
-import { CompletionStatusCard } from "@components/common/CompletionStatusCard";
-import { CustomModal } from "@components/common/CustomModal";
-import { CycleDatesStepper } from "@components/common/CycleDatesStepper";
-import { LoadingEffect } from "@components/ui/Loading";
-import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
-import { TeamSummary } from "@views/leadPortal/components/TeamSummary";
-import { Review } from "@views/leadPortal/components/Review";
-import { Report } from "@views/adminPortal/components/Report";
-import { Completion } from "@views/adminPortal/components/Completion";
+import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { LoadingEffect } from "@component/ui/Loading";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+// import { TeamSummary } from "@views/leadPortal/components/TeamSummary";
+// import { Review } from "@views/leadPortal/components/Review";
+// import { Report } from "@views/adminPortal/components/Report";
+// import { Completion } from "@views/adminPortal/components/Completion";
 import { calculateAllTeamsSummary } from "@utils/utils";
-import { ParThreeSixtyReviewStatus, RequestState, Team } from "@utils/types";
+import { RequestState,  } from "@utils/types";
+import { Team } from "@slices/teamSlice/team";
 import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { shortDateFormat } from "@config/constant";
 import dayjs from "dayjs";
 import { selectUserEmail } from "@slices/authSlice/auth";
-import NoDataView from "@components/common/NoDataView";
+import NoDataView from "@component/common/NoDataView";
 import SearchIcon from "@mui/icons-material/Search";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -76,7 +86,7 @@ import UpdateIcon from "@mui/icons-material/Update";
 import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import SummarizedParHistoryView from "./SummarizedParHistoryView";
-import SpecialRatingAllocationView from "@components/common/SpecialRatingAllocationView";
+import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
 import EmployeeSyncModal from "@views/leadPortal/components/EmployeeSyncModal";
 
 interface DashboardProps {
@@ -407,7 +417,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
             }}
             onClick={() => handleEmployeeSelect(params.row, false)}
           >
-            {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
+            {/* {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
               <Tooltip arrow title="View" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
                 <VisibilityIcon />
               </Tooltip>
@@ -415,7 +425,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               <Tooltip arrow title="Review" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
                 <RateReviewIcon />
               </Tooltip>
-            )}
+            )} */}
           </IconButton>
           <IconButton
             sx={{
@@ -609,7 +619,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
           {selectedTeamId === null && !reviewEmployeeView && !reportView && !isParCompletionViewOpen && (
             <Box flexDirection={"column"} height={"100%"}>
               <Grid container mb={1}>
-                <Grid item xs={12} sm={6} alignContent={"center"}>
+                <Grid size={{ xs: 12, sm: 6 }} alignContent={"center"}>
                   {isAdminHistoryViewOn && (
                     <Box sx={{ display: "inline" }}>
                       <IconButton aria-label="back" color="primary" onClick={closeOrgSummaryView} sx={{ mb: 1, mr: 1 }}>
@@ -633,10 +643,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                   </Typography>
                 </Grid>
                 <Grid
-                  item
+                  size={{ xs: 12, sm: 6 }}
                   pr={2}
-                  xs={12}
-                  sm={6}
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -709,7 +717,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               <>
                 <Card variant="outlined" sx={{ padding: 2 }}>
                   <Grid container>
-                    <Grid item xs={12} sm={12} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+                    <Grid size={{ xs: 12, sm: 12 }} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
                       <Typography variant="h5">Completion Status</Typography>
                       <Box>
                         <Tooltip
@@ -736,21 +744,21 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                     </Grid>
                   </Grid>
                   <Grid container spacing={10}>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }} >
                       <CompletionStatusCard
                         name="Employee PAR"
                         completed={filteredSummary.totalEmployeeParComplete}
                         total={filteredSummary.totalEmployees}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }} >
                       <CompletionStatusCard
                         name="Lead's PAR"
                         completed={filteredSummary.totalLeadReviewComplete}
                         total={filteredSummary.totalEmployees}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid size={{ xs: 12, sm: 4 }}>
                       <CompletionStatusCard
                         name="F2F"
                         completed={filteredSummary.totalF2fComplete}
