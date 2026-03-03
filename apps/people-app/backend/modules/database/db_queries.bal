@@ -538,7 +538,6 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
 # Get offices query.
 #
 # + companyId - Company ID (optional)
-# + companyId - Company ID (optional)
 # + return - Offices query
 isolated function getOfficesQuery(int? companyId = ()) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
