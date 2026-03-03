@@ -170,8 +170,6 @@ public type EmployeeFilters record {|
     string? managerEmail = ();
     # Company ID
     int? companyId = ();
-    # Employment location
-    string? location = ();
     # Office ID
     int? officeId = ();
     # Business unit ID
