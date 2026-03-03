@@ -75,7 +75,7 @@ export function CompanyAndOfficeFilters({
     >
       <Grid container direction="column">
         <Typography variant="h5" color="primary">
-          Locations and Offices
+          Company and Offices
         </Typography>
       </Grid>
 
