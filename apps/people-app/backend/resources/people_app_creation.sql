@@ -316,8 +316,6 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`company_id`) REFERENCES `company` (`id`),
   CONSTRAINT `fk_emp_office_company`
     FOREIGN KEY (`company_id`, `office_id`) REFERENCES `office` (`company_id`, `id`),
-  CONSTRAINT `fk_emp_office`
-    FOREIGN KEY (`office_id`) REFERENCES `office` (`id`),
   CONSTRAINT `fk_emp_team`
     FOREIGN KEY (`team_id`) REFERENCES `team` (`id`),
   CONSTRAINT `fk_emp_subteam`

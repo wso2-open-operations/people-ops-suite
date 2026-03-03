@@ -70,7 +70,6 @@ CREATE TABLE `companies_allowed_locations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 ALTER TABLE `employee` DROP COLUMN `employment_location`;
-ALTER TABLE `employee` MODIFY COLUMN `office_id` INT NULL;
 
 ALTER TABLE `employee` 
 ADD COLUMN `company_id` INT NOT NULL DEFAULT 1 AFTER `designation_id`;
@@ -81,6 +80,9 @@ ADD KEY `idx_office_company_id_id` (`company_id`, `id`);
 ALTER TABLE `employee`
 ADD CONSTRAINT `fk_emp_company`
   FOREIGN KEY (`company_id`) REFERENCES `company` (`id`);
+
+ALTER TABLE `employee`
+DROP FOREIGN KEY IF EXISTS `fk_emp_office`;
 
 ALTER TABLE `employee`
 ADD CONSTRAINT `fk_emp_office_company`
