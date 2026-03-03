@@ -411,7 +411,6 @@ public type Company record {|
     # Company prefix
     string prefix;
     # Company location
-    @sql:Column {name: "location"}
     string location;
     # Allowed locations
     string? allowedLocations;
