@@ -52,82 +52,79 @@ const CommonPage = ({ title, commonPageTabs, icon }: CommonPageProps) => {
     setValue(newValue);
   };
 
+  const isSingleTab = commonPageTabs.length === 1;
+
   return (
     <Box
       sx={{
         height: "100%",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 0.5,
-          alignItems: "center",
-        }}
-      >
-        {icon && <Box sx={{ ml: 0.8, mt: 0.5 }}>{icon}</Box>}
-        <Stack
-          sx={{
-            p: 0.8,
-          }}
-          flexDirection="row"
-          gap={1}
+      {isSingleTab ? (
+        <Box
+          sx={(theme) => ({
+            mt: 0.7,
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0px 3px 10px rgba(120, 125, 129, 0.5)"
+                : 10,
+            overflow: "auto",
+            height: "calc(100% - 50px)",
+            background: "background.paper",
+            borderRadius: 3,
+          })}
         >
-          <Typography variant="h5" fontWeight="bold">
-            {title}
-          </Typography>
-          <Typography variant="h6" color={"secondary.main"}>
-            /{searchParams.get("tab")}
-          </Typography>
-        </Stack>
-      </Box>
-
-      {/* -------Tabs--------- */}
-      <Stack flexDirection="row" sx={{ mt: 0.7 }}>
-        <Tabs
-          value={value}
-          onChange={handleChange}
-          sx={{
-            alignItems: "center",
-            "&.MuiTabs-root": {
-              minHeight: 0,
-              borderTopLeftRadius: 5,
-            },
-            ".MuiTab-root": {
-              borderTopLeftRadius: 5,
-              borderTopRightRadius: 5,
-            },
-            "& .MuiTabs-indicator": {
-              display: "none",
-            },
-          }}
-        >
+          {commonPageTabs[0].page}
+        </Box>
+      ) : (
+        <>
+          {/* -------Tabs--------- */}
+          <Stack flexDirection="row" sx={{ mt: 0.7 }}>
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              sx={{
+                alignItems: "center",
+                "&.MuiTabs-root": {
+                  minHeight: 0,
+                  borderTopLeftRadius: 5,
+                },
+                ".MuiTab-root": {
+                  borderTopLeftRadius: 5,
+                  borderTopRightRadius: 5,
+                },
+                "& .MuiTabs-indicator": {
+                  display: "none",
+                },
+              }}
+            >
+              {commonPageTabs.map((tab, index) => (
+                <Tab
+                  key={index}
+                  icon={tab.icon}
+                  label={tab.tabTitle}
+                  onClick={() => setSearchParams({ tab: tabs[index] })}
+                  iconPosition="start"
+                  sx={(theme) => ({
+                    minHeight: 0,
+                    lineHeight: 0,
+                    py: 0.7,
+                    background:
+                      tabs[index] === searchParams.get("tab")
+                        ? alpha(theme.palette.primary.light, 0.2)
+                        : "inherit",
+                  })}
+                />
+              ))}
+            </Tabs>
+          </Stack>
           {commonPageTabs.map((tab, index) => (
-            <Tab
-              key={index}
-              icon={tab.icon}
-              label={tab.tabTitle}
-              onClick={() => setSearchParams({ tab: tabs[index] })}
-              iconPosition="start"
-              sx={(theme) => ({
-                minHeight: 0,
-                lineHeight: 0,
-                py: 0.7,
-                background:
-                  tabs[index] === searchParams.get("tab")
-                    ? alpha(theme.palette.primary.light, 0.2)
-                    : "inherit",
-              })}
-            />
+            <TabPanel key={tab.tabPath || index} value={value} index={index}>
+              {tab.page}
+            </TabPanel>
           ))}
-        </Tabs>
-      </Stack>
-      {commonPageTabs.map((tab, index) => (
-        <TabPanel key={tab.tabPath || index} value={value} index={index}>
-          {tab.page}
-        </TabPanel>
-      ))}
+        </>
+      )}
     </Box>
   );
 };
