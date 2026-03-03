@@ -17,30 +17,31 @@
 import { Autocomplete, Box, Grid, Typography } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import {
+  Company,
   Office
 } from "@root/src/slices/organizationSlice/organization";
 
-export type LocationAndOfficeSelection = {
+export type CompanyAndOfficeSelection = {
+  companyId?: number;
   officeId?: number;
-  location?: string;
 };
 
-export type LocationAndOfficeFiltersProps = {
-  value: LocationAndOfficeSelection;
+export type CompanyAndOfficeFiltersProps = {
+  value: CompanyAndOfficeSelection;
   offices: Office[];
-  locations: string[];
+  companies: Company[];
 
   onChangeOffice: (selected: Office | null) => void;
-  onChangeLocation: (selected: string | null) => void;
+  onChangeCompany: (selected: Company | null) => void;
 };
 
-export function LocationAndOfficeFilters({
+export function CompanyAndOfficeFilters({
   value,
   offices,
-  locations,
+  companies,
   onChangeOffice,
-  onChangeLocation
-}: LocationAndOfficeFiltersProps) {
+  onChangeCompany,
+}: CompanyAndOfficeFiltersProps) {
   const treeItemSx = {
     position: "relative",
     pl: 2,
@@ -80,18 +81,18 @@ export function LocationAndOfficeFilters({
 
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
-          <Autocomplete<string, false, false, false>
-            options={locations}
-            getOptionLabel={(location) => location}
+          <Autocomplete<Company, false, false, false>
+            options={companies}
+            getOptionLabel={(company: Company) => company.name}
             value={
-              locations.find((l) => l === value.location) ?? null
+              companies.find((company: Company) => company.id === value.companyId) ?? null
             }
-            onChange={(_, selected) => onChangeLocation(selected)}
+            onChange={(_, selected) => onChangeCompany(selected)}
             renderInput={(params) => (
               <BaseTextField
                 {...params}
                 size="small"
-                label="Location"
+                label="Company"
                 sx={{ mt: 1 }}
               />
             )}
@@ -101,10 +102,10 @@ export function LocationAndOfficeFilters({
             <Box sx={treeItemSx}>
               <Autocomplete<Office, false, false, false>
                 options={offices}
-                getOptionLabel={(o) => o.name}
-                value={offices.find((d) => d.id === value.officeId) ?? null}
+                getOptionLabel={(office: Office) => office.name}
+                value={offices.find((office: Office) => office.id === value.officeId) ?? null}
                 onChange={(_, selected) => onChangeOffice(selected)}
-                disabled={!value.location}
+                disabled={!value.companyId}
                 renderInput={(params) => (
                   <BaseTextField
                     {...params}
