@@ -75,6 +75,13 @@ ALTER TABLE `employee` MODIFY COLUMN `office_id` INT NULL;
 ALTER TABLE `employee` 
 ADD COLUMN `company_id` INT NOT NULL DEFAULT 1 AFTER `designation_id`;
 
+ALTER TABLE `office`
+ADD KEY `idx_office_company_id_id` (`company_id`, `id`);
+
 ALTER TABLE `employee`
 ADD CONSTRAINT `fk_emp_company`
   FOREIGN KEY (`company_id`) REFERENCES `company` (`id`);
+
+ALTER TABLE `employee`
+ADD CONSTRAINT `fk_emp_office_company`
+  FOREIGN KEY (`company_id`, `office_id`) REFERENCES `office` (`company_id`, `id`);

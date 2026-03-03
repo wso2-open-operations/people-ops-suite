@@ -158,6 +158,7 @@ CREATE TABLE `office` (
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
+  KEY `idx_office_company_id_id` (`company_id`, `id`),
   CONSTRAINT `fk_office_company`
     FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
@@ -313,6 +314,8 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
   CONSTRAINT `fk_emp_company`
     FOREIGN KEY (`company_id`) REFERENCES `company` (`id`),
+  CONSTRAINT `fk_emp_office_company`
+    FOREIGN KEY (`company_id`, `office_id`) REFERENCES `office` (`company_id`, `id`),
   CONSTRAINT `fk_emp_office`
     FOREIGN KEY (`office_id`) REFERENCES `office` (`id`),
   CONSTRAINT `fk_emp_team`
