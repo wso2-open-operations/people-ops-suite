@@ -215,8 +215,10 @@ export function SearchForm() {
     return employeeState.managers.map((manager) => manager.workEmail);
   }, [employeeState.managers]);
 
-  // Configurations for the filter chips in the SearchForm.
-  // When adding a new filter chip to the SearchForm, add its configuration to this array
+  /**
+   * Configurations for the filter chips in the SearchForm.
+   * When adding a new filter chip to the SearchForm, add its configuration to this array.
+   */
   const filterChipConfigs = useMemo<ChipConfig[]>(
     () => [
       {
