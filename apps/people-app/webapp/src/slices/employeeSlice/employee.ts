@@ -111,7 +111,7 @@ export type Filters = {
   unitId?: number;
   careerFunctionId?: number;
   designationId?: number;
-  location?: string;
+  companyId?: number;
   officeId?: number;
   employmentTypeId?: number;
   managerEmail?: string;

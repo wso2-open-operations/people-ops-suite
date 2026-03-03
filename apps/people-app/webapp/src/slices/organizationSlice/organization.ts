@@ -575,6 +575,7 @@ export const organizationSlice = createSlice({
       })
       .addCase(fetchOffices.pending, (state) => {
         state.state = State.loading;
+        state.offices = [];
         state.stateMessage = "Fetching offices...";
         state.errorMessage = null;
       })

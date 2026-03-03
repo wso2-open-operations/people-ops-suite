@@ -48,10 +48,12 @@ import {
 import {
   BusinessUnit,
   CareerFunction,
+  Company,
   Designation,
   EmploymentType,
   fetchBusinessUnits,
   fetchCareerFunctions,
+  fetchCompanies,
   fetchDesignations,
   fetchEmploymentTypes,
   fetchOffices,
@@ -68,8 +70,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect, FilterChipSelectProps } from "./FilterChipSelect";
 import { FilterDrawer } from "./FilterDrawer";
 
-type ChipMeta<K extends string, T> =
-  { kind: K;} & FilterChipSelectProps<T>;
+type ChipMeta<K extends string, T> = { kind: K } & FilterChipSelectProps<T>;
 
 // Add the new filter chip to this union type when a new filter chip is added in the SearchForm
 type ChipConfig =
@@ -80,9 +81,9 @@ type ChipConfig =
   | ChipMeta<"careerFunction", CareerFunction>
   | ChipMeta<"designation", Designation>
   | ChipMeta<"manager", string>
+  | ChipMeta<"company", Company>
   | ChipMeta<"office", Office>
   | ChipMeta<"employmentType", EmploymentType>
-  | ChipMeta<"location", string>
   | ChipMeta<"employeeStatus", EmployeeStatus>
   | ChipMeta<"gender", string>;
 
@@ -103,6 +104,7 @@ export function SearchForm() {
     careerFunctions,
     designations,
     employmentTypes,
+    companies,
     offices,
   } = useAppSelector((state) => state.organization);
 
@@ -123,16 +125,15 @@ export function SearchForm() {
     dispatch(fetchDesignations({}));
     dispatch(fetchBusinessUnits());
     dispatch(fetchCareerFunctions());
-    dispatch(fetchOffices());
+    dispatch(fetchCompanies());
   }, [dispatch]);
 
-  const locations: string[] = useMemo(() => {
-    return Array.from(new Set(offices.map((office) => office.location)));
-  }, [offices]);
-
-  const filteredOfficesByLocation = useMemo(() => {
-    return offices.filter((o) => o.location === filterPayload.filters.location);
-  }, [offices, filterPayload.filters.location]);
+  const initialCompanyId = useRef<number | undefined>(filterPayload.filters.companyId);
+  useEffect(() => {
+    if (initialCompanyId.current) {
+      dispatch(fetchOffices({ id: initialCompanyId.current }));
+    }
+  }, [dispatch, initialCompanyId]);
 
   const filterRef = useRef<EmployeeSearchPayload>(filterPayload);
   useEffect(() => {
@@ -192,7 +193,7 @@ export function SearchForm() {
       gender,
       employmentTypeId,
       managerEmail,
-      location,
+      companyId,
       officeId,
     } = filters;
 
@@ -206,20 +207,27 @@ export function SearchForm() {
       designationId ||
       employmentTypeId ||
       managerEmail ||
-      location ||
+      companyId ||
       officeId,
     );
   }
 
+  // Check if any of the filters are active
   const active = useMemo(
     () => hasAnyActiveFilters(filterPayload.filters),
     [filterPayload.filters],
   );
+  // Derive manager emails
   const managerEmails = useMemo(() => {
     return employeeState.managers.map((manager) => manager.workEmail);
   }, [employeeState.managers]);
 
-  const filterChipConfigs = useMemo<ChipConfig[]>(() => [
+  /**
+   * Configurations for the filter chips in the SearchForm.
+   * When adding a new filter chip to the SearchForm, add its configuration to this array.
+   */
+  const filterChipConfigs = useMemo<ChipConfig[]>(
+    () => [
       {
         kind: "businessUnit",
         label: "Business Unit",
@@ -357,30 +365,33 @@ export function SearchForm() {
           updateSearchPayload({ filters: { designationId: undefined } }),
       },
       {
-        kind: "location",
-        label: "Location",
-        value: filterPayload.filters.location,
-        options: locations,
-        getLabel: (location: string) => location,
-        onChange: (location: string) => {
+        kind: "company",
+        label: "Company",
+        value: companies.find(
+          (company) => company.id === filterPayload.filters.companyId,
+        )?.name,
+        options: companies,
+        getLabel: (company: Company) => company.name,
+        onChange: (company: Company) => {
           updateSearchPayload({
-            filters: { location, officeId: undefined },
+            filters: { companyId: company.id, officeId: undefined },
           });
+          dispatch(fetchOffices({ id: company.id }));
         },
         onClear: () =>
           updateSearchPayload({
-            filters: { location: undefined, officeId: undefined },
+            filters: { companyId: undefined, officeId: undefined },
           }),
       },
       {
         kind: "office",
         label: "Office",
-        value: filteredOfficesByLocation.find(
+        value: offices.find(
           (office) => office.id === filterPayload.filters.officeId,
         )?.name,
-        parent: "Location",
-        noParentSelected: !filterPayload.filters.location,
-        options: filteredOfficesByLocation,
+        parent: "Company",
+        noParentSelected: !filterPayload.filters.companyId,
+        options: offices,
         getLabel: (office: Office) => office.name,
         onChange: (office: Office) => {
           updateSearchPayload({ filters: { officeId: office.id } });
@@ -439,32 +450,34 @@ export function SearchForm() {
           updateSearchPayload({ filters: { gender } }),
         onClear: () => updateSearchPayload({ filters: { gender: undefined } }),
       },
-    ], [
-    businessUnits,
-    careerFunctions,
-    designations,
-    dispatch,
-    employmentTypes,
-    filterPayload.filters.businessUnitId,
-    filterPayload.filters.careerFunctionId,
-    filterPayload.filters.designationId,
-    filterPayload.filters.employeeStatus,
-    filterPayload.filters.employmentTypeId,
-    filterPayload.filters.gender,
-    filterPayload.filters.location,
-    filterPayload.filters.managerEmail,
-    filterPayload.filters.officeId,
-    filterPayload.filters.subTeamId,
-    filterPayload.filters.teamId,
-    filterPayload.filters.unitId,
-    filteredOfficesByLocation,
-    locations,
-    managerEmails,
-    subTeams,
-    teams,
-    units,
-    updateSearchPayload,
-  ]);
+    ],
+    [
+      businessUnits,
+      careerFunctions,
+      companies,
+      designations,
+      dispatch,
+      employmentTypes,
+      filterPayload.filters.businessUnitId,
+      filterPayload.filters.careerFunctionId,
+      filterPayload.filters.companyId,
+      filterPayload.filters.designationId,
+      filterPayload.filters.employeeStatus,
+      filterPayload.filters.employmentTypeId,
+      filterPayload.filters.gender,
+      filterPayload.filters.managerEmail,
+      filterPayload.filters.officeId,
+      filterPayload.filters.subTeamId,
+      filterPayload.filters.teamId,
+      filterPayload.filters.unitId,
+      managerEmails,
+      offices,
+      subTeams,
+      teams,
+      units,
+      updateSearchPayload,
+    ],
+  );
 
   const assertNever = (x: never): never => {
     throw new Error("Unhandled chip kind");
@@ -620,7 +633,9 @@ export function SearchForm() {
               switch (config.kind) {
                 case "businessUnit": {
                   const { kind, ...props } = config;
-                  return <FilterChipSelect<BusinessUnit> key={kind} {...props} />;
+                  return (
+                    <FilterChipSelect<BusinessUnit> key={kind} {...props} />
+                  );
                 }
                 case "team": {
                   const { kind, ...props } = config;
@@ -636,25 +651,36 @@ export function SearchForm() {
                 }
                 case "careerFunction": {
                   const { kind, ...props } = config;
-                  return <FilterChipSelect<CareerFunction> key={kind} {...props} />;
+                  return (
+                    <FilterChipSelect<CareerFunction> key={kind} {...props} />
+                  );
                 }
                 case "designation": {
                   const { kind, ...props } = config;
-                  return <FilterChipSelect<Designation> key={kind} {...props} />;
+                  return (
+                    <FilterChipSelect<Designation> key={kind} {...props} />
+                  );
                 }
                 case "employmentType": {
                   const { kind, ...props } = config;
-                  return <FilterChipSelect<EmploymentType> key={kind} {...props} />;
+                  return (
+                    <FilterChipSelect<EmploymentType> key={kind} {...props} />
+                  );
                 }
                 case "employeeStatus": {
                   const { kind, ...props } = config;
-                  return <FilterChipSelect<EmployeeStatus> key={kind} {...props} />;
+                  return (
+                    <FilterChipSelect<EmployeeStatus> key={kind} {...props} />
+                  );
+                }
+                case "company": {
+                  const { kind, ...props } = config;
+                  return <FilterChipSelect<Company> key={kind} {...props} />;
                 }
                 case "office": {
                   const { kind, ...props } = config;
                   return <FilterChipSelect<Office> key={kind} {...props} />;
                 }
-                case "location":
                 case "manager":
                 case "gender": {
                   const { kind, ...props } = config;
@@ -723,8 +749,8 @@ export function SearchForm() {
         designations={designations}
         employmentTypes={employmentTypes}
         managerEmails={managerEmails}
-        locations={locations}
-        filteredOfficesByLocation={filteredOfficesByLocation}
+        companies={companies}
+        offices={offices}
       />
     </Box>
   );

@@ -35,9 +35,11 @@ import { EmployeeSearchPayload, EmployeeStatus, Filters } from "@slices/employee
 import {
   BusinessUnit,
   CareerFunction,
+  Company,
   Designation,
   EmploymentType,
   fetchDesignations,
+  fetchOffices,
   fetchSubTeams,
   fetchTeams,
   fetchUnits,
@@ -53,9 +55,9 @@ import {
   CareerFunctionsAndDesignationsSelection,
 } from "./CareerFunctionAndDesignationFilters";
 import {
-  LocationAndOfficeFilters,
-  LocationAndOfficeSelection,
-} from "./LocationAndOfficeFilters";
+  CompanyAndOfficeFilters,
+  CompanyAndOfficeSelection,
+} from "./CompanyAndOfficeFilters";
 import {
   OrganizationSelection,
   OrganizationTreeFilters,
@@ -76,8 +78,8 @@ type FilterDrawerProps = {
   designations: Designation[];
   employmentTypes: EmploymentType[];
   managerEmails: string[];
-  locations: string[];
-  filteredOfficesByLocation: Office[];
+  companies: Company[];
+  offices: Office[];
 };
 
 export function FilterDrawer({
@@ -95,8 +97,8 @@ export function FilterDrawer({
   designations,
   employmentTypes,
   managerEmails,
-  locations,
-  filteredOfficesByLocation,
+  companies,
+  offices,
 }: FilterDrawerProps) {
   const dispatch = useAppDispatch();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
@@ -223,17 +225,18 @@ export function FilterDrawer({
               <Divider />
             </Grid>
             <Grid item>
-              <LocationAndOfficeFilters
+              <CompanyAndOfficeFilters
                 value={
                   {
-                    location: draft.filters.location,
+                    companyId: draft.filters.companyId,
                     officeId: draft.filters.officeId,
-                  } as LocationAndOfficeSelection
+                  } as CompanyAndOfficeSelection
                 }
-                locations={locations}
-                offices={filteredOfficesByLocation}
-                onChangeLocation={(selected: string | null) => {
-                  set({ location: selected  || undefined, officeId: undefined });
+                companies={companies}
+                offices={offices}
+                onChangeCompany={(selected: Company | null) => {
+                  set({ companyId: selected?.id || undefined, officeId: undefined });
+                  if (selected?.id) dispatch(fetchOffices({ id: selected.id }));
                 }}
                 onChangeOffice={(selected: Office | null) => {
                   set({ officeId: selected?.id });
