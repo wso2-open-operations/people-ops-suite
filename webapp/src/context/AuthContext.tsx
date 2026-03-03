@@ -23,7 +23,8 @@ import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
 import { redirectUrl } from "@config/constant";
-import { loadPrivileges, setUserAuthData } from "@slices/authSlice/auth";
+import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
+import { fetchAppConfig } from "@slices/configSlice/config";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { ApiService } from "@utils/apiService";
@@ -88,11 +89,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   }, []);
 
   const setupAuthenticatedUser = async () => {
-    const [userInfo, idToken, decodedIdToken, accessToken] = await Promise.all([
+    const [userInfo, idToken, decodedIdToken] = await Promise.all([
       getBasicUserInfo(),
       getIDToken(),
       getDecodedIDToken(),
-      getAccessToken(),
     ]);
 
     dispatch(
@@ -153,7 +153,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const refreshToken = async (): Promise<{ accessToken: string }> => {
     if (state.isAuthenticated) {
       const accessToken = await getIDToken();
-      return { accessToken }
+      return { accessToken };
     }
 
     try {
@@ -161,7 +161,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       const accessToken = await getAccessToken();
       return { accessToken };
     } catch (error) {
-      console.error("Token refresh failed: ", error)
+      console.error("Token refresh failed: ", error);
       await appSignOut();
       throw error;
     }
