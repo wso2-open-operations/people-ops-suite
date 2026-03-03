@@ -130,7 +130,6 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
             e.work_email AS workEmail,
             e.employee_thumbnail AS employeeThumbnail,
             e.epf AS epf,
-            e.employment_location AS employmentLocation,
             e.work_location AS workLocation,
             e.start_date AS startDate,
             e.manager_email AS managerEmail,
@@ -156,6 +155,8 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
             e.sub_team_id AS subTeamId,
             u.name AS unit,
             e.unit_id AS unitId,
+            c.name AS company,
+            e.company_id AS companyId,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -180,11 +181,11 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
             INNER JOIN personal_info pi ON pi.id = e.personal_info_id
             INNER JOIN employment_type et ON et.id = e.employment_type_id
             INNER JOIN designation d ON d.id = e.designation_id
-            INNER JOIN office o ON o.id = e.office_id
+            INNER JOIN company c ON c.id = e.company_id
+            LEFT JOIN office o ON o.id = e.office_id
             INNER JOIN business_unit bu ON bu.id = e.business_unit_id
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
-            INNER JOIN company c ON c.id = o.company_id
             LEFT JOIN unit u ON u.id = e.unit_id
         `;
 
@@ -205,15 +206,12 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
     if payload.filters.managerEmail is string {
         filters.push(`LOWER(e.manager_email) LIKE LOWER(CONCAT('%', ${payload.filters.managerEmail}, '%'))`);
     }
-    if payload.filters.location is string {
-        filters.push(`LOWER(e.employment_location) LIKE LOWER(CONCAT('%', ${payload.filters.location}, '%'))`);
-    }
 
     if payload.filters.nicOrPassport is int|string {
         filters.push(`pi.nic_or_passport = ${payload.filters.nicOrPassport}`);
     }
 
-    appendIntFilter(filters, payload.filters.companyId, `o.company_id = ${payload.filters.companyId}`);
+    appendIntFilter(filters, payload.filters.companyId, `e.company_id = ${payload.filters.companyId}`);
     appendIntFilter(filters, payload.filters.officeId, `e.office_id = ${payload.filters.officeId}`);
     appendIntFilter(filters, payload.filters.designationId, `e.designation_id = ${payload.filters.designationId}`);
     appendIntFilter(filters, payload.filters.careerFunctionId, `d.career_function_id = ${payload.filters.careerFunctionId}`);
@@ -284,8 +282,8 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         LEFT JOIN office o ON e.office_id = o.id
         INNER JOIN company c ON c.id = e.company_id
         INNER JOIN team t ON e.team_id = t.id
+        INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
-        LEFT JOIN sub_team st ON e.sub_team_id = st.id
         LEFT JOIN unit u ON e.unit_id = u.id
     WHERE
         e.work_email = ${workEmail}
