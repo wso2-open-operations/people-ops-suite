@@ -91,6 +91,8 @@ export enum ParEmployeeStatus {
   SHARED_BLOCKED = "SHARED_BLOCKED",
 }
 
+export const parRatingNotAssigned = "NOT_ASSIGNED";
+
 export interface ThreeSixtyReview {
   reviewerEmail: string;
   reviewRating: string;

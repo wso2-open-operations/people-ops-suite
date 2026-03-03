@@ -7,19 +7,21 @@
 
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { UserState } from "@slices/userSlice/user";
+import { UserState } from "../userSlice/user";
 import {
   Role,
   AuthState,
   AuthData,
   AuthFlowState,
   RequestState,
-} from "@utils/types";
+} from "../../utils/types";
+
 
 
 const initialState: AuthState = {
   isAuthenticated: false,
   status: RequestState.IDLE,
+  mode: "active",
   statusMessage: null,
   userInfo: null,
   accessToken: null,
@@ -43,6 +45,11 @@ export const authSlice = createSlice({
       state.accessToken = action.payload.accessToken;
       state.decodedIdToken = action.payload.decodedIdToken;
       state.userEmail = action.payload.decodedIdToken?.email || null;
+    },
+    setAuthError: (state, action: PayloadAction<string>) => {
+      state.errorMessage = action.payload;
+      state.isAuthenticated = false;
+      state.status = RequestState.FAILED;
     },
     setStatus: (state, action: PayloadAction<AuthState["status"]>) => {
       state.status = action.payload;
@@ -68,6 +75,7 @@ export const authSlice = createSlice({
       state = {
         isAuthenticated: false,
         status: RequestState.IDLE,
+        mode: "active",
         statusMessage: null,
         userInfo: null,
         accessToken: null,
@@ -170,5 +178,6 @@ export const isIdTokenExpired = (state: RootState) =>
   state.auth.isIdTokenExpired;
 export const selectEmployeeInfoStatus = (state: RootState) =>
   state.auth.employeeInfoStatus;
+export const { setAuthError } = authSlice.actions;
 
 export default authSlice.reducer;
