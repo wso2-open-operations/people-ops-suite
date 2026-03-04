@@ -42,7 +42,7 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
     FROM employee;`;
 
 # Fetch employee ID by primary key ID.
-# 
+#
 # + id - Primary key ID of the employee record
 # + return - Query to get employee ID
 isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
@@ -114,7 +114,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         e.employee_id = ${employeeId};`;
 
 # Fetch employees with filters.
-# 
+#
 # + payload - Get employees filter payload
 # + return - Parameterized query for fetching employees
 isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:ParameterizedQuery {
@@ -742,58 +742,76 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
         updates.push(`nationality = ${payload.nationality}`);
     }
 
-    if payload.personalEmail is () || payload.personalEmail == "" {
-        updates.push(`personal_email = NULL`);
-    } else {
-        updates.push(`personal_email = ${payload.personalEmail}`);
+    if payload.personalEmail is string {
+        if payload.personalEmail == "" {
+            updates.push(`personal_email = NULL`);
+        } else {
+            updates.push(`personal_email = ${payload.personalEmail}`);
+        }
     }
 
-    if payload.personalPhone is () || payload.personalPhone == "" {
-        updates.push(`personal_phone = NULL`);
-    } else {
-        updates.push(`personal_phone = ${payload.personalPhone}`);
+    if payload.personalPhone is string {
+        if payload.personalPhone == "" {
+            updates.push(`personal_phone = NULL`);
+        } else {
+            updates.push(`personal_phone = ${payload.personalPhone}`);
+        }
     }
 
-    if payload.residentNumber is () || payload.residentNumber == "" {
-        updates.push(`resident_number = NULL`);
-    } else {
-        updates.push(`resident_number = ${payload.residentNumber}`);
+    if payload.residentNumber is string {
+        if payload.residentNumber == "" {
+            updates.push(`resident_number = NULL`);
+        } else {
+            updates.push(`resident_number = ${payload.residentNumber}`);
+        }
     }
 
-    if payload.addressLine1 is () || payload.addressLine1 == "" {
-        updates.push(`address_line_1 = NULL`);
-    } else {
-        updates.push(`address_line_1 = ${payload.addressLine1}`);
+    if payload.addressLine1 is string {
+        if payload.addressLine1 == "" {
+            updates.push(`address_line_1 = NULL`);
+        } else {
+            updates.push(`address_line_1 = ${payload.addressLine1}`);
+        }
     }
 
-    if payload.addressLine2 is () || payload.addressLine2 == "" {
-        updates.push(`address_line_2 = NULL`);
-    } else {
-        updates.push(`address_line_2 = ${payload.addressLine2}`);
+    if payload.addressLine2 is string {
+        if payload.addressLine2 == "" {
+            updates.push(`address_line_2 = NULL`);
+        } else {
+            updates.push(`address_line_2 = ${payload.addressLine2}`);
+        }
     }
 
-    if payload.city is () || payload.city == "" {
-        updates.push(`city = NULL`);
-    } else {
-        updates.push(`city = ${payload.city}`);
+    if payload.city is string {
+        if payload.city == "" {
+            updates.push(`city = NULL`);
+        } else {
+            updates.push(`city = ${payload.city}`);
+        }
     }
 
-    if payload.stateOrProvince is () || payload.stateOrProvince == "" {
-        updates.push(`state_or_province = NULL`);
-    } else {
-        updates.push(`state_or_province = ${payload.stateOrProvince}`);
+    if payload.stateOrProvince is string {
+        if payload.stateOrProvince == "" {
+            updates.push(`state_or_province = NULL`);
+        } else {
+            updates.push(`state_or_province = ${payload.stateOrProvince}`);
+        }
     }
 
-    if payload.postalCode is () || payload.postalCode == "" {
-        updates.push(`postal_code = NULL`);
-    } else {
-        updates.push(`postal_code = ${payload.postalCode}`);
+    if payload.postalCode is string {
+        if payload.postalCode == "" {
+            updates.push(`postal_code = NULL`);
+        } else {
+            updates.push(`postal_code = ${payload.postalCode}`);
+        }
     }
 
-    if payload.country is () || payload.country == "" {
-        updates.push(`country = NULL`);
-    } else {
-        updates.push(`country = ${payload.country}`);
+    if payload.country is string {
+        if payload.country == "" {
+            updates.push(`country = NULL`);
+        } else {
+            updates.push(`country = ${payload.country}`);
+        }
     }
 
     updates.push(`updated_by = ${updatedBy}`);
@@ -858,10 +876,12 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     sql:ParameterizedQuery mainQuery = `UPDATE employee SET `;
     sql:ParameterizedQuery[] updates = [];
 
-    if payload.epf is () || payload.epf == "" {
-        updates.push(`epf = NULL`);
-    } else {
-        updates.push(`epf = ${payload.epf}`);
+    if payload.epf is string {
+        if payload.epf == "" {
+            updates.push(`epf = NULL`);
+        } else {
+            updates.push(`epf = ${payload.epf}`);
+        }
     }
 
     if payload.companyId != () {
@@ -888,41 +908,50 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`manager_email = ${payload.managerEmail}`);
     }
 
-    if payload.employeeThumbnail is () || payload.employeeThumbnail == "" {
-        updates.push(`employee_thumbnail = NULL`);
-    } else {
-        updates.push(`employee_thumbnail = ${payload.employeeThumbnail}`);
+    if payload.employeeThumbnail is string {
+        if payload.employeeThumbnail == "" {
+            updates.push(`employee_thumbnail = NULL`);
+        } else {
+            updates.push(`employee_thumbnail = ${payload.employeeThumbnail}`);
+        }
     }
 
-    if payload.probationEndDate is () || payload.probationEndDate == "" {
-        updates.push(`probation_end_date = NULL`);
-    } else {
-        updates.push(`probation_end_date = ${payload.probationEndDate}`);
+    if payload.probationEndDate is string {
+        if payload.probationEndDate == "" {
+            updates.push(`probation_end_date = NULL`);
+        } else {
+            updates.push(`probation_end_date = ${payload.probationEndDate}`);
+        }
     }
 
-    if payload.agreementEndDate is () || payload.agreementEndDate == "" {
-        updates.push(`agreement_end_date = NULL`);
-    } else {
-        updates.push(`agreement_end_date = ${payload.agreementEndDate}`);
+    if payload.agreementEndDate is string {
+        if payload.agreementEndDate == "" {
+            updates.push(`agreement_end_date = NULL`);
+        } else {
+            updates.push(`agreement_end_date = ${payload.agreementEndDate}`);
+        }
     }
 
     if payload.employmentTypeId != () {
         updates.push(`employment_type_id = ${payload.employmentTypeId}`);
     }
+
     if payload.designationId != () {
         updates.push(`designation_id = ${payload.designationId}`);
     }
-    
-    if payload.officeId is () {
-        updates.push(`office_id = NULL`);
-    } else{
-        updates.push(`office_id = ${payload.officeId}`);
+
+    if payload.officeId != () {
+        if payload.officeId is int {
+            updates.push(`office_id = ${payload.officeId}`);
+        } else {
+            updates.push(`office_id = NULL`);
+        }
     }
 
     if payload.teamId != () {
         updates.push(`team_id = ${payload.teamId}`);
-
     }
+
     if payload.subTeamId != () {
         updates.push(`sub_team_id = ${payload.subTeamId}`);
     }
@@ -931,26 +960,23 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`business_unit_id = ${payload.businessUnitId}`);
     }
 
-    if payload.unitId is () {
-        updates.push(`unit_id = NULL`);
-    } else {
-        updates.push(`unit_id = ${payload.unitId}`);
-    }
-
-    if payload.continuousServiceRecord is () || payload.continuousServiceRecord == "" {
-        updates.push(`continuous_service_record = NULL`);
-    } else {
-        updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
-    }
-
-    if payload.employeeStatus != () {
-        updates.push(`employee_status = ${payload.employeeStatus}`);
+    if payload.unitId != () {
+        if payload.unitId is int {
+            updates.push(`unit_id = ${payload.unitId}`);
+        } else {
+            updates.push(`unit_id = NULL`);
+        }
     }
 
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
-    return sql:queryConcat(query, ` WHERE employee_id = ${employeeId}`);
+
+    sql:ParameterizedQuery finalQuery = sql:queryConcat(query, `
+        WHERE employee_id = ${employeeId}
+    `);
+
+    return finalQuery;
 }
 
 # Delete additional managers by employee database ID.

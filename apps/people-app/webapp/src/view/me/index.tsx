@@ -514,6 +514,7 @@ export default function Me({
         defaultExpanded
         sx={{
           borderRadius: 2,
+          mt: 2,
           mb: 2,
           boxShadow: 0,
           border: 1,
