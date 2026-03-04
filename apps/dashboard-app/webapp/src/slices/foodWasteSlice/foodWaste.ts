@@ -81,28 +81,39 @@ interface FoodWasteDashboardState {
   latestError: unknown;
 }
 
-const DEFAULT_WEEKLY_DATA: WeeklyDataPoint[] = [{ date: "Jan 26", breakfast: 0, lunch: 0 }];
-const DEFAULT_MONTHLY_DATA: MonthlyDataPoint[] = [{ month: "Jan", breakfast: 0, lunch: 0 }];
-const DEFAULT_ANNUAL_DATA: AnnualDataPoint[] = [{ year: "2026", breakfast: 0, lunch: 0 }];
+const DEFAULT_WEEKLY_DATA: WeeklyDataPoint[] = [];
+const DEFAULT_MONTHLY_DATA: MonthlyDataPoint[] = [];
+const DEFAULT_ANNUAL_DATA: AnnualDataPoint[] = [];
 
 const transformWeeklyData = (records: WeeklyTrendItem[]): WeeklyDataPoint[] =>
-  records.map((item) => ({
-    date: new Date(item.date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    }),
-    breakfast: Number(item.breakfastWaste) || 0,
-    lunch: Number(item.lunchWaste) || 0,
-  }));
+  records.map((item) => {
+    // Parse as LOCAL date (not UTC) to avoid timezone shift.
+    // new Date("YYYY-MM-DD") is UTC midnight which shifts the day backward in IST.
+    const [year, month, day] = item.date.split("-").map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return {
+      date: localDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      breakfast: Number(item.breakfastWaste) || 0,
+      lunch: Number(item.lunchWaste) || 0,
+    };
+  });
 
 const transformMonthlyData = (records: MonthlyTrendItem[]): MonthlyDataPoint[] =>
-  records.map((item) => ({
-    month: new Date(`${item.month}-01`).toLocaleDateString("en-US", {
-      month: "short",
-    }),
-    breakfast: Number(item.breakfastWaste) || 0,
-    lunch: Number(item.lunchWaste) || 0,
-  }));
+  records.map((item) => {
+    // Parse as local date (year, month) to avoid UTC timezone shift.
+    const [year, month] = item.month.split("-").map(Number);
+    const localDate = new Date(year, month - 1, 1);
+    return {
+      month: localDate.toLocaleDateString("en-US", {
+        month: "short",
+      }),
+      breakfast: Number(item.breakfastWaste) || 0,
+      lunch: Number(item.lunchWaste) || 0,
+    };
+  });
 
 const transformYearlyData = (records: MonthlyTrendItem[]): AnnualDataPoint[] => {
   const yearly = records.reduce<Record<string, { breakfast: number; lunch: number }>>(
@@ -219,7 +230,7 @@ const FoodWasteSlice = createSlice({
       })
       .addCase(fetchWeeklyFoodWasteData.fulfilled, (state, action) => {
         state.weeklyLoading = false;
-        state.weeklyData = action.payload.length > 0 ? action.payload : DEFAULT_WEEKLY_DATA;
+        state.weeklyData = action.payload;
       })
       .addCase(fetchWeeklyFoodWasteData.rejected, (state, action) => {
         state.weeklyLoading = false;
@@ -231,7 +242,7 @@ const FoodWasteSlice = createSlice({
       })
       .addCase(fetchMonthlyFoodWasteData.fulfilled, (state, action) => {
         state.monthlyLoading = false;
-        state.monthlyData = action.payload.length > 0 ? action.payload : DEFAULT_MONTHLY_DATA;
+        state.monthlyData = action.payload;
       })
       .addCase(fetchMonthlyFoodWasteData.rejected, (state, action) => {
         state.monthlyLoading = false;
@@ -243,7 +254,7 @@ const FoodWasteSlice = createSlice({
       })
       .addCase(fetchYearlyFoodWasteData.fulfilled, (state, action) => {
         state.annualLoading = false;
-        state.annualData = action.payload.length > 0 ? action.payload : DEFAULT_ANNUAL_DATA;
+        state.annualData = action.payload;
       })
       .addCase(fetchYearlyFoodWasteData.rejected, (state, action) => {
         state.annualLoading = false;

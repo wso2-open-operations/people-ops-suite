@@ -83,9 +83,9 @@ const SkeletonCard = () => {
               sx={{ ml: "auto", mb: 1.5 }}
               alignItems={"center"}
             >
-              <Skeleton variant="circular" />
-              <Skeleton variant="circular" />
-              <Skeleton variant="circular" />
+              <Skeleton variant="circular" width={40} height={40} />
+              <Skeleton variant="circular" width={40} height={40} />
+              <Skeleton variant="circular" width={40} height={40} />
             </Stack>
             <Grid container flexDirection={"row"} sx={{ width: "auto", ml: "auto", mr: 1 }} gap={2}>
               <Skeleton variant="rectangular" sx={{ width: 140, height: 50, borderRadius: 3 }} />

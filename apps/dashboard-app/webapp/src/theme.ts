@@ -24,7 +24,9 @@ type ColorToken = {
 
 // Helper function to remove 'ff' suffix from hex colors
 const cleanHexColor = (color: string): string => {
-  if (color.endsWith("ff")) {
+  // Matches #RRGGBBAA or RRGGBBAA where AA is 'ff' (case-insensitive)
+  const hex8Regex = /^#?[0-9a-fA-F]{6}([fF]{2})$/;
+  if (hex8Regex.test(color)) {
     return color.slice(0, -2);
   }
   return color;
@@ -86,175 +88,175 @@ export const tokens = (mode: PaletteMode) => {
   return {
     ...(mode === "dark"
       ? {
-          // Neutral colors
-          neutral: colors.neutral,
-          secondary: colors.secondary,
-          primary: colors.primary,
+        // Neutral colors
+        neutral: colors.neutral,
+        secondary: colors.secondary,
+        primary: colors.primary,
 
-          // Text colors - Dark mode (from Figma design tokens)
-          text: {
-            primary: {
-              p1: { active: colors.neutral.white, hover: "#ffffff" },
-              p2: { active: colors.neutral["400"], hover: "#ffffff" },
-              p3: { active: colors.neutral["800"], hover: "#ffffff" },
-              p4: { active: colors.neutral["1300"], hover: "#ffffff" },
-            },
-            brand: {
-              p1: { active: colors.primary["1100"], hover: "#FF6A0096" },
-            },
+        // Text colors - Dark mode (from Figma design tokens)
+        text: {
+          primary: {
+            p1: { active: colors.neutral.white, hover: "#ffffff" },
+            p2: { active: colors.neutral["400"], hover: "#ffffff" },
+            p3: { active: colors.neutral["800"], hover: "#ffffff" },
+            p4: { active: colors.neutral["1300"], hover: "#ffffff" },
           },
+          brand: {
+            p1: { active: colors.primary["1100"], hover: "#FF6A0096", disabled: "#FF6A004D" },
+          },
+        },
 
-          // Border colors - Dark mode (from Figma design tokens)
-          border: {
-            primary: {
-              active: colors.neutral.white,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
-            secondary: {
-              active: colors.neutral.white,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
-            territory: {
-              active: colors.neutral["1700"],
-              hover: colors.neutral["1500"],
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
+        // Border colors - Dark mode (from Figma design tokens)
+        border: {
+          primary: {
+            active: colors.neutral.white,
+            hover: colors.neutral.white,
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
           },
+          secondary: {
+            active: colors.neutral.white,
+            hover: colors.neutral.white,
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
+          },
+          territory: {
+            active: colors.neutral["1700"],
+            hover: colors.neutral["1500"],
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
+          },
+        },
 
-          // Navigation colors - Dark mode
-          navigation: {
-            text: "#ffffff8f",
-            textClicked: "#ffffff",
-            hover: "#ffffffd9",
-            hoverBg: "#ffffff0a",
-            clickedBg: "#ffffff14",
-            border: colors.neutral["1700"],
-          },
+        // Navigation colors - Dark mode
+        navigation: {
+          text: "#ffffff8f",
+          textClicked: "#ffffff",
+          hover: "#ffffffd9",
+          hoverBg: "#ffffff0a",
+          clickedBg: "#ffffff14",
+          border: colors.neutral["1700"],
+        },
 
-          // Surface colors (from color tokens)
-          surface: {
-            primary: {
-              active: colors.neutral["1800"],
-              hover: colors.neutral["1900"],
-            },
-            secondary: {
-              active: colors.secondary["2000"],
-              hover: colors.secondary["1700"],
-            },
-            territory: {
-              active: "#171717",
-            },
+        // Surface colors (from color tokens)
+        surface: {
+          primary: {
+            active: colors.neutral["1800"],
+            hover: colors.neutral["1900"],
           },
+          secondary: {
+            active: colors.secondary["2000"],
+            hover: colors.secondary["1700"],
+          },
+          territory: {
+            active: "#171717",
+          },
+        },
 
-          // Fill colors (from color tokens)
-          fill: {
-            primary: {
-              active: colors.primary["1700"],
-              hover: colors.primary["1600"],
-              clicked: colors.primary["1800"],
-              disabled: "#3D190196",
-            },
-            secondary: {
-              active: colors.secondary["1400"],
-              hover: colors.secondary["1300"],
-              clicked: colors.secondary["1500"],
-              disabled: "#0A475C96",
-            },
-            territory: {
-              active: colors.secondary["1900"],
-            },
+        // Fill colors (from color tokens)
+        fill: {
+          primary: {
+            active: colors.primary["1700"],
+            hover: colors.primary["1600"],
+            clicked: colors.primary["1800"],
+            disabled: "#3D190196",
           },
-        }
+          secondary: {
+            active: colors.secondary["1400"],
+            hover: colors.secondary["1300"],
+            clicked: colors.secondary["1500"],
+            disabled: "#0A475C96",
+          },
+          territory: {
+            active: colors.secondary["1900"],
+          },
+        },
+      }
       : {
-          // Light mode colors
-          neutral: colors.neutral,
-          primary: colors.primary,
-          secondary: colors.secondary,
+        // Light mode colors
+        neutral: colors.neutral,
+        primary: colors.primary,
+        secondary: colors.secondary,
 
-          // Text colors - Light mode (from Figma design tokens)
-          text: {
-            primary: {
-              p1: { active: colors.neutral.black, hover: "#ffffff" },
-              p2: { active: colors.neutral["1600"], hover: "#ffffff" },
-              p3: { active: colors.neutral["1200"], hover: "#ffffff" },
-              p4: { active: colors.neutral["700"], hover: "#ffffff" },
-            },
-            brand: {
-              p1: { active: colors.primary["brand"], hover: "#ffffff", disabled: "#ff730096" },
-            },
+        // Text colors - Light mode (from Figma design tokens)
+        text: {
+          primary: {
+            p1: { active: colors.neutral.black, hover: "#ffffff" },
+            p2: { active: colors.neutral["1600"], hover: "#ffffff" },
+            p3: { active: colors.neutral["1200"], hover: "#ffffff" },
+            p4: { active: colors.neutral["700"], hover: "#ffffff" },
           },
+          brand: {
+            p1: { active: colors.primary["brand"], hover: "#ffffff", disabled: "#ff730096" },
+          },
+        },
 
-          // Border colors - Light mode
-          border: {
-            primary: {
-              active: colors.neutral.black,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
-            secondary: {
-              active: colors.neutral.white,
-              hover: colors.neutral.white,
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
-            territory: {
-              active: colors.neutral["200"],
-              hover: colors.neutral["400"],
-              clicked: colors.neutral.white,
-              disabled: colors.neutral.white,
-            },
+        // Border colors - Light mode
+        border: {
+          primary: {
+            active: colors.neutral.black,
+            hover: colors.neutral.white,
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
           },
+          secondary: {
+            active: colors.neutral.white,
+            hover: colors.neutral.white,
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
+          },
+          territory: {
+            active: colors.neutral["200"],
+            hover: colors.neutral["400"],
+            clicked: colors.neutral.white,
+            disabled: colors.neutral.white,
+          },
+        },
 
-          // Surface colors (from color tokens)
-          surface: {
-            primary: {
-              active: colors.neutral.light_white,
-              hover: colors.neutral.white,
-            },
-            secondary: {
-              active: colors.secondary["1500"],
-              hover: "#FFF",
-            },
-            territory: {
-              active: colors.neutral.white,
-            },
+        // Surface colors (from color tokens)
+        surface: {
+          primary: {
+            active: colors.neutral.light_white,
+            hover: colors.neutral.white,
           },
+          secondary: {
+            active: colors.secondary["1500"],
+            hover: "#FFF",
+          },
+          territory: {
+            active: colors.neutral.white,
+          },
+        },
 
-          // Fill colors (from color tokens)
-          fill: {
-            primary: {
-              active: colors.primary.main,
-              hover: colors.primary["900"],
-              clicked: colors.primary["1100"],
-              disabled: "#FF730096",
-            },
-            secondary: {
-              active: colors.secondary.main,
-              hover: colors.secondary["600"],
-              clicked: colors.secondary["800"],
-              disabled: "#00CEFF96",
-            },
-            territory: {
-              active: colors.secondary["1600"],
-            },
+        // Fill colors (from color tokens)
+        fill: {
+          primary: {
+            active: colors.primary.main,
+            hover: colors.primary["900"],
+            clicked: colors.primary["1100"],
+            disabled: "#FF730096",
           },
+          secondary: {
+            active: colors.secondary.main,
+            hover: colors.secondary["600"],
+            clicked: colors.secondary["800"],
+            disabled: "#00CEFF96",
+          },
+          territory: {
+            active: colors.secondary["1600"],
+          },
+        },
 
-          // Navigation colors - Light mode
-          navigation: {
-            text: "#ffffffbd",
-            textClicked: "#ffffff",
-            hover: "#ffffffd9",
-            hoverBg: "#ffffff0a",
-            clickedBg: colors.secondary["1600"],
-            border: "#2F454C",
-          },
-        }),
+        // Navigation colors - Light mode
+        navigation: {
+          text: "#ffffffbd",
+          textClicked: "#ffffff",
+          hover: "#ffffffd9",
+          hoverBg: "#ffffff0a",
+          clickedBg: colors.secondary["1600"],
+          border: "#2F454C",
+        },
+      }),
   };
 };
 
@@ -355,7 +357,6 @@ declare module "@mui/material/styles" {
     customNavigation?: {
       text?: string;
       textClicked?: string;
-      bg?: string;
       hover?: string;
       hoverBg?: string;
       clicked?: string;

@@ -28,7 +28,7 @@ interface CandidateInfoArray {
   icon: React.ReactElement<{ sx?: object }>;
 }
 
-const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
+const CandidateInfoCard = ({ title, items }: CandidateInfoCardProps) => {
   return (
     <Grid
       size={{ xs: 12 }}
@@ -46,8 +46,8 @@ const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
         {title}
       </Typography>
       <Stack gap={1}>
-        {items.map((item) => (
-          <Stack key={item.title} flexDirection={"row"} gap={1}>
+        {items.map((item, index) => (
+          <Stack key={`${item.title}-${index}`} flexDirection={"row"} gap={1}>
             {React.cloneElement(item.icon, {
               sx: {
                 color: "secondary.dark",
@@ -78,4 +78,4 @@ const CandidateMainInfoCard = ({ title, items }: CandidateInfoCardProps) => {
   );
 };
 
-export default CandidateMainInfoCard;
+export default CandidateInfoCard;

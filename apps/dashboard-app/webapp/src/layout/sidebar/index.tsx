@@ -15,14 +15,13 @@
 // under the License.
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
-import { matchPath, useLocation } from "react-router-dom";
 
 import { useMemo, useState } from "react";
 
 import type { NavState } from "@/types/types";
 import SidebarNavItem from "@component/layout/SidebarNavItem";
+import { ColorModeContext } from "@context/ColorModeContext";
 import pJson from "@root/package.json";
-import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
 
 interface SidebarProps {
@@ -34,7 +33,6 @@ interface SidebarProps {
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
-  const location = useLocation();
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
@@ -44,10 +42,10 @@ const Sidebar = (props: SidebarProps) => {
   });
 
   // Handlers
-  const handleClick = (idx: number) => {
+  const handleClick = (routePath: string) => {
     setNavState((prev) => ({
       ...prev,
-      active: prev.active === idx ? null : idx,
+      active: prev.active === routePath ? null : routePath,
     }));
   };
 
@@ -177,8 +175,12 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === null ? idx === 0 : navState.active === idx}
-                        onClick={() => handleClick(idx)}
+                        isActive={
+                          navState.active === null
+                            ? route.path === allRoutes.filter((r) => !r.bottomNav)[0]?.path
+                            : navState.active === route.path
+                        }
+                        onClick={() => handleClick(route.path)}
                       />
                     </Box>
                   )

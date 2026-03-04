@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
+import type { ReactElement } from "react";
 
 import { Role } from "@slices/authSlice/auth";
 import { Collection } from "@slices/collections/collection";
@@ -76,8 +77,8 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
-export interface CommonCardProps {
+export interface CollectionCardProps {
   collection: Collection;
-  actions: React.ReactElement;
+  actions: ReactElement;
   dataCardIndex: number;
 }

@@ -30,6 +30,18 @@ interface Employee {
   employeeThumbnail: string | null;
 }
 
+const isEmployee = (value: unknown): value is Employee => {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const candidate = value as Partial<Employee>;
+  return typeof candidate.workEmail === "string";
+};
+
+const isEmployeeArray = (value: unknown): value is Employee[] =>
+  Array.isArray(value) && value.every(isEmployee);
+
 interface EmployeesState {
   state: State;
   stateMessage: string | null;
@@ -48,31 +60,38 @@ export const fetchEmployees = createAsyncThunk(
   "employee/fetchEmployees",
   async (_, { getState, dispatch, rejectWithValue }) => {
     const { userInfo } = (getState() as { user: UserState }).user;
-    return new Promise<Employee[]>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.employees)
-        .then((response) => {
-          const filteredEmployees = response.data.filter(
-            (emp: Employee) => emp.workEmail !== userInfo?.workEmail,
-          );
-          resolve(filteredEmployees);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchEmployees
-                  : "An unknown error occurred.",
-              type: "error",
-            }),
-          );
-          reject(error.response.data.message);
-        });
-    });
+    try {
+      const response = await APIService.getInstance().get(AppConfig.serviceUrls.employees);
+      if (!isEmployeeArray(response.data)) {
+        throw new Error("Invalid employees payload received from server");
+      }
+
+      const filteredEmployees = response.data.filter(
+        (emp: Employee) => emp.workEmail !== userInfo?.workEmail,
+      );
+      return filteredEmployees;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+
+      const status = (error as { response?: { status?: number } }).response?.status;
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } }; message?: string }).response?.data
+          ?.message ?? (error as { message?: string }).message ?? "An unknown error occurred.";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            status === HttpStatusCode.InternalServerError
+              ? SnackMessage.error.fetchEmployees
+              : errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
   },
 );
 
@@ -95,9 +114,11 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Successfully fetched!";
         state.employees = action.payload;
       })
-      .addCase(fetchEmployees.rejected, (state) => {
+      .addCase(fetchEmployees.rejected, (state, action) => {
         state.state = State.failed;
         state.stateMessage = "Failed to fetch!";
+        state.errorMessage =
+          (action.payload as string | undefined) ?? action.error?.message ?? "An unknown error occurred.";
       });
   },
 });

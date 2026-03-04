@@ -24,7 +24,7 @@ export default function BasicBreadcrumbs() {
   const theme = useTheme();
 
   const { pathname } = location;
-  const pathnames = pathname === "/" ? [] : pathname.split("/");
+  const pathnames = pathname.split("/").filter((x) => x);
 
   const renderBreadCrumbs = () => {
     let routeTo = "";
@@ -42,29 +42,33 @@ export default function BasicBreadcrumbs() {
         {pathnames.map((path, index) => {
           const isLong = path.length > MAX_LENGTH;
           const isLast = pathnames.length - 1 === index;
-          routeTo += `${path}/`;
+          routeTo += `/${path}`;
+          const textColor = isLast
+            ? theme.palette.text.secondary
+            : theme.palette.customText.primary.p3.active;
 
           const label =
             !isLast && isLong ? (
               <Typography
                 key={`${path}-short`}
                 variant="caption"
-                sx={{ color: theme.palette.customText.primary.p3.active }}
+                sx={{ color: textColor }}
               >
-                {path.slice(0, 4)}...
+                {path.slice(0, MAX_LENGTH)}...
               </Typography>
             ) : (
               <Typography
                 key={`${path}-full`}
                 variant="caption"
-                sx={{ color: theme.palette.customText.primary.p3.active }}
+                sx={{ color: textColor }}
               >
                 {path}
               </Typography>
             );
 
           return isLong && !isLast ? (
-            <Tooltip key={path} title={path} placement="bottom">
+            <Tooltip key={`${path}-${index}`} title={path} placement="bottom">
+
               <Box
                 component={Link}
                 to={routeTo}
@@ -83,6 +87,19 @@ export default function BasicBreadcrumbs() {
                 {label}
               </Box>
             </Tooltip>
+          ) : isLast ? (
+            <Box
+              key={index}
+              sx={{
+                textDecoration: "none",
+                padding: theme.spacing(0.5),
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {label}
+            </Box>
           ) : (
             <Box
               component={Link}

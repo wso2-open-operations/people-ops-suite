@@ -22,10 +22,10 @@ service class BadRequestInterceptor {
 
     remote function interceptResponseError(error err, http:RequestContext ctx) returns http:BadRequest|error {
         if err is http:PayloadBindingError {
-            log:printError("Payload binding failed!", err);
+            log:printError("Payload binding failed!", err, payloadBindingMessage = err.message());
             return {
                 body: {
-                    message: err.message()
+                    message: "Invalid request payload"
                 }
             };
         }

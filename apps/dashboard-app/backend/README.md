@@ -40,12 +40,13 @@ Retrieve the logged-in user's details.
   }
   ```
   </td>
+    </tr>
     <tr>
       <td> 500 </td><td> Internal Server Error <br/>
   
   ```json
   {
-    "message": "Error occurred while retrieving user data: user@wso2.com"
+    "message": "Error occurred while retrieving user info"
   }
   ```
   </td>
@@ -116,6 +117,7 @@ Fetch all the collections based on the filter criteria.
 }
   ```
   </td>
+    </tr>
     <tr>
       <td> 500 </td><td> Internal Server Error <br/>
   

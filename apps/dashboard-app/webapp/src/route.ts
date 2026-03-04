@@ -24,26 +24,32 @@ import { View } from "@view/index";
 
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
+export const ROUTE_PATHS = {
+  home: "/",
+  dataEntry: "/data-entry",
+  adManagement: "/ad-management",
+} as const;
+
 export const routes: RouteObjectWithRole[] = [
   {
-    path: "/",
+    path: ROUTE_PATHS.home,
     text: "Home",
     icon: React.createElement(HomeIcon),
-    element: React.createElement(View.firstView),
+    element: React.createElement(View.dashboardOverviewView),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/page-two",
+    path: ROUTE_PATHS.dataEntry,
     text: "Data Entry",
     icon: React.createElement(PenTool),
-    element: React.createElement(View.dataEntry),
+    element: React.createElement(View.dataEntryView),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/ad-management",
+    path: ROUTE_PATHS.adManagement,
     text: "Ad Management",
     icon: React.createElement(Megaphone),
-    element: React.createElement(View.adManagement),
+    element: React.createElement(View.adManagementView),
     allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
 ];
@@ -99,7 +105,7 @@ interface getActiveParentRoutesProps {
 export const getActiveParentRoutes = ({ routes, roles }: getActiveParentRoutesProps): string[] => {
   if (!routes) return [];
 
-  let activeParentPaths: string[] = [];
+  const activeParentPaths: string[] = [];
 
   routes.forEach((routeObj) => {
     if (!routeObj.element) return;

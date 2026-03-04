@@ -15,6 +15,18 @@
 // under the License.
 import { BaseURLAuthClientConfig } from "@asgardeo/auth-react";
 
+import { MicroAppType } from "@/types/types";
+
+const runtimeConfig = window.config;
+
+const getRequiredConfig = (key: keyof Window["config"]): string => {
+  const value = runtimeConfig?.[key];
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`Missing required runtime config: ${key}`);
+  }
+  return value;
+};
+
 declare global {
   interface Window {
     config: {
@@ -26,32 +38,34 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       REACT_APP_BACKEND_BASE_URL: string;
+      IS_MICROAPP: MicroAppType;
     };
   }
 }
 
 export const AsgardeoConfig: BaseURLAuthClientConfig = {
   scope: ["openid", "email", "groups"],
-  baseUrl: window.config?.ASGARDEO_BASE_URL ?? "",
-  clientID: window.config?.ASGARDEO_CLIENT_ID ?? "",
-  signInRedirectURL: window.config?.AUTH_SIGN_IN_REDIRECT_URL ?? "",
-  signOutRedirectURL: window.config?.AUTH_SIGN_OUT_REDIRECT_URL ?? "",
+  baseUrl: getRequiredConfig("ASGARDEO_BASE_URL"),
+  clientID: getRequiredConfig("ASGARDEO_CLIENT_ID"),
+  signInRedirectURL: getRequiredConfig("AUTH_SIGN_IN_REDIRECT_URL"),
+  signOutRedirectURL: getRequiredConfig("AUTH_SIGN_OUT_REDIRECT_URL"),
 };
 
-export const APP_NAME = window.config?.APP_NAME ?? "";
-export const APP_DOMAIN = window.config?.APP_DOMAIN ?? "";
-export const ServiceBaseUrl = window.config?.REACT_APP_BACKEND_BASE_URL ?? "";
+export const APP_NAME = getRequiredConfig("APP_NAME");
+export const APP_DOMAIN = runtimeConfig?.APP_DOMAIN ?? "";
+export const SERVICE_BASE_URL = getRequiredConfig("REACT_APP_BACKEND_BASE_URL");
+export const isMicroApp = window.config?.IS_MICROAPP ?? MicroAppType.None;
 
 export const AppConfig = {
   serviceUrls: {
-    contacts: ServiceBaseUrl + "/contacts",
-    userInfo: ServiceBaseUrl + "/user-info",
-    employees: ServiceBaseUrl + "/employees",
-    appConfig: ServiceBaseUrl + "/app-config",
-    collections: ServiceBaseUrl + "/collections",
-    foodWaste: ServiceBaseUrl + "/food-waste",
-    foodWasteDaily: ServiceBaseUrl + "/food-waste/daily",
-    advertisements: ServiceBaseUrl + "/advertisements",
-    advertisementsActive: ServiceBaseUrl + "/advertisements/active",
+    contacts: SERVICE_BASE_URL + "/contacts",
+    userInfo: SERVICE_BASE_URL + "/user-info",
+    employees: SERVICE_BASE_URL + "/employees",
+    appConfig: SERVICE_BASE_URL + "/app-config",
+    collections: SERVICE_BASE_URL + "/collections",
+    foodWaste: SERVICE_BASE_URL + "/food-waste",
+    foodWasteDaily: SERVICE_BASE_URL + "/food-waste/daily",
+    advertisements: SERVICE_BASE_URL + "/advertisements",
+    advertisementsActive: SERVICE_BASE_URL + "/advertisements/active",
   },
 };

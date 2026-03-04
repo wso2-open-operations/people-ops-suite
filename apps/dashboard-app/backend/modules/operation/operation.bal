@@ -155,9 +155,6 @@ public isolated function deleteAdvertisement(int id)
     return database:deleteAdvertisement(id);
 }
 
-# Get weekly food waste trend for the current rolling 7-day window.
-#
-# + return - Weekly trend items|Error
 # Get weekly food waste trend from endDate going back to startDate.
 #
 # + startDate - Start date (YYYY-MM-DD)

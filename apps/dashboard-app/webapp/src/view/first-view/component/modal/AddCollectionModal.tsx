@@ -36,7 +36,7 @@ import * as yup from "yup";
 
 import React, { useEffect } from "react";
 
-import useConfirmationModalContext from "@context/confirmationModalContext";
+import { useConfirmationModalContext } from "@context/dialogState";
 import { addCollections, resetSubmitState } from "@slices/collections/collection";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 import { ConfirmationType, State } from "@utils/types";
@@ -110,7 +110,7 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
         </DialogContentText>
 
         {/* Collection Details */}
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Box
             //updated
             component="span"

@@ -15,9 +15,13 @@
 // under the License.
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import MenuIcon from "@mui/icons-material/Menu";
-import { AppBar, Box, IconButton, Typography, useTheme } from "@mui/material";
+import { AppBar, Box, ButtonBase, IconButton, Typography, useTheme } from "@mui/material";
 import { Home, Moon, Sun } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+
+import { CHART_COLORS } from "@config/feature";
+
+import { ROUTE_PATHS } from "../../route";
 
 interface MobileBottomBarProps {
   onMenuClick: () => void;
@@ -36,7 +40,7 @@ export default function MobileBottomBar({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isHomePage = location.pathname === "/" || location.pathname === "/home";
+  const isHomePage = location.pathname === ROUTE_PATHS.home;
 
   return (
     <AppBar
@@ -73,8 +77,10 @@ export default function MobileBottomBar({
           pointerEvents: "auto",
         }}
       >
-        <Box
-          onClick={() => navigate("/")}
+        <ButtonBase
+          onClick={() => navigate(ROUTE_PATHS.home)}
+          aria-label="Go to home"
+          aria-current={isHomePage ? "page" : undefined}
           sx={{
             display: "flex",
             alignItems: "center",
@@ -105,7 +111,7 @@ export default function MobileBottomBar({
                     theme.palette as unknown as {
                       customText?: { brand?: { p1?: { active?: string } } };
                     }
-                  ).customText?.brand?.p1?.active || "#ff7300"
+                  ).customText?.brand?.p1?.active || CHART_COLORS.lunch
                 : (
                     theme.palette as unknown as {
                       customText?: { primary?: { p1?: { active?: string } } };
@@ -125,7 +131,7 @@ export default function MobileBottomBar({
                     theme.palette as unknown as {
                       customText?: { brand?: { p1?: { active?: string } } };
                     }
-                  ).customText?.brand?.p1?.active || "#ff7300"
+                  ).customText?.brand?.p1?.active || CHART_COLORS.lunch
                 : (
                     theme.palette as unknown as {
                       customText?: { primary?: { p1?: { active?: string } } };
@@ -136,7 +142,7 @@ export default function MobileBottomBar({
           >
             Home
           </Typography>
-        </Box>
+        </ButtonBase>
 
         <IconButton
           color="inherit"
@@ -157,7 +163,7 @@ export default function MobileBottomBar({
 
         <IconButton
           color="inherit"
-          aria-label="open menu"
+          aria-label={open ? "close menu" : "open menu"}
           onClick={onMenuClick}
           sx={{
             padding: "3px 5px 3px 0",

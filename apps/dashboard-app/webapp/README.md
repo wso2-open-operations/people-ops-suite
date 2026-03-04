@@ -290,7 +290,7 @@ import * as rax from "retry-axios";
 - `_idToken`: the current **JWT** we attach to every request so the server knows who we are.
 - `_cancelTokenSource`: a general cancel source (not heavily used here—more important is the map below).
 - `_cancelTokenMap`: remembers a **cancel token per endpoint URL**. If you call the same endpoint again before the previous one finishes, we can cancel the old one (prevents duplicate work and “race” bugs).
-- `callback`: a function we got from the auth code (Asgardeo) to **refresh** the token when it expires. (When it gets a 401 or 405 from the choreo gateway) It returns `{ idToken }`.
+- `callback`: a function we got from the auth code (Asgardeo) to **refresh** the token when it expires. (When it gets a 401 from the choreo gateway) It returns `{ idToken }`.
 - `_isRefreshing` + `_refreshPromise`: used to make sure we **refresh once at a time** and share the same refresh promise among all waiting requests.
 
 ### Constructor (Runs Once When You `new APIService(...)`)
@@ -417,13 +417,15 @@ APIService.callback = callback;
     APIService._instance.interceptors.request.use(
       (config) => {
         config.headers.set("Authorization", "Bearer " + APIService._idToken);
-        config.headers.set("x-jwt-assertion", APIService._idToken); // Use only when locally runs
+        if (import.meta.env.DEV) {
+          config.headers.set("x-jwt-assertion", APIService._idToken);
+        }
 ```
 
 - A **request interceptor** runs **right before** a request is sent.
 - We set two headers:
   - `Authorization: Bearer <token>` → standard way to send a JWT to the server.
-  - After the choreo gateway validates the idToken, it will install a new header called `x-jwt-assertion: <token>` and will assign our idToken as its value.
+  - `x-jwt-assertion: <token>` is only set in local/dev mode when explicitly needed.
 
 ```tsx
 const endpoint = config.url || "";
@@ -450,7 +452,7 @@ if (existingToken) {
         return config;
       },
       (error) => {
-        Promise.reject(error);
+        return Promise.reject(error);
       }
     );
   }
@@ -588,7 +590,7 @@ useEffect(() => {
     if (auth.status === "loading")
       loadingMessage = auth.statusMessage ? auth.statusMessage : "loading";
     if (appConfig.state === "loading")
-      loadingMessage = auth.statusMessage ? auth.statusMessage : "loading";
+      loadingMessage = appConfig.statusMessage ? appConfig.statusMessage : "loading";
     setAppState("loading");
   } else if (auth.status === "success" && appConfig.state === "success") {
     setAppState("success");

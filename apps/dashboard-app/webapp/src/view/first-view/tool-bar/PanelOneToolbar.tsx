@@ -17,7 +17,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import { Button, IconButton, Stack } from "@mui/material";
 
-import useConfirmationModalContext from "@context/confirmationModalContext";
+import { useConfirmationModalContext } from "@context/dialogState";
 import { ConfirmationType } from "@utils/types";
 
 const PanelOneToolbar = () => {

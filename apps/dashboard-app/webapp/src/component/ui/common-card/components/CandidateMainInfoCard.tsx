@@ -50,8 +50,10 @@ const CandidateMainInfoCard = ({ title, subTitle, icon }: CandidateMainInfoCardP
       })}
 
       <Stack gap={0.4}>
-        <Typography sx={{ fontWeight: 600, fontSize: 10 }}>{title}</Typography>
-        <Typography sx={{ fontWeight: 600, fontSize: 10 }} color="primary.dark">
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600 }} color="primary.dark">
           {subTitle}
         </Typography>
       </Stack>

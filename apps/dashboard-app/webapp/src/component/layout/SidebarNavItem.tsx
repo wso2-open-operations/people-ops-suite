@@ -110,7 +110,7 @@ function SidebarNavItem({
       </Tooltip>
 
       {/* Render expanded children, outside the Tooltip */}
-      {route && route.children?.length && isActive && (
+      {!!route.children?.length && isActive && (
         <Box
           key="nested"
           sx={{

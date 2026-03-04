@@ -13,18 +13,51 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import PreLoader from "@component/common/PreLoader";
+import { CommonMessage } from "@config/messages";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
 import { RootState, useAppSelector } from "@slices/store";
+import { isIncludedRole } from "@utils/utils";
 
-import { getActiveRoutesV2, routes } from "../route";
+import { ROUTE_PATHS, routes } from "../route";
+
+const AuthorizedRoute = ({
+  allowRoles,
+  element,
+}: {
+  allowRoles: string[];
+  element: ReactNode;
+}) => {
+  const auth = useAppSelector((state: RootState) => state.auth);
+
+  if (!isIncludedRole(auth.roles, allowRoles)) {
+    return <Navigate to={ROUTE_PATHS.home} replace />;
+  }
+
+  return <>{element}</>;
+};
+
+const router = createBrowserRouter([
+  {
+    path: ROUTE_PATHS.home,
+    element: <Layout />,
+    errorElement: <NotFoundPage />,
+    children: routes.map((route) => ({
+      ...route,
+      element: route.element ? (
+        <AuthorizedRoute allowRoles={route.allowRoles} element={route.element} />
+      ) : undefined,
+    })),
+  },
+]);
 
 const AppHandler = () => {
   const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
@@ -33,35 +66,22 @@ const AppHandler = () => {
 
   const auth = useAppSelector((state: RootState) => state.auth);
 
-  const router = useMemo(
-    () =>
-      createBrowserRouter([
-        {
-          path: "/",
-          element: <Layout />,
-          errorElement: <NotFoundPage />,
-          children: getActiveRoutesV2(routes, auth.roles),
-        },
-      ]),
-    [auth.roles],
-  );
-
   useEffect(() => {
-    if (auth.status === "loading") {
+    if (auth.mode === "maintenance") {
+      setAppState("maintenance");
+    } else if (auth.status === "loading") {
       setAppState("loading");
     } else if (auth.status === "success") {
       setAppState("success");
     } else if (auth.status === "failed") {
       setAppState("failed");
-    } else if (auth.mode === "maintenance") {
-      setAppState("maintenance");
     }
   }, [auth.status, auth.mode]);
 
   const renderApp = () => {
     switch (appState) {
       case "loading":
-        return <PreLoader isLoading={true} message={"We are getting things ready ..."} />;
+        return <PreLoader isLoading={true} message={CommonMessage.loading.appReady} />;
 
       case "failed":
         return <ErrorHandler message={auth.statusMessage} />;

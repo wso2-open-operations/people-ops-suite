@@ -5,7 +5,7 @@ import { globalIgnores } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-export default tseslint.config([
+export default tseslint.config(
   globalIgnores(["dist"]),
   {
     files: ["**/*.{ts,tsx}"],
@@ -20,4 +20,4 @@ export default tseslint.config([
       globals: globals.browser,
     },
   },
-]);
+);

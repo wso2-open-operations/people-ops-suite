@@ -37,10 +37,10 @@
       "@config/*": ["./src/config/*"],
       "@context/*": ["./src/context/*"],
       "@layout/*": ["./src/layout/*"],
-      "@services/*": ["./src/services/*"],
       "@slices/*": ["./src/slices/*"],
       "@view/*": ["./src/view/*"],
       "@utils/*": ["./src/utils/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "@/types/*": ["./src/types/*"]
     },
     "types": ["vite/client"]

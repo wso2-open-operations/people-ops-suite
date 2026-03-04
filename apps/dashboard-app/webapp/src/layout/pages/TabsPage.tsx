@@ -27,8 +27,8 @@ interface TabsPageProps {
 interface TabProps {
   tabTitle: string;
   tabPath: string;
-  icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
-  page: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
+  icon: React.ReactElement;
+  page: React.ReactElement;
 }
 
 export default function TabsPage({ tabsPage }: TabsPageProps) {
@@ -38,6 +38,11 @@ export default function TabsPage({ tabsPage }: TabsPageProps) {
   const tabs = useMemo(() => tabsPage.map((tab) => tab.tabPath), [tabsPage]);
 
   useEffect(() => {
+    if (tabs.length === 0) {
+      setValue(0);
+      return;
+    }
+
     const currentTab = searchParams.get("tab");
     const tabIndex = currentTab ? tabs.indexOf(currentTab) : -1;
 
@@ -176,6 +181,7 @@ export function TabPanel(props: TabPanelProps) {
   return (
     <Box
       role="tabpanel"
+      hidden={value !== index}
       id={`simple-tabpanel-${index}`}
       aria-labelledby={`simple-tab-${index}`}
       {...other}

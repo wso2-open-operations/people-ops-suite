@@ -18,6 +18,10 @@ import { Link as RouterLink, LinkProps as RouterLinkProps } from "react-router-d
 
 import React from "react";
 
+import { CommonMessage } from "@config/messages";
+
+import { ROUTE_PATHS } from "../../route";
+
 const Link = React.forwardRef<HTMLAnchorElement, RouterLinkProps>(function Link(itemProps, ref) {
   return <RouterLink ref={ref} {...itemProps} role={undefined} />;
 });
@@ -33,14 +37,14 @@ export default function NotFoundPage() {
         minHeight: "100vh",
       }}
     >
-      <Typography variant="h1" style={{ color: "gray" }}>
-        404
+      <Typography variant="h1" sx={{ color: "text.secondary" }}>
+        {CommonMessage.notFound.title}
       </Typography>
-      <Typography variant="h6" style={{ color: "gray" }}>
-        The page you’re looking for doesn’t exist.
+      <Typography variant="h6" sx={{ color: "text.secondary" }}>
+        {CommonMessage.notFound.description}
       </Typography>
-      <Button component={Link} to={"/"} variant="contained">
-        Back Home
+      <Button component={Link} to={ROUTE_PATHS.home} variant="contained">
+        {CommonMessage.notFound.backHome}
       </Button>
     </Box>
   );

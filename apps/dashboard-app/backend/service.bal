@@ -28,7 +28,6 @@ final cache:Cache cache = new ({
     defaultMaxAge: 1800.0,
     cleanupInterval: 900.0
 });
-
 @display {
     label: "Dashboard Application",
     id: "people-ops-suite/dashboard-service"
@@ -427,6 +426,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
             return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
+                !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
+            return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
         Advertisement|error? ad = database:getActiveAdvertisement();

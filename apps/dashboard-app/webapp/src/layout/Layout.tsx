@@ -22,7 +22,8 @@ import { Suspense, useCallback, useContext, useEffect, useMemo, useState } from 
 
 import PreLoader from "@component/common/PreLoader";
 import { redirectUrl as savedRedirectUrl } from "@config/constant";
-import { ColorModeContext } from "@src/App";
+import { ColorModeContext } from "@context/ColorModeContext";
+import { CommonMessage } from "@config/messages";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
@@ -60,7 +61,26 @@ export default function Layout() {
   useEffect(() => {
     const redirectUrl = localStorage.getItem(savedRedirectUrl);
     if (redirectUrl) {
-      navigate(redirectUrl);
+      const isSafeRelativePath = redirectUrl.startsWith("/") && !redirectUrl.startsWith("//");
+      let safeRedirectPath: string | null = null;
+
+      if (isSafeRelativePath) {
+        safeRedirectPath = redirectUrl;
+      } else {
+        try {
+          const parsedUrl = new URL(redirectUrl, window.location.origin);
+          const isTrustedOrigin = parsedUrl.origin === window.location.origin;
+          if (isTrustedOrigin) {
+            safeRedirectPath = `${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+          }
+        } catch {
+          safeRedirectPath = null;
+        }
+      }
+
+      if (safeRedirectPath) {
+        navigate(safeRedirectPath);
+      }
       localStorage.removeItem(savedRedirectUrl);
     }
   }, [navigate]);
@@ -159,14 +179,14 @@ export default function Layout() {
             sx={{
               flex: 1,
               height: "100%",
-              padding: theme.spacing(3),
-              paddingBottom: isMobile ? "80px" : theme.spacing(3),
-              overflowY: "auto",
+              padding: isFullscreen ? 0 : theme.spacing(3),
+              paddingBottom: isMobile ? "80px" : (isFullscreen ? 0 : theme.spacing(3)),
+              overflowY: isFullscreen ? "hidden" : "auto",
               minHeight: 0,
               backgroundColor: theme.palette.surface.primary.active,
             }}
           >
-            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+            <Suspense fallback={<PreLoader isLoading message={CommonMessage.loading.pageData} />}>
               <Outlet />
             </Suspense>
           </Box>

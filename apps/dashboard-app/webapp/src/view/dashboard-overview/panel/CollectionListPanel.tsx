@@ -21,16 +21,17 @@ import { useEffect, useState } from "react";
 
 import ErrorSvg from "@assets/images/error.svg";
 import NoDataSvg from "@assets/images/no-data.svg";
+import { DashboardOverviewMessage } from "@config/messages";
 import SkeletonCard from "@component/ui/common-card/SkeletonCard";
 import { fetchCollections } from "@slices/collections/collection";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@utils/types";
-import PanelOneToolBar from "@view/first-view/tool-bar/PanelOneToolbar";
+import CollectionActionsToolbar from "@view/dashboard-overview/tool-bar/CollectionActionsToolbar";
 
-import DataCard from "../component/card/CommonCard";
+import CollectionCard from "../component/card/CollectionCard";
 import AddCollectionModal from "../component/modal/AddCollectionModal";
 
-const TabOnePanel = () => {
+const CollectionListPanel = () => {
   const dispatch = useAppDispatch();
   const collection = useAppSelector((state) => state.collection);
   const [showAddCollectionPopUp, setShowAddCollectionPopUp] = useState(false);
@@ -75,20 +76,20 @@ const TabOnePanel = () => {
             gap={2}
           >
             <Box>
-              <img src={ErrorSvg} height={"120px"} />
+              <img src={ErrorSvg} height={"120px"} alt="Error graphic" />
             </Box>
             <Box sx={{ mt: 1 }}>
               <Typography
                 align="center"
                 variant="h3"
                 color={"secondary.dark"}
-              >{`Oops! Internal Server Error`}</Typography>
+              >{DashboardOverviewMessage.panel.serverErrorTitle}</Typography>
               <Typography
                 align="center"
                 fontWeight={500}
                 sx={{ mt: 2 }}
                 variant="body1"
-              >{`we are trying to fix the problem`}</Typography>
+              >{DashboardOverviewMessage.panel.serverErrorDescription}</Typography>
             </Box>
           </Stack>
         </Fade>
@@ -138,20 +139,20 @@ const TabOnePanel = () => {
                 gap={2}
               >
                 <Box>
-                  <img src={NoDataSvg} height={"120px"} />
+                  <img src={NoDataSvg} height={"120px"} alt="No data graphic" />
                 </Box>
                 <Box>
                   <Typography
                     align="center"
                     variant="h4"
                     color={"secondary.dark"}
-                  >{`No data available`}</Typography>
+                  >{DashboardOverviewMessage.panel.noDataTitle}</Typography>
                   <Typography
                     align="center"
                     fontWeight={500}
                     sx={{ mt: 2 }}
                     variant="body2"
-                  >{`There are no collections to display`}</Typography>
+                  >{DashboardOverviewMessage.panel.noDataDescription}</Typography>
                 </Box>
               </Stack>
             </Fade>
@@ -170,11 +171,11 @@ const TabOnePanel = () => {
                   flexDirection: "column",
                 }}
               >
-                {collection.collections.collections.map((collection, idx) => (
-                  <DataCard
-                    key={collection.id}
-                    collection={collection}
-                    actions={<PanelOneToolBar />}
+                {collection.collections.collections.map((item, idx) => (
+                  <CollectionCard
+                    key={item.id}
+                    collection={item}
+                    actions={<CollectionActionsToolbar />}
                     dataCardIndex={idx}
                   />
                 ))}
@@ -189,4 +190,4 @@ const TabOnePanel = () => {
   );
 };
 
-export default TabOnePanel;
+export default CollectionListPanel;

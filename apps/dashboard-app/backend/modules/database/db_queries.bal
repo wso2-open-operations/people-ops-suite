@@ -75,8 +75,15 @@ isolated function getFoodWasteRecordsByDateQuery(string recordDate) returns sql:
 # Build paginated query to list food waste records with optional filters.
 #
 # + filters - Pagination and filter options
+# + page - Page number (1-based)
+# + pageSize - Number of records per page
 # + return - Parameterized select query
-isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters) returns sql:ParameterizedQuery {
+isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters, int page, int pageSize)
+    returns sql:ParameterizedQuery {
+    int safePage = page < 1 ? 1 : page;
+    int safePageSize = pageSize < 1 ? 1 : (pageSize > MAX_PAGE_SIZE ? MAX_PAGE_SIZE : pageSize);
+    int computedOffset = (safePage - 1) * safePageSize;
+
     sql:ParameterizedQuery baseQuery =
 `
     SELECT
@@ -103,7 +110,7 @@ isolated function getFoodWasteRecordsQuery(FoodWasteRecordFilters filters) retur
         baseQuery = sql:queryConcat(baseQuery, ` AND meal_type = ${filters.mealType}`);
     }
     return sql:queryConcat(baseQuery,
-            ` ORDER BY record_date DESC LIMIT ${filters.'limit} OFFSET ${filters.offset}`);
+            ` ORDER BY record_date DESC LIMIT ${safePageSize} OFFSET ${computedOffset}`);
 }
 
 # Build query to update a food waste record.
@@ -142,10 +149,10 @@ isolated function addAdvertisementQuery(CreateAdvertisementPayload payload, stri
     returns sql:ParameterizedQuery =>
 `
     INSERT INTO dashboard_app_db.advertisements
-        (media_url, media_type, duration_seconds, thumbnail_url, created_by, updated_by)
+        (ad_name, media_url, media_type, duration_seconds, created_by, updated_by)
     VALUES
-        (${payload.mediaUrl}, ${payload.mediaType.toString()}, ${payload.durationSeconds},
-         ${payload.thumbnailUrl}, ${createdBy}, ${createdBy})
+        (${payload.adName}, ${payload.mediaUrl}, ${payload.mediaType.toString()}, ${payload.durationSeconds},
+         ${createdBy}, ${createdBy})
 `;
 
 # Build query to retrieve all advertisements.
@@ -155,16 +162,17 @@ isolated function getAdvertisementsQuery() returns sql:ParameterizedQuery =>
 `
     SELECT
         advertisement_id AS id,
+        ad_name          AS adName,
         media_url        AS mediaUrl,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
-        thumbnail_url    AS thumbnailUrl,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,
         created_on       AS createdOn,
         created_by       AS createdBy,
-        updated_on       AS updatedOn
+        updated_on       AS updatedOn,
+        updated_by       AS updatedBy
     FROM  dashboard_app_db.advertisements
     ORDER BY display_order ASC
 `;
@@ -176,16 +184,17 @@ isolated function getActiveAdvertisementQuery() returns sql:ParameterizedQuery =
 `
     SELECT
         advertisement_id AS id,
+        ad_name          AS adName,
         media_url        AS mediaUrl,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
-        thumbnail_url    AS thumbnailUrl,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,
         created_on       AS createdOn,
         created_by       AS createdBy,
-        updated_on       AS updatedOn
+        updated_on       AS updatedOn,
+        updated_by       AS updatedBy
     FROM  dashboard_app_db.advertisements
     WHERE is_active = TRUE
     LIMIT 1
@@ -199,16 +208,17 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
 `
     SELECT
         advertisement_id AS id,
+        ad_name          AS adName,
         media_url        AS mediaUrl,
         media_type       AS mediaType,
         duration_seconds AS durationSeconds,
-        thumbnail_url    AS thumbnailUrl,
         is_active        AS isActive,
         display_order    AS displayOrder,
         uploaded_date    AS uploadedDate,
         created_on       AS createdOn,
         created_by       AS createdBy,
-        updated_on       AS updatedOn
+        updated_on       AS updatedOn,
+        updated_by       AS updatedBy
     FROM  dashboard_app_db.advertisements
     WHERE advertisement_id = ${id}
 `;
@@ -216,9 +226,9 @@ isolated function getAdvertisementByIdQuery(int id) returns sql:ParameterizedQue
 # Build query to activate an advertisement.
 #
 # + id - Advertisement id
-# + return - Parameterized update query
+# + return - Parameterized procedure call query
 isolated function activateAdvertisementQuery(int id) returns sql:ParameterizedQuery =>
-    `UPDATE dashboard_app_db.advertisements SET is_active = TRUE WHERE advertisement_id = ${id}`;
+    `CALL dashboard_app_db.activate_advertisement(${id})`;
 
 # Build query to delete an advertisement.
 #
@@ -274,7 +284,8 @@ isolated function getMonthlyTrendQuery(string startMonth, string endMonth) retur
         SUM(CASE WHEN meal_type = 'BREAKFAST' THEN total_waste_kg ELSE 0 END) AS breakfastWaste,
         SUM(CASE WHEN meal_type = 'LUNCH'     THEN total_waste_kg ELSE 0 END) AS lunchWaste
     FROM  dashboard_app_db.food_waste_records
-    WHERE DATE_FORMAT(record_date, '%Y-%m') BETWEEN ${startMonth} AND ${endMonth}
+        WHERE record_date >= STR_TO_DATE(CONCAT(${startMonth}, '-01'), '%Y-%m-%d')
+            AND record_date < DATE_ADD(STR_TO_DATE(CONCAT(${endMonth}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
     GROUP BY DATE_FORMAT(record_date, '%Y-%m')
     ORDER BY month ASC
 `;

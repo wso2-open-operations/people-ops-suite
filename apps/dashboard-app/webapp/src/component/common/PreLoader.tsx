@@ -17,6 +17,7 @@ import { Box, Container, LinearProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
 import type { PreLoaderProps } from "@utils/types";
+import Wso2Logo from "@assets/images/wso2-logo.svg";
 
 const PreLoader = (props: PreLoaderProps) => {
   return (
@@ -26,11 +27,13 @@ const PreLoader = (props: PreLoaderProps) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        alignItems: "center",
         height: "100vh",
+        width: "100%",
       }}
     >
       <Container maxWidth="md">
-        <Box>
+        <Box sx={{ width: "100%", display: "flex", justifyContent: "center" }}>
           <Grid
             container
             direction="column"
@@ -38,7 +41,20 @@ const PreLoader = (props: PreLoaderProps) => {
             alignItems="center"
             spacing={2}
           >
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
+              <Box
+                component="img"
+                src={Wso2Logo}
+                alt="WSO2"
+                sx={{
+                  width: "110px",
+                  height: "auto",
+                  display: "block",
+                  margin: "0 auto",
+                }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
               {props.isLoading && (
                 <LinearProgress
                   sx={{
@@ -47,12 +63,13 @@ const PreLoader = (props: PreLoaderProps) => {
                 />
               )}
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Typography
                 variant="inherit"
                 sx={{
                   fontSize: "14px",
                   fontWeight: 500,
+                  textAlign: "center",
                   color: (theme) =>
                     theme.palette.mode === "light"
                       ? theme.palette.common.black

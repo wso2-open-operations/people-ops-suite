@@ -25,11 +25,29 @@ configurable Oauth2Config oauthConfig = ?;
     id: "hris/entity-graphql-service"
 }
 
-final graphql:Client hrClient = check new (hrEntityBaseUrl, {
-    auth: {
-        ...oauthConfig
-    },
-    retryConfig: {
-        ...retryConfig
+graphql:Client? hrClient = ();
+
+# Initialize HR GraphQL client.
+#
+# + return - Error if initialization fails
+function init() returns error? {
+    hrClient = check new (hrEntityBaseUrl, {
+        auth: {
+            ...oauthConfig
+        },
+        retryConfig: {
+            ...retryConfig
+        }
+    });
+}
+
+# Get initialized HR GraphQL client.
+#
+# + return - graphql:Client|error if uninitialized
+public function getHrClient() returns graphql:Client|error {
+    graphql:Client? hrGraphQlClient = hrClient;
+    if hrGraphQlClient is graphql:Client {
+        return hrGraphQlClient;
     }
-});
+    return error("HR GraphQL client is not initialized");
+}

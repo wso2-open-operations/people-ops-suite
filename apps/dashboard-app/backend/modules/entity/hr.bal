@@ -13,12 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ballerina/graphql;
 
 # Fetch Employee Data.
 #
 # + workEmail - WSO2 email address
 # + return - Employee | Error
-public isolated function fetchEmployeesBasicInfo(string workEmail) returns Employee|error {
+public function fetchEmployeesBasicInfo(string workEmail) returns Employee|error {
+    graphql:Client graphQlClient = check getHrClient();
+
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -27,12 +30,12 @@ public isolated function fetchEmployeesBasicInfo(string workEmail) returns Emplo
                 firstName,
                 lastName,
                 jobRole,
-                employeeThumbnail,
+                employeeThumbnail
             }
         }
     `;
 
-    EmployeeResponse|error response = hrClient->execute(document, {workEmail});
+    EmployeeResponse|error response = graphQlClient->execute(document, {workEmail});
     if response is error {
         return response;
     }

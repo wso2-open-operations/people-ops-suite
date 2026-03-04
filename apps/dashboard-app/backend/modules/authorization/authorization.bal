@@ -16,6 +16,7 @@
 import ballerina/http;
 import ballerina/jwt;
 import ballerina/log;
+import ballerina/crypto;
 
 public configurable AppRoles authorizedRoles = ?;
 
@@ -25,13 +26,13 @@ public isolated service class JwtInterceptor {
     *http:RequestInterceptor;
 
     isolated resource function default [string... path](http:RequestContext ctx, http:Request req)
-        returns http:NextService|http:Forbidden|http:InternalServerError|error? {
+        returns http:NextService|http:Forbidden|http:Unauthorized|http:InternalServerError|error? {
 
         string|error idToken = req.getHeader(JWT_ASSERTION_HEADER);
         if idToken is error {
             string errorMsg = "Missing invoker info header!";
             log:printError(errorMsg, idToken);
-            return <http:InternalServerError>{
+            return <http:Unauthorized>{
                 body: {
                     message: errorMsg
                 }
@@ -59,8 +60,9 @@ public isolated service class JwtInterceptor {
             }
         }
 
-        log:printError(
-                string `${userInfo.email} is missing required permissions, only has ${userInfo.groups.toBalString()}`);
+        byte[] emailHash = crypto:hashSha256(userInfo.email.toBytes());
+        int groupCount = userInfo.groups.length();
+        log:printError(string `Access denied for user hash ${emailHash.toBase16()} (groupCount=${groupCount})`);
 
         return <http:Forbidden>{body: {message: "Insufficient privileges!"}};
     }

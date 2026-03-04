@@ -53,17 +53,19 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
             overflow: "hidden",
           }}
         >
-          {parentRoute.children!.map((child) => (
-            <motion.div key={child.path} variants={item} style={{ width: "100%" }}>
-              <SubLink
-                to={child.path as string}
-                parentPath={parentRoute.path}
-                primary={child.text}
-                icon={child.icon}
-                open={open}
-              />
-            </motion.div>
-          ))}
+          {parentRoute.children!
+            .filter((child): child is typeof child & { path: string } => typeof child.path === "string")
+            .map((child) => (
+              <motion.div key={child.path} variants={item} style={{ width: "100%" }}>
+                <SubLink
+                  to={child.path}
+                  parentPath={parentRoute.path}
+                  primary={child.text}
+                  icon={child.icon}
+                  open={open}
+                />
+              </motion.div>
+            ))}
         </motion.div>
       )}
     </AnimatePresence>

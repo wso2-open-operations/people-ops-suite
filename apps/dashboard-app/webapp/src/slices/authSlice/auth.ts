@@ -17,7 +17,7 @@ import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import { State } from "@/types/types";
-import { SnackMessage } from "@config/constant";
+import { PRIVILEGE_ADMIN, PRIVILEGE_EMPLOYEE, SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
@@ -88,10 +88,10 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(789)) {
+    if (userPrivileges.includes(PRIVILEGE_ADMIN)) {
       roles.push(Role.ADMIN);
     }
-    if (userPrivileges.includes(987)) {
+    if (userPrivileges.includes(PRIVILEGE_EMPLOYEE)) {
       roles.push(Role.EMPLOYEE);
     }
 
@@ -135,7 +135,8 @@ export const authSlice = createSlice({
       })
       .addCase(loadPrivileges.rejected, (state, action) => {
         state.status = State.failed;
-        state.statusMessage = action.payload as string;
+        state.statusMessage =
+          (action.payload as string | undefined) ?? action.error?.message ?? "Failed to load privileges";
       });
   },
 });

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -28,6 +28,19 @@ const BackgroundLoader = (props: {
     action?: () => void;
   };
 }) => {
+  const safeProgress = (() => {
+    if (!props.linearProgress || !props.linearProgress.total) {
+      return 0;
+    }
+
+    const rawValue = (props.linearProgress.completed / props.linearProgress.total) * 100;
+    if (!Number.isFinite(rawValue)) {
+      return 0;
+    }
+
+    return Math.min(100, Math.max(0, rawValue));
+  })();
+
   return (
     <Backdrop
       sx={{
@@ -48,9 +61,7 @@ const BackgroundLoader = (props: {
       )}
       {props.linearProgress && (
         <Box sx={{ width: "40%" }}>
-          <LinearProgressWithLabel
-            value={(props.linearProgress.completed / props.linearProgress.total) * 100}
-          />
+          <LinearProgressWithLabel value={safeProgress} />
           <Typography variant="h5" sx={{ marginTop: "20px" }}>
             {props.message}
           </Typography>

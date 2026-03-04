@@ -116,10 +116,10 @@ function createFoodWasteRecordAndGetId(string date, map<string> headers) returns
 
 function createAdvertisementAndGetId(map<string> headers) returns int|error {
     CreateAdvertisementPayload payload = {
+        adName: "Sample Ad",
         mediaUrl: "http://example.com/ad.mp4",
         mediaType: database:VIDEO_MP4,
-        durationSeconds: 15,
-        thumbnailUrl: "http://example.com/thumb.jpg"
+        durationSeconds: 15
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);
@@ -145,7 +145,7 @@ function createAdvertisementAndGetId(map<string> headers) returns int|error {
 function testUnauthorizedAccess() returns error? {
     http:Response|error response = dashboardClient->get("/food-waste/daily?date=2024-01-01");
     if response is http:Response {
-        test:assertEquals(response.statusCode, 500, "Expected 500 Internal Server Error for missing JWT header");
+        test:assertEquals(response.statusCode, 401, "Expected 401 Unauthorized for missing JWT header");
     } else {
         test:assertFail("Client call failed");
     }
@@ -179,15 +179,11 @@ function testCreateFoodWasteRecord() returns error? {
     http:Response|error response = dashboardClient->post("/food-waste", payload, headers);
 
     if response is http:Response {
-        // Expect 201 Created or 409 Conflict if exists (since we reuse date)
         if response.statusCode == 500 {
             json errorPayload = check response.getJsonPayload();
-            test:assertEquals(errorPayload.message, "Error occurred while creating food waste record!");
-            return;
+            test:assertFail(string `Unexpected 500 response: ${errorPayload.toJsonString()}`);
         }
         if response.statusCode == 409 {
-            // If conflict, it means record exists, which is acceptable for repeated test runs without DB cleanup
-            // Ideally we should delete first, but let's accept 409 or 201
             return;
         }
         test:assertEquals(response.statusCode, 201, "Expected 201 Created");
@@ -206,10 +202,25 @@ function testGetDailyFoodWaste() returns error? {
     if response is http:Response {
         if response.statusCode == 500 {
             json payload = check response.getJsonPayload();
-            test:assertEquals(payload.message, "Error occurred while fetching daily food waste records!");
-            return;
+            test:assertFail(string `Unexpected 500 response: ${payload.toJsonString()}`);
         }
         test:assertEquals(response.statusCode, 200, "Expected 200 OK");
+    } else {
+        test:assertFail("Client call failed");
+    }
+}
+
+// 4.1 Test Get Daily Food Waste Server Error (Negative Path)
+@test:Config {}
+function testGetDailyFoodWasteHandlesServerError() returns error? {
+    map<string> headers = check getHeaders(["employee"]);
+
+    http:Response|error response = dashboardClient->get("/food-waste/daily?date=2024-01-01", headers);
+
+    if response is http:Response {
+        test:assertEquals(response.statusCode, 500, "Expected 500 Internal Server Error");
+        json payload = check response.getJsonPayload();
+        test:assertEquals(payload.message, "Error occurred while fetching daily food waste records!");
     } else {
         test:assertFail("Client call failed");
     }
@@ -301,10 +312,10 @@ function testCreateAdvertisement() returns error? {
     map<string> headers = check getHeaders(["admin"]);
 
     CreateAdvertisementPayload payload = {
+        adName: "Test Campaign",
         mediaUrl: "http://example.com/ad.mp4",
         mediaType: database:VIDEO_MP4,
-        durationSeconds: 15,
-        thumbnailUrl: "http://example.com/thumb.jpg"
+        durationSeconds: 15
     };
 
     http:Response|error response = dashboardClient->post("/advertisements", payload, headers);

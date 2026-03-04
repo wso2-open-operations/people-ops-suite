@@ -19,65 +19,33 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { SnackbarProvider } from "notistack";
 import { Provider } from "react-redux";
 
-import { createContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
+import { ColorModeContext } from "@context/ColorModeContext";
 import { store } from "@slices/store";
 import { themeSettings } from "@root/src/theme";
-import { ThemeMode } from "@utils/types";
+
+import { useColorMode } from "./hooks/useColorMode";
 
 import "./index.css";
 
-export const ColorModeContext = createContext({
-  mode: ThemeMode.Light,
-  toggleColorMode: () => {},
-});
-
 function App() {
-  document.title = APP_NAME;
-  const processLocalThemeMode = (): ThemeMode => {
-    try {
-      const savedTheme = localStorage.getItem("internal-app-theme");
-      if (savedTheme === ThemeMode.Light || savedTheme === ThemeMode.Dark) {
-        return savedTheme;
-      }
+  const { mode, toggleColorMode } = useColorMode();
 
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const systemTheme = prefersDark ? ThemeMode.Dark : ThemeMode.Light;
-
-      localStorage.setItem("internal-app-theme", systemTheme);
-      return systemTheme;
-    } catch {
-      return ThemeMode.Light;
-    }
-  };
-
-  const [mode, setMode] = useState<ThemeMode>(processLocalThemeMode());
+  useEffect(() => {
+    document.title = APP_NAME;
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", mode);
   }, [mode]);
 
-  const colorMode = useMemo(
-    () => ({
-      toggleColorMode: () => {
-        const newMode = mode === ThemeMode.Light ? ThemeMode.Dark : ThemeMode.Light;
-        // Update localStorage
-        localStorage.setItem("internal-app-theme", newMode);
-        // Update state
-        setMode(newMode);
-        // Apply the data-theme attribute to the document element
-        document.documentElement.setAttribute("data-theme", newMode);
-      },
-    }),
-    [mode],
-  );
-
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
 
   return (
-    <ColorModeContext.Provider value={{ mode, toggleColorMode: colorMode.toggleColorMode }}>
+    <ColorModeContext.Provider value={{ mode, toggleColorMode }}>
       <SnackbarProvider maxSnack={3} preventDuplicate>
         <ThemeProvider theme={theme}>
           <Provider store={store}>

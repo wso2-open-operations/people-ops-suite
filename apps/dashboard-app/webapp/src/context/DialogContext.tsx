@@ -29,15 +29,13 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
 import * as React from "react";
-import { useContext, useState } from "react";
+import { useState } from "react";
 
-import { ConfirmationType } from "@/types/types";
-
-type InputObj = {
-  label: string;
-  mandatory: boolean;
-  type: "textarea" | "date";
-};
+import { ConfirmationType, InputObj } from "@/types/types";
+import {
+  ConfirmationDialogContextType,
+  ConfirmationModalContext,
+} from "@context/dialogState";
 
 type UseConfirmationDialogShowReturnType = {
   show: boolean;
@@ -59,23 +57,9 @@ const useDialogShow = (): UseConfirmationDialogShowReturnType => {
   };
 };
 
-type ConfirmationDialogContextType = {
-  showConfirmation: (
-    title: string,
-    message: string | React.ReactNode,
-    type: ConfirmationType,
-    action: () => void,
-    okText?: string,
-    cancelText?: string,
-    inputObj?: InputObj,
-  ) => void;
-};
-
 type ConfirmationModalContextProviderProps = {
   children: React.ReactNode;
 };
-
-const ConfirmationModalContext = React.createContext<ConfirmationDialogContextType | null>(null);
 
 const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProviderProps> = (
   props,
@@ -83,6 +67,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   const { setShow, show, onHide } = useDialogShow();
 
   const [comment, setComment] = React.useState("");
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const [content, setContent] = useState<{
     title: string;
@@ -124,9 +109,16 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     showConfirmation: handleShow,
   };
 
-  const handleOk = (value?: string) => {
-    content && content.action(value);
-    onHide();
+  const handleOk = async (value?: string) => {
+    try {
+      if (content) {
+        await Promise.resolve(content.action(value));
+      }
+      setComment("");
+      onHide();
+    } catch (error) {
+      console.error("Confirmation dialog action failed", error);
+    }
   };
 
   const handleCancel = () => {
@@ -173,7 +165,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 borderBottom: 1,
                 borderColor: "divider",
                 mb: 1,
-                pd: 0,
+                p: 0,
               }}
             >
               {content?.title}
@@ -198,11 +190,12 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                 sx={{ marginX: 2, mt: 2, maxWidth: 350 }}
                 value={comment}
                 label={content.inputObj?.label}
-                type="text"
+                type={content.inputObj.type === "date" ? "date" : "text"}
                 size="small"
-                multiline
-                rows={2}
-                maxRows={6}
+                multiline={content.inputObj.type === "textarea"}
+                rows={content.inputObj.type === "textarea" ? 2 : undefined}
+                maxRows={content.inputObj.type === "textarea" ? 6 : undefined}
+                InputLabelProps={content.inputObj.type === "date" ? { shrink: true } : undefined}
                 onChange={onChange}
               />
             )}
@@ -232,8 +225,20 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                   }}
                   variant="contained"
                   size="small"
-                  disabled={content?.inputObj?.mandatory && comment === ""}
-                  onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
+                  loading={isSubmitting}
+                  disabled={content?.inputObj?.mandatory && !comment.trim()}
+                  onClick={async () => {
+                    if (isSubmitting) {
+                      return;
+                    }
+
+                    try {
+                      setIsSubmitting(true);
+                      await (content?.inputObj ? handleOk(comment) : handleOk());
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
                   loadingPosition="start"
                   startIcon={
                     content.type === "update" ? (
@@ -255,17 +260,5 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
     </LocalizationProvider>
   );
 };
-
-const useConfirmationModalContext = (): ConfirmationDialogContextType => {
-  const context = useContext(ConfirmationModalContext);
-  if (!context) {
-    throw new Error(
-      "useConfirmationModalContext must be used within a ConfirmationModalContextProvider",
-    );
-  }
-  return context;
-};
-
-export { useDialogShow, useConfirmationModalContext };
 
 export default ConfirmationModalContextProvider;

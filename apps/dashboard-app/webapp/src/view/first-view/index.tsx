@@ -13,12 +13,32 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { useTheme } from "@mui/material";
-import { Box, Card, CardContent, Stack, Typography } from "@wso2/oxygen-ui";
-import { AreaChart, BarChart, PieChart, ResponsiveContainer } from "@wso2/oxygen-ui-charts-react";
-import { Maximize2, Minimize2, TrendingUpIcon } from "@wso2/oxygen-ui-icons-react";
+import { useTheme } from "@mui/material/styles";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { Maximize2, Minimize2 } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import type { CSSProperties } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 
 import {
   fetchLatestFoodWasteData,
@@ -28,25 +48,250 @@ import {
 } from "@slices/foodWasteSlice/foodWaste";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 
-const DEFAULT_WEEKLY_DATA = [{ date: "Jan 26", breakfast: 0, lunch: 0 }];
+type WeeklyDatum = {
+  date: string;
+  breakfast: number;
+  lunch: number;
+};
 
-const DEFAULT_MONTHLY_DATA = [{ month: "Jan", breakfast: 0, lunch: 0 }];
+type MonthlyDatum = {
+  month: string;
+  breakfast: number;
+  lunch: number;
+};
 
-const DEFAULT_ANNUAL_DATA = [{ year: "2026", breakfast: 0, lunch: 0 }];
+type AnnualDatum = {
+  year: string;
+  breakfast: number;
+  lunch: number;
+};
+
+type PieDatum = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type OverviewDatum = {
+  name: string;
+  breakfast: number;
+  lunch: number;
+};
+
+const DEFAULT_WEEKLY_DATA: WeeklyDatum[] = [];
+const DEFAULT_MONTHLY_DATA: MonthlyDatum[] = [];
+const DEFAULT_ANNUAL_DATA: AnnualDatum[] = [];
+
+interface KPICardProps {
+  title: string;
+  totalWaste: number;
+  plateCount: number;
+  borderColor: string;
+}
+
+const KPICard = memo(({ title, totalWaste, plateCount, borderColor }: KPICardProps) => {
+  const wastePerPlate = plateCount > 0 ? ((totalWaste * 1000) / plateCount).toFixed(1) : "0.0";
+
+  return (
+    <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px" }}>
+      <Card
+        sx={{
+          borderLeft: `8px solid ${borderColor}`,
+          borderRadius: 2,
+          boxShadow: 1,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}
+      >
+        <CardContent sx={{ py: 1, px: 2, "&:last-child": { pb: 1 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle1" fontWeight="bold">
+              {title}
+            </Typography>
+            <Stack direction="row" spacing={2}>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem", lineHeight: 1 }}>
+                  Total Waste
+                </Typography>
+                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "1rem" }}>
+                  {totalWaste.toFixed(1)}{" "}
+                  <Typography component="span" variant="caption" sx={{ fontSize: "0.6rem" }}>
+                    kg
+                  </Typography>
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem", lineHeight: 1 }}>
+                  Plate Count
+                </Typography>
+                <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "1rem" }}>{plateCount}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontSize: "0.7rem", lineHeight: 1 }}>
+                  Waste/Plate
+                </Typography>
+                <Typography variant="h6" fontWeight="bold" sx={{ color: "#FF7300", fontSize: "1rem" }}>
+                  {wastePerPlate}{" "}
+                  <Typography component="span" variant="caption" sx={{ fontSize: "0.6rem" }}>
+                    g
+                  </Typography>
+                </Typography>
+              </Box>
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+});
+
+interface ChartProps {
+  data: WeeklyDatum[];
+  chartGridColor: string;
+  chartLabelColor: string;
+  chartTooltipStyle: CSSProperties;
+}
+
+const WeeklyTrendChart = memo(({ data, chartGridColor, chartLabelColor, chartTooltipStyle }: ChartProps) => (
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+    <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
+      <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 2 } }}>
+        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+          Weekly Waste Trend
+        </Typography>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+              <XAxis dataKey="date" tick={{ fill: chartLabelColor }} />
+              <YAxis tick={{ fill: chartLabelColor }} />
+              <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: chartLabelColor }} />
+              <Legend wrapperStyle={{ color: chartLabelColor }} />
+              <Area
+                type="monotone"
+                dataKey="lunch"
+                name="Lunch (kg)"
+                stroke="#FF7300"
+                fill="#FF7300"
+                fillOpacity={0.4}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+              <Area
+                type="monotone"
+                dataKey="breakfast"
+                name="Breakfast (kg)"
+                stroke="#00A97E"
+                fill="#00A97E"
+                fillOpacity={0.6}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+));
+
+interface CompositionPieChartProps {
+  data: PieDatum[];
+  chartLabelColor: string;
+  chartTooltipStyle: CSSProperties;
+}
+
+const CompositionPieChart = memo(({ data, chartLabelColor, chartTooltipStyle }: CompositionPieChartProps) => (
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+    <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
+      <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 4 } }}>
+        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+          Daily Waste Composition
+        </Typography>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ bottom: 40 }}>
+              <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: chartLabelColor }} />
+              <Legend
+                wrapperStyle={{ color: chartLabelColor, paddingTop: "20px" }}
+                verticalAlign="bottom"
+                align="center"
+              />
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={100}
+              >
+                {data.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+));
+
+interface OverviewChartsProps {
+  title: string;
+  data: OverviewDatum[];
+  chartGridColor: string;
+  chartLabelColor: string;
+  chartTooltipStyle: CSSProperties;
+}
+
+const OverviewCharts = memo(({ title, data, chartGridColor, chartLabelColor, chartTooltipStyle }: OverviewChartsProps) => (
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+    <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
+      <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 2 } }}>
+        <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+          {title}
+        </Typography>
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 30 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+              <XAxis dataKey="name" tick={{ fill: chartLabelColor }} />
+              <YAxis tick={{ fill: chartLabelColor }} />
+              <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: chartLabelColor }} />
+              <Legend wrapperStyle={{ color: chartLabelColor }} />
+              <Bar dataKey="lunch" name="Lunch (kg)" fill="#FF7300" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="breakfast" name="Breakfast (kg)" fill="#00A97E" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+      </CardContent>
+    </Card>
+  </Box>
+));
 
 export default function Dashboard() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Calculate date range for last 7 days
+  // Calculate date range for last 7 days using LOCAL dates (not UTC).
   const { startDate, endDate } = useMemo(() => {
     const today = new Date();
     const sevenDaysAgo = new Date(today);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+    const toLocalDateStr = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
     return {
-      startDate: sevenDaysAgo.toISOString().split("T")[0],
-      endDate: today.toISOString().split("T")[0],
+      startDate: toLocalDateStr(sevenDaysAgo),
+      endDate: toLocalDateStr(today),
     };
   }, []);
 
@@ -64,45 +309,14 @@ export default function Dashboard() {
     dispatch(fetchLatestFoodWasteData());
   }, [dispatch, endDate, startDate]);
 
-  const kpis = useMemo(
-    () => ({
-      breakfast: latestData?.breakfast,
-      lunch: latestData?.lunch,
-    }),
-    [latestData],
-  );
-
-  const compositionData = useMemo(() => {
-    const breakfastValue = kpis.breakfast?.totalWasteKg ?? 0;
-    const lunchValue = kpis.lunch?.totalWasteKg ?? 0;
-
-    return [
-      { name: "Breakfast", value: breakfastValue, color: "#00A97E" },
-      { name: "Lunch", value: lunchValue, color: "#FF7300" },
-    ];
-  }, [kpis.breakfast?.totalWasteKg, kpis.lunch?.totalWasteKg]);
-
-  const chartTextSx =
-    theme.palette.mode === "dark"
-      ? {
-          "& .recharts-cartesian-axis-tick-value": {
-            fill: `${theme.palette.common.white} !important`,
-          },
-          "& .recharts-cartesian-axis-label": {
-            fill: `${theme.palette.common.white} !important`,
-          },
-          "& .recharts-legend-item-text": {
-            color: `${theme.palette.common.white} !important`,
-            fill: `${theme.palette.common.white} !important`,
-          },
-          "& .recharts-text": {
-            fill: `${theme.palette.common.white} !important`,
-          },
-          "& text": {
-            fill: `${theme.palette.common.white} !important`,
-          },
-        }
-      : {};
+  const chartLabelColor = theme.palette.mode === "dark" ? theme.palette.common.white : theme.palette.common.black;
+  const chartGridColor =
+    theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.18)" : "rgba(0, 0, 0, 0.18)";
+  const chartTooltipStyle = {
+    backgroundColor: theme.palette.background.paper,
+    border: `1px solid ${chartGridColor}`,
+    color: chartLabelColor,
+  };
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -116,20 +330,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Apply dark mode text colors to chart SVG elements
-  useEffect(() => {
-    if (theme.palette.mode === "dark") {
-      const textElements = document.querySelectorAll(
-        ".recharts-cartesian-axis-tick text, .recharts-legend-item-text, .recharts-tooltip-wrapper text, .recharts-label, svg text",
-      );
-      textElements.forEach((el) => {
-        if (el.getAttribute("fill") !== "#FF7300" && el.getAttribute("fill") !== "#00A97E") {
-          el.setAttribute("fill", "#FFFFFF");
-        }
-      });
-    }
-  }, [theme.palette.mode, weeklyData, monthlyData, annualData]);
-
   const toggleFullscreen = async () => {
     if (!document.fullscreenElement) {
       await document.documentElement.requestFullscreen();
@@ -139,13 +339,47 @@ export default function Dashboard() {
     await document.exitFullscreen();
   };
 
+  const weeklyChartData = useMemo(() => weeklyData || DEFAULT_WEEKLY_DATA, [weeklyData]);
+
+  const pieData = useMemo(() => {
+    if (!latestData) return [];
+    const breakfastValue = Number(latestData.breakfast?.totalWasteKg ?? 0);
+    const lunchValue = Number(latestData.lunch?.totalWasteKg ?? 0);
+    return [
+      { name: "Breakfast", value: breakfastValue, color: "#00A97E" },
+      { name: "Lunch", value: lunchValue, color: "#FF7300" },
+    ];
+  }, [latestData]);
+
+  const monthlyChartData = useMemo(() => {
+    return (monthlyData || DEFAULT_MONTHLY_DATA).map((d) => ({
+      name: d.month,
+      breakfast: d.breakfast,
+      lunch: d.lunch,
+    }));
+  }, [monthlyData]);
+
+  const yearlyChartData = useMemo(() => {
+    return (annualData || DEFAULT_ANNUAL_DATA).map((d) => ({
+      name: d.year,
+      breakfast: d.breakfast,
+      lunch: d.lunch,
+    }));
+  }, [annualData]);
+
   return (
     <Box
       sx={{
-        p: isFullscreen ? 2 : 4,
-        minHeight: "100%",
-        height: "100%",
+        p: isFullscreen ? 2 : 3,
+        pt: isFullscreen ? 3 : 3,
+        height: isFullscreen ? "100vh" : "100%",
+        width: "100%",
         position: "relative",
+        bgcolor: "background.default",
+        overflow: "hidden",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <Box
@@ -174,239 +408,92 @@ export default function Dashboard() {
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </Box>
 
-      <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-        <Box sx={{ flex: "1 1 calc(50% - 12px)", minWidth: "300px" }}>
-          <Card
-            sx={{
-              borderLeft: "10px solid #00A97E",
-              borderRadius: 4,
-              boxShadow: 1,
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h4" fontWeight="bold">
-                  Breakfast
-                </Typography>
-                <Stack direction="row" spacing={4}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Waste
-                    </Typography>
-                    <Typography variant="h5">
-                      {(kpis.breakfast?.totalWasteKg ?? 0).toFixed(1)}{" "}
-                      <Typography component="span" variant="body2">
-                        kg
-                      </Typography>
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Plate Count
-                    </Typography>
-                    <Typography variant="h5">{kpis.breakfast?.plateCount ?? 0}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Waste/Plate (grams)
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: "#FF7300" }}>
-                      {kpis.breakfast?.plateCount
-                        ? (
-                            (kpis.breakfast.totalWasteKg * 1000) /
-                            kpis.breakfast.plateCount
-                          ).toFixed(1)
-                        : "0.0"}{" "}
-                      <Typography component="span" variant="caption">
-                        g
-                      </Typography>
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Box>
 
-        <Box sx={{ flex: "1 1 calc(50% - 12px)", minWidth: "300px" }}>
-          <Card
-            sx={{
-              borderLeft: "10px solid #FF7300",
-              borderRadius: 4,
-              boxShadow: 1,
-            }}
-          >
-            <CardContent>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="h4" fontWeight="bold">
-                  Lunch
-                </Typography>
-                <Stack direction="row" spacing={4}>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Total Waste
-                    </Typography>
-                    <Typography variant="h5">
-                      {(kpis.lunch?.totalWasteKg ?? 0).toFixed(1)}{" "}
-                      <Typography component="span" variant="body2">
-                        kg
-                      </Typography>
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Plate Count
-                    </Typography>
-                    <Typography variant="h5">{kpis.lunch?.plateCount ?? 0}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Waste/Plate (grams)
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: "#FF7300" }}>
-                      {kpis.lunch?.plateCount
-                        ? ((kpis.lunch.totalWasteKg * 1000) / kpis.lunch.plateCount).toFixed(1)
-                        : "0.0"}{" "}
-                      <Typography component="span" variant="caption">
-                        g
-                      </Typography>
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
+      <Stack
+        spacing={1.5}
+        sx={{
+          height: "100%",
+          width: "100%",
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden"
+        }}
+      >
+        {/* KPI Row - Reduced to 10% height */}
+        <Stack
+          direction="row"
+          spacing={2}
+          flexWrap="nowrap"
+          sx={{
+            flex: "0 0 auto",
+            height: isFullscreen ? "10%" : "auto"
+          }}
+        >
+          <KPICard
+            title="Breakfast"
+            totalWaste={Number(latestData?.breakfast?.totalWasteKg || 0)}
+            plateCount={latestData?.breakfast?.plateCount || 0}
+            borderColor="#00A97E"
+          />
+          <KPICard
+            title="Lunch"
+            totalWaste={Number(latestData?.lunch?.totalWasteKg || 0)}
+            plateCount={latestData?.lunch?.plateCount || 0}
+            borderColor="#FF7300"
+          />
+        </Stack>
 
-      <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-        <Box sx={{ flex: "2 1 600px", minWidth: "300px" }}>
-          <Card sx={{ borderRadius: 4, height: 400, ...chartTextSx }}>
-            <CardContent>
-              <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                <TrendingUpIcon color="#FF7300" />
-                <Typography variant="subtitle1" fontWeight="bold">
-                  Weekly Waste Trend
-                </Typography>
-              </Stack>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart
-                  data={weeklyData}
-                  xAxisDataKey="date"
-                  areas={[
-                    {
-                      dataKey: "lunch",
-                      name: "Lunch (kg)",
-                      stroke: "#FF7300",
-                      fill: "#FF7300",
-                      fillOpacity: 0.4,
-                      strokeWidth: 2,
-                    },
-                    {
-                      dataKey: "breakfast",
-                      name: "Breakfast (kg)",
-                      stroke: "#00A97E",
-                      fill: "#00A97E",
-                      fillOpacity: 0.6,
-                      strokeWidth: 2,
-                    },
-                  ]}
-                  grid={{ show: true, strokeDasharray: "3 3" }}
-                  xAxis={{ show: true }}
-                  yAxis={{ show: true }}
-                  legend={{ show: true }}
-                  tooltip={{ show: true }}
-                />
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Box>
+        {/* Charts Row 1 - Weekly & Daily Composition - Flex 1 */}
+        <Stack
+          direction="row"
+          spacing={2}
+          flexWrap="nowrap"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            height: "100%"
+          }}
+        >
+          <WeeklyTrendChart
+            data={weeklyChartData}
+            chartGridColor={chartGridColor}
+            chartLabelColor={chartLabelColor}
+            chartTooltipStyle={chartTooltipStyle}
+          />
+          <CompositionPieChart
+            data={pieData}
+            chartLabelColor={chartLabelColor}
+            chartTooltipStyle={chartTooltipStyle}
+          />
+        </Stack>
 
-        <Box sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <Card sx={{ borderRadius: 4, height: 400, ...chartTextSx }}>
-            <CardContent>
-              <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                Daily Waste Composition
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart
-                  data={compositionData}
-                  pies={[{ dataKey: "value", nameKey: "name" }]}
-                  colors={compositionData.map((item) => item.color)}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  tooltip={{ show: true }}
-                  legend={{ show: true, verticalAlign: "bottom" }}
-                />
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
-
-      <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-        <Box sx={{ flex: "1 1 calc(50% - 12px)", minWidth: "300px" }}>
-          <Card sx={{ borderRadius: 4, ...chartTextSx }}>
-            <CardContent>
-              <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                Monthly Overview
-              </Typography>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart
-                  data={monthlyData}
-                  xAxisDataKey="month"
-                  bars={[
-                    { dataKey: "breakfast", fill: "#00A97E", name: "Breakfast (kg)" },
-                    { dataKey: "lunch", fill: "#FF7300", name: "Lunch (kg)" },
-                  ]}
-                  grid={{ show: true, strokeDasharray: "3 3" }}
-                  legend={{ show: true }}
-                  tooltip={{ show: true }}
-                />
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Box>
-
-        <Box sx={{ flex: "1 1 calc(50% - 12px)", minWidth: "300px" }}>
-          <Card sx={{ borderRadius: 4, ...chartTextSx }}>
-            <CardContent>
-              <Typography variant="subtitle1" fontWeight="bold" mb={2}>
-                Annual Overview
-              </Typography>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart
-                  data={annualData}
-                  xAxisDataKey="year"
-                  areas={[
-                    {
-                      dataKey: "breakfast",
-                      name: "Breakfast (kg)",
-                      stroke: "#00A97E",
-                      fill: "#00A97E",
-                      fillOpacity: 0.4,
-                      stackId: "1",
-                    },
-                    {
-                      dataKey: "lunch",
-                      name: "Lunch (kg)",
-                      stroke: "#FF7300",
-                      fill: "#FF7300",
-                      fillOpacity: 0.4,
-                      stackId: "1",
-                    },
-                  ]}
-                  grid={{ show: true, strokeDasharray: "3 3" }}
-                  legend={{ show: true }}
-                  tooltip={{ show: true }}
-                />
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Box>
-      </Box>
+        {/* Overview Chart Row - Monthly & Yearly Side by Side - Flex 1 */}
+        <Stack
+          direction="row"
+          spacing={2}
+          flexWrap="nowrap"
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            height: "100%"
+          }}
+        >
+          <OverviewCharts
+            title="Monthly Overview"
+            data={monthlyChartData}
+            chartGridColor={chartGridColor}
+            chartLabelColor={chartLabelColor}
+            chartTooltipStyle={chartTooltipStyle}
+          />
+          <OverviewCharts
+            title="Yearly Overview"
+            data={yearlyChartData}
+            chartGridColor={chartGridColor}
+            chartLabelColor={chartLabelColor}
+            chartTooltipStyle={chartTooltipStyle}
+          />
+        </Stack>
+      </Stack>
     </Box>
   );
 }

@@ -16,6 +16,14 @@
 import axios, { AxiosInstance, CancelTokenSource } from "axios";
 import * as rax from "retry-axios";
 
+import {
+  API_RETRY_ATTEMPTS,
+  API_RETRY_DELAY_MS,
+  API_RETRY_METHODS,
+  API_RETRY_STATUS_CODES,
+} from "@config/auth";
+import { CommonMessage } from "@config/messages";
+
 export class APIService {
   private static _instance: AxiosInstance;
   private static _idToken: string;
@@ -32,18 +40,20 @@ export class APIService {
 
     APIService._idToken = idToken;
     APIService.updateRequestInterceptor();
+    APIService.updateResponseInterceptor();
     APIService.callback = callback;
     (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
-      retry: 3,
+      retry: API_RETRY_ATTEMPTS,
       instance: APIService._instance,
-      httpMethodsToRetry: ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH", "PUT"],
-      statusCodesToRetry: [[401, 401]],
-      retryDelay: 100,
+      httpMethodsToRetry: API_RETRY_METHODS,
+      statusCodesToRetry: API_RETRY_STATUS_CODES,
+      retryDelay: API_RETRY_DELAY_MS,
 
       onRetryAttempt: async () => {
-        if (!APIService._isRefreshing) {
+        if (!APIService._isRefreshing && !APIService._refreshPromise) {
           APIService._isRefreshing = true;
-          APIService._refreshPromise = APIService.callback()
+          APIService._refreshPromise = Promise.resolve()
+            .then(() => APIService.callback())
             .then((res) => {
               APIService.updateTokens(res.accessToken);
               APIService._instance.interceptors.request.clear();
@@ -55,7 +65,15 @@ export class APIService {
               APIService._refreshPromise = null;
             });
         }
-        return APIService._refreshPromise;
+
+        const refresh = APIService._refreshPromise;
+        if (!refresh) {
+          APIService._isRefreshing = false;
+          APIService._refreshPromise = null;
+          return Promise.reject(new Error(CommonMessage.auth.tokenRefreshPromiseMissing));
+        }
+
+        return refresh;
       },
     };
   }
@@ -77,9 +95,37 @@ export class APIService {
     APIService._idToken = idToken;
   }
 
+  private static clearEndpointCancelToken(config?: unknown) {
+    const endpointKey = (config as { _endpointKey?: string } | undefined)?._endpointKey;
+    const requestToken = (config as { _cancelTokenSource?: CancelTokenSource } | undefined)?._cancelTokenSource;
+
+    if (!endpointKey || !requestToken) {
+      return;
+    }
+
+    const currentToken = APIService._cancelTokenMap.get(endpointKey);
+    if (currentToken === requestToken) {
+      APIService._cancelTokenMap.delete(endpointKey);
+    }
+  }
+
+  private static updateResponseInterceptor() {
+    APIService._instance.interceptors.response.use(
+      (response) => {
+        APIService.clearEndpointCancelToken(response.config);
+        return response;
+      },
+      (error) => {
+        APIService.clearEndpointCancelToken(error?.config);
+        return Promise.reject(error);
+      },
+    );
+  }
+
   private static updateRequestInterceptor() {
     APIService._instance.interceptors.request.use(
       (config) => {
+        // config.headers.set("x-jwt-assertion", APIService._idToken);
         config.headers.set("Authorization", "Bearer " + APIService._idToken);
 
         // Create a unique key including URL and query params
@@ -87,14 +133,21 @@ export class APIService {
         const params = config.params ? `?${new URLSearchParams(config.params).toString()}` : "";
         const endpointKey = `${endpoint}${params}`;
 
-        const existingToken = APIService._cancelTokenMap.get(endpointKey);
-        if (existingToken) {
-          existingToken.cancel(`Request cancelled for endpoint: ${endpointKey}`);
+        // Only auto-cancel GET requests. POST/PUT/DELETE requests should be allowed
+        // to run concurrently even to the same endpoint (e.g., saving breakfast and lunch).
+        if (config.method?.toUpperCase() === "GET") {
+          const existingToken = APIService._cancelTokenMap.get(endpointKey);
+          if (existingToken) {
+            existingToken.cancel(`Request cancelled for endpoint: ${endpointKey}`);
+          }
+
+          const newTokenSource = axios.CancelToken.source();
+          APIService._cancelTokenMap.set(endpointKey, newTokenSource);
+          (config as { _endpointKey?: string })._endpointKey = endpointKey;
+          (config as { _cancelTokenSource?: CancelTokenSource })._cancelTokenSource = newTokenSource;
+          config.cancelToken = newTokenSource.token;
         }
 
-        const newTokenSource = axios.CancelToken.source();
-        APIService._cancelTokenMap.set(endpointKey, newTokenSource);
-        config.cancelToken = newTokenSource.token;
         return config;
       },
       (error) => {

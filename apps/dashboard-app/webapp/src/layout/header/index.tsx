@@ -21,13 +21,18 @@ import React from "react";
 
 import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
-import { useAppAuthContext } from "@context/AuthContext";
+import { CommonMessage } from "@config/messages";
+import { useAppAuthContext } from "@context/authState";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 import { RootState, useAppSelector } from "@slices/store";
+import { useNavigate } from "react-router-dom";
+
+import { ROUTE_PATHS } from "../../route";
 
 const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
+  const navigate = useNavigate();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const user = useAppSelector((state: RootState) => state.user);
 
@@ -38,6 +43,11 @@ const Header = () => {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
+
+  const avatarAltText = [user.userInfo?.firstName, user.userInfo?.lastName]
+    .filter(Boolean)
+    .join(" ") || "User avatar";
+  const avatarInitials = `${user.userInfo?.firstName?.charAt(0) ?? ""}${user.userInfo?.lastName?.charAt(0) ?? ""}`;
 
   return (
     <Box
@@ -58,15 +68,36 @@ const Header = () => {
           },
         }}
       >
-        <img
-          alt="wso2"
-          style={{
-            height: "40px",
-            maxWidth: "100px",
+        <Box
+          component="button"
+          type="button"
+          onClick={() => navigate(ROUTE_PATHS.home)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              navigate(ROUTE_PATHS.home);
+            }
           }}
-          onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
-        ></img>
+          aria-label="Home"
+          sx={{
+            border: "none",
+            background: "transparent",
+            padding: 0,
+            margin: 0,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <img
+            alt="WSO2 logo"
+            style={{
+              height: "40px",
+              maxWidth: "100px",
+            }}
+            src={Wso2Logo}
+          ></img>
+        </Box>
 
         <Box
           sx={{
@@ -93,9 +124,10 @@ const Header = () => {
           {user.userInfo && (
             <>
               <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
-                <Tooltip title="Open settings">
+                <Tooltip title="Open user menu">
                   <Avatar
                     onClick={handleOpenUserMenu}
+                    aria-label="Open user menu"
                     sx={{
                       width: 48,
                       height: 48,
@@ -103,9 +135,9 @@ const Header = () => {
                       borderColor: theme.palette.customBorder.territory.active,
                     }}
                     src={user.userInfo?.employeeThumbnail || ""}
-                    alt={user.userInfo?.firstName || "Avatar"}
+                    alt={avatarAltText}
                   >
-                    {user.userInfo?.firstName?.charAt(0)}
+                    {avatarInitials || "U"}
                   </Avatar>
                 </Tooltip>
                 <Box sx={{ width: "fit-content" }}>
@@ -116,7 +148,7 @@ const Header = () => {
                       color: theme.palette.customText.primary.p2.active,
                     }}
                   >
-                    {user.userInfo?.firstName + " " + user.userInfo.lastName}
+                    {[user.userInfo?.firstName, user.userInfo?.lastName].filter(Boolean).join(" ")}
                   </Typography>
                   <Typography
                     noWrap
@@ -152,7 +184,7 @@ const Header = () => {
                     authContext.appSignOut();
                   }}
                 >
-                  <Typography textAlign="center">Logout</Typography>
+                  <Typography textAlign="center">{CommonMessage.session.logoutButton}</Typography>
                 </MenuItem>
               </Menu>
             </>

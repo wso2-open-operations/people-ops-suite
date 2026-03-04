@@ -23,12 +23,16 @@ import ballerina/sql;
 isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:ParameterizedQuery[] filters)
     returns sql:ParameterizedQuery {
 
+    if filters.length() == 0 {
+        return mainQuery;
+    }
+
     boolean isFirstUpdate = true;
-    sql:ParameterizedQuery updatedQuery = ``;
+    sql:ParameterizedQuery updatedQuery = mainQuery;
 
     foreach sql:ParameterizedQuery filter in filters {
         if isFirstUpdate {
-            updatedQuery = sql:queryConcat(mainQuery, filter);
+            updatedQuery = sql:queryConcat(updatedQuery, filter);
             isFirstUpdate = false;
             continue;
         }

@@ -57,33 +57,41 @@ export interface Collection {
   createdBy: string;
   updatedOn: string;
   updatedBy: string;
+  email?: string;
+  phone?: string;
+  location?: string;
 }
 
 export const fetchCollections = createAsyncThunk(
   "collection/fetchCollections",
   async (_, { dispatch, rejectWithValue }) => {
-    return new Promise<Collections>((resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.collections)
-        .then((response) => {
-          resolve(response.data);
-        })
-        .catch((error) => {
-          if (axios.isCancel(error)) {
-            return rejectWithValue("Request canceled");
-          }
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.fetchCollectionsMessage
-                  : String(error.response.data.message),
-              type: "error",
-            }),
-          );
-          reject(error.response.data.message);
-        });
-    });
+    try {
+      const response = await APIService.getInstance().get(AppConfig.serviceUrls.collections);
+      return response.data;
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        return rejectWithValue("Request canceled");
+      }
+
+      const msg =
+        (error as { response?: { data?: { message?: string }; status?: number }; message?: string }).response
+          ?.data?.message ??
+        (error as { message?: string }).message ??
+        String(error);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            (error as { response?: { status?: number } }).response?.status ===
+            HttpStatusCode.InternalServerError
+              ? SnackMessage.error.fetchCollectionsMessage
+              : msg,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(msg);
+    }
   },
 );
 
@@ -94,32 +102,40 @@ export interface AddCollectionPayload {
 
 export const addCollections = createAsyncThunk(
   "collection/addCollections",
-  async (payload: AddCollectionPayload, { dispatch }) => {
-    return new Promise<AddCollectionPayload>((resolve, reject) => {
-      APIService.getInstance()
-        .post(AppConfig.serviceUrls.collections, payload)
-        .then((response) => {
-          dispatch(
-            enqueueSnackbarMessage({
-              message: SnackMessage.success.addCollections,
-              type: "success",
-            }),
-          );
-          resolve(response.data);
-        })
-        .catch((error) => {
-          dispatch(
-            enqueueSnackbarMessage({
-              message:
-                error.response?.status === HttpStatusCode.InternalServerError
-                  ? SnackMessage.error.addCollections
-                  : String(error.response.data.message),
-              type: "error",
-            }),
-          );
-          reject(error);
-        });
-    });
+  async (payload: AddCollectionPayload, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().post(AppConfig.serviceUrls.collections, payload);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: SnackMessage.success.addCollections,
+          type: "success",
+        }),
+      );
+      return response.data;
+    } catch (error) {
+      const msg =
+        (error as { response?: { data?: { message?: string }; status?: number }; message?: string }).response
+          ?.data?.message ??
+        (error as { message?: string }).message ??
+        "Unknown error";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message:
+            (error as { response?: { status?: number } }).response?.status ===
+            HttpStatusCode.InternalServerError
+              ? SnackMessage.error.addCollections
+              : msg,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(
+        (error as { response?: { data?: unknown }; message?: string }).response?.data ?? {
+          message: msg,
+        },
+      );
+    }
   },
 );
 

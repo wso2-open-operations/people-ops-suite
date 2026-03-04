@@ -7,6 +7,8 @@ import {
   DialogTitle,
 } from "@mui/material";
 
+import { CommonMessage } from "@config/messages";
+
 interface SessionWarningDialogProps {
   open: boolean;
   handleContinue: () => void;
@@ -22,15 +24,15 @@ function SessionWarningDialog(props: SessionWarningDialogProps) {
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
     >
-      <DialogTitle id="alert-dialog-title">{"Are you still there?"}</DialogTitle>
+      <DialogTitle id="alert-dialog-title">{CommonMessage.session.title}</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          It looks like you've been inactive for a while. Would you like to continue?
+          {CommonMessage.session.description}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleContinue}>Continue</Button>
-        <Button onClick={() => appSignOut()}>Logout</Button>
+        <Button onClick={handleContinue}>{CommonMessage.session.continueButton}</Button>
+        <Button onClick={() => appSignOut()}>{CommonMessage.session.logoutButton}</Button>
       </DialogActions>
     </Dialog>
   );

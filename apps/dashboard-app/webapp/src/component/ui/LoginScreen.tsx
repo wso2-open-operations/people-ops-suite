@@ -17,16 +17,18 @@ import LoadingButton from "@mui/lab/LoadingButton";
 import { Box, Card, CardContent, Container, Divider, Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
 
 import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
-import { useAppAuthContext } from "@root/src/context/AuthContext";
+import { useAppAuthContext } from "@context/authState";
 import BackgroundImage from "@src/assets/images/app-login-background.png";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
 import logo from "@src/assets/images/wso2-logo-black.png";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   return (
     <Box
@@ -94,10 +96,21 @@ const LoginScreen = () => {
                     variant="contained"
                     color="primary"
                     sx={{ fontWeight: "bold" }}
-                    onClick={() => {
-                      appSignOut();
+                    loading={isAuthenticating}
+                    onClick={async () => {
+                      if (isAuthenticating) {
+                        return;
+                      }
 
-                      appSignIn();
+                      try {
+                        setIsAuthenticating(true);
+                        await appSignOut();
+                        await appSignIn();
+                      } catch (error) {
+                        console.error("Login flow failed", error);
+                      } finally {
+                        setIsAuthenticating(false);
+                      }
                     }}
                   >
                     LOG IN

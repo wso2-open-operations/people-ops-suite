@@ -29,22 +29,24 @@ const initialState: UserState = {
   userInfo: null,
 };
 
-export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
-  return new Promise<{
-    UserInfo: UserInfoInterface;
-  }>((resolve, reject) => {
-    APIService.getInstance()
-      .get(AppConfig.serviceUrls.userInfo)
-      .then((resp) => {
-        resolve({
-          UserInfo: resp.data,
-        });
-      })
-      .catch((error: AxiosError) => {
-        reject(error);
+export const getUserInfo = createAsyncThunk<{ UserInfo: UserInfoInterface }>(
+  "user/getUserInfo",
+  async (_, { rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(AppConfig.serviceUrls.userInfo);
+      return {
+        UserInfo: resp.data,
+      };
+    } catch (error) {
+      const err = error as AxiosError;
+      return rejectWithValue({
+        code: err.code,
+        message: err.message,
+        status: err.response?.status,
       });
-  });
-});
+    }
+  },
+);
 
 export const UserSlice = createSlice({
   name: "getUserInfo",
@@ -56,7 +58,7 @@ export const UserSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getUserInfo.pending, (state, action) => {
+      .addCase(getUserInfo.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
       })
@@ -66,7 +68,10 @@ export const UserSlice = createSlice({
       })
       .addCase(getUserInfo.rejected, (state, action) => {
         state.state = State.failed;
-        if (action.error.code === AxiosError.ERR_BAD_REQUEST) {
+        const errorPayload = action.payload as { status?: number } | undefined;
+        const errorStatus = errorPayload?.status;
+
+        if (errorStatus === 401 || errorStatus === 403) {
           state.errorMessage =
             "Oops! Looks like you are not authorized to access this application.";
         } else {

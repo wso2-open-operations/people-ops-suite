@@ -16,21 +16,24 @@
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import PreLoader from "@component/common/PreLoader";
 import SessionWarningDialog from "@component/common/SessionWarningDialog";
 import LoginScreen from "@component/ui/LoginScreen";
+import {
+  SESSION_IDLE_THROTTLE_MS,
+  SESSION_PROMPT_BEFORE_IDLE_MS,
+  SESSION_TIMEOUT_MS,
+} from "@config/auth";
 import { redirectUrl } from "@config/constant";
+import { CommonMessage } from "@config/messages";
 import { loadPrivileges, setAuthError, setUserAuthData } from "@slices/authSlice/auth";
 import { useAppDispatch } from "@slices/store";
 import { getUserInfo } from "@slices/userSlice/user";
 import { APIService } from "@utils/apiService";
 
-type AuthContextType = {
-  appSignIn: () => void;
-  appSignOut: () => void;
-};
+import { AuthContext, AuthContextType } from "./authState";
 
 enum AppState {
   Loading = "loading",
@@ -39,13 +42,6 @@ enum AppState {
   Authenticated = "authenticated",
 }
 
-const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
-
-// Session timeout: 15 minutes in milliseconds
-const timeout = 15 * 60 * 1000;
-// Show warning 4 seconds before session timeout
-const promptBeforeIdle = 4_000;
-
 const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const [sessionWarningOpen, setSessionWarningOpen] = useState<boolean>(false);
   const [appState, setAppState] = useState<AppState>(AppState.Loading);
@@ -53,14 +49,16 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const dispatch = useAppDispatch();
 
   const onPrompt = () => {
-    appState === AppState.Authenticated && setSessionWarningOpen(true);
+    if (appState === AppState.Authenticated) {
+      setSessionWarningOpen(true);
+    }
   };
 
   const { activate } = useIdleTimer({
     onPrompt,
-    timeout,
-    promptBeforeIdle,
-    throttle: 500,
+    timeout: SESSION_TIMEOUT_MS,
+    promptBeforeIdle: SESSION_PROMPT_BEFORE_IDLE_MS,
+    throttle: SESSION_IDLE_THROTTLE_MS,
   });
 
   const handleContinue = () => {
@@ -79,6 +77,11 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getAccessToken,
     state,
   } = useAuthContext();
+  const isAuthenticatedRef = useRef(state.isAuthenticated);
+
+  useEffect(() => {
+    isAuthenticatedRef.current = state.isAuthenticated;
+  }, [state.isAuthenticated]);
 
   useEffect(() => {
     if (!localStorage.getItem(redirectUrl)) {
@@ -86,7 +89,25 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const setupAuthenticatedUser = async () => {
+  const refreshToken = React.useCallback(async (): Promise<{ accessToken: string }> => {
+    if (isAuthenticatedRef.current) {
+      const accessToken = await getAccessToken();
+      return { accessToken };
+    }
+
+    try {
+      await refreshAccessToken();
+      const accessToken = await getAccessToken();
+      return { accessToken };
+    } catch (error) {
+      setAppState(AppState.Loading);
+      await signOut();
+      setAppState(AppState.Unauthenticated);
+      throw error;
+    }
+  }, [getAccessToken, refreshAccessToken, signOut]);
+
+  const setupAuthenticatedUser = React.useCallback(async () => {
     const [userInfo, idToken, decodedIdToken] = await Promise.all([
       getBasicUserInfo(),
       getIDToken(),
@@ -95,8 +116,8 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
     dispatch(
       setUserAuthData({
-        userInfo: userInfo,
-        decodedIdToken: decodedIdToken,
+        userInfo,
+        decodedIdToken,
       }),
     );
 
@@ -104,7 +125,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
     await dispatch(getUserInfo());
     await dispatch(loadPrivileges());
-  };
+  }, [dispatch, getBasicUserInfo, getDecodedIDToken, getIDToken, refreshToken]);
 
   useEffect(() => {
     let mounted = true;
@@ -123,11 +144,15 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         } else {
           const silentSignInSuccess = await trySignInSilently();
 
-          if (mounted)
-            setAppState(silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated);
+          if (mounted) {
+            setAppState(
+              silentSignInSuccess ? AppState.Authenticating : AppState.Unauthenticated,
+            );
+          }
         }
       } catch (err) {
         if (mounted) {
+          console.error("Auth initialization failed", err);
           dispatch(setAuthError());
         }
       }
@@ -138,23 +163,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     return () => {
       mounted = false;
     };
-  }, [state.isAuthenticated, state.isLoading]);
-
-  const refreshToken = async (): Promise<{ accessToken: string }> => {
-    if (state.isAuthenticated) {
-      const accessToken = await getIDToken();
-      return { accessToken };
-    }
-
-    try {
-      await refreshAccessToken();
-      const accessToken = await getAccessToken();
-      return { accessToken };
-    } catch (error) {
-      await appSignOut();
-      throw error;
-    }
-  };
+  }, [dispatch, setupAuthenticatedUser, state.isAuthenticated, state.isLoading, trySignInSilently]);
 
   const appSignOut = async () => {
     setAppState(AppState.Loading);
@@ -175,10 +184,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
   const renderContent = () => {
     switch (appState) {
       case AppState.Loading:
-        return <PreLoader isLoading message="Loading ..." />;
+        return <PreLoader isLoading message={CommonMessage.loading.appInit} />;
 
       case AppState.Authenticating:
-        return <PreLoader isLoading message="Loading User Info ..." />;
+        return <PreLoader isLoading message={CommonMessage.loading.userInfo} />;
 
       case AppState.Authenticated:
         return <AuthContext.Provider value={authContext}>{props.children}</AuthContext.Provider>;
@@ -203,15 +212,11 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         appSignOut={appSignOut}
       />
 
-      <SecureApp fallback={<PreLoader isLoading message="We are getting things ready ..." />}>
+      <SecureApp fallback={<PreLoader isLoading message={CommonMessage.loading.appReady} />}>
         {renderContent()}
       </SecureApp>
     </>
   );
 };
-
-const useAppAuthContext = (): AuthContextType => useContext(AuthContext);
-
-export { useAppAuthContext };
 
 export default AppAuthProvider;

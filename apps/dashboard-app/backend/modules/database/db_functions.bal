@@ -34,7 +34,11 @@ public isolated function addFoodWasteRecord(AddFoodWasteRecordPayload payload, s
         }
         return executionResults;
     }
-    return <int>executionResults.lastInsertId;
+    anydata lastInsertId = executionResults.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+    return error("Failed to retrieve the last insert ID.");
 }
 
 # Fetch food waste record by id.
@@ -59,7 +63,7 @@ public isolated function fetchFoodWasteRecords(FoodWasteRecordFilters filters, i
     returns PaginatedFoodWasteRecords|error {
 
     stream<FoodWasteRecordListRow, sql:Error?> resultStream =
-        databaseClient->query(getFoodWasteRecordsQuery(filters));
+        databaseClient->query(getFoodWasteRecordsQuery(filters, page, pageSize));
     int totalCount = 0;
     FoodWasteRecord[] records = [];
 
@@ -140,7 +144,11 @@ public isolated function deleteFoodWasteRecord(int id) returns FoodWasteRecordNo
 # + return - Created ID|Error
 public isolated function addAdvertisement(CreateAdvertisementPayload payload, string createdBy) returns int|error {
     sql:ExecutionResult result = check databaseClient->execute(addAdvertisementQuery(payload, createdBy));
-    return <int>result.lastInsertId;
+    anydata lastInsertId = result.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
+    }
+    return error("Failed to retrieve last insert ID.");
 }
 
 # Get all advertisements.
@@ -239,7 +247,12 @@ public isolated function getMonthlyTrend(string startMonth, string endMonth) ret
 # + return - Aggregated stats|Error
 public isolated function fetchDateRangeSummaryStats(string startDate, string endDate)
     returns record {|decimal totalWasteKg; int totalPlates;|}|error {
-    return databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
+    record {|decimal totalWasteKg; int totalPlates;|} | error result = 
+        databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
+    if result is sql:NoRowsError {
+        return {totalWasteKg: 0, totalPlates: 0};
+    }
+    return result;
 }
 
 # Fetch the highest waste day in a date range.

@@ -17,9 +17,15 @@ import type { NonIndexRouteObject } from "react-router-dom";
 
 export type NavState = {
   hovered: number | null;
-  active: number | null;
+  active: string | null;
   expanded: number | null;
 };
+
+export enum MicroAppType {
+  None = "NONE",
+  Menu = "MENU_APP",
+  Dod = "DOD_APP",
+}
 
 export enum State {
   failed = "failed",
@@ -35,10 +41,16 @@ export enum ConfirmationType {
   accept = "accept",
 }
 
+export type InputObj = {
+  label: string;
+  mandatory: boolean;
+  type: "textarea" | "date";
+};
+
 export interface RouteDetail {
   path: string;
   allowRoles: string[];
-  icon: React.ReactElement | undefined;
+  icon?: React.ReactElement;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
@@ -47,9 +59,8 @@ export interface RouteDetail {
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
-  icon: React.ReactElement | undefined;
+  icon?: React.ReactElement;
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
-  element?: React.ReactNode;
 }

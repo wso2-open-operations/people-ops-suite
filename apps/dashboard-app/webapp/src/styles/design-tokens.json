@@ -432,7 +432,7 @@
         },
         "1900": {
           "type": "color",
-          "value": "#000000ff",
+          "value": "#1e0d00ff",
           "blendMode": "normal"
         },
         "2000": {
@@ -441,7 +441,7 @@
           "blendMode": "normal"
         },
         "main": {
-          "type": "string",
+          "type": "color",
           "value": "#ff7300ff",
           "blendMode": "normal"
         }
@@ -483,7 +483,7 @@
           "blendMode": "normal"
         },
         "main": {
-          "type": "string",
+          "type": "color",
           "value": "#06c0f9ff",
           "blendMode": "normal"
         },
@@ -932,7 +932,7 @@
           "active": {
             "description": "",
             "type": "color",
-            "value": "{variables.colors.primary.brand}"
+            "value": "{variables.colors.primary.main}"
           },
           "hover": {
             "type": "color",

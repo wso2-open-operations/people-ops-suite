@@ -16,6 +16,7 @@
 import { Box, Typography } from "@mui/material";
 
 import MaintenanceGif from "@assets/images/maintenance.gif";
+import { CommonMessage } from "@config/messages";
 
 export default function MaintenancePage() {
   return (
@@ -29,9 +30,8 @@ export default function MaintenancePage() {
       }}
     >
       <img alt="maintenance" src={MaintenanceGif} />
-      <Typography variant="h4" style={{ color: "gray" }}>
-        Exciting changes are on the way! Our website is currently undergoing a transformation to
-        enhance your experience. Please check back soon to see the amazing updates.
+      <Typography variant="h4" sx={{ color: "text.secondary" }}>
+        {CommonMessage.maintenance.description}
       </Typography>
     </Box>
   );

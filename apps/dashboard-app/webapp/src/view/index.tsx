@@ -15,12 +15,12 @@
 // under the License.
 import { lazy } from "react";
 
-const firstView = lazy(() => import("@view/first-view/index"));
-const dataEntry = lazy(() => import("@view/page-two/PageTwo"));
-const adManagement = lazy(() => import("@view/ad-management/AdManagement"));
+const dashboardOverviewView = lazy(() => import("@view/dashboard-overview/index"));
+const dataEntryView = lazy(() => import("@view/data-entry/index"));
+const adManagementView = lazy(() => import("@view/ad-management/index"));
 
 export const View = {
-  firstView,
-  dataEntry,
-  adManagement,
+  dashboardOverviewView,
+  dataEntryView,
+  adManagementView,
 };

@@ -31,6 +31,12 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const APP_DESC = " Internal App Product Template.";
+export const APP_DESC = "Dashboard App";
 
 export const redirectUrl = "iapm-marketplace-redirect-url";
+
+export const localStorageTheme = "dashboard-app-theme";
+
+export const PRIVILEGE_ADMIN = 789;
+
+export const PRIVILEGE_EMPLOYEE = 987;

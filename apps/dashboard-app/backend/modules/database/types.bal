@@ -134,14 +134,14 @@ public type FoodWasteRecordNotFoundError distinct error;
 public type Advertisement record {|
     # Unique id
     int id;
+    # Advertisement name
+    string adName;
     # Media URL
     string mediaUrl;
     # Media type
     string mediaType;
     # Duration in seconds
     int durationSeconds;
-    # Thumbnail URL
-    string? thumbnailUrl;
     # Whether this advertisement is currently active
     boolean isActive;
     # Display order
@@ -151,21 +151,23 @@ public type Advertisement record {|
     # Created timestamp
     string createdOn;
     # Created by
-    string? createdBy;
+    string createdBy;
     # Updated timestamp
     string updatedOn;
+    # Updated by
+    string? updatedBy?;
 |};
 
 # Payload for creating an advertisement.
 public type CreateAdvertisementPayload record {|
+    # Advertisement name
+    string adName;
     # Media URL
     string mediaUrl;
     # Media type
     MediaType mediaType;
     # Duration in seconds
     int durationSeconds;
-    # Thumbnail URL
-    string? thumbnailUrl;
 |};
 
 # Not-found error for advertisement operations.
