@@ -898,6 +898,9 @@ export default function JobInfoStep() {
               helperText={touched.officeId && errors.officeId}
               sx={textFieldSx}
             >
+              <MenuItem value={0}>
+                <em>None</em>
+              </MenuItem>
               {offices.length ? (
                 offices.map((office) => (
                   <MenuItem key={office.id} value={office.id}>
