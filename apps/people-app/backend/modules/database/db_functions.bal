@@ -389,3 +389,39 @@ public isolated function getOrganizationDetails() returns Company|error {
         businessUnits
     };
 }
+
+# Add new business unit.
+#
+# + payload - Add business unit payload
+# + return - Created business unit ID or error
+public isolated function addBusinessUnit(BusinessUnitPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitQuery(payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new team.
+#
+# + payload - Add team payload
+# + return - Created team ID or error
+public isolated function addTeam(TeamPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addTeamQuery(payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new sub team.
+#
+# + payload - Add sub team payload
+# + return - Created sub-team ID or error
+public isolated function addSubTeam(SubTeamPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addSubTeamQuery(payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+# Add new unit.
+#
+# + payload - Add unit payload
+# + return - Created unit ID or error
+public isolated function addUnit(UnitOrgPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addUnitQuery(payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
