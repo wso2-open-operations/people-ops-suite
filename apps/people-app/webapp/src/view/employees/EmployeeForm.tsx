@@ -666,7 +666,22 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validateOnChange={false}
           validateOnBlur={true}
         >
-          {({ isSubmitting, validateForm, setTouched, submitForm, dirty }) => (
+          {({ isSubmitting, validateForm, setTouched, submitForm, dirty, values }) => {
+            let hasActualChanges = true;
+            
+            if (isEditMode && initialEditValues && employeeId) {
+              const initialJob = toJobUpdatePayload(initialEditValues);
+              const currentJob = toJobUpdatePayload(values);
+              const initialPersonal = toPersonalUpdatePayload(initialEditValues);
+              const currentPersonal = toPersonalUpdatePayload(values);
+              
+              const jobPatch = diffObject(initialJob, currentJob);
+              const personalPatch = diffObject(initialPersonal, currentPersonal);
+              
+              hasActualChanges = Object.keys(jobPatch).length > 0 || Object.keys(personalPatch).length > 0;
+            }
+
+            return (
             <Form
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
@@ -709,7 +724,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                     employeeSlice.updateJobInfoState === State.loading ||
                     (isEditMode &&
                       activeStep === EmployeeFormSteps.length - 1 &&
-                      !dirty)
+                      !hasActualChanges)
                   }
                   onClick={async () => {
                     const errors = await validateForm();
@@ -735,7 +750,8 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 </Button>
               </Box>
             </Form>
-          )}
+            );
+          }}
         </Formik>
       </Paper>
     </Box>
