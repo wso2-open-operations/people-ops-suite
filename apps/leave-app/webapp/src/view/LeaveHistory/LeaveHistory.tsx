@@ -16,7 +16,7 @@
 
 import { Box, CircularProgress, Stack, MenuItem, Select, SelectChangeEvent, Typography, useTheme } from "@mui/material";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
@@ -40,7 +40,7 @@ interface LeaveHistoryProps {
 
 export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {}) {
   const dispatch = useAppDispatch();
-  const currentYear = new Date().getFullYear();
+  const [currentYear] = useState<number>(new Date().getFullYear());
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const userInfo = useAppSelector(selectUser);
   const leaveState = useAppSelector(selectLeaveState);
@@ -49,21 +49,25 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
   const loading = leaveState === State.loading;
   const theme = useTheme();
 
-  const employmentStartYear = userInfo?.employmentStartDate
-    ? new Date(userInfo.employmentStartDate).getFullYear()
-    : currentYear;
-
-  const availableYears: number[] = Array.from(
-    { length: currentYear - employmentStartYear + 1 },
-    (_, i) => currentYear - i,
-  );
+  const availableYears = useMemo(() => {
+    const parsedEmploymentStartYear = userInfo?.employmentStartDate
+      ? new Date(userInfo.employmentStartDate).getFullYear()
+      : currentYear;
+    const employmentStartYear = Number.isNaN(parsedEmploymentStartYear)
+      ? currentYear
+      : parsedEmploymentStartYear;
+    return Array.from(
+      { length: currentYear - employmentStartYear + 1 },
+      (_, i) => currentYear - i,
+    );
+  }, [userInfo?.employmentStartDate, currentYear]);
 
   useEffect(() => {
     if (userInfo?.workEmail) {
       dispatch(
         fetchLeaveHistory({
           email: userInfo.workEmail,
-          startDate: `${selectedYear}-01-01`, // first day of the selected year
+          startDate: `${selectedYear}-01-01`,
           endDate: `${selectedYear}-12-31`,
           statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
@@ -97,6 +101,7 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
         />
         <Select
           value={selectedYear}
+          inputProps={{ "aria-label": "Leave history year" }}
           onChange={handleYearChange}
           size="small"
           sx={{
