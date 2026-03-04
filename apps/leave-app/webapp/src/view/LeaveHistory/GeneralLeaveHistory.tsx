@@ -19,7 +19,6 @@ import { LeaveType } from "@root/src/types/types";
 import LeaveHistory from "./LeaveHistory";
 
 export default function GeneralLeaveHistory() {
-  const currentYear = new Date().getFullYear();
   return (
     <LeaveHistory
       leaveType={[
@@ -29,7 +28,7 @@ export default function GeneralLeaveHistory() {
         LeaveType.MATERNITY,
         LeaveType.PATERNITY,
       ]}
-      title={{ firstWord: "General", secondWord: `Leave History (${currentYear})` }}
+      title={{ firstWord: "General", secondWord: `Leave History` }}
     />
   );
 }
