@@ -968,6 +968,14 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         }
     }
 
+    if payload.continuousServiceRecord is string {
+        if payload.continuousServiceRecord == "" {
+            updates.push(`continuous_service_record = NULL`);
+        } else {
+            updates.push(`continuous_service_record = ${payload.continuousServiceRecord}`);
+        }
+    }
+
     updates.push(`updated_by = ${updatedBy}`);
 
     sql:ParameterizedQuery query = buildSqlUpdateQuery(mainQuery, updates);
