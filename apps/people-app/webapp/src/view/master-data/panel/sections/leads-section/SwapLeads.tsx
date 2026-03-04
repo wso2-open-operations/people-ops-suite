@@ -31,7 +31,7 @@ import { useState } from "react";
 
 import ConfirmationDialog from "@root/src/component/common/ConfirmationDialog";
 import { Head } from "@root/src/services/organization";
-import { EmployeeBasicInfo, useGetAllEmployeesQuery, useGetEmployeesBasicInfoQuery } from "@services/employee";
+import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
 
 import { truncateName } from "../../utils";
 
