@@ -14,6 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
+import type {
+  BusinessUnitState,
+  OrganizationInfo,
+  SubTeamState,
+  TeamState,
+  UnitState,
+} from "@slices/organizationSlice/organizationStructure";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
   return roles.some((role) => allowedRoles.includes(role));
@@ -83,3 +90,34 @@ export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
 
 // Child type labels
 export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
+
+export function normalizeCompanyToOrganizationState(company: Company): OrganizationInfo {
+  const businessUnits: BusinessUnitState[] = [];
+  const teams: TeamState[] = [];
+  const subTeams: SubTeamState[] = [];
+  const units: UnitState[] = [];
+
+  for (const bu of company.businessUnits) {
+    businessUnits.push({ ...bu, companyId: company.id });
+
+    for (const team of bu.teams) {
+      teams.push({ ...team, businessUnitId: bu.id });
+
+      for (const subTeam of team.subTeams) {
+        subTeams.push({ ...subTeam, teamId: team.id });
+
+        for (const unit of subTeam.units) {
+          units.push({ ...unit, subTeamId: subTeam.id });
+        }
+      }
+    }
+  }
+
+  return {
+    company,
+    businessUnits,
+    teams,
+    subTeams,
+    units,
+  };
+}
