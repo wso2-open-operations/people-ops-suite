@@ -16,9 +16,15 @@
 
 import React from "react";
 
-import { NonIndexRouteObject, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+  NonIndexRouteObject,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import GroupsIcon from "@mui/icons-material/Groups";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -70,23 +76,22 @@ export const routes: RouteObjectWithRole[] = [
     icon: React.createElement(GroupsIcon),
     element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
-    children:[
+    children: [
       {
         path: "/employees/view",
         text: "Employees",
         element: React.createElement(View.employeesList),
-        icon: React.createElement(GroupsIcon),   
+        icon: React.createElement(GroupsIcon),
         allowRoles: [Role.ADMIN],
       },
       {
         path: "/employees/onboarding",
         text: "Onboarding",
-        icon: React.createElement(GroupsIcon),
+        icon: React.createElement(GroupAddIcon),
         element: React.createElement(View.employeeOnboarding),
         allowRoles: [Role.ADMIN],
       },
-      
-    ]
+    ],
   },
   // Todo: Uncomment when help view is ready
   // {
