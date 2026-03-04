@@ -32,23 +32,75 @@ FLUSH PRIVILEGES;
 1. Create `backend/Config.toml` (not committed — contains secrets):
 
 ```toml
-dbHost = "localhost"
-dbUser = "leave_app_user"
-dbPassword = "leave_app_pass"
-dbName = "leave_app"
-dbPort = 3306
+# --- Root-level configurables ---
+[leave_service]
+emailGroupToNotify = "vacation-group@wso2.com"
+sabbaticalFunctionalLeadOptOutMails = ["sanjiva@wso2.com"]
+sabbaticalMailGroups = ["sabbatical-application-group@wso2.com"]
+isSabbaticalLeaveEnabled = true
+sabbaticalLeaveApprovalUrl = "https://localhost:3000/approve/sabbatical"
+sabbaticalLeavePolicyUrl = "<policy-doc-url>"
+sabbaticalLeaveUserGuideUrl = "<user-guide-url>"
+
+# --- Email Module ---
+[leave_service.email]
+emailServiceBaseUrl = "<email-service-url>"
+isDebug = true
 emailNotificationsEnabled = false
+debugRecipients = ["<your-email>"]
+additionalCommentTemplate = "leaveAdditionalComment"
 
-[oauth2Config]
+[leave_service.email.emailServiceConfig]
+baseUrl = "<email-service-url>"
+emailFrom = "Leave App <noreply@wso2.com>"
+
+[leave_service.email.choreoAppConfig]
 tokenUrl = "https://api.asgardeo.io/t/wso2/oauth2/token"
-clientId = "<your-client-id>"
-clientSecret = "<your-client-secret>"
+clientId = "<client-id>"
+clientSecret = "<client-secret>"
 
-[hrisConfig]
-serviceUrl = "<hr-entity-graphql-url>"
+# --- Employee Module ---
+[leave_service.employee]
+hrEntityBaseUrl = "<hr-entity-graphql-url>"
 
-[calendarServiceConfig]
-serviceUrl = "<google-calendar-service-url>"
+[leave_service.employee.oauthConfig]
+tokenUrl = "https://api.asgardeo.io/t/wso2/oauth2/token"
+clientId = "<client-id>"
+clientSecret = "<client-secret>"
+
+[leave_service.employee.retryConfig]
+count = 3
+interval = 3.0
+backOffFactor = 2.0
+maxWaitInterval = 20.0
+
+# --- Calendar Events Module ---
+[leave_service.calendar_events]
+eventBaseUrl = "<calendar-event-service-url>"
+
+[leave_service.calendar_events.choreoAppConfig]
+tokenUrl = "https://api.asgardeo.io/t/wso2/oauth2/token"
+clientId = "<client-id>"
+clientSecret = "<client-secret>"
+
+# --- Database Module ---
+[leave_service.database.databaseConfig]
+user = "leave_app_user"
+password = "leave_app_pass"
+database = "leave_app"
+host = "localhost"
+port = 3306
+
+[leave_service.database.databaseConfig.connectionPool]
+maxOpenConnections = 10
+maxConnectionLifeTime = 100.0
+minIdleConnections = 3
+
+# --- Authorization Roles ---
+[leave_service.authorization.authorizedRoles]
+employeeRoles = ["wso2-everyone"]
+internRoles = ["wso2-interns1"]
+peopleOpsTeamRoles = ["wso2-everyone"]
 ```
 
 2. Build and run:
@@ -67,13 +119,14 @@ Backend runs on `http://localhost:9090`.
 
 ```js
 window.config = {
-  apiBaseUrl: "http://localhost:9090",
-  clientID: "<asgardeo-spa-client-id>",
-  baseUrl: "https://api.asgardeo.io/t/wso2",
-  signInRedirectURL: "http://localhost:3000",
-  signOutRedirectURL: "http://localhost:3000",
-  scope: ["openid", "profile", "email", "groups"],
-  resourceServerURLs: ["http://localhost:9090"],
+  APP_NAME: "WSO2 Leave App",
+  APP_DOMAIN: "localhost",
+  ASGARDEO_BASE_URL: "https://api.asgardeo.io/t/wso2",
+  ASGARDEO_CLIENT_ID: "<asgardeo-spa-client-id>",
+  ASGARDEO_REVOKE_ENDPOINT: "https://api.asgardeo.io/t/wso2/oauth2/revoke",
+  AUTH_SIGN_IN_REDIRECT_URL: "http://localhost:3000",
+  AUTH_SIGN_OUT_REDIRECT_URL: "http://localhost:3000",
+  REACT_APP_BACKEND_BASE_URL: "http://localhost:9090",
 };
 ```
 

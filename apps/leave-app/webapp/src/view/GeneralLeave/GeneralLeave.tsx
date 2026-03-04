@@ -24,7 +24,7 @@ import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, getLeaveEntitlement, submitLeaveRequest } from "@root/src/services/leaveService";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { useAppSelector } from "@root/src/slices/store";
 import { DayPortion, EmployeeLocation, LeaveLabel, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveBalanceSummary from "@root/src/view/GeneralLeave/component/LeaveBalanceSummary";
@@ -34,7 +34,6 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
-  const dispatch = useAppDispatch();
   const userInfo = useAppSelector((state) => state.user.userInfo);
   const userLocation = userInfo?.location ?? null;
   const email = userInfo?.workEmail ?? "";
@@ -52,25 +51,25 @@ export default function GeneralLeave() {
   };
 
   /** Map a LeaveType enum value to its entitlement object key. */
-  const getLeaveTypeEntitlementKey = (leaveType: LeaveType): string | null => {
-    switch (leaveType) {
-      case LeaveType.CONGES_PAYES:
-        return "congesPayes";
-      case LeaveType.RTT:
-        return "rtt";
-      case LeaveType.SPAIN_ANNUAL:
-        return "spainAnnual";
-      case LeaveType.SPAIN_CASUAL:
-        return "spainCasual";
-      case LeaveType.SICK:
-        return "sick";
-      case LeaveType.CASUAL:
-        return "casual";
-      case LeaveType.ANNUAL:
-        return "annual";
-      default:
-        return null;
-    }
+  const LEAVE_TYPE_KEY_MAP: Record<string, string> = {
+    [LeaveType.CONGES_PAYES]: "congesPayes",
+    [LeaveType.RTT]: "rtt",
+    [LeaveType.SPAIN_ANNUAL]: "spainAnnual",
+    [LeaveType.SPAIN_CASUAL]: "spainCasual",
+    [LeaveType.SICK]: "sick",
+    [LeaveType.CASUAL]: "casual",
+    [LeaveType.ANNUAL]: "annual",
+  };
+
+  /** Map a LeaveType enum value to its user-friendly label. */
+  const LEAVE_TYPE_LABEL_MAP: Record<string, string> = {
+    [LeaveType.CONGES_PAYES]: LeaveLabel.CONGES_PAYES,
+    [LeaveType.RTT]: LeaveLabel.RTT,
+    [LeaveType.SPAIN_ANNUAL]: LeaveLabel.SPAIN_ANNUAL,
+    [LeaveType.SPAIN_CASUAL]: LeaveLabel.SPAIN_CASUAL,
+    [LeaveType.SICK]: LeaveLabel.SICK,
+    [LeaveType.CASUAL]: LeaveLabel.CASUAL,
+    [LeaveType.ANNUAL]: LeaveLabel.CASUAL,
   };
 
   const [daysSelected, setDaysSelected] = useState(0);
@@ -167,7 +166,7 @@ export default function GeneralLeave() {
           const entitlements = await getLeaveEntitlement(email);
           if (entitlements.length > 0) {
             const ent = entitlements[0];
-            const leaveTypeKey = getLeaveTypeEntitlementKey(selectedLeaveType);
+            const leaveTypeKey = LEAVE_TYPE_KEY_MAP[selectedLeaveType] ?? null;
             if (leaveTypeKey) {
               const entitled =
                 (ent.leavePolicy as Record<string, number | null | undefined>)[leaveTypeKey] ?? 0;
@@ -176,8 +175,7 @@ export default function GeneralLeave() {
                   leaveTypeKey
                 ] ?? 0;
               if (entitled > 0 && consumed + workingDays > entitled) {
-                const label =
-                  LeaveLabel[selectedLeaveType as keyof typeof LeaveLabel] ?? selectedLeaveType;
+                const label = LEAVE_TYPE_LABEL_MAP[selectedLeaveType] ?? selectedLeaveType;
                 enqueueSnackbar(
                   `This request will exceed your ${label} entitlement (${consumed + workingDays}/${entitled} days)`,
                   { variant: "warning" },

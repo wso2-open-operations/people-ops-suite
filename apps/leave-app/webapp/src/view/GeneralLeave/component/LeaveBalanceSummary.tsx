@@ -42,7 +42,8 @@ import {
 interface BalanceRow {
   label: string;
   tooltip?: string;
-  entitled: number;
+  /** null means unlimited (e.g. sick leave). */
+  entitled: number | null;
   consumed: number;
   periodLabel?: string;
 }
@@ -137,7 +138,7 @@ export default function LeaveBalanceSummary() {
       const meta = LEAVE_KEY_LABEL[key];
       if (!meta) return null;
       const entitled =
-        (entitlement.leavePolicy as Record<string, number | null | undefined>)[key] ?? 0;
+        (entitlement.leavePolicy as Record<string, number | null | undefined>)[key] ?? null;
       const consumed =
         (entitlement.policyAdjustedLeave as Record<string, number | null | undefined>)[key] ?? 0;
       return {
@@ -166,9 +167,11 @@ export default function LeaveBalanceSummary() {
       </Stack>
 
       {rows.map((row) => {
-        const remaining = Math.max(row.entitled - row.consumed, 0);
-        const progress = row.entitled > 0 ? (row.consumed / row.entitled) * 100 : 0;
-        const isOverLimit = row.consumed > row.entitled && row.entitled > 0;
+        const isUnlimited = row.entitled === null;
+        const entitled = row.entitled ?? 0;
+        const remaining = isUnlimited ? null : Math.max(entitled - row.consumed, 0);
+        const progress = !isUnlimited && entitled > 0 ? (row.consumed / entitled) * 100 : 0;
+        const isOverLimit = !isUnlimited && row.consumed > entitled && entitled > 0;
 
         return (
           <Stack key={row.label} gap={0.5}>
@@ -190,27 +193,30 @@ export default function LeaveBalanceSummary() {
                 fontWeight={500}
                 color={isOverLimit ? theme.palette.error.main : theme.palette.text.secondary}
               >
-                {row.consumed} / {row.entitled} used
-                {remaining > 0 && ` · ${remaining} remaining`}
+                {isUnlimited
+                  ? `${row.consumed} used · Unlimited`
+                  : `${row.consumed} / ${entitled} used${remaining != null && remaining > 0 ? ` · ${remaining} remaining` : ""}`}
               </Typography>
             </Stack>
-            <LinearProgress
-              variant="determinate"
-              value={Math.min(progress, 100)}
-              sx={{
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: theme.palette.action.hover,
-                "& .MuiLinearProgress-bar": {
+            {!isUnlimited && (
+              <LinearProgress
+                variant="determinate"
+                value={Math.min(progress, 100)}
+                sx={{
+                  height: 6,
                   borderRadius: 3,
-                  backgroundColor: isOverLimit
-                    ? theme.palette.error.main
-                    : progress > 80
-                      ? theme.palette.warning.main
-                      : theme.palette.primary.main,
-                },
-              }}
-            />
+                  backgroundColor: theme.palette.action.hover,
+                  "& .MuiLinearProgress-bar": {
+                    borderRadius: 3,
+                    backgroundColor: isOverLimit
+                      ? theme.palette.error.main
+                      : progress > 80
+                        ? theme.palette.warning.main
+                        : theme.palette.primary.main,
+                  },
+                }}
+              />
+            )}
           </Stack>
         );
       })}
