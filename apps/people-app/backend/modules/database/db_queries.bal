@@ -941,11 +941,7 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     }
 
     if payload.officeId != () {
-        if payload.officeId is int {
-            updates.push(`office_id = ${payload.officeId}`);
-        } else {
-            updates.push(`office_id = NULL`);
-        }
+        updates.push(`office_id = ${payload.officeId}`);
     }
 
     if payload.teamId != () {
@@ -961,11 +957,7 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
     }
 
     if payload.unitId != () {
-        if payload.unitId is int {
-            updates.push(`unit_id = ${payload.unitId}`);
-        } else {
-            updates.push(`unit_id = NULL`);
-        }
+        updates.push(`unit_id = ${payload.unitId}`);
     }
 
     if payload.continuousServiceRecord is string {
