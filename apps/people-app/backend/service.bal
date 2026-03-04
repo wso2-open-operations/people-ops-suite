@@ -1172,4 +1172,181 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return orgStructure;
     }
+    
+    # Add new business unit.
+    #
+    # + payload - Business-unit details
+    # + return - HTTP Created on success, or HTTP errors on failure 
+    resource function post business\-units(http:RequestContext ctx, BusinessUnitPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addBusinessUnit(payload);
+
+        if result is error {
+            string customErr = "Error while adding a business unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Business unit ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Add a new team.
+    #
+    # + payload - Team details
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post teams(http:RequestContext ctx, TeamPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addTeam(payload);
+
+        if result is error {
+            string customErr = "Error while adding a team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Team ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Add a new sub team.
+    #
+    # + payload - Sub team details
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post sub\-teams(http:RequestContext ctx, SubTeamPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addSubTeam(payload);
+
+        if result is error {
+            string customErr = "Error while adding a sub team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Sub team ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Add a new unit.
+    #
+    # + payload - Unit details
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post units(http:RequestContext ctx, UnitOrgPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addUnit(payload);
+
+        if result is error {
+            string customErr = "Error while adding a unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Unit ${payload.name} Successfully created`
+            }
+        };
+    }
 }
+
