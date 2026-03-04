@@ -578,15 +578,6 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
               const hasPersonalChanges = Object.keys(personalPatch).length > 0;
 
               if (!hasJobChanges && !hasPersonalChanges) {
-                showConfirmation(
-                  "No Changes Detected",
-                  <Typography variant="body1">
-                    No changes were made.
-                  </Typography>,
-                  ConfirmationType.accept,
-                  () => {},
-                  "OK",
-                );
                 actions.setSubmitting(false);
                 return;
               }
@@ -675,7 +666,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validateOnChange={false}
           validateOnBlur={true}
         >
-          {({ isSubmitting, validateForm, setTouched, submitForm }) => (
+          {({ isSubmitting, validateForm, setTouched, submitForm, dirty }) => (
             <Form
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
@@ -715,7 +706,10 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                   disabled={
                     isSubmitting ||
                     employeeSlice.state === State.loading ||
-                    employeeSlice.updateJobInfoState === State.loading
+                    employeeSlice.updateJobInfoState === State.loading ||
+                    (isEditMode &&
+                      activeStep === EmployeeFormSteps.length - 1 &&
+                      !dirty)
                   }
                   onClick={async () => {
                     const errors = await validateForm();
