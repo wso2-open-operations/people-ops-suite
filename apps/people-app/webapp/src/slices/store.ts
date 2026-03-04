@@ -27,6 +27,7 @@ import employeeReducer from "@slices/employeeSlice/employee";
 import employeePersonalInfoReducer from "@slices/employeeSlice/employeePersonalInfo";
 import organizationReducer from "@slices/organizationSlice/organization";
 import userReducer from "@slices/userSlice/user";
+import organizationStructureReducer from "@slices/organizationSlice/organizationStructure";
 
 enableMapSet();
 
@@ -38,7 +39,8 @@ export const store = configureStore({
     employee: employeeReducer,
     employeePersonalInfo: employeePersonalInfoReducer,
     organization: organizationReducer,
-
+    organizationStructure: organizationStructureReducer,
+    
     [userApi.reducerPath]: userApi.reducer,
     [configApi.reducerPath]: configApi.reducer,
     [employeeApi.reducerPath]: employeeApi.reducer,
