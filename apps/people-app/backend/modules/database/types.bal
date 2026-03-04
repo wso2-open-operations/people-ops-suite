@@ -689,3 +689,34 @@ public type CompanyRaw record {|
     json businessUnits = [];
 |};
 
+# Payload for adding a new business unit.
+public type BusinessUnitPayload record {|
+    # Name of the business unit
+    string name;
+    # Email of the heading email
+    string headEmail;
+|};
+
+# Payload for adding a new team.
+public type TeamPayload record {|
+    # Name of the team
+    string name;
+    # Email of the head of the team
+    string headEmail;
+|};
+
+# Payload for adding a new sub team.
+public type SubTeamPayload record {|
+    # Name of the sub team
+    string name;
+    # Email of the head of the sub team
+    string headEmail;
+|};
+
+# Payload for adding a new unit.
+public type UnitOrgPayload record {|
+    # Name of the unit
+    string name;
+    # Email of the head of the unit
+    string headEmail;
+|};
