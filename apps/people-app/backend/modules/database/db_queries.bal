@@ -931,3 +931,55 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
     WHERE
         c.is_active = 1
     LIMIT 1`;
+
+isolated function addBusinessUnitQuery(BusinessUnitPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO businessUnits(
+    name,
+    head_email
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail}
+  )
+`;
+
+# Build query to insert a new team.
+#
+# + payload - Payload containing the team details
+# + return - Parameterized INSERT query for the new team
+isolated function addTeamQuery(TeamPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO team(
+    name,
+    head_email
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail}
+  )
+`;
+
+# Build query to insert a new sub team.
+#
+# + payload - Payload containing the sub team details
+# + return - Parameterized INSERT query for the new sub team
+isolated function addSubTeamQuery(SubTeamPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO sub_team(
+    name,
+    head_email
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail}
+  )
+`;
+
+# Build query to insert a new unit.
+#
+# + payload - Payload containing the unit details
+# + return - Parameterized INSERT query for the new unit
+isolated function addUnitQuery(UnitOrgPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO unit(
+    name,
+    head_email
+  ) VALUES (
+    ${payload.name},
+    ${payload.headEmail}
+  )
+`;
