@@ -74,6 +74,7 @@ export interface UserInfoInterface {
   employmentStartDate: string;
   subordinateCount: number | null;
   privileges: number[];
+  location: string | null;
 }
 
 const initialState: AuthState = {

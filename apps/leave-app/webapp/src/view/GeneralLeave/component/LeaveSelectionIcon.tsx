@@ -37,7 +37,6 @@ export default function LeaveSelectionIcon({
       justifyContent="space-between"
       alignItems="center"
       gap={1.5}
-      width={1}
       height="100%"
       onClick={onClick}
       sx={{

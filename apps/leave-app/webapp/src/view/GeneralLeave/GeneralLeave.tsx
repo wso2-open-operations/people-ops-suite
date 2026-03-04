@@ -18,15 +18,16 @@ import { Stack } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { formatDateForApi, submitLeaveRequest } from "@root/src/services/leaveService";
+import { formatDateForApi, getLeaveEntitlement, submitLeaveRequest } from "@root/src/services/leaveService";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
-import { DayPortion, LeaveType, PeriodType } from "@root/src/types/types";
+import { DayPortion, EmployeeLocation, LeaveLabel, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
+import LeaveBalanceSummary from "@root/src/view/GeneralLeave/component/LeaveBalanceSummary";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
 import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection";
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
@@ -35,11 +36,50 @@ export default function GeneralLeave() {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector((state) => state.user.userInfo);
+  const userLocation = userInfo?.location ?? null;
+  const email = userInfo?.workEmail ?? "";
+
+  /** Return the primary leave type for the employee's location. */
+  const getDefaultLeaveType = (location: string | null): LeaveType => {
+    switch (location) {
+      case EmployeeLocation.FR:
+        return LeaveType.CONGES_PAYES;
+      case EmployeeLocation.ES:
+        return LeaveType.SPAIN_ANNUAL;
+      default:
+        return LeaveType.CASUAL;
+    }
+  };
+
+  /** Map a LeaveType enum value to its entitlement object key. */
+  const getLeaveTypeEntitlementKey = (leaveType: LeaveType): string | null => {
+    switch (leaveType) {
+      case LeaveType.CONGES_PAYES:
+        return "congesPayes";
+      case LeaveType.RTT:
+        return "rtt";
+      case LeaveType.SPAIN_ANNUAL:
+        return "spainAnnual";
+      case LeaveType.SPAIN_CASUAL:
+        return "spainCasual";
+      case LeaveType.SICK:
+        return "sick";
+      case LeaveType.CASUAL:
+        return "casual";
+      case LeaveType.ANNUAL:
+        return "annual";
+      default:
+        return null;
+    }
+  };
+
   const [daysSelected, setDaysSelected] = useState(0);
   const [workingDays, setWorkingDays] = useState(0);
   const [startDate, setStartDate] = useState<Dayjs | null>(null);
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
-  const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType>(LeaveType.CASUAL);
+  const [selectedLeaveType, setSelectedLeaveType] = useState<LeaveType>(
+    getDefaultLeaveType(userLocation),
+  );
   const [selectedDayPortion, setSelectedDayPortion] = useState<DayPortion | null>(null);
   const [emailRecipients, setEmailRecipients] = useState<string[]>([]);
   const [mandatoryEmails, setMandatoryEmails] = useState<string[]>([]);
@@ -47,6 +87,11 @@ export default function GeneralLeave() {
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState(false);
+
+  // Update the selected leave type when the user's location loads asynchronously.
+  useEffect(() => {
+    setSelectedLeaveType(getDefaultLeaveType(userLocation));
+  }, [userLocation]);
 
   const handleSubmit = async () => {
     setDateError(false);
@@ -113,6 +158,38 @@ export default function GeneralLeave() {
         isPublicComment,
       };
 
+      // Over-limit warning for France/Spain locations (non-blocking)
+      if (
+        userLocation === EmployeeLocation.FR ||
+        userLocation === EmployeeLocation.ES
+      ) {
+        try {
+          const entitlements = await getLeaveEntitlement(email);
+          if (entitlements.length > 0) {
+            const ent = entitlements[0];
+            const leaveTypeKey = getLeaveTypeEntitlementKey(selectedLeaveType);
+            if (leaveTypeKey) {
+              const entitled =
+                (ent.leavePolicy as Record<string, number | null | undefined>)[leaveTypeKey] ?? 0;
+              const consumed =
+                (ent.policyAdjustedLeave as Record<string, number | null | undefined>)[
+                  leaveTypeKey
+                ] ?? 0;
+              if (entitled > 0 && consumed + workingDays > entitled) {
+                const label =
+                  LeaveLabel[selectedLeaveType as keyof typeof LeaveLabel] ?? selectedLeaveType;
+                enqueueSnackbar(
+                  `This request will exceed your ${label} entitlement (${consumed + workingDays}/${entitled} days)`,
+                  { variant: "warning" },
+                );
+              }
+            }
+          }
+        } catch {
+          // Silently ignore — this is a best-effort check
+        }
+      }
+
       await submitLeaveRequest(payload);
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
@@ -120,7 +197,7 @@ export default function GeneralLeave() {
       // Reset form
       setStartDate(null);
       setEndDate(null);
-      setSelectedLeaveType(LeaveType.CASUAL);
+      setSelectedLeaveType(getDefaultLeaveType(userLocation));
       setSelectedDayPortion(null);
       setComment("");
       setIsPublicComment(false);
@@ -138,6 +215,7 @@ export default function GeneralLeave() {
     <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
       <FormContainer>
         <Title firstWord="General" secondWord="Leave Submission" />
+        <LeaveBalanceSummary />
         <Stack
           direction={{ xs: "column", md: "row" }}
           width="100%"
@@ -162,6 +240,7 @@ export default function GeneralLeave() {
             onLeaveTypeChange={setSelectedLeaveType}
             selectedDayPortion={selectedDayPortion}
             onDayPortionChange={setSelectedDayPortion}
+            location={userLocation}
           />
         </Stack>
         <NotifyPeople

@@ -28,6 +28,14 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:3000"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowHeaders: ["Authorization", "Content-Type", "x-jwt-assertion"],
+        allowCredentials: true
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
@@ -85,7 +93,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
-                subordinateCount: subordinates.length()
+                subordinateCount: subordinates.length(),
+                location: empInfo.location
             };
 
             return userInfoResponse;
