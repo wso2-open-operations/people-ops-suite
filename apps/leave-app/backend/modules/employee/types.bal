@@ -110,6 +110,8 @@ public type Employee record {|
     string workEmail;
     # Start date of the employee
     string? startDate;
+    # Continuous service start date of the employee
+    string? continuousServiceDate = ();
     # Thumbnail image of the employee
     string? employeeThumbnail;
     # Location of the employee

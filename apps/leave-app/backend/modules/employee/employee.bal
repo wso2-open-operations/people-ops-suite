@@ -41,6 +41,7 @@ public isolated function getEmployee(string? email)
                 lastName
                 workEmail
                 startDate
+                continuousServiceDate
                 employeeThumbnail
                 location
                 jobRole
@@ -90,6 +91,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
                 lastName
                 workEmail
                 startDate
+                continuousServiceDate
                 employeeThumbnail
                 location
                 jobRole

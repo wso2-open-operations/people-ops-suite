@@ -84,7 +84,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 jobRole: empInfo.jobRole,
                 privileges: privileges,
                 isLead: empInfo.lead,
-                employmentStartDate: empInfo.startDate,
+                employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
                 subordinateCount: subordinates.length()
             };
 
@@ -305,7 +305,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     };
                 }
 
-                string? employmentStartDate = employeeDetails.startDate;
+                string? employmentStartDate = employeeDetails.continuousServiceDate ?: employeeDetails.startDate;
                 if employmentStartDate is () {
                     string errMsg = "Employee employment start date not found.";
                     return <http:InternalServerError>{
