@@ -198,7 +198,7 @@ public type Pagination record {|
     int offset = 0;
 |};
 
-# Sort order enum for ascending and descending.
+# Allowlisted sort order values and their SQL fragments.
 public final map<sql:ParameterizedQuery> & readonly SortOrder = {
     "ASC": `ASC`,
     "DESC": `DESC`,
@@ -208,7 +208,7 @@ public final map<sql:ParameterizedQuery> & readonly SortOrder = {
     "Desc" : `DESC`
 };
 
-# Employee sort fields with their corresponding database columns.
+# Allowed Employee sort fields with their corresponding database columns.
 public final map<sql:ParameterizedQuery> & readonly EmployeeSortField = {
     "employeeId": `e.employee_id`,
     "firstName": `e.first_name`,
