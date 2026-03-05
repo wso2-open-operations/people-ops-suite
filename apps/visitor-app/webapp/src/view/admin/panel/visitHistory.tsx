@@ -46,7 +46,7 @@ const toLocalDateTime = (utcString: string) => {
 const VisitHistory = () => {
   const dispatch = useAppDispatch();
   const { visits, state, stateMessage } = useAppSelector(
-    (state: RootState) => state.visit
+    (state: RootState) => state.visit,
   );
 
   const [page, setPage] = useState(0);
@@ -61,33 +61,64 @@ const VisitHistory = () => {
         limit: pageSize,
         offset: page * pageSize,
         statusArray: [VisitStatus.completed, VisitStatus.rejected],
-      })
+      }),
     );
   }, [dispatch, page, pageSize]);
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
-      field: "companyName",
-      headerName: "Company Name",
+      field: "firstName",
+      headerName: "First Name",
+      minWidth: 180,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "lastName",
+      headerName: "Last Name",
+      minWidth: 180,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "email",
+      headerName: "Visitor Email",
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "passNumber",
+      headerName: "Pass Number",
+      minWidth: 120,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      headerName: "Time Of Entry",
       minWidth: 150,
       flex: 1,
       renderCell: (params) =>
         params.value ? toLocalDateTime(params.value) : "N/A",
     },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 140, flex: 1 },
     {
-      field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
       minWidth: 160,
       flex: 1.2,
       renderCell: (params) =>

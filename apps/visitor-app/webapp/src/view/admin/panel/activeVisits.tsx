@@ -40,6 +40,7 @@ import {
   Cancel,
   CorporateFare,
   Visibility,
+  Close,
 } from "@mui/icons-material";
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn";
 import dayjs from "dayjs";
@@ -47,13 +48,18 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
+import { useSearchParams } from "react-router-dom";
 
 import {
   RootState,
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
-import { fetchVisits, visitStatusUpdate } from "@slices/visitSlice/visit";
+import {
+  fetchVisits,
+  UpdateVisitPayload,
+  visitStatusUpdate,
+} from "@slices/visitSlice/visit";
 import {
   State,
   VisitStatus,
@@ -64,25 +70,10 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelector";
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
+import Scan from "@view/admin/scan";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const AVAILABLE_FLOORS_AND_ROOMS = [
-  { floor: "1st Floor", rooms: ["Cafeteria"] },
-  { floor: "6th Floor", rooms: ["The Launchpad"] },
-  { floor: "7th Floor", rooms: ["CloudScape", "DigIntel", "TerminalX"] },
-  { floor: "8th Floor", rooms: ["Octave", "Melody"] },
-  { floor: "9th Floor", rooms: ["Grove", "Orchard"] },
-  { floor: "9th and 10th", rooms: ["The Circuit"] },
-  { floor: "10th Floor", rooms: ["Elevate Zone", "Chamber"] },
-  { floor: "11th Floor", rooms: ["Tinker Room"] },
-  { floor: "12th Floor", rooms: ["Emerald", "Synergy"] },
-  { floor: "13th Floor", rooms: ["Quarter Crunch", "Deal Den"] },
-  { floor: "14th Floor", rooms: ["Cove", "Skyline", "Pinnacle", "Vertex"] },
-  { floor: "15th Floor", rooms: ["Common Area"] },
-  { floor: "Rooftop", rooms: ["Basketball Court"] },
-];
 
 const toLocalDateTime = (utcString: string) => {
   return dayjs
@@ -92,17 +83,16 @@ const toLocalDateTime = (utcString: string) => {
 };
 
 const approvalValidationSchema = Yup.object({
-  passNumber: Yup.string().required("Pass number is required"),
-  selectedFloorsAndRooms: Yup.array()
-    .min(1, "At least one floor and room must be selected")
-    .required("Floor and room selection is required"),
+  passNumber: Yup.string(),
+  selectedFloorsAndRooms: Yup.array(),
 });
 
 const ActiveVisits = () => {
   const dispatch = useAppDispatch();
   const { visits, state, submitState, stateMessage } = useAppSelector(
-    (state: RootState) => state.visit
+    (state: RootState) => state.visit,
   );
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
@@ -116,6 +106,9 @@ const ActiveVisits = () => {
   >([]);
   const dialogContext = useConfirmationModalContext();
 
+  const visitVerificationCodeParam = searchParams.get("visitVerificationCode");
+  const [isScanModalOpen, setIsScanModalOpen] = useState<boolean>(false);
+
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
 
@@ -125,34 +118,54 @@ const ActiveVisits = () => {
         limit: pageSize,
         offset: page * pageSize,
         statusArray: [VisitStatus.requested, VisitStatus.approved],
-      })
+      }),
     );
-  }, [dispatch, page, pageSize]);
+  }, [dispatch, page, pageSize, isScanModalOpen]);
+
+  // Handle visitVerificationCode parameter for opening scan modal
+  useEffect(() => {
+    if (visitVerificationCodeParam) {
+      setIsScanModalOpen(true);
+    } else {
+      setIsScanModalOpen(false);
+    }
+  }, [visitVerificationCodeParam]);
+
+  const handleCloseScanModal = () => {
+    // Remove visitVerificationCode parameter from URL
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.delete("visitVerificationCode");
+    setSearchParams(newSearchParams);
+    setIsScanModalOpen(false);
+  };
 
   const handleApproveSingleVisit = async (
     visitId: string,
     passNumber: string,
-    accessibleLocations: { floor: string; rooms: string[] }[]
+    accessibleLocations: { floor: string; rooms: string[] }[],
   ) => {
     try {
-      const payload = {
+      const payload: UpdateVisitPayload = {
         visitId: +visitId,
-        passNumber: passNumber.trim(),
         status: VisitAction.approve,
-        accessibleLocations,
         rejectionReason: null,
       };
+
+      if (accessibleLocations.length > 0)
+        payload.accessibleLocations = accessibleLocations;
+      if (passNumber.trim() !== "") payload.passNumber = passNumber.trim();
 
       await dispatch(visitStatusUpdate(payload));
       setCurrentVisitId(null);
       setIsApprovalModalOpen(false);
+      handleCloseScanModal();
 
       dispatch(
         fetchVisits({
           limit: pageSize,
           offset: page * pageSize,
           statusArray: [VisitStatus.requested, VisitStatus.approved],
-        })
+        }),
       );
     } catch (error) {
       console.error("Error approving visit:", error);
@@ -181,7 +194,7 @@ const ActiveVisits = () => {
               limit: pageSize,
               offset: page * pageSize,
               statusArray: [VisitStatus.requested, VisitStatus.approved],
-            })
+            }),
           );
         } catch (error) {
           console.error("Error rejecting visit:", error);
@@ -193,7 +206,7 @@ const ActiveVisits = () => {
         label: "Rejection Reason",
         mandatory: true,
         type: "textarea",
-      }
+      },
     );
   };
 
@@ -212,16 +225,17 @@ const ActiveVisits = () => {
         };
 
         await dispatch(visitStatusUpdate(payload));
+        handleCloseScanModal();
         dispatch(
           fetchVisits({
             limit: pageSize,
             offset: page * pageSize,
             statusArray: [VisitStatus.requested, VisitStatus.approved],
-          })
+          }),
         );
       },
       "Confirm",
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -231,26 +245,67 @@ const ActiveVisits = () => {
   };
 
   const showViewAccessibleFloors = (
-    locations: { floor: string; rooms: string[] }[]
+    locations: { floor: string; rooms: string[] }[],
   ) => {
     setAccessibleFloors(locations || []);
     setViewAccessibleFloors(true);
   };
 
   const columns: GridColDef[] = [
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
     {
-      field: "companyName",
-      headerName: "Company Name",
+      field: "firstName",
+      headerName: "First Name",
+      minWidth: 180,
+
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "lastName",
+      headerName: "Last Name",
+      minWidth: 180,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "contactNumber",
+      headerName: "Contact Number",
       minWidth: 150,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
+    {
+      field: "email",
+      headerName: "Visitor Email",
+      minWidth: 200,
+      flex: 1.5,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "passNumber",
+      headerName: "Pass Number",
+      minWidth: 120,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
+    {
+      field: "purposeOfVisit",
+      headerName: "Purpose",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) => params.value || "N/A",
+    },
     {
       field: "timeOfEntry",
-      headerName: "Scheduled Date",
+      headerName: "Time Of Entry",
+      minWidth: 150,
+      flex: 1,
+      renderCell: (params) =>
+        params.value ? toLocalDateTime(params.value) : "N/A",
+    },
+    {
+      field: "timeOfDeparture",
+      headerName: "Time Of Departure",
       minWidth: 150,
       flex: 1,
       renderCell: (params) =>
@@ -370,6 +425,48 @@ const ActiveVisits = () => {
         }
       />
 
+      {/* Scan Modal - Shows when visitVerificationCode parameter is present */}
+      {isScanModalOpen && (
+        <Modal
+          open
+          onClose={handleCloseScanModal}
+          aria-labelledby="scan-visit-modal"
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "50vw",
+              maxWidth: 1200,
+              maxHeight: "90vh",
+              bgcolor: "background.paper",
+              boxShadow: 24,
+              borderRadius: 2,
+              overflowY: "auto",
+            }}
+          >
+            <IconButton
+              onClick={handleCloseScanModal}
+              sx={{
+                position: "absolute",
+                right: 8,
+                top: 8,
+                zIndex: 1,
+                bgcolor: "background.paper",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+            <Scan onClose={handleCloseScanModal} />
+          </Box>
+        </Modal>
+      )}
+
       {/* Approval Modal */}
       <Modal
         open={isApprovalModalOpen}
@@ -408,7 +505,7 @@ const ActiveVisits = () => {
               handleApproveSingleVisit(
                 currentVisitId || "",
                 values.passNumber,
-                values.selectedFloorsAndRooms
+                values.selectedFloorsAndRooms,
               );
             }}
           >
@@ -420,7 +517,7 @@ const ActiveVisits = () => {
                 <Field
                   as={TextField}
                   name="passNumber"
-                  label="Pass Number"
+                  label="Pass Number (Optional)"
                   fullWidth
                   variant="outlined"
                   placeholder="Enter pass number"
@@ -432,7 +529,6 @@ const ActiveVisits = () => {
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector
-                  availableFloorsAndRooms={AVAILABLE_FLOORS_AND_ROOMS}
                   selectedFloorsAndRooms={values.selectedFloorsAndRooms}
                   onChange={(value) =>
                     setFieldValue("selectedFloorsAndRooms", value)

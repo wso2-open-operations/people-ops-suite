@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/sql;
+import ballerina/time;
 
 # Build query to persist a visitor.
 #
@@ -24,9 +25,9 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
     => `
         INSERT INTO visitor
         (
-            nic_hash,
-            name,
-            nic_number,
+            first_name,
+            last_name,
+            id_hash,
             email,
             contact_number,
             created_by,
@@ -34,33 +35,33 @@ isolated function addVisitorQuery(AddVisitorPayload payload, string createdBy) r
         )
         VALUES
         (
-            ${payload.nicHash},
-            ${payload.name},
-            ${payload.nicNumber},
+            ${payload.firstName},
+            ${payload.lastName},
+            ${payload.idHash},
             ${payload.email},
             ${payload.contactNumber},
             ${createdBy},
             ${createdBy}
         )
         ON DUPLICATE KEY UPDATE
-            name = ${payload.name},
-            nic_number = ${payload.nicNumber},
-            email = ${payload.email},
-            contact_number = ${payload.contactNumber},
+            first_name = COALESCE(${payload.firstName}, first_name),
+            last_name = COALESCE(${payload.lastName}, last_name),
+            contact_number = COALESCE(${payload.contactNumber}, contact_number),
+            email = COALESCE(${payload.email}, email),
             updated_by = ${createdBy}
         ;`;
 
-# Build query to fetch a visitor by hashed NIC.
+# Build query to fetch a visitor by hashed email or contact number.
 #
-# + hashedNic - Filter : Hashed NIC of the visitor
-# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed NIC
-isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:ParameterizedQuery
+# + idHash - Filter : Hashed email or contact number of the visitor
+# + return - sql:ParameterizedQuery - Select query for the visitor based on the hashed email or contact number
+isolated function fetchVisitorByIdHashQuery(string idHash) returns sql:ParameterizedQuery
     => `
-        SELECT   
-            nic_hash as nicHash,        
-            name,
-            nic_number as nicNumber,
+        SELECT         
+            first_name as firstName,
+            last_name as lastName,
             contact_number as contactNumber,
+            id_hash as idHash,
             email,
             created_by as createdBy,
             created_on as createdOn,
@@ -69,7 +70,7 @@ isolated function fetchVisitorByNicQuery(string hashedNic) returns sql:Parameter
         FROM 
             visitor
         WHERE 
-            nic_hash = ${hashedNic};
+            id_hash = ${idHash};
         `;
 
 # Build query to create a new invitation.
@@ -112,6 +113,7 @@ isolated function fetchInvitationQuery(string encodeValue) returns sql:Parameter
             is_active AS active,
             no_of_visitors AS noOfVisitors,
             visit_info AS visitInfo,
+            type,
             created_by AS createdBy,
             created_on AS createdOn,
             updated_by AS updatedBy,
@@ -125,39 +127,46 @@ isolated function fetchInvitationQuery(string encodeValue) returns sql:Parameter
 # Build query to persist a visit.
 #
 # + payload - Payload containing the visit details
+# + invitedBy - Person who is inviting the visitor
 # + createdBy - Person who is creating the visit
 # + invitationId - Invitation ID associated with the visit
 # + return - sql:ParameterizedQuery - Insert query for the new visit
-isolated function addVisitQuery(AddVisitPayload payload, string createdBy, int? invitationId)
+isolated function addVisitQuery(AddVisitPayload payload, string invitedBy, string createdBy, int? invitationId)
     returns sql:ParameterizedQuery
 
     => `
         INSERT INTO visit
         (
-            nic_hash,
+            uuid,
+            visitor_id_hash,
             pass_number,
             company_name,
             whom_they_meet,
             purpose_of_visit,
             accessible_locations,
+            visit_date,
             time_of_entry,
             time_of_departure,
             invitation_id,
+            invited_by,
             status,
             created_by,
             updated_by
         )
         VALUES
         (
-            ${payload.nicHash},
+            ${payload.uuid},
+            ${payload.visitorIdHash},
             ${payload.passNumber},
             ${payload.companyName},
             ${payload.whomTheyMeet},
             ${payload.purposeOfVisit},
             ${payload.accessibleLocations is Floor[] ? payload.accessibleLocations.toJsonString() : null},
+            ${payload.visitDate},
             ${payload.timeOfEntry},
             ${payload.timeOfDeparture},
             ${invitationId},
+            ${invitedBy},
             ${payload.status},
             ${createdBy},
             ${createdBy}
@@ -174,39 +183,36 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
             v.visit_id as id,
             v.time_of_entry as timeOfEntry,
             v.time_of_departure as timeOfDeparture,
+            v.invitation_id as invitationId,
             v.pass_number as passNumber,
-            v.nic_hash as nicHash,
-            vs.nic_number as nicNumber,
-            vs.name,
+            vs.id_hash as visitorIdHash,
+            vs.first_name as firstName,
+            vs.last_name as lastName,
             vs.email,
             vs.contact_number as contactNumber,
             v.company_name as companyName,
             v.whom_they_meet as whomTheyMeet,
             v.purpose_of_visit as purposeOfVisit,
             v.accessible_locations as accessibleLocations,
+            v.visit_date as visitDate,
             v.status,
             v.created_by as createdBy,
             v.created_on as createdOn,
             v.updated_by as updatedBy,
             v.updated_on as updatedOn,
-            vi.invitation_id as invitationId,
             COUNT(*) OVER() AS totalCount
         FROM 
             visit v
         LEFT JOIN
             visitor vs
         ON
-            v.nic_hash = vs.nic_hash
-        LEFT JOIN
-            visit_invitation vi
-        ON
-            v.invitation_id = vi.invitation_id
+            vs.id_hash = v.visitor_id_hash
     `;
 
     // Setting the filters based on the inputs.
     sql:ParameterizedQuery[] filterQueries = [];
     if filters.inviter is string {
-        filterQueries.push(` v.created_by = ${filters.inviter}`);
+        filterQueries.push(` v.invited_by = ${filters.inviter}`);
     }
     if filters.invitationId is int {
         filterQueries.push(` v.invitation_id = ${filters.invitationId}`);
@@ -222,6 +228,14 @@ isolated function fetchVisitsQuery(VisitFilters filters) returns sql:Parameteriz
 
     if filters.visitId is int {
         filterQueries.push(` v.visit_id = ${filters.visitId}`);
+    }
+
+    if filters.uuid is string {
+        filterQueries.push(` v.uuid = ${filters.uuid}`);
+    }
+
+    if filters.smsVerificationCode is int {
+        filterQueries.push(` v.sms_verification_code = ${filters.smsVerificationCode}`);
     }
 
     // Build main query with the filters.
@@ -278,7 +292,22 @@ isolated function updateVisitQuery(int visitId, UpdateVisitPayload payload, stri
         filters.push(`rejection_reason = ${payload.rejectionReason}`);
     }
 
-    // Setting the updated_by (redundant in this case, but keeping for consistency).
+    if payload.actionedBy is string {
+        filters.push(`actioned_by = ${payload.actionedBy}`);
+    }
+
+    if payload.timeOfEntry is time:Utc {
+        filters.push(`time_of_entry = ${payload.timeOfEntry}`);
+    }
+
+    if payload.timeOfDeparture is time:Utc {
+        filters.push(`time_of_departure = ${payload.timeOfDeparture}`);
+    }
+    if payload.hasKey("smsVerificationCode") {
+        filters.push(`sms_verification_code = ${payload?.smsVerificationCode}`);
+    }
+
+    // Setting the updated_by field to record who performed the update, for audit purposes.
     filters.push(`updated_by = ${updatedBy}`);
 
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);

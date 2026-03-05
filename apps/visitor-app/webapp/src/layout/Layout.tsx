@@ -16,11 +16,10 @@
 
 import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
-import pJson from "@root/package.json";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
-import { Typography } from "@mui/material";
-import { Box, alpha } from "@mui/material";
+import { CircularProgress } from "@mui/material";
+import { Box } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { selectRoles } from "@slices/authSlice/auth";
@@ -28,7 +27,6 @@ import { RootState, useAppSelector } from "@slices/store";
 import { Suspense, useEffect, useState, useCallback } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ConfirmationModalContextProvider from "@context/DialogContext";
-import ThreeDoteWave from "../component/common/ThreeDotWave";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
@@ -82,31 +80,27 @@ export default function Layout() {
           sx={{
             flexGrow: 1,
             height: "100vh",
-            p: 3,
-            pt: 7.5,
-            pb: 4.5,
+            p: 1.5,
+            pt: 7,
+            pb: 1.5,
           }}
         >
-          <Suspense fallback={<ThreeDoteWave />}>
+          <Suspense
+            fallback={
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  height: "100%",
+                }}
+              >
+                <CircularProgress />
+              </Box>
+            }
+          >
             <Outlet />
           </Suspense>
-          <Box
-            className="layout-note"
-            sx={{
-              background:
-                theme.palette.mode === "light"
-                  ? (theme) =>
-                      alpha(
-                        theme.palette.secondary.main,
-                        theme.palette.action.activatedOpacity
-                      )
-                  : (theme) => alpha(theme.palette.common.black, 0.4),
-            }}
-          >
-            <Typography variant="h6" sx={{ color: "#919090" }}>
-              v {pJson.version} | © {new Date().getFullYear()} WSO2 LLC
-            </Typography>
-          </Box>
         </Box>
       </Box>
     </ConfirmationModalContextProvider>

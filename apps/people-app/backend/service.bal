@@ -18,6 +18,7 @@ import people.database;
 
 import ballerina/http;
 import ballerina/log;
+import ballerina/regex;
 
 @display {
     label: "People Service",
@@ -31,11 +32,11 @@ service class ErrorInterceptor {
 
         // Handle data-binding errors.
         if err is http:PayloadBindingError {
-            string customError = string `Payload binding failed!`;
-            log:printError(customError, err);
+            string customErr = string `Payload binding failed!`;
+            log:printError(customErr, err);
             return {
                 body: {
-                    message: customError
+                    message: customErr
                 }
             };
         }
@@ -45,11 +46,478 @@ service class ErrorInterceptor {
 
 service http:InterceptableService / on new http:Listener(9090) {
 
+    # Service initialization.
+    function init() {
+        log:printInfo("People App backend started...");
+    }
+
     # Request interceptor.
     #
     # + return - authorization:JwtInterceptor, ErrorInterceptor
     public function createInterceptors() returns http:Interceptor[] =>
         [new authorization:JwtInterceptor(), new ErrorInterceptor()];
+
+    # Get user information.
+    #
+    # + return - User information or http errors
+    resource function get user\-info(http:RequestContext ctx)
+        returns database:UserInfo|http:InternalServerError|http:NotFound {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:EmployeeBasicInfo|error? employeeBasicInfo = database:getEmployeeBasicInfo(userInfo.email);
+        if employeeBasicInfo is error {
+            string customErr = string `Error occurred while fetching employee basic information`;
+            log:printError(customErr, employeeBasicInfo, email = userInfo.email);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if employeeBasicInfo is () {
+            string customErr = "Employee basic information not found";
+            log:printWarn(customErr, user = userInfo.email);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        // TODO: Fetch privileges and return along with the basic info
+        return {...employeeBasicInfo, privileges: []};
+    }
+
+    # Fetch employee detailed information.
+    #
+    # + id - Employee ID
+    # + return - Employee detailed information
+    resource function get employees/[string id](http:RequestContext ctx)
+        returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${id}`;
+            log:printError(customErr, employeeInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, id = id);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeeInfo;
+    }
+
+    # Fetch employee personal information.
+    #
+    # + id - Employee ID
+    # + return - Employee personal information
+    resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
+        returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        if employeePersonalInfo is error {
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
+            log:printError(customErr, employeePersonalInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if employeePersonalInfo is () {
+            string customErr = "Employee personal information not found";
+            log:printWarn(customErr, id = id);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeePersonalInfo;
+    }
+
+    # Fetch continuous service record by work email.
+    #
+    # + workEmail - Work email of the employee
+    # + return - Employee ID and continuous service record or error response
+    resource function get continuous\-service\-records(http:RequestContext ctx, string workEmail)
+        returns database:ContinuousServiceRecordInfo[]|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        if workEmail.trim().length() == 0 {
+            string customErr = "Work email is a mandatory query parameter";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:ContinuousServiceRecordInfo[]|error serviceRecords = database:getContinuousServiceRecordsByEmail(workEmail);
+        if serviceRecords is error {
+            string customErr = "Error occurred while fetching continuous service records";
+            log:printError(customErr, serviceRecords, workEmail = workEmail);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return serviceRecords;
+    }
+
+    # Fetch all employees' basic information.
+    #
+    # + return - All employees' basic information
+    resource function get employees/basic\-info() returns database:EmployeeBasicInfo[]|http:InternalServerError {
+        database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
+        if employeesBasicInfos is error {
+            string customErr = "Error occurred while fetching employees' basic information";
+            log:printError(customErr, employeesBasicInfos);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employeesBasicInfos;
+    }
+
+    # Get business units.
+    # + return - Business units
+    resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
+        database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
+        if businessUnits is error {
+            string customErr = "Error while fetching Business Units";
+            log:printError(customErr, businessUnits);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return businessUnits;
+    }
+
+    # Get teams.
+    #
+    # + buId - Business unit ID (optional)
+    # + return - Teams
+    resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
+        database:Team[]|error teams = database:getTeams(buId);
+        if teams is error {
+            string customErr = "Error while fetching Teams";
+            log:printError(customErr, teams);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return teams;
+    }
+
+    # Get sub teams.
+    #
+    # + teamId - Team ID (optional)
+    # + return - Sub teams
+    resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
+        database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
+        if subTeams is error {
+            string customErr = "Error while fetching Sub Teams";
+            log:printError(customErr, subTeams);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return subTeams;
+    }
+
+    # Get units.
+    #
+    # + subTeamId - Sub team ID (optional)
+    # + return - Units
+    resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
+        database:Unit[]|error units = database:getUnits(subTeamId);
+        if units is error {
+            string customErr = "Error while fetching Units";
+            log:printError(customErr, units);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return units;
+    }
+
+    # Get career functions.
+    #
+    # + return - Career functions
+    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
+        database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
+        if careerFunctions is error {
+            string customErr = "Error while fetching Career Functions";
+            log:printError(customErr, careerFunctions);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return careerFunctions;
+    }
+
+    # Get designations.
+    #
+    # + careerFunctionId - Career function ID (optional)
+    # + return - Designations
+    resource function get designations(int? careerFunctionId = ())
+        returns database:Designation[]|http:InternalServerError {
+
+        database:Designation[]|error designations = database:getDesignations(careerFunctionId);
+        if designations is error {
+            string customErr = "Error while fetching Designations";
+            log:printError(customErr, designations);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return designations;
+    }
+
+    # Get offices.
+    #
+    # + return - Offices
+    resource function get offices() returns database:Office[]|http:InternalServerError {
+        database:Office[]|error offices = database:getOffices();
+        if offices is error {
+            string customErr = "Error while fetching Offices";
+            log:printError(customErr, offices);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return offices;
+    }
+
+    # Create a new employee.
+    #
+    # + return - The created employee ID as an integer, or HTTP errors
+    resource function post employees(http:RequestContext ctx, database:CreateEmployeePayload payload)
+        returns int|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to create new employees", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to create new employees"
+                }
+            };
+        }
+
+        database:EmployeePersonalInfo[]|error employeePersonalInfoList = database:searchEmployeePersonalInfo(
+                {nicOrPassport: payload.personalInfo.nicOrPassport});
+        if employeePersonalInfoList is error {
+            string customErr = "Error occurred while checking existing employee personal information";
+            log:printError(customErr, employeePersonalInfoList, nicOrPassport = payload.personalInfo.nicOrPassport);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        if employeePersonalInfoList.length() > 0 {
+            string customErr = "Employee with the given NIC/Passport already exists";
+            log:printWarn(customErr, nicOrPassport = payload.personalInfo.nicOrPassport);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error employeeId = database:addEmployee(payload, userInfo.email);
+        if employeeId is error {
+            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        return employeeId;
+    }
+
+    # Update employee personal information.
+    #
+    # + id - Employee ID
+    # + payload - Employee personal information update payload
+    # + return - HTTP OK or HTTP errors
+    resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
+            database:UpdateEmployeePersonalInfoPayload payload)
+        returns database:EmployeePersonalInfo|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        if employeeInfo is error {
+            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
+                    employeeInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn("Employee information not found", id = id);
+            return <http:NotFound>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo.workEmail != userInfo.email {
+            log:printWarn("User is trying to update personal info of another employee", id = id,
+                    invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not allowed to update personal information of other employees"
+                }
+            };
+        }
+
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        if employeePersonalInfo is error {
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
+            log:printError(customErr, employeePersonalInfo, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeePersonalInfo is () {
+            string customErr = "Employee personal information not found";
+            log:printWarn(customErr, id = id);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        if updateResult is error {
+            string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
+            log:printError(customErr, updateResult, id = id);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_PERSONAL_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        return {
+            id: employeePersonalInfo.id,
+            nicOrPassport: employeePersonalInfo.nicOrPassport,
+            fullName: employeePersonalInfo.fullName,
+            nameWithInitials: employeePersonalInfo.nameWithInitials,
+            firstName: employeePersonalInfo.firstName,
+            lastName: employeePersonalInfo.lastName,
+            title: employeePersonalInfo.title,
+            dob: employeePersonalInfo.dob,
+            nationality: employeePersonalInfo.nationality,
+            personalEmail: payload.personalEmail,
+            personalPhone: payload.personalPhone,
+            residentNumber: payload.residentNumber,
+            addressLine1: payload.addressLine1,
+            addressLine2: payload.addressLine2,
+            city: payload.city,
+            stateOrProvince: payload.stateOrProvince,
+            postalCode: payload.postalCode,
+            country: payload.country,
+            emergencyContacts: payload.emergencyContacts
+        };
+    }
 
     # Fetch vehicles of a specific employee.
     #
@@ -67,7 +535,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -113,7 +581,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }
@@ -155,7 +623,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if userInfo is error {
             return <http:InternalServerError>{
                 body: {
-                    message: "User information header not found!"
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
         }

@@ -15,7 +15,11 @@
 // under the License.
 import ballerina/constraint;
 import ballerina/sql;
+import ballerina/time;
 import ballerinax/mysql;
+
+# Error type for duplicate database entry (MySQL error code 1062).
+public type DuplicateEntryError distinct error;
 
 # [Configurable] Database configs.
 type DatabaseConfig record {|
@@ -55,30 +59,30 @@ public type Visitor record {|
 
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
-    # Nic Hash of the visitor
+    # Email or phone number hash of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC Hash should be a non-empty string with printable characters."
+            message: "The ID Hash should be a non-empty string with printable characters."
         }
     }
-    string nicHash;
-    # Name of the visitor
+    string idHash;
+    # First name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The name should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The first name should be in international format."
         }
     }
-    string name;
-    # NIC number of visitor
+    string firstName;
+    # Last name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The NIC number should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The last name should be in international format."
         }
     }
-    string nicNumber;
+    string? lastName = ();
     # Working phone number of visitor
     @constraint:String {
         pattern: {
@@ -86,8 +90,14 @@ public type AddVisitorPayload record {|
             message: "The contact number should be in valid international format."
         }
     }
-    string contactNumber;
+    string? contactNumber = ();
     # Email of the visitor
+    @constraint:String {
+        pattern: {
+            value: EMAIL_REGEX,
+            message: "The email should be a valid email address."
+        }
+    }
     string? email = ();
 |};
 
@@ -101,39 +111,43 @@ public type Floor record {|
 
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
-    # Nic Hash of the visitor
-    string nicHash;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Company name of visitor
-    string? companyName;
+    string? companyName = ();
     # Number in the tag given to visitor
-    string passNumber?;
+    string? passNumber = ();
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet = ();
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    time:Utc? timeOfEntry = ();
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    time:Utc? timeOfDeparture = ();
     # Status of the visit
-    Status status;
+    Status? status = ();
+    # Date of the visit [in UTC]
+    string visitDate;
+    # Unique identifier for the visit
+    string uuid;
 |};
 
 # [Database] Visit record.
 public type VisitRecord record {|
     *AuditFields;
-    # Nic Hash of the visitor
-    string nicHash;
     # Unique identifier for the visit
     int id;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # First name of the visitor
+    string firstName;
+    # Last name of the visitor
+    string? lastName;
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Email of the visitor
     string? email = ();
     # Company name of visitor
@@ -141,15 +155,17 @@ public type VisitRecord record {|
     # Number in the tag given to visitor
     string passNumber?;
     # The person the visitor is supposed to meet
-    string whomTheyMeet;
+    string? whomTheyMeet;
     # Purpose of the visit
-    string purposeOfVisit;
+    string? purposeOfVisit;
     # The floors and rooms that the visitor can access
     string? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
     # Time at which the visitor is supposed to check in [in UTC]
-    string timeOfEntry;
+    string? timeOfEntry;
     # Time at which the visitor is supposed to check out [in UTC]
-    string timeOfDeparture;
+    string? timeOfDeparture;
     # Invitation ID associated with the visit
     int? invitationId;
     # Status of the visit
@@ -160,20 +176,39 @@ public type VisitRecord record {|
 
 # Visit record.
 public type Visit record {|
-    *AddVisitPayload;
     *AuditFields;
     # Unique identifier for the visit
     int id;
-    # Name of the visitor
-    string name;
-    # NIC number of visitor
-    string nicNumber;
+    # Visitor ID Hash
+    string visitorIdHash;
+    # Company name of visitor
+    string? companyName = ();
+    # Number in the tag given to visitor
+    string passNumber?;
+    # The person the visitor is supposed to meet
+    string? whomTheyMeet = ();
+    # Purpose of the visit
+    string? purposeOfVisit = ();
+    # The floors and rooms that the visitor can access
+    Floor[]? accessibleLocations = ();
+    # Date of the visit [in UTC]
+    string visitDate;
+    # Time at which the visitor is supposed to check in [in UTC]
+    string? timeOfEntry = ();
+    # Time at which the visitor is supposed to check out [in UTC]
+    string? timeOfDeparture = ();
+    # Status of the visit
+    Status status;
+    # First name of the visitor
+    string firstName;
+    # Last name of the visitor
+    string? lastName = ();
     # Working phone number of visitor
-    string contactNumber;
+    string? contactNumber = ();
     # Email of the visitor
     string? email = ();
     # Invitation ID associated with the visit
-    int? invitationId;
+    int? invitationId = ();
 |};
 
 # Response Record for Visits.
@@ -209,6 +244,8 @@ public type InvitationRecord record {|
     string? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Invitation.
@@ -226,6 +263,8 @@ public type Invitation record {|
     VisitInfo? visitInfo = ();
     # Who invited the visitor
     AddVisitorPayload[] invitees?;
+    # Types of the invitation
+    string 'type;
 |};
 
 # Visit information of invitation.
@@ -252,6 +291,14 @@ public type UpdateVisitPayload record {|
     string? rejectionReason = ();
     # The floors and rooms that the visitor can access
     Floor[]? accessibleLocations = ();
+    # Who actioned the visit
+    string? actionedBy = ();
+    # Time of entry
+    time:Utc? timeOfEntry = ();
+    # Time of departure
+    time:Utc? timeOfDeparture = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode?;
 |};
 
 # Payload to update Invitation details.
@@ -277,4 +324,8 @@ public type VisitFilters record {|
     int? 'limit = DEFAULT_LIMIT;
     # Offset for pagination
     int? offset = ();
+    # UUID of the visit
+    string? uuid = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode = ();
 |};

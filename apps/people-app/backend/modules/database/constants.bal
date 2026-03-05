@@ -16,3 +16,5 @@
 
 # A constant default limit of a database query
 public const DEFAULT_LIMIT = 100;
+
+const ERROR_NO_ROWS_UPDATED = "No rows were updated";
