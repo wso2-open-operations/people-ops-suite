@@ -1227,19 +1227,24 @@ function CreateVisit() {
         {isLocked && (
           <Box sx={{ mt: 3, textAlign: "center" }}>
             <Button
-              variant="contained"
-              color="inherit"
+              variant="text"
               onClick={resetForm}
+              startIcon={<CheckCircleIcon sx={{ fontSize: 18 }} />}
               sx={{
-                borderRadius: "12px",
                 textTransform: "none",
                 fontWeight: 500,
                 fontSize: "0.875rem",
+                color: "#4B5064",
                 px: 3,
                 py: 1,
+                borderRadius: "12px",
+                bgcolor: "#F3F4F8",
+                "&:hover": {
+                  bgcolor: "#E9EBF5",
+                },
               }}
             >
-              Complete
+              Complete Visit
             </Button>
           </Box>
         )}
