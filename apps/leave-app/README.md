@@ -34,9 +34,9 @@ FLUSH PRIVILEGES;
 ```toml
 # --- Root-level configurables ---
 [leave_service]
-emailGroupToNotify = "vacation-group@wso2.com"
-sabbaticalFunctionalLeadOptOutMails = ["sanjiva@wso2.com"]
-sabbaticalMailGroups = ["sabbatical-application-group@wso2.com"]
+emailGroupToNotify = "leave-management@company.com"
+sabbaticalFunctionalLeadOptOutMails = ["peter@company.com"]
+sabbaticalMailGroups = ["sabbatical-management@company.com"]
 isSabbaticalLeaveEnabled = true
 sabbaticalLeaveApprovalUrl = "https://localhost:3000/approve/sabbatical"
 sabbaticalLeavePolicyUrl = "<policy-doc-url>"
@@ -52,7 +52,7 @@ additionalCommentTemplate = "leaveAdditionalComment"
 
 [leave_service.email.emailServiceConfig]
 baseUrl = "<email-service-url>"
-emailFrom = "Leave App <noreply@wso2.com>"
+emailFrom = "Leave App <noreply@company.com>"
 
 [leave_service.email.choreoAppConfig]
 tokenUrl = "https://api.asgardeo.io/t/wso2/oauth2/token"
@@ -98,9 +98,9 @@ minIdleConnections = 3
 
 # --- Authorization Roles ---
 [leave_service.authorization.authorizedRoles]
-employeeRoles = ["wso2-everyone"]
-internRoles = ["wso2-interns1"]
-peopleOpsTeamRoles = ["wso2-everyone"]
+employeeRoles = ["employee-role"]
+internRoles = ["intern-role"]
+peopleOpsTeamRoles = ["hr-team-role"]
 ```
 
 2. Build and run:

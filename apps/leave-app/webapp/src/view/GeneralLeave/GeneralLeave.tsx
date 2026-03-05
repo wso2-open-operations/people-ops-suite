@@ -25,7 +25,7 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi, getLeaveEntitlement, submitLeaveRequest } from "@root/src/services/leaveService";
 import { useAppSelector } from "@root/src/slices/store";
-import { DayPortion, EmployeeLocation, LeaveLabel, LeaveType, PeriodType } from "@root/src/types/types";
+import { DayPortion, EmployeeLocation, LeaveLabel, LeavePolicy, LeaveType, PeriodType } from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveBalanceSummary from "@root/src/view/GeneralLeave/component/LeaveBalanceSummary";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -168,12 +168,9 @@ export default function GeneralLeave() {
             const ent = entitlements[0];
             const leaveTypeKey = LEAVE_TYPE_KEY_MAP[selectedLeaveType] ?? null;
             if (leaveTypeKey) {
-              const entitled =
-                (ent.leavePolicy as Record<string, number | null | undefined>)[leaveTypeKey] ?? 0;
-              const consumed =
-                (ent.policyAdjustedLeave as Record<string, number | null | undefined>)[
-                  leaveTypeKey
-                ] ?? 0;
+              const policyKey = leaveTypeKey as keyof LeavePolicy;
+              const entitled = ent.leavePolicy[policyKey] ?? 0;
+              const consumed = ent.policyAdjustedLeave[policyKey] ?? 0;
               if (entitled > 0 && consumed + workingDays > entitled) {
                 const label = LEAVE_TYPE_LABEL_MAP[selectedLeaveType] ?? selectedLeaveType;
                 enqueueSnackbar(

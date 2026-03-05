@@ -34,6 +34,7 @@ import {
   EmployeeLocation,
   LeaveEntitlement,
   LeaveLabel,
+  LeavePolicy,
   LeaveTooltip,
   LeaveType,
 } from "@root/src/types/types";
@@ -106,7 +107,7 @@ export default function LeaveBalanceSummary() {
   }, [email, location]);
 
   useEffect(() => {
-    fetchEntitlement();
+    void fetchEntitlement();
   }, [fetchEntitlement]);
 
   // Only render for France and Spain employees
@@ -137,10 +138,9 @@ export default function LeaveBalanceSummary() {
     .map((key) => {
       const meta = LEAVE_KEY_LABEL[key];
       if (!meta) return null;
-      const entitled =
-        (entitlement.leavePolicy as Record<string, number | null | undefined>)[key] ?? null;
-      const consumed =
-        (entitlement.policyAdjustedLeave as Record<string, number | null | undefined>)[key] ?? 0;
+      const policyKey = key as keyof LeavePolicy;
+      const entitled = entitlement.leavePolicy[policyKey] ?? null;
+      const consumed = entitlement.policyAdjustedLeave[policyKey] ?? 0;
       return {
         label: meta.label,
         tooltip: meta.tooltip,
