@@ -1,0 +1,8 @@
+{
+    "short_name": "Visitor App",
+    "name": "Visitor Micro App",
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#FF7300",
+    "background_color": "#ffffff"
+}
