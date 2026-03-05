@@ -1,9 +1,18 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -17,18 +26,18 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import React from "react";
-import { tokens } from "../../../theme";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
-import NoDataView from "@components/common/NoDataView";
-import CommentPaper from "@components/common/CommentPaper";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
+import NoDataView from "@component/common/NoDataView";
+import CommentPaper from "@component/common/CommentPaper";
 import { base64Regex, uiMessages } from "@config/constant";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ParThreeSixtyReviewStatus, RequestState, ThreeSixtyReview } from "@utils/types";
-import { selectThreeSixtyReviews, selectThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice";
+import { RequestState } from "@utils/types";
+import { ParThreeSixtyReviewStatus, ThreeSixtyReview } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { selectThreeSixtyReviews, selectThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 
 interface ThreeSixtyFeedbackSectionProps {
   isAdminsSelfProfile: boolean;
@@ -37,7 +46,6 @@ interface ThreeSixtyFeedbackSectionProps {
 const ThreeSixtyFeedbackSection: React.FC<ThreeSixtyFeedbackSectionProps> = ({ isAdminsSelfProfile }) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const colors = tokens(theme.palette.mode);
   const employeeMap = useAppSelector(selectEmployeeMap);
   const threeSixtyReviewStatus = useAppSelector(selectThreeSixtyReviewStatus);
   const threeSixtyReviews = useAppSelector(selectThreeSixtyReviews);
@@ -117,7 +125,7 @@ const ThreeSixtyFeedbackSection: React.FC<ThreeSixtyFeedbackSectionProps> = ({ i
                     label={`Rating: ${review.reviewRating}`}
                     sx={{
                       height: "1.5rem",
-                      backgroundColor: colors.blueAccent[800],
+                      backgroundColor: theme.palette.secondaryShades["900"],
                       mr: 1,
                     }}
                   />

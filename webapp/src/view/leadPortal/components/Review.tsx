@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { SyntheticEvent, useEffect, useState } from "react";
 import {
@@ -30,19 +39,19 @@ import {
 } from "@mui/material";
 import GroupWorkIcon from "@mui/icons-material/GroupWork";
 import GradingIcon from "@mui/icons-material/Grading";
-import ParStatusChip from "@components/common/ParStatusChip";
+import ParStatusChip from "@component/common/ParStatusChip";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import GroupIcon from "@mui/icons-material/Group";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-import { CustomModal } from "@components/common/CustomModal";
-import { ReviewRequestModal } from "@components/common/ReviewRequestModal";
+import { CustomModal } from "@component/common/CustomModal";
+import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
 import { LeadReviewPanel } from "../panels/LeadReviewPanel";
-import { F2fPanel } from "@components/common/F2fPanel";
-import { UpdateStatusPanel } from "@components/common/UpdateStatusPanel";
-import EmployeeHistoryCard from "@components/common/EmployeeHistoryCard";
-import { LoadingEffect } from "@components/ui/Loading";
+import { F2fPanel } from "@component/common/F2fPanel";
+import { UpdateStatusPanel } from "@component/common/UpdateStatusPanel";
+import EmployeeHistoryCard from "@component/common/EmployeeHistoryCard";
+import { LoadingEffect } from "@component/ui/Loading";
 import {
   base64Regex,
   defaultTabWidth,
@@ -54,24 +63,23 @@ import {
   selectThreeSixtyReviewers,
   selectThreeSixtyReviews,
   selectThreeSixtyReviewStatus,
-} from "@slices/threeSixtyReviewSlice";
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import {
-  ParLeadStatus,
-  ParThreeSixtyReviewStatus,
   RequestState,
 } from "@utils/types";
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { tokens } from "../../../theme";
-import { selectUserEmail, selectUserInfo } from "@slices/authSlice";
-import { selectCurrentCycle } from "@slices/parCycleSlice";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { ReviewViewModal } from "@components/common/ReviewViewModal";
+import { selectUserEmail, selectUserInfo } from "@slices/authSlice/auth";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { ReviewViewModal } from "@component/common/ReviewViewModal";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import {
   selectEmployeeRatings,
   selectEmployeeRatingStatus,
-} from "@slices/employeeSlice";
+} from "@slices/employeeSlice/employee";
 import React from "react";
 dayjs.extend(utc);
 
@@ -89,7 +97,6 @@ export const Review = ({
   isAdminHistoryViewOn = false,
 }: ReviewProps) => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const dispatch = useAppDispatch();
 
   const reviewSliceState = useAppSelector(selectThreeSixtyReviewStatus);
@@ -458,7 +465,7 @@ export const Review = ({
                                 sx={{
                                   height: "1.23rem",
                                   paddingX: "0.2rem",
-                                  backgroundColor: colors.blueAccent[900],
+                                  backgroundColor: theme.palette.fill.secondary.active,
                                 }}
                               />
                             )}
@@ -470,7 +477,7 @@ export const Review = ({
                                 sx={{
                                   height: "1.23rem",
                                   paddingX: "0.2rem",
-                                  backgroundColor: colors.redAccent[900],
+                                  backgroundColor: (theme) => theme.palette.primaryShades["1700"],
                                 }}
                               />
                             )}

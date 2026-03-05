@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   IconButton,
@@ -38,7 +47,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { GridRenderCellParams, GridRowParams } from "@mui/x-data-grid";
 import { tokens } from "../../../theme";
 import NoDataView from "@component/common/NoDataView";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { ParCycle } from "@slices/parCycleSlice/parCycle";
 
 const LeadOngoingPanel = () => {
   const location = useLocation();
@@ -98,11 +107,8 @@ const LeadOngoingPanel = () => {
     return {
       ...team,
       id: team.parTeamId,
-      employeePARCompletion: `${team.summary.employeeParCompletedCount}/${team.numberOfTeamMembers}`,
-      leadReviewCompletion: `${team.summary.leadsReviewCompletedCount}/${team.numberOfTeamMembers}`,
-      f2fCompletion: `${team.summary.f2fCompletedCount}/${team.numberOfTeamMembers}`,
     };
-  });
+  }) as unknown as Team[];
 
   const columns = [
     { field: "parBusinessUnit", headerName: "BU", flex: 0.15 },
@@ -113,53 +119,55 @@ const LeadOngoingPanel = () => {
       field: "employeePARCompletion",
       headerName: "Employee PAR",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<Team>) => (
-        <Chip
-          size="small"
-          label={params.row.employeePARCompletion}
-          sx={{
-            backgroundColor:
-              params.row.employeePARCompletion ===
-              params.row.numberOfTeamMembers
-                ? colors.greenAccent[600]
-                : colors.yellowAccent[900],
-          }}
-        />
-      ),
+      renderCell: (params: GridRenderCellParams<Team>) => {
+        const completed = params.row.summary.employeeParCompletedCount;
+        const total = params.row.numberOfTeamMembers;
+        return (
+          <Chip
+            size="small"
+            label={`${completed}/${total}`}
+            sx={{
+              backgroundColor: completed === total ? "success.main" : "warning.dark",
+            }}
+          />
+        );
+      },
     },
     {
       field: "leadReviewCompletion",
       headerName: "Lead's Feedback",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<Team>) => (
-        <Chip
-          size="small"
-          label={params.row.leadReviewCompletion}
-          sx={{
-            backgroundColor:
-              params.row.leadReviewCompletion === params.row.numberOfTeamMembers
-                ? colors.greenAccent[600]
-                : colors.yellowAccent[900],
-          }}
-        />
-      ),
+      renderCell: (params: GridRenderCellParams<Team>) => {
+        const completed = params.row.summary.leadsReviewCompletedCount;
+        const total = params.row.numberOfTeamMembers;
+        return (
+          <Chip
+            size="small"
+            label={`${completed}/${total}`}
+            sx={{
+              backgroundColor: completed === total ? "success.main" : "warning.dark",
+            }}
+          />
+        );
+      },
     },
     {
       field: "f2fCompletion",
       headerName: "F2F",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<Team>) => (
-        <Chip
-          size="small"
-          label={params.row.f2fCompletion}
-          sx={{
-            backgroundColor:
-              params.row.f2fCompletion === params.row.numberOfTeamMembers
-                ? colors.greenAccent[600]
-                : colors.yellowAccent[900],
-          }}
-        />
-      ),
+      renderCell: (params: GridRenderCellParams<Team>) => {
+        const completed = params.row.summary.f2fCompletedCount;
+        const total = params.row.numberOfTeamMembers;
+        return (
+          <Chip
+            size="small"
+            label={`${completed}/${total}`}
+            sx={{
+              backgroundColor: completed === total ? "success.main" : "warning.dark",
+            }}
+          />
+        );
+      },
     },
     {
       field: "actions",

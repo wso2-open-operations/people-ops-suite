@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -19,7 +28,6 @@ import {
 } from "@mui/material";
 import {
   DataGrid,
-  GridRowId,
   GridRowSelectionModel,
   GridRenderCellParams,
 } from "@mui/x-data-grid";
@@ -65,7 +73,11 @@ const EmployeeReportView = () => {
   const employeeMap = useAppSelector(selectEmployeeMap);
   const currentCycle = useAppSelector(selectCurrentCycle);
   const reportStatus = useAppSelector(selectReportStatus);
-  const [selectionModel, setSelectionModel] = useState<GridRowId[]>([]);
+
+  // FIX: Properly type the selection model for DataGrid v6+
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>([] as any);
+
+
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -77,7 +89,7 @@ const EmployeeReportView = () => {
   const handleSelectionModelChange = (
     newSelectionModel: GridRowSelectionModel
   ) => {
-    setSelectionModel(newSelectionModel as unknown as GridRowId[]); 
+    setSelectionModel(newSelectionModel);
   };
 
   const fetchData = async () => {
@@ -433,21 +445,24 @@ const EmployeeReportView = () => {
                   columns={columns}
                   rowHeight={50}
                   checkboxSelection={false}
-                  disableSelectionOnClick
+
+                  // FIX: Modernized v6+ prop names
+                  disableRowSelectionOnClick
+                  pageSizeOptions={[10, 20, 25]}
+                  rowSelectionModel={selectionModel}
+                  onRowSelectionModelChange={handleSelectionModelChange}
+
                   autoHeight
                   loading={reportStatus === RequestState.LOADING}
-                  rowsPerPageOptions={[10, 20, 25]}
-                initialState={{
-                  pagination: {
-                    paginationModel: {
-                      pageSize: 10,
-                      page: 0,
+                  initialState={{
+                    pagination: {
+                      paginationModel: {
+                        pageSize: 10,
+                        page: 0,
+                      },
                     },
-                  },
-                }}
+                  }}
                   rows={getFilteredRows() as unknown as ParRatingShort[]}
-                  selectionModel={selectionModel}
-                  onSelectionModelChange={handleSelectionModelChange}
                 />
               </Card>
             </Box>

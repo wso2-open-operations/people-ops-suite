@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { useEffect, useState } from "react";
 import {
@@ -24,46 +33,43 @@ import {
   DataGrid,
   GridRenderCellParams,
   GridRowId,
-  GridSelectionModel,
+  GridRowSelectionModel,
 } from "@mui/x-data-grid";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DateRangeIcon from "@mui/icons-material/DateRange";
-import InfoIcon from "@mui/icons-material/Info";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
-import ParStatusChip from "@components/common/ParStatusChip";
+import ParStatusChip from "@component/common/ParStatusChip";
 import {
   fetchTeamReport,
+  ParRatingShort,
   selectTeamReport,
   selectTeamReportStatus,
-} from "@slices/teamSlice";
+  TeamReport,
+} from "@slices/teamSlice/team";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import dayjs from "dayjs";
+import { RequestState } from "@utils/types";
+import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
 import {
-  ParCycle,
-  ParLeadStatus,
-  ParRatingShort,
-  RequestState,
-  TeamReport,
-} from "@utils/types";
-import { CompletionStatusCard } from "@components/common/CompletionStatusCard";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
-import {
-  snackMessages,
+  SnackMessage,
   tooltipVisibilityDelay,
   uiMessages,
 } from "@config/constant";
-import { CycleDatesStepper } from "@components/common/CycleDatesStepper";
-import { bulkUpdateParRatingOfEmployee } from "@slices/employeeSlice";
-import { showSnackBarMessage } from "@slices/commonSlice/common";
-import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
-import { sendAllThreeSixtyReminder } from "@slices/reminderSlice";
-import { CustomModal } from "@components/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { bulkUpdateParRatingOfEmployee } from "@slices/employeeSlice/employee";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
+import { CustomModal } from "@component/common/CustomModal";
 import EmployeeSyncModal from "./EmployeeSyncModal";
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface DashboardProps {
   cycle: Partial<ParCycle>;
@@ -93,35 +99,44 @@ export const TeamSummary = ({
   // Stores the search term for the teams list
   const [searchTerm, setSearchTerm] = useState("");
   // Stores the selected rows in the data grid
-  const [selectionModel, setSelectionModel] = useState<GridRowId[]>([]);
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>(
+    [] as unknown as GridRowSelectionModel
+  );
   // Stores state of 360 reminder confirmation open/ close
   const [is360ReminderDialogOpen, setIs360ReminderDialogOpen] = useState(false);
   // Stores the state of the dialog to confirm the bulk share
   const [isParShareDialogOpen, setIsParShareDialogOpen] = useState(false);
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
-  const [feedbackRequestModalOpen, setFeedbackRequestModalOpen] =
-    useState(false);
-  const handleOpenFeedbackRequestModal = () =>
-    setFeedbackRequestModalOpen(true);
-  const handleCloseFeedbackRequestModal = () =>
-    setFeedbackRequestModalOpen(false);
+  const [feedbackRequestModalOpen, setFeedbackRequestModalOpen] = useState(false);
 
-  const openCycleDeadlines = () => {
-    setIsParCycleDatesOpen(true);
+  // Create a safe extractor to get IDs regardless of MUI DataGrid version structure
+  const getSelectedIds = (): GridRowId[] => {
+    if (!selectionModel) return [];
+    // If MUI is returning an object like { type: 'row', ids: [...] }
+    if (!Array.isArray(selectionModel) && "ids" in selectionModel) {
+      return (selectionModel as any).ids as GridRowId[];
+    }
+    // If MUI is still returning a standard array
+    if (Array.isArray(selectionModel)) {
+      return selectionModel as GridRowId[];
+    }
+    return [];
   };
-  const closeCycleDeadlines = () => {
-    setIsParCycleDatesOpen(false);
-  };
+  const handleOpenFeedbackRequestModal = () => setFeedbackRequestModalOpen(true);
+  const handleCloseFeedbackRequestModal = () => setFeedbackRequestModalOpen(false);
+
+  const openCycleDeadlines = () => setIsParCycleDatesOpen(true);
+  const closeCycleDeadlines = () => setIsParCycleDatesOpen(false);
 
   const openParShareDialog = () => {
     const ratingMap = getSelectedRatings(
-      selectionModel,
+      getSelectedIds(),
       teamReport?.details ?? []
     );
 
     if (!validateRatings(ratingMap)) {
       dispatch(
-        showSnackBarMessage(snackMessages.error.invalidBulkShare, "error")
+        ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error")
       );
       return;
     }
@@ -146,15 +161,15 @@ export const TeamSummary = ({
   const filteredMembers =
     teamReport !== null
       ? teamReport.details
-          ?.map((member: ParRatingShort) => ({
-            ...member,
-            id: member.parRatingId,
-          }))
-          .filter((member: ParRatingShort) =>
-            `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
-              searchTerm.toLowerCase()
-            )
+        ?.map((member: ParRatingShort) => ({
+          ...member,
+          id: member.parRatingId,
+        }))
+        .filter((member: ParRatingShort) =>
+          `${member.parEmployeeName.toLowerCase()}${member.parEmployeeEmail.toLowerCase()}`.includes(
+            searchTerm.toLowerCase()
           )
+        )
       : [];
 
   const columns = [
@@ -211,7 +226,7 @@ export const TeamSummary = ({
                   aria-label="Copy Email"
                   onClick={() => {
                     navigator.clipboard.writeText(params.row?.parEmployeeEmail);
-                    dispatch(showSnackBarMessage("Email copied", "success"));
+                    dispatch(ShowSnackBarMessage("Email copied", "success"));
                   }}
                 >
                   <ContentCopyIcon sx={{ fontSize: "15px" }} />
@@ -294,7 +309,7 @@ export const TeamSummary = ({
           onClick={() => handleMembersTableClick(params.row)}
         >
           {params.row.parLeadStatus === ParLeadStatus.SHARED ||
-          isAdminHistoryViewOn ? (
+            isAdminHistoryViewOn ? (
             <Tooltip
               arrow
               title="View"
@@ -319,16 +334,16 @@ export const TeamSummary = ({
   ];
 
   const handleSelectionModelChange = (
-    newSelectionModel: GridSelectionModel
+    newSelectionModel: GridRowSelectionModel
   ) => {
     setSelectionModel(newSelectionModel);
   };
 
   const getSelectedRatings = (
-    selectionModel: GridRowId[],
+    selectedIdsArray: GridRowId[],
     details: ParRatingShort[]
   ) => {
-    return selectionModel.reduce((acc: ParRatingShort[], rowId) => {
+    return selectedIdsArray.reduce((acc: ParRatingShort[], rowId) => {
       const employeeParRating = details?.find(
         (member) => member.parRatingId === rowId
       );
@@ -348,13 +363,13 @@ export const TeamSummary = ({
   const updateSelectedRatings = async () => {
     try {
       const ratingMap = getSelectedRatings(
-        selectionModel,
+        getSelectedIds(),
         teamReport?.details ?? []
       );
 
       if (!validateRatings(ratingMap)) {
         dispatch(
-          showSnackBarMessage(snackMessages.error.invalidBulkShare, "error")
+          ShowSnackBarMessage(SnackMessage.error.invalidBulkShare, "error")
         );
         return;
       }
@@ -398,21 +413,21 @@ export const TeamSummary = ({
 
         if (passedCount === 0) {
           dispatch(
-            showSnackBarMessage(
+            ShowSnackBarMessage(
               `Failed to share ${failedCount} ratings. ${reasonMessage}`,
               "error"
             )
           );
         } else if (failedCount !== 0) {
           dispatch(
-            showSnackBarMessage(
+            ShowSnackBarMessage(
               `Failed to update ${failedCount} ratings. ${reasonMessage}`,
               "warning"
             )
           );
         } else {
           dispatch(
-            showSnackBarMessage(
+            ShowSnackBarMessage(
               `Successfully updated ${passedCount} ratings`,
               "success"
             )
@@ -420,7 +435,7 @@ export const TeamSummary = ({
         }
       }
     } catch (error) {
-      dispatch(showSnackBarMessage("Failed to update ratings", "error"));
+      dispatch(ShowSnackBarMessage("Failed to update ratings", "error"));
     }
   };
 
@@ -430,7 +445,7 @@ export const TeamSummary = ({
   };
 
   const copySelectedEmailsToClipboard = () => {
-    const emails = selectionModel.map((rowId) => {
+    const emails = getSelectedIds().map((rowId) => {
       const employeeParRating = teamReport?.details.find(
         (member) => member.parRatingId === rowId
       );
@@ -440,7 +455,7 @@ export const TeamSummary = ({
     });
 
     navigator.clipboard.writeText(emails.join(", "));
-    dispatch(showSnackBarMessage("Emails copied to clipboard", "success"));
+    dispatch(ShowSnackBarMessage("Emails copied to clipboard", "success"));
   };
 
   const handleEmployeeSyncSuccess = () => {
@@ -490,33 +505,33 @@ export const TeamSummary = ({
               {(isAdminAuditViewOn ||
                 isAdminHistoryViewOn ||
                 isLeadMultiTeamViewOn) && (
-                <Box sx={{ display: "inline" }}>
-                  <IconButton
-                    aria-label="back"
-                    color="primary"
-                    onClick={closeTeamSummary}
-                    sx={{ mb: 1, mr: 1 }}
-                  >
-                    <ArrowBackIcon />
-                  </IconButton>
-                  {isAdminHistoryViewOn && (
+                  <Box sx={{ display: "inline" }}>
+                    <IconButton
+                      aria-label="back"
+                      color="primary"
+                      onClick={closeTeamSummary}
+                      sx={{ mb: 1, mr: 1 }}
+                    >
+                      <ArrowBackIcon />
+                    </IconButton>
+                    {isAdminHistoryViewOn && (
+                      <Typography display={"inline"} variant="h5">
+                        {` History / ${cycle.parCycleName} / `}
+                      </Typography>
+                    )}
+                    <Link
+                      underline="hover"
+                      color="inherit"
+                      variant="h5"
+                      onClick={closeTeamSummary}
+                    >
+                      {"All Teams"}
+                    </Link>
                     <Typography display={"inline"} variant="h5">
-                      {` History / ${cycle.parCycleName} / `}
+                      {" / "}
                     </Typography>
-                  )}
-                  <Link
-                    underline="hover"
-                    color="inherit"
-                    variant="h5"
-                    onClick={closeTeamSummary}
-                  >
-                    {"All Teams"}
-                  </Link>
-                  <Typography display={"inline"} variant="h5">
-                    {" / "}
-                  </Typography>
-                </Box>
-              )}
+                  </Box>
+                )}
 
               <Typography display={"inline"} variant="h5">
                 {teamReport.parBusinessUnit}
@@ -670,7 +685,7 @@ export const TeamSummary = ({
                 <Button
                   variant="contained"
                   onClick={copySelectedEmailsToClipboard}
-                  disabled={selectionModel.length === 0}
+                  disabled={getSelectedIds().length === 0}
                   sx={{ mr: 2 }}
                 >
                   Copy Emails
@@ -679,7 +694,7 @@ export const TeamSummary = ({
                   <Button
                     variant="contained"
                     onClick={openParShareDialog}
-                    disabled={selectionModel.length === 0}
+                    disabled={getSelectedIds().length === 0}
                     sx={{ mr: 2 }}
                   >
                     Share
@@ -710,16 +725,18 @@ export const TeamSummary = ({
                 rowHeight={50}
                 checkboxSelection
                 autoHeight
-                rowsPerPageOptions={[10, 20, 25]}
+                pageSizeOptions={[10, 20, 25]}
                 initialState={{
                   pagination: {
-                    pageSize: 10,
-                    page: 0,
+                    paginationModel: {
+                      pageSize: 10,
+                      page: 0,
+                    },
                   },
                 }}
-                disableSelectionOnClick
-                selectionModel={selectionModel}
-                onSelectionModelChange={handleSelectionModelChange}
+                disableRowSelectionOnClick
+                rowSelectionModel={selectionModel}
+                onRowSelectionModelChange={handleSelectionModelChange}
               />
             </Box>
           </Card>
