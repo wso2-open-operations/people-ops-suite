@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -27,14 +27,15 @@ import { CommonMessage } from "@config/messages";
 export class APIService {
   private static _instance: AxiosInstance;
   private static _idToken: string;
+  private static _authRequestInterceptorId: number | null = null;
   private static _cancelTokenSource = axios.CancelToken.source();
   private static _cancelTokenMap: Map<string, CancelTokenSource> = new Map();
-  private static callback: () => Promise<{ accessToken: string }>;
+  private static callback: () => Promise<{ idToken: string }>;
 
   private static _isRefreshing = false;
-  private static _refreshPromise: Promise<{ accessToken: string }> | null = null;
+  private static _refreshPromise: Promise<{ idToken: string }> | null = null;
 
-  constructor(idToken: string, callback: () => Promise<{ accessToken: string }>) {
+  constructor(idToken: string, callback: () => Promise<{ idToken: string }>) {
     APIService._instance = axios.create();
     rax.attach(APIService._instance);
 
@@ -55,8 +56,7 @@ export class APIService {
           APIService._refreshPromise = Promise.resolve()
             .then(() => APIService.callback())
             .then((res) => {
-              APIService.updateTokens(res.accessToken);
-              APIService._instance.interceptors.request.clear();
+              APIService.updateTokens(res.idToken);
               APIService.updateRequestInterceptor();
               return res;
             })
@@ -123,7 +123,11 @@ export class APIService {
   }
 
   private static updateRequestInterceptor() {
-    APIService._instance.interceptors.request.use(
+    if (APIService._authRequestInterceptorId !== null) {
+      APIService._instance.interceptors.request.eject(APIService._authRequestInterceptorId);
+    }
+
+    APIService._authRequestInterceptorId = APIService._instance.interceptors.request.use(
       (config) => {
         // config.headers.set("x-jwt-assertion", APIService._idToken);
         config.headers.set("Authorization", "Bearer " + APIService._idToken);
