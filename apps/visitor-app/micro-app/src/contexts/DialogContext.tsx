@@ -14,12 +14,12 @@
 // under the License.
 
 import { createContext, ReactNode, useContext, useState } from "react";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
+import Backdrop from "@mui/material/Backdrop";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Fade from "@mui/material/Fade";
 import Typography from "@mui/material/Typography";
+import { keyframes } from "@mui/material/styles";
 
 interface DialogState {
   isOpen: boolean;
@@ -79,69 +79,125 @@ export const DialogProvider = ({ children }: { children: ReactNode }) => {
     hideConfirmation();
   };
 
+  const slideUp = keyframes`
+    from { opacity: 0; transform: translateY(100%); }
+    to   { opacity: 1; transform: translateY(0); }
+  `;
+
   return (
     <DialogContext.Provider value={{ showConfirmation, hideConfirmation }}>
       {children}
-      <Dialog
+      <Backdrop
         open={dialog.isOpen}
-        onClose={hideConfirmation}
-        PaperProps={{
-          sx: {
-            borderRadius: "16px",
-            p: 1,
-            mx: 3,
-            maxWidth: 384,
-            width: "100%",
-          },
+        onClick={hideConfirmation}
+        sx={{
+          zIndex: 9999,
+          bgcolor: "rgba(0,0,0,0.25)",
+          backdropFilter: "blur(8px)",
+          alignItems: "flex-end",
         }}
-        sx={{ zIndex: 9999 }}
       >
-        <DialogTitle
-          sx={{
-            fontWeight: 600,
-            color: "#4B5064",
-            fontSize: "1.125rem",
-            pb: 0.5,
-          }}
-        >
-          {dialog.title}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ color: "#7E87AD" }}>
-            {dialog.message}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={hideConfirmation}
+        <Fade in={dialog.isOpen}>
+          <Box
+            onClick={(e) => e.stopPropagation()}
             sx={{
-              textTransform: "none",
-              fontWeight: 500,
-              color: "#6C7496",
-              bgcolor: "#F4F6F9",
-              borderRadius: "8px",
-              px: 2,
-              "&:hover": { bgcolor: "#E9EBF5" },
+              width: "100%",
+              bgcolor: "#fff",
+              borderRadius: "20px 20px 0 0",
+              overflow: "hidden",
+              animation: dialog.isOpen
+                ? `${slideUp} 0.35s cubic-bezier(0.16,1,0.3,1)`
+                : "none",
+              boxShadow: "0 -8px 32px rgba(0,0,0,0.12)",
             }}
           >
-            {dialog.cancelText}
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            sx={{
-              textTransform: "none",
-              fontWeight: 500,
-              color: "#FFFFFF",
-              bgcolor: "#FF7300",
-              borderRadius: "8px",
-              px: 2,
-              "&:hover": { bgcolor: "#FF8C33" },
-            }}
-          >
-            {dialog.confirmText}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {/* Drag handle */}
+            <Box sx={{ display: "flex", justifyContent: "center", pt: 1.5 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 4,
+                  borderRadius: 2,
+                  bgcolor: "#D1D5E0",
+                }}
+              />
+            </Box>
+
+            {/* Content */}
+            <Box sx={{ px: 3, pt: 2.5, pb: 1.5 }}>
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "1.1rem",
+                  color: "#1E2132",
+                  mb: 1,
+                }}
+              >
+                {dialog.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#6B7294",
+                  lineHeight: 1.6,
+                  fontSize: "0.875rem",
+                }}
+              >
+                {dialog.message}
+              </Typography>
+            </Box>
+
+            {/* Actions */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1,
+                px: 3,
+                pb: 3,
+                pt: 1,
+              }}
+            >
+              <Button
+                fullWidth
+                onClick={handleConfirm}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  color: "#fff",
+                  background: "linear-gradient(135deg, #FF7300, #FF8C33)",
+                  borderRadius: "12px",
+                  py: 1.3,
+                  boxShadow: "0 4px 12px rgba(255,115,0,0.3)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #E56600, #FF7300)",
+                    boxShadow: "0 6px 16px rgba(255,115,0,0.4)",
+                  },
+                }}
+              >
+                {dialog.confirmText}
+              </Button>
+              <Button
+                fullWidth
+                onClick={hideConfirmation}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.95rem",
+                  color: "#6B7294",
+                  bgcolor: "transparent",
+                  borderRadius: "12px",
+                  py: 1.3,
+                  "&:hover": { bgcolor: "#F3F4F8" },
+                }}
+              >
+                {dialog.cancelText}
+              </Button>
+            </Box>
+          </Box>
+        </Fade>
+      </Backdrop>
     </DialogContext.Provider>
   );
 };
