@@ -104,7 +104,11 @@ const LoginScreen = () => {
 
                       try {
                         setIsAuthenticating(true);
-                        await appSignOut();
+                        try {
+                          await appSignOut();
+                        } catch (error) {
+                          console.warn("Pre-login sign-out failed", error);
+                        }
                         await appSignIn();
                       } catch (error) {
                         console.error("Login flow failed", error);

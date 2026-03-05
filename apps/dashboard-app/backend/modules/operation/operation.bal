@@ -111,13 +111,17 @@ public isolated function getTodayKpis(string date) returns database:TodayKPIs|er
 # + id - Food waste record id
 # + payload - Fields to update
 # + updatedBy - Person who is updating
-# + return - Updated FoodWasteRecord|FoodWasteRecordNotFoundError|Error
+# + return - Updated FoodWasteRecord|FoodWasteRecordNotFoundError|DuplicateFoodWasteRecordError|Error
 public isolated function updateFoodWasteRecord(int id, database:UpdateFoodWasteRecordPayload payload,
         string updatedBy)
-        returns database:FoodWasteRecord|database:FoodWasteRecordNotFoundError|error {
+        returns database:FoodWasteRecord|database:FoodWasteRecordNotFoundError|database:DuplicateFoodWasteRecordError|error {
 
-    database:FoodWasteRecordNotFoundError|error? result = database:updateFoodWasteRecord(id, payload, updatedBy);
+    database:FoodWasteRecordNotFoundError|database:DuplicateFoodWasteRecordError|error? result =
+        database:updateFoodWasteRecord(id, payload, updatedBy);
     if result is database:FoodWasteRecordNotFoundError {
+        return result;
+    }
+    if result is database:DuplicateFoodWasteRecordError {
         return result;
     }
     if result is error {

@@ -93,7 +93,7 @@ const KPICard = memo(({ title, totalWaste, plateCount, borderColor }: KPICardPro
   const wastePerPlate = plateCount > 0 ? ((totalWaste * 1000) / plateCount).toFixed(1) : "0.0";
 
   return (
-    <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px" }}>
+    <Box sx={{ flex: "1 1 0", width: "100%", minWidth: { xs: 0, md: "300px" } }}>
       <Card
         sx={{
           borderLeft: `8px solid ${borderColor}`,
@@ -155,7 +155,7 @@ interface ChartProps {
 }
 
 const WeeklyTrendChart = memo(({ data, chartGridColor, chartLabelColor, chartTooltipStyle }: ChartProps) => (
-  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: { xs: 0, md: "300px" }, height: "100%" }}>
     <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
       <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 2 } }}>
         <Typography variant="subtitle1" fontWeight="bold" mb={1}>
@@ -206,7 +206,7 @@ interface CompositionPieChartProps {
 }
 
 const CompositionPieChart = memo(({ data, chartLabelColor, chartTooltipStyle }: CompositionPieChartProps) => (
-  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: { xs: 0, md: "300px" }, height: "100%" }}>
     <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
       <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 4 } }}>
         <Typography variant="subtitle1" fontWeight="bold" mb={1}>
@@ -251,7 +251,7 @@ interface OverviewChartsProps {
 }
 
 const OverviewCharts = memo(({ title, data, chartGridColor, chartLabelColor, chartTooltipStyle }: OverviewChartsProps) => (
-  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: "300px", height: "100%" }}>
+  <Box sx={{ flex: "1 1 0", width: "100%", minWidth: { xs: 0, md: "300px" }, height: "100%" }}>
     <Card sx={{ borderRadius: 2, height: "100%", borderLeft: "8px solid transparent" }}>
       <CardContent sx={{ p: 2, height: "100%", display: "flex", flexDirection: "column", "&:last-child": { pb: 2 } }}>
         <Typography variant="subtitle1" fontWeight="bold" mb={1}>
@@ -383,8 +383,12 @@ export default function Dashboard() {
       }}
     >
       <Box
+        component="button"
+        type="button"
         onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
         sx={{
+          border: "none",
           position: "fixed",
           bottom: 24,
           right: 24,
@@ -421,9 +425,9 @@ export default function Dashboard() {
       >
         {/* KPI Row - Reduced to 10% height */}
         <Stack
-          direction="row"
+          direction={{ xs: "column", md: "row" }}
           spacing={2}
-          flexWrap="nowrap"
+          flexWrap={{ xs: "wrap", md: "nowrap" }}
           sx={{
             flex: "0 0 auto",
             height: isFullscreen ? "10%" : "auto"
@@ -445,9 +449,9 @@ export default function Dashboard() {
 
         {/* Charts Row 1 - Weekly & Daily Composition - Flex 1 */}
         <Stack
-          direction="row"
+          direction={{ xs: "column", md: "row" }}
           spacing={2}
-          flexWrap="nowrap"
+          flexWrap={{ xs: "wrap", md: "nowrap" }}
           sx={{
             flex: 1,
             minHeight: 0,
@@ -469,9 +473,9 @@ export default function Dashboard() {
 
         {/* Overview Chart Row - Monthly & Yearly Side by Side - Flex 1 */}
         <Stack
-          direction="row"
+          direction={{ xs: "column", md: "row" }}
           spacing={2}
-          flexWrap="nowrap"
+          flexWrap={{ xs: "wrap", md: "nowrap" }}
           sx={{
             flex: 1,
             minHeight: 0,

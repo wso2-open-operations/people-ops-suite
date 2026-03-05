@@ -103,6 +103,26 @@ interface TabToggleProps {
 export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
   const theme = useTheme();
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (tabs.length === 0) {
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      handleTabClick((index + 1) % tabs.length);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      handleTabClick((index - 1 + tabs.length) % tabs.length);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      handleTabClick(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      handleTabClick(tabs.length - 1);
+    }
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "row" }}>
       <Box
@@ -122,6 +142,7 @@ export function Tabs({ tabs, activeIndex, handleTabClick }: TabToggleProps) {
             component={motion.button}
             key={index}
             onClick={() => handleTabClick(index)}
+            onKeyDown={(event) => handleKeyDown(event, index)}
             disableRipple
             role="tab"
             id={`simple-tab-${index}`}

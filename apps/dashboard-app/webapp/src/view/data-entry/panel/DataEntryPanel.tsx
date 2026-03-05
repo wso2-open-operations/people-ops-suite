@@ -143,13 +143,33 @@ export default function DataEntryPanel() {
       return;
     }
 
-    const breakfastWaste = parseFloat(breakfastData.totalWasteKg);
-    const breakfastPlates = parseInt(breakfastData.plateCount, 10);
-    const lunchWaste = parseFloat(lunchData.totalWasteKg);
-    const lunchPlates = parseInt(lunchData.plateCount, 10);
+    const parseDecimalStrict = (value: string): number | null => {
+      const normalizedValue = value.trim();
+      if (!/^\d+(\.\d+)?$/.test(normalizedValue)) {
+        return null;
+      }
 
-    const hasBreakfastData = Number.isFinite(breakfastWaste) && Number.isFinite(breakfastPlates);
-    const hasLunchData = Number.isFinite(lunchWaste) && Number.isFinite(lunchPlates);
+      const parsedValue = Number(normalizedValue);
+      return Number.isFinite(parsedValue) ? parsedValue : null;
+    };
+
+    const parseIntegerStrict = (value: string): number | null => {
+      const normalizedValue = value.trim();
+      if (!/^\d+$/.test(normalizedValue)) {
+        return null;
+      }
+
+      const parsedValue = Number(normalizedValue);
+      return Number.isInteger(parsedValue) ? parsedValue : null;
+    };
+
+    const breakfastWaste = parseDecimalStrict(breakfastData.totalWasteKg);
+    const breakfastPlates = parseIntegerStrict(breakfastData.plateCount);
+    const lunchWaste = parseDecimalStrict(lunchData.totalWasteKg);
+    const lunchPlates = parseIntegerStrict(lunchData.plateCount);
+
+    const hasBreakfastData = breakfastWaste !== null && breakfastPlates !== null;
+    const hasLunchData = lunchWaste !== null && lunchPlates !== null;
 
     if (!hasBreakfastData && !hasLunchData) {
       enqueueSnackbar(DataEntryMessage.snackbar.atLeastOneMeal, { variant: "warning" });
@@ -163,7 +183,7 @@ export default function DataEntryPanel() {
       promise: Promise<{ data?: { id?: number } }>;
     }[] = [];
 
-    if (hasBreakfastData) {
+    if (breakfastWaste !== null && breakfastPlates !== null) {
       const payload = {
         totalWasteKg: breakfastWaste,
         plateCount: breakfastPlates,
@@ -189,7 +209,7 @@ export default function DataEntryPanel() {
       }
     }
 
-    if (hasLunchData) {
+    if (lunchWaste !== null && lunchPlates !== null) {
       const payload = {
         totalWasteKg: lunchWaste,
         plateCount: lunchPlates,

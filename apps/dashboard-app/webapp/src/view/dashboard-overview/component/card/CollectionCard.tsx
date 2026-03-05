@@ -34,7 +34,6 @@ import {
   Avatar,
   Grid,
   Grow,
-  IconButton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -124,10 +123,6 @@ const CollectionCard = ({ collection, actions, dataCardIndex }: CollectionCardPr
       subTitle: collection.email ? "Email" : collection.phone ? "Phone" : "No contact details",
     },
   ];
-
-  const toggleAccordion = () => {
-    setExpand((prev) => !prev);
-  };
 
   const formatDate = (value?: string): string => {
     if (!value) {
@@ -251,6 +246,7 @@ const CollectionCard = ({ collection, actions, dataCardIndex }: CollectionCardPr
           variant="outlined"
           square
           expanded={expand}
+          onChange={(_, isExpanded) => setExpand(isExpanded)}
           sx={{
             borderRadius: 3,
             "&.MuiAccordion-root:before": {
@@ -260,14 +256,7 @@ const CollectionCard = ({ collection, actions, dataCardIndex }: CollectionCardPr
             borderLeftColor: "divider",
           }}
         >
-          <AccordionSummary
-            expandIcon={
-              <IconButton onClick={toggleAccordion}>
-                <ExpandMoreIcon />
-              </IconButton>
-            }
-            sx={{ width: "100%" }}
-          >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ width: "100%" }}>
             <Stack flexDirection={"column"} sx={{ width: "100%" }}>
               <Stack flexDirection={"row"} sx={{ m: 0, width: "100%", alignItems: "center" }}>
                 <Stack flexDirection={"row"} sx={{ alignItems: "center" }}>

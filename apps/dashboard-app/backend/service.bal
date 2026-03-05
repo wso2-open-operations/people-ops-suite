@@ -28,11 +28,12 @@ final cache:Cache cache = new ({
     defaultMaxAge: 1800.0,
     cleanupInterval: 900.0
 });
+
 @display {
     label: "Dashboard Application",
     id: "people-ops-suite/dashboard-service"
 }
-service http:InterceptableService / on new http:Listener(9090) {
+service http:InterceptableService / on new http:Listener(9095) {
 
     # Request interceptor.
     #
@@ -96,7 +97,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -139,7 +140,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
@@ -180,7 +181,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
@@ -310,14 +311,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request context
     # + id - Food waste record id
     # + payload - Update payload
-    # + return - Updated record|NotFound|Forbidden|BadRequest|InternalServerError
+        # + return - Updated record|Conflict|NotFound|Forbidden|BadRequest|InternalServerError
     resource function put food\-waste/[int id](http:RequestContext ctx, UpdateFoodWasteRecordPayload payload)
-            returns FoodWasteRecord|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+            returns FoodWasteRecord|http:Conflict|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -330,8 +331,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        FoodWasteRecord|database:FoodWasteRecordNotFoundError|error updated =
+        FoodWasteRecord|database:FoodWasteRecordNotFoundError|database:DuplicateFoodWasteRecordError|error updated =
             operation:updateFoodWasteRecord(id, payload, userInfo.email);
+        if updated is database:DuplicateFoodWasteRecordError {
+            return <http:Conflict>{body: {message: updated.message()}};
+        }
         if updated is database:FoodWasteRecordNotFoundError {
             return <http:NotFound>{body: {message: updated.message()}};
         }
@@ -354,7 +358,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -386,7 +390,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -412,7 +416,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
@@ -439,7 +443,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&
@@ -470,7 +474,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -500,7 +504,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_PRIVILEGE], userInfo.groups) {
@@ -537,7 +541,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             log:printError(authorization:USER_INFO_HEADER_NOT_FOUND_ERROR, userInfo);
-            return <http:BadRequest>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
+            return <http:InternalServerError>{body: {message: authorization:USER_INFO_HEADER_NOT_FOUND_ERROR}};
         }
 
         if !authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_PRIVILEGE], userInfo.groups) &&

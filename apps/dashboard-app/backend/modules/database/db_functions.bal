@@ -113,12 +113,20 @@ public isolated function fetchDailyFoodWasteRecords(string recordDate) returns D
 # + id - Food waste record id
 # + payload - Fields to update
 # + updatedBy - Person who is updating
-# + return - FoodWasteRecordNotFoundError|Error if update failed
+# + return - FoodWasteRecordNotFoundError|DuplicateFoodWasteRecordError|Error if update failed
 public isolated function updateFoodWasteRecord(int id, UpdateFoodWasteRecordPayload payload, string updatedBy)
-    returns FoodWasteRecordNotFoundError|error? {
+    returns FoodWasteRecordNotFoundError|DuplicateFoodWasteRecordError|error? {
 
-    sql:ExecutionResult executionResult =
-        check databaseClient->execute(updateFoodWasteRecordQuery(id, payload, updatedBy));
+    sql:ExecutionResult|error executionResult =
+        databaseClient->execute(updateFoodWasteRecordQuery(id, payload, updatedBy));
+    if executionResult is error {
+        string errMsg = executionResult.message();
+        if errMsg.includes("Duplicate entry") || errMsg.includes("uniq_food_waste_record_date_type") {
+            return error DuplicateFoodWasteRecordError(
+                "Food waste record already exists for the given date and meal type.");
+        }
+        return executionResult;
+    }
     if executionResult.affectedRowCount < 1 {
         FoodWasteRecord|error? existing = fetchFoodWasteRecord(id);
         if existing is error {
@@ -259,7 +267,7 @@ public isolated function getMonthlyTrend(string startMonth, string endMonth) ret
 # + return - Aggregated stats|Error
 public isolated function fetchDateRangeSummaryStats(string startDate, string endDate)
     returns record {|decimal totalWasteKg; int totalPlates;|}|error {
-    record {|decimal totalWasteKg; int totalPlates;|} | error result = 
+    record {|decimal totalWasteKg; int totalPlates;|}|error result =
         databaseClient->queryRow(getDateRangeSummaryStatsQuery(startDate, endDate));
     if result is sql:NoRowsError {
         return {totalWasteKg: 0, totalPlates: 0};

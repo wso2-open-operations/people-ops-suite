@@ -125,20 +125,36 @@ const Header = () => {
             <>
               <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
                 <Tooltip title="Open user menu">
-                  <Avatar
+                  <Box
+                    component="button"
+                    type="button"
                     onClick={handleOpenUserMenu}
                     aria-label="Open user menu"
+                    aria-controls={anchorElUser ? "menu-appbar" : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={anchorElUser ? "true" : undefined}
                     sx={{
-                      width: 48,
-                      height: 48,
-                      border: 1,
-                      borderColor: theme.palette.customBorder.territory.active,
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      margin: 0,
+                      cursor: "pointer",
+                      display: "flex",
                     }}
-                    src={user.userInfo?.employeeThumbnail || ""}
-                    alt={avatarAltText}
                   >
-                    {avatarInitials || "U"}
-                  </Avatar>
+                    <Avatar
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        border: 1,
+                        borderColor: theme.palette.customBorder.territory.active,
+                      }}
+                      src={user.userInfo?.employeeThumbnail || ""}
+                      alt={avatarAltText}
+                    >
+                      {avatarInitials || "U"}
+                    </Avatar>
+                  </Box>
                 </Tooltip>
                 <Box sx={{ width: "fit-content" }}>
                   <Typography
