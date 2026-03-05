@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import ErrorSvg from "@assets/images/error.svg";
 import NoDataSvg from "@assets/images/no-data.svg";
 import { DashboardOverviewMessage } from "@config/messages";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import SkeletonCard from "@component/ui/common-card/SkeletonCard";
 import { fetchCollections } from "@slices/collections/collection";
 import { useAppDispatch, useAppSelector } from "@slices/store";
@@ -175,7 +176,34 @@ const CollectionListPanel = () => {
                   <CollectionCard
                     key={item.id}
                     collection={item}
-                    actions={<CollectionActionsToolbar />}
+                    actions={
+                      <CollectionActionsToolbar
+                        onAccept={() => {
+                          dispatch(
+                            enqueueSnackbarMessage({
+                              message: `${DashboardOverviewMessage.collectionActions.actionOne} confirmed for ${item.name}`,
+                              type: "success",
+                            }),
+                          );
+                        }}
+                        onSend={() => {
+                          dispatch(
+                            enqueueSnackbarMessage({
+                              message: `${DashboardOverviewMessage.collectionActions.actionTwo} confirmed for ${item.name}`,
+                              type: "success",
+                            }),
+                          );
+                        }}
+                        onUpdate={() => {
+                          dispatch(
+                            enqueueSnackbarMessage({
+                              message: `${DashboardOverviewMessage.collectionActions.actionThree} confirmed for ${item.name}`,
+                              type: "success",
+                            }),
+                          );
+                        }}
+                      />
+                    }
                     dataCardIndex={idx}
                   />
                 ))}

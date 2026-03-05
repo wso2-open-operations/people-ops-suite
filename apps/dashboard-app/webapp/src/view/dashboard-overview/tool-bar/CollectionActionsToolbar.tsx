@@ -21,7 +21,13 @@ import { useConfirmationModalContext } from "@context/dialogState";
 import { DashboardOverviewMessage } from "@config/messages";
 import { ConfirmationType } from "@utils/types";
 
-const CollectionActionsToolbar = () => {
+interface CollectionActionsToolbarProps {
+  onAccept: () => void;
+  onSend: () => void;
+  onUpdate: () => void;
+}
+
+const CollectionActionsToolbar = ({ onAccept, onSend, onUpdate }: CollectionActionsToolbarProps) => {
   const dialogContext = useConfirmationModalContext();
 
   return (
@@ -37,9 +43,7 @@ const CollectionActionsToolbar = () => {
               `${DashboardOverviewMessage.collectionActions.confirmTitlePrefix} ${DashboardOverviewMessage.collectionActions.actionOne}${DashboardOverviewMessage.collectionActions.confirmSuffix}`,
               DashboardOverviewMessage.collectionActions.confirmBody,
               ConfirmationType.accept,
-              () => {
-                // Trigger function.
-              },
+              onAccept,
             );
           }}
         >
@@ -65,9 +69,7 @@ const CollectionActionsToolbar = () => {
               `${DashboardOverviewMessage.collectionActions.confirmTitlePrefix} ${DashboardOverviewMessage.collectionActions.actionTwo}${DashboardOverviewMessage.collectionActions.confirmSuffix}`,
               DashboardOverviewMessage.collectionActions.confirmBody,
               ConfirmationType.send,
-              () => {
-                // Trigger function.
-              },
+              onSend,
             );
           }}
         >
@@ -82,9 +84,7 @@ const CollectionActionsToolbar = () => {
               `${DashboardOverviewMessage.collectionActions.confirmTitlePrefix} ${DashboardOverviewMessage.collectionActions.actionThree}${DashboardOverviewMessage.collectionActions.confirmSuffix}`,
               DashboardOverviewMessage.collectionActions.confirmBody,
               ConfirmationType.update,
-              () => {
-                // Trigger function.
-              },
+              onUpdate,
             );
           }}
         >
