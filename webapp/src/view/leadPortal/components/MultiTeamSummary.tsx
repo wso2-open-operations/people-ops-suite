@@ -19,22 +19,23 @@ import {
 } from "@mui/x-data-grid";
 import DateRangeIcon from "@mui/icons-material/DateRange";
 
-import { CompletionStatusCard } from "@components/common/CompletionStatusCard";
-import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
-import { CustomModal } from "@components/common/CustomModal";
-import { CycleDatesStepper } from "@components/common/CycleDatesStepper";
-import { AllTeamsSummary, RequestState, Team } from "@utils/types";
+import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { RequestState } from "@utils/types";
+import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
 
 import { calculateAllTeamsSummary } from "@utils/utils";
 import { shortDateFormat, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { selectCurrentCycle } from "@slices/parCycleSlice";
-import { sendAllThreeSixtyReminder } from "@slices/reminderSlice";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { sendAllThreeSixtyReminder } from "@slices/reminderSlice/reminder";
 
 import dayjs from "dayjs";
-import { LoadingEffect } from "@components/ui/Loading";
-import { selectTeamStatus } from "@slices/teamSlice";
+import { LoadingEffect } from "@component/ui/Loading";
+import { selectTeamStatus } from "@slices/teamSlice/team";
 
 interface MultiTeamSummaryProps {
   filteredSummary: AllTeamsSummary;
@@ -121,26 +122,26 @@ export const MultiTeamSummary = ({
       </Stack>
       <Card variant="outlined" sx={{ padding: 2 }}>
         <Grid container>
-          <Grid item xs={12} sm={12} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+          <Grid size={{ xs: 12, sm: 12 }} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
             <Typography variant="h5">Completion Status</Typography>
           </Grid>
         </Grid>
         <Grid container spacing={10}>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <CompletionStatusCard
               name="Employee PAR"
               completed={filteredSummary.totalEmployeeParComplete}
               total={filteredSummary.totalEmployees}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <CompletionStatusCard
               name="Lead's PAR"
               completed={filteredSummary.totalLeadReviewComplete}
               total={filteredSummary.totalEmployees}
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid size={{ xs: 12, sm: 4 }}>
             <CompletionStatusCard
               name="F2F"
               completed={filteredSummary.totalF2fComplete}
@@ -180,19 +181,21 @@ export const MultiTeamSummary = ({
             columns={columns}
             rowHeight={60}
             getRowId={(row) => row.parTeamId}
-            disableSelectionOnClick
+            disableRowSelectionOnClick
             autoHeight
-            rowsPerPageOptions={[10, 20, 25]}
+            pageSizeOptions={[10, 20, 25]}
             initialState={{
               pagination: {
-                pageSize: 10,
-                page: 0,
+                paginationModel: {
+                  pageSize: 10,
+                  page: 0,
+                },
               },
             }}
             onRowClick={handleTeamChange}
-            components={{
-              Toolbar: CustomToolbar,
-            }}
+            // components={{
+            //   Toolbar: CustomToolbar,
+            // }}
             onFilterModelChange={(model) => {
               const filteredRows = formattedTeams.filter((row) =>
                 Object.values(row).some((value) =>
@@ -234,23 +237,11 @@ const CustomToolbar = () => {
   return (
     <GridToolbarContainer sx={{ justifyContent: "space-between" }}>
       <Box>
-        <GridToolbarColumnsButton
-          placeholder={undefined}
-          onPointerEnterCapture={undefined}
-          onPointerLeaveCapture={undefined}
-        />
-        <GridToolbarFilterButton
-          placeholder={undefined}
-          onPointerEnterCapture={undefined}
-          onPointerLeaveCapture={undefined}
-        />
-        <GridToolbarDensitySelector
-          placeholder={undefined}
-          onPointerEnterCapture={undefined}
-          onPointerLeaveCapture={undefined}
-        />
+        <GridToolbarColumnsButton />
+        <GridToolbarFilterButton />
+        <GridToolbarDensitySelector />
       </Box>
-      <GridToolbarQuickFilter placeholder="Search Teams" />
+      <GridToolbarQuickFilter />
     </GridToolbarContainer>
   );
 };
