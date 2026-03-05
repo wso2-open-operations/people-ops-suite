@@ -302,7 +302,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # 
     # + statusArray - Status of the promotion request
     # + return - Internal Server Error or Promotion request array
-    resource function GET promotions(http:RequestContext ctx, string employeeEmail, string[]? statusArray)
+    resource function GET promotions(http:RequestContext ctx, string[]? statusArray, 
+            string? employeeEmail, string? recommendedBy, string? 'type)
         returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
 
         // if there is a status array.
@@ -343,8 +344,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         // Retrieve promotion requests from the database, using various filters and constraints.
         database:Promotion[]|error PromotionArray = database:getPromotions(
-            employeeEmail = employeeEmail,  // Constrain by user email if needed.
-            statusArray = statusArray // Filter by status.
+            employeeEmail = employeeEmail,
+            statusArray = statusArray,
+            recommendedBy = recommendedBy
         );
 
         if PromotionArray is error {
