@@ -921,7 +921,14 @@ function CreateVisit() {
               displayEmpty
               notched
               label={`Expected Departure Time${timeOfEntry && timeOfDeparture ? ` (${getDurationLabel(timeOfEntry, timeOfDeparture)})` : ""}`}
-              sx={{ borderRadius: "12px", fontSize: "0.875rem" }}
+              sx={{
+                borderRadius: "12px",
+                fontSize: "0.875rem",
+                textAlign: "center",
+                "& .MuiSelect-select": {
+                  textAlign: "center",
+                },
+              }}
             >
               {timeSlots
                 .filter((t) => !timeOfEntry || t > timeOfEntry)
