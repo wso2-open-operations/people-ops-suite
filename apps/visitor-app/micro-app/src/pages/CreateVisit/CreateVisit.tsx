@@ -426,6 +426,11 @@ function CreateVisit() {
     [visitors],
   );
 
+  const hasDraftVisitors = useMemo(
+    () => visitors.some((v) => v.status === VisitorStatus.Draft),
+    [visitors],
+  );
+
   const canAddMoreVisitors = useMemo(() => {
     if (visitors.length === 0) return false;
     const last = visitors[visitors.length - 1];
@@ -1169,7 +1174,6 @@ function CreateVisit() {
                   <Grid size={12} sx={{ textAlign: "right" }}>
                     <Button
                       variant="contained"
-                      color="success"
                       size="small"
                       startIcon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
                       onClick={() => submitVisitor(idx)}
@@ -1179,6 +1183,10 @@ function CreateVisit() {
                         textTransform: "none",
                         fontWeight: 500,
                         fontSize: "0.875rem",
+                        bgcolor: "#FF7300",
+                        "&:hover": {
+                          bgcolor: "#E56600",
+                        },
                       }}
                     >
                       Submit Visitor
@@ -1208,53 +1216,61 @@ function CreateVisit() {
         ))}
 
         {/* Add Visitor & Complete Buttons */}
-        <Box
-          sx={{
-            mt: 3,
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddCircleOutlineIcon sx={{ fontSize: 16 }} />}
-            onClick={addNewVisitorBlock}
-            disabled={!canAddMoreVisitors}
+        {isLocked && (
+          <Box
             sx={{
-              borderRadius: "12px",
-              textTransform: "none",
-              fontWeight: 500,
-              fontSize: "0.875rem",
+              mt: 3,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 2,
             }}
           >
-            Add Visitor
-          </Button>
-        </Box>
-
-        {isLocked && (
-          <Box sx={{ mt: 3, textAlign: "center" }}>
-            <Button
-              variant="text"
-              onClick={resetForm}
-              startIcon={<CheckCircleIcon sx={{ fontSize: 18 }} />}
-              sx={{
-                textTransform: "none",
-                fontWeight: 500,
-                fontSize: "0.875rem",
-                color: "#4B5064",
-                px: 3,
-                py: 1,
-                borderRadius: "12px",
-                bgcolor: "#F3F4F8",
-                "&:hover": {
-                  bgcolor: "#E9EBF5",
-                },
-              }}
-            >
-              Complete Visit
-            </Button>
+            {canAddMoreVisitors && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddCircleOutlineIcon sx={{ fontSize: 16 }} />}
+                onClick={addNewVisitorBlock}
+                sx={{
+                  borderRadius: "12px",
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  bgcolor: "#F3F4F8",
+                  color: "#4B5064",
+                  boxShadow: "none",
+                  "&:hover": {
+                    bgcolor: "#E9EBF5",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                Add Visitor
+              </Button>
+            )}
+            {!hasDraftVisitors && (
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
+                onClick={resetForm}
+                sx={{
+                  borderRadius: "12px",
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "0.875rem",
+                  bgcolor: "#FF7300",
+                  color: "#fff",
+                  boxShadow: "none",
+                  "&:hover": {
+                    bgcolor: "#E56600",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                Complete Visit
+              </Button>
+            )}
           </Box>
         )}
       </Box>
