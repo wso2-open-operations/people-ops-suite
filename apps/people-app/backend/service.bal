@@ -1172,7 +1172,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return orgStructure;
     }
-    
+
     # Add new business unit.
     #
     # + payload - Business-unit details
@@ -1198,7 +1198,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addBusinessUnit(payload, workEmail);
+        int|error result = database:addBusinessUnit(workEmail, payload);
 
         if result is error {
             string customErr = "Error while adding a business unit";
@@ -1242,7 +1242,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addTeam(payload, workEmail);
+        int|error result = database:addTeam(workEmail, payload);
 
         if result is error {
             string customErr = "Error while adding a team";
@@ -1286,7 +1286,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addSubTeam(payload, workEmail);
+        int|error result = database:addSubTeam(workEmail, payload);
 
         if result is error {
             string customErr = "Error while adding a sub team";
@@ -1330,7 +1330,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addUnit(payload, workEmail);
+        int|error result = database:addUnit(workEmail, payload);
 
         if result is error {
             string customErr = "Error while adding a unit";
