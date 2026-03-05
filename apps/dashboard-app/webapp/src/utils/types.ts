@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -20,19 +20,22 @@ import { Role } from "@slices/authSlice/auth";
 import { Collection } from "@slices/collections/collection";
 import { ConfirmationType, State } from "@/types/types";
 
+interface ExtendedDecodedIDTokenPayload extends DecodedIDTokenPayload {
+  groups?: string[];
+}
+
 export interface AuthState {
   status: State;
   mode: "active" | "maintenance";
   statusMessage: string | null;
-  isAuthenticated: boolean;
   userInfo: BasicUserInfo | null;
-  decodedIdToken: DecodedIDTokenPayload | null;
+  decodedIdToken: ExtendedDecodedIDTokenPayload | null;
   roles: Role[];
 }
 
 export interface AuthData {
   userInfo: BasicUserInfo;
-  decodedIdToken: DecodedIDTokenPayload;
+  decodedIdToken: ExtendedDecodedIDTokenPayload;
 }
 
 export interface Employee {

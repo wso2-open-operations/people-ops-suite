@@ -28,6 +28,7 @@ export class APIService {
   private static _instance: AxiosInstance;
   private static _idToken: string;
   private static _authRequestInterceptorId: number | null = null;
+  private static _authResponseInterceptorId: number | null = null;
   private static _cancelTokenSource = axios.CancelToken.source();
   private static _cancelTokenMap: Map<string, CancelTokenSource> = new Map();
   private static callback: () => Promise<{ idToken: string }>;
@@ -110,7 +111,11 @@ export class APIService {
   }
 
   private static updateResponseInterceptor() {
-    APIService._instance.interceptors.response.use(
+    if (APIService._authResponseInterceptorId !== null) {
+      APIService._instance.interceptors.response.eject(APIService._authResponseInterceptorId);
+    }
+
+    APIService._authResponseInterceptorId = APIService._instance.interceptors.response.use(
       (response) => {
         APIService.clearEndpointCancelToken(response.config);
         return response;
