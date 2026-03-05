@@ -108,7 +108,7 @@ public type Advertisement record {|
     # Created timestamp
     string createdOn;
     # Created by
-    string? createdBy;
+    string createdBy;
     # Updated timestamp
     string updatedOn;
     # Updated by
