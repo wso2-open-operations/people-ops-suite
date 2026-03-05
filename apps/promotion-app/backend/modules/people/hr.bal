@@ -19,7 +19,7 @@ import ballerina/log;
 #
 # + workEmail - WSO2 email address
 # + return - Employee | Error
-public isolated function fetchEmployeesBasicInfo(string workEmail) returns EmployeesBasicInfo|error {
+public isolated function fetchEmployeesBasicInfo(string workEmail) returns EmployeeBasicInfo|error {
     string document = string `
         query employeeQuery ($workEmail: String!) {
             employee(email: $workEmail) {
@@ -84,6 +84,60 @@ public isolated function getEmployee(string workEmail) returns Employee|error {
     }
 
     return employee;
+}
+
+# Retrieve the employee list.
+#
+# + filterLeads - Leads are filtered or not  
+# + jobBandArray - Array of job bands  
+# + employmentTypesArray - Array of employment types
+# + return - Array of employees
+public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandArray = (),
+        EmploymentType[]? employmentTypesArray = ()) returns EmployeeInfo[]|error {
+
+    string document = string `
+        query employeeQuery ($filter: EmployeeFilter!) {
+            employees(filter: $filter) {
+            employeeId,
+            firstName,
+            lastName,
+            workEmail,
+            jobBand,
+            jobRole,
+            lastPromotedDate,
+            startDate,
+            managerEmail,
+            employmentType,
+            businessUnit,
+            department,
+            team,
+            subTeam,
+            employeeThumbnail
+            }
+        }
+    `;
+
+    EmployeeFilter filter = {
+        employeeStatus: [Active, Marked\ leaver],
+        employmentType: employmentTypesArray is EmploymentType[] ? employmentTypesArray :
+            [PERMANENT, CONSULTANCY, PART\ TIME\ CONSULTANCY],
+        lead: (filterLeads is boolean && filterLeads == false) ? () : filterLeads,
+        jobBand: jobBandArray is int[] ? jobBandArray : []
+    };
+
+    EmployeeInfoResult|error employeeData = hrClient->execute(document, {filter});
+
+    if employeeData is error {
+        log:printError(employeeData.toBalString());
+        return error((filterLeads is boolean && filterLeads == true) ? "Error while retrieving lead list!" : "Error while retrieving employee list!");
+    }
+
+    // Null Check.
+    if employeeData.data.length() <= 0 {
+        return error((filterLeads is boolean && filterLeads == true) ? "No active leads found!" : "No active employees found!");
+    }
+
+    return employeeData.data.employees;
 }
 
 # Retrieve the Employee name by work email.
