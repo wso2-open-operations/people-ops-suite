@@ -22,7 +22,7 @@ import commonReducer from "@slices/commonSlice/common";
 import appConfigReducer from "@slices/configSlice/config";
 import employeeReducer from "@slices/employeeSlice/employee";
 import promotionReducer from "@slices/promotionSlice/promotion";
-import pomotionCycleReducer from "@slices/promotionCycleSlice/promotionCycle";
+import promotionCycleReducer from "@slices/promotionCycleSlice/promotionCycle";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 enableMapSet();
@@ -34,7 +34,7 @@ export const store = configureStore({
     common: commonReducer,
     employee: employeeReducer,
     promotion: promotionReducer,
-    promotionCycle: pomotionCycleReducer,
+    promotionCycle: promotionCycleReducer,
     appConfig: appConfigReducer,
   },
   middleware: (getDefaultMiddleware) =>
