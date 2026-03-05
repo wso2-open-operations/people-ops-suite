@@ -244,7 +244,7 @@ public type EmployeeSearchPayload record {|
     EmployeeFilters filters;
     # Pagination
     Pagination pagination;
-    # Sort by field
+    # Sort configuration
     Sort sort;
 |};
 
