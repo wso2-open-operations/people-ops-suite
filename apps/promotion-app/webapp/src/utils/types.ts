@@ -21,6 +21,33 @@ export interface TimeLineData{
   Lead: string
 }
 
+export interface Employee {
+  firstName : string;
+  lastName: string;
+  workEmail : string;
+  jobBand  : number;
+  jobRole  : string;
+  employeeThumbnail : string;
+  lastPromotedDate : string;
+  managerEmail : string;
+  startDate : string;
+  employmentType : string;
+  businessUnit : string;
+  department : string;
+  team  : string
+  subTeam : string;
+}
+
+export interface ActivePromotionCycleInterface {
+  id: number;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: PromotionCycleStatus;
+}
+
+export type PromotionCycleStatus = "OPEN" | "CLOSED" | "END";
+
 export interface PromotionRequest {
   currentJobBand: number;
   employeeEmail: string;
