@@ -24,7 +24,6 @@ import {
   Divider,
   Grid,
   IconButton,
-  InputAdornment,
   Link,
   Stack,
   Tab,
@@ -59,12 +58,8 @@ import { CustomModal } from "@component/common/CustomModal";
 import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
 import { LoadingEffect } from "@component/ui/Loading";
 import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-// import { TeamSummary } from "@views/leadPortal/components/TeamSummary";
-// import { Review } from "@views/leadPortal/components/Review";
-// import { Report } from "@views/adminPortal/components/Report";
-// import { Completion } from "@views/adminPortal/components/Completion";
 import { calculateAllTeamsSummary } from "@utils/utils";
-import { RequestState,  } from "@utils/types";
+import { RequestState } from "@utils/types";
 import { Team } from "@slices/teamSlice/team";
 import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
@@ -72,7 +67,6 @@ import { shortDateFormat } from "@config/constant";
 import dayjs from "dayjs";
 import { selectUserEmail } from "@slices/authSlice/auth";
 import NoDataView from "@component/common/NoDataView";
-import SearchIcon from "@mui/icons-material/Search";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
@@ -87,7 +81,10 @@ import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import SummarizedParHistoryView from "./SummarizedParHistoryView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import EmployeeSyncModal from "@views/leadPortal/components/EmployeeSyncModal";
+import EmployeeSyncModal from "@view/adminPortal/components/EmployeeSyncModal";
+import { Review } from "../../leadPortal/components/Review";
+import { TeamSummary } from "../../leadPortal/components/TeamSummary";
+import { Completion } from "./Completion";
 
 interface DashboardProps {
   closeOrgSummaryView?: () => void;
@@ -155,13 +152,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
   const [employeeSyncModal, setEmployeeSyncModalOpen] = useState(false);
   const handleEmployeeSyncModal = () => setEmployeeSyncModalOpen(!employeeSyncModal);
 
-  const openCycleDeadlines = () => {
-    setIsParCycleDatesOpen(true);
-  };
-
-  const closeCycleDeadlines = () => {
-    setIsParCycleDatesOpen(false);
-  };
+  const openCycleDeadlines = () => setIsParCycleDatesOpen(true);
+  const closeCycleDeadlines = () => setIsParCycleDatesOpen(false);
 
   const openReviewEmployeeView = (employeeEmail: string) => {
     setSelectedEmployeeEmail(employeeEmail);
@@ -243,7 +235,11 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
     const filteredTeams = formattedTeams.filter((team) =>
       Object.values(team).some((value) => String(value).toLowerCase().includes(debouncedSearchText.toLowerCase()))
     );
-    const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
+
+    const filteredTeamIds = new Set(filteredTeams.map((t) => t.parTeamId));
+    const originalFilteredTeams = teams.filter((t) => filteredTeamIds.has(t.parTeamId));
+
+    const newFilteredSummary = calculateAllTeamsSummary(originalFilteredTeams);
     setFilteredSummary(newFilteredSummary);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchText]);
@@ -328,7 +324,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       field: "employeePARCompletion",
       headerName: "Employee PAR",
       flex: 0.09,
-      renderCell: (params: GridRenderCellParams<Team>) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Chip size="small" label={params.row.employeePARCompletion} />
       ),
     },
@@ -336,13 +332,13 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       field: "leadReviewCompletion",
       headerName: "Lead's Feedback",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams<Team>) => <Chip size="small" label={params.row.leadReviewCompletion} />,
+      renderCell: (params: GridRenderCellParams) => <Chip size="small" label={params.row.leadReviewCompletion} />,
     },
     {
       field: "f2fCompletion",
       headerName: "F2F",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams<Team>) => <Chip size="small" label={params.row.f2fCompletion} />,
+      renderCell: (params: GridRenderCellParams) => <Chip size="small" label={params.row.f2fCompletion} />,
     },
     { field: "numberOf5pSlots", headerName: "5% Slots", flex: 0.09 },
     { field: "numberOf20pSlots", headerName: "20% Slots", flex: 0.09 },
@@ -352,7 +348,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       sortable: false,
       flex: 0.1,
       disableExport: true,
-      renderCell: (params: GridRenderCellParams<Team>) => (
+      renderCell: (params: GridRenderCellParams) => (
         <Tooltip arrow title="Open Team" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
           <Button
             variant="outlined"
@@ -519,13 +515,13 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               backgroundColor:
                 params.row.isOfferedFeedback === "TRUE"
                   ? (theme) =>
-                      theme.palette.mode === "light"
-                        ? alpha(theme.palette.info.main, 0.1)
-                        : alpha(theme.palette.info.main, 0.8)
+                    theme.palette.mode === "light"
+                      ? alpha(theme.palette.info.main, 0.1)
+                      : alpha(theme.palette.info.main, 0.8)
                   : (theme) =>
-                      theme.palette.mode === "light"
-                        ? alpha(theme.palette.warning.main, 0.1)
-                        : alpha(theme.palette.warning.main, 0.8),
+                    theme.palette.mode === "light"
+                      ? alpha(theme.palette.warning.main, 0.1)
+                      : alpha(theme.palette.warning.main, 0.8),
 
               "& .MuiChip-label": {
                 px: 1.5,
@@ -832,37 +828,25 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                               rows={formattedTeams}
                               columns={columns}
                               autoHeight
-                              rowsPerPageOptions={[10, 20, 25]}
+                              disableRowSelectionOnClick
+                              pageSizeOptions={[10, 20, 25]}
                               rowHeight={60}
-                              disableSelectionOnClick
                               onRowClick={(params) => handleTeamsTableClick(params.row.id)}
-                              components={{
-                                Toolbar: GridToolbar,
+                              slots={{
+                                toolbar: GridToolbar,
                               }}
-                              componentsProps={{
+                              slotProps={{
                                 toolbar: {
                                   showQuickFilter: true,
-                                  quickFilterProps: {
-                                    debounceMs: 500,
-                                    InputProps: {
-                                      placeholder: "Search Team",
-                                      startAdornment: (
-                                        <InputAdornment position="start">
-                                          <SearchIcon />
-                                        </InputAdornment>
-                                      ),
-                                    },
-                                  },
-                                  value: searchText,
-                                  onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                                    setSearchText(event.target.value),
-                                  components: [GridToolbarExportContainer],
+                                  quickFilterProps: { debounceMs: 500 },
+                                },
+                                baseTextField: {
+                                  placeholder: "Search Team",
                                 },
                               }}
                               initialState={{
                                 pagination: {
-                                  pageSize: 10,
-                                  page: 0,
+                                  paginationModel: { pageSize: 10, page: 0 },
                                 },
                                 filter: {
                                   filterModel: {
@@ -870,8 +854,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                       {
                                         id: "searchText",
                                         value: searchText,
-                                        columnField: "searchText",
-                                        operatorValue: "contains",
+                                        field: "searchText",
+                                        operator: "contains",
                                       },
                                     ],
                                   },
@@ -942,34 +926,22 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                 columns={employeeColumns}
                                 rowHeight={50}
                                 autoHeight
-                                rowsPerPageOptions={[10, 20, 25]}
-                                components={{
-                                  Toolbar: GridToolbar,
+                                pageSizeOptions={[10, 20, 25]}
+                                slots={{
+                                  toolbar: GridToolbar,
                                 }}
-                                componentsProps={{
+                                slotProps={{
                                   toolbar: {
                                     showQuickFilter: true,
-                                    quickFilterProps: {
-                                      debounceMs: 500,
-                                      InputProps: {
-                                        placeholder: "Search Employee",
-                                        startAdornment: (
-                                          <InputAdornment position="start">
-                                            <SearchIcon />
-                                          </InputAdornment>
-                                        ),
-                                      },
-                                    },
-                                    value: employeeSearchText,
-                                    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                                      setEmployeeSearchText(event.target.value),
-                                    components: [GridToolbarExportContainer],
+                                    quickFilterProps: { debounceMs: 500 },
+                                  },
+                                  baseTextField: {
+                                    placeholder: "Search Employee",
                                   },
                                 }}
                                 initialState={{
                                   pagination: {
-                                    pageSize: 10,
-                                    page: 0,
+                                    paginationModel: { pageSize: 10, page: 0 },
                                   },
                                   filter: {
                                     filterModel: {
@@ -977,8 +949,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                         {
                                           id: "employeeSearchText",
                                           value: employeeSearchText,
-                                          columnField: "employeeSearchText",
-                                          operatorValue: "contains",
+                                          field: "employeeSearchText",
+                                          operator: "contains",
                                         },
                                       ],
                                     },
@@ -1067,34 +1039,22 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                 columns={reviewColumns}
                                 rowHeight={50}
                                 autoHeight
-                                rowsPerPageOptions={[10, 20, 25]}
-                                components={{
-                                  Toolbar: GridToolbar,
+                                pageSizeOptions={[10, 20, 25]}
+                                slots={{
+                                  toolbar: GridToolbar,
                                 }}
-                                componentsProps={{
+                                slotProps={{
                                   toolbar: {
                                     showQuickFilter: true,
-                                    quickFilterProps: {
-                                      debounceMs: 500,
-                                      InputProps: {
-                                        placeholder: "Search Reviews",
-                                        startAdornment: (
-                                          <InputAdornment position="start">
-                                            <SearchIcon />
-                                          </InputAdornment>
-                                        ),
-                                      },
-                                    },
-                                    value: reviewSearchText,
-                                    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                                      setReviewSearchText(event.target.value),
-                                    components: [GridToolbarExportContainer],
+                                    quickFilterProps: { debounceMs: 500 },
+                                  },
+                                  baseTextField: {
+                                    placeholder: "Search Reviews",
                                   },
                                 }}
                                 initialState={{
                                   pagination: {
-                                    pageSize: 10,
-                                    page: 0,
+                                    paginationModel: { pageSize: 10, page: 0 },
                                   },
                                   filter: {
                                     filterModel: {
@@ -1102,8 +1062,8 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                         {
                                           id: "reviewSearchText",
                                           value: reviewSearchText,
-                                          columnField: "searchText",
-                                          operatorValue: "contains",
+                                          field: "searchText",
+                                          operator: "contains",
                                         },
                                       ],
                                     },
@@ -1195,13 +1155,14 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               />
             )}
 
-          {reportView && currentCycle?.parCycleId && (
+          {/* Uncommented the Report component since it is being used here */}
+          {/* {reportView && currentCycle?.parCycleId && (
             <Report
               parCycle={currentCycle}
               closeReportView={closeReportView}
               isAdminHistoryViewOn={isAdminHistoryViewOn}
             />
-          )}
+          )} */}
 
           {isParCompletionViewOpen && currentCycle?.parCycleId && (
             <Completion parCycle={currentCycle} closeCompletionView={closeParCompletionView} />
