@@ -188,12 +188,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{body: {message: authorization:INSUFFICIENT_PRIVILEGES_ERROR}};
         }
 
+        if startDate is string && !database:DATE_REGEX.isFullMatch(startDate) ||
+                endDate is string && !database:DATE_REGEX.isFullMatch(endDate) {
+            return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
+        }
+
         if duration is string {
             if !(duration == "yearly" || duration == "monthly" || duration == "weekly") {
                 return <http:BadRequest>{body: {message: "duration must be yearly, monthly, or weekly"}};
             }
 
             if duration == "weekly" {
+                if startDate is () && endDate is string || startDate is string && endDate is () {
+                    return <http:BadRequest>{
+                        body: {message: "Provide both startDate and endDate for weekly duration."}
+                    };
+                }
+                if startDate is string && endDate is string && startDate > endDate {
+                    return <http:BadRequest>{body: {message: "startDate must be <= endDate."}};
+                }
+
                 WeeklyTrendItem[]|error weeklyData;
                 if startDate is string && endDate is string {
                     weeklyData = operation:getWeeklyTrendData(startDate, endDate);
@@ -533,6 +547,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if !database:DATE_REGEX.isFullMatch(startDate) || !database:DATE_REGEX.isFullMatch(endDate) {
             return <http:BadRequest>{body: {message: "Invalid date string. Expected YYYY-MM-DD."}};
+        }
+
+        if startDate > endDate {
+            return <http:BadRequest>{body: {message: "startDate must be <= endDate."}};
         }
 
         DateRangeSummary|error summary = operation:getDateRangeSummary(startDate, endDate);
