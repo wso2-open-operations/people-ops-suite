@@ -179,14 +179,15 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
 #
 # + owner - Filter : owner of the vehicles  
 # + vehicleStatus - Filter :  status of the vehicle
+# + vehicleType - Filter :  type of the vehicle (e.g. CAR for parking booking, excluding bikes)
 # + 'limit - Limit of the response  
 # + offset - Offset of the response
 # + return - Vehicles | Error
-public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicleStatus = (), int? 'limit = (),
-        int? offset = ()) returns Vehicles|error {
+public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicleStatus = (),
+        VehicleTypes? vehicleType = (), int? 'limit = (), int? offset = ()) returns Vehicles|error {
 
     stream<FetchVehicleResponse, error?> vehiclesResponse = databaseClient->query(
-            fetchVehiclesQuery(owner, vehicleStatus, 'limit, offset));
+            fetchVehiclesQuery(owner, vehicleStatus, vehicleType, 'limit, offset));
 
     Vehicle[] vehicles = [];
     int totalCount = 0;
@@ -213,6 +214,21 @@ public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicl
     };
 }
 
+# Get owner email of a vehicle by id.
+#
+# + vehicleId - Vehicle identifier
+# + return - Owner email or error
+public isolated function getVehicleOwner(int vehicleId) returns string|error? {
+    record {|string owner;|}|error row = databaseClient->queryRow(getVehicleOwnerQuery(vehicleId));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    if row is error {
+        return row;
+    }
+    return row.owner;
+}
+
 # Persist new vehicle.
 #
 # + payload - Payload containing the vehicle details
@@ -232,4 +248,92 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
         return true;
     }
     return false;
+}
+
+# Get active parking floors.
+#
+# + return - Parking floors
+public isolated function getParkingFloors() returns ParkingFloor[]|error {
+    stream<ParkingFloor, error?> floorStream = databaseClient->query(getParkingFloorsQuery());
+    return from ParkingFloor f in floorStream
+        select f;
+}
+
+# Get parking slots for a floor for a date.
+#
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Parking slots (with isBooked)
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
+    stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+    return from ParkingSlot s in slotStream select s;
+}
+
+# Get parking slot by ID.
+#
+# + slotId - Slot id
+# + return - Parking slot or nil
+public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
+    ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Check if slot is booked for date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - True if booked, false otherwise, or error
+public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
+    if row is sql:NoRowsError {
+        return false;
+    }
+    if row is error {
+        return row;
+    }
+    return true;
+}
+
+# Create parking reservation (PENDING).
+#
+# + payload - Reservation payload
+# + return - New reservation id
+public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
+    return result.lastInsertId.ensureType(int);
+}
+
+# Get parking reservation by ID.
+#
+# + reservationId - Reservation id
+# + return - Reservation details or nil
+public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
+    ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Update reservation status and optional transaction_hash.
+#
+# + payload - Update payload
+# + return - True if updated
+public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
+    returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationStatusQuery(payload));
+    return result.affectedRowCount > 0;
+}
+
+# Get parking reservations by employee.
+#
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Reservations
+public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
+        string? toDate = ()) returns ParkingReservationDetails[]|error {
+    stream<ParkingReservationDetails, error?> resStream = databaseClient->query(
+        getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
+    return from ParkingReservationDetails r in resStream
+        select r;
 }

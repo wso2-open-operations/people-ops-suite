@@ -274,6 +274,18 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
+name = "regex"
+version = "1.3.2"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.string"}
+]
+modules = [
+	{org = "ballerina", packageName = "regex", moduleName = "regex"}
+]
+
+[[package]]
+org = "ballerina"
 name = "sql"
 version = "1.16.0"
 dependencies = [
@@ -301,6 +313,9 @@ name = "time"
 version = "2.7.0"
 dependencies = [
 	{org = "ballerina", name = "jballerina.java"}
+]
+modules = [
+	{org = "ballerina", packageName = "time", moduleName = "time"}
 ]
 
 [[package]]
@@ -387,7 +402,9 @@ dependencies = [
 	{org = "ballerina", name = "http"},
 	{org = "ballerina", name = "jwt"},
 	{org = "ballerina", name = "log"},
+	{org = "ballerina", name = "regex"},
 	{org = "ballerina", name = "sql"},
+	{org = "ballerina", name = "time"},
 	{org = "ballerinai", name = "observe"},
 	{org = "ballerinai", name = "transaction"},
 	{org = "ballerinax", name = "mysql"},
@@ -396,6 +413,7 @@ dependencies = [
 modules = [
 	{org = "wso2_open_operations", packageName = "people", moduleName = "people"},
 	{org = "wso2_open_operations", packageName = "people", moduleName = "people.authorization"},
-	{org = "wso2_open_operations", packageName = "people", moduleName = "people.database"}
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people.database"},
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people.gsheet"}
 ]
 

@@ -428,11 +428,12 @@ isolated function updateEmployeePersonalInfoQuery(int id, UpdateEmployeePersonal
 #
 # + owner - Filter : Owner of the vehicles
 # + vehicleStatus - Filter :  status of the vehicle
+# + vehicleType - Filter :  type of the vehicle
 # + 'limit - Limit of the response  
 # + offset - Offset of the response
 # + return - sql:ParameterizedQuery - Select query for the vehicles
-isolated function fetchVehiclesQuery(string? owner, VehicleStatus? vehicleStatus, int? 'limit, int? offset)
-    returns sql:ParameterizedQuery {
+isolated function fetchVehiclesQuery(string? owner, VehicleStatus? vehicleStatus, VehicleTypes? vehicleType,
+        int? 'limit, int? offset) returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery mainQuery = `
         SELECT 
@@ -460,6 +461,10 @@ isolated function fetchVehiclesQuery(string? owner, VehicleStatus? vehicleStatus
         filters.push(` vehicle_status = ${vehicleStatus}`);
     }
 
+    if vehicleType is VehicleTypes {
+        filters.push(` vehicle_type = ${vehicleType}`);
+    }
+
     // Building the WHERE clause.
     mainQuery = buildSqlSelectQuery(mainQuery, filters);
 
@@ -478,6 +483,15 @@ isolated function fetchVehiclesQuery(string? owner, VehicleStatus? vehicleStatus
 
     return mainQuery;
 }
+
+# Get owner email of a vehicle by id.
+#
+# + vehicleId - Vehicle ID
+# + return - Query to get the owner email of the vehicle
+isolated function getVehicleOwnerQuery(int vehicleId) returns sql:ParameterizedQuery =>
+    `SELECT employee_email as 'owner' FROM vehicle
+     WHERE vehicle_id = ${vehicleId} AND vehicle_status = 'ACTIVE'
+     LIMIT 1`;
 
 # Build query to persist a vehicle.
 #
@@ -535,4 +549,192 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     mainQuery = buildSqlUpdateQuery(mainQuery, filters);
 
     return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Get parking floors.
+#
+# + return - Query to get parking floors
+isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        id,
+        name,
+        display_order as 'displayOrder',
+        coins_per_slot as 'coinsPerSlot',
+        is_active as 'isActive'
+    FROM parking_floor
+    WHERE is_active = 1
+    ORDER BY display_order ASC, id ASC`;
+
+# Get parking slots for a floor for a date.
+#
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get parking slots with isBooked
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
+    `SELECT
+        ps.slot_id as 'slotId',
+        ps.floor_id as 'floorId',
+        pf.name as 'floorName',
+        pf.coins_per_slot as 'coinsPerSlot',
+        CASE WHEN EXISTS (
+            SELECT 1 FROM parking_reservation pr
+            WHERE pr.slot_id = ps.slot_id
+              AND pr.booking_date = ${bookingDate}
+              AND pr.status = 'CONFIRMED'
+        ) THEN 1 ELSE 0 END as 'isBooked'
+    FROM parking_slot ps
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    WHERE ps.floor_id = ${floorId}
+    ORDER BY ps.slot_id ASC
+`;
+
+# Get parking slot by id.
+#
+# + slotId - Slot id
+# + return - Query to get parking slot
+isolated function getParkingSlotByIdQuery(string slotId) returns sql:ParameterizedQuery =>
+    `SELECT
+        ps.slot_id as 'slotId',
+        ps.floor_id as 'floorId',
+        pf.name as 'floorName',
+        pf.coins_per_slot as 'coinsPerSlot',
+        0 as 'isBooked'
+    FROM parking_slot ps
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    WHERE ps.slot_id = ${slotId}`;
+
+# Get confirmed reservation id for slot and date (existence check).
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get reservation id if booked
+isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
+    returns sql:ParameterizedQuery =>
+    `SELECT id
+    FROM parking_reservation
+    WHERE slot_id = ${slotId}
+      AND booking_date = ${bookingDate}
+      AND status = 'CONFIRMED'
+    LIMIT 1`;
+
+# Insert parking reservation (PENDING).
+#
+# + payload - Reservation payload
+# + return - Query to insert parking reservation
+isolated function addParkingReservationQuery(AddParkingReservationPayload payload) returns sql:ParameterizedQuery =>
+    `
+    INSERT INTO parking_reservation
+    (
+        slot_id, 
+        booking_date, 
+        employee_email, 
+        vehicle_id, 
+        status, 
+        coins_amount, 
+        created_by, 
+        updated_by
+    )
+    VALUES
+    (
+        ${payload.slotId},
+        ${payload.bookingDate}, 
+        ${payload.employeeEmail}, 
+        ${payload.vehicleId},
+        'PENDING', 
+        ${payload.coinsAmount}, 
+        ${payload.createdBy}, 
+        ${payload.createdBy}
+    );
+`;
+
+# Get parking reservation by id.
+#
+# + reservationId - Reservation id
+# + return - Query to get reservation details
+isolated function getParkingReservationByIdQuery(int reservationId) returns sql:ParameterizedQuery =>
+    `SELECT
+        pr.id,
+        pr.slot_id as 'slotId',
+        pr.booking_date as 'bookingDate',
+        pr.employee_email as 'employeeEmail',
+        pr.vehicle_id as 'vehicleId',
+        v.vehicle_registration_number as 'vehicleRegistrationNumber',
+        v.vehicle_type as 'vehicleType',
+        pr.status,
+        pr.transaction_hash as 'transactionHash',
+        pr.coins_amount as 'coinsAmount',
+        pf.name as 'floorName',
+        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
+        pr.created_by as 'createdBy',
+        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
+        pr.updated_by as 'updatedBy'
+    FROM parking_reservation pr
+    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
+    WHERE pr.id = ${reservationId}`;
+
+# Update parking reservation status and optional transaction_hash.
+#
+# + payload - Update payload
+# + return - Query to update reservation
+isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
+
+    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
+
+    if payload.transactionHash is string {
+        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
+    }
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
+
+    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
+}
+
+# Get parking reservations by employee.
+#
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Query to get reservations
+isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, string? fromDate, string? toDate)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `
+    SELECT
+        pr.id,
+        pr.slot_id as 'slotId',
+        pr.booking_date as 'bookingDate',
+        pr.employee_email as 'employeeEmail',
+        pr.vehicle_id as 'vehicleId',
+        v.vehicle_registration_number as 'vehicleRegistrationNumber',
+        v.vehicle_type as 'vehicleType',
+        pr.status,
+        pr.transaction_hash as 'transactionHash',
+        pr.coins_amount as 'coinsAmount',
+        pf.name as 'floorName',
+        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
+        pr.created_by as 'createdBy',
+        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
+        pr.updated_by as 'updatedBy'
+    FROM parking_reservation pr
+    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id`;
+
+    sql:ParameterizedQuery[] filters = [` pr.employee_email = ${employeeEmail}`];
+
+    if fromDate is string {
+        filters.push(` pr.booking_date >= ${fromDate}`);
+    }
+    if toDate is string {
+        filters.push(` pr.booking_date <= ${toDate}`);
+    }
+
+    mainQuery = buildSqlSelectQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
