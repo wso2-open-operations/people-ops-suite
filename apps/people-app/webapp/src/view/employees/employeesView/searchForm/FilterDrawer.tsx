@@ -208,7 +208,7 @@ export function FilterDrawer({
                 companies={companies}
                 offices={offices}
                 onChangeCompany={(selected: Company | null) => {
-                  set({ companyId: selected?.id || undefined });
+                  set({ companyId: selected?.id });
                 }}
                 onChangeOffice={(selected: Office | null) => {
                   set({ officeId: selected?.id });
