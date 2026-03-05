@@ -1106,7 +1106,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Payload containing WiFi account details
     # + return - Successfully created or error
     resource function post wifi/accounts(http:RequestContext ctx, @http:Payload wifi:CreateWifiAccountPayload payload)
-    returns http:Ok|http:Forbidden|http:InternalServerError {
+    returns http:Ok|http:Forbidden|http:InternalServerError|http:Conflict {
 
         authorization:CustomJwtPayload|error userInfo =
         ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1134,12 +1134,31 @@ service http:InterceptableService / on new http:Listener(9090) {
             email: userInfo.email
         };
 
-        error? result = wifi:createWifiAccount(wifiPayload);
+        http:Response|error result = wifi:createWifiAccount(wifiPayload);
 
         if result is error {
             log:printError("WiFi account creation failed", result);
             return <http:InternalServerError>{
                 body: {message: "Failed to create WiFi account"}
+            };
+        }
+
+        if result.statusCode == http:STATUS_CONFLICT {
+            return <http:Conflict>{
+                body: {message: "WiFi account already exists for this user"}
+            };
+        }
+
+        if result.statusCode != http:STATUS_OK {
+            string customError = string `Error occurred while creating the Guest Wifi !`;
+            json|error responsePayload = result.getJsonPayload();
+            if responsePayload is json {
+                log:printError(string `${customError} : ${responsePayload.toJsonString()}`);
+            } else {
+                log:printError(customError);
+            }
+            return <http:InternalServerError>{
+                body: {message: customError}
             };
         }
 
