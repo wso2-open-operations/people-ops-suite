@@ -64,7 +64,7 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 }
 
 # Append a string filter to the filters array if the value is not null or empty.
-# 
+#
 # + filters - Array of sub queries to be added to the main query
 # + value - The string value to check and append
 # + condition - The sql:ParameterizedQuery representing the filter condition to append
@@ -75,7 +75,7 @@ isolated function appendStringFilter(sql:ParameterizedQuery[] filters, string? v
 }
 
 # Append an integer filter to the filters array if the value is not null.
-# 
+#
 # + filters - Array of sub queries to be added to the main query
 # + value - The integer value to check and append
 # + condition - The sql:ParameterizedQuery representing the filter condition to append
@@ -86,7 +86,7 @@ isolated function appendIntFilter(sql:ParameterizedQuery[] filters, int? value, 
 }
 
 # Build the text token filter for the search query.
-# 
+#
 # + token - The text token to build the filter for
 # + return - sql:ParameterizedQuery representing the text token filter
 isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQuery {
@@ -128,6 +128,15 @@ isolated function buildTextTokenFilter(string token) returns sql:ParameterizedQu
                 LIKE LOWER(${likeValue}) ESCAPE '\\'
         )
     `;
+}
+
+# Build the `ORDER BY` clause for the SQL query based on the sort configuration.
+#
+# + sortConfig - Sort configuration from the request payload
+# + return - Parameterized query fragment for ORDER BY clause
+public isolated function buildOrderByClause(Sort sortConfig) returns sql:ParameterizedQuery {
+    return sql:queryConcat(` ORDER BY `,
+            EmployeeSortField.get(sortConfig.sortField), ` `, SortOrder.get(sortConfig.sortOrder));
 }
 
 # Check the affected row count after an update operation.

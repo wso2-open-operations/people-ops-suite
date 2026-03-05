@@ -224,7 +224,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - Get employees filter payload
     # + return - List of employees or error response
     resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchPayload payload) 
-        returns http:Ok|http:InternalServerError|http:Forbidden {
+        returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -243,6 +243,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:Forbidden>{
                 body: {
                     message: "You are not authorized to view employee list"
+                }
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
                 }
             };
         }

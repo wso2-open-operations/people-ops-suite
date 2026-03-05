@@ -228,11 +228,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
     }
 
     sql:ParameterizedQuery retrieveEmployeeQuery = buildSqlSelectQuery(baseQuery, filters);
+    sql:ParameterizedQuery orderByClause = buildOrderByClause(payload.sort);
 
-    retrieveEmployeeQuery = sql:queryConcat(retrieveEmployeeQuery, `
-        ORDER BY e.id ASC
-        LIMIT ${'limit} OFFSET ${offset}
-    `);
+    retrieveEmployeeQuery = sql:queryConcat(retrieveEmployeeQuery, 
+        ` `, orderByClause, ` LIMIT ${'limit} OFFSET ${offset};`);
 
     return retrieveEmployeeQuery;
 };
