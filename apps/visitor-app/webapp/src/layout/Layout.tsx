@@ -18,7 +18,7 @@ import Header from "@layout/header";
 import Sidebar from "@layout/sidebar";
 import { useSnackbar } from "notistack";
 import { useSelector } from "react-redux";
-import { CircularProgress, Typography } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { Box } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
