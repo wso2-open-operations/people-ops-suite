@@ -44,6 +44,7 @@ import {
   fetchEmployeesBasicInfo,
   fetchContinuousServiceRecord,
   resetContinuousService,
+  type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import {
   fetchBusinessUnits,
@@ -155,7 +156,7 @@ const SectionHeader = React.memo(
 );
 
 const ContinuousServiceTooltip = React.memo(
-  ({ record }: { record: any }) => {
+  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => {
     if (!record) return null;
 
     const fields = [
@@ -193,19 +194,25 @@ const ContinuousServiceTooltip = React.memo(
   },
 );
 
-const InfoTooltipAdornment = React.memo(({ record }: { record: any }) => (
-  <InputAdornment position="end">
-    <Tooltip
-      title={<ContinuousServiceTooltip record={record} />}
-      placement="top"
-      arrow
-    >
-      <IconButton size="small" sx={{ p: 0.5 }}>
-        <InfoOutlined fontSize="small" />
-      </IconButton>
-    </Tooltip>
-  </InputAdornment>
-));
+const InfoTooltipAdornment = React.memo(
+  ({ record }: { record: ContinuousServiceRecordInfo | null | undefined }) => (
+    <InputAdornment position="end">
+      <Tooltip
+        title={<ContinuousServiceTooltip record={record} />}
+        placement="top"
+        arrow
+      >
+        <IconButton
+          size="small"
+          sx={{ p: 0.5 }}
+          aria-label="Show continuous service record details"
+        >
+          <InfoOutlined fontSize="small" />
+        </IconButton>
+      </Tooltip>
+    </InputAdornment>
+  ),
+);
 
 export default function JobInfoStep() {
   const theme = useTheme();
@@ -357,9 +364,18 @@ export default function JobInfoStep() {
 
     if (recordCount === 0) {
       setSelectedRecordIndex(null);
-    } else if (selectedRecordIndex === null) {
+    } else if (
+      selectedRecordIndex === null ||
+      selectedRecordIndex >= recordCount
+    ) {
       setSelectedRecordIndex(0);
     }
+  }, [continuousServiceRecord, selectedRecordIndex]);
+
+  const selectedRecord = useMemo(() => {
+    if (!continuousServiceRecord?.length) return null;
+    const index = selectedRecordIndex ?? 0;
+    return continuousServiceRecord[index] ?? null;
   }, [continuousServiceRecord, selectedRecordIndex]);
 
   const handleCareerFunctionChange = useCallback(
@@ -531,14 +547,8 @@ export default function JobInfoStep() {
                   }}
                   InputProps={{
                     endAdornment:
-                      continuousServiceRecord && !errorMessage ? (
-                        <InfoTooltipAdornment
-                          record={
-                            selectedRecordIndex !== null
-                              ? continuousServiceRecord[selectedRecordIndex]
-                              : continuousServiceRecord[0]
-                          }
-                        />
+                      selectedRecord && !errorMessage ? (
+                        <InfoTooltipAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 />
@@ -564,14 +574,8 @@ export default function JobInfoStep() {
                   error={!!errorMessage}
                   InputProps={{
                     endAdornment:
-                      continuousServiceRecord && !errorMessage ? (
-                        <InfoTooltipAdornment
-                          record={
-                            selectedRecordIndex !== null
-                              ? continuousServiceRecord[selectedRecordIndex]
-                              : continuousServiceRecord[0]
-                          }
-                        />
+                      selectedRecord && !errorMessage ? (
+                        <InfoTooltipAdornment record={selectedRecord} />
                       ) : undefined,
                   }}
                 >
