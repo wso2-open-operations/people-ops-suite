@@ -62,8 +62,8 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         entity:Employee|error loggedInUser = entity:fetchEmployeesBasicInfo(userInfo.email);
         if loggedInUser is error {
-            string customError = string `Error occurred while retrieving user data: ${userInfo.email}!`;
-            log:printError(customError, loggedInUser);
+            string customError = "Error occurred while retrieving user data!";
+            log:printError(customError, loggedInUser, userEmail = userInfo.email);
             return <http:InternalServerError>{body: {message: customError}};
         }
 
