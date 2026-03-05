@@ -35,3 +35,12 @@ public enum PromotionRequestType {
     TIME_BASED,
     INDIVIDUAL_CONTRIBUTOR
 }
+
+// Promotion Recommendation Lifecycle Status.
+public enum PromotionRecommendationStatus {
+    DRAFT,
+    REQUESTED,
+    SUBMITTED,
+    DECLINED,
+    EXPIRED
+}
