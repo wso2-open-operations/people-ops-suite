@@ -28,6 +28,7 @@ import QRCode from "qrcode";
 import { hash } from "../../utils/utils";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { useDialog } from "../../contexts/DialogContext";
+import { useUserStore } from "../../stores/user/user";
 import { useGet, useAPI } from "../../services/useApi";
 import { Endpoints } from "../../services/endpoints";
 import FloorRoomSelector from "../../components/CreateVisit/FloorRoomSelector";
@@ -132,6 +133,7 @@ const textFieldSx = {
 function CreateVisit() {
   const { showSnackbar } = useSnackbar();
   const { showConfirmation } = useDialog();
+  const user = useUserStore((state) => state.user);
 
   // Form state
   const [companyName, setCompanyName] = useState("");
@@ -290,7 +292,60 @@ function CreateVisit() {
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [autocompleteOpen, setAutocompleteOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+    null,
+  );
+
+  // Pre-populate "Whom They Meet" with the logged-in user's details
+  useEffect(() => {
+    if (user?.email && !whoTheyMeet) {
+      const nameParts = (user.name || "").trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      const fullName = user.name || user.email;
+
+      setWhoTheyMeet(user.email);
+      setWhoTheyMeetName(fullName);
+      setInputValue(fullName);
+      setSelectedEmployee({
+        firstName,
+        lastName,
+        workEmail: user.email,
+        employeeThumbnail: null,
+      });
+
+      // Fetch employee record to get the thumbnail
+      (async () => {
+        try {
+          const { default: apiClient } =
+            await import("../../services/apiClient");
+          const endpoint = Endpoints.getEmployees({
+            search: user.email,
+            offset: 0,
+            limit: 1,
+          });
+          const res = await apiClient.get(
+            `${endpoint.baseUrl}${endpoint.path}`,
+          );
+          const employees: Employee[] = res.data;
+          const match = employees?.find(
+            (emp) => emp.workEmail.toLowerCase() === user.email.toLowerCase(),
+          );
+          if (match) {
+            setSelectedEmployee(match);
+            const empFullName =
+              `${match.firstName || ""} ${match.lastName || ""}`.trim();
+            if (empFullName) {
+              setWhoTheyMeetName(empFullName);
+              setInputValue(empFullName);
+            }
+          }
+        } catch {
+          // Thumbnail fetch failed silently — fallback already set above
+        }
+      })();
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visitorDebounceRefs = useRef<
     Record<number, ReturnType<typeof setTimeout> | null>
@@ -688,7 +743,9 @@ function CreateVisit() {
               const thumbnail = selectedEmployee?.employeeThumbnail ?? null;
               let initial = "?";
               if (selectedEmployee) {
-                initial = (selectedEmployee.firstName?.charAt(0) || "?").toUpperCase();
+                initial = (
+                  selectedEmployee.firstName?.charAt(0) || "?"
+                ).toUpperCase();
               }
 
               return (
