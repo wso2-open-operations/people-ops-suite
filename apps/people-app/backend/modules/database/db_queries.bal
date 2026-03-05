@@ -1023,3 +1023,79 @@ isolated function addUnitQuery(string userEmail, UnitOrgPayload payload) returns
     current_timestamp
   )
 `;
+
+
+# Build query to insert a new business-unit-team.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Mapping payload; `parentId` = business unit ID, `childId` = team ID
+# + return - Parameterized INSERT query for the new business-unit-team
+isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO business_unit_team(
+    business_unit_id,
+    team_id,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.parentId},
+    ${payload.childId},
+    ${payload.functionalLeadEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new sub team into a business unit-team mapping.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Mapping payload; `parentId` = business_unit_team ID, `childId` = sub-team ID
+# + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
+isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO business_unit_team_sub_team(
+    business_unit_team_id,
+    sub_team_id,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.parentId},
+    ${payload.childId},
+    ${payload.functionalLeadEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
+
+# Build query to insert a new unit into a business unit-team-sub team mapping.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Mapping payload; `parentId` = business_unit_team_sub_team ID, `childId` = unit ID
+# + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
+isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO business_unit_team_sub_team_unit(
+    business_unit_team_sub_team_id,
+    unit_id,
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
+  ) VALUES (
+    ${payload.parentId},
+    ${payload.childId},
+    ${payload.functionalLeadEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
+  )
+`;
