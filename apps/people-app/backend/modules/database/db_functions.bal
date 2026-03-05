@@ -393,9 +393,9 @@ public isolated function getOrganizationDetails() returns Company|error {
 # Add new business unit.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Add business unit payload
+# + payload - Node details (name and head email)
 # + return - Created business unit ID or error
-public isolated function addBusinessUnit(string userEmail, BusinessUnitPayload payload) returns int|error {
+public isolated function addBusinessUnit(string userEmail, OrgNodeInfo payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
@@ -403,9 +403,9 @@ public isolated function addBusinessUnit(string userEmail, BusinessUnitPayload p
 # Add new team.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Add team payload
+# + payload - Node details (name and head email)
 # + return - Created team ID or error
-public isolated function addTeam(string userEmail, TeamPayload payload) returns int|error {
+public isolated function addTeam(string userEmail, OrgNodeInfo payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
@@ -413,9 +413,9 @@ public isolated function addTeam(string userEmail, TeamPayload payload) returns 
 # Add new sub team.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Add sub team payload
+# + payload - Node details (name and head email)
 # + return - Created sub-team ID or error
-public isolated function addSubTeam(string userEmail, SubTeamPayload payload) returns int|error {
+public isolated function addSubTeam(string userEmail, OrgNodeInfo payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addSubTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
@@ -423,9 +423,9 @@ public isolated function addSubTeam(string userEmail, SubTeamPayload payload) re
 # Add new unit.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Add unit payload
+# + payload - Node details (name and head email)
 # + return - Created unit ID or error
-public isolated function addUnit(string userEmail, UnitOrgPayload payload) returns int|error {
+public isolated function addUnit(string userEmail, OrgNodeInfo payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
