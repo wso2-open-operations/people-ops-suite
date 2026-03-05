@@ -935,9 +935,9 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
 # Build query to insert a new business-unit.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Payload containing the business-unit details
+# + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new business-unit
-isolated function addBusinessUnitQuery(string userEmail, BusinessUnitPayload payload) returns sql:ParameterizedQuery => `
+isolated function addBusinessUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit(
     name,
     head_email,
@@ -958,9 +958,9 @@ isolated function addBusinessUnitQuery(string userEmail, BusinessUnitPayload pay
 # Build query to insert a new team.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Payload containing the team details
+# + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new team
-isolated function addTeamQuery(string userEmail, TeamPayload payload) returns sql:ParameterizedQuery => `
+isolated function addTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
   INSERT INTO team(
     name,
     head_email,
@@ -981,9 +981,9 @@ isolated function addTeamQuery(string userEmail, TeamPayload payload) returns sq
 # Build query to insert a new sub team.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Payload containing the sub team details
+# + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new sub team
-isolated function addSubTeamQuery(string userEmail, SubTeamPayload payload) returns sql:ParameterizedQuery => `
+isolated function addSubTeamQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
   INSERT INTO sub_team(
     name,
     head_email,
@@ -1004,9 +1004,9 @@ isolated function addSubTeamQuery(string userEmail, SubTeamPayload payload) retu
 # Build query to insert a new unit.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Payload containing the unit details
+# + payload - Node details (name and head email)
 # + return - Parameterized INSERT query for the new unit
-isolated function addUnitQuery(string userEmail, UnitOrgPayload payload) returns sql:ParameterizedQuery => `
+isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sql:ParameterizedQuery => `
   INSERT INTO unit(
     name,
     head_email,
