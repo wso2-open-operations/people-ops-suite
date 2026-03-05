@@ -76,6 +76,7 @@ const CollectionActionsToolbar = ({ onAccept, onSend, onUpdate }: CollectionActi
           {DashboardOverviewMessage.collectionActions.actionTwo}
         </Button>
         <IconButton
+          aria-label={DashboardOverviewMessage.collectionActions.actionThree}
           size="small"
           sx={{ border: 1, borderColor: "info", borderRadius: 2 }}
           onClick={() => {
