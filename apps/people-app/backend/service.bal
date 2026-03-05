@@ -1194,7 +1194,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post business\-units(http:RequestContext ctx, BusinessUnitPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post business\-units(http:RequestContext ctx, OrgNodeInfo payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
