@@ -223,7 +223,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + employeeWorkEmail - employee email
     # + return - Internal Server Error or Unauthorized Error or Employee info object
     resource function GET employee/history(http:RequestContext ctx, string employeeWorkEmail)
-        returns EmployeeJoinedDetails|http:InternalServerError|http:Unauthorized|error? {
+        returns EmployeeJoinedDetails|http:InternalServerError|http:Unauthorized {
 
         // "RequestedBy" is the email of the user access this resource
         // Interceptor set this value after validating the jwt.
@@ -238,7 +238,16 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if userInfo.email != employeeWorkEmail {
-            authorization:UserAppPrivilege userAppPrivileges = check authorization:getUserPrivileges(userInfo.email);
+            authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+            if userAppPrivileges is error {
+                string customError =  "Error while retrieving user App Privileges!";
+                log:printError(customError);
+                return <http:InternalServerError>{
+                    body:  {
+                        message: customError
+                    }
+                };
+            }
             if !database:checkRoles([database:LEAD], userAppPrivileges.roles) {
                 return <http:Unauthorized>{
                     body: {
