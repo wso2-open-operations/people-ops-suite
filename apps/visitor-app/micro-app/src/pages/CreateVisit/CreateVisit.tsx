@@ -132,6 +132,15 @@ const textFieldSx = {
   "& .MuiInputLabel-root": {
     fontSize: "0.875rem",
   },
+  "& input": {
+    textAlign: "left",
+    "&::-webkit-date-and-time-value": {
+      textAlign: "left",
+    },
+    "&::-webkit-datetime-edit": {
+      textAlign: "left",
+    },
+  },
 };
 
 function CreateVisit() {
@@ -952,9 +961,9 @@ function CreateVisit() {
               sx={{
                 borderRadius: "12px",
                 fontSize: "0.875rem",
-                textAlign: "center",
+                textAlign: "left",
                 "& .MuiSelect-select": {
-                  textAlign: "center",
+                  textAlign: "left",
                 },
               }}
             >
