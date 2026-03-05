@@ -32,10 +32,10 @@ import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { selectEmployeeRatingStatus, updateParTeamIdOfEmployee } from "@slices/employeeSlice/employee";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { snackMessages, tooltipVisibilityDelay } from "@config/constant";
-import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
+import { SnackMessage, tooltipVisibilityDelay } from "@config/constant";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { Autocomplete, Avatar, Box, IconButton, TextField, Tooltip, Typography } from "@mui/material";
-import { LoadingEffect } from "@components/ui/Loading";
+import { LoadingEffect } from "@component/ui/Loading";
 
 type Props = { 
   leadonly?: boolean;
@@ -89,7 +89,7 @@ const EmployeeSyncModal: React.FC<Props> = ({ leadonly, onSyncSuccess }) => {
       if (updateParTeamIdOfEmployee.fulfilled.match(resultAction)) {
         dispatch(
           enqueueSnackbarMessage({
-            message: snackMessages.success.employeeSync,
+            message: SnackMessage.success.employeeSync,
             type: "success",
           })
         );

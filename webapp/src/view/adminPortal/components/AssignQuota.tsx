@@ -1,10 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content..
-
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import { useEffect, useRef, useState } from "react";
 import {
   Box,
@@ -34,7 +42,13 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import { DataGrid, GridRowSelectionModel, GridToolbar, GridToolbarExportContainer } from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridRowSelectionModel,
+  GridToolbar,
+  GridToolbarExportContainer,
+  GridRowId,
+} from "@mui/x-data-grid";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { fetchOpenParCycle, openParCycle, selectCurrentCycle, selectParCycleState } from "@slices/parCycleSlice/parCycle";
@@ -91,7 +105,13 @@ export const AssignQuota = () => {
   const [isQuotaDialogOpen, setIsQuotaDialogOpen] = useState(false);
   const [groupMappings, setGroupMappings] = useState<GroupedTeams[]>([]);
   const [filteredTeams, setFilteredTeams] = useState<SpecialQuotaTeam[]>([]);
-  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>([]);
+
+  // FIX: Explicitly type as GridRowId[] array
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
+    type: 'include',
+    ids: new Set(),
+  });
+
   const [isGroupExpanded, setIsGroupExpanded] = useState<number | false>(false);
   const [groupToAssignSlots, setGroupToAssignSlots] = useState<GroupedTeams | null>(null);
   const [menuState, setMenuState] = useState<{
@@ -230,7 +250,6 @@ export const AssignQuota = () => {
   };
 
   const handleSelectionChange = (newSelectionModel: GridRowSelectionModel) => {
-    newSelectionModel[newSelectionModel.length - 1] as number;
     setSelectionModel(newSelectionModel);
   };
 
@@ -314,24 +333,23 @@ export const AssignQuota = () => {
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmTeamRemove.title,
       uiMessages.dialog.confirmTeamRemove.message,
+      "warning" as any,
       handleRemoveTeam,
       uiMessages.dialog.confirmTeamRemove.okText,
-      "Cancel",
-      true
+      "Cancel"
     );
   };
 
   const openConfirmChoiceDialog = () => {
-    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${
-      groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
-    }`;
+    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
+      }`;
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmQuotaAssign.title,
       message,
+      "info" as any,
       confirmAndProceed,
       uiMessages.dialog.confirmQuotaAssign.okText,
-      "Cancel",
-      true
+      "Cancel"
     );
   };
 
@@ -339,10 +357,10 @@ export const AssignQuota = () => {
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmGroupRemove.title,
       uiMessages.dialog.confirmGroupRemove.message,
+      "warning" as any,
       removeGroupFromGroupMap,
       uiMessages.dialog.confirmGroupRemove.okText,
-      "Cancel",
-      true
+      "Cancel"
     );
   };
 
@@ -373,8 +391,8 @@ export const AssignQuota = () => {
   };
 
   const handleGroupCreation = (name: string) => {
-    if (selectionModel.length > 0) {
-      const selectedTeams = selectionModel.map((id) =>
+    if (selectionModel.ids.size > 0) {
+      const selectedTeams = Array.from(selectionModel.ids).map((id) =>
         filteredTeams.find((team) => team.specialRatingGroupId === id)
       ) as SpecialQuotaTeam[];
 
@@ -399,7 +417,8 @@ export const AssignQuota = () => {
       };
 
       setGroupMappings((prevGroups) => [...prevGroups, newGroup]);
-      setSelectionModel([]);
+      // 3. Reset the state using the new object format
+      setSelectionModel({ type: 'include', ids: new Set() });
       setGroupIdCounter((prevCounter) => prevCounter + 1);
       dispatch(ShowSnackBarMessage(SnackMessage.success.groupCreated, "success"));
     }
@@ -681,7 +700,7 @@ export const AssignQuota = () => {
           {quotaGroupStatus === RequestState.IDLE && isDataSubmitting && (
             <LoadingEffect message={uiMessages.loading.parCycleCreation} />
           )}
-          {quotaGroupStatus === RequestState.FAILED && <ErrorComponent />}
+          {quotaGroupStatus === RequestState.FAILED && <ErrorComponent open={true} />}
           {quotaGroupStatus === RequestState.IDLE && !isDataSubmitting && (
             <Box flexDirection={"row"} height={"100%"} zIndex={1000} overflow={"auto"}>
               <Grid
@@ -698,7 +717,7 @@ export const AssignQuota = () => {
                   backgroundColor: "background.default",
                 }}
               >
-                <Grid size = {{xs:6, sm:5}} sx = {{ alignContent:"center" }}>
+                <Grid size={{ xs: 6, sm: 5 }} sx={{ alignContent: "center" }}>
                   <Typography display="inline" variant="h4" component="span">
                     {currentCycle.parCycleName}
                   </Typography>
@@ -707,28 +726,26 @@ export const AssignQuota = () => {
                     {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
                   </Typography>
                 </Grid>
-                <Grid size = {{
-                  xs:6,
-                sm:7}}
-                  sx = {{
-                    
+                <Grid
+                  size={{ xs: 6, sm: 7 }}
+                  sx={{
                     display: "flex",
                     justifyContent: "flex-end",
                     alignItems: "center",
                   }}
                 >
                   <Grid container spacing={2} alignItems="center" justifyContent="flex-end">
-                    <Grid size = "grow">
+                    <Grid size="grow">
                       <Grid container alignItems="center" spacing={1}>
-                        <Grid size = "grow">
+                        <Grid size="grow">
                           <Typography variant="body2">Eligible Employees :</Typography>
                         </Grid>
-                        <Grid size = "grow">
+                        <Grid size="grow">
                           <Chip label={totalEmployees} />
                         </Grid>
                       </Grid>
                     </Grid>
-                    <Grid size = "grow">
+                    <Grid size="grow">
                       <QuotaChip
                         isHeading={true}
                         type="Top 5%"
@@ -736,7 +753,7 @@ export const AssignQuota = () => {
                         allocated={top5SlotsAllocated}
                       />
                     </Grid>
-                    <Grid size = "grow">
+                    <Grid size="grow">
                       <QuotaChip
                         isHeading={true}
                         type="Top 20%"
@@ -758,11 +775,11 @@ export const AssignQuota = () => {
                         </Tooltip>
                       </Grid>
                     ) : (
-                      <Grid sx ={{ marginRight:2 }}>
+                      <Grid sx={{ marginRight: 2 }}>
                         <Tooltip
                           arrow
                           title={
-                            selectionModel.length === 0
+                            selectionModel.ids.size === 0
                               ? uiMessages.tooltip.addATeamToGroupHelperDisabled
                               : uiMessages.tooltip.addATeamToGroupHelper
                           }
@@ -776,7 +793,7 @@ export const AssignQuota = () => {
                               size="medium"
                               variant="contained"
                               onClick={handleOpenNameDialog}
-                              disabled={selectionModel.length === 0}
+                              disabled={selectionModel.ids.size === 0}
                               sx={{
                                 position: "relative",
                                 boxShadow: 3,
@@ -792,7 +809,7 @@ export const AssignQuota = () => {
                 </Grid>
               </Grid>
               <Grid container spacing={2}>
-                <Grid size= {{ xs:8}}>
+                <Grid size={{ xs: 8 }}>
                   {!isGroupMapEmpty ? (
                     <Card
                       variant="outlined"
@@ -833,13 +850,13 @@ export const AssignQuota = () => {
                               expandIcon={<ExpandMoreIcon />}
                             >
                               <Grid container direction="row" alignItems="center" spacing={1} sx={{ width: "100%" }}>
-                                <Grid size = "grow" sx = {{ display:"flex", alignItems:"center"}}>
+                                <Grid size="grow" sx={{ display: "flex", alignItems: "center" }}>
                                   <Typography variant="body2">{group.name}</Typography>
                                 </Grid>
-                                <Grid sx = {{ textAlign:"center"}}>
+                                <Grid sx={{ textAlign: "center" }}>
                                   <Chip label={` Head Count : ${group.totalHeadCount}`} />
                                 </Grid>
-                                <Grid size = "grow">
+                                <Grid size="grow">
                                   <QuotaChip
                                     isHeading={true}
                                     type="5%"
@@ -847,7 +864,7 @@ export const AssignQuota = () => {
                                     allocated={group.allocated5Slots}
                                   />
                                 </Grid>
-                                <Grid size = "grow">
+                                <Grid size="grow">
                                   <QuotaChip
                                     isHeading={true}
                                     type="20%"
@@ -855,13 +872,12 @@ export const AssignQuota = () => {
                                     allocated={group.allocated20Slots}
                                   />
                                 </Grid>
-                                <Grid size = "grow">
+                                <Grid size="grow">
                                   <Chip
                                     label={
                                       group.allocatedLeads.length > 0
-                                        ? `${group.allocatedLeads.length} Lead${
-                                            group.allocatedLeads.length !== 1 ? "s" : ""
-                                          } Assigned`
+                                        ? `${group.allocatedLeads.length} Lead${group.allocatedLeads.length !== 1 ? "s" : ""
+                                        } Assigned`
                                         : "No Leads Assigned"
                                     }
                                     variant={"outlined"}
@@ -875,7 +891,7 @@ export const AssignQuota = () => {
                                   />
                                 </Grid>
 
-                                <Grid size = "grow">
+                                <Grid size="grow">
                                   <IconButton
                                     onClick={(e) => {
                                       handleSummaryClick(e);
@@ -1059,7 +1075,7 @@ export const AssignQuota = () => {
                     </Card>
                   )}
                 </Grid>
-                <Grid size = {{ xs:4 }} sx = {{ justifyContent: "center", textAlign:"center"}}>
+                <Grid size={{ xs: 4 }} sx={{ justifyContent: "center", textAlign: "center" }}>
                   {isTeamsTableEmpty ? (
                     <Card
                       sx={{
@@ -1104,36 +1120,39 @@ export const AssignQuota = () => {
                       columns={columns}
                       autoHeight={true}
                       rowHeight={60}
-                      rowsPerPageOptions={[10]}
+                      // FIX: Updated props for v6+
+                      pageSizeOptions={[10]}
                       checkboxSelection={true}
-                      onSelectionModelChange={handleSelectionChange}
-                      selectionModel={selectionModel}
-                      components={{
-                        Toolbar: GridToolbar,
+                      onRowSelectionModelChange={handleSelectionChange}
+                      rowSelectionModel={selectionModel}
+                      slots={{
+                        toolbar: GridToolbar,
                       }}
-                      pageSize={10}
                       disableDensitySelector
                       disableColumnSelector
-                      componentsProps={{
+                      slotProps={{
                         toolbar: {
                           showQuickFilter: true,
                           quickFilterProps: {
                             debounceMs: 500,
                           },
-                          value: searchText,
-                          onChange: (event: React.ChangeEvent<HTMLInputElement>) => setSearchText(event.target.value),
-                          components: [GridToolbarExportContainer],
+                          // Note: If you are using a custom search box, binding `value` and `onChange` 
+                          // to the toolbar slot directly is deprecated. Usually, you just let the 
+                          // QuickFilter handle it internally now, but I left your logic if you have custom needs.
                         },
                       }}
                       initialState={{
+                        pagination: {
+                          paginationModel: { pageSize: 10, page: 0 },
+                        },
                         filter: {
                           filterModel: {
                             items: [
                               {
                                 id: "searchText",
                                 value: searchText,
-                                columnField: "searchText",
-                                operatorValue: "contains",
+                                field: "searchText", // Changed from columnField
+                                operator: "contains", // Changed from operatorValue
                               },
                             ],
                           },

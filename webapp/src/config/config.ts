@@ -27,6 +27,8 @@ declare global {
       AUTH_SIGN_IN_REDIRECT_URL: string;
       AUTH_SIGN_OUT_REDIRECT_URL: string;
       REACT_APP_BACKEND_BASE_URL: string;
+      TOP5P20PENABLEDRATING: string;
+      EVIDENCE_ENABLED_RATING: string;
     };
   }
 }
@@ -61,3 +63,7 @@ export const AppConfig = {
     calendar: ServiceBaseUrl + "/calendar",
   },
 };
+
+export const top5p20pEnabledRating = window.config?.TOP5P20PENABLEDRATING ?? "Successful";
+
+export const evidenceEnabledRating = window.config?.EVIDENCE_ENABLED_RATING ?? "Needs Improvement";

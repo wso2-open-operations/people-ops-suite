@@ -1,26 +1,35 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import { ParCycle, RequestState, Team } from "@utils/types";
+import { RequestState } from "@utils/types";
 import { Box, Chip, IconButton, Link, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useState } from "react";
 import { useAppSelector } from "@slices/store";
-import { LoadingEffect } from "@components/ui/Loading";
+import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
 import {
   DataGrid,
   GridColDef,
   GridRenderCellParams,
   GridToolbar,
-  GridToolbarExportContainer,
 } from "@mui/x-data-grid";
-import { selectAllTeams, selectTeamStatus } from "@slices/teamSlice";
+import { selectAllTeams, selectTeamStatus, Team } from "@slices/teamSlice/team";
 import { getCombinedTeams } from "@utils/utils";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface CompletionProps {
   parCycle: Partial<ParCycle>;
@@ -89,7 +98,7 @@ export const Completion = ({
       renderCell: (params: GridRenderCellParams<Team>) => (
         <Chip size="small" label={params.row.f2fCompletion} />
       ),
-      hide: true,
+      // 1. Removed hide: true from here
     },
   ];
 
@@ -134,32 +143,35 @@ export const Completion = ({
             }}
             rows={formattedTeams}
             columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10]}
             rowHeight={60}
-            disableSelectionOnClick
-            components={{
-              Toolbar: GridToolbar,
+            disableRowSelectionOnClick
+            pageSizeOptions={[10]}
+            slots={{
+              toolbar: GridToolbar,
             }}
-            componentsProps={{
+            slotProps={{
               toolbar: {
                 showQuickFilter: true,
                 quickFilterProps: { debounceMs: 500 },
-                value: searchText,
-                onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearchText(event.target.value),
-                components: [GridToolbarExportContainer],
               },
             }}
             initialState={{
+              columns: {
+                columnVisibilityModel: {
+                  f2fCompletion: false, // This hides the column
+                },
+              },
+              pagination: {
+                paginationModel: { pageSize: 10, page: 0 },
+              },
               filter: {
                 filterModel: {
                   items: [
                     {
                       id: "searchText",
                       value: searchText,
-                      columnField: "searchText",
-                      operatorValue: "contains",
+                      field: "searchText",
+                      operator: "contains",
                     },
                   ],
                 },

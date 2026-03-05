@@ -1,12 +1,21 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
-  snackMessages,
+  SnackMessage,
   tooltipVisibilityDelay,
   uiMessages,
 } from "@config/constant";
@@ -26,24 +35,20 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { showSnackBarMessage } from "@slices/commonSlice/common";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import {
   fetchParRatingOfEmployee,
   selectEmployeeRatings,
   updateParRatingOfEmployee,
-} from "@slices/employeeSlice";
+} from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  ParCycle,
-  ParEmployeeStatus,
-  ParF2fStatus,
-  ParLeadStatus,
-} from "@utils/types";
 import dayjs from "dayjs";
 import { useFormik } from "formik";
 import { isEqual } from "lodash";
 import { useEffect } from "react";
 import * as yup from "yup";
+import { ParEmployeeStatus, ParLeadStatus, ParF2fStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface UpdateStatusPanelProps {
   parCycle: Partial<ParCycle>;
@@ -136,8 +141,8 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
         }
 
         dispatch(
-          showSnackBarMessage(
-            snackMessages.success.adminParStatusUpdate,
+          ShowSnackBarMessage(
+            SnackMessage.success.adminParStatusUpdate,
             "success"
           )
         );
@@ -185,7 +190,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
     <Box>
       <form onSubmit={handleSubmit}>
         <Grid container maxWidth={"35%"}>
-          <Grid item xs={5} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
             <Typography>
               {"Employee PAR Status: "}
               <Tooltip
@@ -209,7 +214,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
               </Tooltip>
             </Typography>
           </Grid>
-          <Grid item xs={7} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
             <FormControl sx={{ minWidth: "16.2rem" }}>
               <Select
                 disabled={
@@ -237,7 +242,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={5} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
             <Typography>
               {"Lead's feedback Status: "}
               <Tooltip
@@ -261,7 +266,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
               </Tooltip>
             </Typography>
           </Grid>
-          <Grid item xs={7} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
             <FormControl sx={{ minWidth: "16.2rem" }}>
               <Select
                 id="parLeadStatus"
@@ -300,7 +305,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={5} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
             <Typography>
               {"F2F Status: "}
               <Tooltip
@@ -324,7 +329,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
               </Tooltip>
             </Typography>
           </Grid>
-          <Grid item xs={7} display={"flex"} alignItems={"center"} my={1}>
+          <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
             <FormControl sx={{ minWidth: "16.2rem" }}>
               <Select
                 disabled={
@@ -353,40 +358,46 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
           </Grid>
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Grid item xs={5} display={"flex"} alignItems={"center"} my={1}>
+            <Grid size={{ xs: 5 }} display={"flex"} alignItems={"center"} my={1}>
               <Typography mr={13}>F2F Date:</Typography>
             </Grid>
 
-            <Grid item xs={7} display={"flex"} alignItems={"center"} my={1}>
-              <DatePicker
-                disabled={
-                  employeeRating.parF2fStatus === ParF2fStatus.COMPLETED ||
-                  values.parF2fStatus !== ParF2fStatus.COMPLETED
-                }
-                value={values.parF2fDate}
-                onChange={(newValue) => {
-                  setFieldValue(
-                    "parF2fDate",
-                    dayjs(newValue?.toString()).format("YYYY-MM-DD")
-                  );
-                }}
-                maxDate={dayjs().toDate()}
-                minDate={dayjs(parCycle?.parCycleStartDate).toDate()}
-                renderInput={(params) => (
-                  <TextField
-                    aria-label="par f2f date"
-                    size="small"
-                    {...params}
-                    name="parF2fDate"
-                    onBlur={handleBlur}
-                    error={touched.parF2fDate && Boolean(errors.parF2fDate)}
-                    helperText={touched.parF2fDate && errors.parF2fDate}
-                  />
-                )}
-              />
+            <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
+            <DatePicker
+              label="PAR F2F Date"
+              disabled={
+                employeeRating.parF2fStatus === ParF2fStatus.COMPLETED ||
+                values.parF2fStatus !== ParF2fStatus.COMPLETED
+              }
+              // Convert string from Formik back to Dayjs for the UI
+              value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
+              onChange={(newValue) => {
+                // Save as string in Formik
+                setFieldValue(
+                  "parF2fDate",
+                  newValue ? dayjs(newValue).format("YYYY-MM-DD") : null
+                );
+              }}
+              // Use slots instead of renderInput
+              slots={{
+                textField: TextField,
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  name: "parF2fDate",
+                  onBlur: handleBlur,
+                  error: touched.parF2fDate && Boolean(errors.parF2fDate),
+                  helperText: (touched.parF2fDate && errors.parF2fDate) as string,
+                  "aria-label": "par f2f date",
+                },
+              }}
+              maxDate={dayjs()} // dayjs() is already the current date
+              minDate={dayjs(parCycle?.parCycleStartDate)}
+            />
             </Grid>
           </LocalizationProvider>
-          <Grid item xs={12} display={"flex"} my={5}>
+          <Grid size={{ xs: 12 }} display={"flex"} my={5}>
             <Button variant="outlined" onClick={resetForm} sx={{ mr: 2 }}>
               Cancel
             </Button>
