@@ -25,6 +25,8 @@ import utc from "dayjs/plugin/utc";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
+import { PhoneNumberUtil } from "google-libphonenumber";
+import { MuiTelInput } from "mui-tel-input";
 import { hash } from "../../utils/utils";
 import { useSnackbar } from "../../contexts/SnackbarContext";
 import { useDialog } from "../../contexts/DialogContext";
@@ -72,6 +74,8 @@ import BusinessIcon from "@mui/icons-material/Business";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
+
+const phoneUtil = PhoneNumberUtil.getInstance();
 
 const defaultVisitor: VisitorDetail = {
   name: "",
@@ -232,7 +236,7 @@ function CreateVisit() {
       }
     }
 
-    // Contact number format: must start with '+', minimum 7 digits
+    // Contact number validation using google-libphonenumber
     if (hasContact) {
       const contact = visitor.contactNumber!.trim();
       if (!contact.startsWith("+")) {
@@ -240,8 +244,20 @@ function CreateVisit() {
           "Phone number must start with country code (e.g. +94)";
         valid = false;
       } else {
-        const digits = contact.replace(/\D/g, "");
-        if (digits.length < 7 || digits.length > 15) {
+        try {
+          const parsed = phoneUtil.parseAndKeepRawInput(contact);
+          if (!phoneUtil.isValidNumber(parsed)) {
+            errors.contactNumber =
+              "Invalid phone number for the selected country";
+            valid = false;
+          } else if (
+            visitor.countryCode &&
+            visitor.countryCode !== `+${parsed.getCountryCode()}`
+          ) {
+            errors.contactNumber = `Phone number doesn't match selected country code (${visitor.countryCode})`;
+            valid = false;
+          }
+        } catch {
           errors.contactNumber = "Invalid phone number format";
           valid = false;
         }
@@ -518,9 +534,21 @@ function CreateVisit() {
             }
 
             const visitorName = visitor.name?.trim() || "";
-            const contactNumber = visitor.contactNumber
-              ? normalizeContact(visitor.contactNumber)
-              : undefined;
+            let contactNumber: string | undefined;
+            if (visitor.contactNumber) {
+              try {
+                const parsed = phoneUtil.parseAndKeepRawInput(
+                  visitor.contactNumber,
+                );
+                const nationalNumber =
+                  parsed.getNationalNumber()?.toString() || undefined;
+                contactNumber = nationalNumber
+                  ? `${visitor.countryCode}${nationalNumber}`
+                  : normalizeContact(visitor.contactNumber);
+              } catch {
+                contactNumber = normalizeContact(visitor.contactNumber);
+              }
+            }
 
             // Add visitor
             const addVisitorPayload: AddVisitorPayload = {
@@ -1060,39 +1088,45 @@ function CreateVisit() {
 
                 {/* Contact Number */}
                 <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
+                  <MuiTelInput
                     fullWidth
                     size="small"
-                    type="tel"
                     label="Contact Number"
-                    placeholder="+94 7X XXX XXXX"
                     value={visitor.contactNumber || ""}
-                    disabled={visitor.status === VisitorStatus.Completed}
-                    error={!!visitorErrors[idx]?.contactNumber}
-                    helperText={visitorErrors[idx]?.contactNumber}
-                    onChange={(e) => {
-                      const contact = e.target.value;
-                      updateVisitor(idx, "contactNumber", contact);
+                    onChange={(newValue, info) => {
+                      updateVisitor(idx, "contactNumber", newValue);
+                      if (info?.countryCallingCode) {
+                        updateVisitor(
+                          idx,
+                          "countryCode",
+                          `+${info.countryCallingCode}`,
+                        );
+                      }
                       clearVisitorError(idx, "contactNumber");
 
                       if (visitor.emailAddress) return;
 
+                      const contact = newValue.replace(/\D/g, "");
                       if (visitorDebounceRefs.current[idx]) {
                         clearTimeout(visitorDebounceRefs.current[idx]!);
                       }
                       visitorDebounceRefs.current[idx] = setTimeout(() => {
-                        const cleaned = contact.replace(/\D/g, "");
-                        if (visitor.status === VisitorStatus.Draft && cleaned) {
+                        if (visitor.status === VisitorStatus.Draft && contact) {
                           updateVisitor(idx, "name", "");
                           updateVisitor(idx, "emailAddress", "");
                           fetchVisitorByEmailOrContact(
-                            normalizeContact(contact),
+                            normalizeContact(newValue),
                             idx,
                           );
                         }
                         delete visitorDebounceRefs.current[idx];
                       }, 600);
                     }}
+                    defaultCountry="LK"
+                    forceCallingCode
+                    disabled={visitor.status === VisitorStatus.Completed}
+                    error={!!visitorErrors[idx]?.contactNumber}
+                    helperText={visitorErrors[idx]?.contactNumber}
                     sx={textFieldSx}
                   />
                 </Grid>
