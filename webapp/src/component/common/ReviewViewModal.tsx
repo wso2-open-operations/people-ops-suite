@@ -1,25 +1,36 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   fetchSelectedReview,
   updateSelectedReview,
   selectSelectedThreeSixtyReview,
   selectSelectedThreeSixtyReviewStatus,
-} from "@slices/threeSixtyReviewSlice";
+  ParThreeSixtyReviewStatus,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import dayjs from "dayjs";
 import { useEffect } from "react";
 import utc from "dayjs/plugin/utc";
 import CommentPaper from "./CommentPaper";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { ParCycle, ParThreeSixtyReviewStatus, RequestState } from "@utils/types";
+import { RequestState } from "@utils/types";
 import { Typography, Button, Grid, Box, Divider, Avatar, Chip } from "@mui/material";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 dayjs.extend(utc);
 
 interface ReviewViewModalProps {
@@ -98,12 +109,12 @@ export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject
           {threeSixtyReviewContent.reviewStatus !== ParThreeSixtyReviewStatus.REJECTED && (
             <Box sx={{ mb: 3 }}>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={2}>
+                <Grid size={{ xs: 12, sm: 2 }}>
                   <Typography variant="body1" fontWeight="medium">
                     Rating:
                   </Typography>
                 </Grid>
-                <Grid item xs={12} sm={10}>
+                <Grid size={{ xs: 12, sm: 10 }}>
                   <Chip size="small" label={threeSixtyReviewContent.reviewRating} color="primary" variant="outlined" />
                 </Grid>
               </Grid>

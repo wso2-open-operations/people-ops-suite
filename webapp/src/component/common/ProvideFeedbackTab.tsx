@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -29,23 +38,25 @@ import {
 } from "@mui/material";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import { FeedbackTypes, ParThreeSixtyReviewStatus, RequestState, ThreeSixtyReviewRequest } from "@utils/types";
-import ParStatusChip from "@components/common/ParStatusChip";
+import { RequestState } from "@utils/types";
+import ParStatusChip from "@component/common/ParStatusChip";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { selectEmployeeMap } from "@slices/metaSlice";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import {
   fetchRequests,
+  ParThreeSixtyReviewStatus,
   selectThreeSixtyReviewRequests,
   selectThreeSixtyReviewStatus,
-} from "@slices/threeSixtyReviewSlice";
-import { selectUserEmail } from "@slices/authSlice";
-import { selectCurrentCycle } from "@slices/parCycleSlice";
+  ThreeSixtyReviewRequest,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { selectCurrentParCycleOfEmployee } from "@slices/employeeSlice";
-import { ReviewProvideModal } from "@views/ongoingCycleView/components/ReviewProvideModal";
-import { CustomModal } from "@components/common/CustomModal";
-import OfferFeedbackView from "../../views/ongoingCycleView/components/OfferFeedbackView";
-import { LoadingEffect } from "@components/ui/Loading";
+import { selectCurrentParCycleOfEmployee } from "@slices/employeeSlice/employee";
+import { ReviewProvideModal } from "@view/ongoingCycleView/components/ReviewProvideModal";
+import { CustomModal } from "@component/common/CustomModal";
+import OfferFeedbackView from "@view/ongoingCycleView/components/OfferFeedbackView";
+import { LoadingEffect } from "@component/ui/Loading";
 import CloseIcon from "@mui/icons-material/Close";
 import dayjs from "dayjs";
 import AddIcon from "@mui/icons-material/Add";
@@ -55,6 +66,11 @@ import MailIcon from "@mui/icons-material/Mail";
 import SendIcon from "@mui/icons-material/Send";
 import { tokens } from "../../theme";
 import NoDataView from "./NoDataView";
+
+export enum FeedbackTypes {
+  OFFERED = "offered",
+  REQUESTED = "requested",
+}
 
 export const ProvideFeedbackTab = () => {
   const theme = useTheme();
@@ -208,9 +224,8 @@ export const ProvideFeedbackTab = () => {
     return reviewRequests;
   }, [reviewRequests, filterValue]);
 
-  const noDataMessage = `No ${
-    filterValue === FeedbackTypes.OFFERED ? "voluntary" : filterValue === FeedbackTypes.REQUESTED ? "requested" : ""
-  } feedback available`;
+  const noDataMessage = `No ${filterValue === FeedbackTypes.OFFERED ? "voluntary" : filterValue === FeedbackTypes.REQUESTED ? "requested" : ""
+    } feedback available`;
 
   return (
     <React.Fragment>
@@ -398,8 +413,8 @@ export const ProvideFeedbackTab = () => {
                       </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         {!isEmployeeOrLeadRequested &&
-                        request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
-                        isDeadlinePassed ? (
+                          request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
+                          isDeadlinePassed ? (
                           <Chip
                             size="small"
                             label="Abandoned"
@@ -408,7 +423,9 @@ export const ProvideFeedbackTab = () => {
                               height: "1.23rem",
                               paddingTop: "0.15rem",
                               paddingX: "0.2rem",
-                              backgroundColor: theme.palette.mode === "light" ? colors.grey[900] : colors.grey[600],
+                              backgroundColor: theme.palette.mode === "light"
+                                ? theme.palette.surface.primary.active
+                                : theme.palette.surface.secondary.active,
                             }}
                           />
                         ) : (

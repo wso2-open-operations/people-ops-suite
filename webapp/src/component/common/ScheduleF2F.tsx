@@ -1,9 +1,18 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -35,12 +44,13 @@ import {
   selectMeetingDetails,
   selectAvailableTimeSlots,
   selectAvailabilityStatus,
-} from "@slices/calendarSlice";
+} from "@slices/calendarSlice/calendar";
 import { useDispatch } from "react-redux";
 import { RequestState } from "@utils/types";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AppDispatch, useAppSelector, RootState } from "@slices/store";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+// import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 
@@ -51,6 +61,7 @@ import {
   AccessTime,
 } from "@mui/icons-material";
 import CloseIcon from "@mui/icons-material/Close";
+import dayjs, { Dayjs } from "dayjs";
 
 interface MeetingSchedulerPageProps {
   parRatingId: number;
@@ -104,19 +115,23 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
     [dispatch]
   );
 
-  const handleDateChange = (newValue: Date | null) => {
+const handleDateChange = (newValue: Dayjs | null) => {
     if (newValue) {
-      const year = newValue.getFullYear();
-      const month = String(newValue.getMonth() + 1).padStart(2, "0");
-      const day = String(newValue.getDate()).padStart(2, "0");
-      const formattedDate = `${year}-${month}-${day}`;
+      // Dayjs makes formatting incredibly easy!
+      const formattedDate = newValue.format("YYYY-MM-DD");
 
       setSelectedDate(formattedDate);
-
       dispatch(resetTimeSlot());
-
       checkAvailabilityForDate(formattedDate);
     }
+  };
+
+  // Convert selected date string to Dayjs object for DatePicker
+  const getSelectedDateObject = (): Dayjs | null => {
+    if (selectedDate) {
+      return dayjs(selectedDate);
+    }
+    return null;
   };
 
   // Handle time slot selection
@@ -177,16 +192,9 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
     return "";
   };
 
-  // Convert selected date string to Date object for DatePicker
-  const getSelectedDateObject = (): Date | null => {
-    if (selectedDate) {
-      return new Date(selectedDate);
-    }
-    return null;
-  };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="md">
         <Box p={2}>
           {/* Close Button */}
@@ -212,13 +220,20 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
           </Typography>
           <Box sx={{ mt: 4 }}>
             <Grid container spacing={3}>
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }}>
                 <DatePicker
-                  minDate={new Date()}
                   label="Select Date"
-                  value={getSelectedDateObject()}
-                  onChange={handleDateChange}
-                  renderInput={(params) => <TextField {...params} fullWidth />}
+                  minDate={dayjs()} 
+                  value={getSelectedDateObject()} 
+                  onChange={handleDateChange} 
+                  slots={{
+                    textField: TextField,
+                  }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                    },
+                  }}
                 />
                 {isCheckingAvailability && (
                   <Box sx={{ display: "flex", alignItems: "center", mt: 1 }}>
@@ -279,7 +294,7 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
                 </Typography>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Meeting Title"
@@ -297,7 +312,7 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid size={{ xs: 12 }}>
                     <TextField
                       fullWidth
                       label="Description"

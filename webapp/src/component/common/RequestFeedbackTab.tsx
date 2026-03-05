@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import React, { useEffect, useState } from "react";
 import {
@@ -23,19 +32,20 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { fetchReviewers, selectThreeSixtyReviewers, selectThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
+import { fetchReviewers, selectThreeSixtyReviewers, selectThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
 import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { CustomModal } from "@components/common/CustomModal";
-import { ReviewRequestModal } from "@components/common/ReviewRequestModal";
-import { ParLeadStatus, RequestState } from "@utils/types";
-import { selectCurrentCycle } from "@slices/parCycleSlice";
-import { selectCurrentParCycleOfEmployee, selectEmployeeRatings } from "@slices/employeeSlice";
-import { selectUserEmail } from "@slices/authSlice";
+import { CustomModal } from "@component/common/CustomModal";
+import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
+import { RequestState } from "@utils/types";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { selectCurrentParCycleOfEmployee, selectEmployeeRatings } from "@slices/employeeSlice/employee";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import NoDataView from "./NoDataView";
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 dayjs.extend(utc);
 
 export const RequestFeedbackTab = () => {
