@@ -126,7 +126,7 @@ export const tokens = (mode: PaletteMode) => {
             disabled: alpha(colors.neutral["1600"], 0.35),
           },
           brand: {
-            active: colors.primary["1300"],
+            active: colors.primary.main,
             hover: "#FF730F",
             clicked: "#F55A00",
             disabled: "#F55A0096",
@@ -224,7 +224,7 @@ export const tokens = (mode: PaletteMode) => {
             p2: { active: colors.secondary["1000"], hover: "#FFFFFF", disabled: "#FFFFFF" },
           },
           brand: {
-            p1: { active: colors.primary["1100"], hover: "#FFFFFF", disabled: "#ff730096" },
+            p1: { active: colors.primary.main, hover: "#FFFFFF", disabled: "#ff730096" },
             p2: { active: colors.neutral.white, hover: "#FF6A0096", disabled: "#ffffff96" },
           },
         },

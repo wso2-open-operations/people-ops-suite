@@ -482,12 +482,15 @@ function CreateVisit() {
               visitors.filter((v: any) => v.emailAddress === value).length === 1
             );
           })
-          .when("contactNumber", {
-            is: (contact: string) => !contact?.trim(),
-            then: (schema) =>
-              schema.required("Email address or contact number is required"),
-            otherwise: (schema) => schema.nullable(),
-          }),
+          .test(
+            "email-or-contact-required",
+            "Email address or contact number is required",
+            function (value) {
+              const { contactNumber } = this.parent;
+              return !!(value?.trim() || contactNumber?.trim());
+            },
+          )
+          .nullable(),
 
         contactNumber: Yup.string()
           .test("valid-phone-international", function (value) {
@@ -525,6 +528,14 @@ function CreateVisit() {
               });
             }
           })
+          .test(
+            "contact-or-email-required",
+            "Email address or contact number is required",
+            function (value) {
+              const { emailAddress } = this.parent;
+              return !!(value?.trim() || emailAddress?.trim());
+            },
+          )
           .nullable(),
         countryCode: Yup.string().nullable(),
       }),
@@ -683,6 +694,16 @@ function CreateVisit() {
                     helperText={
                       formik.touched.whoTheyMeet && formik.errors.whoTheyMeet
                     }
+                    onPaste={(e) => {
+                      e.preventDefault();
+                      const pastedText = e.clipboardData?.getData("text") || "";
+                      const extractedEmail = handlePaste(pastedText);
+                      const valueToUse = extractedEmail || pastedText.trim();
+                      setInputValue(valueToUse);
+                      if (valueToUse.length >= 2) {
+                        debouncedEmployeeSearch(extractedEmail);
+                      }
+                    }}
                   />
                 );
               }}
@@ -854,7 +875,14 @@ function CreateVisit() {
             const visitorTouched = formik.touched.visitors?.[idx];
 
             return (
-              <Card key={idx} variant="outlined" sx={{ mb: 3 }}>
+              <Card
+                key={idx}
+                variant="outlined"
+                sx={{
+                  mb: 3,
+                  backgroundColor: "inherit",
+                }}
+              >
                 <CardContent>
                   <Box
                     sx={{
@@ -1061,7 +1089,11 @@ function CreateVisit() {
                           visitorTouched?.contactNumber &&
                           visitorErrors?.contactNumber
                             ? visitorErrors.contactNumber
-                            : ""
+                            : formik.submitCount > 0 &&
+                                !visitor.emailAddress?.trim() &&
+                                !visitor.contactNumber?.trim()
+                              ? "Email address or contact number is required"
+                              : ""
                         }
                       />
                     </Grid>
