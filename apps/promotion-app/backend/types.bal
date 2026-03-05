@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 import promotion_app.database;
+import promotion_app.people;
 
 # Represents the response structure for retrieving user information.
 public type UserInfoResponse record {|
@@ -77,4 +78,38 @@ public type EmployeeJoinedDetails record {
 type Promotions record {
     # array of promotion requests
     database:FullPromotion[] promotionRequests;
+};
+# Result object of the get promotion cycle resource function.
+type PromotionCycles record {
+    # Array of promotion cycles
+    database:PromotionCycle[] promotionCycles;
+};
+
+# Result object of the get employees resource function.
+type Employees record {
+    # List of employees based on the filter Lead or not
+    people:EmployeeInfo[] employees;
+};
+
+// Response type for POST promotion/request/
+# Result object of the Update promotion request resource function.
+type ApplicationInfo record {
+    # New Application ID
+    int applicationID;
+};
+
+# Promotion Request application payload.
+public type Application record {
+    # Promotion cycle id
+    int PromotionCycleID;
+    # Promotion application type
+    string 'type;
+    # Employee email
+    string employeeEmail;
+    # Promoting job band for the special promotion
+    int? promotingJobBand = ();
+    # Promotion recommendation statement for the special promotion
+    string? statement = ();
+    # Promotion recommendation comment for the special promotion
+    string? comment = ();
 };
