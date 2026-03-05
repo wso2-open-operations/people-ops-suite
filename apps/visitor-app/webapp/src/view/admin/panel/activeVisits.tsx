@@ -71,6 +71,7 @@ import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelect
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import Scan from "@view/admin/scan";
+import { reject } from "lodash";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -111,8 +112,6 @@ const ActiveVisits = () => {
 
   const visitsList = visits?.visits ?? [];
   const totalVisits = visits?.totalCount || 0;
-
-  const currentVisit = visitsList.find((v) => String(v.id) === currentVisitId);
 
   useEffect(() => {
     dispatch(
@@ -185,6 +184,8 @@ const ActiveVisits = () => {
             visitId: +visitId,
             status: VisitAction.reject,
             rejectionReason: reason?.trim(),
+            passNumber: null,
+            accessibleLocations: null,
           };
 
           await dispatch(visitStatusUpdate(payload));
@@ -219,6 +220,9 @@ const ActiveVisits = () => {
         const payload = {
           visitId: +visitId,
           status: VisitAction.complete,
+          passNumber: null,
+          accessibleLocations: null,
+          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));
@@ -338,7 +342,7 @@ const ActiveVisits = () => {
       minWidth: 150,
       flex: 1,
       headerAlign: "center",
-      align: "left",
+      align: "center",
       renderCell: (params) => {
         const visit = params.row;
         const isRequested = visit.status === VisitStatus.requested;
@@ -385,69 +389,6 @@ const ActiveVisits = () => {
               </IconButton>
             )}
           </>
-        );
-      },
-    },
-    { field: "nicNumber", headerName: "Visitor NIC", minWidth: 150, flex: 1 },
-    { field: "name", headerName: "Visitor Name", minWidth: 180, flex: 1.5 },
-    { field: "passNumber", headerName: "Pass Number", minWidth: 120, flex: 1 },
-    {
-      field: "contactNumber",
-      headerName: "Contact Number",
-      minWidth: 150,
-      flex: 1,
-    },
-    { field: "email", headerName: "Visitor Email", minWidth: 200, flex: 1.5 },
-    {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
-    },
-    {
-      field: "whomTheyMeet",
-      headerName: "Whom They Meet",
-      minWidth: 170,
-      flex: 1.2,
-    },
-    { field: "purposeOfVisit", headerName: "Purpose", minWidth: 150, flex: 1 },
-    {
-      field: "timeOfEntry",
-      headerName: "Time Of Entry",
-      minWidth: 150,
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? toLocalDateTime(params.value) : "N/A",
-    },
-    {
-      field: "timeOfDeparture",
-      headerName: "Time Of Departure",
-      minWidth: 170,
-      flex: 1,
-      renderCell: (params) =>
-        params.value ? toLocalDateTime(params.value) : "N/A",
-    },
-    { field: "status", headerName: "Status", minWidth: 120, flex: 1 },
-    {
-      field: "accessibleLocations",
-      headerName: "Accessible Locations",
-      minWidth: 100,
-      flex: 1,
-      headerAlign: "center",
-      align: "center",
-      renderCell: (params) => {
-        const locations = params.value || [];
-        return (
-          <Tooltip title="View Attachments" arrow>
-            <IconButton
-              color="info"
-              onClick={() => showViewAccessibleFloors(locations)}
-              title="View Accessible Floors"
-              disabled={locations.length === 0}
-            >
-              <Visibility />
-            </IconButton>
-          </Tooltip>
         );
       },
     },
@@ -559,8 +500,6 @@ const ActiveVisits = () => {
             initialValues={{
               passNumber: "",
               selectedFloorsAndRooms: [],
-              whomTheyMeet: currentVisit?.whomTheyMeet || "",
-              purposeOfVisit: currentVisit?.purposeOfVisit || "",
             }}
             validationSchema={approvalValidationSchema}
             onSubmit={(values) => {
@@ -588,36 +527,6 @@ const ActiveVisits = () => {
                     errors.passNumber
                   }
                   error={touched.passNumber && Boolean(errors.passNumber)}
-                  sx={{ mb: 2 }}
-                />
-                <Field
-                  as={TextField}
-                  name="whomTheyMeet"
-                  label="Whom They Meet"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Enter person to meet"
-                  helperText={
-                    (touched.whomTheyMeet && errors.whomTheyMeet) ??
-                    errors.whomTheyMeet
-                  }
-                  error={touched.whomTheyMeet && Boolean(errors.whomTheyMeet)}
-                  sx={{ mb: 2 }}
-                />
-                <Field
-                  as={TextField}
-                  name="purposeOfVisit"
-                  label="Purpose of Visit"
-                  fullWidth
-                  variant="outlined"
-                  placeholder="Enter purpose of visit"
-                  helperText={
-                    (touched.purposeOfVisit && errors.purposeOfVisit) ??
-                    errors.purposeOfVisit
-                  }
-                  error={
-                    touched.purposeOfVisit && Boolean(errors.purposeOfVisit)
-                  }
                   sx={{ mb: 2 }}
                 />
                 <FloorRoomSelector
