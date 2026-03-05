@@ -41,7 +41,7 @@ const PreLoader = (props: PreLoaderProps) => {
             alignItems="center"
             spacing={2}
           >
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               <Box
                 component="img"
                 src={Wso2Logo}
@@ -54,7 +54,7 @@ const PreLoader = (props: PreLoaderProps) => {
                 }}
               />
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               {props.isLoading && (
                 <LinearProgress
                   sx={{
@@ -63,7 +63,7 @@ const PreLoader = (props: PreLoaderProps) => {
                 />
               )}
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid item xs={12}>
               <Typography
                 variant="inherit"
                 sx={{
