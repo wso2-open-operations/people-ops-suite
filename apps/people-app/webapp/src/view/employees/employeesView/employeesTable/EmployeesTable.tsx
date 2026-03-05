@@ -56,7 +56,7 @@ export default function EmployeesTable() {
 
   const pagination = useMemo<Pagination>(() => ({
     limit: paginationModel.pageSize,
-    offset: paginationModel.page,
+    offset: paginationModel.page * paginationModel.pageSize,
   }), [paginationModel.page, paginationModel.pageSize]) 
 
   const appliedFilter = useMemo(
