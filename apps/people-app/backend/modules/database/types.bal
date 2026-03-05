@@ -203,7 +203,9 @@ public final map<sql:ParameterizedQuery> & readonly SortOrder = {
     "ASC": `ASC`,
     "DESC": `DESC`,
     "asc" : `ASC`,
-    "desc" : `DESC`
+    "desc" : `DESC`,
+    "Asc" : `ASC`,
+    "Desc" : `DESC`
 };
 
 # Employee sort fields with their corresponding database columns.
