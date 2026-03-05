@@ -393,35 +393,39 @@ public isolated function getOrganizationDetails() returns Company|error {
 # Add new business unit.
 #
 # + payload - Add business unit payload
+# + createdBy - Email of the user creating the record
 # + return - Created business unit ID or error
-public isolated function addBusinessUnit(BusinessUnitPayload payload) returns int|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitQuery(payload));
+public isolated function addBusinessUnit(BusinessUnitPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitQuery(createdBy, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
 
 # Add new team.
 #
 # + payload - Add team payload
+# + createdBy - Email of the user creating the record
 # + return - Created team ID or error
-public isolated function addTeam(TeamPayload payload) returns int|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(addTeamQuery(payload));
+public isolated function addTeam(TeamPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addTeamQuery(createdBy, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
 
 # Add new sub team.
 #
 # + payload - Add sub team payload
+# + createdBy - Email of the user creating the record
 # + return - Created sub-team ID or error
-public isolated function addSubTeam(SubTeamPayload payload) returns int|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(addSubTeamQuery(payload));
+public isolated function addSubTeam(SubTeamPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addSubTeamQuery(createdBy, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
 
 # Add new unit.
 #
 # + payload - Add unit payload
+# + createdBy - Email of the user creating the record
 # + return - Created unit ID or error
-public isolated function addUnit(UnitOrgPayload payload) returns int|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(addUnitQuery(payload));
+public isolated function addUnit(UnitOrgPayload payload, string createdBy) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addUnitQuery(createdBy, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
