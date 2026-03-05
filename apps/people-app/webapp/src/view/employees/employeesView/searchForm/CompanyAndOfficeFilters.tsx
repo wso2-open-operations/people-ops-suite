@@ -105,7 +105,6 @@ export function CompanyAndOfficeFilters({
                 getOptionLabel={(office: Office) => office.name}
                 value={offices.find((office: Office) => office.id === value.officeId) ?? null}
                 onChange={(_, selected) => onChangeOffice(selected)}
-                disabled={!value.companyId}
                 renderInput={(params) => (
                   <BaseTextField
                     {...params}
