@@ -44,7 +44,6 @@ import { ConfirmationType, State } from "@utils/types";
 
 interface AddCollectionFormValues {
   collectionName: string;
-  collectionType: string;
 }
 
 const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose }) => {
@@ -54,7 +53,6 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
 
   const validationSchema = yup.object().shape({
     collectionName: yup.string().required(DashboardOverviewMessage.addCollectionModal.nameRequired),
-    collectionType: yup.string().required(DashboardOverviewMessage.addCollectionModal.typeRequired),
   });
 
   useEffect(() => {
@@ -66,7 +64,6 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
   const formik = useFormik<AddCollectionFormValues>({
     initialValues: {
       collectionName: "",
-      collectionType: "",
     },
     validationSchema: validationSchema,
 
@@ -157,34 +154,6 @@ const AddCollectionModal: React.FC<{ toggleClose: () => void }> = ({ toggleClose
                       </FormHelperText>
                     </FormControl>
 
-                    {/* Collection type */}
-                    <FormControl>
-                      <Tooltip title={DashboardOverviewMessage.addCollectionModal.typeTooltip} placement="top">
-                        <TextField
-                          id="collectionType"
-                          label={DashboardOverviewMessage.addCollectionModal.typeLabel}
-                          value={formik.values.collectionType}
-                          error={
-                            formik.touched.collectionType && Boolean(formik.errors.collectionType)
-                          }
-                          name="collectionType"
-                          onChange={(e) => {
-                            formik.setFieldValue("collectionType", e.target.value);
-                          }}
-                        />
-                      </Tooltip>
-                      <FormHelperText
-                        error={
-                          formik.touched.collectionType && Boolean(formik.errors.collectionType)
-                        }
-                      >
-                        <>
-                          {formik.touched.collectionType &&
-                            Boolean(formik.errors.collectionType) &&
-                            formik.errors.collectionType}
-                        </>
-                      </FormHelperText>
-                    </FormControl>
                   </>
                 </>
               </div>
