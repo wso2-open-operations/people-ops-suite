@@ -475,7 +475,13 @@ export default function Request() {
                     }}
                   >
 
-                    <CustomizedTimeline employeeEmail="thejanr@wso2.com" />
+                    {selectedEmployee ? (
+                      <CustomizedTimeline employeeEmail={selectedEmployee.workEmail} />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Please select an employee to view promotion history.
+                      </Typography>
+                    )}
                   </Box>
 
                   <Box
