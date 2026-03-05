@@ -61,13 +61,18 @@ export const UserSlice = createSlice({
       .addCase(getUserInfo.pending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
+        state.errorMessage = null;
       })
       .addCase(getUserInfo.fulfilled, (state, action) => {
         state.userInfo = action.payload.UserInfo;
         state.state = State.success;
+        state.stateMessage = null;
+        state.errorMessage = null;
       })
       .addCase(getUserInfo.rejected, (state, action) => {
         state.state = State.failed;
+        state.userInfo = null;
+        state.stateMessage = null;
         const errorPayload = action.payload as { status?: number } | undefined;
         const errorStatus = errorPayload?.status;
 
