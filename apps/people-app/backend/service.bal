@@ -618,6 +618,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
+    # Delete a vehicle for an employee (soft delete).
+    #
+    # + employeeEmail - Email of the employee who owns the vehicle
+    # + vehicleId - ID of the vehicle to delete
+    # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete employees/[string employeeEmail]/vehicles/[int vehicleId](http:RequestContext ctx)
         returns http:Ok|http:Forbidden|http:InternalServerError|http:BadRequest {
 
@@ -895,6 +900,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
+    # Update the functional lead of a team-sub team mapping.
+    #
+    # + teamId - ID of the team
+    # + subTeamId - ID of the sub team
+    # + payload - Fields to update in the mapping
+    # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId]
             (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -931,6 +942,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
+    # Update the functional lead of a sub team-unit mapping.
+    #
+    # + subTeamId - ID of the sub team
+    # + unitId - ID of the unit
+    # + payload - Fields to update in the mapping
+    # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId]
             (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1217,11 +1234,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Add a new team.
+    # Create a new team, and optionally map it to a business unit.
     #
-    # + payload - Team details
+    # + payload - Team details; include `orgNodeLinkInfo` to map to an existing business unit
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post teams(http:RequestContext ctx, TeamPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1242,8 +1259,27 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addTeam(workEmail, payload);
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addBusinessUnitTeam(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            if result is error {
+                string customErr = "Error while adding a team";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
 
+            return <http:Created>{
+                body: {
+                    message: string `Team ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
         if result is error {
             string customErr = "Error while adding a team";
             log:printError(customErr, result);
@@ -1261,11 +1297,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Add a new sub team.
+    # Create a new sub-team, and optionally map it to a business unit-team.
     #
-    # + payload - Sub team details
+    # + payload - Sub-team details; include `orgNodeLinkInfo` with the `business_unit_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post sub\-teams(http:RequestContext ctx, SubTeamPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post sub\-teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1286,10 +1322,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addSubTeam(workEmail, payload);
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addSubTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            if result is error {
+                string customErr = "Error while adding a sub-team";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
 
+            return <http:Created>{
+                body: {
+                    message: string `Sub-team ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addSubTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
         if result is error {
-            string customErr = "Error while adding a sub team";
+            string customErr = "Error while adding a sub-team";
             log:printError(customErr, result);
             return <http:InternalServerError>{
                 body: {
@@ -1300,16 +1355,16 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return <http:Created>{
             body: {
-                message: string `Sub team ${payload.name} Successfully created`
+                message: string `Sub-team ${payload.name} Successfully created`
             }
         };
     }
 
-    # Add a new unit.
+    # Create a new unit, and optionally map it to a business unit-team-sub-team.
     #
-    # + payload - Unit details
+    # + payload - Unit details; include `orgNodeLinkInfo` with the `business_unit_team_sub_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post units(http:RequestContext ctx, UnitOrgPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post units(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1330,8 +1385,27 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int|error result = database:addUnit(workEmail, payload);
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addUnitWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            if result is error {
+                string customErr = "Error while adding a unit";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
 
+            return <http:Created>{
+                body: {
+                    message: string `Unit ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addUnit(workEmail, {name: payload.name, headEmail: payload.headEmail});
         if result is error {
             string customErr = "Error while adding a unit";
             log:printError(customErr, result);
