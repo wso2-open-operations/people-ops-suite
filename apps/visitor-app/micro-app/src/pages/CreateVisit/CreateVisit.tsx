@@ -517,7 +517,7 @@ function CreateVisit() {
         "Do you want to submit this visitor? This will add the visitor's information to the system.",
         async () => {
           setIsSubmitting(true);
-          setSubmittingMessage("Processing visitor...");
+          setSubmittingMessage("Processing Visitor");
 
           try {
             const idInput =
@@ -574,7 +574,6 @@ function CreateVisit() {
             if (visitor.emailAddress)
               addVisitorPayload.email = visitor.emailAddress;
 
-            setSubmittingMessage("Adding visitor...");
             await addVisitorMutation.mutateAsync(addVisitorPayload);
 
             // Add visit
@@ -606,7 +605,6 @@ function CreateVisit() {
               purposeOfVisit: purposeOfVisit || undefined,
             };
 
-            setSubmittingMessage("Creating visit...");
             await addVisitMutation.mutateAsync(addVisitPayload);
 
             // Mark visitor as completed

@@ -15,32 +15,62 @@
 
 import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
-import CircularProgress from "@mui/material/CircularProgress";
+import { keyframes } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 
 interface BackgroundLoaderProps {
   message?: string;
 }
 
+const pulse = keyframes`
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+  40% { transform: scale(1); opacity: 1; }
+`;
+
 const BackgroundLoader: React.FC<BackgroundLoaderProps> = ({
   message = "Processing...",
 }) => {
   return (
-    <Backdrop open sx={{ zIndex: 9998 }}>
+    <Backdrop
+      open
+      sx={{
+        zIndex: 9998,
+        bgcolor: "rgba(255,255,255,0.65)",
+        backdropFilter: "blur(6px)",
+      }}
+    >
       <Box
         sx={{
-          bgcolor: "white",
-          borderRadius: "16px",
-          p: 3,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 1.5,
-          boxShadow: 6,
+          gap: 2.5,
         }}
       >
-        <CircularProgress size={40} sx={{ color: "#FF7300" }} />
-        <Typography variant="body2" color="text.secondary" fontWeight={500}>
+        <Box sx={{ display: "flex", gap: 1.2 }}>
+          {[0, 1, 2].map((i) => (
+            <Box
+              key={i}
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                bgcolor: "#FF7300",
+                animation: `${pulse} 1.4s ease-in-out infinite`,
+                animationDelay: `${i * 0.16}s`,
+              }}
+            />
+          ))}
+        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#4B5064",
+            fontWeight: 600,
+            fontSize: "0.85rem",
+            letterSpacing: 0.3,
+          }}
+        >
           {message}
         </Typography>
       </Box>
