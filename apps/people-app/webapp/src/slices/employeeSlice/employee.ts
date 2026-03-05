@@ -16,7 +16,7 @@
 
 import { EmergencyContact, State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { SnackMessage } from "@config/constant";
+import { DEFAULT_LIMIT_VALUE, DEFAULT_OFFSET_VALUE, SnackMessage } from "@config/constant";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
@@ -124,10 +124,16 @@ export type Pagination = {
   offset?: number;
 };
 
+export type Sort = {
+  sortField: string;
+  sortOrder: "ASC" | "DESC";
+};
+
 export type EmployeeSearchPayload = {
   searchString?: string;
   filters: Filters;
-  pagination?: Pagination;
+  pagination: Pagination;
+  sort: Sort;
 };
 
 export type CreateEmployeePayload = {
@@ -222,6 +228,14 @@ const initialState: EmployeesState = {
   employeeFilter: {
     filters: {
       employeeStatus: EmployeeStatus.Active,
+    },
+    pagination: {
+      limit: DEFAULT_LIMIT_VALUE,
+      offset: DEFAULT_OFFSET_VALUE,
+    },
+    sort: {
+      sortField: "employeeId",
+      sortOrder: "ASC",
     },
   },
   filteredEmployeesResponseState: State.idle,

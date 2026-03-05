@@ -120,7 +120,6 @@ export function OrganizationTreeFilters({
                 getOptionLabel={(o) => o.name}
                 value={teams.find((t) => t.id === value.teamId) ?? null}
                 onChange={(_, selected) => onChangeTeam(selected)}
-                disabled={!value.businessUnitId}
                 renderInput={(params) => (
                   <BaseTextField
                     {...params}
@@ -140,7 +139,6 @@ export function OrganizationTreeFilters({
                       subTeams.find((st) => st.id === value.subTeamId) ?? null
                     }
                     onChange={(_, selected) => onChangeSubTeam(selected)}
-                    disabled={!value.teamId}
                     renderInput={(params) => (
                       <BaseTextField
                         {...params}
@@ -158,7 +156,6 @@ export function OrganizationTreeFilters({
                         getOptionLabel={(o) => o.name}
                         value={units.find((u) => u.id === value.unitId) ?? null}
                         onChange={(_, selected) => onChangeUnit(selected)}
-                        disabled={!value.subTeamId}
                         renderInput={(params) => (
                           <BaseTextField
                             {...params}

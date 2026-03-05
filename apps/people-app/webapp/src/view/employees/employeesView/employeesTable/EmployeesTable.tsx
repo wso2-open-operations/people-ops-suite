@@ -16,11 +16,13 @@
 
 import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
 import { Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
+import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams, GridSortItem, GridSortModel } from "@mui/x-data-grid";
 import {
   Employee,
   EmployeeSearchPayload,
   fetchFilteredEmployees,
+  Pagination,
+  Sort,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@src/types/types";
@@ -34,20 +36,36 @@ export default function EmployeesTable() {
   const employeeState = useAppSelector((state) => state.employee);
   const navigate = useNavigate();
 
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    pageNumber: 0,
     pageSize: DEFAULT_LIMIT_VALUE,
   });
+
+  const [sortModel, setSortModel] = useState<GridSortModel>([]);
+
+  const sortConfig = useMemo<Sort>(() => {
+    if (sortModel.length === 0) return { sortField: "employeeId", sortOrder: "ASC" };
+    const sortItem : GridSortItem = sortModel[0];
+    const sortField = sortItem.field;
+    if (!sortField || !sortItem.field) return { sortField: "employeeId", sortOrder: "ASC" };
+    return {
+      sortField,
+      sortOrder: sortItem.sort?.toUpperCase() === "ASC" ? "ASC" : "DESC",
+    } satisfies Sort;
+  }, [sortModel])
+
+  const pagination = useMemo<Pagination>(() => ({
+    limit: paginationModel.pageSize,
+    offset: paginationModel.pageNumber,
+  }), [paginationModel.pageNumber, paginationModel.pageSize]) 
 
   const appliedFilter = useMemo(
     () => ({
       ...employeeState.employeeFilter,
-      pagination: {
-        limit: paginationModel.pageSize,
-        offset: paginationModel.page,
-      },
-    } as EmployeeSearchPayload),
-    [employeeState.employeeFilter, paginationModel],
+      pagination: pagination,
+      sort: sortConfig,
+    } satisfies EmployeeSearchPayload),
+    [employeeState.employeeFilter, pagination, sortConfig],
   );
 
   useEffect(() => {
@@ -92,7 +110,6 @@ export default function EmployeesTable() {
       headerName: "Employee",
       flex: 1,
       minWidth: 200,
-      sortable: false,
       valueGetter: (_value, row) => getFullName(row.firstName, row.lastName),
       resizable: false,
       renderCell: (params: GridRenderCellParams<Employee>) => (
@@ -354,9 +371,15 @@ export default function EmployeesTable() {
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPaginationModelChange={(model) => {
             setPaginationModel({
-              page: model.page,
+              pageNumber: model.pageNumber,
               pageSize: model.pageSize,
             });
+          }}
+          sortingMode="server"
+          sortModel={sortModel}
+          onSortModelChange={(model) => {
+            setSortModel(model);
+            setPaginationModel((currentPaginationModel) => ({ ...currentPaginationModel, pageNumber: 0 }));
           }}
           onRowClick={(params) =>
             navigate(`/employees/${params.row.employeeId}`)

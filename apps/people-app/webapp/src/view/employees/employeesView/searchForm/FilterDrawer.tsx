@@ -38,17 +38,11 @@ import {
   Company,
   Designation,
   EmploymentType,
-  fetchDesignations,
-  fetchOffices,
-  fetchSubTeams,
-  fetchTeams,
-  fetchUnits,
   Office,
   SubTeam,
   Team,
   Unit,
 } from "@slices/organizationSlice/organization";
-import { useAppDispatch } from "@slices/store";
 import { useEffect, useState } from "react";
 import {
   CareerFunctionAndDesignationFilters,
@@ -100,7 +94,6 @@ export function FilterDrawer({
   companies,
   offices,
 }: FilterDrawerProps) {
-  const dispatch = useAppDispatch();
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
 
   useEffect(() => {
@@ -110,7 +103,7 @@ export function FilterDrawer({
   }, [drawerOpen, appliedFilter]);
 
   const set = (patch: Partial<Filters>) => {
-    setDraft((p) => ({ filters: { ...p.filters, ...patch } }));
+    setDraft((p) => ({ ...p, filters: { ...p.filters, ...patch } } satisfies EmployeeSearchPayload));
   };
 
   return (
@@ -167,26 +160,13 @@ export function FilterDrawer({
                 subTeams={subTeams}
                 units={units}
                 onChangeBusinessUnit={(selected: BusinessUnit | null) => {
-                  set({
-                    businessUnitId: selected?.id,
-                    teamId: undefined,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  });
-                  if (selected?.id) dispatch(fetchTeams({ id: selected.id }));
+                  set({ businessUnitId: selected?.id });
                 }}
                 onChangeTeam={(selected: Team | null) => {
-                  set({
-                    teamId: selected?.id,
-                    subTeamId: undefined,
-                    unitId: undefined,
-                  });
-                  if (selected?.id)
-                    dispatch(fetchSubTeams({ id: selected.id }));
+                  set({ teamId: selected?.id });
                 }}
                 onChangeSubTeam={(selected: SubTeam | null) => {
-                  set({ subTeamId: selected?.id, unitId: undefined });
-                  if (selected?.id) dispatch(fetchUnits({ id: selected.id }));
+                  set({ subTeamId: selected?.id });
                 }}
                 onChangeUnit={(selected: Unit | null) => {
                   set({ unitId: selected?.id });
@@ -207,14 +187,7 @@ export function FilterDrawer({
                 careerFunctions={careerFunctions}
                 designations={designations}
                 onChangeCareerFunction={(selected: CareerFunction | null) => {
-                  set({
-                    careerFunctionId: selected?.id,
-                    designationId: undefined,
-                  });
-                  if (selected?.id)
-                    dispatch(
-                      fetchDesignations({ careerFunctionId: selected.id }),
-                    );
+                  set({ careerFunctionId: selected?.id });
                 }}
                 onChangeDesignation={(selected: Designation | null) => {
                   set({ designationId: selected?.id });
@@ -235,8 +208,7 @@ export function FilterDrawer({
                 companies={companies}
                 offices={offices}
                 onChangeCompany={(selected: Company | null) => {
-                  set({ companyId: selected?.id || undefined, officeId: undefined });
-                  if (selected?.id) dispatch(fetchOffices({ id: selected.id }));
+                  set({ companyId: selected?.id });
                 }}
                 onChangeOffice={(selected: Office | null) => {
                   set({ officeId: selected?.id });
@@ -351,6 +323,7 @@ export function FilterDrawer({
             color="secondary"
             onClick={() => {
               const nextDraft = {
+                ...draft,
                 filters: {
                   ...draft.filters,
                 },

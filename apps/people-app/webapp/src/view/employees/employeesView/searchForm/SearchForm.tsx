@@ -21,12 +21,13 @@ import {
   SEARCH_REGEX,
   SEARCH_MAX_LENGTH,
 } from "@config/constant";
-import { FilterAlt, FilterAltOutlined } from "@mui/icons-material";
+import { FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
 import GroupsIcon from "@mui/icons-material/Groups";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
+  Badge,
   Button,
   Divider,
   Grid,
@@ -126,14 +127,11 @@ export function SearchForm() {
     dispatch(fetchBusinessUnits());
     dispatch(fetchCareerFunctions());
     dispatch(fetchCompanies());
+    dispatch(fetchTeams({}));
+    dispatch(fetchSubTeams({}));
+    dispatch(fetchUnits({}));
+    dispatch(fetchOffices({}));
   }, [dispatch]);
-
-  const initialCompanyId = useRef<number | undefined>(filterPayload.filters.companyId);
-  useEffect(() => {
-    if (initialCompanyId.current) {
-      dispatch(fetchOffices({ id: initialCompanyId.current }));
-    }
-  }, [dispatch, initialCompanyId]);
 
   const filterRef = useRef<EmployeeSearchPayload>(filterPayload);
   useEffect(() => {
@@ -159,6 +157,7 @@ export function SearchForm() {
           ...patch.filters,
         },
         pagination: patch.pagination ?? filterRef.current.pagination,
+        sort: patch.sort ?? filterRef.current.sort,
       };
       dispatch(setEmployeeFilter(nextPayload));
     },
@@ -176,6 +175,7 @@ export function SearchForm() {
           limit: DEFAULT_LIMIT_VALUE,
           offset: DEFAULT_OFFSET_VALUE,
         },
+        sort: filterRef.current.sort,
       } satisfies EmployeeSearchPayload),
     );
   };
@@ -195,6 +195,7 @@ export function SearchForm() {
       managerEmail,
       companyId,
       officeId,
+      employeeStatus,
     } = filters;
 
     return Boolean(
@@ -208,15 +209,46 @@ export function SearchForm() {
       employmentTypeId ||
       managerEmail ||
       companyId ||
-      officeId,
+      officeId ||
+      employeeStatus,
     );
   }
 
+  // Count how many filters are active
+  const activeFilterCount = useMemo(() => {
+    const {
+      businessUnitId,
+      teamId,
+      subTeamId,
+      unitId,
+      careerFunctionId,
+      designationId,
+      gender,
+      employmentTypeId,
+      managerEmail,
+      companyId,
+      officeId,
+      employeeStatus,
+    } = filterPayload.filters;
+    return [
+      businessUnitId,
+      teamId,
+      subTeamId,
+      unitId,
+      careerFunctionId,
+      designationId,
+      gender,
+      employmentTypeId,
+      managerEmail,
+      companyId,
+      officeId,
+      employeeStatus,
+    ].filter(Boolean).length;
+  }, [filterPayload.filters]);
+
   // Check if any of the filters are active
-  const active = useMemo(
-    () => hasAnyActiveFilters(filterPayload.filters),
-    [filterPayload.filters],
-  );
+  const active = activeFilterCount > 0;
+
   // Derive manager emails
   const managerEmails = useMemo(() => {
     return employeeState.managers.map((manager) => manager.workEmail);
@@ -236,26 +268,10 @@ export function SearchForm() {
         )?.name,
         options: businessUnits,
         getLabel: (businessUnit: BusinessUnit) => businessUnit.name,
-        onChange: (businessUnit: BusinessUnit) => {
-          updateSearchPayload({
-            filters: {
-              businessUnitId: businessUnit.id,
-              teamId: undefined,
-              subTeamId: undefined,
-              unitId: undefined,
-            },
-          });
-          dispatch(fetchTeams({ id: businessUnit.id }));
-        },
+        onChange: (businessUnit: BusinessUnit) =>
+          updateSearchPayload({ filters: { businessUnitId: businessUnit.id } }),
         onClear: () =>
-          updateSearchPayload({
-            filters: {
-              businessUnitId: undefined,
-              teamId: undefined,
-              subTeamId: undefined,
-              unitId: undefined,
-            },
-          }),
+          updateSearchPayload({ filters: { businessUnitId: undefined } }),
       },
       {
         kind: "team",
@@ -263,27 +279,10 @@ export function SearchForm() {
         value: teams.find((team) => team.id === filterPayload.filters.teamId)
           ?.name,
         options: teams,
-        parent: "Business Unit",
-        noParentSelected: !filterPayload.filters.businessUnitId,
         getLabel: (team: Team) => team.name,
-        onChange: (team: Team) => {
-          updateSearchPayload({
-            filters: {
-              teamId: team.id,
-              subTeamId: undefined,
-              unitId: undefined,
-            },
-          });
-          dispatch(fetchSubTeams({ id: team.id }));
-        },
-        onClear: () =>
-          updateSearchPayload({
-            filters: {
-              teamId: undefined,
-              subTeamId: undefined,
-              unitId: undefined,
-            },
-          }),
+        onChange: (team: Team) =>
+          updateSearchPayload({ filters: { teamId: team.id } }),
+        onClear: () => updateSearchPayload({ filters: { teamId: undefined } }),
       },
       {
         kind: "subTeam",
@@ -292,19 +291,11 @@ export function SearchForm() {
           (subTeam) => subTeam.id === filterPayload.filters.subTeamId,
         )?.name,
         options: subTeams,
-        parent: "Team",
-        noParentSelected: !filterPayload.filters.teamId,
         getLabel: (subTeam: SubTeam) => subTeam.name,
-        onChange: (subTeam: SubTeam) => {
-          updateSearchPayload({
-            filters: { subTeamId: subTeam.id, unitId: undefined },
-          });
-          dispatch(fetchUnits({ id: subTeam.id }));
-        },
+        onChange: (subTeam: SubTeam) =>
+          updateSearchPayload({ filters: { subTeamId: subTeam.id } }),
         onClear: () =>
-          updateSearchPayload({
-            filters: { subTeamId: undefined, unitId: undefined },
-          }),
+          updateSearchPayload({ filters: { subTeamId: undefined } }),
       },
       {
         kind: "unit",
@@ -312,8 +303,6 @@ export function SearchForm() {
         value: units.find((unit) => unit.id === filterPayload.filters.unitId)
           ?.name,
         options: units,
-        parent: "Sub Team",
-        noParentSelected: !filterPayload.filters.subTeamId,
         getLabel: (unit: Unit) => unit.name,
         onChange: (unit: Unit) =>
           updateSearchPayload({ filters: { unitId: unit.id } }),
@@ -328,22 +317,12 @@ export function SearchForm() {
         options: careerFunctions,
         getLabel: (careerFunction: CareerFunction) =>
           careerFunction.careerFunction,
-        onChange: (careerFunction: CareerFunction) => {
+        onChange: (careerFunction: CareerFunction) =>
           updateSearchPayload({
-            filters: {
-              careerFunctionId: careerFunction.id,
-              designationId: undefined,
-            },
-          });
-          dispatch(fetchDesignations({ careerFunctionId: careerFunction.id }));
-        },
-        onClear: () =>
-          updateSearchPayload({
-            filters: {
-              careerFunctionId: undefined,
-              designationId: undefined,
-            },
+            filters: { careerFunctionId: careerFunction.id },
           }),
+        onClear: () =>
+          updateSearchPayload({ filters: { careerFunctionId: undefined } }),
       },
       {
         kind: "designation",
@@ -353,8 +332,6 @@ export function SearchForm() {
             designation.id === filterPayload.filters.designationId,
         )?.designation,
         options: designations,
-        parent: "Career Function",
-        noParentSelected: !filterPayload.filters.careerFunctionId,
         getLabel: (designation: Designation) => designation.designation,
         onChange: (designation: Designation) => {
           updateSearchPayload({
@@ -372,16 +349,10 @@ export function SearchForm() {
         )?.name,
         options: companies,
         getLabel: (company: Company) => company.name,
-        onChange: (company: Company) => {
-          updateSearchPayload({
-            filters: { companyId: company.id, officeId: undefined },
-          });
-          dispatch(fetchOffices({ id: company.id }));
-        },
+        onChange: (company: Company) =>
+          updateSearchPayload({ filters: { companyId: company.id } }),
         onClear: () =>
-          updateSearchPayload({
-            filters: { companyId: undefined, officeId: undefined },
-          }),
+          updateSearchPayload({ filters: { companyId: undefined } }),
       },
       {
         kind: "office",
@@ -389,8 +360,6 @@ export function SearchForm() {
         value: offices.find(
           (office) => office.id === filterPayload.filters.officeId,
         )?.name,
-        parent: "Company",
-        noParentSelected: !filterPayload.filters.companyId,
         options: offices,
         getLabel: (office: Office) => office.name,
         onChange: (office: Office) => {
@@ -456,7 +425,6 @@ export function SearchForm() {
       careerFunctions,
       companies,
       designations,
-      dispatch,
       employmentTypes,
       filterPayload.filters.businessUnitId,
       filterPayload.filters.careerFunctionId,
@@ -583,36 +551,84 @@ export function SearchForm() {
           />
         </Grid>
         <Grid item>
-          <Box sx={{ display: "flex", alignItems: "center", height: "40px" }}>
-            <Tooltip title="Filters">
+          <Tooltip
+            title={
+              active
+                ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
+                : "Open filters"
+            }
+          >
+            <Badge
+              badgeContent={activeFilterCount}
+              overlap="circular"
+              sx={{
+                "& .MuiBadge-badge": {
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  fontSize: "0.7rem",
+                  height: 20,
+                  minWidth: 20,
+                  lineHeight: "20px",
+                  padding: "0 4px",
+                  fontWeight: 700,
+                  top: 4,
+                  right: 4,
+                },
+              }}
+            >
               <Button
                 variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  setDrawerOpen(true);
-                }}
+                onClick={() => setDrawerOpen(true)}
+                startIcon={
+                  <FilterAltOutlined
+                    sx={{
+                      fontSize: "20px !important",
+                      color: active
+                        ? theme.palette.primary.main
+                        : "inherit",
+                      transition: "color 0.2s ease",
+                    }}
+                  />
+                }
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
                   textTransform: "none",
-                  p: 1,
                   height: "40px",
+                  px: 2,
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  letterSpacing: 0.5,
+                  transition: "all 0.2s ease",
+                  // Base: standard outlined primary button look
+                  borderColor: active
+                    ? theme.palette.primary.main
+                    : theme.palette.primary.main,
+                  color: active
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary,
+                  backgroundColor: active
+                    ? `${theme.palette.primary.main}18`
+                    : "transparent",
+                  "&:hover": {
+                    borderColor: theme.palette.primary.dark,
+                    color: theme.palette.primary.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? `${theme.palette.primary.main}28`
+                        : `${theme.palette.primary.main}14`,
+                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}44`,
+                  },
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  {active ? (
-                    <FilterAlt sx={{ fontSize: 28 }} />
-                  ) : (
-                    <FilterAltOutlined sx={{ fontSize: 28 }} />
-                  )}
-                </Box>
-                <Typography variant="h5" sx={{ letterSpacing: 1 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  sx={{ letterSpacing: 0.5 }}
+                >
                   Filters
                 </Typography>
               </Button>
-            </Tooltip>
-          </Box>
+            </Badge>
+          </Tooltip>
         </Grid>
       </Grid>
 

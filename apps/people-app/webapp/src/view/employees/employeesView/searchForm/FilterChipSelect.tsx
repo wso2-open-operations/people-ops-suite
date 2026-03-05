@@ -36,8 +36,6 @@ export type FilterChipSelectProps<T> = {
   getLabel: (o: T) => string;
   onChange: (o: T) => void;
   onClear: () => void;
-  parent?: string;
-  noParentSelected?: boolean;
 };
 
 export function FilterChipSelect<T>({
@@ -47,8 +45,6 @@ export function FilterChipSelect<T>({
   getLabel,
   onChange,
   onClear,
-  parent,
-  noParentSelected = false,
 }: FilterChipSelectProps<T>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -147,29 +143,21 @@ export function FilterChipSelect<T>({
     setAnchorEl(null);
   };
 
-  const tooltipTitle =
-    parent && noParentSelected
-      ? `Select ${parent} first`
-      : options.length === 0
-        ? "No options available"
-        : undefined;
+  const tooltipTitle = options.length === 0 ? "No options available" : undefined;
 
   return (
     <>
       <Tooltip title={tooltipTitle} disableHoverListener={!tooltipTitle} arrow>
         <span
           style={{
-            cursor:
-              (parent && noParentSelected) || options.length === 0
-                ? "not-allowed"
-                : "pointer",
+            cursor: options.length === 0 ? "not-allowed" : "pointer",
           }}
         >
           <Chip
             label={chipText}
             clickable={false}
             onClick={openMenu}
-            disabled={noParentSelected || options.length === 0}
+            disabled={options.length === 0}
             deleteIcon={
               <Box
                 sx={{

@@ -105,7 +105,6 @@ export function CareerFunctionAndDesignationFilters({
                 getOptionLabel={(o) => o.designation}
                 value={designations.find((d) => d.id === value.designationId) ?? null}
                 onChange={(_, selected) => onChangeDesignation(selected)}
-                disabled={!value.careerFunctionId}
                 renderInput={(params) => (
                   <BaseTextField
                     {...params}
