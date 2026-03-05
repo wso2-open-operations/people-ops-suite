@@ -34,6 +34,8 @@ import {
   Checkbox,
   Chip,
   Stack,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { useFormikContext } from "formik";
 import * as Yup from "yup";
@@ -62,8 +64,8 @@ import {
   LocationOnOutlined,
   EventOutlined,
   SupervisorAccountOutlined,
-  PhoneOutlined,
-  HighlightOff as CloseIcon,
+  InfoOutlined,
+  Close,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -73,8 +75,15 @@ const SECTION_ICONS = {
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
   supervisor: <SupervisorAccountOutlined />,
-  phone: <PhoneOutlined />,
 };
+
+const SECTION_HEADER_BOX_SX = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1.5,
+  mb: 3,
+  mt: 4,
+} as const;
 
 export const jobInfoValidationSchema = Yup.object().shape({
   workEmail: Yup.string()
@@ -85,7 +94,6 @@ export const jobInfoValidationSchema = Yup.object().shape({
     .max(45, "EPF must be at most 45 characters")
     .transform((value) => (value === "" ? null : value))
     .nullable(),
-  secondaryJobTitle: Yup.string().required("Secondary job title is required"),
   businessUnitId: Yup.number()
     .required("Business unit is required")
     .min(1, "Select a valid business unit"),
@@ -102,6 +110,7 @@ export const jobInfoValidationSchema = Yup.object().shape({
   designationId: Yup.number()
     .required("Designation is required")
     .min(1, "Select a valid designation"),
+  secondaryJobTitle: Yup.string().required("Secondary job title is required"),
   companyId: Yup.number()
     .required("Company is required")
     .min(1, "Select a valid company"),
@@ -144,6 +153,59 @@ const SectionHeader = React.memo(
     );
   },
 );
+
+const ContinuousServiceTooltip = React.memo(
+  ({ record }: { record: any }) => {
+    if (!record) return null;
+
+    const fields = [
+      { label: "Employee ID", value: record.employeeId },
+      {
+        label: "Name",
+        value: `${record.firstName || ""} ${record.lastName || ""}`.trim(),
+      },
+      { label: "Designation", value: record.designation },
+      { label: "Work Location", value: record.workLocation },
+      {
+        label: "Start Date",
+        value: dayjs(record.startDate).format("YYYY-MM-DD"),
+      },
+      { label: "Manager Email", value: record.managerEmail },
+      { label: "Additional Managers", value: record.additionalManagerEmails },
+      { label: "Business Unit", value: record.businessUnit },
+      { label: "Team", value: record.team },
+      ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
+      ...(record.unit ? [{ label: "Unit", value: record.unit }] : []),
+    ];
+
+    return (
+      <Box sx={{ p: 1, maxWidth: 400 }}>
+        <Typography variant="caption" fontWeight={600}>
+          Continuous Service Record Details
+        </Typography>
+        {fields.map((f) => (
+          <Typography key={f.label} variant="caption" display="block">
+            <strong>{f.label}:</strong> {f.value || "N/A"}
+          </Typography>
+        ))}
+      </Box>
+    );
+  },
+);
+
+const InfoTooltipAdornment = React.memo(({ record }: { record: any }) => (
+  <InputAdornment position="end">
+    <Tooltip
+      title={<ContinuousServiceTooltip record={record} />}
+      placement="top"
+      arrow
+    >
+      <IconButton size="small" sx={{ p: 0.5 }}>
+        <InfoOutlined fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  </InputAdornment>
+));
 
 export default function JobInfoStep() {
   const theme = useTheme();
@@ -428,13 +490,7 @@ export default function JobInfoStep() {
         <SectionHeader
           icon={SECTION_ICONS.badge}
           title="Identity"
-          headerBoxSx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            mb: 3,
-            mt: 4,
-          }}
+          headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
@@ -462,67 +518,7 @@ export default function JobInfoStep() {
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <Tooltip
-              title={
-                continuousServiceRecord && !errorMessage ? (
-                  <Box sx={{ p: 1, maxWidth: 400 }}>
-                    <Typography variant="caption" fontWeight={600}>
-                      Continuous Service Record Details
-                    </Typography>
-
-                    {(() => {
-                      const record =
-                        selectedRecordIndex !== null
-                          ? continuousServiceRecord[selectedRecordIndex]
-                          : continuousServiceRecord[0];
-
-                      if (!record) return null;
-
-                      const fields = [
-                        { label: "Employee ID", value: record.employeeId },
-                        {
-                          label: "Name",
-                          value: `${record.firstName || ""} ${
-                            record.lastName || ""
-                          }`.trim(),
-                        },
-                        { label: "Designation", value: record.designation },
-                        { label: "Work Location", value: record.workLocation },
-                        {
-                          label: "Start Date",
-                          value: dayjs(record.startDate).format("YYYY-MM-DD"),
-                        },
-                        { label: "Manager Email", value: record.managerEmail },
-                        {
-                          label: "Additional Managers",
-                          value: record.additionalManagerEmails,
-                        },
-                        { label: "Business Unit", value: record.businessUnit },
-                        { label: "Team", value: record.team },
-                        ...(record.subTeam
-                          ? [{ label: "Sub Team", value: record.subTeam }]
-                          : []),
-                        ...(record.unit
-                          ? [{ label: "Unit", value: record.unit }]
-                          : []),
-                      ];
-
-                      return fields.map((f) => (
-                        <Typography
-                          key={f.label}
-                          variant="caption"
-                          display="block"
-                        >
-                          <strong>{f.label}:</strong> {f.value || "N/A"}
-                        </Typography>
-                      ));
-                    })()}
-                  </Box>
-                ) : null
-              }
-              placement="top"
-              arrow
-            >
+            <Box>
               {continuousServiceRecord?.length === 1 ? (
                 <TextField
                   fullWidth
@@ -532,7 +528,18 @@ export default function JobInfoStep() {
                   sx={{
                     ...textFieldSx,
                     ...disabledSx,
-                    cursor: "pointer",
+                  }}
+                  InputProps={{
+                    endAdornment:
+                      continuousServiceRecord && !errorMessage ? (
+                        <InfoTooltipAdornment
+                          record={
+                            selectedRecordIndex !== null
+                              ? continuousServiceRecord[selectedRecordIndex]
+                              : continuousServiceRecord[0]
+                          }
+                        />
+                      ) : undefined,
                   }}
                 />
               ) : continuousServiceRecord?.length > 1 ? (
@@ -550,11 +557,23 @@ export default function JobInfoStep() {
                     );
                   }}
                   disabled={!!errorMessage}
-                  sx={{ ...textFieldSx, cursor: "pointer" }}
+                  sx={{ ...textFieldSx }}
                   helperText={
                     errorMessage ? "Failed to fetch record" : undefined
                   }
                   error={!!errorMessage}
+                  InputProps={{
+                    endAdornment:
+                      continuousServiceRecord && !errorMessage ? (
+                        <InfoTooltipAdornment
+                          record={
+                            selectedRecordIndex !== null
+                              ? continuousServiceRecord[selectedRecordIndex]
+                              : continuousServiceRecord[0]
+                          }
+                        />
+                      ) : undefined,
+                  }}
                 >
                   {continuousServiceRecord.map((rec, idx) => (
                     <MenuItem key={idx} value={idx}>
@@ -578,20 +597,20 @@ export default function JobInfoStep() {
                   }}
                 />
               )}
-            </Tooltip>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={!!values.isRelocation}
-                  onChange={(e) => handleRelocationChange(e.target.checked)}
-                />
-              }
-              label="Relocation"
-            />
-          </Grid>
 
+              <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={!!values.isRelocation}
+                      onChange={(e) => handleRelocationChange(e.target.checked)}
+                    />
+                  }
+                  label="Relocation"
+                />
+              </Box>
+            </Box>
+          </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <TextField
               fullWidth
@@ -605,35 +624,13 @@ export default function JobInfoStep() {
               sx={textFieldSx}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              required
-              label="Secondary Job Title"
-              name="secondaryJobTitle"
-              value={values.secondaryJobTitle ?? ""}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              error={Boolean(
-                touched.secondaryJobTitle && errors.secondaryJobTitle,
-              )}
-              helperText={touched.secondaryJobTitle && errors.secondaryJobTitle}
-              sx={textFieldSx}
-            />
-          </Grid>
         </Grid>
       </Box>
       <Box>
         <SectionHeader
           icon={SECTION_ICONS.work}
           title="Job & Team"
-          headerBoxSx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            mb: 3,
-            mt: 4,
-          }}
+          headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
@@ -839,6 +836,22 @@ export default function JobInfoStep() {
               )}
             </TextField>
           </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              fullWidth
+              required
+              label="Secondary Job Title"
+              name="secondaryJobTitle"
+              value={values.secondaryJobTitle ?? ""}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={Boolean(
+                touched.secondaryJobTitle && errors.secondaryJobTitle,
+              )}
+              helperText={touched.secondaryJobTitle && errors.secondaryJobTitle}
+              sx={textFieldSx}
+            />
+          </Grid>
         </Grid>
       </Box>
 
@@ -846,13 +859,7 @@ export default function JobInfoStep() {
         <SectionHeader
           icon={SECTION_ICONS.location}
           title="Location & Office"
-          headerBoxSx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            mb: 3,
-            mt: 4,
-          }}
+          headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
@@ -956,17 +963,11 @@ export default function JobInfoStep() {
         <SectionHeader
           icon={SECTION_ICONS.event}
           title="Dates & Status"
-          headerBoxSx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            mb: 3,
-            mt: 4,
-          }}
+          headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <TextField
               select
               fullWidth
@@ -1000,7 +1001,7 @@ export default function JobInfoStep() {
               )}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1018,7 +1019,7 @@ export default function JobInfoStep() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Probation End Date"
               value={
@@ -1044,7 +1045,7 @@ export default function JobInfoStep() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Agreement End Date"
               value={
@@ -1077,13 +1078,7 @@ export default function JobInfoStep() {
         <SectionHeader
           icon={SECTION_ICONS.supervisor}
           title="Manager & Reports"
-          headerBoxSx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            mb: 3,
-            mt: 4,
-          }}
+          headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
@@ -1161,7 +1156,7 @@ export default function JobInfoStep() {
                           setFieldValue("additionalManagerEmail", updated);
                         }}
                         deleteIcon={
-                          <CloseIcon
+                          <Close
                             fontSize="small"
                             sx={{ color: "error.main" }}
                             aria-label={`Remove ${email}`}

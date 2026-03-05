@@ -254,12 +254,36 @@ export default function PersonalInfoStep() {
     [values, errors, touched, handleChange, handleBlur, textFieldSx],
   );
 
+  const nameFields = useMemo(
+    () => [
+      { field: "firstName", label: "First Name", sm: 3, md: 3, required: true },
+      { field: "lastName", label: "Last Name", sm: 3, md: 3, required: true },
+      {
+        field: "nicOrPassport",
+        label: "NIC/Passport",
+        sm: 3,
+        md: 4,
+        required: true,
+      },
+    ],
+    [],
+  );
+
+  const contactFields = useMemo(
+    () => [
+      { field: "personalEmail", label: "Personal Email" },
+      { field: "personalPhone", label: "Personal Phone" },
+      { field: "residentNumber", label: "Resident Number" },
+    ],
+    [],
+  );
+
   return (
     <Box sx={{ width: "100%", px: 0 }}>
       <Box sx={{ mt: 1 }}>
         <SectionHeader icon={PERSONAL_INFO_ICONS.person} title="Identity" />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid item xs={12} sm={3} md={2}>
             <TextField
               select
               fullWidth
@@ -285,16 +309,12 @@ export default function PersonalInfoStep() {
             </TextField>
           </Grid>
 
-          {["firstName", "lastName", "nicOrPassport"].map((f) => (
-            <Grid item xs={12} sm={6} md={4} key={f}>
+          {nameFields.map(({ field, label, sm, md, required }) => (
+            <Grid item xs={12} sm={sm} md={md} key={field}>
               {renderField(
-                f as keyof CreateEmployeeFormValues["personalInfo"],
-                f === "nicOrPassport"
-                  ? "NIC/Passport"
-                  : f
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase()),
-                f === "firstName" || f === "lastName" || f === "nicOrPassport",
+                field as keyof CreateEmployeeFormValues["personalInfo"],
+                label,
+                required,
               )}
             </Grid>
           ))}
@@ -359,28 +379,20 @@ export default function PersonalInfoStep() {
               ))}
             </TextField>
           </Grid>
-          {["nationality"].map((f) => (
-            <Grid item xs={12} sm={6} md={4} key={f}>
-              {renderField(
-                f as keyof CreateEmployeeFormValues["personalInfo"],
-                f[0].toUpperCase() + f.slice(1),
-                f === "nationality",
-              )}
-            </Grid>
-          ))}
+          <Grid item xs={12} sm={6} md={4}>
+            {renderField("nationality", "Nationality", true)}
+          </Grid>
         </Grid>
       </Box>
 
       <Box sx={{ mt: 5 }}>
         <SectionHeader icon={PERSONAL_INFO_ICONS.contact} title="Contact" />
         <Grid container spacing={3}>
-          {["personalEmail", "personalPhone", "residentNumber"].map((f) => (
-            <Grid item xs={12} sm={6} md={4} key={f}>
+          {contactFields.map(({ field, label }) => (
+            <Grid item xs={12} sm={6} md={4} key={field}>
               {renderField(
-                f as keyof CreateEmployeeFormValues["personalInfo"],
-                f
-                  .replace(/([A-Z])/g, " $1")
-                  .replace(/^./, (str) => str.toUpperCase()),
+                field as keyof CreateEmployeeFormValues["personalInfo"],
+                label,
               )}
             </Grid>
           ))}
@@ -492,8 +504,9 @@ export default function PersonalInfoStep() {
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "center",
+                  justifyContent: "flex-start",
                   mt: values.personalInfo.emergencyContacts?.length > 0 ? 0 : 2,
+                  ml: 0,
                 }}
               >
                 <IconButton
