@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -35,30 +35,37 @@ const initialState: WifiInfo = {
   error: null,
 };
 
-export const fetchWifiDetails = createAsyncThunk<WifiInfo>(
-  "wifi/fetchWifiDetails",
-  (_, { dispatch, rejectWithValue }) => {
-    return new Promise<WifiInfo>(async (resolve, reject) => {
-      APIService.getInstance()
-        .get(AppConfig.serviceUrls.wifi, {})
-        .then((response: any) => {
-          resolve(response.data);
-        })
-        .catch((error: any) => {
-          if (axios.isAxiosError(error)) {
-            if (error.response?.status === HttpStatusCode.Unauthorized) {
-              dispatch(
-                enqueueSnackbarMessage({
-                  message: "You are not authorized to access WiFi details.",
-                  type: "error",
-                })
-              );
-            }
-          }
-          reject(rejectWithValue("Failed to fetch WiFi details"));
-        });
-    });
-  }
+export const createWifiAccount = createAsyncThunk<
+  WifiInfo,
+  { username: string; password: string }
+>(
+  "wifi/createWifiAccount",
+  async (credentials, { dispatch, rejectWithValue }) => {
+    try {
+      await APIService.getInstance().post(
+        AppConfig.serviceUrls.wifi,
+        credentials,
+      );
+      return {
+        ssid: credentials.username,
+        password: credentials.password,
+        loading: false,
+        error: null,
+      };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === HttpStatusCode.Unauthorized) {
+          dispatch(
+            enqueueSnackbarMessage({
+              message: "You are not authorized to create WiFi accounts.",
+              type: "error",
+            }),
+          );
+        }
+      }
+      return rejectWithValue("Failed to create WiFi account");
+    }
+  },
 );
 
 export const wifiSlice = createSlice({
@@ -67,19 +74,19 @@ export const wifiSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchWifiDetails.pending, (state) => {
+      .addCase(createWifiAccount.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchWifiDetails.fulfilled, (state, action) => {
+      .addCase(createWifiAccount.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
         state.ssid = action.payload.ssid;
         state.password = action.payload.password;
       })
-      .addCase(fetchWifiDetails.rejected, (state, action) => {
+      .addCase(createWifiAccount.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error?.message || "Failed to load WiFi details";
+        state.error = action.error?.message || "Failed to create WiFi account";
         state.ssid = "";
         state.password = "";
       });
