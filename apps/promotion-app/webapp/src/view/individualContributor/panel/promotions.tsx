@@ -64,9 +64,7 @@ export default function Request() {
 
         dispatch(fetchActivePromotionCycle());
     
-        dispatch(fetchEmployees({
-            statusArray: ["OPEN"]
-        }));
+        dispatch(fetchEmployees());
     };
 
     useEffect(() => {

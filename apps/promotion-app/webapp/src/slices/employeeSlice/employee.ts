@@ -56,20 +56,13 @@ const initialState: EmployeesState = {
 
 export const fetchEmployees = createAsyncThunk(
   "employee/fetchEmployees",
-  async ({
-      statusArray,
-    }: {
-      statusArray?: string[];
-    }, { getState, dispatch, rejectWithValue }) => {
+  async (_, { getState, dispatch, rejectWithValue }) => {
     const { userInfo } = (getState() as { user: UserState }).user;
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Employee[]>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.employees, {
-          params: {
-            statusArray: statusArray?.join(","),
-          },
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
