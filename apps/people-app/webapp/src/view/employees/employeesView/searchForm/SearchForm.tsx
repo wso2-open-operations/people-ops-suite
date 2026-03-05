@@ -27,6 +27,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
+  Badge,
   Button,
   Divider,
   Grid,
@@ -195,6 +196,7 @@ export function SearchForm() {
       managerEmail,
       companyId,
       officeId,
+      employeeStatus,
     } = filters;
 
     return Boolean(
@@ -208,15 +210,46 @@ export function SearchForm() {
       employmentTypeId ||
       managerEmail ||
       companyId ||
-      officeId,
+      officeId ||
+      employeeStatus,
     );
   }
 
+  // Count how many filters are active
+  const activeFilterCount = useMemo(() => {
+    const {
+      businessUnitId,
+      teamId,
+      subTeamId,
+      unitId,
+      careerFunctionId,
+      designationId,
+      gender,
+      employmentTypeId,
+      managerEmail,
+      companyId,
+      officeId,
+      employeeStatus,
+    } = filterPayload.filters;
+    return [
+      businessUnitId,
+      teamId,
+      subTeamId,
+      unitId,
+      careerFunctionId,
+      designationId,
+      gender,
+      employmentTypeId,
+      managerEmail,
+      companyId,
+      officeId,
+      employeeStatus,
+    ].filter(Boolean).length;
+  }, [filterPayload.filters]);
+
   // Check if any of the filters are active
-  const active = useMemo(
-    () => hasAnyActiveFilters(filterPayload.filters),
-    [filterPayload.filters],
-  );
+  const active = activeFilterCount > 0;
+
   // Derive manager emails
   const managerEmails = useMemo(() => {
     return employeeState.managers.map((manager) => manager.workEmail);
@@ -583,36 +616,84 @@ export function SearchForm() {
           />
         </Grid>
         <Grid item>
-          <Box sx={{ display: "flex", alignItems: "center", height: "40px" }}>
-            <Tooltip title="Filters">
+          <Tooltip
+            title={
+              active
+                ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
+                : "Open filters"
+            }
+          >
+            <Badge
+              badgeContent={activeFilterCount}
+              overlap="circular"
+              sx={{
+                "& .MuiBadge-badge": {
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.primary.contrastText,
+                  fontSize: "0.7rem",
+                  height: 20,
+                  minWidth: 20,
+                  lineHeight: "20px",
+                  padding: "0 4px",
+                  fontWeight: 700,
+                  top: 4,
+                  right: 4,
+                },
+              }}
+            >
               <Button
                 variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  setDrawerOpen(true);
-                }}
+                onClick={() => setDrawerOpen(true)}
+                startIcon={
+                  <FilterAltOutlined
+                    sx={{
+                      fontSize: "20px !important",
+                      color: active
+                        ? theme.palette.primary.main
+                        : "inherit",
+                      transition: "color 0.2s ease",
+                    }}
+                  />
+                }
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
                   textTransform: "none",
-                  p: 1,
                   height: "40px",
+                  px: 2,
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  letterSpacing: 0.5,
+                  transition: "all 0.2s ease",
+                  // Base: standard outlined primary button look
+                  borderColor: active
+                    ? theme.palette.primary.main
+                    : theme.palette.primary.main,
+                  color: active
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary,
+                  backgroundColor: active
+                    ? `${theme.palette.primary.main}18`
+                    : "transparent",
+                  "&:hover": {
+                    borderColor: theme.palette.primary.dark,
+                    color: theme.palette.primary.main,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? `${theme.palette.primary.main}28`
+                        : `${theme.palette.primary.main}14`,
+                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}44`,
+                  },
                 }}
               >
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  {active ? (
-                    <FilterAlt sx={{ fontSize: 28 }} />
-                  ) : (
-                    <FilterAltOutlined sx={{ fontSize: 28 }} />
-                  )}
-                </Box>
-                <Typography variant="h5" sx={{ letterSpacing: 1 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  sx={{ letterSpacing: 0.5 }}
+                >
                   Filters
                 </Typography>
               </Button>
-            </Tooltip>
-          </Box>
+            </Badge>
+          </Tooltip>
         </Grid>
       </Grid>
 
