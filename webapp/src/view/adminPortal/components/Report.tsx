@@ -1,21 +1,31 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
-import { ParCycle, ParReportEntry, RequestState } from "@utils/types";
+import { RequestState } from "@utils/types";
 import { Box, IconButton, Link, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
   fetchReportData,
+  ParReportEntry,
   selectReportData,
   selectReportStatus,
-} from "@slices/reportSlice";
-import { LoadingEffect } from "@components/ui/Loading";
+} from "@slices/reportSlice/report";
+import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
 import {
   DataGrid,
@@ -24,8 +34,9 @@ import {
   GridToolbar,
   GridToolbarExportContainer,
 } from "@mui/x-data-grid";
-import ParStatusChip from "@components/common/ParStatusChip";
+import ParStatusChip from "@component/common/ParStatusChip";
 import { getSpecialRatingEnum, getSpecialRatingLabel } from "@utils/utils";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface ReportProps {
   parCycle: Partial<ParCycle>;
@@ -53,13 +64,13 @@ export const Report = ({
 
   const columns: GridColDef[] = [
     { field: "parEmployeeEmail", headerName: "Employee Email", flex: 1 },
-    { field: "parCompany", headerName: "Company", flex: 0.5, hide: true },
-    { field: "parLocation", headerName: "Location", flex: 0.5, hide: true },
+    { field: "parCompany", headerName: "Company", flex: 0.5 },
+    { field: "parLocation", headerName: "Location", flex: 0.5 },
     { field: "parBusinessUnit", headerName: "Business Unit", flex: 1 },
     { field: "parDepartment", headerName: "Department", flex: 1 },
     { field: "parTeam", headerName: "Team", flex: 1 },
     { field: "parSubTeam", headerName: "Sub Team", flex: 1 },
-    { field: "parLeadEmail", headerName: "Lead Email", flex: 1, hide: true },
+    { field: "parLeadEmail", headerName: "Lead Email", flex: 1, },
     {
       field: "parRating",
       headerName: "Rating",
@@ -149,31 +160,36 @@ export const Report = ({
             sx={{ p: 1, gap: 2 }}
             rows={usableReportData}
             columns={columns}
-            pageSize={100}
-            rowsPerPageOptions={[100]}
-            components={{
-              Toolbar: GridToolbar,
+            disableRowSelectionOnClick
+            pageSizeOptions={[100]}
+            slots={{
+              toolbar: GridToolbar,
             }}
-            disableSelectionOnClick
-            componentsProps={{
+            slotProps={{
               toolbar: {
                 showQuickFilter: true,
                 quickFilterProps: { debounceMs: 500 },
-                value: searchText,
-                onChange: (event: ChangeEvent<HTMLInputElement>) =>
-                  setSearchText(event.target.value),
-                components: [GridToolbarExportContainer],
               },
             }}
             initialState={{
+              columns: {
+                columnVisibilityModel: {
+                  parCompany: false,
+                  parLocation: false,
+                  parLeadEmail: false,
+                },
+              },
+              pagination: {
+                paginationModel: { pageSize: 100, page: 0 },
+              },
               filter: {
                 filterModel: {
                   items: [
                     {
                       id: "searchText",
                       value: searchText,
-                      columnField: "searchText",
-                      operatorValue: "contains",
+                      field: "searchText",
+                      operator: "contains",
                     },
                   ],
                 },
