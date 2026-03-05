@@ -182,6 +182,18 @@ export default function AdManagementPanel() {
     return parsedUrl.toString();
   };
 
+  const normalizeMediaUrl = (raw: string): string | null => {
+    try {
+      const parsed = new URL(raw.trim());
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return null;
+      }
+      return parsed.toString();
+    } catch {
+      return null;
+    }
+  };
+
   const mapAdvertisement = (item: {
     id: number;
     adName: string;
@@ -281,7 +293,13 @@ export default function AdManagementPanel() {
       return;
     }
 
-    if (!newMediaUrl) {
+    if (!newMediaUrl.trim()) {
+      enqueueSnackbar(AdManagementMessage.snackbar.mediaUrlRequired, { variant: "warning" });
+      return;
+    }
+
+    const safeMediaUrl = normalizeMediaUrl(newMediaUrl);
+    if (!safeMediaUrl) {
       enqueueSnackbar(AdManagementMessage.snackbar.mediaUrlRequired, { variant: "warning" });
       return;
     }
@@ -289,8 +307,8 @@ export default function AdManagementPanel() {
     try {
       const payload = {
         adName: newAdName.trim(),
-        mediaUrl: newMediaUrl,
-        mediaType: await resolveMediaType(newMediaUrl),
+        mediaUrl: safeMediaUrl,
+        mediaType: await resolveMediaType(safeMediaUrl),
         durationSeconds: newDuration,
       };
 
