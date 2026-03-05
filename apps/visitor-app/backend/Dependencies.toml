@@ -513,6 +513,7 @@ modules = [
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.database"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.email"},
 	{org = "wso2", packageName = "visitor", moduleName = "visitor.people"},
-	{org = "wso2", packageName = "visitor", moduleName = "visitor.sms"}
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.sms"},
+	{org = "wso2", packageName = "visitor", moduleName = "visitor.wifi"}
 ]
 
