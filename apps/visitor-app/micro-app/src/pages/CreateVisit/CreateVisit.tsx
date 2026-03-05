@@ -659,23 +659,73 @@ function CreateVisit() {
       "Visit details are already locked. No more changes allowed. Start a new visit?",
       () => {
         setCompanyName("");
-        setWhoTheyMeet("");
-        setWhoTheyMeetName("");
-        setSelectedEmployee(null);
-        setInputValue("");
         setPurposeOfVisit("");
         setAccessibleLocations([]);
-        setVisitDate("");
+        setVisitDate(dayjs().format("YYYY-MM-DD"));
         setTimeOfEntry("");
         setTimeOfDeparture("");
         setVisitors([{ ...defaultVisitor }]);
         setFormErrors({});
         setVisitorErrors({});
+
+        // Pre-populate "Whom They Meet" with the logged-in user
+        if (user?.email) {
+          const nameParts = (user.name || "").trim().split(/\s+/);
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+          const fullName = user.name || user.email;
+
+          setWhoTheyMeet(user.email);
+          setWhoTheyMeetName(fullName);
+          setInputValue(fullName);
+          setSelectedEmployee({
+            firstName,
+            lastName,
+            workEmail: user.email,
+            employeeThumbnail: null,
+          });
+
+          (async () => {
+            try {
+              const { default: apiClient } =
+                await import("../../services/apiClient");
+              const endpoint = Endpoints.getEmployees({
+                search: user.email,
+                offset: 0,
+                limit: 1,
+              });
+              const res = await apiClient.get(
+                `${endpoint.baseUrl}${endpoint.path}`,
+              );
+              const employees: Employee[] = res.data;
+              const match = employees?.find(
+                (emp) =>
+                  emp.workEmail.toLowerCase() === user.email.toLowerCase(),
+              );
+              if (match) {
+                setSelectedEmployee(match);
+                const empFullName =
+                  `${match.firstName || ""} ${match.lastName || ""}`.trim();
+                if (empFullName) {
+                  setWhoTheyMeetName(empFullName);
+                  setInputValue(empFullName);
+                }
+              }
+            } catch {
+              // Thumbnail fetch failed silently
+            }
+          })();
+        } else {
+          setWhoTheyMeet("");
+          setWhoTheyMeetName("");
+          setSelectedEmployee(null);
+          setInputValue("");
+        }
       },
       "Yes",
       "Cancel",
     );
-  }, [showConfirmation]);
+  }, [showConfirmation, user]);
 
   const today = dayjs().format("YYYY-MM-DD");
 
