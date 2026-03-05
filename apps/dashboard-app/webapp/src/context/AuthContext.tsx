@@ -94,6 +94,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const refreshToken = React.useCallback(async (): Promise<{ idToken: string }> => {
     if (isAuthenticatedRef.current) {
+      await refreshAccessToken();
       const idToken = await getIDToken();
       return { idToken };
     }
