@@ -620,20 +620,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 };
             }
-            if purposeOfVisit is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Purpose of visit is required when approving a visit!"
-                    }
-                };
-            }
-            if whomTheyMeet is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "The person they meet is required when approving a visit!"
-                    }
-                };
-            }
 
             string? hostEmail = visit.whomTheyMeet;
             people:Employee|error? hostEmployee = ();
@@ -656,9 +642,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         passNumber: payload.passNumber,
                         accessibleLocations: accessibleLocations,
                         actionedBy: invokerInfo.email,
-                        timeOfEntry: time:utcNow(),
-                        purposeOfVisit: payload.purposeOfVisit,
-                        whomTheyMeet: payload.whomTheyMeet
+                        timeOfEntry: time:utcNow()
                     }, invokerInfo.email);
 
             if response is error {
@@ -1163,7 +1147,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             body: {message: "WiFi account created successfully"}
         };
     }
-}
 
     # Fetch a visit by its UUID.
     #
