@@ -932,8 +932,13 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
         c.is_active = 1
     LIMIT 1`;
 
-isolated function addBusinessUnitQuery(BusinessUnitPayload payload) returns sql:ParameterizedQuery => `
-  INSERT INTO businessUnits(
+# Build query to insert a new business-unit.
+#
+# + userEmail - Email of the user performing the action
+# + payload - Payload containing the business-unit details
+# + return - Parameterized INSERT query for the new business-unit
+isolated function addBusinessUnitQuery(string userEmail, BusinessUnitPayload payload) returns sql:ParameterizedQuery => `
+  INSERT INTO business_unit(
     name,
     head_email,
     created_by,
