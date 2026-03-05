@@ -71,7 +71,6 @@ import FloorRoomSelector from "@root/src/view/employee/component/floorRoomSelect
 import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import BackgroundLoader from "@root/src/component/common/BackgroundLoader";
 import Scan from "@view/admin/scan";
-import { reject } from "lodash";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
