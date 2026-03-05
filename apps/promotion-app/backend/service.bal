@@ -463,7 +463,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         // Verifying the requester 
         // [Special Promotion Request] leads can create promotion requests for others 
-        if !database:checkRoles([database:LEAD], userAppPrivileges.roles) && userInfo.email != application.employeeEmail {
+        if userInfo.email != application.employeeEmail {
             string customError = "Insufficient privilege to create promotion application for others.";
             log:printError(customError);
             return <http:Forbidden>{
