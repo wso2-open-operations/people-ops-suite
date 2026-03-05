@@ -25,7 +25,7 @@ import { useMicroappStore } from "./stores/microapp/microapp";
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const { setDeviceSafeAreaInsets, deviceSafeAreaInsets } = useMicroappStore();
+  const { setDeviceSafeAreaInsets } = useMicroappStore();
 
   // Initialize user token and request device safe area insets
   useEffect(() => {
@@ -55,7 +55,6 @@ function App() {
         height: "100vh",
         overflow: "hidden",
         bgcolor: "#FFFFFF",
-        paddingTop: deviceSafeAreaInsets.top + "px",
       }}
     >
       <HashRouter>

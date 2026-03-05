@@ -18,13 +18,10 @@ import Box from "@mui/material/Box";
 import Tabbar from "./Tabbar/Tabbar";
 import CreateVisit from "../pages/CreateVisit/CreateVisit";
 import VisitHistory from "../pages/VisitHistory/VisitHistory";
-import Header from "./Header/Header";
 
 const TabLayout: React.FC = () => {
   return (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      <Header title="Visitor App" showBack />
-
       {/* Main content area */}
       <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
         <Routes>
