@@ -21,12 +21,12 @@ import { useEffect, useState } from "react";
 
 import ErrorSvg from "@assets/images/error.svg";
 import NoDataSvg from "@assets/images/no-data.svg";
+import { State } from "@/types/types";
 import { DashboardOverviewMessage } from "@config/messages";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import SkeletonCard from "@component/ui/common-card/SkeletonCard";
 import { fetchCollections } from "@slices/collections/collection";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import { State } from "@utils/types";
 import CollectionActionsToolbar from "@view/dashboard-overview/tool-bar/CollectionActionsToolbar";
 
 import CollectionCard from "../component/card/CollectionCard";

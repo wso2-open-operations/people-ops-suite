@@ -19,8 +19,8 @@ import axios, { HttpStatusCode } from "axios";
 
 import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
+import { State } from "@/types/types";
 import { APIService } from "@utils/apiService";
-import { State } from "@utils/types";
 
 import { enqueueSnackbarMessage } from "../commonSlice/common";
 

@@ -36,10 +36,10 @@ import * as yup from "yup";
 
 import React, { useEffect } from "react";
 
+import { ConfirmationType, State } from "@/types/types";
 import { useConfirmationModalContext } from "@context/dialogState";
 import { addCollections, resetSubmitState } from "@slices/collections/collection";
 import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
-import { ConfirmationType, State } from "@utils/types";
 
 interface AddCollectionFormValues {
   collectionName: string;

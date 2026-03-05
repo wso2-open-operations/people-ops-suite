@@ -17,9 +17,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import { Button, IconButton, Stack } from "@mui/material";
 
+import { ConfirmationType } from "@/types/types";
 import { useConfirmationModalContext } from "@context/dialogState";
 import { DashboardOverviewMessage } from "@config/messages";
-import { ConfirmationType } from "@utils/types";
 
 interface CollectionActionsToolbarProps {
   onAccept: () => void;

@@ -57,6 +57,8 @@ const Sidebar = (props: SidebarProps) => {
     setNavState((prev) => ({ ...prev, hovered: null }));
   };
   const theme = useTheme();
+  const defaultPath = allRoutes.find((route) => !route.bottomNav)?.path ?? null;
+  const effectiveActivePath = navState.active ?? props.currentPath ?? defaultPath;
 
   const renderControlButton = (
     icon: React.ReactNode,
@@ -175,11 +177,7 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={
-                          navState.active === null
-                            ? route.path === allRoutes.filter((r) => !r.bottomNav)[0]?.path
-                            : navState.active === route.path
-                        }
+                        isActive={route.path === effectiveActivePath}
                         onClick={() => handleClick(route.path)}
                       />
                     </Box>
