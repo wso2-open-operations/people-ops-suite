@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -25,28 +34,29 @@ import React from "react";
 import dayjs from "dayjs";
 import { Review } from "../components/Review";
 import { useEffect, useRef, useState } from "react";
-import { selectUserEmail } from "@slices/authSlice";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import SearchIcon from "@mui/icons-material/Search";
 import Groups3Icon from "@mui/icons-material/Groups3";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
-import NoDataView from "@components/common/NoDataView";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
+import NoDataView from "@component/common/NoDataView";
 import DateRangeIcon from "@mui/icons-material/DateRange";
-import { selectCurrentCycle } from "@slices/parCycleSlice";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import RateReviewIcon from "@mui/icons-material/RateReview";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import ParStatusChip from "@components/common/ParStatusChip";
-import { CustomModal } from "@components/common/CustomModal";
+import ParStatusChip from "@component/common/ParStatusChip";
+import { CustomModal } from "@component/common/CustomModal";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useAppSelector, useAppDispatch } from "@slices/store";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
-import { showSnackBarMessage } from "@slices/commonSlice/common";
-import { CycleDatesStepper } from "@components/common/CycleDatesStepper";
-import { RequestState, ParLeadStatus, ParRatingShort } from "@utils/types";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { RequestState } from "@utils/types";
 import { uiMessages, shortDateFormat, tooltipVisibilityDelay } from "@config/constant";
-import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice";
-import { DataGrid, GridRowId, GridSelectionModel, GridRenderCellParams } from "@mui/x-data-grid";
-import { selectReportStatus, fetchDirectEmployeePars, selectDirectEmployeePars } from "@slices/reportSlice";
+import { fetchCurrentParCycleOfEmployee, selectEmployeeStatus } from "@slices/employeeSlice/employee";
+import { DataGrid, GridRowId, GridRowSelectionModel, GridRenderCellParams } from "@mui/x-data-grid";
+import { selectReportStatus, fetchDirectEmployeePars, selectDirectEmployeePars } from "@slices/reportSlice/report";
+import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
 
 const ReportChainView = () => {
   const userEmail = useAppSelector(selectUserEmail);
@@ -56,7 +66,12 @@ const ReportChainView = () => {
   const employeeMap = useAppSelector(selectEmployeeMap);
   const currentCycle = useAppSelector(selectCurrentCycle);
   const reportStatus = useAppSelector(selectReportStatus);
-  const [selectionModel, setSelectionModel] = useState<GridRowId[]>([]);
+
+  // FIX 1: Explicitly type as an array of GridRowIds
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
+    type: 'include',
+    ids: new Set(),
+  });
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,7 +82,7 @@ const ReportChainView = () => {
   ]);
   const parCycleLoadingStatus = useAppSelector(selectEmployeeStatus);
 
-  const handleSelectionModelChange = (newSelectionModel: GridSelectionModel) => {
+  const handleSelectionModelChange = (newSelectionModel: GridRowSelectionModel) => {
     setSelectionModel(newSelectionModel);
   };
   const [showLeadsOnly, setShowLeadsOnly] = useState(false);
@@ -136,8 +151,8 @@ const ReportChainView = () => {
           leadEmail: employeeEmail,
         })
       );
-      setShowLeadsOnly(false)
-      setSearchQuery("")
+      setShowLeadsOnly(false);
+      setSearchQuery("");
     }
   };
 
@@ -146,7 +161,7 @@ const ReportChainView = () => {
       field: "parEmployeeName",
       headerName: "Team Member",
       flex: 0.2,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <Box display="flex" alignItems="center" position="relative">
           <Avatar
             src={employeeMap[params.row?.parEmployeeEmail]?.employeeThumbnail}
@@ -188,7 +203,7 @@ const ReportChainView = () => {
                   aria-label="Copy Email"
                   onClick={() => {
                     navigator.clipboard.writeText(params.row?.parEmployeeEmail);
-                    dispatch(showSnackBarMessage("Email copied", "success"));
+                    dispatch(ShowSnackBarMessage("Email copied", "success"));
                   }}
                 >
                   <ContentCopyIcon sx={{ fontSize: "15px" }} />
@@ -203,7 +218,7 @@ const ReportChainView = () => {
       field: "parEmployeeStatus",
       headerName: "Employee PAR",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip content={params.row?.parEmployeeStatus || ""} />
       ),
     },
@@ -211,7 +226,7 @@ const ReportChainView = () => {
       field: "par360ReviewStatus",
       headerName: "360° Feedback",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip
           content={params.row?.par360ReviewStatus || ""}
           countDetails={{
@@ -225,7 +240,7 @@ const ReportChainView = () => {
       field: "parLeadStatus",
       headerName: "Lead's PAR",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip content={params.row?.parLeadStatus || ""} />
       ),
     },
@@ -233,7 +248,7 @@ const ReportChainView = () => {
       field: "parRating",
       headerName: "Rating",
       flex: 0.15,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip content={params.row?.parRating || ""} />
       ),
     },
@@ -241,7 +256,7 @@ const ReportChainView = () => {
       field: "parSpecialRating",
       headerName: "Top 5%/20% Rating",
       flex: 0.15,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip content={params.row?.parSpecialRating || ""} />
       ),
     },
@@ -249,7 +264,7 @@ const ReportChainView = () => {
       field: "parF2fStatus",
       headerName: "F2F",
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <ParStatusChip content={params.row?.parF2fStatus || ""} />
       ),
     },
@@ -258,7 +273,7 @@ const ReportChainView = () => {
       headerName: "",
       sortable: false,
       flex: 0.1,
-      renderCell: (params: GridRenderCellParams<ParRatingShort>) => (
+      renderCell: (params: GridRenderCellParams<any>) => (
         <>
           <IconButton
             sx={{
@@ -307,8 +322,8 @@ const ReportChainView = () => {
     },
   ];
 
-  const handleMembersTableClick = (parRating: ParRatingShort) => {
-    openReviewEmployeeView(parRating.parEmployeeEmail);
+  const handleMembersTableClick = (row: any) => {
+    openReviewEmployeeView(row.parEmployeeEmail);
   };
 
   const openReviewEmployeeView = (employeeEmail: string) => {
@@ -387,7 +402,7 @@ const ReportChainView = () => {
                   alignItems: "center",
                 }}
               >
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Box display="flex" alignItems="center">
                     <Typography variant="h4" component="div">
                       {currentCycle.parCycleName}{" "}
@@ -399,7 +414,7 @@ const ReportChainView = () => {
                   </Box>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <TextField
                     fullWidth
                     variant="outlined"
@@ -417,7 +432,7 @@ const ReportChainView = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -475,19 +490,21 @@ const ReportChainView = () => {
                   columns={columns}
                   rowHeight={50}
                   checkboxSelection={false}
-                  disableSelectionOnClick
+                  disableRowSelectionOnClick
                   autoHeight
                   loading={reportStatus === RequestState.LOADING}
-                  rowsPerPageOptions={[10, 20, 25]}
+                  pageSizeOptions={[10, 20, 25]}
                   initialState={{
                     pagination: {
-                      pageSize: 10,
-                      page: 0,
+                      paginationModel: {
+                        pageSize: 10,
+                        page: 0,
+                      },
                     },
                   }}
                   rows={getFilteredRows()}
-                  selectionModel={selectionModel}
-                  onSelectionModelChange={handleSelectionModelChange}
+                  rowSelectionModel={selectionModel}
+                  onRowSelectionModelChange={handleSelectionModelChange}
                 />
               </Card>
             </Box>

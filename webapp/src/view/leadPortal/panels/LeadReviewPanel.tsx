@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -27,20 +36,12 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import {
-  ParCycle,
-  RequestState,
-  ParLeadStatus,
-  ParSpecialRating,
-  ParEmployeeStatus,
-  parRatingNotAssigned,
-} from "@utils/types";
-import {
   selectEmployeeRatings,
   fetchParRatingOfEmployee,
   updateParRatingOfEmployee,
   selectEmployeeRatingStatus,
   updateSelectedParLeadComment,
-} from "@slices/employeeSlice";
+} from "@slices/employeeSlice/employee";
 import "jspdf-autotable";
 import jsPDF from "jspdf";
 import dayjs from "dayjs";
@@ -51,30 +52,33 @@ import autoTable, { RowInput } from "jspdf-autotable";
 import LinkIcon from "@mui/icons-material/Link";
 import EditIcon from "@mui/icons-material/Edit";
 import { useEffect, useRef, useState } from "react";
-import { selectUserEmail } from "@slices/authSlice";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import CardContent from "@mui/material/CardContent";
 import LaunchIcon from "@mui/icons-material/Launch";
-import { selectEmployeeMap } from "@slices/metaSlice";
-import { LoadingEffect } from "@components/ui/Loading";
-import NoDataView from "@components/common/NoDataView";
-import CommentPaper from "@components/common/CommentPaper";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { LoadingEffect } from "@component/ui/Loading";
+import NoDataView from "@component/common/NoDataView";
+import CommentPaper from "@component/common/CommentPaper";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import CustomRichTextField from "@components/common/CustomRichText";
+import CustomRichTextField from "@component/common/CustomRichText";
 import ThreeSixtyFeedbackSection from "../components/FeedbackComponent";
-import { base64Regex, snackMessages, uiMessages } from "@config/constant";
-import { ConfirmationDialog } from "@components/common/ConfirmationDialog";
+import { base64Regex, SnackMessage, uiMessages } from "@config/constant";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
 import { top5p20pEnabledRating, evidenceEnabledRating } from "@config/config";
 import {
   fetchReviews,
   selectThreeSixtyReviews,
-} from "@slices/threeSixtyReviewSlice";
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
 import {
   enqueueSnackbarMessage,
-  showSnackBarMessage,
+  ShowSnackBarMessage,
 } from "@slices/commonSlice/common";
 import { set } from "lodash";
+import { ParSpecialRating, ParLeadStatus, ParEmployeeStatus, parRatingNotAssigned } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { RequestState } from "@root/src/utils/types";
 dayjs.extend(utc);
 
 interface LeadReviewPanelProps {
@@ -446,7 +450,7 @@ export const LeadReviewPanel = ({
         );
       }
       dispatch(
-        showSnackBarMessage(snackMessages.success.leadParDraftSaved, "success")
+        ShowSnackBarMessage(SnackMessage.success.leadParDraftSaved, "success")
       );
     });
   };
@@ -530,7 +534,7 @@ export const LeadReviewPanel = ({
       closeParShareDialog();
       setSubmitting(false);
       dispatch(
-        showSnackBarMessage(snackMessages.success.shareLeadReview, "success")
+        ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success")
       );
       if (cycle?.parCycleId) {
         await dispatch(
@@ -547,7 +551,7 @@ export const LeadReviewPanel = ({
       setIsEmployeeParShareDialogOpen(false);
       setSubmitting(false);
       dispatch(
-        showSnackBarMessage(snackMessages.success.shareLeadReview, "success")
+        ShowSnackBarMessage(SnackMessage.success.shareLeadReview, "success")
       );
       if (cycle?.parCycleId) {
         await dispatch(
@@ -935,7 +939,7 @@ export const LeadReviewPanel = ({
 
   return (
     <Grid container height={"100%"} spacing={1}>
-      <Grid item xs={12}>
+      <Grid size={{ xs: 12 }}>
         <Box
           display="flex"
           alignItems="center"
@@ -1036,14 +1040,14 @@ export const LeadReviewPanel = ({
       )}
 
       {employeeParRatingStatus === RequestState.FAILED && (
-        <NoDataView text={snackMessages.error.fetchThreeSixtyReview} />
+        <NoDataView text={SnackMessage.error.fetchThreeSixtyReview} />
       )}
 
       {employeeParRatingStatus === RequestState.SUCCEEDED && (
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Grid container spacing={2}>
             {/* Lead's Feedback Section */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card variant="outlined" sx={{ height: "100%" }}>
                 <CardHeader
                   title={
@@ -1057,7 +1061,7 @@ export const LeadReviewPanel = ({
                 <CardContent>
                   <form onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid size={{ xs: 12 }}>
                         {!isReadOnly ? (
                           <Box sx={{ position: "relative" }}>
                             <CustomRichTextField
@@ -1131,15 +1135,14 @@ export const LeadReviewPanel = ({
                       {/* Rating Section */}
                       <Grid
                         container
-                        item
-                        xs={12}
+                        size={{ xs: 12 }}
                         spacing={2}
                         alignItems="center"
                       >
-                        <Grid item xs={12} sm={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                           <Typography variant="body2">Rating:</Typography>
                         </Grid>
-                        <Grid item xs={12} sm={8}>
+                        <Grid size={{ xs: 12, sm: 8 }}>
                           {!isReadOnly ? (
                             <TextField
                               select
@@ -1183,17 +1186,16 @@ export const LeadReviewPanel = ({
                       {isReadOnly && employeeParRating.parRatingSharedBy && (
                         <Grid
                           container
-                          item
-                          xs={12}
+                          size={{ xs: 12 }}
                           spacing={2}
                           alignItems="center"
                         >
-                          <Grid item xs={12} sm={4}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Typography variant="body2">
                               PAR shared by:
                             </Typography>
                           </Grid>
-                          <Grid item xs={12} sm={8}>
+                          <Grid size={{ xs: 12, sm: 8 }}>
                             <Chip
                               size="small"
                               label={employeeParRating.parRatingSharedBy}
@@ -1208,7 +1210,7 @@ export const LeadReviewPanel = ({
                         employeeParRating.parPerformanceNoticeAck &&
                         employeeParRating.parRating ===
                           evidenceEnabledRating && (
-                          <Grid item xs={12}>
+                          <Grid size={{ xs: 12 }}>
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -1251,7 +1253,7 @@ export const LeadReviewPanel = ({
                       {/* Checkbox for Top 5%/20% Rating */}
                       {!isReadOnly &&
                         values.parRating === top5p20pEnabledRating && (
-                          <Grid item xs={12}>
+                          <Grid size={{ xs: 12 }} >
                             <FormControlLabel
                               control={
                                 <Checkbox
@@ -1270,7 +1272,7 @@ export const LeadReviewPanel = ({
                       {!isReadOnly &&
                         values.parRating === evidenceEnabledRating && (
                           <>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }} >
                               <FormControlLabel
                                 control={
                                   <Checkbox
@@ -1286,7 +1288,7 @@ export const LeadReviewPanel = ({
                           and at least two discussions were held.`}
                               />
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid size={{ xs: 12 }}>
                               <TextField
                                 fullWidth
                                 multiline
@@ -1325,17 +1327,16 @@ export const LeadReviewPanel = ({
                       {values.parRating === top5p20pEnabledRating && (
                         <Grid
                           container
-                          item
-                          xs={12}
+                          size={{ xs: 12 }}
                           spacing={2}
                           alignItems="center"
                         >
-                          <Grid item xs={12} sm={4}>
+                          <Grid size={{ xs: 12, sm: 4 }}>
                             <Typography variant="body2">
                               Top 5%/20% Rating:
                             </Typography>
                           </Grid>
-                          <Grid item xs={12} sm={8}>
+                          <Grid size={{ xs: 12, sm: 8 }}>
                             {!isReadOnly ? (
                               <TextField
                                 disabled={!isCheckboxChecked || isSubmitting}
@@ -1401,7 +1402,7 @@ export const LeadReviewPanel = ({
                           ParEmployeeStatus.DRAFT,
                           ParEmployeeStatus.PENDING,
                         ].includes(employeeParRating.parEmployeeStatus) && (
-                          <Grid item xs={12}>
+                          <Grid size={{ xs: 12 }} >
                             <Typography
                               color="warning.main"
                               textAlign="right"
@@ -1414,7 +1415,7 @@ export const LeadReviewPanel = ({
 
                       {/* Action Buttons */}
                       {!isAdminHistoryViewOn && (
-                        <Grid item xs={12} sx={{ mt: 2 }}>
+                        <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
                           <Box display="flex" justifyContent="flex-end" gap={2}>
                             {!isAdminAuditViewOn &&
                               employeeParRating.parLeadStatus !==
@@ -1525,7 +1526,7 @@ export const LeadReviewPanel = ({
               </Card>
             </Grid>
             {/* Employee PAR Section */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Card variant="outlined" sx={{ height: "100%" }}>
                 <CardHeader
                   title={
@@ -1554,7 +1555,7 @@ export const LeadReviewPanel = ({
                 </CardContent>
 
                 {isAdminAuditViewOn && (
-                  <Grid item xs={12} sx={{ mt: 2 }}>
+                  <Grid size={{ xs: 12 }} sx={{ mt: 2 }}>
                     <Box display="flex" justifyContent="flex-end" gap={2}>
                       {!isReadOnly && (
                         <Button
@@ -1583,7 +1584,7 @@ export const LeadReviewPanel = ({
             </Grid>
             {/* Admin Comment Section */}
             {(isAdminAuditViewOn || isAdminHistoryViewOn) && (
-              <Grid item xs={12}>
+              <Grid size={{ xs: 12 }} >
                 <Accordion>
                   <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <Typography variant="subtitle1">Admin Comment</Typography>
@@ -1623,7 +1624,7 @@ export const LeadReviewPanel = ({
               </Grid>
             )}
             {/* 360 Feedback Section */}
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }} >
               <ThreeSixtyFeedbackSection
                 isAdminsSelfProfile={isAdminsSelfProfile}
               />
