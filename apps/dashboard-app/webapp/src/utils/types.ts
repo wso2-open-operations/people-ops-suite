@@ -18,6 +18,7 @@ import type { ReactElement } from "react";
 
 import { Role } from "@slices/authSlice/auth";
 import { Collection } from "@slices/collections/collection";
+import { ConfirmationType, State } from "@/types/types";
 
 export interface AuthState {
   status: State;
@@ -63,19 +64,7 @@ export interface ErrorHandlerProps {
   message: string | null;
 }
 
-export enum State {
-  failed = "failed",
-  success = "success",
-  loading = "loading",
-  idle = "idle",
-}
-
-export enum ConfirmationType {
-  update = "update",
-  send = "send",
-  upload = "upload",
-  accept = "accept",
-}
+export { State, ConfirmationType };
 
 export interface CollectionCardProps {
   collection: Collection;
