@@ -21,4 +21,4 @@ export const SESSION_IDLE_THROTTLE_MS = 500;
 export const API_RETRY_ATTEMPTS = 3;
 export const API_RETRY_DELAY_MS = 100;
 export const API_RETRY_STATUS_CODES: [number, number][] = [[401, 401]];
-export const API_RETRY_METHODS = ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH", "PUT"];
+export const API_RETRY_METHODS = ["GET", "HEAD", "OPTIONS"];

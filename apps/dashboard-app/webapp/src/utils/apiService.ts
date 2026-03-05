@@ -129,8 +129,8 @@ export class APIService {
 
     APIService._authRequestInterceptorId = APIService._instance.interceptors.request.use(
       (config) => {
-        // config.headers.set("x-jwt-assertion", APIService._idToken);
-        config.headers.set("Authorization", "Bearer " + APIService._idToken);
+        config.headers.set("x-jwt-assertion", APIService._idToken);
+        // config.headers.set("Authorization", "Bearer " + APIService._idToken);
 
         // Create a unique key including URL and query params
         const endpoint = config.url || "";
