@@ -24,11 +24,11 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 interface PromotionCycle {
     id: number,
     name: string,
-    startDate: Date,
-    endDate: Date,
-    leadDeadline: Date,
-    functionalLeadDeadline: Date,
-    promotionBoardDeadline: Date,
+    startDate: string,
+    endDate: string,
+    leadDeadline: string,
+    functionalLeadDeadline: string,
+    promotionBoardDeadline: string,
     status: string
 }
 
