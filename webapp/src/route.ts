@@ -19,30 +19,28 @@ import { View } from "@view/index";
 import React from "react";
 import { isIncludedRole } from "./utils/utils";
 
-// icons
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
-import SettingsIcon from "@mui/icons-material/Settings";
 import ShieldIcon from "@mui/icons-material/Shield";
 import { Role } from "@utils/types";
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 
 export const routes: RouteObjectWithRole[] = [
-  // {
-  //   path: "/",
-  //   text: "Employee Portal",
-  //   icon: React.createElement(DataUsageIcon),
-  //   element: React.createElement(View.OngoingCycleView),
-  //   allowRoles: [Role.EMPLOYEE],
-  // },
-  // {
-  //   path: "/lead-portal",
-  //   text: "Lead Portal",
-  //   icon: React.createElement(GroupsIcon),
-  //   element: React.createElement(View.LeadPortal),
-  //   allowRoles: [Role.TEAM_LEAD],
-  // },
+  {
+    path: "/",
+    text: "Employee Portal",
+    icon: React.createElement(DataUsageIcon),
+    element: React.createElement(View.OngoingCycleView),
+    allowRoles: [Role.EMPLOYEE],
+  },
+  {
+    path: "/lead-portal",
+    text: "Lead Portal",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.LeadPortal),
+    allowRoles: [Role.TEAM_LEAD],
+  },
   {
     path: "/admin-portal",
     text: "Admin Portal",

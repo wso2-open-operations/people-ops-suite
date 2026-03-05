@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { useEffect, useState } from "react";
 import {
@@ -20,26 +29,23 @@ import {
   selectEmployeeRatingStatus,
   updateParRatingOfEmployee,
   updateSelectedParF2fFields,
-} from "@slices/employeeSlice";
+} from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  ParCycle,
-  ParF2fStatus,
-  ParLeadStatus,
-  RequestState,
-} from "@utils/types";
+import { RequestState } from "@utils/types";
 import { useFormik } from "formik";
 import * as yup from "yup";
-import { LoadingEffect } from "@components/ui/Loading";
-import { shortDateFormat, snackMessages, uiMessages } from "@config/constant";
-import { showSnackBarMessage } from "@slices/commonSlice/common";
+import { LoadingEffect } from "@component/ui/Loading";
+import { shortDateFormat, SnackMessage, uiMessages } from "@config/constant";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import LoadingButton from "@mui/lab/LoadingButton";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import utc from "dayjs/plugin/utc";
-import MeetingSchedulerPage from "@components/common/ScheduleF2F";
+import MeetingSchedulerPage from "@component/common/ScheduleF2F";
 import { CustomModal } from "./CustomModal";
+import { ParF2fStatus, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 dayjs.extend(utc);
 
 interface F2fPanelProp {
@@ -129,7 +135,7 @@ export const F2fPanel = ({
           })
         );
         dispatch(
-          showSnackBarMessage(snackMessages.success.updateF2fStatus, "success")
+          ShowSnackBarMessage(SnackMessage.success.updateF2fStatus, "success")
         );
       }
     },
@@ -199,34 +205,36 @@ export const F2fPanel = ({
         </Typography>
         <DatePicker
           disabled={parRating?.parLeadStatus !== ParLeadStatus.SHARED}
-          value={values.parF2fDate}
-          onChange={(newValue) => {
+          value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
+          onChange={(newValue: Dayjs | null) => {
             setFieldValue(
               "parF2fDate",
-              dayjs(newValue?.toString()).format("YYYY-MM-DD")
+              newValue ? newValue.format("YYYY-MM-DD") : ""
             );
           }}
-          maxDate={dayjs().toDate()}
-          minDate={dayjs(parCycle?.parCycleStartDate).toDate()}
-          renderInput={(params) => (
-            <TextField
-              aria-label="par f2f date"
-              size="small"
-              fullWidth
-              sx={{
+          maxDate={dayjs()}
+          minDate={dayjs(parCycle?.parCycleStartDate)}
+          slots={{
+            textField: TextField,
+          }}
+          slotProps={{
+            textField: {
+              "aria-label": "par f2f date",
+              size: "small",
+              fullWidth: true,
+              name: "parF2fDate",
+              onBlur: handleBlur,
+              error: touched.parF2fDate && Boolean(errors.parF2fDate),
+              helperText: (touched.parF2fDate && errors.parF2fDate) as string,
+              sx: {
                 "& .MuiOutlinedInput-root": {
                   "&:hover fieldset": {
                     borderColor: "primary.main",
                   },
                 },
-              }}
-              {...params}
-              name="parF2fDate"
-              onBlur={handleBlur}
-              error={touched.parF2fDate && Boolean(errors.parF2fDate)}
-              helperText={touched.parF2fDate && errors.parF2fDate}
-            />
-          )}
+              },
+            },
+          }}
         />
       </Box>
     </LocalizationProvider>

@@ -1,25 +1,28 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import { alpha, Avatar, Chip, Tooltip, useTheme } from "@mui/material";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import DoneIcon from "@mui/icons-material/Done";
-import {
-  ParEmployeeStatus,
-  ParThreeSixtyReviewStatus,
-  ParLeadStatus,
-  ParF2fStatus,
-  ParSpecialRating,
-} from "../../utils/types";
-import { tokens } from "../../theme";
 import { parUiText, tooltipVisibilityDelay } from "@config/constant";
 import { capitalizeFirstLetter } from "@utils/utils";
 import CloseIcon from "@mui/icons-material/Close";
 import EditIcon from "@mui/icons-material/Edit";
+import { ParEmployeeStatus, ParLeadStatus, ParF2fStatus, ParSpecialRating } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParThreeSixtyReviewStatus } from "@root/src/slices/threeSixtyReviewSlice/threeSixtyReview";
 
 interface StatusChipProps {
   content: ParEmployeeStatus | ParThreeSixtyReviewStatus | ParLeadStatus | ParF2fStatus | string | ParSpecialRating;
@@ -32,7 +35,6 @@ interface StatusChipProps {
 
 const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipProps) => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
 
   const isCompleted = (status: string) => {
     return [
@@ -54,33 +56,32 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
   };
   const statusConfig = {
     completed: {
-      color:
-        theme.palette.mode === "light" ? alpha(colors.greenAccent[500], 0.15) : alpha(colors.greenAccent[500], 0.4),
-      textColor: theme.palette.mode === "light" ? colors.greenAccent[100] : colors.greenAccent[100],
+      color: alpha(theme.palette.success.main, theme.palette.mode === "light" ? 0.15 : 0.25),
+      textColor: theme.palette.mode === "light" ? theme.palette.success.dark : theme.palette.success.main,
       icon: <DoneIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Completed",
     },
     pending: {
-      color: theme.palette.mode === "light" ? alpha(colors.yellowAccent[900], 1) : alpha(colors.yellowAccent[900], 1),
-      textColor: theme.palette.mode === "light" ? colors.yellowAccent[100] : colors.yellowAccent[100],
+      color: alpha(theme.palette.warning.main, theme.palette.mode === "light" ? 0.15 : 0.25),
+      textColor: theme.palette.mode === "light" ? theme.palette.warning.dark : theme.palette.warning.main,
       icon: <HourglassEmptyIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Pending",
     },
     rejected: {
-      color: theme.palette.mode === "light" ? alpha(colors.redAccent[500], 0.15) : alpha(colors.redAccent[500], 0.25),
-      textColor: colors.redAccent[500],
+      color: alpha(theme.palette.error.main, theme.palette.mode === "light" ? 0.15 : 0.25),
+      textColor: theme.palette.mode === "light" ? theme.palette.error.dark : theme.palette.error.main,
       icon: <CloseIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Rejected",
     },
     draft: {
-      color: theme.palette.mode === "light" ? alpha(colors.blueAccent[500], 0.15) : alpha(colors.blueAccent[500], 0.25),
-      textColor: colors.blueAccent[500],
+      color: alpha(theme.palette.info.main, theme.palette.mode === "light" ? 0.15 : 0.25),
+      textColor: theme.palette.mode === "light" ? theme.palette.info.dark : theme.palette.info.main,
       icon: <EditIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Draft",
     },
     default: {
-      color: theme.palette.mode === "light" ? alpha(colors.grey[500], 0.15) : alpha(colors.grey[500], 0.25),
-      textColor: theme.palette.mode === "light" ? colors.grey[700] : colors.grey[400],
+      color: alpha((theme.palette.neutral?.[1000] as string) || "#808080", theme.palette.mode === "light" ? 0.15 : 0.25),
+      textColor: (theme.palette.neutral?.[theme.palette.mode === "light" ? "1600" : "400"] as string) || "#808080",
     },
   };
 
@@ -182,7 +183,7 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
         sx={{
           height: "24px",
           width: "auto",
-          minWidth: "120xp",
+          minWidth: "120px",
           borderRadius: "12px",
           backgroundColor: statusInfo.style.color,
           color: statusInfo.style.textColor,

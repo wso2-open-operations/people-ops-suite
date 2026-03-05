@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 import {
   Box,
   Grid,
@@ -26,26 +35,21 @@ import {
   selectEmployeeRatings,
   updateParRatingOfEmployee,
   fetchCurrentParCycleOfEmployee,
-} from "@slices/employeeSlice";
+} from "@slices/employeeSlice/employee";
 import { useState } from "react";
 import CommentPaper from "./CommentPaper";
 import EmployeeChip from "./EmployeeChip";
-import { selectUserEmail } from "@slices/authSlice";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import autoTable, { RowInput } from "jspdf-autotable";
-import { selectEmployeeMap } from "@slices/metaSlice";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { base64Regex, uiMessages } from "@config/constant";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import {
-  ParCycle,
-  ParEmployeeStatus,
-  ParLeadStatus,
-  parRatingNotAssigned,
-  ParSpecialRating,
-} from "@utils/types";
+import { ParEmployeeStatus, parRatingNotAssigned, ParSpecialRating, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface EmployeeParProp {
   closeParRatingView?: () => void;
@@ -208,23 +212,19 @@ export const EmployeePar = ({
       head: [
         [
           {
-            content: ` - Employee: ${
-              employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
+            content: ` - Employee: ${employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
               employeeRatings.parEmployeeEmail
-            }\n - PAR Rating: ${
-              employeeRatings.parRating === parRatingNotAssigned
+              }\n - PAR Rating: ${employeeRatings.parRating === parRatingNotAssigned
                 ? "Not Assigned"
                 : employeeRatings.parRating
-            }\n - Top 5%/20% Rating: ${
-              employeeRatings.parSpecialRating !== ParSpecialRating.NONE
+              }\n - Top 5%/20% Rating: ${employeeRatings.parSpecialRating !== ParSpecialRating.NONE
                 ? employeeRatings.parSpecialRating
                 : "Not Assigned"
-            }\n - PAR Shared By: ${
-              employeeRatings.parRatingSharedBy
+              }\n - PAR Shared By: ${employeeRatings.parRatingSharedBy
                 ? employeeMap[employeeRatings.parRatingSharedBy]
-                    ?.employeeName || employeeRatings.parRatingSharedBy
+                  ?.employeeName || employeeRatings.parRatingSharedBy
                 : "Not Provided"
-            }`,
+              }`,
             colSpan: 3,
             styles: {
               halign: "left",
@@ -309,13 +309,7 @@ export const EmployeePar = ({
         )}
 
         <Grid container spacing={2}>
-          <Grid
-            item
-            xs={12}
-            sm={
-              employeeRatings?.parLeadStatus === ParLeadStatus.SHARED ? 6 : 12
-            }
-          >
+          <Grid size={{ xs: 12, sm: employeeRatings?.parLeadStatus === ParLeadStatus.SHARED ? 6 : 12 }}>
             <Paper
               variant="outlined"
               sx={{
@@ -417,7 +411,7 @@ export const EmployeePar = ({
           </Grid>
 
           {employeeRatings?.parLeadStatus === ParLeadStatus.SHARED && (
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }} >
               <Paper
                 variant="outlined"
                 sx={{

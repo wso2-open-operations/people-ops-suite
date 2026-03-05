@@ -1,9 +1,19 @@
-// Copyright (c) 2025, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import {
   Box,
   Grid,
@@ -25,7 +35,7 @@ import {
   selectEmployeeMap,
   selectSubordinates,
   selectSubordinatesArray,
-} from "@slices/metaSlice";
+} from "@slices/metaSlice/meta";
 import {
   fetchHistoryReviews,
   resetEmpRatingHistorySate,
@@ -37,20 +47,21 @@ import {
   fetchParticipatedParCyclesOfEmployee,
   selectParticipatedParCyclesOfEmployee,
   selectParticipatedParCyclesOfEmployeeState,
-} from "@slices/employeeHistorySlice";
+  ParSpecialRating,
+} from "@slices/employeeHistorySlice/employeeHistory";
 import NoDataView from "./NoDataView";
 import CommentPaper from "./CommentPaper";
 import { uiMessages } from "@config/constant";
-import { selectUserEmail } from "@slices/authSlice";
+import { selectUserEmail } from "@slices/authSlice/auth";
 import { useEffect, useMemo, useState } from "react";
-import { LoadingEffect } from "@components/ui/Loading";
-import ErrorComponent from "@components/ui/ErrorComponent";
-import EmployeeChip from "@components/common/EmployeeChip";
+import { LoadingEffect } from "@component/ui/Loading";
+import ErrorComponent from "@component/ui/ErrorComponent";
+import EmployeeChip from "@component/common/EmployeeChip";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { fetchReviews } from "@slices/threeSixtyReviewSlice";
-import { ParSpecialRating, RequestState } from "@utils/types";
+import { fetchReviews } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { RequestState } from "@utils/types";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import ThreeSixtyFeedbackSection from "@views/leadPortal/components/FeedbackComponent";
+import ThreeSixtyFeedbackSection from "@root/src/view/leadPortal/components/FeedbackComponent";
 
 const DEFAULT_CYCLE_ID = -1;
 
@@ -261,12 +272,12 @@ const EmployeeHistoryView = () => {
       {showEmployeeDetails && (
         <>
           <Grid container spacing={2} sx={{ mt: 3, mb: 2 }}>
-            <Grid item xs="auto">
+            <Grid size={{ xs: "auto" }}>
               <Avatar variant="rounded" src={empThumbnail} alt="Employee Thumbnail" sx={{ width: 100, height: 100 }} />
             </Grid>
 
             {hasRatings && (
-              <Grid item xs>
+              <Grid size={{ xs: "auto" }}>
                 <Box display="flex" flexDirection="column" gap={1}>
                   <Box display="flex" gap={1} flexWrap="wrap">
                     {ratings.parSpecialRating !== ParSpecialRating.NONE && (
@@ -338,7 +349,7 @@ const EmployeeInfoGridItem = ({
   subtitle1: string;
   subtitle2: string;
 }) => (
-  <Grid item xs>
+  <Grid size={{ xs: "auto" }}>
     <Box>
       <Typography variant="body1">{title || "-"}</Typography>
       <Typography variant="subtitle2" color="textSecondary">

@@ -1,9 +1,18 @@
-// Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com). All Rights Reserved.
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
-// This software is the property of WSO2 LLC. and its suppliers, if any.
-// Dissemination of any information or reproduction of any material contained
-// herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
-// You may not alter or remove any copyright or other notice from copies of this content.
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 import {
   Box,
@@ -30,6 +39,7 @@ import {
   fetchParticipatedParCyclesOfEmployee,
   selectParticipatedParCyclesOfEmployee,
   selectParticipatedParCyclesOfEmployeeState,
+  ParSpecialRating,
 } from "@slices/employeeHistorySlice/employeeHistory";
 import { tokens } from "../../theme";
 import CommentPaper from "./CommentPaper";
@@ -41,11 +51,9 @@ import { LoadingEffect } from "@component/ui/Loading";
 import ErrorComponent from "@component/ui/ErrorComponent";
 import EmployeeChip from "@component/common/EmployeeChip";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { ParSpecialRating, RequestState } from "@utils/types";
+import { RequestState } from "@utils/types";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import ThreeSixtyFeedbackSection from "@views/leadPortal/components/FeedbackComponent";
-import ThreeSixtyHistoryFeedbackSection from "@views/leadPortal/components/HistoryFeedbackComponent";
-import { fetchReviews } from "@slices/threeSixtyReviewSlice";
+import ThreeSixtyHistoryFeedbackSection from "@root/src/view/leadPortal/components/HistoryFeedbackComponent";
 
 interface EmployeeHistoryCardProps {
   onClose: () => void;
@@ -197,7 +205,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                   marginTop: 2,
                 }}
               >
-                <Grid item xs>
+                <Grid size={{ xs: 12 }}>
                   <Avatar
                     variant="rounded"
                     src={empThumbnail}
@@ -212,7 +220,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                 {ratings.parSpecialRating === ParSpecialRating.NONE && ratings.parRating === ParSpecialRating.NONE ? (
                   <></>
                 ) : (
-                  <Grid item xs>
+                  <Grid size={{ xs: 12 }}>
                     <Box mt={2} display="flex" flexDirection="column" gap={1}>
                       <Box display="flex" gap={1} flexWrap="wrap">
                         {ratings.parSpecialRating !== ParSpecialRating.NONE && (
@@ -231,7 +239,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                   </Grid>
                 )}
 
-                <Grid item xs ml={1}>
+                <Grid size={{ xs: 12 }} ml={1}>
                   <Box>
                     <Typography variant="body1">{empName}</Typography>
                     <Typography variant="subtitle2" color="textSecondary">
@@ -242,7 +250,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs>
+                <Grid size={{ xs: 12 }}>
                   <Box>
                     <Typography variant="body1">
                       {ratings.parLeadEmail
@@ -257,7 +265,7 @@ const EmployeeHistoryCard = ({ onClose, empName, empEmail, empThumbnail }: Emplo
                     </Typography>
                   </Box>
                 </Grid>
-                <Grid item xs>
+                <Grid size={{ xs: 12 }}>
                   <Box>
                     <Typography variant="body1">{formatString(ratings.parTeam)}</Typography>
                     <Typography variant="subtitle2" color="textSecondary">
