@@ -120,7 +120,13 @@ public isolated function updateFoodWasteRecord(int id, UpdateFoodWasteRecordPayl
     sql:ExecutionResult executionResult =
         check databaseClient->execute(updateFoodWasteRecordQuery(id, payload, updatedBy));
     if executionResult.affectedRowCount < 1 {
-        return error FoodWasteRecordNotFoundError("Food waste record not found.");
+        FoodWasteRecord|error? existing = fetchFoodWasteRecord(id);
+        if existing is error {
+            return existing;
+        }
+        if existing is () {
+            return error FoodWasteRecordNotFoundError("Food waste record not found.");
+        }
     }
 }
 
@@ -190,7 +196,13 @@ public isolated function getAdvertisementById(int id) returns Advertisement|erro
 public isolated function activateAdvertisement(int id) returns AdvertisementNotFoundError|error? {
     sql:ExecutionResult result = check databaseClient->execute(activateAdvertisementQuery(id));
     if result.affectedRowCount == 0 {
-        return error AdvertisementNotFoundError("Advertisement not found.");
+        Advertisement|error? ad = getAdvertisementById(id);
+        if ad is error {
+            return ad;
+        }
+        if ad is () {
+            return error AdvertisementNotFoundError("Advertisement not found.");
+        }
     }
 }
 
