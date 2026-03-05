@@ -38,10 +38,17 @@ function DateSelectionCard(props: DateSelectionCardProps) {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Calendar size={24} color={CHART_COLORS.breakfast} />
           <Box sx={{ flex: "1", maxWidth: 400 }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
+            <Typography
+              component="label"
+              htmlFor="data-entry-date"
+              variant="body2"
+              color="text.secondary"
+              gutterBottom
+            >
               {DataEntryMessage.selectDate}
             </Typography>
             <TextField
+              id="data-entry-date"
               fullWidth
               type="date"
               disabled={props.isSaving}
