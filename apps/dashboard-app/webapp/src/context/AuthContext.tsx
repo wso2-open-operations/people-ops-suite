@@ -66,6 +66,10 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     activate();
   };
 
+  const handleSessionWarningDismiss = () => {
+    setSessionWarningOpen(false);
+  };
+
   const {
     signIn,
     signOut,
@@ -208,6 +212,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
       <SessionWarningDialog
         open={sessionWarningOpen}
         handleContinue={handleContinue}
+        handleDismiss={handleSessionWarningDismiss}
         appSignOut={appSignOut}
       />
 
