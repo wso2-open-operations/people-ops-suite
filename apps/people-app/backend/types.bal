@@ -157,3 +157,21 @@ public type UnitOrgPayload record {|
     # Email of the head of the unit
     string headEmail;
 |};
+
+# Reference to a parent organization node with mapping details.
+public type OrgNodeLinkInfo record {|
+    # ID of the parent node
+    string id;
+    # Functional lead email for the mapping
+    string functionalLeadEmail;
+|};
+
+# Payload for adding any organization node.
+public type OrgNodePayload record {|
+    # Name of the node
+    string name;
+    # Head email of the node
+    string headEmail;
+    # Parent node link details — required for mapping nodes only
+    OrgNodeLinkInfo orgNodeLinkInfo?;
+|};
