@@ -74,7 +74,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     refreshAccessToken,
     getIDToken,
     trySignInSilently,
-    getAccessToken,
     state,
   } = useAuthContext();
   const isAuthenticatedRef = useRef(state.isAuthenticated);
@@ -89,23 +88,23 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const refreshToken = React.useCallback(async (): Promise<{ accessToken: string }> => {
+  const refreshToken = React.useCallback(async (): Promise<{ idToken: string }> => {
     if (isAuthenticatedRef.current) {
-      const accessToken = await getAccessToken();
-      return { accessToken };
+      const idToken = await getIDToken();
+      return { idToken };
     }
 
     try {
       await refreshAccessToken();
-      const accessToken = await getAccessToken();
-      return { accessToken };
+      const idToken = await getIDToken();
+      return { idToken };
     } catch (error) {
       setAppState(AppState.Loading);
       await signOut();
       setAppState(AppState.Unauthenticated);
       throw error;
     }
-  }, [getAccessToken, refreshAccessToken, signOut]);
+  }, [getIDToken, refreshAccessToken, signOut]);
 
   const setupAuthenticatedUser = React.useCallback(async () => {
     const [userInfo, idToken, decodedIdToken] = await Promise.all([
