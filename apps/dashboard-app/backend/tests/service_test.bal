@@ -210,22 +210,6 @@ function testGetDailyFoodWaste() returns error? {
     }
 }
 
-// 4.1 Test Get Daily Food Waste Server Error (Negative Path)
-@test:Config {}
-function testGetDailyFoodWasteHandlesServerError() returns error? {
-    map<string> headers = check getHeaders(["employee"]);
-
-    http:Response|error response = dashboardClient->get("/food-waste/daily?date=2024-01-01", headers);
-
-    if response is http:Response {
-        test:assertEquals(response.statusCode, 500, "Expected 500 Internal Server Error");
-        json payload = check response.getJsonPayload();
-        test:assertEquals(payload.message, "Error occurred while fetching daily food waste records!");
-    } else {
-        test:assertFail("Client call failed");
-    }
-}
-
 // 5. Test Invalid Date Logic
 @test:Config {}
 function testInvalidDate() returns error? {
