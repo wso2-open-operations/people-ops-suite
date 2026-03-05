@@ -198,6 +198,40 @@ public type Pagination record {|
     int offset = 0;
 |};
 
+# Allowlisted sort order values and their SQL fragments.
+public final map<sql:ParameterizedQuery> & readonly SortOrder = {
+    "ASC": `ASC`,
+    "DESC": `DESC`,
+    "asc" : `ASC`,
+    "desc" : `DESC`,
+    "Asc" : `ASC`,
+    "Desc" : `DESC`
+};
+
+# Allowed Employee sort fields with their corresponding database columns.
+public final map<sql:ParameterizedQuery> & readonly EmployeeSortField = {
+    "employeeId": `e.employee_id`,
+    "firstName": `e.first_name`,
+    "lastName": `e.last_name`,
+    "fullName": `CONCAT(e.first_name, ' ', e.last_name)`,
+    "workEmail": `e.work_email`,
+    "startDate": `e.start_date`,
+    "employeeStatus": `e.employee_status`,
+    "employmentType": `et.name`,
+    "designation": `d.designation`,
+    "businessUnit": `bu.name`,
+    "team": `t.name`,
+    "company": `c.name`
+};
+
+# Sort configuration for employee listing.
+public type Sort record {|
+    # Field to sort by
+    string sortField = "employeeId";
+    # Sort order: "ASC" for ascending, "DESC" for descending
+    string sortOrder = "ASC";
+|};
+
 # Filter payload for getting employees.
 public type EmployeeSearchPayload record {|
     # Search query
@@ -210,6 +244,8 @@ public type EmployeeSearchPayload record {|
     EmployeeFilters filters;
     # Pagination
     Pagination pagination;
+    # Sort configuration
+    Sort sort;
 |};
 
 # Employee record with total count.
