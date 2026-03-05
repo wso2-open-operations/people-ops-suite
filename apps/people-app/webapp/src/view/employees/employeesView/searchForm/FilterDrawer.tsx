@@ -110,7 +110,7 @@ export function FilterDrawer({
   }, [drawerOpen, appliedFilter]);
 
   const set = (patch: Partial<Filters>) => {
-    setDraft((p) => ({ filters: { ...p.filters, ...patch } }));
+    setDraft((p) => ({ ...p, filters: { ...p.filters, ...patch } } satisfies EmployeeSearchPayload));
   };
 
   return (
@@ -351,6 +351,7 @@ export function FilterDrawer({
             color="secondary"
             onClick={() => {
               const nextDraft = {
+                ...draft,
                 filters: {
                   ...draft.filters,
                 },

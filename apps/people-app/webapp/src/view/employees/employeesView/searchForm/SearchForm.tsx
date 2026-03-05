@@ -160,6 +160,7 @@ export function SearchForm() {
           ...patch.filters,
         },
         pagination: patch.pagination ?? filterRef.current.pagination,
+        sort: patch.sort ?? filterRef.current.sort,
       };
       dispatch(setEmployeeFilter(nextPayload));
     },
@@ -177,6 +178,7 @@ export function SearchForm() {
           limit: DEFAULT_LIMIT_VALUE,
           offset: DEFAULT_OFFSET_VALUE,
         },
+        sort: filterRef.current.sort,
       } satisfies EmployeeSearchPayload),
     );
   };
