@@ -157,6 +157,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         if (mounted) {
           console.error("Auth initialization failed", err);
           dispatch(setAuthError());
+          setAppState(AppState.Unauthenticated);
         }
       }
     };
