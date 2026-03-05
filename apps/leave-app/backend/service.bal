@@ -85,7 +85,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 privileges: privileges,
                 isLead: empInfo.lead,
                 employmentStartDate: empInfo.continuousServiceDate ?: empInfo.startDate,
-                subordinateCount: subordinates.length()
+                subordinateCount: subordinates.length(),
+                location: empInfo.location
             };
 
             return userInfoResponse;
