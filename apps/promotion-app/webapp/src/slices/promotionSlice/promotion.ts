@@ -108,12 +108,15 @@ export const insertPromotions = createAsyncThunk(
   ) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken(); 
-    return new Promise<{ applicationID: string }>((resolve, reject) => {
+    return new Promise<{ applicationID: number }>((resolve, reject) => {
       APIService.getInstance()
         .post(AppConfig.serviceUrls.retrieveAllPromotionRequests, payload,{
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
+          resolve({
+            applicationID: response.data
+          })
           dispatch(
             enqueueSnackbarMessage({
               message: "Successfully Create a Promotion!",
