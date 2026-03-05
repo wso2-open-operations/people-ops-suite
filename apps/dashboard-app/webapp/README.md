@@ -324,10 +324,6 @@ APIService.callback = callback;
         "GET",
         "HEAD",
         "OPTIONS",
-        "DELETE",
-        "POST",
-        "PATCH",
-        "PUT",
       ],
       statusCodesToRetry: [[401, 401]],
       retryDelay: 100,
@@ -335,7 +331,7 @@ APIService.callback = callback;
 
 - This config tells retry-axios:
   - `retry: 3`: try up to **3 retries**.
-  - `httpMethodsToRetry`: which HTTP methods are allowed to retry (we include most).
+  - `httpMethodsToRetry`: retries are restricted to safe methods (`GET`, `HEAD`, `OPTIONS`) to avoid duplicate writes.
   - `statusCodesToRetry: [[401, 401]]`: only **401 Unauthorized** should trigger a retry (this is important—401 usually means our token expired).
   - `retryDelay: 100`: wait **100ms** between retries.
 
