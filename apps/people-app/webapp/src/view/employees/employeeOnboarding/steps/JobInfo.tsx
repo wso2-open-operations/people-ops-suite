@@ -169,7 +169,9 @@ const ContinuousServiceTooltip = React.memo(
       { label: "Work Location", value: record.workLocation },
       {
         label: "Start Date",
-        value: dayjs(record.startDate).format("YYYY-MM-DD"),
+        value: record.startDate
+          ? dayjs(record.startDate).format("YYYY-MM-DD")
+          : null,
       },
       { label: "Manager Email", value: record.managerEmail },
       { label: "Additional Managers", value: record.additionalManagerEmails },
