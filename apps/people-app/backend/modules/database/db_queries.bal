@@ -935,51 +935,86 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
 isolated function addBusinessUnitQuery(BusinessUnitPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO businessUnits(
     name,
-    head_email
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
   ) VALUES (
     ${payload.name},
-    ${payload.headEmail}
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
   )
 `;
 
 # Build query to insert a new team.
 #
+# + userEmail - Email of the user performing the action
 # + payload - Payload containing the team details
 # + return - Parameterized INSERT query for the new team
-isolated function addTeamQuery(TeamPayload payload) returns sql:ParameterizedQuery => `
+isolated function addTeamQuery(string userEmail, TeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO team(
     name,
-    head_email
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
   ) VALUES (
     ${payload.name},
-    ${payload.headEmail}
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
   )
 `;
 
 # Build query to insert a new sub team.
 #
+# + userEmail - Email of the user performing the action
 # + payload - Payload containing the sub team details
 # + return - Parameterized INSERT query for the new sub team
-isolated function addSubTeamQuery(SubTeamPayload payload) returns sql:ParameterizedQuery => `
+isolated function addSubTeamQuery(string userEmail, SubTeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO sub_team(
     name,
-    head_email
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
   ) VALUES (
     ${payload.name},
-    ${payload.headEmail}
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
   )
 `;
 
 # Build query to insert a new unit.
 #
+# + userEmail - Email of the user performing the action
 # + payload - Payload containing the unit details
 # + return - Parameterized INSERT query for the new unit
-isolated function addUnitQuery(UnitOrgPayload payload) returns sql:ParameterizedQuery => `
+isolated function addUnitQuery(string userEmail, UnitOrgPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO unit(
     name,
-    head_email
+    head_email,
+    created_by,
+    created_on,
+    updated_by,
+    updated_on
   ) VALUES (
     ${payload.name},
-    ${payload.headEmail}
+    ${payload.headEmail},
+    ${userEmail},
+    current_timestamp,
+    ${userEmail},
+    current_timestamp
   )
 `;
