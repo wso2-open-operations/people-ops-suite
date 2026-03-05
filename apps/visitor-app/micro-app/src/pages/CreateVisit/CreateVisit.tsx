@@ -923,9 +923,6 @@ function CreateVisit() {
               label={`Expected Departure Time${timeOfEntry && timeOfDeparture ? ` (${getDurationLabel(timeOfEntry, timeOfDeparture)})` : ""}`}
               sx={{ borderRadius: "12px", fontSize: "0.875rem" }}
             >
-              <MenuItem value="">
-                <em>Select departure time</em>
-              </MenuItem>
               {timeSlots
                 .filter((t) => !timeOfEntry || t > timeOfEntry)
                 .map((slot) => {
