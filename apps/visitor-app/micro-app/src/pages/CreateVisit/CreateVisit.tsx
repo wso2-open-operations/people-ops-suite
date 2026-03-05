@@ -143,7 +143,7 @@ function CreateVisit() {
   const [accessibleLocations, setAccessibleLocations] = useState<FloorRoom[]>(
     [],
   );
-  const [visitDate, setVisitDate] = useState("");
+  const [visitDate, setVisitDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [timeOfEntry, setTimeOfEntry] = useState("");
   const [timeOfDeparture, setTimeOfDeparture] = useState("");
   const [visitors, setVisitors] = useState<VisitorDetail[]>([
