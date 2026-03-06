@@ -17,9 +17,6 @@
 import {
   Employee,
   selectEmployeeMap,
-  fetchParticipants,
-  selectParticipants,
-  selectParticipantsStatus,
   fetchEntityEmployees,
   selectSubordinatesArray,
   selectSubordinates,
