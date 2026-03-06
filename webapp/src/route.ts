@@ -13,10 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import React from "react";
 import type { RouteObject } from "react-router-dom";
 import { View } from "@view/index";
-import React from "react";
 import { isIncludedRole } from "./utils/utils";
 
 import DataUsageIcon from "@mui/icons-material/DataUsage";
@@ -25,6 +24,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import ShieldIcon from "@mui/icons-material/Shield";
 import { Role } from "@utils/types";
 import type { RouteDetail, RouteObjectWithRole } from "./types/types";
+import { SettingsIcon } from "lucide-react";
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -63,20 +63,20 @@ export const routes: RouteObjectWithRole[] = [
       },
     ],
   },
-  // {
-  //   path: "/history",
-  //   text: "PAR History",
-  //   icon: React.createElement(HistoryIcon),
-  //   element: React.createElement(View.ParHistory),
-  //   allowRoles: [Role.EMPLOYEE],
-  // },
-  // {
-  //   path: "/settings",
-  //   text: "Settings",
-  //   icon: React.createElement(SettingsIcon),
-  //   element: React.createElement(View.GlobalSettings),
-  //   allowRoles: [Role.ADMIN],
-  // },
+  {
+    path: "/history",
+    text: "PAR History",
+    icon: React.createElement(HistoryIcon),
+    element: React.createElement(View.ParHistory),
+    allowRoles: [Role.EMPLOYEE],
+  },
+  {
+    path: "/settings",
+    text: "Settings",
+    icon: React.createElement(SettingsIcon),
+    element: React.createElement(View.GlobalSettings),
+    allowRoles: [Role.ADMIN],
+  },
 ];
 
 export const getActiveRoutesV2 = (
