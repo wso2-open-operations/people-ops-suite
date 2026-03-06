@@ -1423,6 +1423,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
+    # Create a business unit-team mapping.
+    #
+    # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
+    # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization\-business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1462,6 +1466,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
+    # Create a team-sub-team mapping.
+    #
+    # + payload - Mapping details; `parentId` = business-unit-team ID, `childId` = sub-team ID
+    # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization\-teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1496,11 +1504,15 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return <http:Created>{
             body: {
-                message: string `BusinessUnit-Team-Subteam Successfully created`
+                message: string `BusinessUnit-Team-SubTeam Successfully created`
             }
         };
     }
 
+    # Create a sub-team-unit mapping.
+    #
+    # + payload - Mapping details; `parentId` = business-unit-team-sub-team ID, `childId` = unit ID
+    # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization\-sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1535,7 +1547,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         return <http:Created>{
             body: {
-                message: string `BusinessUnit-Team-Subteam-Unit Successfully created`
+                message: string `BusinessUnit-Team-SubTeam-Unit Successfully created`
             }
         };
     }
