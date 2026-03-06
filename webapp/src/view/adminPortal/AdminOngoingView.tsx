@@ -101,7 +101,7 @@ export default function AdminOngoingView() {
 
   return (
     <Fade in={true}>
-      <Stack sx={{ height: "100%" }}>
+      <Stack sx={{ height: "calc(100vh - 7rem)" }}>
         <FormContainer>
           <Title
             firstWord="Admin"
