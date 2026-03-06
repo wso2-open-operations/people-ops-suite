@@ -13,207 +13,75 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
 import {
-  Autocomplete,
-  Avatar,
   Box,
   Button,
-  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
-  TextField,
+  IconButton,
   Typography,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import { Controller, useForm } from "react-hook-form";
 
-import { useCallback, useMemo } from "react";
+import { EmployeeAutocompleteField, OrgItemAutocompleteField } from "./add-modal/AddModalFields";
+import type { AddOrgFormValues, AddPageContext } from "./add-modal/types";
+import { useAddOrgEntity } from "./add-modal/useAddOrgEntity";
 
-import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@services/employee";
-import { TeamState } from "@slices/organizationSlice/organizationStructure";
-import { useAppSelector } from "@slices/store";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const ADD_NEW_TEAM_PREFIX = "__ADD_NEW__";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-/** A team option that may represent an existing team or a "create new" placeholder. */
-interface TeamOption {
-  id: string;
-  name: string;
-  isNew: boolean;
-}
-
-interface AddPageFormValues {
-  team: TeamOption | null;
-  head: EmployeeBasicInfo | null;
-  functionalLead: EmployeeBasicInfo | null;
-}
+export type { AddPageContext, AddOrgFormValues };
 
 export interface AddPageProps {
-  /** Called when the user cancels the dialog. */
-  onCancel: () => void;
-  /** Called with the submitted form values. */
-  onSubmit: (values: AddPageFormValues) => void;
+  open: boolean;
+  context: AddPageContext;
+  onClose: () => void;
+  onSubmit: (context: AddPageContext, values: AddOrgFormValues) => void;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-interface EmployeeOptionProps {
-  listItemProps: React.HTMLAttributes<HTMLLIElement>;
-  employee: EmployeeBasicInfo;
-}
-
-const EmployeeOption: React.FC<EmployeeOptionProps> = ({ listItemProps, employee }) => {
-  const theme = useTheme();
-  const label = employee.designation ?? employee.workEmail;
-
-  return (
-    <Box
-      component="li"
-      {...listItemProps}
-      sx={{
-        display: "flex",
-        gap: 1.5,
-        alignItems: "center",
-        py: "10px !important",
-        px: "12px !important",
-      }}
-    >
-      <Avatar
-        src={employee.employeeThumbnail ?? undefined}
-        sx={{ borderRadius: "8px", fontSize: 12, height: 40, width: 40 }}
-      >
-        {employee.firstName.charAt(0)}
-      </Avatar>
-
-      <Box sx={{ display: "flex", flexDirection: "column" }}>
-        <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p2.active }}>
-          {employee.firstName} {employee.lastName}
-        </Typography>
-        <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p4.active }}>
-          {label}
-        </Typography>
-      </Box>
-    </Box>
-  );
-};
-
-// ─── Field label ──────────────────────────────────────────────────────────────
-
-const FieldLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AddPage: React.FC<AddPageProps> = ({ open, context, onClose, onSubmit }) => {
   const theme = useTheme();
 
+  const {
+    childLabel,
+    parentLabel,
+    orgItemOptions,
+    filterOrgItemOptions,
+    employees,
+    isEmployeesLoading,
+    form,
+    isNewItem,
+    handleOrgItemChange,
+    buildSubmitHandler,
+    handleSubmit,
+  } = useAddOrgEntity({ context });
+
   return (
-    <Typography
-      variant="body2"
-      sx={{
-        fontWeight: 500,
-        color: theme.palette.customText.primary.p3.active,
-        letterSpacing: "0.14px",
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={false}
+      slotProps={{
+        paper: {
+          sx: {
+            position: "relative",
+            width: "620px",
+            borderRadius: "12px",
+            boxShadow: "0px 1px 8px 2px rgba(0,0,0,0.12)",
+            backgroundColor: theme.palette.fill.secondary.light.active,
+            padding: "4px",
+          },
+        },
       }}
     >
-      {children}
-    </Typography>
-  );
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-const AddPage: React.FC<AddPageProps> = ({ onCancel, onSubmit }) => {
-  const theme = useTheme();
-
-  // ── Redux state ──────────────────────────────────────────────────────────
-  const teams = useAppSelector(
-    (state) => state.organizationStructure.organizationInfo?.teams ?? [],
-  );
-
-  // ── Remote data ──────────────────────────────────────────────────────────
-  const { data: employees = [], isLoading: isEmployeesLoading } = useGetEmployeesBasicInfoQuery();
-
-  // ── Form ─────────────────────────────────────────────────────────────────
-  const { control, handleSubmit, watch, setValue } = useForm<AddPageFormValues>({
-    defaultValues: {
-      team: null,
-      head: null,
-      functionalLead: null,
-    },
-  });
-
-  const selectedTeam = watch("team");
-
-  /**
-   * Whether the user is creating a brand-new team (typed a name not in the list).
-   * When true, the "Team Head" section is shown.
-   */
-  const isNewTeam = selectedTeam?.isNew === true;
-
-  // ── Team autocomplete options ─────────────────────────────────────────────
-  const teamOptions: TeamOption[] = useMemo(
-    () =>
-      teams.map((t: TeamState) => ({
-        id: t.id,
-        name: t.name,
-        isNew: false,
-      })),
-    [teams],
-  );
-
-  /**
-   * Build the option list for the Teams autocomplete.
-   * If the user's input doesn't match any existing team, append a "create" option.
-   */
-  const filterTeamOptions = useCallback(
-    (options: TeamOption[], { inputValue }: { inputValue: string }): TeamOption[] => {
-      const trimmed = inputValue.trim();
-      const filtered = options.filter((o) => o.name.toLowerCase().includes(trimmed.toLowerCase()));
-
-      const exactMatch = options.some((o) => o.name.toLowerCase() === trimmed.toLowerCase());
-
-      if (trimmed && !exactMatch) {
-        filtered.push({
-          id: `${ADD_NEW_TEAM_PREFIX}${trimmed}`,
-          name: trimmed,
-          isNew: true,
-        });
-      }
-
-      return filtered;
-    },
-    [],
-  );
-
-  // ── Submit ───────────────────────────────────────────────────────────────
-  const handleFormSubmit = (values: AddPageFormValues) => {
-    onSubmit(values);
-  };
-
-  // ── Render ───────────────────────────────────────────────────────────────
-  return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(handleFormSubmit)}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "4px",
-        p: "4px",
-        pt: "8px",
-        borderRadius: "12px",
-        backgroundColor: theme.palette.fill.secondary.light.active,
-        boxShadow: "0px 1px 8px 2px rgba(0,0,0,0.12)",
-        width: "100%",
-      }}
-    >
-      {/* ── Modal header ─────────────────────────────────────────────── */}
-      <Box
+      <DialogTitle
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          px: 1,
+          padding: "0px",
+          paddingX: "12px",
+          paddingY: "6px",
         }}
       >
         <Typography
@@ -224,237 +92,102 @@ const AddPage: React.FC<AddPageProps> = ({ onCancel, onSubmit }) => {
             letterSpacing: "0.14px",
           }}
         >
-          Add a Team
+          Add {childLabel} to{" "}
+          <Box
+            component="span"
+            sx={{ color: theme.palette.customText.primary.p2.active, fontWeight: 600 }}
+          >
+            {context.parentName}
+          </Box>{" "}
+          <Box
+            component="span"
+            sx={{ color: theme.palette.customText.primary.p4.active, fontWeight: 400 }}
+          >
+            ({parentLabel})
+          </Box>
         </Typography>
-      </Box>
 
-      {/* ── Content card ─────────────────────────────────────────────── */}
-      <Box
+        <IconButton
+          onClick={onClose}
+          sx={{
+            color: theme.palette.customText.primary.p2.active,
+            p: 0,
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent
         sx={{
-          backgroundColor: theme.palette.surface.secondary.active,
-          border: `1px solid ${theme.palette.customBorder.primary.b2.active}`,
+          padding: 1.5,
           borderRadius: "12px",
-          p: 2,
+          border: `1px solid ${theme.palette.customBorder.primary.b2.active}`,
+          backgroundColor: theme.palette.surface.secondary.active,
           display: "flex",
           flexDirection: "column",
-          gap: "20px",
+          gap: 2.5,
         }}
       >
         {/* Section header */}
-        <Box>
+        <Box sx={{ mt: 1 }}>
           <Typography
             variant="h6"
             sx={{ color: theme.palette.customText.primary.p2.active, pb: 1 }}
           >
-            Add teams
+            Add {childLabel}
           </Typography>
           <Divider sx={{ borderColor: theme.palette.customBorder.primary.b2.active }} />
         </Box>
 
-        {/* ── Teams autocomplete ──────────────────────────────────────── */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <FieldLabel>Teams</FieldLabel>
+        {/* Form */}
+        <Box
+          component="form"
+          onSubmit={handleSubmit(buildSubmitHandler(onSubmit))}
+          sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}
+        >
+          {/* Org-item picker (Teams / Sub Teams / Units …) */}
+          <OrgItemAutocompleteField
+            control={form.control}
+            options={orgItemOptions}
+            filterOptions={filterOrgItemOptions}
+            childLabel={childLabel}
+            onChange={handleOrgItemChange}
+          />
 
-          <Box sx={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <Controller
-              name="team"
-              control={control}
-              render={({ field }) => (
-                <Autocomplete<TeamOption, false, false, false>
-                  {...field}
-                  options={teamOptions}
-                  filterOptions={filterTeamOptions}
-                  getOptionLabel={(o) => o.name}
-                  isOptionEqualToValue={(a, b) => a.id === b.id}
-                  value={field.value}
-                  onChange={(_, val) => {
-                    field.onChange(val);
-                    // Reset head when switching team selection
-                    setValue("head", null);
-                  }}
-                  renderOption={(props, option) => (
-                    <Box
-                      component="li"
-                      {...props}
-                      key={option.id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        py: "10px !important",
-                        px: "12px !important",
-                      }}
-                    >
-                      {option.isNew && (
-                        <AddIcon
-                          sx={{
-                            fontSize: 16,
-                            color: theme.palette.customText.secondary.p1.active,
-                          }}
-                        />
-                      )}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: option.isNew
-                            ? theme.palette.customText.secondary.p1.active
-                            : theme.palette.customText.primary.p3.active,
-                          fontWeight: option.isNew ? 500 : 400,
-                        }}
-                      >
-                        {option.isNew ? `Add "${option.name}"` : option.name}
-                      </Typography>
-                    </Box>
-                  )}
-                  renderInput={(params) => (
-                    <TextField {...params} placeholder="Select an existing team" size="small" />
-                  )}
-                  sx={{ flex: 1 }}
-                />
-              )}
+          {/* Head picker — only when creating a brand-new entity */}
+          {isNewItem && (
+            <EmployeeAutocompleteField
+              control={form.control}
+              name="head"
+              label={`${childLabel} Head`}
+              employees={employees}
+              isLoading={isEmployeesLoading}
             />
+          )}
 
-            <Button
-              type="button"
-              variant="outlined"
-              color="neutral"
-              size="small"
-              onClick={handleSubmit(handleFormSubmit)}
-              sx={{ whiteSpace: "nowrap", height: 37 }}
-            >
-              Add
+          {/* Functional Lead picker — always shown */}
+          <EmployeeAutocompleteField
+            control={form.control}
+            name="functionalLead"
+            label="Functional Lead"
+            employees={employees}
+            isLoading={isEmployeesLoading}
+          />
+
+          {/* Action buttons */}
+          <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+            <Button type="button" variant="outlined" size="small" onClick={onClose}>
+              Cancel
+            </Button>
+
+            <Button type="submit" variant={"primary" as any} size="small">
+              Add {childLabel}
             </Button>
           </Box>
         </Box>
-
-        {/* ── Team Head (only shown when creating a new team) ──────────── */}
-        {isNewTeam && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <FieldLabel>Team Head</FieldLabel>
-
-            <Box sx={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <Controller
-                name="head"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete<EmployeeBasicInfo, false, false, false>
-                    {...field}
-                    options={employees}
-                    loading={isEmployeesLoading}
-                    getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
-                    isOptionEqualToValue={(a, b) => a.employeeId === b.employeeId}
-                    value={field.value}
-                    onChange={(_, val) => field.onChange(val)}
-                    renderOption={(props, employee) => (
-                      <EmployeeOption
-                        key={employee.employeeId}
-                        listItemProps={props}
-                        employee={employee}
-                      />
-                    )}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        placeholder="Select an existing team"
-                        size="small"
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              {isEmployeesLoading && <CircularProgress size={14} />}
-                              {params.InputProps.endAdornment}
-                            </>
-                          ),
-                        }}
-                      />
-                    )}
-                    sx={{ flex: 1 }}
-                  />
-                )}
-              />
-
-              <Button
-                type="button"
-                variant="outlined"
-                color="neutral"
-                size="small"
-                sx={{ whiteSpace: "nowrap", height: 37 }}
-              >
-                Add
-              </Button>
-            </Box>
-          </Box>
-        )}
-
-        {/* ── Functional Lead autocomplete ────────────────────────────── */}
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <FieldLabel>Functional Lead</FieldLabel>
-
-          <Box sx={{ display: "flex", gap: "12px", alignItems: "center" }}>
-            <Controller
-              name="functionalLead"
-              control={control}
-              render={({ field }) => (
-                <Autocomplete<EmployeeBasicInfo, false, false, false>
-                  {...field}
-                  options={employees}
-                  loading={isEmployeesLoading}
-                  getOptionLabel={(o) => `${o.firstName} ${o.lastName}`}
-                  isOptionEqualToValue={(a, b) => a.employeeId === b.employeeId}
-                  value={field.value}
-                  onChange={(_, val) => field.onChange(val)}
-                  renderOption={(props, employee) => (
-                    <EmployeeOption
-                      key={employee.employeeId}
-                      listItemProps={props}
-                      employee={employee}
-                    />
-                  )}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Select an existing team"
-                      size="small"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <>
-                            {isEmployeesLoading && <CircularProgress size={14} />}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      }}
-                    />
-                  )}
-                  sx={{ flex: 1 }}
-                />
-              )}
-            />
-
-            <Button
-              type="button"
-              variant="outlined"
-              color="neutral"
-              size="small"
-              sx={{ whiteSpace: "nowrap", height: 37 }}
-            >
-              Add
-            </Button>
-          </Box>
-        </Box>
-
-        {/* ── Action buttons ──────────────────────────────────────────── */}
-        <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-          <Button type="button" variant="outlined" size="small" onClick={onCancel}>
-            Cancel
-          </Button>
-
-          <Button type="submit" variant={"primary" as any} size="small">
-            Add Team
-          </Button>
-        </Box>
-      </Box>
-    </Box>
+      </DialogContent>
+    </Dialog>
   );
 };
 
