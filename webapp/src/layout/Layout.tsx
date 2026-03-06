@@ -91,6 +91,8 @@ export default function Layout() {
               flex: 1,
               height: "100%",
               padding: theme.spacing(3),
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
