@@ -698,11 +698,11 @@ public type OrgNodeInfo record {|
 |};
 
 # Internal payload for inserting a row into any org-node mapping table.
-type OrgNodeMappingPayload record {|
+public type OrgNodeMappingPayload record {|
     # ID of the parent junction row
     string parentId;
     # ID of the newly created child node
-    int childId;
+    string childId;
     # Functional lead email for the mapping
     string functionalLeadEmail;
 |};
