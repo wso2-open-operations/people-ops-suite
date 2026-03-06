@@ -483,3 +483,18 @@ public isolated function addUnitWithMapping(string userEmail, OrgNodePayload pay
         return id;
     }
 }
+
+public isolated function addBusinessUnitTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+public isolated function addBusinessUnitTeamSubTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
+
+public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
+    return executionResult.lastInsertId.ensureType(int);
+}
