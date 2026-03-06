@@ -1261,7 +1261,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addBusinessUnitTeam(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            int|error result = database:addTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
             if result is error {
                 string customErr = "Error while adding a team";
                 log:printError(customErr, result);
@@ -1419,6 +1419,123 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Created>{
             body: {
                 message: string `Unit ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    resource function post organization\-business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team Successfully created`
+            }
+        };
+    }
+
+    resource function post organization\-teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team-SubTeam";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team-Subteam Successfully created`
+            }
+        };
+    }
+
+    resource function post organization\-sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        string workEmail = userInfo.email;
+        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
+            string customErr = "Invalid work email format";
+            log:printWarn(customErr, workEmail = workEmail);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team-Subteam-Unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team-Subteam-Unit Successfully created`
             }
         };
     }
