@@ -433,7 +433,7 @@ public isolated function addUnit(string userEmail, OrgNodeInfo payload) returns 
 # Create a new team and map it to a business unit atomically.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Team details; `orgNodeLinkInfo.id` must be the target business unit ID
+# + payload - Team details
 # + return - Created mapping ID or error
 public isolated function addTeamWithMapping(string userEmail, OrgNodePayload payload) returns int|error {
     transaction {
@@ -451,7 +451,7 @@ public isolated function addTeamWithMapping(string userEmail, OrgNodePayload pay
 # Create a new sub-team and map it to a business unit-team atomically.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Sub-team details; `orgNodeLinkInfo.id` must be the target `business_unit_team` ID
+# + payload - Sub-team details
 # + return - Created mapping ID or error
 public isolated function addSubTeamWithMapping(string userEmail, OrgNodePayload payload) returns int|error {
     transaction {
@@ -469,7 +469,7 @@ public isolated function addSubTeamWithMapping(string userEmail, OrgNodePayload 
 # Create a new unit and map it to a business unit-team-sub-team atomically.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Unit details; `orgNodeLinkInfo.id` must be the target `business_unit_team_sub_team` ID
+# + payload - Unit details 
 # + return - Created mapping ID or error
 public isolated function addUnitWithMapping(string userEmail, OrgNodePayload payload) returns int|error {
     transaction {
@@ -484,16 +484,31 @@ public isolated function addUnitWithMapping(string userEmail, OrgNodePayload pay
     }
 }
 
+# Map an existing team to a business unit.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Mapping details; `parentId` = business unit ID, `childId` = team ID
+# + return - Created mapping ID or error
 public isolated function addBusinessUnitTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
 
+# Map an existing sub-team to a business unit-team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Mapping details; `parentId` = business_unit_team ID, `childId` = sub-team ID
+# + return - Created mapping ID or error
 public isolated function addBusinessUnitTeamSubTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
 
+# Map an existing unit to a business unit-team-sub-team.
+#
+# + userEmail - Email of the user creating the record
+# + payload - Mapping details; `parentId` = business_unit_team_sub_team ID, `childId` = unit ID
+# + return - Created mapping ID or error
 public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNodeMappingPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
