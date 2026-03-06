@@ -770,7 +770,6 @@ isolated function deleteSubTeamUnitQuery(DeleteSubTeamUnitPayload payload, int s
 }
 
 # Fetch the organization structure with business units, teams, sub-teams, units,
-# including head, functional lead, and headcount for each node.
 #
 # + return - Query to get the full organization hierarchy
 isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery =>
@@ -1028,7 +1027,7 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
 # Build query to insert a new business-unit-team.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload; `parentId` = business unit ID, `childId` = team ID
+# + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business-unit-team
 isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team(
@@ -1053,7 +1052,7 @@ isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPaylo
 # Build query to insert a new sub team into a business unit-team mapping.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload; `parentId` = business_unit_team ID, `childId` = sub-team ID
+# + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
 isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team(
@@ -1078,7 +1077,7 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappi
 # Build query to insert a new unit into a business unit-team-sub team mapping.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload; `parentId` = business_unit_team_sub_team ID, `childId` = unit ID
+# + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
 isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team_unit(
