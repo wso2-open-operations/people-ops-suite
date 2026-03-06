@@ -37,7 +37,7 @@ export default function EmployeesTable() {
   const navigate = useNavigate();
 
   const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    pageNumber: 0,
+    page: 0,
     pageSize: DEFAULT_LIMIT_VALUE,
   });
 
@@ -56,8 +56,8 @@ export default function EmployeesTable() {
 
   const pagination = useMemo<Pagination>(() => ({
     limit: paginationModel.pageSize,
-    offset: paginationModel.pageNumber,
-  }), [paginationModel.pageNumber, paginationModel.pageSize]) 
+    offset: paginationModel.page * paginationModel.pageSize,
+  }), [paginationModel.page, paginationModel.pageSize]) 
 
   const appliedFilter = useMemo(
     () => ({
@@ -371,7 +371,7 @@ export default function EmployeesTable() {
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPaginationModelChange={(model) => {
             setPaginationModel({
-              pageNumber: model.pageNumber,
+              page: model.page,
               pageSize: model.pageSize,
             });
           }}
@@ -379,7 +379,7 @@ export default function EmployeesTable() {
           sortModel={sortModel}
           onSortModelChange={(model) => {
             setSortModel(model);
-            setPaginationModel((currentPaginationModel) => ({ ...currentPaginationModel, pageNumber: 0 }));
+            setPaginationModel((currentPaginationModel) => ({ ...currentPaginationModel, page: 0 }));
           }}
           onRowClick={(params) =>
             navigate(`/employees/${params.row.employeeId}`)
