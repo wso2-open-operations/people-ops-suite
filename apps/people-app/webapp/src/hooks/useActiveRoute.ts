@@ -44,7 +44,6 @@ export const useActiveRoute = () => {
     for (const route of routes) {
       // Check exact match first
       if (route.path === path) {
-        console.log("Found exact match:", route);
         return route;
       }
 
@@ -52,10 +51,8 @@ export const useActiveRoute = () => {
       if (route.children && route.children.length > 0) {
         for (const child of route.children) {
           const childPath = `${route.path}/${child.path}`;
-          console.log(`Checking child path: ${childPath} vs ${path}`);
 
           if (childPath === path) {
-            console.log("Found child match:", child);
             return child;
           }
         }
