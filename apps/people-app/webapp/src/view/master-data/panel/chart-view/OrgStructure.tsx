@@ -30,7 +30,7 @@ import {
 } from "@services/organization";
 import { UnitType } from "@utils/utils";
 
-import { EditModal } from "./components/EditModal";
+import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureTree from "./components/OrgStructureTree";
 
 export default function OrgStructure() {
@@ -170,7 +170,7 @@ export default function OrgStructure() {
   if (!orgStructure) {
     return <ErrorHandler message="No organization structure data available" />;
   }
-  
+
   return (
     <Box
       sx={{
