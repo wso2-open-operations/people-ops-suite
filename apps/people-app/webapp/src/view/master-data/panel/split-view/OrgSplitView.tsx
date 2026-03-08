@@ -13,7 +13,6 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -34,10 +33,12 @@ import {
 } from "@services/organization";
 import { UnitType } from "@utils/utils";
 
-import { EditModal } from "../panel/components/EditModal";
+import AddPage, { AddPageContext } from "@view/master-data/components/AddPage"
+import { EditModal } from "@view/master-data/components/EditModal";
 import { CollapsibleOrgCard } from "./components/CollapsibleOrgCard";
 import { OrgSectionColumn } from "./components/OrgSectionColumn";
 import { useGlobalOrgSearch } from "./hooks/useGlobalOrgSearch";
+import { OrgSearchNode, buildGlobalOrgSearchIndex } from "./utils/globalOrgSearch";
 import {
   filterBusinessUnits,
   filterSubTeams,
@@ -45,7 +46,6 @@ import {
   filterUnits,
   searchOrgItem,
 } from "./utils/searchUtils";
-import { buildGlobalOrgSearchIndex, OrgSearchNode } from "./utils/globalOrgSearch";
 
 type ExpandableNodeType = "BUSINESS_UNIT" | "TEAM" | "SUB_TEAM" | "UNIT";
 
@@ -85,6 +85,14 @@ export default function OrgSplitView() {
     parentNode: null,
   });
 
+  const [addModal, setAddModal] = useState<{
+    open: boolean;
+    context: AddPageContext | null;
+  }>({
+    open: false,
+    context: null,
+  });
+
   const businessUnits = useMemo(() => orgStructure?.businessUnits || [], [orgStructure]);
 
   const getExpandKey = (type: ExpandableNodeType, id: string) => `${type}:${id}`;
@@ -95,7 +103,10 @@ export default function OrgSplitView() {
     if (match.type === "sub_team") return getRefKey("SUB_TEAM", match.id);
     return getRefKey("UNIT", match.id);
   };
-  const globalSearchIndex = useMemo(() => buildGlobalOrgSearchIndex(businessUnits), [businessUnits]);
+  const globalSearchIndex = useMemo(
+    () => buildGlobalOrgSearchIndex(businessUnits),
+    [businessUnits],
+  );
   const {
     inputValue: globalSearchInput,
     setInputValue: setGlobalSearchInput,
@@ -263,7 +274,9 @@ export default function OrgSplitView() {
   };
 
   const highlightedGlobalBusinessUnitId =
-    hasGlobalSearch && searchCurrentResult?.type === "business_unit" ? searchCurrentResult.id : null;
+    hasGlobalSearch && searchCurrentResult?.type === "business_unit"
+      ? searchCurrentResult.id
+      : null;
   const highlightedGlobalTeamId =
     hasGlobalSearch && searchCurrentResult?.type === "team" ? searchCurrentResult.id : null;
   const highlightedGlobalSubTeamId =
@@ -277,7 +290,7 @@ export default function OrgSplitView() {
 
   const findNodeById = (
     id: string,
-    type: string
+    type: string,
   ): {
     node: Company | BusinessUnit | Team | SubTeam | Unit;
     parentNode: Company | BusinessUnit | Team | SubTeam | null;
@@ -340,6 +353,14 @@ export default function OrgSplitView() {
     });
   };
 
+  const handleOpenAdd = (context: AddPageContext) => {
+    setAddModal({ open: true, context });
+  };
+
+  const handleCloseAdd = () => {
+    setAddModal({ open: false, context: null });
+  };
+
   if (isLoading) {
     return <PreLoader isLoading message="Loading organization structure ..." />;
   }
@@ -359,7 +380,7 @@ export default function OrgSplitView() {
         flexDirection: "column",
         height: "100%",
         gap: "12px",
-        padding: "16px",
+        // padding: "16px",
       }}
     >
       {/* Global Search */}
@@ -494,7 +515,14 @@ export default function OrgSplitView() {
           title="Business Units"
           searchValue={buSearch}
           onSearchChange={setBuSearch}
-          onAdd={() => console.log("Add Business Unit")}
+          onAdd={() =>
+            handleOpenAdd({
+              childType: UnitType.BusinessUnit,
+              parentId: orgStructure.id,
+              parentName: orgStructure.name,
+              parentType: UnitType.Company,
+            })
+          }
         >
           {filteredBusinessUnits.map((bu) => (
             <Box
@@ -531,7 +559,21 @@ export default function OrgSplitView() {
           title="Teams"
           searchValue={teamSearch}
           onSearchChange={setTeamSearch}
-          onAdd={selectedBU ? () => console.log("Add Team") : undefined}
+          onAdd={
+            selectedBU
+              ? () => {
+                const bu = businessUnits.find((b) => b.id === selectedBU);
+                if (bu) {
+                  handleOpenAdd({
+                    childType: UnitType.Team,
+                    parentId: bu.id,
+                    parentName: bu.name,
+                    parentType: UnitType.BusinessUnit,
+                  });
+                }
+              }
+              : undefined
+          }
         >
           {filteredTeams.map((team) => (
             <Box
@@ -568,7 +610,21 @@ export default function OrgSplitView() {
           title="Sub Teams"
           searchValue={subTeamSearch}
           onSearchChange={setSubTeamSearch}
-          onAdd={selectedTeam ? () => console.log("Add Sub Team") : undefined}
+          onAdd={
+            selectedTeam
+              ? () => {
+                const team = currentTeams.find((t) => t.id === selectedTeam);
+                if (team) {
+                  handleOpenAdd({
+                    childType: UnitType.SubTeam,
+                    parentId: team.id,
+                    parentName: team.name,
+                    parentType: UnitType.Team,
+                  });
+                }
+              }
+              : undefined
+          }
         >
           {filteredSubTeams.map((subTeam) => (
             <Box
@@ -605,7 +661,21 @@ export default function OrgSplitView() {
           title="Units"
           searchValue={unitSearch}
           onSearchChange={setUnitSearch}
-          onAdd={selectedSubTeam ? () => console.log("Add Unit") : undefined}
+          onAdd={
+            selectedSubTeam
+              ? () => {
+                const subTeam = currentSubTeams.find((st) => st.id === selectedSubTeam);
+                if (subTeam) {
+                  handleOpenAdd({
+                    childType: UnitType.Unit,
+                    parentId: subTeam.id,
+                    parentName: subTeam.name,
+                    parentType: UnitType.SubTeam,
+                  });
+                }
+              }
+              : undefined
+          }
         >
           {filteredUnits.map((unit) => (
             <Box
@@ -645,6 +715,18 @@ export default function OrgSplitView() {
           type={editModal.type}
           parentNode={editModal.parentNode}
           onClose={handleClose}
+        />
+      )}
+
+      {/* Add modal */}
+      {addModal.context && (
+        <AddPage
+          open={addModal.open}
+          context={addModal.context}
+          onClose={handleCloseAdd}
+          onSubmit={(_ctx, _values) => {
+            handleCloseAdd();
+          }}
         />
       )}
     </Box>
