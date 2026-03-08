@@ -23,7 +23,6 @@ import { useState } from "react";
 
 import { FunctionalLead, Head } from "@root/src/services/organization";
 import { NodeType } from "@utils/types";
-
 import PersonCard from "@view/master-data/components/edit-modal/PersonCard";
 
 interface OrgStructureCardProps {
@@ -35,7 +34,7 @@ interface OrgStructureCardProps {
   hasChildren?: boolean;
   isExpanded?: boolean;
   onCollapse?: () => void;
-  togglePeopleSectionVisibility?: boolean,
+  togglePeopleSectionVisibility?: boolean;
   onEdit?: () => void;
   onAdd?: () => void;
 }
@@ -74,15 +73,15 @@ const OrgStructureCard = ({
   onEdit,
   onAdd,
 }: OrgStructureCardProps) => {
-
   const theme = useTheme();
   const isCompanyNode = type === NodeType.Company;
   const primaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.chairman : teamHead;
   const secondaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.ceo : functionLead;
 
-  const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(Boolean(primaryPerson || secondaryPerson))
+  const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(
+    Boolean(primaryPerson || secondaryPerson),
+  );
 
-  console.log("ttt : ", togglePeopleSectionVisibility);
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit?.();
@@ -98,9 +97,11 @@ const OrgStructureCard = ({
     onCollapse?.();
 
     if (togglePeopleSectionVisibility) {
-      setPeopleSectionVisibility(prev => !prev);
+      setPeopleSectionVisibility((prev) => !prev);
     }
   };
+
+  const isIconRotated = isExpanded ?? isPeopleSectionVisible;
 
   return (
     <Box
@@ -152,7 +153,7 @@ const OrgStructureCard = ({
               height: "20px",
               padding: 0,
               color: theme.palette.customText.primary.p3.active,
-              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              transform: isIconRotated ? "rotate(180deg)" : "rotate(0deg)",
               transition: "transform 0.3s ease",
               opacity: hasChildren ? 1 : 0.3,
               cursor: hasChildren ? "pointer" : "default",
@@ -170,7 +171,7 @@ const OrgStructureCard = ({
               gap: "16px",
               alignItems: "flex-start",
               mr: 4,
-              width: "100%"
+              width: "100%",
             }}
           >
             {/* Team Head */}
