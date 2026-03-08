@@ -15,12 +15,15 @@
 // under the License.
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import type {
+  CompanyState,
   BusinessUnitState,
   OrganizationInfo,
   SubTeamState,
   TeamState,
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
+
+import { NodeType } from "./types";
 
 export function isIncludedRole(roles: string[], allowedRoles: string[]) {
   return roles.some((role) => allowedRoles.includes(role));
@@ -91,23 +94,24 @@ export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
 // Child type labels
 export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
 
-export function normalizeCompanyToOrganizationState(company: Company): OrganizationInfo {
+export function normalizeCompanyToOrganizationState(companyDto: Company): OrganizationInfo {
   const businessUnits: BusinessUnitState[] = [];
   const teams: TeamState[] = [];
   const subTeams: SubTeamState[] = [];
   const units: UnitState[] = [];
+  const company: CompanyState = {...companyDto, type: NodeType.Company};
 
   for (const bu of company.businessUnits) {
-    businessUnits.push({ ...bu, companyId: company.id });
+    businessUnits.push({ ...bu, parentId: company.id, type: NodeType.BusinessUnit });
 
     for (const team of bu.teams) {
-      teams.push({ ...team, businessUnitId: bu.id });
+      teams.push({ ...team, parentId: bu.id, type: NodeType.Team });
 
       for (const subTeam of team.subTeams) {
-        subTeams.push({ ...subTeam, teamId: team.id });
+        subTeams.push({ ...subTeam, parentId: team.id, type: NodeType.SubTeam });
 
         for (const unit of subTeam.units) {
-          units.push({ ...unit, subTeamId: subTeam.id });
+          units.push({ ...unit, parentId: subTeam.id, type: NodeType.Unit });
         }
       }
     }
