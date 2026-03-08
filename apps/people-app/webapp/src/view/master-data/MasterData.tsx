@@ -14,19 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
- import ViewWeekOutlinedIcon from "@mui/icons-material/ViewWeekOutlined";
+import ViewWeekOutlinedIcon from "@mui/icons-material/ViewWeekOutlined";
 
 import TabsPage from "@layout/pages/TabsPage";
 
-import OrgStructure from "./panel/OrgStructure";
-import OrgSplitView from "./split-view/OrgSplitView";
-import Test from "./panel/Test.tsx";
+import OrgStructure from "@view/master-data/panel/chart-view/OrgStructure.tsx";
+import OrgSplitView from "@view/master-data/panel/split-view/OrgSplitView.tsx";
+import Test from "@view/master-data/panel/Test.tsx";
 
 export default function MasterData() {
   return (
     <TabsPage
       title="Master Data"
       tabsPage={[
+        {
+          tabTitle: "Org Structure",
+          tabPath: "org-structure-split-view",
+          icon: <ViewWeekOutlinedIcon />,
+          page: <OrgSplitView />,
+        },
         {
           tabTitle: "Org Structure Chart",
           tabPath: "org-structure-chart",
