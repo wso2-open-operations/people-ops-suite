@@ -98,7 +98,6 @@ const OrgStructureCard = ({
     onCollapse?.();
 
     if (togglePeopleSectionVisibility) {
-      console.log("visibility : ", isPeopleSectionVisible);
       setPeopleSectionVisibility(prev => !prev);
     }
   };
