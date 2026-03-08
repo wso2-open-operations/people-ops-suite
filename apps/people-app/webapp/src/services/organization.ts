@@ -69,6 +69,8 @@ export interface BusinessUnit {
   teams: Team[];
 }
 
+export type OrgStructure = Company | BusinessUnit | Team | SubTeam | Unit
+
 export interface Company {
   id: string;
   name: string;
