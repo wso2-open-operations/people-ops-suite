@@ -21,10 +21,10 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 
-import { useOrgEntityActions } from "../panel/hooks/useOrgEntityActions";
-import { DeleteCurrent } from "../panel/sections/danger-section/DeleteCurrent";
-import { RenameField } from "../panel/sections/general-section/RenameField";
-import { SwapLeads } from "../panel/sections/leads-section/SwapLeads";
+import { useOrgEntityActions } from "../panel/chart-view/hooks/useOrgEntityActions";
+import { DeleteCurrent } from "../panel/chart-view/sections/danger-section/DeleteCurrent";
+import { RenameField } from "../panel/chart-view/sections/general-section/RenameField";
+import { SwapLeads } from "../panel/chart-view/sections/leads-section/SwapLeads";
 import { SectionHeader } from "./edit-modal/SectionHeader";
 
 interface EditModalProps {

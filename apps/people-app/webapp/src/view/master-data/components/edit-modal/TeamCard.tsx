@@ -19,7 +19,7 @@ import { useTheme } from "@mui/material/styles";
 
 import { FunctionalLead, Head } from "@services/organization";
 
-import { truncateName } from "../../panel/utils";
+import { truncateName } from "../../panel/chart-view/utils";
 
 interface TeamCardProps {
   teamName: string;
