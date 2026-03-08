@@ -19,6 +19,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PeopleAltOutlinedIcon from "@mui/icons-material/PeopleAltOutlined";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 
+import { useState } from "react";
+
 import { FunctionalLead, Head } from "@root/src/services/organization";
 import { NodeType } from "@utils/types";
 
@@ -33,6 +35,7 @@ interface OrgStructureCardProps {
   hasChildren?: boolean;
   isExpanded?: boolean;
   onCollapse?: () => void;
+  togglePeopleSectionVisibility?: boolean,
   onEdit?: () => void;
   onAdd?: () => void;
 }
@@ -67,15 +70,19 @@ const OrgStructureCard = ({
   hasChildren,
   isExpanded,
   onCollapse,
+  togglePeopleSectionVisibility,
   onEdit,
   onAdd,
 }: OrgStructureCardProps) => {
+
   const theme = useTheme();
   const isCompanyNode = type === NodeType.Company;
   const primaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.chairman : teamHead;
   const secondaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.ceo : functionLead;
-  const shouldRenderPeopleSection = Boolean(primaryPerson || secondaryPerson);
 
+  const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(Boolean(primaryPerson || secondaryPerson))
+
+  console.log("ttt : ", togglePeopleSectionVisibility);
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit?.();
@@ -89,6 +96,11 @@ const OrgStructureCard = ({
   const handleCollapse = (e: React.MouseEvent) => {
     e.stopPropagation();
     onCollapse?.();
+
+    if (togglePeopleSectionVisibility) {
+      console.log("visibility : ", isPeopleSectionVisible);
+      setPeopleSectionVisibility(prev => !prev);
+    }
   };
 
   return (
@@ -152,7 +164,7 @@ const OrgStructureCard = ({
         </Box>
 
         {/* Team Head and Function Lead */}
-        {shouldRenderPeopleSection && (
+        {isPeopleSectionVisible && (
           <Box
             sx={{
               display: "flex",
@@ -184,7 +196,7 @@ const OrgStructureCard = ({
       </Box>
 
       {/* Divider - Only for types with heads/leads */}
-      {shouldRenderPeopleSection && (
+      {isPeopleSectionVisible && (
         <Box
           sx={{
             height: "1px",
