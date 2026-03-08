@@ -39,7 +39,6 @@ interface UseAddOrgEntityParams {
  *  - derives autocomplete options from the Redux org-structure state
  *  - loads employees for head/lead pickers
  *  - owns the react-hook-form instance
- *  - builds the submit handler (console.log + callback)
  */
 export function useAddOrgEntity({ context }: UseAddOrgEntityParams) {
   const childLabel = UNIT_TYPE_LABEL[context.childType] ?? "Item";
@@ -55,7 +54,7 @@ export function useAddOrgEntity({ context }: UseAddOrgEntityParams) {
    */
   const scopedOrgItems = useMemo<TeamState[]>(() => {
     if (context.childType === UnitType.Team) {
-      return allTeams.filter((t) => t.businessUnitId === context.parentId);
+      return allTeams.filter((t) => t.parentId === context.parentId);
     }
     return allTeams;
   }, [allTeams, context.childType, context.parentId]);
