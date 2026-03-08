@@ -15,34 +15,45 @@
 // under the License.
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
+import { NodeType } from "@root/src/utils/types";
 import { normalizeCompanyToOrganizationState } from "@root/src/utils/utils";
 import type { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import { organizationApi } from "@services/organization";
 
 import { State } from "../authSlice/auth";
 
+export interface CompanyState extends Company {
+  type: NodeType;
+}
+
 export interface BusinessUnitState extends BusinessUnit {
-  companyId: string;
+  parentId: string;
+  type: NodeType;
 }
 
 export interface TeamState extends Team {
-  businessUnitId: string;
+  parentId: string;
+  type: NodeType;
 }
 
 export interface SubTeamState extends SubTeam {
-  teamId: string;
+  parentId: string;
+  type: NodeType;
 }
 
 export interface UnitState extends Unit {
-  subTeamId: string;
+  parentId: string;
+  type: NodeType;
 }
+
+export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState | UnitState;
 
 export interface OrganizationInfo {
   units: UnitState[];
   subTeams: SubTeamState[];
   teams: TeamState[];
   businessUnits: BusinessUnitState[];
-  company: Company;
+  company: CompanyState;
 }
 
 export interface OrganizationState {
