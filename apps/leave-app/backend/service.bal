@@ -520,7 +520,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(errMsg, internalErr);
             return <http:InternalServerError>{
                 body: {
-                    message: errMsg
+                    message: internalErr.message()
                 }
             };
         }
