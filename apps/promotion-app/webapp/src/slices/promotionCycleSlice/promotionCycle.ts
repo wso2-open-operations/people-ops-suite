@@ -53,15 +53,21 @@ export const fetchActivePromotionCycle = createAsyncThunk(
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
 
-    return new Promise<{ activePromotionCycles: PromotionCycle }>((resolve, reject) => {
+    return new Promise<{ activePromotionCycles: PromotionCycle | null }>((resolve, reject) => {
       APIService.getInstance()
         .get(AppConfig.serviceUrls.getActivePromotionCycle, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
-          resolve({
-            activePromotionCycles: response.data.promotionCycles[0],
-          });
+            if (response.data.promotionCycles[0]){
+                resolve({
+                    activePromotionCycles: response.data.promotionCycles[0],
+                });
+            }else{
+                resolve({
+                    activePromotionCycles: null
+                });
+            }
         })
         .catch((error) => {
           if (axios.isCancel(error)) {
