@@ -151,6 +151,7 @@ const PromotionSlice = createSlice({
   reducers: {
     resetSubmitState(state) {
       state.state = State.idle;
+      state.postState = State.idle;
     },
   },
   extraReducers: (builder) => {
