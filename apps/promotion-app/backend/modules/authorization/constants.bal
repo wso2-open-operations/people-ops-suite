@@ -20,3 +20,4 @@ public const HEADER_USER_INFO = "user-info";
 
 # Privileges.
 public const EMPLOYEE = 987;
+public const LEAD = 624;
