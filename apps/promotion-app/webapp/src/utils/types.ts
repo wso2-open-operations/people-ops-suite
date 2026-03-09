@@ -1,3 +1,4 @@
+import { StdioNull } from "child_process";
 import { ApplicationState, RecommendationState } from "../types/types";
 import type { BasicUserInfo } from "@asgardeo/auth-spa";
 
@@ -25,17 +26,17 @@ export interface Employee {
   firstName : string;
   lastName: string;
   workEmail : string;
-  jobBand  : number;
+  jobBand  : number | null;
   jobRole  : string;
-  employeeThumbnail : string;
-  lastPromotedDate : string;
-  managerEmail : string;
-  startDate : string;
+  employeeThumbnail : string | null;
+  lastPromotedDate : string | null;
+  managerEmail : string | null;
+  startDate : string | null;
   employmentType : string;
   businessUnit : string;
   department : string;
-  team  : string
-  subTeam : string;
+  team  : string | null;
+  subTeam : string | null;
 }
 
 export interface ActivePromotionCycleInterface {
