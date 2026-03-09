@@ -29,6 +29,8 @@ public type CustomJwtPayload record {
 public type AppRoles record {|
     # Role for the employee
     string EMPLOYEE_ROLE;
+    # Role for the lead
+    string LEAD_ROLE;
 |};
 
 # Return record for user privileges.
