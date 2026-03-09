@@ -42,8 +42,8 @@ export interface Employee {
 export interface ActivePromotionCycleInterface {
   id: number;
   name: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   status: PromotionCycleStatus;
 }
 
