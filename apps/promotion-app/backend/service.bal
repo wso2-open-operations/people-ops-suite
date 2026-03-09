@@ -181,7 +181,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Get all Employees
-        people:EmployeeInfo[]|error employees = check people:getEmployees();
+        people:EmployeeInfo[]|error employees = people:getEmployees();
 
         if employees is error {
             string customError = string `Error occurred while retrieving employees!`;
