@@ -16,6 +16,7 @@
 
 import * as React from "react";
 import {
+  Card,
   CardContent,
   TextField,
   IconButton,
@@ -25,7 +26,10 @@ import {
   Typography,
   CircularProgress,
   Box,
+  Divider,
 } from "@mui/material";
+
+import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
@@ -35,6 +39,7 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "@root/src/slices/store";
+
 import { createWifiAccount } from "@slices/wifiSlice/wifi";
 import ErrorHandler from "@component/common/ErrorHandler";
 import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
@@ -46,22 +51,33 @@ const WifiCard = () => {
     (store: RootState) => store.wifi,
   );
 
-  const [showPassword, setShowPassword] = React.useState<boolean>(false);
-  const [copied, setCopied] = React.useState<"ssid" | "password" | null>(null);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [copied, setCopied] = React.useState<
+    "ssid" | "password" | "both" | null
+  >(null);
 
-  const handleCopy = async (text: string, which: "ssid" | "password") => {
+  const handleCopy = async (
+    text: string,
+    which: "ssid" | "password" | "both",
+  ) => {
     try {
       if (navigator?.clipboard) {
         await navigator.clipboard.writeText(text);
         setCopied(which);
-        setTimeout(() => setCopied(null), 1400);
+        setTimeout(() => setCopied(null), 1800);
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "Copied to clipboard",
+            type: "success",
+          }),
+        );
       } else {
-        throw new Error("Clipboard not available");
+        throw new Error("Clipboard API not available");
       }
     } catch {
       dispatch(
         enqueueSnackbarMessage({
-          message: "Failed to copy to clipboard. Please copy manually.",
+          message: "Failed to copy. Please select and copy manually.",
           type: "error",
         }),
       );
@@ -69,132 +85,184 @@ const WifiCard = () => {
   };
 
   React.useEffect(() => {
-    dispatch(
-      createWifiAccount({
-        username: "admin",
-        password: "admin",
-      }),
-    );
+    dispatch(createWifiAccount("admin"));
   }, [dispatch]);
 
   if (loading) {
     return (
       <Box
         sx={{
-          height: "80vh",
-          width: "100%",
+          minHeight: "100vh",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          py: 4,
+          gap: 3,
+          p: 4,
         }}
       >
-        <CircularProgress />
-        <Typography mt={2} color="textSecondary">
-          {"Loading WiFi details..."}
+        <CircularProgress size={48} thickness={4} />
+        <Typography variant="body1" color="text.secondary">
+          Fetching WiFi credentials...
         </Typography>
       </Box>
     );
   }
 
   if (error) {
-    return <ErrorHandler message={"Failed to load WiFi information."} />;
+    return <ErrorHandler message="Failed to load WiFi information." />;
   }
 
+  const fullCredentials = `SSID: ${ssid}\nPassword: ${password}`;
+
   return (
-    <CardContent>
-      <Stack
-        spacing={2}
-        sx={{
-          width: { xs: "100%", sm: "80%", md: "60%", lg: "40%" },
-          m: { xs: 1, sm: 2 },
-        }}
-      >
-        <TextField
-          label="Network (SSID)"
-          value={ssid}
-          InputProps={{
-            readOnly: true,
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip title={copied === "ssid" ? "Copied!" : "Copy SSID"}>
-                  <IconButton onClick={() => handleCopy(ssid, "ssid")}>
-                    <ContentCopyRoundedIcon />
-                  </IconButton>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-          fullWidth
-        />
+    <Card
+      elevation={2}
+      sx={{
+        borderRadius: 3,
+        overflow: "hidden",
+        maxWidth: 560,
+        mx: "auto",
+        mt: 4,
+        mb: 6,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+      }}
+    >
+      <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+        <Stack spacing={3}>
+          {/* Header */}
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <WifiRoundedIcon color="primary" sx={{ fontSize: 32 }} />
+            <Typography variant="h5" component="h1" fontWeight={600}>
+              Wi-Fi Network Details
+            </Typography>
+          </Stack>
 
-        <TextField
-          label="Password"
-          type={showPassword ? "text" : "password"}
-          value={password}
-          InputProps={{
-            readOnly: true,
-            endAdornment: (
-              <InputAdornment position="end">
-                <Tooltip title={showPassword ? "Hide" : "Show"}>
-                  <IconButton onClick={() => setShowPassword((v) => !v)}>
-                    {showPassword ? (
-                      <VisibilityOffRoundedIcon />
-                    ) : (
-                      <VisibilityRoundedIcon />
-                    )}
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip
-                  title={copied === "password" ? "Copied!" : "Copy Password"}
-                >
-                  <IconButton onClick={() => handleCopy(password, "password")}>
-                    <ContentCopyRoundedIcon />
-                  </IconButton>
-                </Tooltip>
-              </InputAdornment>
-            ),
-          }}
-          fullWidth
-        />
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          alignItems={{ xs: "stretch", sm: "center" }}
-        >
-          <Typography
-            variant="body2"
-            sx={{
-              p: 1,
-              px: 1.5,
-              borderRadius: 1.5,
-              fontFamily: "ui-monospace, Menlo, Consolas, monospace",
-              border: (t) => `1px dashed ${t.palette.divider}`,
-              bgcolor: (t) =>
-                t.palette.mode === "dark" ? "action.selected" : "action.hover",
-              whiteSpace: { xs: "normal", sm: "nowrap" },
-              overflowX: { sm: "auto" },
-            }}
-            tabIndex={0}
-          >
-            SSID: {ssid} | Password: {showPassword ? password : "••••••••"}
+          <Typography variant="body1" color="text.secondary">
+            Use these credentials to connect to the corporate wireless network.
           </Typography>
 
-          <Tooltip title="Copy Share Text">
-            <IconButton
-              onClick={() =>
-                handleCopy(`SSID: ${ssid}\nPassword: ${password}`, "ssid")
-              }
-            >
-              <ContentCopyRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          <Divider sx={{ my: 1 }} />
+
+          {/* SSID Field */}
+          <TextField
+            label="Network Name (SSID)"
+            value={ssid}
+            fullWidth
+            variant="outlined"
+            InputProps={{
+              readOnly: true,
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip title={copied === "ssid" ? "Copied!" : "Copy SSID"}>
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleCopy(ssid, "ssid")}
+                      color={copied === "ssid" ? "success" : "default"}
+                    >
+                      <ContentCopyRoundedIcon />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ bgcolor: "action.hover", borderRadius: 1 }}
+          />
+
+          {/* Password Field */}
+          <TextField
+            label="Password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            fullWidth
+            variant="outlined"
+            InputProps={{
+              readOnly: true,
+              endAdornment: (
+                <InputAdornment position="end">
+                  <Tooltip
+                    title={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="start"
+                    >
+                      {showPassword ? (
+                        <VisibilityOffRoundedIcon />
+                      ) : (
+                        <VisibilityRoundedIcon />
+                      )}
+                    </IconButton>
+                  </Tooltip>
+
+                  <Tooltip
+                    title={copied === "password" ? "Copied!" : "Copy password"}
+                  >
+                    <IconButton
+                      onClick={() => handleCopy(password, "password")}
+                      color={copied === "password" ? "success" : "default"}
+                    >
+                      <ContentCopyRoundedIcon />
+                    </IconButton>
+                  </Tooltip>
+                </InputAdornment>
+              ),
+            }}
+            sx={{ bgcolor: "action.hover", borderRadius: 1 }}
+          />
+
+          <Divider />
+
+          {/* Unified credentials row + copy all */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              alignItems: { xs: "stretch", sm: "center" },
+              justifyContent: "space-between",
+              gap: 2,
+              p: 2.5,
+              borderRadius: 2,
+              bgcolor: "grey.50",
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <Stack spacing={0.5} flex={1}>
+              <Typography variant="subtitle2" color="text.primary">
+                Quick connect string
+              </Typography>
+              <Typography
+                variant="body2"
+                fontFamily="ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace"
+                sx={{ wordBreak: "break-all" }}
+              >
+                {showPassword
+                  ? fullCredentials
+                  : `SSID: ${ssid}   |   Password: ••••••••`}
+              </Typography>
+            </Stack>
+
+            <Tooltip title={copied === "both" ? "Copied!" : "Copy both"}>
+              <IconButton
+                size="large"
+                onClick={() => handleCopy(fullCredentials, "both")}
+                color={copied === "both" ? "success" : "primary"}
+                sx={{ alignSelf: { xs: "center", sm: "flex-start" } }}
+              >
+                <ContentCopyRoundedIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          {/* Optional: small helper text */}
+          <Typography variant="caption" color="text.secondary" align="center">
+            These credentials are managed centrally. Contact IT if you encounter
+            issues.
+          </Typography>
         </Stack>
-      </Stack>
-    </CardContent>
+      </CardContent>
+    </Card>
   );
 };
 

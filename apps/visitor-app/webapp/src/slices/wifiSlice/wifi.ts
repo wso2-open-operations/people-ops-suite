@@ -35,38 +35,70 @@ const initialState: WifiInfo = {
   error: null,
 };
 
+type WifiError = {
+  status: number;
+  ssid: string;
+  password: string;
+  loading: false;
+  error: string;
+};
+
 export const createWifiAccount = createAsyncThunk<
   WifiInfo,
-  { username: string; password: string }
->(
-  "wifi/createWifiAccount",
-  async (credentials, { dispatch, rejectWithValue }) => {
-    try {
-      await APIService.getInstance().post(
-        AppConfig.serviceUrls.wifi,
-        credentials,
-      );
-      return {
-        ssid: credentials.username,
-        password: credentials.password,
-        loading: false,
-        error: null,
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === HttpStatusCode.Unauthorized) {
-          dispatch(
-            enqueueSnackbarMessage({
-              message: "You are not authorized to create WiFi accounts.",
-              type: "error",
-            }),
-          );
-        }
+  string,
+  { rejectValue: WifiError }
+>("wifi/createWifiAccount", async (username, { dispatch, rejectWithValue }) => {
+  try {
+    const response = await APIService.getInstance().post(
+      AppConfig.serviceUrls.wifi,
+      null,
+      {
+        params: {
+          username,
+        },
+      },
+    );
+
+    return {
+      ssid: response.data.username,
+      password: response.data.password,
+      loading: false,
+      error: null,
+    };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const statusCode = error.response?.status ?? 500;
+
+      if (statusCode === HttpStatusCode.Unauthorized) {
+        dispatch(
+          enqueueSnackbarMessage({
+            message: "You are not authorized to create WiFi accounts.",
+            type: "error",
+          }),
+        );
       }
-      return rejectWithValue("Failed to create WiFi account");
+
+      return rejectWithValue({
+        status: statusCode,
+        ssid: statusCode === HttpStatusCode.Conflict ? username : "",
+        password:
+          statusCode === HttpStatusCode.Conflict
+            ? error.response?.data?.password
+            : "",
+        loading: false,
+        error: "Failed to create WiFi account",
+      });
     }
-  },
-);
+
+    return rejectWithValue({
+      status: 500,
+      ssid: "",
+      password: "",
+      loading: false,
+      error: "Failed to create WiFi account",
+    });
+  }
+});
 
 export const wifiSlice = createSlice({
   name: "wifi",
@@ -86,9 +118,16 @@ export const wifiSlice = createSlice({
       })
       .addCase(createWifiAccount.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error?.message || "Failed to create WiFi account";
-        state.ssid = "";
-        state.password = "";
+        if (action.payload?.status === HttpStatusCode.Conflict) {
+          state.ssid = action.payload.ssid;
+          state.password = action.payload.password;
+          state.error = null;
+        } else {
+          state.ssid = "";
+          state.password = "";
+          state.error =
+            action.payload?.error ?? "An unexpected error occurred.";
+        }
       });
   },
 });

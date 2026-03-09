@@ -25,13 +25,12 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { selectRoles } from "@slices/authSlice/auth";
 import { RootState, useAppSelector } from "@slices/store";
 import { Suspense, useEffect, useState, useCallback } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import ConfirmationModalContextProvider from "@context/DialogContext";
 
 export default function Layout() {
   const { enqueueSnackbar } = useSnackbar();
   const common = useAppSelector((state: RootState) => state.common);
-  const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -52,15 +51,6 @@ export default function Layout() {
   useEffect(() => {
     showSnackbar();
   }, [showSnackbar]);
-
-  // Handle Redirect After Login
-  useEffect(() => {
-    const redirectUrl = localStorage.getItem("meet-app-redirect-url");
-    if (redirectUrl) {
-      navigate(redirectUrl);
-      localStorage.removeItem("meet-app-redirect-url");
-    }
-  }, [navigate]);
 
   return (
     <ConfirmationModalContextProvider>
