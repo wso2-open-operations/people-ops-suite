@@ -15,8 +15,8 @@
 // under the License.
 import { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import type {
-  CompanyState,
   BusinessUnitState,
+  CompanyState,
   OrganizationInfo,
   SubTeamState,
   TeamState,
@@ -99,22 +99,54 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
   const teams: TeamState[] = [];
   const subTeams: SubTeamState[] = [];
   const units: UnitState[] = [];
-  const company: CompanyState = {...companyDto, type: NodeType.Company};
+  const company: CompanyState = { ...companyDto, type: NodeType.Company };
 
-  for (const bu of company.businessUnits) {
-    businessUnits.push({ ...bu, parentId: company.id, type: NodeType.BusinessUnit });
+  for (const bu of companyDto.businessUnits) {
+    const transformedTeams: TeamState[] = [];
 
     for (const team of bu.teams) {
-      teams.push({ ...team, parentId: bu.id, type: NodeType.Team });
+      const transformedSubTeams: SubTeamState[] = [];
 
       for (const subTeam of team.subTeams) {
-        subTeams.push({ ...subTeam, parentId: team.id, type: NodeType.SubTeam });
+        const transformedUnits: UnitState[] = [];
 
         for (const unit of subTeam.units) {
-          units.push({ ...unit, parentId: subTeam.id, type: NodeType.Unit });
+          const transformedUnit: UnitState = {
+            ...unit,
+            parentId: subTeam.id,
+            type: NodeType.Unit,
+          };
+          transformedUnits.push(transformedUnit);
+          units.push(transformedUnit);
         }
+
+        const transformedSubTeam: SubTeamState = {
+          ...subTeam,
+          parentId: team.id,
+          type: NodeType.SubTeam,
+          units: transformedUnits,
+        };
+        transformedSubTeams.push(transformedSubTeam);
+        subTeams.push(transformedSubTeam);
       }
+
+      const transformedTeam: TeamState = {
+        ...team,
+        parentId: bu.id,
+        type: NodeType.Team,
+        subTeams: transformedSubTeams,
+      };
+      transformedTeams.push(transformedTeam);
+      teams.push(transformedTeam);
     }
+
+    const transformedBU: BusinessUnitState = {
+      ...bu,
+      parentId: companyDto.id,
+      type: NodeType.BusinessUnit,
+      teams: transformedTeams,
+    };
+    businessUnits.push(transformedBU);
   }
 
   return {
