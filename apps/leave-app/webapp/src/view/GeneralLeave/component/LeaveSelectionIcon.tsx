@@ -34,7 +34,7 @@ export default function LeaveSelectionIcon({
   return (
     <Stack
       direction="column"
-      justifyContent="space-between"
+      justifyContent="flex-start"
       alignItems="center"
       gap={1.5}
       height="100%"
