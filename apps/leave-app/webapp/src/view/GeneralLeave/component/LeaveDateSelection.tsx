@@ -51,7 +51,6 @@ export default function LeaveDateSelection({
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
@@ -96,7 +95,6 @@ export default function LeaveDateSelection({
     }
 
     setIsValidating(true);
-    setValidationError(null);
     try {
       const totalDays = calculateTotalDays(start, end);
       let periodType: PeriodType;
@@ -134,11 +132,6 @@ export default function LeaveDateSelection({
       onWorkingDaysChange(response.workingDays);
     } catch (error) {
       console.error("Error validating leave dates:", error);
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      const serverMessage = axiosError?.response?.data?.message;
-      setValidationError(
-        serverMessage ?? "Unable to validate dates. The calendar service may be unavailable.",
-      );
       setWorkingDaysSelected(0);
       onWorkingDaysChange(0);
     } finally {
@@ -176,7 +169,6 @@ export default function LeaveDateSelection({
     if (endDate.isBefore(startDate, "day"))
       return { message: "Invalid date range", severity: "warning" };
     if (daysSelected <= 0) return { message: "Invalid selection", severity: "warning" };
-    if (validationError) return { message: validationError, severity: "error" };
     if (workingDaysSelected <= 0)
       return { message: "No working days selected", severity: "warning" };
     return { message: "Valid date selection", severity: "success" };

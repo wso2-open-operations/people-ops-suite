@@ -65,9 +65,6 @@ public isolated function checkIfWeekday(time:Civil|time:Utc date) returns boolea
 public isolated function insertLeaveToDatabase(database:LeaveInput input, boolean isValidationOnlyMode, string token)
     returns LeaveDetails|error {
     LeaveDetails[]|error? leaveDetails = calculateLeaveDetails(input, token);
-    if leaveDetails is error {
-        return leaveDetails;
-    }
     if leaveDetails is LeaveDetails[] {
         return error(ERR_MSG_LEAVE_OVERLAPS_WITH_EXISTING_LEAVE);
     }

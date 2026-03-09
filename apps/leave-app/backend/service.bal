@@ -28,6 +28,14 @@ import ballerina/time;
     id: "people-ops/leave-application"
 }
 
+@http:ServiceConfig {
+    cors: {
+        allowOrigins: ["http://localhost:3000"],
+        allowCredentials: true,
+        allowHeaders: ["Authorization", "Content-Type"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+    }
+}
 service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
