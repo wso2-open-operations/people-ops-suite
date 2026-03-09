@@ -258,7 +258,7 @@ export default function Request() {
                   >
                     <Avatar
                       alt={`${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
-                      src={selectedEmployee.employeeThumbnail}
+                      src={selectedEmployee.employeeThumbnail ?? ""}
                       sx={{ ml: 7,width: 100, height: 100 }}
                     />
 
@@ -320,6 +320,7 @@ export default function Request() {
                             </MenuItem>
                             {[...Array(13)].map(
                               (_, index) =>
+                                selectedEmployee.jobBand !== null &&
                                 index > selectedEmployee.jobBand && (
                                   <MenuItem key={index} value={String(index)}>
                                     {index}
