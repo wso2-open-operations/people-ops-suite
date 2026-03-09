@@ -35,6 +35,7 @@ import StateWithImage from '@root/src/component/ui/StateWithImage';
 import { LoadingEffect } from "@component/ui/Loading";
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { fetchPromotions } from "@slices/promotionSlice/promotion";
+import DOMPurify from 'dompurify';
 
 const statusColorMap: Record<string, string> = {
   REQUESTED: '#e3f2fd',
@@ -104,7 +105,7 @@ export default function SubmissionHistory() {
 
     const handleOpen = (base64EncodedNote: string) => {
         const decodedHtml = safeBase64Decode(base64EncodedNote);
-        setSelectedNoteHtml(decodedHtml);
+        setSelectedNoteHtml(DOMPurify.sanitize(decodedHtml));
         setOpen(true);
     };
 
