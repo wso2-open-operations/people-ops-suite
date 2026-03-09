@@ -95,27 +95,31 @@ export default function Request() {
         setIsDialogOpen(false);
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const encodedStatement = safeBase64Encode(recommendationText);
-
         if (
-            promotionCycle.activePromotionCycle?.id &&
-            recommendedJobBand &&
-            selectedEmployee?.workEmail
-        ){
-            dispatch(insertPromotions({
+            !promotionCycle.activePromotionCycle?.id ||
+            !recommendedJobBand ||
+            !selectedEmployee?.workEmail
+        ) {
+            return;
+        }
+
+        try {
+            await dispatch(insertPromotions({
                 PromotionCycleID: promotionCycle.activePromotionCycle.id,
                 type: "INDIVIDUAL_CONTRIBUTOR",
                 promotingJobBand: recommendedJobBand,
                 employeeEmail: selectedEmployee.workEmail,
                 statement: encodedStatement
-            }));
+            })).unwrap();
+
+            setSelectedEmployee(null);
+            setRecommendedJobBand(null);
+            setRecommendationText("");
+        } catch (error) {
+            console.error("Failed to submit promotion:", error);
         }
-
-        setSelectedEmployee(null);
-        setRecommendedJobBand(null);
-        setRecommendationText('');
-
     };
 
   const safeBase64Encode = (str: string): string => {
