@@ -37,6 +37,7 @@ interface OrgStructureCardProps {
   togglePeopleSectionVisibility?: boolean;
   onEdit?: () => void;
   onAdd?: () => void;
+  onClick?: () => void;
 }
 
 const TYPE_LABELS = {
@@ -72,6 +73,7 @@ const OrgStructureCard = ({
   togglePeopleSectionVisibility,
   onEdit,
   onAdd,
+  onClick,
 }: OrgStructureCardProps) => {
   const theme = useTheme();
   const isCompanyNode = type === NodeType.Company;
@@ -101,6 +103,10 @@ const OrgStructureCard = ({
     }
   };
 
+  const handleClick = () => {
+    onClick?.();
+  }
+
   const isIconRotated = isExpanded ?? isPeopleSectionVisible;
 
   return (
@@ -118,6 +124,7 @@ const OrgStructureCard = ({
         flexDirection: "column",
         gap: "16px",
       }}
+      onClick={handleClick}
     >
       {/* Top Section */}
       <Box
