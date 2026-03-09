@@ -57,7 +57,7 @@ export const routes: RouteObjectWithRole[] = [
     text: "Individual Contributor",
     icon: React.createElement(PersonPinIcon),
     element: React.createElement(View.individualContributor),
-    allowRoles: [Role.ADMIN, Role.TEAM],
+    allowRoles: [Role.LEAD],
     bottomNav: false,
   },
   {
