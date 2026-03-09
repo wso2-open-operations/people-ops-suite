@@ -133,7 +133,7 @@ public isolated function getEmployees(boolean? filterLeads = (), int[]? jobBandA
     }
 
     // Null Check.
-    if employeeData.data.length() <= 0 {
+    if employeeData.data.employees.length() <= 0 {
         return error((filterLeads is boolean && filterLeads == true) ? "No active leads found!" : "No active employees found!");
     }
 
