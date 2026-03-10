@@ -427,7 +427,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + application - Application data
     # + return - Internal Server Error or Apply Promotion Service Results
     resource function POST promotions(http:RequestContext ctx, @http:Payload Application application)
-        returns ApplicationInfo|http:Forbidden|http:InternalServerError|error {
+        returns ApplicationInfo|http:Forbidden|http:InternalServerError {
 
         // "HEADER_USER_INFO" is the email of the user access this resource.
         // Interceptor set this value after validating the jwt.
@@ -666,7 +666,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <ApplicationInfo>{applicationID};
 
         } else {
-            return error("Invalid promotion type!");
+            string customError = string `Invalid promotion type!`;
+            log:printError(customError);
+            return <http:InternalServerError>{
+                body: {
+                    message: customError
+                }
+            };
         }
 
     }
