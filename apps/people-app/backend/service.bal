@@ -344,7 +344,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch all employees' basic information.
     #
     # + return - All employees' basic information
-    resource function get employees/basic\-info(http:RequestContext ctx) 
+    resource function get employees/basic\-info(http:RequestContext ctx)
         returns database:EmployeeBasicInfo[]|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -381,27 +381,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get business units.
     # + return - Business units
-    resource function get business\-units(http:RequestContext ctx) 
-        returns database:BusinessUnit[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view business units", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view business units"
-                }
-            };
-        }
+    resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
 
         database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
         if businessUnits is error {
@@ -420,27 +400,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + buId - Business unit ID (optional)
     # + return - Teams
-    resource function get teams(http:RequestContext ctx, int? buId = ()) 
-        returns database:Team[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view teams", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view teams"
-                }
-            };
-        }
+    resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
 
         database:Team[]|error teams = database:getTeams(buId);
         if teams is error {
@@ -459,27 +419,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + teamId - Team ID (optional)
     # + return - Sub teams
-    resource function get sub\-teams(http:RequestContext ctx, int? teamId = ()) 
-        returns database:SubTeam[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view sub teams", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view sub teams"
-                }
-            };
-        }
+    resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
 
         database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
         if subTeams is error {
@@ -498,27 +438,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + subTeamId - Sub team ID (optional)
     # + return - Units
-    resource function get units(http:RequestContext ctx, int? subTeamId = ()) 
-        returns database:Unit[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view units", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view units"
-                }
-            };
-        }
+    resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
 
         database:Unit[]|error units = database:getUnits(subTeamId);
         if units is error {
@@ -536,27 +456,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get full organization structure.
     #
     # + return - Full organization structure
-    resource function get organization\-structure(http:RequestContext ctx) 
-        returns database:OrgStructureBusinessUnit[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view organization structure", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view organization structure"
-                }
-            };
-        }
+    resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
 
         database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
         if orgStructure is error {
@@ -574,27 +474,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get career functions.
     #
     # + return - Career functions
-    resource function get career\-functions(http:RequestContext ctx) 
-        returns database:CareerFunction[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view career functions", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view career functions"
-                }
-            };
-        }
+    resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
 
         database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
         if careerFunctions is error {
@@ -613,27 +493,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + careerFunctionId - Career function ID (optional)
     # + return - Designations
-    resource function get designations(http:RequestContext ctx, int? careerFunctionId = ())
-        returns database:Designation[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view designations", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view designations"
-                }
-            };
-        }
+    resource function get designations(int? careerFunctionId = ()) returns database:Designation[]|http:InternalServerError {
 
         database:Designation[]|error designations = database:getDesignations(careerFunctionId);
         if designations is error {
@@ -651,27 +511,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get companies.
     #
     # + return - Companies
-    resource function get companies(http:RequestContext ctx) 
-        returns database:Company[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view companies", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view companies"
-                }
-            };
-        }
+    resource function get companies(http:RequestContext ctx) returns database:Company[]|http:InternalServerError {
 
         database:Company[]|error companies = database:getCompanies();
         if companies is error {
@@ -690,27 +530,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + companyId - Company ID (optional)
     # + return - Offices
-    resource function get offices(http:RequestContext ctx, int? companyId = ()) 
-        returns database:Office[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view offices", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view offices"
-                }
-            };
-        }
+    resource function get offices(int? companyId = ()) returns database:Office[]|http:InternalServerError {
 
         database:Office[]|error offices = database:getOffices(companyId);
         if offices is error {
@@ -728,27 +548,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get employment types.
     #
     # + return - Employment types
-    resource function get employment\-types(http:RequestContext ctx) 
-        returns database:EmploymentType[]|http:Forbidden|http:InternalServerError {
-
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view employment types", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view employment types"
-                }
-            };
-        }
+    resource function get employment\-types() returns database:EmploymentType[]|http:InternalServerError {
 
         database:EmploymentType[]|error employmentTypes = database:getEmploymentTypes();
         if employmentTypes is error {
