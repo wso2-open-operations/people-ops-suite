@@ -91,8 +91,10 @@ export function FilterChipSelect<T>({
               fontWeight: 700,
               color: isDark ? theme.palette.grey[100] : theme.palette.grey[800],
               maxWidth: 140,
+              overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              flexShrink: 1,
             }}
           >
             {`${value}`}
@@ -124,7 +126,11 @@ export function FilterChipSelect<T>({
   const closeMenu = () => setAnchorEl(null);
 
   const tooltipTitle =
-    options.length === 0 ? "No options available" : undefined;
+    options.length === 0
+      ? "No options available"
+      : hasValue
+        ? `${value}`
+        : undefined;
 
   return (
     <>
