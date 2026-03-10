@@ -128,6 +128,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
+        }
+
         if employeeInfo is () {
             string customErr = "Employee information not found";
             log:printWarn(customErr, employeeId = employeeId);
@@ -136,18 +149,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customErr
                 }
             };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            if employeeInfo.workEmail != userInfo.email {
-                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{
-                    body: {
-                        message: "You are not authorized to view this employee's information"
-                    }
-                };
-            }
         }
 
         return employeeInfo;
@@ -179,6 +180,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
+        }
+
         if employeeInfo is () {
             string customErr = "Employee information not found";
             log:printWarn(customErr, employeeId = employeeId);
@@ -187,18 +201,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customErr
                 }
             };
-        }
-
-        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            if employeeInfo.workEmail != userInfo.email {
-                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{
-                    body: {
-                        message: "You are not authorized to view this employee's information"
-                    }
-                };
-            }
         }
 
         database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
