@@ -382,7 +382,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get business units.
     # + return - Business units
     resource function get business\-units() returns database:BusinessUnit[]|http:InternalServerError {
-
         database:BusinessUnit[]|error businessUnits = database:getBusinessUnits();
         if businessUnits is error {
             string customErr = "Error while fetching Business Units";
@@ -401,7 +400,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + buId - Business unit ID (optional)
     # + return - Teams
     resource function get teams(int? buId = ()) returns database:Team[]|http:InternalServerError {
-
         database:Team[]|error teams = database:getTeams(buId);
         if teams is error {
             string customErr = "Error while fetching Teams";
@@ -420,7 +418,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + teamId - Team ID (optional)
     # + return - Sub teams
     resource function get sub\-teams(int? teamId = ()) returns database:SubTeam[]|http:InternalServerError {
-
         database:SubTeam[]|error subTeams = database:getSubTeams(teamId);
         if subTeams is error {
             string customErr = "Error while fetching Sub Teams";
@@ -439,7 +436,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + subTeamId - Sub team ID (optional)
     # + return - Units
     resource function get units(int? subTeamId = ()) returns database:Unit[]|http:InternalServerError {
-
         database:Unit[]|error units = database:getUnits(subTeamId);
         if units is error {
             string customErr = "Error while fetching Units";
@@ -457,7 +453,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Full organization structure
     resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
-
         database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
         if orgStructure is error {
             string customErr = "Error while fetching organization structure";
@@ -475,7 +470,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Career functions
     resource function get career\-functions() returns database:CareerFunction[]|http:InternalServerError {
-
         database:CareerFunction[]|error careerFunctions = database:getCareerFunctions();
         if careerFunctions is error {
             string customErr = "Error while fetching Career Functions";
@@ -493,7 +487,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + careerFunctionId - Career function ID (optional)
     # + return - Designations
-    resource function get designations(int? careerFunctionId = ()) returns database:Designation[]|http:InternalServerError {
+    resource function get designations(int? careerFunctionId = ())
+        returns database:Designation[]|http:InternalServerError {
 
         database:Designation[]|error designations = database:getDesignations(careerFunctionId);
         if designations is error {
@@ -511,8 +506,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get companies.
     #
     # + return - Companies
-    resource function get companies(http:RequestContext ctx) returns database:Company[]|http:InternalServerError {
-
+    resource function get companies() returns database:Company[]|http:InternalServerError {
         database:Company[]|error companies = database:getCompanies();
         if companies is error {
             string customErr = "Error while fetching Companies";
@@ -531,7 +525,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + companyId - Company ID (optional)
     # + return - Offices
     resource function get offices(int? companyId = ()) returns database:Office[]|http:InternalServerError {
-
         database:Office[]|error offices = database:getOffices(companyId);
         if offices is error {
             string customErr = "Error while fetching Offices";
@@ -549,7 +542,6 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Employment types
     resource function get employment\-types() returns database:EmploymentType[]|http:InternalServerError {
-
         database:EmploymentType[]|error employmentTypes = database:getEmploymentTypes();
         if employmentTypes is error {
             string customErr = "Error while fetching Employment Types";
