@@ -18,26 +18,27 @@ import {
   DEFAULT_LIMIT_VALUE,
   DEFAULT_OFFSET_VALUE,
   EmployeeGenders,
-  SEARCH_REGEX,
   SEARCH_MAX_LENGTH,
+  SEARCH_REGEX,
 } from "@config/constant";
 import { FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
 import GroupsIcon from "@mui/icons-material/Groups";
 import SearchIcon from "@mui/icons-material/Search";
 import {
-  Box,
   Badge,
+  Box,
   Button,
-  Divider,
+  Chip,
   Grid,
   IconButton,
   InputAdornment,
   Stack,
   Tooltip,
   Typography,
-  useTheme,
+  useTheme
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
 import type { EmployeeSearchPayload } from "@slices/employeeSlice/employee";
 import {
@@ -67,6 +68,7 @@ import {
   Unit,
 } from "@slices/organizationSlice/organization";
 import { useAppDispatch, useAppSelector } from "@slices/store";
+import { State } from "@src/types/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect, FilterChipSelectProps } from "./FilterChipSelect";
 import { FilterDrawer } from "./FilterDrawer";
@@ -455,300 +457,410 @@ export function SearchForm() {
     return hasAnyActiveFilters(filterPayload.filters);
   }, [filterPayload.filters]);
 
+  const hasSearchString = !!employeeState.employeeFilter.searchString?.trim();
+  const showFilteredCard =
+    (employeeState.filterAppliedOnce && hasActiveFilters) || hasSearchString;
+
+  const isLoading: boolean =
+    employeeState.filteredEmployeesResponseState === State.loading;
+
   return (
-    <Box sx={{ my: 2 }}>
-      {/* Search */}
-      <Grid
-        container
-        justifyContent="flex-end"
-        spacing={2}
-        alignItems="flex-end"
-      >
-        <Grid item flex={1}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 0.5,
-              alignItems: "center",
-            }}
-          >
-            <Box sx={{ ml: 0.8, mt: 0.5 }}>
-              <GroupsIcon />
-            </Box>
-            <Stack
-              sx={{
-                p: 0.8,
-              }}
-              flexDirection="row"
-              gap={1}
-            >
-              <Typography variant="h5" fontWeight="bold">
-                Employees
-              </Typography>
-            </Stack>
-          </Box>
-        </Grid>
-        <Grid item sx={{ display: "flex", alignItems: "center", width: "40%" }}>
-          <BaseTextField
-            id="searchString"
-            size="small"
-            name="searchString"
-            label="Search"
-            value={searchText}
-            error={searchError}
-            helperText={
-              searchError
-                ? searchText.length > SEARCH_MAX_LENGTH
-                  ? `Maximum ${SEARCH_MAX_LENGTH} characters allowed`
-                  : "Only letters, numbers, spaces and @ . _ - are allowed"
-                : undefined
-            }
-            inputProps={{ maxLength: SEARCH_MAX_LENGTH + 1 }}
-            onChange={(e) => {
-              const value = e.target.value;
-              if (!SEARCH_REGEX.test(value)) {
-                setSearchError(true);
-                return;
-              }
-              if (value.length > SEARCH_MAX_LENGTH) {
-                setSearchError(true);
-                return;
-              }
-              setSearchError(false);
-              setSearchText(value);
-              if (debounceRef.current) window.clearTimeout(debounceRef.current);
-              debounceRef.current = window.setTimeout(() => {
-                updateSearchPayload({ searchString: value });
-              }, 300);
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="Clear search"
-                    edge="end"
-                    size="small"
-                    disabled={!searchText}
-                    onClick={() => {
-                      if (debounceRef.current)
-                        window.clearTimeout(debounceRef.current);
-                      setSearchError(false);
-                      setSearchText("");
-                      updateSearchPayload({ searchString: "" });
-                    }}
-                  >
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Grid>
-        <Grid item>
-          <Tooltip
-            title={
-              active
-                ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
-                : "Open filters"
-            }
-          >
-            <Badge
-              badgeContent={activeFilterCount}
-              overlap="circular"
-              sx={{
-                "& .MuiBadge-badge": {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.primary.contrastText,
-                  fontSize: "0.7rem",
-                  height: 20,
-                  minWidth: 20,
-                  lineHeight: "20px",
-                  padding: "0 4px",
-                  fontWeight: 700,
-                  top: 4,
-                  right: 4,
-                },
-              }}
-            >
-              <Button
-                variant="outlined"
-                onClick={() => setDrawerOpen(true)}
-                startIcon={
-                  <FilterAltOutlined
-                    sx={{
-                      fontSize: "20px !important",
-                      color: active
-                        ? theme.palette.primary.main
-                        : "inherit",
-                      transition: "color 0.2s ease",
-                    }}
-                  />
-                }
-                sx={{
-                  textTransform: "none",
-                  height: "40px",
-                  px: 2,
-                  borderRadius: "8px",
-                  fontWeight: 600,
-                  letterSpacing: 0.5,
-                  transition: "all 0.2s ease",
-                  // Base: standard outlined primary button look
-                  borderColor: active
-                    ? theme.palette.primary.main
-                    : theme.palette.primary.main,
-                  color: active
-                    ? theme.palette.primary.main
-                    : theme.palette.text.primary,
-                  backgroundColor: active
-                    ? `${theme.palette.primary.main}18`
-                    : "transparent",
-                  "&:hover": {
-                    borderColor: theme.palette.primary.dark,
-                    color: theme.palette.primary.main,
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? `${theme.palette.primary.main}28`
-                        : `${theme.palette.primary.main}14`,
-                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}44`,
-                  },
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  sx={{ letterSpacing: 0.5 }}
-                >
-                  Filters
-                </Typography>
-              </Button>
-            </Badge>
-          </Tooltip>
-        </Grid>
-      </Grid>
-
-      <Divider sx={{ my: 2 }} />
-
-      {/* Chips */}
-      <Box sx={{ mt: 1 }}>
-        {/* Dropdown chips */}
-        {filtersAppliedOnce && (
-          <Stack
-            direction="row"
+    <Box sx={{ mt: 2 }}>
+      <Grid container spacing={3}>
+        {/* Title + Searchbar */}
+        <Grid item width="100%" sx={{ display: "flex" }}>
+          <Grid
+            container
+            justifyContent="flex-end"
             spacing={2}
-            useFlexGap
-            flexWrap="wrap"
-            alignItems="center"
+            alignItems="flex-end"
           >
-            {filterChipConfigs.map((config) => {
-              switch (config.kind) {
-                case "businessUnit": {
-                  const { kind, ...props } = config;
-                  return (
-                    <FilterChipSelect<BusinessUnit> key={kind} {...props} />
-                  );
-                }
-                case "team": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<Team> key={kind} {...props} />;
-                }
-                case "subTeam": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<SubTeam> key={kind} {...props} />;
-                }
-                case "unit": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<Unit> key={kind} {...props} />;
-                }
-                case "careerFunction": {
-                  const { kind, ...props } = config;
-                  return (
-                    <FilterChipSelect<CareerFunction> key={kind} {...props} />
-                  );
-                }
-                case "designation": {
-                  const { kind, ...props } = config;
-                  return (
-                    <FilterChipSelect<Designation> key={kind} {...props} />
-                  );
-                }
-                case "employmentType": {
-                  const { kind, ...props } = config;
-                  return (
-                    <FilterChipSelect<EmploymentType> key={kind} {...props} />
-                  );
-                }
-                case "employeeStatus": {
-                  const { kind, ...props } = config;
-                  return (
-                    <FilterChipSelect<EmployeeStatus> key={kind} {...props} />
-                  );
-                }
-                case "company": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<Company> key={kind} {...props} />;
-                }
-                case "office": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<Office> key={kind} {...props} />;
-                }
-                case "manager":
-                case "gender": {
-                  const { kind, ...props } = config;
-                  return <FilterChipSelect<string> key={kind} {...props} />;
-                }
-                default:
-                  return assertNever(config);
-              }
-            })}
-
-            {hasActiveFilters && (
-              <Button
-                variant="text"
-                onClick={clearAll}
-                sx={{
-                  textTransform: "none",
-                  height: "32px",
-                  borderRadius: "50px",
-                  px: 2,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? theme.palette.grey[800]
-                        : theme.palette.grey[300],
-                    borderColor: theme.palette.error.main,
-                  },
-                }}
+            {/* Left: title + count-pills */}
+            <Grid item flex={1} alignSelf="flex-start" height="100%">
+              <Stack
+                display="flex"
+                direction="row"
+                alignItems="center"
+                gap={1}
+                sx={{ pl: 0.5 }}
               >
-                <ClearIcon
-                  fontSize="small"
-                  sx={{
-                    mr: 0.5,
-                    fontSize: 16,
-                    transition: "color 0.2s ease",
-                  }}
+                <GroupsIcon
+                  sx={{ fontSize: 20, color: theme.palette.text.secondary }}
                 />
                 <Typography
-                  variant="subtitle2"
+                  variant="h5"
+                  fontWeight={700}
+                  sx={{ letterSpacing: "-0.3px" }}
+                >
+                  Employees
+                </Typography>
+                <Chip
+                  size="small"
+                  label={
+                    <>
+                      <Box
+                        component="span"
+                        sx={{
+                          lineHeight: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          letterSpacing: "0.04em",
+                          color: theme.palette.text.secondary,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        Total Active
+                      </Box>
+                      <Box
+                        component="span"
+                        sx={{
+                          fontSize: "14px",
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          color:
+                            theme.palette.mode === "dark"
+                              ? theme.palette.grey[100]
+                              : theme.palette.grey[800],
+                        }}
+                      >
+                        {isLoading &&
+                        employeeState.totalActiveEmployeeCount === null
+                          ? "—"
+                          : (employeeState.totalActiveEmployeeCount ?? "—")}
+                      </Box>
+                    </>
+                  }
                   sx={{
+                    ml: 1,
+                    height: "auto",
+                    borderRadius: "100px",
+                    border: `1px solid ${theme.palette.text.disabled}`,
+                    backgroundColor:
+                      theme.palette.mode === "dark"
+                        ? theme.palette.background.paper
+                        : "#fff",
+                    "& .MuiChip-label": {
+                      padding: "6px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    },
+                  }}
+                />
+                {showFilteredCard && (
+                  <Chip
+                    size="small"
+                    label={
+                      <>
+                        <Box
+                          component="span"
+                          sx={{
+                            lineHeight: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            letterSpacing: "0.04em",
+                            color: alpha(
+                              theme.palette.secondary.contrastText,
+                              0.85,
+                            ),
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          Filtered
+                        </Box>
+                        <Box
+                          component="span"
+                          sx={{
+                            fontSize: "14px",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            color:
+                              theme.palette.mode === "dark"
+                                ? theme.palette.grey[100]
+                                : theme.palette.grey[800],
+                          }}
+                        >
+                          {isLoading
+                            ? "—"
+                            : employeeState.filteredEmployeesResponse
+                                .totalCount}
+                        </Box>
+                      </>
+                    }
+                    sx={{
+                      ml: 1,
+                      height: "auto",
+                      borderRadius: "100px",
+                      border: `1px solid ${theme.palette.secondary.contrastText}`,
+                      background: alpha(
+                        theme.palette.secondary.contrastText,
+                        0.1,
+                      ),
+                      "& .MuiChip-label": {
+                        padding: "6px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      },
+                    }}
+                  />
+                )}
+              </Stack>
+            </Grid>
+
+            {/* Center: search input */}
+            <Grid
+              item
+              sx={{ display: "flex", alignItems: "center", width: "40%" }}
+            >
+              <BaseTextField
+                id="searchString"
+                size="small"
+                name="searchString"
+                label="Search"
+                value={searchText}
+                error={searchError}
+                helperText={
+                  searchError
+                    ? searchText.length > SEARCH_MAX_LENGTH
+                      ? `Maximum ${SEARCH_MAX_LENGTH} characters allowed`
+                      : "Only letters, numbers, spaces and @ . _ - are allowed"
+                    : undefined
+                }
+                inputProps={{ maxLength: SEARCH_MAX_LENGTH + 1 }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!SEARCH_REGEX.test(value)) {
+                    setSearchError(true);
+                    return;
+                  }
+                  if (value.length > SEARCH_MAX_LENGTH) {
+                    setSearchError(true);
+                    return;
+                  }
+                  setSearchError(false);
+                  setSearchText(value);
+                  if (debounceRef.current)
+                    window.clearTimeout(debounceRef.current);
+                  debounceRef.current = window.setTimeout(() => {
+                    updateSearchPayload({ searchString: value });
+                  }, 300);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon
+                        fontSize="small"
+                        sx={{ color: theme.palette.text.disabled }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="Clear search"
+                        edge="end"
+                        size="small"
+                        disabled={!searchText}
+                        onClick={() => {
+                          if (debounceRef.current)
+                            window.clearTimeout(debounceRef.current);
+                          setSearchError(false);
+                          setSearchText("");
+                          updateSearchPayload({ searchString: "" });
+                        }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "8px",
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.secondary.contrastText,
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: theme.palette.secondary.contrastText,
+                    },
+                  },
+                }}
+              />
+            </Grid>
+            {/* Right: filter button */}
+            <Grid
+              item
+              sx={{
+                display: "flex",
+                alignSelf: "flex-start",
+                pr: 0.5,
+              }}
+            >
+              <Tooltip
+                title={
+                  active
+                    ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
+                    : "Open filters"
+                }
+              >
+                <Badge
+                  badgeContent={activeFilterCount}
+                  overlap="circular"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      backgroundColor: theme.palette.secondary.contrastText,
+                      color: "#fff",
+                      fontSize: "0.65rem",
+                      height: 18,
+                      minWidth: 18,
+                      padding: "0 4px",
+                      fontWeight: 700,
+                      top: 3,
+                      right: 3,
+                    },
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => setDrawerOpen(true)}
+                    startIcon={
+                      <FilterAltOutlined sx={{ fontSize: "18px !important" }} />
+                    }
+                    sx={{
+                      textTransform: "none",
+                      height: "40px",
+                      px: 2,
+                      borderRadius: "8px",
+                      fontWeight: 600,
+                      letterSpacing: 0.3,
+                      backgroundColor: active
+                        ? alpha(theme.palette.secondary.contrastText, 0.06)
+                        : "transparent",
+                      "&:hover": {
+                        backgroundColor: alpha(
+                          theme.palette.secondary.contrastText,
+                          0.1,
+                        ),
+                      },
+                    }}
+                  >
+                    Filters
+                  </Button>
+                </Badge>
+              </Tooltip>
+            </Grid>
+          </Grid>
+        </Grid>
+
+        {/* Active filter chips row */}
+        <Grid
+          item
+          sx={{ display: "flex", minHeight: filtersAppliedOnce ? 32 : 0 }}
+        >
+          {filtersAppliedOnce && (
+            <Stack
+              direction="row"
+              spacing={1}
+              useFlexGap
+              flexWrap="wrap"
+              alignItems="center"
+              sx={{ mb: 2 }}
+            >
+              {filterChipConfigs.map((config) => {
+                switch (config.kind) {
+                  case "businessUnit": {
+                    const { kind, ...props } = config;
+                    return (
+                      <FilterChipSelect<BusinessUnit> key={kind} {...props} />
+                    );
+                  }
+                  case "team": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<Team> key={kind} {...props} />;
+                  }
+                  case "subTeam": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<SubTeam> key={kind} {...props} />;
+                  }
+                  case "unit": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<Unit> key={kind} {...props} />;
+                  }
+                  case "careerFunction": {
+                    const { kind, ...props } = config;
+                    return (
+                      <FilterChipSelect<CareerFunction> key={kind} {...props} />
+                    );
+                  }
+                  case "designation": {
+                    const { kind, ...props } = config;
+                    return (
+                      <FilterChipSelect<Designation> key={kind} {...props} />
+                    );
+                  }
+                  case "company": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<Company> key={kind} {...props} />;
+                  }
+                  case "office": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<Office> key={kind} {...props} />;
+                  }
+                  case "employmentType": {
+                    const { kind, ...props } = config;
+                    return (
+                      <FilterChipSelect<EmploymentType> key={kind} {...props} />
+                    );
+                  }
+                  case "employeeStatus": {
+                    const { kind, ...props } = config;
+                    return (
+                      <FilterChipSelect<EmployeeStatus> key={kind} {...props} />
+                    );
+                  }
+                  case "manager":
+                  case "gender": {
+                    const { kind, ...props } = config;
+                    return <FilterChipSelect<string> key={kind} {...props} />;
+                  }
+                  default:
+                    return assertNever(config);
+                }
+              })}
+              {hasActiveFilters && (
+                <Button
+                  variant="text"
+                  onClick={clearAll}
+                  startIcon={<ClearIcon sx={{ fontSize: "14px !important" }} />}
+                  sx={{
+                    textTransform: "none",
+                    height: "30px",
+                    borderRadius: "50px",
+                    px: 1.5,
                     fontSize: "12px",
                     fontWeight: 600,
-                    transition: "color 0.2s ease",
+                    borderColor: theme.palette.divider,
+                    color: theme.palette.text.secondary,
+                    "&:hover": {
+                      borderColor: theme.palette.error.main,
+                      color: theme.palette.error.main,
+                      backgroundColor: alpha(theme.palette.error.main, 0.05),
+                    },
                   }}
                 >
                   Clear filters
-                </Typography>
-              </Button>
-            )}
-          </Stack>
-        )}
-      </Box>
+                </Button>
+              )}
+            </Stack>
+          )}
+        </Grid>
+      </Grid>
 
       <FilterDrawer
         drawerOpen={drawerOpen}

@@ -218,6 +218,7 @@ interface EmployeesState {
   continuousServiceRecord: ContinuousServiceRecordInfo[];
   updateJobInfoState: State;
   updateJobInfoMessage: string | null;
+  totalActiveEmployeeCount: number | null;
 }
 
 const initialState: EmployeesState = {
@@ -251,6 +252,7 @@ const initialState: EmployeesState = {
   continuousServiceRecord: [],
   updateJobInfoState: State.idle,
   updateJobInfoMessage: null,
+  totalActiveEmployeeCount: null,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -551,6 +553,9 @@ const EmployeeSlice = createSlice({
         state.filteredEmployeesResponseState = State.success;
         state.stateMessage = "Filtered employees fetched successfully";
         state.errorMessage = null;
+        if (state.totalActiveEmployeeCount === null) {
+          state.totalActiveEmployeeCount = action.payload.totalCount;
+        }
       })
       .addCase(fetchFilteredEmployees.rejected, (state, action) => {
         state.filteredEmployeesResponseState = State.failed;

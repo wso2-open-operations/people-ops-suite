@@ -397,11 +397,13 @@ export default function EmployeesTable() {
               fontSize: "0.875rem",
               fontWeight: 700,
               color: theme.palette.text.primary,
-              borderBottom: `2px solid ${theme.palette.divider}`,
+              borderBottom: `0px solid ${theme.palette.divider}`,
               minHeight: "56px !important",
               maxHeight: "56px !important",
             },
             "& .MuiDataGrid-columnHeader": {
+              borderBottom: 0,
+              backgroundColor: theme.palette.background.paper,
               "&:focus, &:focus-within": {
                 outline: "none",
               },
@@ -410,7 +412,7 @@ export default function EmployeesTable() {
               fontWeight: 700,
             },
             "& .MuiDataGrid-virtualScroller": {
-              minHeight: "200px !important",
+              minHeight: "100px !important",
             },
             "& .MuiDataGrid-cell": {
               display: "flex",
@@ -418,26 +420,24 @@ export default function EmployeesTable() {
               fontSize: "0.875rem",
               py: 1.5,
               borderBottom: `1px solid ${theme.palette.divider}`,
+              borderTop: 0,
               "&:focus, &:focus-within": {
                 outline: "none",
               },
             },
             "& .MuiDataGrid-row": {
               cursor: "pointer",
+              backgroundColor: theme.palette.mode === "dark"
+                ? "#1e1e1e"
+                : "transparent",
               transition: "background-color 0.2s ease",
               "&:hover": {
-                backgroundColor: theme.palette.mode === "dark"
-                  ? theme.palette.grey[900]
-                  : theme.palette.grey[50],
+                backgroundColor: theme.palette.action.hover,
               },
               "&.Mui-selected": {
-                backgroundColor: theme.palette.mode === "dark"
-                  ? theme.palette.grey[800]
-                  : theme.palette.grey[100],
+                backgroundColor: theme.palette.action.selected,
                 "&:hover": {
-                  backgroundColor: theme.palette.mode === "dark"
-                    ? theme.palette.grey[700]
-                    : theme.palette.grey[200],
+                  backgroundColor: theme.palette.action.focus,
                 },
               },
             },
@@ -445,6 +445,9 @@ export default function EmployeesTable() {
               display: "none",
             },
             "& .MuiDataGrid-footerContainer": {
+              backgroundColor: theme.palette.background.paper,
+              border: 0,
+              borderRadius: "0 0 0.25rem 0.25rem",
               minHeight: "52px",
             },
           }}
