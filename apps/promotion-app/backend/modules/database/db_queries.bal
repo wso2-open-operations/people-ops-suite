@@ -300,7 +300,7 @@ isolated function getFullPromotionRecommendationsQuery(int? id, string? employee
     return updatedQuery;
 }
 
-# Get Duplicate Promotion Request Count Query
+# Get Duplicate Promotion Request Count Query.
 #
 # + employeeEmail - WSO2 Email  
 # + promotionCycleId - Promotion Cycle ID
@@ -325,7 +325,7 @@ isolated function getDuplicatePromotionRequestCountQuery(string employeeEmail, i
     );
 }
 
-# Insert Promotion Request Query
+# Insert Promotion Request Query.
 #
 # + payload - Promotion Request Insert Payload  
 # + return - sql:ParameterizedQuery - Inset query for the promotion request table
@@ -368,7 +368,7 @@ isolated function insertPromotionRequestQuery(PromotionRequestDbInsertPayload pa
             )`;
 }
 
-# Insert promotion recommendation query
+# Insert Promotion Recommendation Query.
 #
 # + payload - Promotion Recommendation Data
 # + return - sql:ParameterizedQuery - Insert query for the promotion recommendation table
