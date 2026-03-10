@@ -13,8 +13,11 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Autocomplete,
+  Box,
+  Button,
   CircularProgress,
   Dialog,
   DialogContent,
@@ -24,9 +27,10 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
+import { Controller, useForm } from "react-hook-form";
 
 import BackdropProgress from "@root/src/component/ui/BackdropProgress";
-import { useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
+import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
   BusinessUnitState,
   SubTeamState,
@@ -43,10 +47,38 @@ interface AddPageProps {
   onClose: () => void;
 }
 
+interface AddOrgItemProps {
+  team: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
+  teamHead: EmployeeBasicInfo | null;
+  functionalLead: EmployeeBasicInfo | null;
+}
+
 export default function AddPage(props: AddPageProps) {
   const { open, orgInfo, onClose } = props;
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const theme = useTheme();
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<AddOrgItemProps>({
+    defaultValues: {
+      team: null,
+      teamHead: null,
+      functionalLead: null,
+    },
+  });
+
+  const onSubmit = (data: AddOrgItemProps) => {
+    console.log("form submit with the data : ", data);
+  };
+
+  const handleCancel = () => {
+    reset();
+    onClose();
+  };
 
   if (!orgInfo) return;
 
@@ -104,7 +136,9 @@ export default function AddPage(props: AddPageProps) {
             color: theme.palette.customText.primary.p2.active,
             p: 0,
           }}
-        />
+        >
+          <CloseIcon />
+        </IconButton>
       </DialogTitle>
 
       <DialogContent
@@ -121,83 +155,148 @@ export default function AddPage(props: AddPageProps) {
       >
         <SectionHeader title="Add Teams" />
 
-        <Autocomplete
-          options={orgInfo}
-          loading={isLoading}
-          getOptionLabel={(option) => `${option.name}`}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Select or create a team"
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  sx: { padding: "4px !important" },
-                  endAdornment: (
-                    <>
-                      {isLoading && <CircularProgress size={14} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                },
-              }}
-            />
-          )}
-        />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+          component="form"
+          onSubmit={handleSubmit(onSubmit)}
+        >
+          <Controller
+            name="team"
+            control={control}
+            rules={{ required: "Team is equired " }}
+            render={({ field }) => (
+              <Autocomplete
+                {...field}
+                value={field.value}
+                onChange={(_, data) => field.onChange(data)}
+                options={orgInfo}
+                loading={isLoading}
+                getOptionLabel={(option) => `${option.name}`}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select or create a team"
+                    error={!!errors.team}
+                    helperText={errors.team?.message}
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        sx: { padding: "4px !important" },
+                        endAdornment: (
+                          <>
+                            {isLoading && <CircularProgress size={14} />}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
+          />
 
-        <Autocomplete
-          options={employees}
-          loading={isLoading}
-          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-          renderOption={(props, employee) => (
-            <EmployeeOption key={employee.employeeId} listItemProps={props} employee={employee} />
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Select a team head"
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  sx: { padding: "4px !important" },
-                  endAdornment: (
-                    <>
-                      {isLoading && <CircularProgress size={14} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                },
-              }}
-            />
-          )}
-        />
+          <Controller
+            name="teamHead"
+            control={control}
+            rules={{ required: "Team head is required" }}
+            render={({ field }) => (
+              <Autocomplete
+                {...field}
+                value={field.value}
+                onChange={(_, data) => field.onChange(data)}
+                options={employees}
+                loading={isLoading}
+                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                renderOption={(props, employee) => (
+                  <EmployeeOption
+                    key={employee.employeeId}
+                    listItemProps={props}
+                    employee={employee}
+                  />
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select a team head"
+                    error={!!errors.teamHead}
+                    helperText={errors.teamHead?.message}
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        sx: { padding: "4px !important" },
+                        endAdornment: (
+                          <>
+                            {isLoading && <CircularProgress size={14} />}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
+          />
 
-        <Autocomplete
-          options={employees}
-          loading={isLoading}
-          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-          renderOption={(props, employee) => (
-            <EmployeeOption key={employee.employeeId} listItemProps={props} employee={employee} />
-          )}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder="Select a functional lead"
-              slotProps={{
-                input: {
-                  ...params.InputProps,
-                  sx: { padding: "4px !important" },
-                  endAdornment: (
-                    <>
-                      {isLoading && <CircularProgress size={14} />}
-                      {params.InputProps.endAdornment}
-                    </>
-                  ),
-                },
-              }}
-            />
-          )}
-        />
+          <Controller
+            name="functionalLead"
+            control={control}
+            rules={{ required: "Functional lead is required " }}
+            render={({ field }) => (
+              <Autocomplete
+                {...field}
+                value={field.value}
+                onChange={(_, data) => field.onChange(data)}
+                options={employees}
+                loading={isLoading}
+                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                renderOption={(props, employee) => (
+                  <EmployeeOption
+                    key={employee.employeeId}
+                    listItemProps={props}
+                    employee={employee}
+                  />
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Select a functional lead"
+                    error={!!errors.functionalLead}
+                    helperText={errors.functionalLead?.message}
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        sx: { padding: "4px !important" },
+                        endAdornment: (
+                          <>
+                            {isLoading && <CircularProgress size={14} />}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
+          />
+
+          {/* Action buttons */}
+          <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+            <Button type="button" variant="outlined" size="small" onClick={handleCancel}>
+              Cancel
+            </Button>
+
+            <Button type="submit" variant={"primary" as any} size="small">
+              Add Team
+            </Button>
+          </Box>
+        </Box>
       </DialogContent>
     </Dialog>
   );
