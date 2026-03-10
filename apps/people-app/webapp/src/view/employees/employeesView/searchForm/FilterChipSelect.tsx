@@ -48,15 +48,19 @@ export function FilterChipSelect<T>({
 }: FilterChipSelectProps<T>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const textColor = theme.palette.secondary.contrastText;
+  const accentColor = theme.palette.secondary.contrastText;
   const hasValue = value !== undefined && value !== null;
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 
-  const chipText = useMemo(() => {
-    return (
+  const chipText = useMemo(
+    () => (
       <Box
-        sx={{ display: "flex", alignItems: "center", gap: hasValue ? 1 : 0.5 }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: hasValue ? 0.75 : 0.5,
+        }}
       >
         <Typography
           variant="caption"
@@ -64,16 +68,19 @@ export function FilterChipSelect<T>({
             lineHeight: 1,
             display: "flex",
             alignItems: "center",
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-            color: theme.palette.grey[500],
-            textTransform: "uppercase",
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.04em",
+            color: hasValue
+              ? alpha(accentColor, 0.85)
+              : theme.palette.text.secondary,
+            textTransform: "capitalize",
           }}
         >
-          {hasValue ? `${label} :` : `${label}`}
+          {hasValue ? `${label} ` : label}
         </Typography>
-        {hasValue ? (
+
+        {hasValue && (
           <Typography
             variant="body2"
             sx={{
@@ -81,77 +88,55 @@ export function FilterChipSelect<T>({
               display: "flex",
               alignItems: "center",
               fontSize: "12px",
-              fontWeight: 900,
-              color: isDark ? theme.palette.grey[100] : theme.palette.grey[700],
+              fontWeight: 700,
+              color: isDark ? theme.palette.grey[100] : theme.palette.grey[800],
+              maxWidth: 140,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              flexShrink: 1,
             }}
           >
             {`${value}`}
           </Typography>
-        ) : (
-          <Typography
-            variant="body2"
-            sx={{
-              lineHeight: 1,
-              display: "flex",
-              alignItems: "center",
-              fontSize: "12px",
-              fontWeight: 900,
-              color: theme.palette.grey[400],
-            }}
-          >
-            {""}
-          </Typography>
         )}
+
         {open ? (
           <KeyboardArrowUp
-            className="arrow-icon"
             sx={{
-              fontSize: "16px",
-              color: theme.palette.grey[500],
-              ".MuiChip-root:hover &": { color: theme.palette.primary.main },
+              fontSize: "14px",
+              color: hasValue ? accentColor : theme.palette.text.secondary,
             }}
           />
         ) : (
           <KeyboardArrowDown
-            className="arrow-icon"
             sx={{
-              fontSize: 16,
-              fontWeight: 900,
-              color: theme.palette.grey[500],
-              ".MuiChip-root:hover &": { color: textColor },
+              fontSize: "14px",
+              color: hasValue ? accentColor : theme.palette.text.secondary,
             }}
           />
         )}
       </Box>
-    );
-  }, [
-    hasValue,
-    theme.palette.grey,
-    theme.palette.primary.main,
-    label,
-    isDark,
-    value,
-    open,
-    textColor,
-  ]);
+    ),
+    [hasValue, accentColor, theme.palette.text.secondary, theme.palette.grey, label, isDark, value, open],
+  );
 
-  const openMenu = (event: MouseEvent<HTMLElement>) => {
+  const openMenu = (event: MouseEvent<HTMLElement>) =>
     setAnchorEl(event.currentTarget);
-  };
+  const closeMenu = () => setAnchorEl(null);
 
-  const closeMenu = () => {
-    setAnchorEl(null);
-  };
-
-  const tooltipTitle = options.length === 0 ? "No options available" : undefined;
+  const tooltipTitle =
+    options.length === 0
+      ? "No options available"
+      : hasValue
+        ? `${value}`
+        : undefined;
 
   return (
     <>
       <Tooltip title={tooltipTitle} disableHoverListener={!tooltipTitle} arrow>
         <span
-          style={{
-            cursor: options.length === 0 ? "not-allowed" : "pointer",
-          }}
+          style={{ cursor: options.length === 0 ? "not-allowed" : "pointer" }}
         >
           <Chip
             label={chipText}
@@ -166,39 +151,41 @@ export function FilterChipSelect<T>({
                   justifyContent: "center",
                   padding: "0 4px",
                   height: "100%",
-                  width: "28px",
-                  color: isDark
-                    ? theme.palette.grey[300]
-                    : theme.palette.grey[400],
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    color: theme.palette.error.main,
-                    backgroundColor: isDark
-                      ? alpha("#fff", 0.05)
-                      : theme.palette.grey[200],
-                  },
+                  width: "26px",
+                  color: theme.palette.text.disabled,
+                  transition: "color 0.15s ease",
+                  "&:hover": { color: theme.palette.error.main },
                 }}
               >
-                <CloseIcon sx={{ fontSize: 16 }} />
+                <CloseIcon sx={{ fontSize: 13 }} />
               </Box>
             }
             sx={{
               height: "32px",
               p: 0,
-              backgroundColor: isDark
-                ? theme.palette.background.default
-                : "#fff",
+              backgroundColor: hasValue
+                ? isDark
+                  ? alpha(accentColor, 0.12)
+                  : alpha(accentColor, 0.06)
+                : isDark
+                  ? theme.palette.background.paper
+                  : "#fff",
               borderRadius: "50px",
-              border: `1px solid ${hasValue ? alpha(textColor, 1) : theme.palette.grey[500]}`,
-              transition: "all 0.1s ease-in-out",
-              "&:active": {
-                transform: "scale(0.98)",
+              border: `1.5px solid ${hasValue ? accentColor : theme.palette.divider}`,
+              transition:
+                "border-color 0.15s ease, background-color 0.15s ease",
+              "&:hover": {
+                borderColor: accentColor,
+                backgroundColor: isDark
+                  ? alpha(accentColor, 0.14)
+                  : alpha(accentColor, 0.05),
               },
+              "&:active": { transform: "scale(0.98)" },
               "& .MuiChip-label": {
                 pl: "12px",
                 pr: "8px",
                 borderRight: hasValue
-                  ? `1px solid ${isDark ? alpha(theme.palette.grey[100], 0.1) : theme.palette.grey[200]}`
+                  ? `1px solid ${isDark ? alpha("#fff", 0.08) : theme.palette.divider}`
                   : "none",
                 height: "100%",
                 display: "flex",
@@ -222,7 +209,16 @@ export function FilterChipSelect<T>({
         open={open}
         onClose={closeMenu}
         slotProps={{
-          paper: { sx: { maxHeight: 360, minWidth: 240 } },
+          paper: {
+            sx: {
+              maxHeight: 320,
+              minWidth: 220,
+              borderRadius: "8px",
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              mt: 0.5,
+            },
+          },
         }}
       >
         {options.length > 0 ? (
@@ -235,6 +231,17 @@ export function FilterChipSelect<T>({
                 onClick={() => {
                   onChange(o);
                   closeMenu();
+                }}
+                sx={{
+                  fontSize: "13px",
+                  py: 0.75,
+                  "&.Mui-selected": {
+                    backgroundColor: alpha(accentColor, 0.1),
+                    color: accentColor,
+                    fontWeight: 600,
+                    "&:hover": { backgroundColor: alpha(accentColor, 0.15) },
+                  },
+                  "&:hover": { backgroundColor: alpha(accentColor, 0.05) },
                 }}
               >
                 {optionLabel}
