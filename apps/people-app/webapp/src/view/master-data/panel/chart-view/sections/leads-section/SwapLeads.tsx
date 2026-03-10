@@ -344,7 +344,7 @@ export const SwapLeads: React.FC<SwapLeadsProps> = ({
         onCancel={handleCancel}
       />
 
-      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5 }}>
+      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", px: 0.5, gap: 2 }}>
         {head && (
           <SwappableLead
             label="Business Unit Head"
