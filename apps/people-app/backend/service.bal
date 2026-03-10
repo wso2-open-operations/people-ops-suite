@@ -138,6 +138,18 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
+        }
+
         return employeeInfo;
     }
 
@@ -155,6 +167,38 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
                 }
             };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
         }
 
         database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
