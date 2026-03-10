@@ -34,7 +34,6 @@ type AuthContextType = {
   appSignIn: () => void;
   appSignOut: () => void;
 };
-
 const AuthContext = React.createContext<AuthContextType>({} as AuthContextType);
 
 const timeout = 1800_000;
@@ -76,6 +75,15 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getIDToken,
     state,
   } = useAuthContext();
+
+  useEffect(() => {
+    var appStatus = localStorage.getItem("visitor-app-state");
+    if (appStatus && appStatus === "logout") {
+      setAppState("logout");
+    } else {
+      setAppState("active");
+    }
+  }, []);
 
   useEffect(() => {
     if (appState === "active") {
@@ -134,14 +142,14 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
 
   const appSignOut = async () => {
     setAppState("loading");
-    localStorage.setItem("meet-app-state", "logout");
+    localStorage.setItem("visitor-app-state", "logout");
     await signOut();
     setAppState("logout");
   };
 
   const appSignIn = async () => {
     setAppState("active");
-    localStorage.setItem("meet-app-state", "active");
+    localStorage.setItem("visitor-app-state", "active");
   };
 
   const authContext: AuthContextType = {

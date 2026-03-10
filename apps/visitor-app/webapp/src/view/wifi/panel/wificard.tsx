@@ -185,7 +185,6 @@ const WifiCard = () => {
                   >
                     <IconButton
                       onClick={() => setShowPassword((prev) => !prev)}
-                      edge="start"
                     >
                       {showPassword ? (
                         <VisibilityOffRoundedIcon />
@@ -201,6 +200,7 @@ const WifiCard = () => {
                     <IconButton
                       onClick={() => handleCopy(password, "password")}
                       color={copied === "password" ? "success" : "default"}
+                      edge="end"
                     >
                       <ContentCopyRoundedIcon />
                     </IconButton>
@@ -216,39 +216,35 @@ const WifiCard = () => {
           {/* Unified credentials row + copy all */}
           <Box
             sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "stretch", sm: "center" },
-              justifyContent: "space-between",
-              gap: 2,
+              position: "relative",
               p: 2.5,
+              pr: 7,
               borderRadius: 2,
               bgcolor: "grey.50",
               border: 1,
               borderColor: "divider",
             }}
           >
-            <Stack spacing={0.5} flex={1}>
-              <Typography variant="subtitle2" color="text.primary">
-                Quick connect string
-              </Typography>
-              <Typography
-                variant="body2"
-                fontFamily="ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace"
-                sx={{ wordBreak: "break-all" }}
-              >
-                {showPassword
-                  ? fullCredentials
-                  : `SSID: ${ssid}   |   Password: ••••••••`}
-              </Typography>
-            </Stack>
+            <Typography
+              variant="body2"
+              fontFamily="ui-monospace, 'Cascadia Mono', Menlo, Consolas, monospace"
+              sx={{ wordBreak: "break-all" }}
+            >
+              {showPassword
+                ? fullCredentials
+                : `SSID: ${ssid}   |   Password: ••••••••`}
+            </Typography>
 
             <Tooltip title={copied === "both" ? "Copied!" : "Copy both"}>
               <IconButton
                 size="large"
                 onClick={() => handleCopy(fullCredentials, "both")}
                 color={copied === "both" ? "success" : "primary"}
-                sx={{ alignSelf: { xs: "center", sm: "flex-start" } }}
+                sx={{
+                  position: "absolute",
+                  top: 8,
+                  right: 8,
+                }}
               >
                 <ContentCopyRoundedIcon />
               </IconButton>
