@@ -391,19 +391,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            error? updateError = from database:FullPromotionRecommendation recommendation in promotionRecommendationsArray
-                do {
-                    recommendation.recommendationStatement = "";
-                    recommendation.recommendationAdditionalComment = "";
-                };
-            if updateError is error {
-                return <http:InternalServerError>{
-                    body: {
-                        message: "Error occurred while data sanitization"
-                    }
-                };
-            }
-
             promotions.push({
                 id: promotionRequest.id,
                 employeeEmail: promotionRequest.employeeEmail,

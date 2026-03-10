@@ -151,57 +151,57 @@ export default function SubmissionHistory() {
                 <Box>
                     <TableContainer component={Paper}>
                         <Table>
-                        <TableHead>
-                            <TableRow>
-                            <TableCell>Promotion Cycle</TableCell>
-                            <TableCell>Employee Email</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Recommendation To</TableCell>
-                            <TableCell>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {submissionHistory.promotions.map((row) => (
-                            <TableRow
-                                key={row.id}
-                                sx={{
-                                    '&:hover': {
-                                    backgroundColor: theme.palette.background.dataGrid,
-                                    cursor: 'pointer',
-                                    },
-                                }}
-                                >
-                                <TableCell>{row.promotionCycle}</TableCell>
-                                <TableCell>{row.employeeEmail}</TableCell>
-                                <TableCell>
-                                    <Box
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Promotion Cycle</TableCell>
+                                    <TableCell>Employee Email</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Recommendation To</TableCell>
+                                    <TableCell>Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {submissionHistory.promotions.map((row) => (
+                                    <TableRow
+                                        key={row.id}
                                         sx={{
-                                            backgroundColor: statusColorMap[row.status] || '#eeeeee',
-                                            color: '#000',
-                                            px: 2,
-                                            py: 0.5,
-                                            borderRadius: '12px',
-                                            display: 'inline-block',
-                                            fontSize: '0.85rem',
-                                            fontWeight: 500,
-                                            textTransform: 'capitalize',
+                                            '&:hover': {
+                                            backgroundColor: theme.palette.background.dataGrid,
+                                            cursor: 'pointer',
+                                            },
                                         }}
                                     >
-                                        {row.status}
-                                    </Box>
-                                </TableCell>
-                                <TableCell>{row.nextJobBand}</TableCell>
-                                <TableCell>
-                                <IconButton onClick={() => handleOpen(
-                                    row.recommendations.length > 0 && row.recommendations[0].recommendationStatement
-                                    ? row.recommendations[0].recommendationStatement
-                                    : safeBase64Encode("<strong>User does not have any recommendations!</strong>"))}>
-                                    <VisibilityIcon />
-                                </IconButton>
-                                </TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
+                                        <TableCell>{row.promotionCycle}</TableCell>
+                                        <TableCell>{row.employeeEmail}</TableCell>
+                                        <TableCell>
+                                            <Box
+                                                sx={{
+                                                    backgroundColor: statusColorMap[row.status] || '#eeeeee',
+                                                    color: '#000',
+                                                    px: 2,
+                                                    py: 0.5,
+                                                    borderRadius: '12px',
+                                                    display: 'inline-block',
+                                                    fontSize: '0.85rem',
+                                                    fontWeight: 500,
+                                                    textTransform: 'capitalize',
+                                                }}
+                                            >
+                                                {row.status}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>{row.nextJobBand}</TableCell>
+                                        <TableCell>
+                                        <IconButton onClick={() => handleOpen(
+                                            row.recommendations.length > 0 && row.recommendations[0].recommendationStatement
+                                            ? row.recommendations[0].recommendationStatement
+                                            : safeBase64Encode("<strong>User does not have any recommendations!</strong>"))}>
+                                            <VisibilityIcon />
+                                        </IconButton>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
                         </Table>
                     </TableContainer>
 
