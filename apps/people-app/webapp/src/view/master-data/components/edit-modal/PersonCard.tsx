@@ -36,7 +36,6 @@ const PersonCard = memo<PersonCardProps>(({ name, title, avatar }) => {
         display: "flex",
         gap: "8px",
         alignItems: "center",
-        padding: "4px",
         borderRadius: "4px",
         flex: 1,
         minWidth: 0,
