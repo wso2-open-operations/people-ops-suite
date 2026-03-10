@@ -10,7 +10,23 @@ public type CreateWifiAccountPayload record {|
     # wifi username
     string username;
     # wifi password
-    string password;
+    string password?;
     # owner email
     string email?;
+|};
+
+public type CreateWifiAccountResponse record {|
+    # Status Code of the response
+    int statusCode?;
+    # Response message
+    string message;
+    # Guest wifi account username
+    string guestAccount;    
+|};
+
+
+type ResponseBody record {|
+    string message?;
+    string guestAccount?;
+    json...;
 |};
