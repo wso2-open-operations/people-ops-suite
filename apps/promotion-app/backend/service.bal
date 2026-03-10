@@ -117,7 +117,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + statusArray - Array of status to filter the promotion cycles
     # + return - http:Ok|http:Unauthorized|http:InternalServerError
     resource function GET promotion/cycles(database:PromotionCyclesStatus[]? statusArray) 
-        returns PromotionCycles|http:InternalServerError|error {
+        returns PromotionCycles|http:InternalServerError {
 
         database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus(statusArray);
 
