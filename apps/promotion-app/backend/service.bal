@@ -542,6 +542,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         // For promotion recommendation payload
         database:PromotionRecommendationInsertPayload promotionRecommendation;
 
+        // Duplicate promotion request check
         boolean|error isDuplicatePromotionRequest = database:isDuplicatePromotionRequest(employeeEmail = application.employeeEmail,
                 promotionCycleId = application.PromotionCycleID);
 
@@ -589,8 +590,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // Duplicate promotion request check
-
             // Setting promotion application payload
             promotionApplication = {
                 employeeEmail: application.employeeEmail,
@@ -607,34 +606,58 @@ service http:InterceptableService / on new http:Listener(9090) {
                 createdBy: userInfo.email
             };
 
-            int|error applicationID =  database:insertPromotionRequest(payload = promotionApplication);
+            int|error applicationID;
+            int|error lastInsertId;
 
-            if applicationID is error {
-                string customError = string `Error while inserting Promotion Request`;
-                log:printError(customError);
+            transaction {
+                applicationID =  database:insertPromotionRequest(payload = promotionApplication);
+
+                if applicationID is int {
+                    // Setting promotion recommendation payload
+                    promotionRecommendation = {
+                        promotionRequestID: applicationID,
+                        leadEmail: userInfo.email,
+                        isReportingLead: (employeeData.managerEmail ?: "") === userInfo.email,
+                        statement: application.statement,
+                        comment: application.comment,
+                        status: database:SUBMITTED,
+                        createdBy: userInfo.email
+                    };
+
+                    lastInsertId = database:insertPromotionRecommendation(promotionRecommendation);
+
+                    if lastInsertId is error {
+                        rollback;
+                        string customError = string `Error while inserting Promotion Recommendation`;
+                        log:printError(customError);
+                        return <http:InternalServerError>{
+                            body: {
+                                message: customError
+                            }
+                        };
+                    } else {
+                        check commit;
+                    }
+                } else {
+                    check commit;
+                    string customError = string `Error while inserting Promotion Request`;
+                    log:printError(customError);
+                    return <http:InternalServerError>{
+                        body: {
+                            message: customError
+                        }
+                    };
+                }
+            } on fail error err {
                 return <http:InternalServerError>{
                     body: {
-                        message: customError
+                        message: err.toString()
                     }
                 };
             }
 
-            // Setting promotion recommendation payload
-            promotionRecommendation = {
-                promotionRequestID: applicationID,
-                leadEmail: userInfo.email,
-                isReportingLead: (employeeData.managerEmail ?: "") === userInfo.email,
-                statement: application.statement,
-                comment: application.comment,
-                status: database:SUBMITTED,
-                createdBy: userInfo.email
-            };
-
-            // Add a new promotion recommendation
-            int|error lastInsertId = database:insertPromotionRecommendation(promotionRecommendation);
-
-            if lastInsertId is error {
-                string customError = string `Error while inserting Promotion Recommendation`;
+            if applicationID is error {
+                string customError = string `Error while inserting Promotion Request`;
                 log:printError(customError);
                 return <http:InternalServerError>{
                     body: {
