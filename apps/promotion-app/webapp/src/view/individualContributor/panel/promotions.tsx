@@ -162,84 +162,84 @@ export default function Request() {
             {/* Refresh Button - Top Left */}
             <Box
                 sx={{
-                position: "absolute",
-                top: 20,
-                left: 20,
+                    position: "absolute",
+                    top: 20,
+                    left: 20,
                 }}
             >
                 <Tooltip title="Refresh">
-                <IconButton onClick={handleRefresh} color="primary">
-                    <RefreshRoundedIcon />
-                </IconButton>
+                    <IconButton onClick={handleRefresh} color="primary">
+                        <RefreshRoundedIcon />
+                    </IconButton>
                 </Tooltip>
             </Box>
             <Box
                 sx={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    width: "100%",
                 }}
             >
                 <Autocomplete
-                sx={{ width: 400 }}
-                options={employee.employees}
-                getOptionLabel={(option) =>
-                    `${option.firstName} ${option.lastName} (${option.workEmail})`
-                }
-                filterOptions={createFilterOptions({
-                    stringify: (option) =>
-                    `${option.firstName} ${option.lastName} ${option.workEmail}`,
-                })}
-                onChange={handleEmployeeChange}
-                renderInput={(params) => (
-                    <TextField {...params} fullWidth label="Search Employee" variant="outlined" />
-                )}
-                renderOption={(props, option) => {
-                    const initials = option?.firstName?.charAt(0)?.toUpperCase() || "";
-                    return (
-                    <li
-                        {...props}
-                        style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "8px 16px",
-                        }}
-                    >
-                        {option.employeeThumbnail ? (
-                        <img
-                            src={option.employeeThumbnail}
-                            alt={option.firstName}
+                    sx={{ width: 400 }}
+                    options={employee.employees}
+                    getOptionLabel={(option) =>
+                        `${option.firstName} ${option.lastName} (${option.workEmail})`
+                    }
+                    filterOptions={createFilterOptions({
+                        stringify: (option) =>
+                        `${option.firstName} ${option.lastName} ${option.workEmail}`,
+                    })}
+                    onChange={handleEmployeeChange}
+                    renderInput={(params) => (
+                        <TextField {...params} fullWidth label="Search Employee" variant="outlined" />
+                    )}
+                    renderOption={(props, option) => {
+                        const initials = option?.firstName?.charAt(0)?.toUpperCase() || "";
+                        return (
+                        <li
+                            {...props}
                             style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: "50%",
-                            marginRight: 8,
-                            }}
-                            loading="lazy"
-                        />
-                        ) : (
-                        <Avatar
-                            sx={{
-                            width: 24,
-                            height: 24,
-                            fontSize: 14,
-                            marginRight: 1,
-                            bgcolor: "#74b3ce",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "8px 16px",
                             }}
                         >
-                            {initials}
-                        </Avatar>
-                        )}
-                        <div>
-                        <div>{`${option.firstName} ${option.lastName}`}</div>
-                        <div style={{ fontSize: "12px", color: "#888" }}>
-                            {option.workEmail}
-                        </div>
-                        </div>
-                    </li>
-                    );
-                }}
+                            {option.employeeThumbnail ? (
+                            <img
+                                src={option.employeeThumbnail}
+                                alt={option.firstName}
+                                style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                marginRight: 8,
+                                }}
+                                loading="lazy"
+                            />
+                            ) : (
+                            <Avatar
+                                sx={{
+                                width: 24,
+                                height: 24,
+                                fontSize: 14,
+                                marginRight: 1,
+                                bgcolor: "#74b3ce",
+                                }}
+                            >
+                                {initials}
+                            </Avatar>
+                            )}
+                            <div>
+                            <div>{`${option.firstName} ${option.lastName}`}</div>
+                            <div style={{ fontSize: "12px", color: "#888" }}>
+                                {option.workEmail}
+                            </div>
+                            </div>
+                        </li>
+                        );
+                    }}
                 />
             </Box>
 
@@ -259,7 +259,7 @@ export default function Request() {
                             variant="outlined"
                             sx={{
                                 p: 2,
-                                bgcolor: 'grey.50',
+                                bgcolor: theme.palette.background.default,
                                 borderRadius: 2,
                                 width: "100%",
                                 maxWidth: "1500px",
@@ -384,7 +384,7 @@ export default function Request() {
                                     borderColor: 'divider',
                                     borderRadius: 1,
                                     '& .quill': {
-                                    bgcolor: 'white',
+                                    bgcolor: theme.palette.background.default,
                                     width: "100%"
                                     },
                                     '& .ql-container': {
@@ -427,7 +427,7 @@ export default function Request() {
                         sx={{
                         px: 4,
                         py: 2.5,
-                        bgcolor: 'grey.50',
+                        bgcolor: theme.palette.background.default,
                         borderTop: 1,
                         borderColor: 'divider',
                         display: 'flex',
@@ -444,9 +444,9 @@ export default function Request() {
                             sx={{
                                 textTransform: 'none',
                                 fontWeight: 500,
-                                bgcolor: 'grey.900',
+                                bgcolor: theme.palette.background.gradient,
                                 '&:hover': {
-                                bgcolor: 'grey.800',
+                                    bgcolor: theme.palette.background.gradient,
                                 },
                             }}
                         >
