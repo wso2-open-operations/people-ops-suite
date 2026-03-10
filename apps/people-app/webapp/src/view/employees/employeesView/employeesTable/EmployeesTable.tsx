@@ -15,7 +15,7 @@
 // under the License.
 
 import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
-import { Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
+import { alpha, Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import { DataGrid, GridColDef, GridPaginationModel, GridRenderCellParams, GridSortItem, GridSortModel } from "@mui/x-data-grid";
 import {
   Employee,
@@ -427,9 +427,7 @@ export default function EmployeesTable() {
             },
             "& .MuiDataGrid-row": {
               cursor: "pointer",
-              backgroundColor: theme.palette.mode === "dark"
-                ? "#1e1e1e"
-                : "transparent",
+              backgroundColor: alpha(theme.palette.background.paper, 0.5),
               transition: "background-color 0.2s ease",
               "&:hover": {
                 backgroundColor: theme.palette.action.hover,
