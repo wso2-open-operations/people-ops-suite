@@ -27,14 +27,15 @@ import PersonCard from "@view/master-data/components/edit-modal/PersonCard";
 
 interface OrgStructureCardProps {
   name: string;
-  type: NodeType;
+  type?: NodeType;
   headCount: number;
   teamHead?: Head;
   functionLead?: FunctionalLead;
   hasChildren?: boolean;
   isExpanded?: boolean;
-  onCollapse?: () => void;
   togglePeopleSectionVisibility?: boolean;
+  isPeopleSectionVertical?: boolean;
+  onCollapse?: () => void;
   onEdit?: () => void;
   onAdd?: () => void;
   onClick?: () => void;
@@ -74,6 +75,7 @@ const OrgStructureCard = ({
   onEdit,
   onAdd,
   onClick,
+  isPeopleSectionVertical,
 }: OrgStructureCardProps) => {
   const theme = useTheme();
   const isCompanyNode = type === NodeType.Company;
@@ -81,7 +83,7 @@ const OrgStructureCard = ({
   const secondaryPerson = isCompanyNode ? STATIC_COMPANY_LEADERS.ceo : functionLead;
 
   const [isPeopleSectionVisible, setPeopleSectionVisibility] = useState<boolean>(
-    Boolean(primaryPerson || secondaryPerson),
+    false
   );
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -105,7 +107,7 @@ const OrgStructureCard = ({
 
   const handleClick = () => {
     onClick?.();
-  }
+  };
 
   const isIconRotated = isExpanded ?? isPeopleSectionVisible;
 
@@ -175,10 +177,10 @@ const OrgStructureCard = ({
           <Box
             sx={{
               display: "flex",
-              gap: "16px",
+              gap: isPeopleSectionVertical ? "8px" : "16px",
               alignItems: "flex-start",
-              mr: 4,
               width: "100%",
+              flexDirection: isPeopleSectionVertical ? "column" : "row",
             }}
           >
             {/* Team Head */}
@@ -229,25 +231,27 @@ const OrgStructureCard = ({
           }}
         >
           {/* Type Badge */}
-          <Box
-            sx={{
-              backgroundColor: theme.palette.fill.primary.light.active,
-              padding: "4px 8px",
-              borderRadius: "4px",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Typography
-              variant="caption"
+          {type && (
+            < Box
               sx={{
-                color: theme.palette.primary.main,
-                textTransform: "uppercase",
+                backgroundColor: theme.palette.fill.primary.light.active,
+                padding: "4px 8px",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              {TYPE_LABELS[type]}
-            </Typography>
-          </Box>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: theme.palette.primary.main,
+                  textTransform: "uppercase",
+                }}
+              >
+                {TYPE_LABELS[type]}
+              </Typography>
+            </Box>
+          )}
 
           <Box
             sx={{
@@ -319,7 +323,7 @@ const OrgStructureCard = ({
           )}
         </Box>
       </Box>
-    </Box>
+    </Box >
   );
 };
 
