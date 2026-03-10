@@ -639,7 +639,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                         check commit;
                     }
                 } else {
-                    check commit;
+                    rollback;
                     string customError = string `Error while inserting Promotion Request`;
                     log:printError(customError);
                     return <http:InternalServerError>{
