@@ -15,7 +15,7 @@
 // under the License.
 import {
   Autocomplete,
-  Box,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -27,19 +27,28 @@ import {
 
 import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
+import {
+  BusinessUnitState,
+  SubTeamState,
+  TeamState,
+  UnitState,
+} from "@root/src/slices/organizationSlice/organizationStructure";
 
 import { SectionHeader } from "../../components/edit-modal/SectionHeader";
 import EmployeeOption from "./EmployeeOption";
 
 interface AddPageProps {
   open: boolean;
+  orgInfo: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
   onClose: () => void;
 }
 
 export default function AddPage(props: AddPageProps) {
-  const { open, onClose } = props;
+  const { open, orgInfo, onClose } = props;
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const theme = useTheme();
+
+  if (!orgInfo) return;
 
   return (
     <Dialog
@@ -113,11 +122,80 @@ export default function AddPage(props: AddPageProps) {
         <SectionHeader title="Add Teams" />
 
         <Autocomplete
+          options={orgInfo}
+          loading={isLoading}
+          getOptionLabel={(option) => `${option.name}`}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Select or create a team"
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  sx: { padding: "4px !important" },
+                  endAdornment: (
+                    <>
+                      {isLoading && <CircularProgress size={14} />}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                },
+              }}
+            />
+          )}
+        />
+
+        <Autocomplete
           options={employees}
           loading={isLoading}
-          renderInput={(params) => <TextField {...params} />}
+          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
           renderOption={(props, employee) => (
             <EmployeeOption key={employee.employeeId} listItemProps={props} employee={employee} />
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Select a team head"
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  sx: { padding: "4px !important" },
+                  endAdornment: (
+                    <>
+                      {isLoading && <CircularProgress size={14} />}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                },
+              }}
+            />
+          )}
+        />
+
+        <Autocomplete
+          options={employees}
+          loading={isLoading}
+          getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+          renderOption={(props, employee) => (
+            <EmployeeOption key={employee.employeeId} listItemProps={props} employee={employee} />
+          )}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Select a functional lead"
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  sx: { padding: "4px !important" },
+                  endAdornment: (
+                    <>
+                      {isLoading && <CircularProgress size={14} />}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                },
+              }}
+            />
           )}
         />
       </DialogContent>
