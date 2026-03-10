@@ -117,6 +117,7 @@ export function SearchForm() {
     filterPayload.searchString ?? "",
   );
   const [searchError, setSearchError] = useState(false);
+  const [searchErrorReason, setSearchErrorReason] = useState<"format" | "length" | null>(null);
 
   useEffect(() => {
     setSearchText(filterPayload.searchString ?? "");
@@ -626,7 +627,7 @@ export function SearchForm() {
                 error={searchError}
                 helperText={
                   searchError
-                    ? searchText.length > SEARCH_MAX_LENGTH
+                    ? searchErrorReason === "length"
                       ? `Maximum ${SEARCH_MAX_LENGTH} characters allowed`
                       : "Only letters, numbers, spaces and @ . _ - are allowed"
                     : undefined
@@ -635,13 +636,16 @@ export function SearchForm() {
                 onChange={(e) => {
                   const value = e.target.value;
                   if (!SEARCH_REGEX.test(value)) {
+                    setSearchErrorReason("format");
                     setSearchError(true);
                     return;
                   }
                   if (value.length > SEARCH_MAX_LENGTH) {
+                    setSearchErrorReason("length");
                     setSearchError(true);
                     return;
                   }
+                  setSearchErrorReason(null);
                   setSearchError(false);
                   setSearchText(value);
                   if (debounceRef.current)
@@ -670,6 +674,7 @@ export function SearchForm() {
                           if (debounceRef.current)
                             window.clearTimeout(debounceRef.current);
                           setSearchError(false);
+                          setSearchErrorReason(null);
                           setSearchText("");
                           updateSearchPayload({ searchString: "" });
                         }}
