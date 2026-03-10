@@ -55,7 +55,7 @@ export const fetchActivePromotionCycle = createAsyncThunk(
 
     return new Promise<{ activePromotionCycles: PromotionCycle | null }>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.getActivePromotionCycle, {
+        .get(AppConfig.serviceUrls.getPromotionCycle + "?statusArray=OPEN", {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {

@@ -48,7 +48,7 @@ export const AppConfig = {
     userInfo: SERVICE_BASE_URL + "/user-info",
     employees: SERVICE_BASE_URL + "/employees",
     getEmployeeHistory: SERVICE_BASE_URL + "/employee/history",
-    getActivePromotionCycle: SERVICE_BASE_URL + "/promotion/cycles?statusArray=OPEN",
+    getPromotionCycle: SERVICE_BASE_URL + "/promotion/cycles",
     appConfig: SERVICE_BASE_URL + "/app-config",
     retrieveAllPromotionRequests: SERVICE_BASE_URL + "/promotions",
   },
