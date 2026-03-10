@@ -44,6 +44,7 @@ import { fetchEmployees } from "@slices/employeeSlice/employee";
 import { insertPromotions } from "@slices/promotionSlice/promotion"; 
 import { fetchActivePromotionCycle } from "@slices/promotionCycleSlice/promotionCycle";
 import { RootState, useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import StateWithImage from "@root/src/component/ui/StateWithImage";
 
 export default function Request() {
         
@@ -155,37 +156,44 @@ export default function Request() {
                 paddingTop: "40px",
                 backgroundColor: theme.palette.background.default,
                 gap: 4,
+                position: "relative",
             }}
         >
+            {/* Refresh Button - Top Left */}
             <Box
                 sx={{
-                px: 4,
-                display: "flex",
-                width: "100%",
-                gap: 60
+                position: "absolute",
+                top: 20,
+                left: 20,
                 }}
             >
-                <Box 
-                sx={{
-                    mr: 11
-                }}
-                >
                 <Tooltip title="Refresh">
-                    <IconButton onClick={handleRefresh} color="primary">
+                <IconButton onClick={handleRefresh} color="primary">
                     <RefreshRoundedIcon />
-                    </IconButton>
+                </IconButton>
                 </Tooltip>
-                </Box>
+            </Box>
+            <Box
+                sx={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+                }}
+            >
                 <Autocomplete
-                sx={{ width: 400}}
+                sx={{ width: 400 }}
                 options={employee.employees}
-                getOptionLabel={(option) => `${option.firstName} ${option.lastName} (${option.workEmail})`}
+                getOptionLabel={(option) =>
+                    `${option.firstName} ${option.lastName} (${option.workEmail})`
+                }
                 filterOptions={createFilterOptions({
-                    stringify: (option) => `${option.firstName} ${option.lastName} ${option.workEmail}`,
+                    stringify: (option) =>
+                    `${option.firstName} ${option.lastName} ${option.workEmail}`,
                 })}
-                
                 onChange={handleEmployeeChange}
-                renderInput={(params) => <TextField {...params} fullWidth label="Search Employee" variant="outlined" />}
+                renderInput={(params) => (
+                    <TextField {...params} fullWidth label="Search Employee" variant="outlined" />
+                )}
                 renderOption={(props, option) => {
                     const initials = option?.firstName?.charAt(0)?.toUpperCase() || "";
                     return (
@@ -225,7 +233,9 @@ export default function Request() {
                         )}
                         <div>
                         <div>{`${option.firstName} ${option.lastName}`}</div>
-                        <div style={{ fontSize: "12px", color: "#888" }}>{option.workEmail}</div>
+                        <div style={{ fontSize: "12px", color: "#888" }}>
+                            {option.workEmail}
+                        </div>
                         </div>
                     </li>
                     );
@@ -244,10 +254,10 @@ export default function Request() {
                 }}
             >
                 {selectedEmployee && (
-                        <Box sx={{ m: 4, justifyItems: "center"}}>
-                            <Paper
-                                variant="outlined"
-                                sx={{
+                    <Box sx={{ m: 4, justifyItems: "center"}}>
+                        <Paper
+                            variant="outlined"
+                            sx={{
                                 p: 2,
                                 bgcolor: 'grey.50',
                                 borderRadius: 2,
@@ -258,249 +268,268 @@ export default function Request() {
                                 alignItems: "center",
                                 gap: 4,
                                 boxShadow: 2,
+                            }}
+                        >
+                            <Avatar
+                                alt={`${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
+                                src={selectedEmployee.employeeThumbnail ?? ""}
+                                sx={{ ml: 7,width: 100, height: 100 }}
+                            />
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    flexGrow: 1,
+                                    gap: 20,
+                                    flexWrap: "nowrap",
+                                    overflowX: "auto",
+                                    whiteSpace: "nowrap",
+                                    ml: 7
                                 }}
                             >
-                                <Avatar
-                                    alt={`${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
-                                    src={selectedEmployee.employeeThumbnail ?? ""}
-                                    sx={{ ml: 7,width: 100, height: 100 }}
-                                />
-
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        flexGrow: 1,
-                                        gap: 20,
-                                        flexWrap: "nowrap",
-                                        overflowX: "auto",
-                                        whiteSpace: "nowrap",
-                                        ml: 7
-                                    }}
-                                >
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                                        Employee Name
-                                    </Typography>
-                                    <Typography variant="body1" noWrap>
-                                        {selectedEmployee.firstName} {selectedEmployee.lastName}
-                                    </Typography>
-                                </Box>
-
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                                        Employee Email
-                                    </Typography>
-                                    <Typography variant="body1" noWrap>
-                                        {selectedEmployee.workEmail}
-                                    </Typography>
-                                </Box>
-
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                                        Current Job Band
-                                    </Typography>
-                                    <Typography variant="body1" noWrap>
-                                        {selectedEmployee.jobBand}
-                                    </Typography>
-                                </Box>
-
-                                <Box sx={{ minWidth: 140, display: 'flex', flexDirection: 'column' }}>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                        fontWeight={500}
-                                        sx={{ mb: 0.5 }}
-                                    >
-                                        Recommended Job Band
-                                    </Typography>
-                                    <FormControl size="small" sx={{ minWidth: 120 }}>
-                                    <Select
-                                        value={recommendedJobBand !== null ? String(recommendedJobBand) : ''}
-                                        onChange={handleRecommendedJobBandChange}
-                                        displayEmpty
-                                    >
-                                        <MenuItem value="" disabled>
-                                            <em>Select band</em>
-                                        </MenuItem>
-                                        {[...Array(13)].map(
-                                            (_, index) =>
-                                                selectedEmployee.jobBand !== null &&
-                                                index > selectedEmployee.jobBand && (
-                                                <MenuItem key={index} value={String(index)}>
-                                                    {index}
-                                                </MenuItem>
-                                            )
-                                        )}
-                                    </Select>
-                                    </FormControl>
-                                </Box>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Typography variant="body2" color="text.secondary" noWrap>
-                                    View History
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                    Employee Name
                                 </Typography>
-                                <IconButton
-                                    color="primary"
-                                    aria-label="View Promotion History"
-                                    onClick={handleOpenDialog}
-                                    sx={{ minWidth: 36, height: 36 }}
-                                >
-                                    <OpenInNewRoundedIcon />
-                                </IconButton>
-                                </Box>
-                            </Paper>
-
-
-                            <Box sx={{ justifyItems: "left", width: "100%", maxWidth: "1500px", mt: 5 }}>
-                                <Typography variant="h6" gutterBottom>
-                                    Add Recommendation for Promotion
+                                <Typography variant="body1" noWrap>
+                                    {selectedEmployee.firstName} {selectedEmployee.lastName}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Explain in detail why you would like to recommend the individual for a promotion.
-                                    Provide specific examples that showcase strong work ethic, skill set, leadership,
-                                    maturity, etc.
+                            </Box>
+
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                    Employee Email
                                 </Typography>
+                                <Typography variant="body1" noWrap>
+                                    {selectedEmployee.workEmail}
+                                </Typography>
+                            </Box>
 
-                                <Alert severity="warning" sx={{ mb: 3 }}>
-                                    If you are experiencing any errors when copying the content from g-doc, please make
-                                    sure to add the content to a text editor/note and copy it from there before
-                                    submitting the statement.
-                                </Alert>
+                            <Box>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                    Current Job Band
+                                </Typography>
+                                <Typography variant="body1" noWrap>
+                                    {selectedEmployee.jobBand}
+                                </Typography>
+                            </Box>
 
-                                <Box
-                                    sx={{
-                                        border: 1,
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        '& .quill': {
-                                        bgcolor: 'white',
-                                        width: "100%"
-                                        },
-                                        '& .ql-container': {
-                                        minHeight: '200px',
-                                        width: "100%",
-                                        fontSize: '14px',
-                                        },
-                                        '& .ql-editor': {
-                                        minHeight: '200px',
-                                        width: "100%"
-                                        },
-                                        width: "100%"
-                                    }}
+                            <Box sx={{ minWidth: 140, display: 'flex', flexDirection: 'column' }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    fontWeight={500}
+                                    sx={{ mb: 0.5 }}
                                 >
-                                <ReactQuill
-                                    value={recommendationText}
-                                    onChange={handleRecommendationChange}
-                                    theme="snow"
-                                    modules={{
-                                    toolbar: [
-                                        [{ header: '1' }, { header: '2' }, { font: [] }],
-                                        [{ list: 'ordered' }, { list: 'bullet' }],
-                                        ['bold', 'italic', 'underline'],
-                                        ['link'],
-                                        [{ align: [] }],
-                                        [{ color: [] }, { background: [] }],
-                                        [{ script: 'sub' }, { script: 'super' }],
-                                        ['blockquote', 'code-block'],
-                                    ],
-                                    }}
-                                />
-                                </Box>
+                                    Recommended Job Band
+                                </Typography>
+                                <FormControl size="small" sx={{ minWidth: 120 }}>
+                                <Select
+                                    value={recommendedJobBand !== null ? String(recommendedJobBand) : ''}
+                                    onChange={handleRecommendedJobBandChange}
+                                    displayEmpty
+                                >
+                                    <MenuItem value="" disabled>
+                                        <em>Select band</em>
+                                    </MenuItem>
+                                    {[...Array(13)].map(
+                                        (_, index) =>
+                                            selectedEmployee.jobBand !== null &&
+                                            index > selectedEmployee.jobBand && (
+                                            <MenuItem key={index} value={String(index)}>
+                                                {index}
+                                            </MenuItem>
+                                        )
+                                    )}
+                                </Select>
+                                </FormControl>
+                            </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary" noWrap>
+                                View History
+                            </Typography>
+                            <IconButton
+                                color="primary"
+                                aria-label="View Promotion History"
+                                onClick={handleOpenDialog}
+                                sx={{ minWidth: 36, height: 36 }}
+                            >
+                                <OpenInNewRoundedIcon />
+                            </IconButton>
+                            </Box>
+                        </Paper>
+
+
+                        <Box sx={{ justifyItems: "left", width: "100%", maxWidth: "1500px", mt: 5 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Add Recommendation for Promotion
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Explain in detail why you would like to recommend the individual for a promotion.
+                                Provide specific examples that showcase strong work ethic, skill set, leadership,
+                                maturity, etc.
+                            </Typography>
+
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                If you are experiencing any errors when copying the content from g-doc, please make
+                                sure to add the content to a text editor/note and copy it from there before
+                                submitting the statement.
+                            </Alert>
+
+                            <Box
+                                sx={{
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    '& .quill': {
+                                    bgcolor: 'white',
+                                    width: "100%"
+                                    },
+                                    '& .ql-container': {
+                                    minHeight: '200px',
+                                    width: "100%",
+                                    fontSize: '14px',
+                                    },
+                                    '& .ql-editor': {
+                                    minHeight: '200px',
+                                    width: "100%"
+                                    },
+                                    width: "100%"
+                                }}
+                            >
+                            <ReactQuill
+                                value={recommendationText}
+                                onChange={handleRecommendationChange}
+                                theme="snow"
+                                modules={{
+                                toolbar: [
+                                    [{ header: '1' }, { header: '2' }, { font: [] }],
+                                    [{ list: 'ordered' }, { list: 'bullet' }],
+                                    ['bold', 'italic', 'underline'],
+                                    ['link'],
+                                    [{ align: [] }],
+                                    [{ color: [] }, { background: [] }],
+                                    [{ script: 'sub' }, { script: 'super' }],
+                                    ['blockquote', 'code-block'],
+                                ],
+                                }}
+                            />
                             </Box>
                         </Box>
-                    )}
+                    </Box>
+                )}
                     
 
-                    {selectedEmployee && (
-                        <Box
+                {selectedEmployee && (
+                    <Box
+                        sx={{
+                        px: 4,
+                        py: 2.5,
+                        bgcolor: 'grey.50',
+                        borderTop: 1,
+                        borderColor: 'divider',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 2,
+                        mt: 4,
+                        }}
+                    >
+                        <Button
+                            onClick={handleSubmit}
+                            variant="contained"
+                            size="large"
+                            disabled={isSubmitDisabled}
                             sx={{
-                            px: 4,
-                            py: 2.5,
-                            bgcolor: 'grey.50',
-                            borderTop: 1,
-                            borderColor: 'divider',
+                                textTransform: 'none',
+                                fontWeight: 500,
+                                bgcolor: 'grey.900',
+                                '&:hover': {
+                                bgcolor: 'grey.800',
+                                },
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </Box>
+                )}
+                {!selectedEmployee && (
+                    <Box
+                        sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "60vh",
+                        "& img": {
+                            width: 360,
+                            height: "auto",
+                        },
+                        }}
+                    >
+                        <StateWithImage
+                            imageUrl={require("@assets/images/save-as-draft.svg").default}
+                            message="Search and Select a employee"
+                        />
+                    </Box>
+                )}
+                <Modal open={isDialogOpen} onClose={handleCloseDialog}>
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '1200px',
+                            maxWidth: '1200px',
+                            height: '700px',
+                            bgcolor: 'background.paper',
+                            boxShadow: 24,
                             display: 'flex',
-                            justifyContent: 'flex-end',
-                            gap: 2,
-                            mt: 4,
-                            }}
-                        >
-                            <Button
-                                onClick={handleSubmit}
-                                variant="contained"
-                                size="large"
-                                disabled={isSubmitDisabled}
-                                sx={{
-                                    textTransform: 'none',
-                                    fontWeight: 500,
-                                    bgcolor: 'grey.900',
-                                    '&:hover': {
-                                    bgcolor: 'grey.800',
-                                    },
-                                }}
-                            >
-                                Submit
-                            </Button>
-                        </Box>
-                    )}
-                    <Modal open={isDialogOpen} onClose={handleCloseDialog}>
-                        <Box
-                            sx={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: '50%',
-                                transform: 'translate(-50%, -50%)',
-                                width: '1200px',
-                                maxWidth: '1200px',
-                                height: '700px',
-                                bgcolor: 'background.paper',
-                                boxShadow: 24,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                outline: 'none',
-                            }}
-                        >
-                        <Box
-                            sx={{
-                                padding: '16px',
-                                borderBottom: '1px solid #ccc',
-                            }}
-                        >
-                            <Typography variant="h6">Promotion History</Typography>
-                        </Box>
-
-                        <Box
-                            sx={{
-                                flex: 1,
-                                overflowY: 'auto',
-                                padding: '16px',
-                            }}
-                        >
-
-                            {selectedEmployee ? (
-                                <CustomizedTimeline employeeEmail={selectedEmployee.workEmail} />
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                    Please select an employee to view promotion history.
-                                </Typography>
-                            )}
-                        </Box>
-
-                        <Box
-                            sx={{
+                            flexDirection: 'column',
+                            outline: 'none',
+                        }}
+                    >
+                    <Box
+                        sx={{
                             padding: '16px',
-                            borderTop: '1px solid #ccc',
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            }}
-                        >
-                            <Button onClick={handleCloseDialog} variant="outlined">Close</Button>
-                        </Box>
-                        </Box>
-                    </Modal>
-            </Box>
-        </Box>
+                            borderBottom: '1px solid #ccc',
+                        }}
+                    >
+                        <Typography variant="h6">Promotion History</Typography>
+                    </Box>
 
+                    <Box
+                        sx={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '16px',
+                        }}
+                    >
+
+                        {selectedEmployee ? (
+                            <CustomizedTimeline employeeEmail={selectedEmployee.workEmail} />
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Please select an employee to view promotion history.
+                            </Typography>
+                        )}
+                    </Box>
+
+                    <Box
+                        sx={{
+                        padding: '16px',
+                        borderTop: '1px solid #ccc',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        }}
+                    >
+                        <Button onClick={handleCloseDialog} variant="outlined">Close</Button>
+                    </Box>
+                    </Box>
+                </Modal>
+            </Box>
+
+            </Box>
     );
 }
