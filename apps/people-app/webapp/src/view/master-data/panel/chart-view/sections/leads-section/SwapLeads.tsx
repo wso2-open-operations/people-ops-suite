@@ -155,15 +155,17 @@ const SelectLeadPanel: React.FC<SelectLeadPanelProps> = ({ onRequestConfirm }) =
             <TextField
               {...params}
               placeholder="Search employee..."
-              InputProps={{
-                ...params.InputProps,
-                sx: { padding: "4px !important" },
-                endAdornment: (
-                  <>
-                    {isLoading && <CircularProgress size={14} />}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
+              slotProps={{
+                input: {
+                  ...params.InputProps,
+                  sx: { padding: "4px !important" },
+                  endAdornment: (
+                    <>
+                      {isLoading && <CircularProgress size={14} />}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                },
               }}
             />
           )}
