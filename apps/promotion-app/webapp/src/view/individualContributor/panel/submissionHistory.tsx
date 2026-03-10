@@ -27,7 +27,8 @@ import {
   Modal, 
   Box, 
   Typography,
-  Button
+  Button,
+  useTheme
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { RootState, useAppDispatch, useAppSelector } from '@root/src/slices/store';
@@ -56,6 +57,7 @@ const statusColorMap: Record<string, string> = {
 
 export default function SubmissionHistory() {
 
+    const theme = useTheme();
     const dispatch = useAppDispatch();
     const auth = useAppSelector((state: RootState) => state.auth);
     const submissionHistory = useAppSelector((state: RootState) => state.promotion);
@@ -164,7 +166,7 @@ export default function SubmissionHistory() {
                                 key={row.id}
                                 sx={{
                                     '&:hover': {
-                                    backgroundColor: '#fcf7ed',
+                                    backgroundColor: theme.palette.background.dataGrid,
                                     cursor: 'pointer',
                                     },
                                 }}
@@ -174,15 +176,15 @@ export default function SubmissionHistory() {
                                 <TableCell>
                                     <Box
                                         sx={{
-                                        backgroundColor: statusColorMap[row.status] || '#eeeeee',
-                                        color: '#000',
-                                        px: 2,
-                                        py: 0.5,
-                                        borderRadius: '12px',
-                                        display: 'inline-block',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 500,
-                                        textTransform: 'capitalize',
+                                            backgroundColor: statusColorMap[row.status] || '#eeeeee',
+                                            color: '#000',
+                                            px: 2,
+                                            py: 0.5,
+                                            borderRadius: '12px',
+                                            display: 'inline-block',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 500,
+                                            textTransform: 'capitalize',
                                         }}
                                     >
                                         {row.status}
@@ -229,7 +231,7 @@ export default function SubmissionHistory() {
                             border: '1px solid #ccc',
                             borderRadius: 1,
                             padding: 2,
-                            backgroundColor: '#fafafa',
+                            backgroundColor: theme.palette.background.default,
                             fontSize: '0.95rem'
                           }}
                           dangerouslySetInnerHTML={{ __html: selectedNoteHtml }}
