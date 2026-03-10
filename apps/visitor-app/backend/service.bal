@@ -29,6 +29,7 @@ import ballerina/random;
 import ballerina/time;
 
 configurable string webAppUrl = ?;
+configurable string wifiSecretSeed = ?;
 
 final cache:Cache cache = new ({
     capacity: 2000,
@@ -1103,10 +1104,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Create a WiFi account for the user.
     #
-    # + payload - Payload containing WiFi account details
+    # + username - Username for the new WiFi account
     # + return - Successfully created or error
-    resource function post wifi/accounts(http:RequestContext ctx, @http:Payload wifi:CreateWifiAccountPayload payload)
-    returns http:Ok|http:Forbidden|http:InternalServerError|http:Conflict {
+    isolated resource function post wifi/accounts(http:RequestContext ctx, string username)
+    returns http:Created|http:Forbidden|http:InternalServerError|http:Conflict {
 
         authorization:CustomJwtPayload|error userInfo =
         ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1128,14 +1129,22 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Generate password
+        string|error generatedPassword = generateDailyPassword();
+        if generatedPassword is error {
+            log:printError("Failed to generate daily password", generatedPassword);
+            return <http:InternalServerError>{
+                body: {message: "Failed to generate WiFi password"}
+            };
+        }
+
         wifi:CreateWifiAccountPayload wifiPayload = {
-            username: payload.username,
-            password: payload.password,
+            username,
+            password: generatedPassword,
             email: userInfo.email
         };
 
-        http:Response|error result = wifi:createWifiAccount(wifiPayload);
-
+        wifi:CreateWifiAccountResponse|error result = wifi:createWifiAccount(wifiPayload);
         if result is error {
             log:printError("WiFi account creation failed", result);
             return <http:InternalServerError>{
@@ -1143,27 +1152,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if result.statusCode == http:STATUS_CONFLICT {
-            return <http:Conflict>{
-                body: {message: "WiFi account already exists for this user"}
-            };
-        }
-
-        if result.statusCode != http:STATUS_OK {
-            string customError = string `Error occurred while creating the Guest Wifi !`;
-            json|error responsePayload = result.getJsonPayload();
-            if responsePayload is json {
-                log:printError(string `${customError} : ${responsePayload.toJsonString()}`);
-            } else {
-                log:printError(customError);
+        // If statusCode is not present or is OK, consider it a success
+        return <http:Created>{
+            body: {
+                message: "WiFi account created successfully",
+                username: result.guestAccount,
+                password: generatedPassword
             }
-            return <http:InternalServerError>{
-                body: {message: customError}
-            };
-        }
-
-        return <http:Ok>{
-            body: {message: "WiFi account created successfully"}
         };
     }
 
