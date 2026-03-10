@@ -116,7 +116,7 @@ export function FilterChipSelect<T>({
         )}
       </Box>
     ),
-    [hasValue, theme, label, isDark, value, open],
+    [hasValue, accentColor, theme.palette.text.secondary, theme.palette.grey, label, isDark, value, open],
   );
 
   const openMenu = (event: MouseEvent<HTMLElement>) =>

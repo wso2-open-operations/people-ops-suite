@@ -16,7 +16,11 @@
 
 import { EmergencyContact, State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { DEFAULT_LIMIT_VALUE, DEFAULT_OFFSET_VALUE, SnackMessage } from "@config/constant";
+import {
+  DEFAULT_LIMIT_VALUE,
+  DEFAULT_OFFSET_VALUE,
+  SnackMessage,
+} from "@config/constant";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
@@ -553,7 +557,14 @@ const EmployeeSlice = createSlice({
         state.filteredEmployeesResponseState = State.success;
         state.stateMessage = "Filtered employees fetched successfully";
         state.errorMessage = null;
-        if (state.totalActiveEmployeeCount === null) {
+        const { searchString, filters } = action.meta.arg;
+        const isTotalActiveQuery =
+          !searchString &&
+          filters.employeeStatus === EmployeeStatus.Active &&
+          Object.entries(filters).every(([key, value]) => {
+            return key === "employeeStatus" || value === undefined;
+          });
+        if (isTotalActiveQuery) {
           state.totalActiveEmployeeCount = action.payload.totalCount;
         }
       })
