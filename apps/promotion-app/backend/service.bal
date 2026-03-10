@@ -139,7 +139,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + ctx - Request Context 
     # + return - Internal Server Error or Lead list object
     resource function GET employees(http:RequestContext ctx, boolean? filterLeads)
-        returns Employees|http:Forbidden|http:InternalServerError|error {
+        returns Employees|http:Forbidden|http:InternalServerError {
 
         // Check if the employees are already cached.
         if cache.hasKey(EMPLOYEES_CACHE_KEY) {
