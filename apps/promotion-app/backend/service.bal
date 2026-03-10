@@ -335,7 +335,17 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if userInfo.email != employeeEmail {
+        authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
+
+        if userAppPrivileges is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error occurred while retrieving User Privileges!"
+                }
+            };
+        }
+
+        if !database:checkRoles([database:LEAD], userAppPrivileges.roles) && userInfo.email != employeeEmail {
             string customError = string `You are not authorized to view promotion details of other employees!`;
             log:printError(customError);
             return <http:Forbidden>{
