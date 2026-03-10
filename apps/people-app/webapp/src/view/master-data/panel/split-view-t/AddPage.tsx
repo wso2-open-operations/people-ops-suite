@@ -25,6 +25,7 @@ import {
   IconButton,
   TextField,
   Typography,
+  createFilterOptions,
   useTheme,
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
@@ -41,14 +42,21 @@ import {
 import { SectionHeader } from "../../components/edit-modal/SectionHeader";
 import EmployeeOption from "./EmployeeOption";
 
+type OrgOption =
+  | (Partial<BusinessUnitState> & { inputValue?: string })
+  | (Partial<TeamState> & { inputValue?: string })
+  | (Partial<SubTeamState> & { inputValue?: string })
+  | (Partial<UnitState> & { inputValue?: string });
+
+const filter = createFilterOptions<OrgOption>();
 interface AddPageProps {
   open: boolean;
-  orgInfo: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
+  orgInfo: OrgOption[] | null;
   onClose: () => void;
 }
 
 interface AddOrgItemProps {
-  team: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
+  team: OrgOption | null;
   teamHead: EmployeeBasicInfo | null;
   functionalLead: EmployeeBasicInfo | null;
 }
@@ -62,6 +70,7 @@ export default function AddPage(props: AddPageProps) {
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<AddOrgItemProps>({
     defaultValues: {
@@ -70,6 +79,8 @@ export default function AddPage(props: AddPageProps) {
       functionalLead: null,
     },
   });
+
+  const selectedTeam = watch("team");
 
   const onSubmit = (data: AddOrgItemProps) => {
     console.log("form submit with the data : ", data);
@@ -167,15 +178,58 @@ export default function AddPage(props: AddPageProps) {
           <Controller
             name="team"
             control={control}
-            rules={{ required: "Team is equired " }}
+            rules={{ required: "Team is required " }}
             render={({ field }) => (
-              <Autocomplete
+              <Autocomplete<OrgOption>
                 {...field}
                 value={field.value}
-                onChange={(_, data) => field.onChange(data)}
-                options={orgInfo}
+                options={orgInfo as OrgOption[]}
                 loading={isLoading}
-                getOptionLabel={(option) => `${option.name}`}
+                getOptionLabel={(option) => option.name ?? ""}
+                filterOptions={(options, params) => {
+                  const filtered = filter(options as OrgOption[], params);
+                  const { inputValue } = params;
+
+                  // Check if the input matches any existing option
+                  const isExisting = options.some(
+                    (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
+                  );
+
+                  // If user typed something and it doesn't exist, add "Create" option
+                  if (inputValue !== "" && !isExisting) {
+                    filtered.push({
+                      name: inputValue,
+                      inputValue,
+                    });
+                  }
+
+                  return filtered;
+                }}
+                onChange={(_, data) => {
+                  if (data && "inputValue" in data && data.inputValue) {
+                    field.onChange(data as OrgOption);
+                  } else if (data && data.name) {
+                    field.onChange(data as OrgOption);
+                  } else {
+                    field.onChange(data as OrgOption);
+                  }
+                }}
+                renderOption={(props, option) => {
+                  const isCreate = option.inputValue !== undefined;
+                  return (
+                    <li {...props}>
+                      <Typography
+                        sx={{
+                          color: isCreate
+                            ? theme.palette.customText.secondary.p2.active
+                            : theme.palette.customText.primary.p2.active,
+                        }}
+                      >
+                        {isCreate ? `Add "${option.inputValue}"` : option.name}
+                      </Typography>
+                    </li>
+                  );
+                }}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -243,48 +297,50 @@ export default function AddPage(props: AddPageProps) {
             )}
           />
 
-          <Controller
-            name="functionalLead"
-            control={control}
-            rules={{ required: "Functional lead is required " }}
-            render={({ field }) => (
-              <Autocomplete
-                {...field}
-                value={field.value}
-                onChange={(_, data) => field.onChange(data)}
-                options={employees}
-                loading={isLoading}
-                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                renderOption={(props, employee) => (
-                  <EmployeeOption
-                    key={employee.employeeId}
-                    listItemProps={props}
-                    employee={employee}
-                  />
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select a functional lead"
-                    error={!!errors.functionalLead}
-                    helperText={errors.functionalLead?.message}
-                    slotProps={{
-                      input: {
-                        ...params.InputProps,
-                        sx: { padding: "4px !important" },
-                        endAdornment: (
-                          <>
-                            {isLoading && <CircularProgress size={14} />}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-            )}
-          />
+          {selectedTeam && selectedTeam.inputValue && (
+            <Controller
+              name="functionalLead"
+              control={control}
+              rules={{ required: "Functional lead is required " }}
+              render={({ field }) => (
+                <Autocomplete
+                  {...field}
+                  value={field.value}
+                  onChange={(_, data) => field.onChange(data)}
+                  options={employees}
+                  loading={isLoading}
+                  getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                  renderOption={(props, employee) => (
+                    <EmployeeOption
+                      key={employee.employeeId}
+                      listItemProps={props}
+                      employee={employee}
+                    />
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select a functional lead"
+                      error={!!errors.functionalLead}
+                      helperText={errors.functionalLead?.message}
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          sx: { padding: "4px !important" },
+                          endAdornment: (
+                            <>
+                              {isLoading && <CircularProgress size={14} />}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          )}
 
           {/* Action buttons */}
           <Box sx={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
