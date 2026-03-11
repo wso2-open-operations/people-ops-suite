@@ -842,7 +842,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + id - Reservation identifier
     # + return - Parking reservation details or error response
     resource function get parkings/reservations/[int id](http:RequestContext ctx)
-        returns database:ParkingReservationDetails|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns database:ParkingReservationDetails|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -858,12 +858,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: "Error occurred while fetching reservation."}
             };
         }
-        if reservation is () {
-            return <http:NotFound>{
-                body: {message: string `Reservation ${id} not found.`}
-            };
-        }
-        if reservation.employeeEmail != userInfo.email {
+        if reservation is () || reservation.employeeEmail != userInfo.email {
             return <http:Forbidden>{
                 body: {message: "You are not allowed to view this reservation."}
             };
