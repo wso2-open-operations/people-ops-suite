@@ -17,18 +17,26 @@ import { Box, Divider } from "@mui/material";
 
 import { MicroAppType } from "@/types/types";
 import { isMicroApp } from "@config/config";
+import PreLoader from "@root/src/component/common/PreLoader";
+import { useGetMenuQuery } from "@root/src/services/menu.api";
 
 import DinnerOnDemand from "./components/dod/DinnerOnDemand";
 import Menu from "./components/menu/Menu";
 
 export default function Home() {
-  if (isMicroApp === MicroAppType.Menu) return <Menu />;
+  const { data: menuData, isLoading: isMenuLoading, isError: isMenuError } = useGetMenuQuery();
+
+  if (isMenuLoading) {
+    return <PreLoader />;
+  }
+
+  if (isMicroApp === MicroAppType.Menu) return <Menu data={menuData} isError={isMenuError} />;
 
   if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <Menu />
+      <Menu data={menuData} isError={isMenuError} />
 
       <Divider />
 

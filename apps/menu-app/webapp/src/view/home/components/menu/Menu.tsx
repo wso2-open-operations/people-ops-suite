@@ -16,19 +16,18 @@
 import { Box, Typography, useTheme } from "@mui/material";
 
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackdropProgress from "@component/ui/BackdropProgress";
 import { formatMenuData } from "@root/src/utils/utils";
-import { useGetMenuQuery } from "@services/menu.api";
+import { Menu as MenuData } from "@services/menu.api";
 
 import MenuCard from "./MenuCard";
 
-export default function Menu() {
-  const { data, isLoading, isError } = useGetMenuQuery();
-  const theme = useTheme();
+interface MenuProps {
+  data: MenuData | undefined;
+  isError: boolean;
+}
 
-  if (isLoading) {
-    return <BackdropProgress open={isLoading} />;
-  }
+export default function Menu({ data, isError }: MenuProps) {
+  const theme = useTheme();
 
   if (isError || !data) {
     return <ErrorHandler message={"Oops something went wrong, Couldn't load the menu"} />;
