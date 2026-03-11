@@ -15,8 +15,8 @@
 // under the License.
 import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { State } from "@/types/types";
 import { UserInfoInterface, userApi } from "@services/user.api";
+import { State } from "@utils/types";
 
 export interface UserState {
   state: State;
@@ -64,7 +64,7 @@ export const UserSlice = createSlice({
       })
       .addMatcher(userApi.endpoints.getUserInfo.matchRejected, (state, action) => {
         state.state = State.failed;
-        if (action.error.message?.includes("401")) {
+        if (action.payload?.status === 401) {
           state.errorMessage =
             "Oops! Looks like you are not authorized to access this application.";
         } else {
