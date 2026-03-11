@@ -29,7 +29,8 @@ import emptyLogo from "@assets/animations/clock-time.json";
 import ErrorHandler from "@component/common/ErrorHandler";
 import { useRecolorLottie } from "@hooks/useRecolorLottie";
 import { useSubmitDinnerRequestMutation } from "@services/dod.api";
-import { RootState, useAppSelector } from "@slices/store";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 import CancelModal from "./CancelModal";
 import DodInfoMessage from "./DodInfoMessage";
@@ -50,6 +51,7 @@ interface DinnerOnDemandProps {
 export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const dispatch = useAppDispatch();
 
   const userInfo = useAppSelector((state: RootState) => state.user.userInfo);
   const [submitDinner] = useSubmitDinnerRequestMutation();
@@ -75,7 +77,16 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
     enableReinitialize: true,
     onSubmit: async (values) => {
       try {
-        if (!values?.mealOption || !userInfo) return;
+        if (!values?.mealOption || !userInfo) {
+          dispatch(
+            enqueueSnackbarMessage({
+              message:
+                "Unable to submit your dinner request. Please try refreshing the page or signing in again.",
+              type: "error",
+            }),
+          );
+          return;
+        }
 
         const date = new Date().toLocaleDateString("en-CA");
 
@@ -88,7 +99,7 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
           managerEmail: userInfo.managerEmail,
         };
 
-        await submitDinner(submitPayload);
+        await submitDinner(submitPayload).unwrap();
       } catch (error) {
         console.error("Failed to submit dinner request:", error);
       }
