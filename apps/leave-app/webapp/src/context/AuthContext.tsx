@@ -77,7 +77,6 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     refreshAccessToken,
     getIDToken,
     trySignInSilently,
-    getAccessToken,
     state,
   } = useAuthContext();
 
