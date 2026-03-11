@@ -189,6 +189,14 @@ public final string inviteTemplate = string `
         text-align: center !important;
       }
 
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
+      }
+
       @media only screen and (max-width: 650px) {
         .fadeimg {
           width: 100% !important;
@@ -489,6 +497,14 @@ public final string inviteTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -626,9 +642,9 @@ public final string inviteTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -1295,20 +1311,29 @@ public final string inviteTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 150px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 150px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -1531,6 +1556,14 @@ public final string visitorCompletionTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -1833,6 +1866,14 @@ public final string visitorCompletionTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -1970,9 +2011,9 @@ public final string visitorCompletionTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -2637,20 +2678,29 @@ public final string visitorCompletionTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 150px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 150px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -2874,6 +2924,14 @@ public final string visitorApproveTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -3176,6 +3234,14 @@ public final string visitorApproveTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -3313,9 +3379,9 @@ public final string visitorApproveTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -3965,20 +4031,29 @@ You have successfully checked in at the security desk using your QR code. You ma
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 150px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 150px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -4201,6 +4276,14 @@ public final string visitorRejectingTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -4503,6 +4586,14 @@ public final string visitorRejectingTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -4640,9 +4731,9 @@ public final string visitorRejectingTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -5309,20 +5400,29 @@ public final string visitorRejectingTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 150px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 150px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
@@ -5547,6 +5647,14 @@ public final string employeeVisitorArrivalTemplate = string `
 
       .wso2_center {
         text-align: center !important;
+      }
+
+      .logo-dark {
+        display: none;
+      }
+
+      .logo-light {
+        display: block;
       }
 
       @media only screen and (max-width: 650px) {
@@ -5849,6 +5957,14 @@ public final string employeeVisitorArrivalTemplate = string `
           height: 40px !important;
           text-align: left !important;
         }
+
+        .logo-dark {
+          display: block !important;
+        }
+
+        .logo-light {
+          display: none !important;
+        }
       }
     </style>
   </head>
@@ -5987,9 +6103,9 @@ public final string employeeVisitorArrivalTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
-                                          width: 100px;
+                                          width: 150px;
                                           -ms-interpolation-mode: bicubic;
                                           height: auto;
                                           outline: none;
@@ -6670,20 +6786,29 @@ public final string employeeVisitorArrivalTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      ><!-- Light mode -->
+                                      <img
                                         alt="WSO2 Logo"
+                                        class="logo-light"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
-                                          width: 100px;
-                                          -ms-interpolation-mode: bicubic;
+                                          width: 150px;
                                           height: auto;
-                                          outline: none;
-                                          text-decoration: none;
+                                          border: 0;
+                                        " />
+
+                                      <!-- Dark mode -->
+                                      <img
+                                        alt="WSO2 Logo"
+                                        class="logo-dark"
+                                        height="40"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        style="
+                                          width: 150px;
+                                          height: auto;
                                           border: 0;
                                         "
-                                        width="100"
                                     /></a>
                                   </td>
                                 </tr>
