@@ -316,8 +316,8 @@ public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int
 # + payload - Fields for the deletion (updatedBy)
 # + buId - ID of the business unit to delete
 # + return - True if deleted, false if not found, error on failure
-public isolated function deleteBusinessUnit(DeleteBusinessUnitPayload payload, int buId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitQuery(payload, buId));
+public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
     if executionResult.affectedRowCount > 0 {
         return true;
     }
@@ -330,9 +330,9 @@ public isolated function deleteBusinessUnit(DeleteBusinessUnitPayload payload, i
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - True if deleted, false if not found, error on failure
-public isolated function deleteBusinessUnitTeam(DeleteBusinessUnitTeamPayload payload, int buId, int teamId)
+public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int teamId)
     returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitTeamQuery(payload, buId, teamId));
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
     if executionResult.affectedRowCount > 0 {
         return true;
     }
@@ -345,8 +345,8 @@ public isolated function deleteBusinessUnitTeam(DeleteBusinessUnitTeamPayload pa
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - True if deleted, false if not found, error on failure
-public isolated function deleteTeamSubTeam(DeleteTeamSubTeamPayload payload, int teamId, int subTeamId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteTeamSubTeamQuery(payload, teamId, subTeamId));
+public isolated function deleteTeamSubTeam(string userEmail, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
     if executionResult.affectedRowCount > 0 {
         return true;
     }
@@ -359,8 +359,8 @@ public isolated function deleteTeamSubTeam(DeleteTeamSubTeamPayload payload, int
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - True if deleted, false if not found, error on failure
-public isolated function deleteSubTeamUnit(DeleteSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteSubTeamUnitQuery(payload, subTeamId, unitId));
+public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
     if executionResult.affectedRowCount > 0 {
         return true;
     }
