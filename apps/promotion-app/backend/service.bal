@@ -226,7 +226,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + employeeWorkEmail - employee email
     # + return - Internal Server Error or Unauthorized Error or Employee info object
     resource function GET employee/history(http:RequestContext ctx, string employeeWorkEmail)
-        returns EmployeeJoinedDetails|http:InternalServerError|http:Unauthorized {
+        returns EmployeeJoinedDetails|http:InternalServerError|http:Forbidden {
 
         // "RequestedBy" is the email of the user access this resource
         // Interceptor set this value after validating the jwt.
@@ -252,7 +252,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
             if !database:checkRoles([database:LEAD], userAppPrivileges.roles) {
-                return <http:Unauthorized>{
+                return <http:Forbidden>{
                     body: {
                         message: "Insufficient privileges!"
                     }
@@ -307,7 +307,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Promotion request array or error
     resource function GET promotions(http:RequestContext ctx, string[]? statusArray, 
             string? employeeEmail, string? recommendedBy, string? 'type)
-        returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
+        returns Promotions|http:Forbidden|http:InternalServerError {
 
         // if there is a status array.
         if statusArray !is null {
