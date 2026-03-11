@@ -511,8 +511,6 @@ public type ParkingFloor record {|
     int displayOrder;
     # Number of coins per slot on the floor
     decimal coinsPerSlot;
-    # Whether the floor is active or not
-    boolean isActive;
 |};
 
 # [Database] Parking slot.

@@ -559,8 +559,7 @@ isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
         id,
         name,
         display_order as 'displayOrder',
-        coins_per_slot as 'coinsPerSlot',
-        is_active as 'isActive'
+        coins_per_slot as 'coinsPerSlot'
     FROM parking_floor
     WHERE is_active = 1
     ORDER BY display_order ASC, id ASC`;
