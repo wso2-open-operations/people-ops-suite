@@ -43,7 +43,7 @@ function init() returns error? {
 
 # Get initialized HR GraphQL client.
 #
-# + return - graphql:Client|error if uninitialized
+# + return - graphql:Client or error if uninitialized
 public function getHrClient() returns graphql:Client|error {
     graphql:Client? hrGraphQlClient = hrClient;
     if hrGraphQlClient is graphql:Client {

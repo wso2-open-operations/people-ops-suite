@@ -33,7 +33,7 @@ final cache:Cache cache = new ({
     label: "Dashboard Application",
     id: "people-ops-suite/dashboard-service"
 }
-service http:InterceptableService / on new http:Listener(9095) {
+service http:InterceptableService / on new http:Listener(9090) {
 
     # Request interceptor.
     #
@@ -44,7 +44,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     # Fetch user information of the logged-in user.
     #
     # + ctx - Request context
-    # + return - User info object|InternalServerError
+    # + return - User info object or InternalServerError
     resource function get user\-info(http:RequestContext ctx)
             returns UserInfoResponse|http:InternalServerError {
 
@@ -90,7 +90,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + payload - Food waste record payload
-    # + return - Created record|Conflict|Forbidden|BadRequest|InternalServerError
+    # + return - Created record or Conflict or Forbidden or BadRequest or InternalServerError
     resource function post food\-waste(http:RequestContext ctx, AddFoodWasteRecordPayload payload)
             returns http:Created|http:Conflict|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -133,7 +133,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + date - Date (YYYY-MM-DD)
-    # + return - DailyFoodWasteRecords|Forbidden|BadRequest|InternalServerError
+    # + return - DailyFoodWasteRecords or Forbidden or BadRequest or InternalServerError
     resource function get food\-waste/daily(http:RequestContext ctx, string date)
             returns DailyFoodWasteRecords|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -166,12 +166,12 @@ service http:InterceptableService / on new http:Listener(9095) {
     # + ctx - Request context
     # + startDate - Start date (YYYY-MM-DD) - optional
     # + endDate - End date (YYYY-MM-DD) - optional
-    # + mealType - Meal type (BREAKFAST|LUNCH) - optional
-    # + duration - Analytics duration (yearly|monthly|weekly) - optional
+    # + mealType - Meal type (BREAKFAST or LUNCH) - optional
+    # + duration - Analytics duration (yearly or monthly or weekly) - optional
     # + latest - Get only the most recent record - optional
     # + limit - Maximum number of records to return - optional
     # + offset - Number of records to skip - optional
-    # + return - Paginated list|latest KPI summary|analytics data|Forbidden|BadRequest|InternalServerError
+    # + return - Paginated list or latest KPI summary or analytics data or Forbidden or BadRequest or InternalServerError
     resource function get food\-waste(http:RequestContext ctx, string? startDate = (), string? endDate = (),
             string? mealType = (), string? duration = (), boolean latest = false, int? 'limit = (),
             int? offset = ())
@@ -311,7 +311,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     # + ctx - Request context
     # + id - Food waste record id
     # + payload - Update payload
-        # + return - Updated record|Conflict|NotFound|Forbidden|BadRequest|InternalServerError
+        # + return - Updated record or Conflict or NotFound or Forbidden or BadRequest or InternalServerError
     resource function put food\-waste/[int id](http:RequestContext ctx, UpdateFoodWasteRecordPayload payload)
             returns FoodWasteRecord|http:Conflict|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -351,7 +351,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + id - Food waste record id
-    # + return - NoContent|NotFound|Forbidden|BadRequest|InternalServerError
+    # + return - NoContent or NotFound or Forbidden or BadRequest or InternalServerError
     resource function delete food\-waste/[int id](http:RequestContext ctx)
             returns http:NoContent|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -383,7 +383,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + payload - Advertisement payload
-    # + return - Created advertisement|Forbidden|BadRequest|InternalServerError
+    # + return - Created advertisement or Forbidden or BadRequest or InternalServerError
     resource function post advertisements(http:RequestContext ctx, CreateAdvertisementPayload payload)
             returns http:Created|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -409,7 +409,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     # Get all advertisements.
     #
     # + ctx - Request context
-    # + return - List of advertisements|Forbidden|BadRequest|InternalServerError
+    # + return - List of advertisements or Forbidden or BadRequest or InternalServerError
     resource function get advertisements(http:RequestContext ctx)
             returns Advertisement[]|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -436,7 +436,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     # Get the active advertisement.
     #
     # + ctx - Request context
-    # + return - Active advertisement|NotFound|Forbidden|BadRequest|InternalServerError
+    # + return - Active advertisement or NotFound or Forbidden or BadRequest or InternalServerError
     resource function get advertisements/active(http:RequestContext ctx)
             returns Advertisement|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -467,7 +467,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + id - Ad ID
-    # + return - Ok|NotFound|Forbidden|BadRequest|InternalServerError
+    # + return - Ok or NotFound or Forbidden or BadRequest or InternalServerError
     resource function put advertisements/[int id]/activate(http:RequestContext ctx)
             returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
@@ -497,7 +497,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     #
     # + ctx - Request context
     # + id - Ad ID
-    # + return - NoContent|BadRequest|NotFound|Forbidden|InternalServerError
+    # + return - NoContent or BadRequest or NotFound or Forbidden or InternalServerError
     resource function delete advertisements/[int id](http:RequestContext ctx)
             returns http:NoContent|http:BadRequest|http:NotFound|http:Forbidden|http:InternalServerError {
 
@@ -534,7 +534,7 @@ service http:InterceptableService / on new http:Listener(9095) {
     # + ctx - Request context
     # + startDate - Start date (YYYY-MM-DD)
     # + endDate - End date (YYYY-MM-DD)
-    # + return - DateRangeSummary|Forbidden|BadRequest|InternalServerError
+    # + return - DateRangeSummary or Forbidden or BadRequest or InternalServerError
     resource function get food\-waste/summary(http:RequestContext ctx, string startDate, string endDate)
             returns DateRangeSummary|http:Forbidden|http:BadRequest|http:InternalServerError {
 

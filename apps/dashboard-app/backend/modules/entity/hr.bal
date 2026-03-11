@@ -18,7 +18,7 @@ import ballerina/graphql;
 # Fetch Employee Data.
 #
 # + workEmail - WSO2 email address
-# + return - Employee | Error
+# + return - Employee or Error
 public function fetchEmployeesBasicInfo(string workEmail) returns Employee|error {
     graphql:Client graphQlClient = check getHrClient();
 

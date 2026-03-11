@@ -55,7 +55,7 @@ public isolated function calculateDailySummary(decimal? breakfastWasteKg, int? b
 #
 # + startDate - Start date (YYYY-MM-DD)
 # + endDate - End date (YYYY-MM-DD)
-# + return - Date range summary|Error
+# + return - Date range summary or Error
 public isolated function getDateRangeSummary(string startDate, string endDate) returns database:DateRangeSummary|error {
     record {|decimal totalWasteKg; int totalPlates;|} stats =
         check database:fetchDateRangeSummaryStats(startDate, endDate);
@@ -82,7 +82,7 @@ public isolated function getDateRangeSummary(string startDate, string endDate) r
 # Build KPI summary for a given date from database records.
 #
 # + date - Date (YYYY-MM-DD)
-# + return - KPI summary|Error
+# + return - KPI summary or Error
 public isolated function getTodayKpis(string date) returns database:TodayKPIs|error {
     database:DailyFoodWasteRecords daily = check database:fetchDailyFoodWasteRecords(date);
 
@@ -111,7 +111,7 @@ public isolated function getTodayKpis(string date) returns database:TodayKPIs|er
 # + id - Food waste record id
 # + payload - Fields to update
 # + updatedBy - Person who is updating
-# + return - Updated FoodWasteRecord|FoodWasteRecordNotFoundError|DuplicateFoodWasteRecordError|Error
+# + return - Updated FoodWasteRecord or FoodWasteRecordNotFoundError or DuplicateFoodWasteRecordError or Error
 public isolated function updateFoodWasteRecord(int id, database:UpdateFoodWasteRecordPayload payload,
         string updatedBy)
         returns database:FoodWasteRecord|database:FoodWasteRecordNotFoundError|database:DuplicateFoodWasteRecordError|error {
@@ -141,7 +141,7 @@ public isolated function updateFoodWasteRecord(int id, database:UpdateFoodWasteR
 # Delete an advertisement after validating it is not currently active.
 #
 # + id - Advertisement ID
-# + return - ActiveAdvertisementError|AdvertisementNotFoundError|Error if failed
+# + return - ActiveAdvertisementError or AdvertisementNotFoundError or Error if failed
 public isolated function deleteAdvertisement(int id)
     returns database:ActiveAdvertisementError|database:AdvertisementNotFoundError|error? {
 
@@ -163,14 +163,14 @@ public isolated function deleteAdvertisement(int id)
 #
 # + startDate - Start date (YYYY-MM-DD)
 # + endDate - End date (YYYY-MM-DD)
-# + return - Weekly trend items|Error
+# + return - Weekly trend items or Error
 public isolated function getWeeklyTrendData(string startDate, string endDate) returns database:WeeklyTrendItem[]|error {
     return database:getWeeklyTrendDateRange(startDate, endDate);
 }
 
 # Get weekly food waste trend for the current date going back 7 days.
 #
-# + return - Weekly trend items|Error
+# + return - Weekly trend items or Error
 public isolated function getWeeklyTrendDataDefault() returns database:WeeklyTrendItem[]|error {
     string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
     return database:getWeeklyTrend(date);
@@ -178,7 +178,7 @@ public isolated function getWeeklyTrendDataDefault() returns database:WeeklyTren
 
 # Get monthly food waste trend for the current calendar month.
 #
-# + return - Monthly trend items|Error
+# + return - Monthly trend items or Error
 public isolated function getMonthlyTrendData() returns database:MonthlyTrendItem[]|error {
     string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
     string currentMonth = string:substring(date, 0, 7);
@@ -187,7 +187,7 @@ public isolated function getMonthlyTrendData() returns database:MonthlyTrendItem
 
 # Get food waste trend by month for the current calendar year.
 #
-# + return - Monthly trend items|Error
+# + return - Monthly trend items or Error
 public isolated function getYearlyTrendData() returns database:MonthlyTrendItem[]|error {
     string date = string:substring(time:utcToString(time:utcNow()), 0, 10);
     string currentYear = string:substring(date, 0, 4);
