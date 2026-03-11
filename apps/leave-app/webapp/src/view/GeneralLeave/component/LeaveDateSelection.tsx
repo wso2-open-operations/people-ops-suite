@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Alert, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -207,7 +206,7 @@ export default function LeaveDateSelection({
             onErrorClear?.();
           }}
           format="YYYY-MM-DD"
-          disablePast
+          minDate={dayjs().startOf("year")}
           slotProps={{
             textField: {
               error: hasError,
@@ -224,7 +223,6 @@ export default function LeaveDateSelection({
           }}
           minDate={startDate || undefined}
           format="YYYY-MM-DD"
-          disablePast
           slotProps={{
             textField: {
               error: hasError,
