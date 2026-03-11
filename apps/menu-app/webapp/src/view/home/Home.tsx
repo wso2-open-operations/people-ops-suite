@@ -29,7 +29,7 @@ export default function Home() {
   const {
     data: dinnerData,
     isLoading: isDinnerLoading,
-    error: isDinnerError,
+    error: dinnerError,
   } = useGetDinnerRequestQuery();
 
   if (isMenuLoading || isDinnerLoading) {
@@ -39,7 +39,7 @@ export default function Home() {
   if (isMicroApp === MicroAppType.Menu) return <Menu data={menuData} isError={isMenuError} />;
 
   if (isMicroApp === MicroAppType.Dod)
-    return <DinnerOnDemand dinner={dinnerData} error={isDinnerError} />;
+    return <DinnerOnDemand dinner={dinnerData} error={dinnerError} />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -47,7 +47,7 @@ export default function Home() {
 
       <Divider />
 
-      <DinnerOnDemand dinner={dinnerData} error={isDinnerError} />
+      <DinnerOnDemand dinner={dinnerData} error={dinnerError} />
     </Box>
   );
 }
