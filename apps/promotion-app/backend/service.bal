@@ -112,10 +112,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         return userInfoResponse;
     }
 
-    # Retrieve promotion cycles by status
+    # Retrieve promotion cycles by status.
     #
     # + statusArray - Array of status to filter the promotion cycles
-    # + return - http:Ok|http:Unauthorized|http:InternalServerError
+    # + return - Promotion Cycle or error
     resource function GET promotion/cycles(database:PromotionCyclesStatus[]? statusArray) 
         returns PromotionCycles|http:InternalServerError {
 
@@ -134,10 +134,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {promotionCycles};
     }
 
-    # Check whether the specific employee is eligible for the promotion
+    # Check whether the specific employee is eligible for the promotion.
     #
     # + ctx - Request Context 
-    # + return - Internal Server Error or Lead list object
+    # + return - Employees list or error
     resource function GET employees(http:RequestContext ctx, boolean? filterLeads)
         returns Employees|http:Forbidden|http:InternalServerError {
 
@@ -151,7 +151,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        // "HEADER_USER_INFO" is the email of the user access this resource
+        // "HEADER_USER_INFO" is the email of the user access this resource.
         // Interceptor set this value after validating the jwt.
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
 
@@ -183,7 +183,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        // Get all Employees
+        // Get all Employees.
         people:EmployeeInfo[]|error employees = people:getEmployees();
 
         if employees is error {
@@ -220,7 +220,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Get employee joined deatails
+    # Get employee joined deatails.
     #
     # + ctx - Request Context er Description  
     # + employeeWorkEmail - employee email
@@ -260,7 +260,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        //Get employee History
+        //Get employee History.
         people:EmployeeHistory|error employeeData = people:fetchEmployeeHistory(employeeWorkEmail);
 
         if employeeData is error {
@@ -304,7 +304,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Retrieve specific users' promotion requests for given criteria.
     # 
     # + statusArray - Status of the promotion request
-    # + return - Internal Server Error or Promotion request array
+    # + return - Promotion request array or error
     resource function GET promotions(http:RequestContext ctx, string[]? statusArray, 
             string? employeeEmail, string? recommendedBy, string? 'type)
         returns Promotions|http:Forbidden|http:Unauthorized|http:InternalServerError {
@@ -421,11 +421,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         return promortionRes;
     }
 
-    # Draft new promotion request
+    # Draft new promotion request.
     #
     # + ctx - Request Context appended from the interceptor  
     # + application - Application data
-    # + return - Internal Server Error or Apply Promotion Service Results
+    # + return - Internal Server Error or Forbidden or Apply Promotion Service Results
     resource function POST promotions(http:RequestContext ctx, @http:Payload Application application)
         returns ApplicationInfo|http:Forbidden|http:InternalServerError {
 
@@ -442,8 +442,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // [Start] Resource level authorization 
-        // After introducing ballerina resource level authorization we can remove this section
         authorization:UserAppPrivilege|error userAppPrivileges = authorization:getUserPrivileges(userInfo.email);
 
         if userAppPrivileges is error {
@@ -461,8 +459,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // Verifying the requester 
-        // [Special Promotion Request] leads can create promotion requests for others 
+        // Verifying the requester.
+        // [Special Promotion Request] leads can create promotion requests for others.
         if !database:checkRoles([database:LEAD], userAppPrivileges.roles) && userInfo.email != application.employeeEmail {
             string customError = "Insufficient privilege to create promotion application for others.";
             log:printError(customError);
@@ -472,7 +470,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // [End] Resource level authorization
+        // [End] Resource level authorization.
 
         people:Employee|error employeeData = people:getEmployee(workEmail = application.employeeEmail);
 
@@ -486,7 +484,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Job band conversion to int
+        // Job band conversion to int.
         int? currentJobBand = employeeData.jobBand;
         if currentJobBand is () {
             string customError = "Invalid Job Band for " + userInfo.email + ".";
@@ -498,7 +496,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Getting active promotion cycle
+        // Getting active promotion cycle.
         database:PromotionCycle[]|error promotionCycles = database:getPromotionCyclesByStatus([database:OPEN]);
 
         if promotionCycles is error {
@@ -533,13 +531,13 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // For promotion application insert payload
+        // For promotion application insert payload.
         database:PromotionRequestDbInsertPayload promotionApplication;
 
-        // For promotion recommendation payload
+        // For promotion recommendation payload.
         database:PromotionRecommendationInsertPayload promotionRecommendation;
 
-        // Duplicate promotion request check
+        // Duplicate promotion request check.
         boolean|error isDuplicatePromotionRequest = database:isDuplicatePromotionRequest(employeeEmail = application.employeeEmail,
                 promotionCycleId = application.PromotionCycleID);
 
@@ -553,7 +551,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        // Check if there are any existing promotion requests for the same promotion cycle
+        // Check if there are any existing promotion requests for the same promotion cycle.
         if isDuplicatePromotionRequest {
             string customError = "Promotion request could not be inserted, duplicate promotion request found!";
             log:printError(customError);
@@ -565,8 +563,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if application.'type == database:INDIVIDUAL_CONTRIBUTOR {
-            // For SPECIAL promotion application
-            // Checking if the requested job band is valid
+            // For SPECIAL promotion application.
+            // Checking if the requested job band is valid.
             if application.promotingJobBand is () || application.promotingJobBand <= currentJobBand {
                 string customError = "Invalid promoting job band!";
                 log:printError(customError);
@@ -587,7 +585,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // Setting promotion application payload
+            // Setting promotion application payload.
             promotionApplication = {
                 employeeEmail: application.employeeEmail,
                 currentJobBand: currentJobBand,
@@ -610,7 +608,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 applicationID =  database:insertPromotionRequest(payload = promotionApplication);
 
                 if applicationID is int {
-                    // Setting promotion recommendation payload
+                    // Setting promotion recommendation payload.
                     promotionRecommendation = {
                         promotionRequestID: applicationID,
                         leadEmail: userInfo.email,
@@ -625,7 +623,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
                     if lastInsertId is error {
                         rollback;
-                        string customError = string `Error while inserting Promotion Recommendation`;
+                        string customError = string `Error while inserting Promotion Recommendation!`;
                         log:printError(customError);
                         return <http:InternalServerError>{
                             body: {
@@ -637,7 +635,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                     }
                 } else {
                     rollback;
-                    string customError = string `Error while inserting Promotion Request`;
+                    string customError = string `Error while inserting Promotion Request!`;
                     log:printError(customError);
                     return <http:InternalServerError>{
                         body: {
@@ -654,7 +652,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
 
             if applicationID is error {
-                string customError = string `Error while inserting Promotion Request`;
+                string customError = string `Error while inserting Promotion Request!`;
                 log:printError(customError);
                 return <http:InternalServerError>{
                     body: {
