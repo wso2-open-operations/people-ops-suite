@@ -91,15 +91,22 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        // TODO: Fetch privileges and return along with the basic info
-        return {...employeeBasicInfo, privileges: []};
+
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            privileges.push(authorization:ADMIN_PRIVILEGE);
+        }
+        return {...employeeBasicInfo, privileges};
     }
 
     # Fetch employee detailed information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee detailed information
-    resource function get employees/[string id](http:RequestContext ctx)
+    resource function get employees/[string employeeId](http:RequestContext ctx)
         returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -111,33 +118,47 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            string customErr = string `Error occurred while fetching employee information for ID: ${id}`;
-            log:printError(customErr, employeeInfo, id = id);
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
             };
         }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
+        }
+
         if employeeInfo is () {
             string customErr = "Employee information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
                 }
             };
         }
+
         return employeeInfo;
     }
 
     # Fetch employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee personal information
-    resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
+    resource function get employees/[string employeeId]/personal\-info(http:RequestContext ctx)
         returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -149,10 +170,43 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: "You are not authorized to view this employee's information"
+                    }
+                };
+            }
+        }
+
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
@@ -161,7 +215,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -169,6 +223,109 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Fetch managers.
+    #
+    # + return - List of managers or error response
+    resource function get employees/managers(http:RequestContext ctx)
+        returns database:Manager[]|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view managers"
+                }
+            };
+        }
+
+        database:Manager[]|error managers = database:getManagers();
+        if managers is error {
+            string customErr = "Error occurred while fetching managers";
+            log:printError(customErr, managers);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return managers;
+    }
+
+    # Fetch employees based on filters.
+    #
+    # + payload - Get employees filter payload
+    # + return - List of employees or error response
+    resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchPayload payload)
+        returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view employee list", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employee list"
+                }
+            };
+        }
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        database:EmployeesResponse|error employees = database:getEmployees(payload);
+        if employees is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, employees);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return <http:Ok>{
+            body: employees
+        };
     }
 
     # Fetch continuous service record by work email.
@@ -207,6 +364,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view continuous service records", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view continuous service records"
+                }
+            };
+        }
+
         database:ContinuousServiceRecordInfo[]|error serviceRecords = database:getContinuousServiceRecordsByEmail(workEmail);
         if serviceRecords is error {
             string customErr = "Error occurred while fetching continuous service records";
@@ -223,7 +390,28 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch all employees' basic information.
     #
     # + return - All employees' basic information
-    resource function get employees/basic\-info() returns database:EmployeeBasicInfo[]|http:InternalServerError {
+    resource function get employees/basic\-info(http:RequestContext ctx)
+        returns database:EmployeeBasicInfo[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view employees basic information", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employees basic information"
+                }
+            };
+        }
+
         database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
         if employeesBasicInfos is error {
             string customErr = "Error occurred while fetching employees' basic information";
@@ -307,6 +495,23 @@ service http:InterceptableService / on new http:Listener(9090) {
         return units;
     }
 
+    # Get full organization structure.
+    #
+    # + return - Full organization structure
+    resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
+        database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
+        if orgStructure is error {
+            string customErr = "Error while fetching organization structure";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return orgStructure;
+    }
+
     # Get career functions.
     #
     # + return - Career functions
@@ -344,11 +549,29 @@ service http:InterceptableService / on new http:Listener(9090) {
         return designations;
     }
 
+    # Get companies.
+    #
+    # + return - Companies
+    resource function get companies() returns database:Company[]|http:InternalServerError {
+        database:Company[]|error companies = database:getCompanies();
+        if companies is error {
+            string customErr = "Error while fetching Companies";
+            log:printError(customErr, companies);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return companies;
+    }
+
     # Get offices.
     #
+    # + companyId - Company ID (optional)
     # + return - Offices
-    resource function get offices() returns database:Office[]|http:InternalServerError {
-        database:Office[]|error offices = database:getOffices();
+    resource function get offices(int? companyId = ()) returns database:Office[]|http:InternalServerError {
+        database:Office[]|error offices = database:getOffices(companyId);
         if offices is error {
             string customErr = "Error while fetching Offices";
             log:printError(customErr, offices);
@@ -359,6 +582,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return offices;
+    }
+
+    # Get employment types.
+    #
+    # + return - Employment types
+    resource function get employment\-types() returns database:EmploymentType[]|http:InternalServerError {
+        database:EmploymentType[]|error employmentTypes = database:getEmploymentTypes();
+        if employmentTypes is error {
+            string customErr = "Error while fetching Employment Types";
+            log:printError(customErr, employmentTypes);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employmentTypes;
     }
 
     # Create a new employee.
@@ -421,12 +661,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + payload - Employee personal information update payload
     # + return - HTTP OK or HTTP errors
-    resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
+    resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns database:EmployeePersonalInfo|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -437,10 +677,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
-                    employeeInfo, id = id);
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -448,27 +690,49 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn("Employee information not found", id = id);
+            log:printWarn("Employee information not found", employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
                 }
             };
         }
-        if employeeInfo.workEmail != userInfo.email {
-            log:printWarn("User is trying to update personal info of another employee", id = id,
-                    invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not allowed to update personal information of other employees"
-                }
-            };
+
+        if !hasAdminAccess {
+            if employeeInfo.workEmail != userInfo.email {
+                string customErr = "You are not allowed to update personal information of another employee";
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email, targetEmail = employeeInfo.workEmail);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            boolean hasRestrictedFields =
+                payload.nicOrPassport is string ||
+                payload.firstName is string ||
+                payload.lastName is string ||
+                payload.title is string ||
+                payload.dob is string ||
+                payload.gender is string ||
+                payload.nationality is string;
+
+            if hasRestrictedFields {
+                string customErr = "You are not allowed to update one or more of the provided fields";
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -477,7 +741,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -485,10 +749,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        error? updateResult = database:updateEmployeePersonalInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
-            string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
-            log:printError(customErr, updateResult, id = id);
+            string customErr = string `Error occurred while updating employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -496,27 +760,69 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {
-            id: employeePersonalInfo.id,
-            nicOrPassport: employeePersonalInfo.nicOrPassport,
-            fullName: employeePersonalInfo.fullName,
-            nameWithInitials: employeePersonalInfo.nameWithInitials,
-            firstName: employeePersonalInfo.firstName,
-            lastName: employeePersonalInfo.lastName,
-            title: employeePersonalInfo.title,
-            dob: employeePersonalInfo.dob,
-            nationality: employeePersonalInfo.nationality,
-            personalEmail: payload.personalEmail,
-            personalPhone: payload.personalPhone,
-            residentNumber: payload.residentNumber,
-            addressLine1: payload.addressLine1,
-            addressLine2: payload.addressLine2,
-            city: payload.city,
-            stateOrProvince: payload.stateOrProvince,
-            postalCode: payload.postalCode,
-            country: payload.country,
-            emergencyContacts: payload.emergencyContacts
-        };
+        return http:OK;
+    }
+
+    # Update employee job information.
+    #
+    # + employeeId - Employee ID
+    # + payload - Employee job info update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string employeeId]/job\-info(http:RequestContext ctx,
+            database:UpdateEmployeeJobInfoPayload payload)
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to update an employee", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to update an employee"
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn("Employee information not found", employeeId = employeeId);
+            return <http:NotFound>{
+                body: {
+                    message: "Employee information not found"
+                }
+            };
+        }
+
+        error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
+        if updateResult is error {
+            string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        return http:OK;
     }
 
     # Fetch vehicles of a specific employee.

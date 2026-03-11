@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -14,11 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Box, Grid, Typography, useTheme, alpha } from "@mui/material";
 import { useFormikContext } from "formik";
 import dayjs from "dayjs";
-import { useAppSelector, useAppDispatch } from "@slices/store";
+import { useAppSelector } from "@slices/store";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import {
   PersonOutline,
@@ -32,16 +32,19 @@ import {
   SupervisorAccountOutlined,
   PhoneOutlined,
 } from "@mui/icons-material";
-import { EmployeeTypes } from "@root/src/config/constant";
-import {
-  fetchBusinessUnits,
-  fetchTeams,
-  fetchSubTeams,
-  fetchUnits,
-  fetchCareerFunctions,
-  fetchDesignations,
-  fetchOffices,
-} from "@slices/organizationSlice/organization";
+
+const REVIEW_ICONS = {
+  person: <PersonOutline fontSize="small" />,
+  cake: <CakeOutlined fontSize="small" />,
+  contact: <ContactPhoneOutlined fontSize="small" />,
+  home: <HomeOutlined fontSize="small" />,
+  badge: <BadgeOutlined fontSize="small" />,
+  work: <WorkOutline fontSize="small" />,
+  location: <LocationOnOutlined fontSize="small" />,
+  event: <EventOutlined fontSize="small" />,
+  supervisor: <SupervisorAccountOutlined fontSize="small" />,
+  phone: <PhoneOutlined fontSize="small" />,
+};
 
 const SectionHeader = React.memo(
   ({ icon, title }: { icon: React.ReactNode; title: string }) => {
@@ -58,7 +61,7 @@ const SectionHeader = React.memo(
             borderRadius: 1.5,
             background: `linear-gradient(135deg, ${alpha(
               theme.palette.secondary.contrastText,
-              0.15
+              0.15,
             )}, ${alpha(theme.palette.secondary.contrastText, 0.08)})`,
             color: theme.palette.secondary.contrastText,
           }}
@@ -75,7 +78,7 @@ const SectionHeader = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const ReviewField = React.memo(
@@ -109,7 +112,7 @@ const ReviewField = React.memo(
         </Typography>
       </Box>
     );
-  }
+  },
 );
 
 const MainSectionTitle = React.memo(({ title }: { title: string }) => {
@@ -148,7 +151,6 @@ const MainSectionTitle = React.memo(({ title }: { title: string }) => {
 
 export default function ReviewStep() {
   const theme = useTheme();
-  const dispatch = useAppDispatch();
   const { values } = useFormikContext<CreateEmployeeFormValues>();
 
   const {
@@ -158,39 +160,12 @@ export default function ReviewStep() {
     units,
     careerFunctions,
     designations,
+    companies,
     offices,
+    employmentTypes,
   } = useAppSelector((s) => s.organization);
 
   const p = values.personalInfo ?? {};
-
-  // Fetch all necessary data when component mounts
-  useEffect(() => {
-    dispatch(fetchBusinessUnits());
-    dispatch(fetchOffices());
-    dispatch(fetchCareerFunctions());
-
-    // Fetch dependent dropdowns based on user selections
-    if (values.businessUnitId && values.businessUnitId !== 0) {
-      dispatch(fetchTeams({ id: values.businessUnitId }));
-    }
-    if (values.teamId && values.teamId !== 0) {
-      dispatch(fetchSubTeams({ id: values.teamId }));
-    }
-    if (values.subTeamId && values.subTeamId !== 0) {
-      dispatch(fetchUnits({ id: values.subTeamId }));
-    }
-    if (values.careerFunctionId && values.careerFunctionId !== 0) {
-      dispatch(
-        fetchDesignations({ careerFunctionId: values.careerFunctionId })
-      );
-    }
-  }, [
-    dispatch,
-    values.businessUnitId,
-    values.teamId,
-    values.subTeamId,
-    values.careerFunctionId,
-  ]);
 
   const sectionBoxSx = useMemo(
     () => ({
@@ -206,23 +181,7 @@ export default function ReviewStep() {
           ? alpha(theme.palette.common.white, 0.02)
           : alpha(theme.palette.common.black, 0.01),
     }),
-    [theme]
-  );
-
-  const icons = useMemo(
-    () => ({
-      person: <PersonOutline fontSize="small" />,
-      cake: <CakeOutlined fontSize="small" />,
-      contact: <ContactPhoneOutlined fontSize="small" />,
-      home: <HomeOutlined fontSize="small" />,
-      badge: <BadgeOutlined fontSize="small" />,
-      work: <WorkOutline fontSize="small" />,
-      location: <LocationOnOutlined fontSize="small" />,
-      event: <EventOutlined fontSize="small" />,
-      supervisor: <SupervisorAccountOutlined fontSize="small" />,
-      phone: <PhoneOutlined fontSize="small" />,
-    }),
-    []
+    [theme],
   );
 
   // Map IDs to Names for display
@@ -236,12 +195,13 @@ export default function ReviewStep() {
       designation:
         designations.find((cf) => cf.id === values.designationId)
           ?.designation || null,
-      careerFunctions:
+      careerFunction:
         careerFunctions.find((cf) => cf.id === values.careerFunctionId)
           ?.careerFunction || null,
+      company: companies.find((c) => c.id === values.companyId)?.name || null,
       office: offices.find((o) => o.id === values.officeId)?.name || null,
       employmentType:
-        EmployeeTypes.find((e) => e.id === values.employmentTypeId)?.label ||
+        employmentTypes.find((o) => o.id === values.employmentTypeId)?.name ||
         null,
     }),
     [
@@ -251,16 +211,19 @@ export default function ReviewStep() {
       units,
       designations,
       careerFunctions,
+      companies,
       offices,
+      employmentTypes,
       values.businessUnitId,
       values.teamId,
       values.subTeamId,
       values.unitId,
       values.designationId,
       values.careerFunctionId,
+      values.companyId,
       values.officeId,
       values.employmentTypeId,
-    ]
+    ],
   );
 
   return (
@@ -269,7 +232,7 @@ export default function ReviewStep() {
 
       {/* Identity */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.person} title="Identity" />
+        <SectionHeader icon={REVIEW_ICONS.person} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Title" value={p.title} />
@@ -281,29 +244,23 @@ export default function ReviewStep() {
             <ReviewField label="Last Name" value={p.lastName} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Name With Initials"
-              value={p.nameWithInitials}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="NIC" value={p.nicOrPassport} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Full Name" value={p.fullName} />
           </Grid>
         </Grid>
       </Box>
 
       {/* Birth & Nationality */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.cake} title="Birth & Nationality" />
+        <SectionHeader icon={REVIEW_ICONS.cake} title="Birth & Nationality" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Date of Birth"
               value={p.dob ? dayjs(p.dob).format("MMMM D, YYYY") : null}
             />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="Gender" value={p.gender} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Nationality" value={p.nationality} />
@@ -313,7 +270,7 @@ export default function ReviewStep() {
 
       {/* Contact */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.contact} title="Contact" />
+        <SectionHeader icon={REVIEW_ICONS.contact} title="Contact" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Personal Email" value={p.personalEmail} />
@@ -329,7 +286,7 @@ export default function ReviewStep() {
 
       {/* Address */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.home} title="Address" />
+        <SectionHeader icon={REVIEW_ICONS.home} title="Address" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Address Line 1" value={p.addressLine1} />
@@ -355,7 +312,10 @@ export default function ReviewStep() {
       {/* Emergency Contacts */}
       {p.emergencyContacts && p.emergencyContacts.length > 0 && (
         <Box sx={sectionBoxSx}>
-          <SectionHeader icon={icons.contact} title="Emergency Contacts" />
+          <SectionHeader
+            icon={REVIEW_ICONS.contact}
+            title="Emergency Contacts"
+          />
           {p.emergencyContacts.map((contact, index) => (
             <Box
               key={index}
@@ -403,7 +363,7 @@ export default function ReviewStep() {
 
       {/* Identity (Work Email & EPF) */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.badge} title="Identity" />
+        <SectionHeader icon={REVIEW_ICONS.badge} title="Identity" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Work Email" value={values.workEmail} />
@@ -422,7 +382,7 @@ export default function ReviewStep() {
 
       {/* Job & Team */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.work} title="Job & Team" />
+        <SectionHeader icon={REVIEW_ICONS.work} title="Job & Team" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
@@ -442,7 +402,7 @@ export default function ReviewStep() {
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
               label="Career Function"
-              value={mappedNames.careerFunctions}
+              value={mappedNames.careerFunction}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -453,16 +413,13 @@ export default function ReviewStep() {
 
       {/* Location & Office */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.location} title="Location & Office" />
+        <SectionHeader icon={REVIEW_ICONS.location} title="Location & Office" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Office" value={mappedNames.office} />
+            <ReviewField label="Company" value={mappedNames.company} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Employment Location"
-              value={values.employmentLocation}
-            />
+            <ReviewField label="Office" value={mappedNames.office} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Work Location" value={values.workLocation} />
@@ -472,7 +429,7 @@ export default function ReviewStep() {
 
       {/* Dates & Status */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.event} title="Dates & Status" />
+        <SectionHeader icon={REVIEW_ICONS.event} title="Dates & Status" />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
@@ -515,7 +472,10 @@ export default function ReviewStep() {
 
       {/* Manager & Reports */}
       <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.supervisor} title="Manager & Reports" />
+        <SectionHeader
+          icon={REVIEW_ICONS.supervisor}
+          title="Manager & Reports"
+        />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="Manager Email" value={values.managerEmail} />
@@ -529,19 +489,6 @@ export default function ReviewStep() {
                   ? values.additionalManagerEmail.join(", ")
                   : "—"
               }
-            />
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Phone */}
-      <Box sx={sectionBoxSx}>
-        <SectionHeader icon={icons.phone} title="Phone" />
-        <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={4}>
-            <ReviewField
-              label="Work Phone Number"
-              value={values.workPhoneNumber}
             />
           </Grid>
         </Grid>

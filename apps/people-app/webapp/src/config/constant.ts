@@ -20,6 +20,7 @@ export const SnackMessage = {
   },
   error: {
     fetchEmployee: "Error while fetching employee",
+    fetchEmployees: "Error while fetching employees",
     fetchPrivileges: "Error while fetching user privileges",
     insufficientPrivileges:
       "You don't have sufficient privileges to access this resource",
@@ -29,16 +30,19 @@ export const SnackMessage = {
   },
   warning: {},
 };
+export const ADMIN_PRIVILEGE = 999;
+export const DEFAULT_LIMIT_VALUE = 10;
+export const DEFAULT_OFFSET_VALUE = 0;
+export const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
-export const EmployeeTypes = [
-  { id: 1, label: "Full-time" },
-  { id: 2, label: "Intern" },
-  { id: 3, label: "Consultancy" },
-];
+export const SEARCH_REGEX = /^[\p{L}\p{M}0-9\s@._'+-]*$/u;
+export const SEARCH_MAX_LENGTH = 100;
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
 export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
+
+export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
 export const Countries = [
   "Afghanistan",
@@ -291,3 +295,5 @@ export const Countries = [
   "Zambia",
   "Zimbabwe",
 ];
+
+export const DATE_FMT = "yyyy-MM-dd";

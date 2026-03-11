@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -12,19 +12,12 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# A constant default limit of a database query
-public const DEFAULT_LIMIT = 100;
+import { useParams } from "react-router-dom";
+import Me from "../../me";
 
-# A constant error message for no rows updated
-const ERROR_NO_ROWS_UPDATED = "No rows were updated";
-
-# A constant max token count for search operations
-const MAX_TOKEN_COUNT = 10;
-
-# A constant default page number
-const int DEFAULT_PAGE_NUMBER = 1;
-
-# A constant default records per page
-const int DEFAULT_RECORDS_PER_PAGE = 20;
+export default function EmployeeDetail() {
+  const { employeeId } = useParams<{ employeeId: string }>();
+  return employeeId ? <Me employeeId={employeeId} readOnly /> : null;
+}
