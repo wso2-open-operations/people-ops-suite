@@ -202,10 +202,10 @@ public type Pagination record {|
 public final map<sql:ParameterizedQuery> & readonly SortOrder = {
     "ASC": `ASC`,
     "DESC": `DESC`,
-    "asc" : `ASC`,
-    "desc" : `DESC`,
-    "Asc" : `ASC`,
-    "Desc" : `DESC`
+    "asc": `ASC`,
+    "desc": `DESC`,
+    "Asc": `ASC`,
+    "Desc": `DESC`
 };
 
 # Allowed Employee sort fields with their corresponding database columns.
@@ -522,10 +522,10 @@ public type CreatePersonalInfoPayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -583,7 +583,7 @@ public type CreateEmployeePayload record {|
     # Additional manager emails
     Email[] additionalManagerEmails = [];
     # Employee thumbnail URL
-    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
     # Probation end date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
@@ -641,10 +641,10 @@ public type UpdateEmployeePersonalInfoPayload record {|
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string? personalEmail = ();
     # Personal phone number
-    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
     string? personalPhone = ();
     # Resident number
-    @constraint:String {pattern: re `${PHONE_PATTERN_STRING}`}
+    @constraint:String {maxLength: 100, pattern: re `${PHONE_PATTERN_STRING}`}
     string? residentNumber = ();
     # Address line 1
     @constraint:String {maxLength: 255}
@@ -693,7 +693,7 @@ public type UpdateEmployeeJobInfoPayload record {|
     # Additional manager emails
     Email[]? additionalManagerEmails = ();
     # Employee thumbnail URL
-    @constraint:String {maxLength: 512, pattern: re `${URL_PATTERN_STRING}`}
+    @constraint:String {maxLength: 2048, pattern: re `${URL_PATTERN_STRING}`}
     string? employeeThumbnail = ();
     # Probation end date
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
