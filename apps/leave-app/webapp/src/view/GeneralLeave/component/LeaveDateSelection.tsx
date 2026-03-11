@@ -54,6 +54,7 @@ export default function LeaveDateSelection({
   const [endDate, setEndDate] = useState<Dayjs | null>(null);
   const [workingDaysSelected, setWorkingDaysSelected] = useState(0);
   const [isValidating, setIsValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const calculateTotalDays = (start: Dayjs | null, end: Dayjs | null): number => {
     if (!start || !end) return 0;
@@ -96,6 +97,7 @@ export default function LeaveDateSelection({
     }
 
     setIsValidating(true);
+    setValidationError(null);
     onValidatingChange?.(true);
     try {
       const totalDays = calculateTotalDays(start, end);
@@ -132,8 +134,11 @@ export default function LeaveDateSelection({
 
       setWorkingDaysSelected(response.workingDays);
       onWorkingDaysChange(response.workingDays);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error validating leave dates:", error);
+      const message =
+        error?.response?.data?.message || "Failed to validate dates. Please try again.";
+      setValidationError(message);
       setWorkingDaysSelected(0);
       onWorkingDaysChange(0);
     } finally {
@@ -166,6 +171,12 @@ export default function LeaveDateSelection({
 
   const getStatusConfig = () => {
     if (isValidating) return { label: "Validating…", color: "warning" as const, icon: null };
+    if (validationError)
+      return {
+        label: validationError,
+        color: "error" as const,
+        icon: <ErrorOutlineRoundedIcon sx={{ fontSize: 16 }} />,
+      };
     if (!startDate || !endDate)
       return {
         label: "Select dates",
@@ -283,19 +294,21 @@ export default function LeaveDateSelection({
             textAlign: "center",
           }}
         >
-          {isValidating ? (
-            <CircularProgress size={24} sx={{ color: theme.palette.primary.main, my: 0.25 }} />
-          ) : (
-            <Typography
-              variant="h5"
-              sx={{
-                color: theme.palette.primary.main,
-                fontWeight: 600,
-              }}
-            >
-              {workingDaysSelected}
-            </Typography>
-          )}
+          <Box sx={{ height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {isValidating ? (
+              <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />
+            ) : (
+              <Typography
+                variant="h5"
+                sx={{
+                  color: validationError ? theme.palette.error.main : theme.palette.primary.main,
+                  fontWeight: 600,
+                }}
+              >
+                {validationError ? "—" : workingDaysSelected}
+              </Typography>
+            )}
+          </Box>
           <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p3.active }}>
             Working days
           </Typography>
