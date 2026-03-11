@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { AppConfig } from "@root/src/config/config";
 import {
   Action,
@@ -60,7 +59,7 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.get<Employee[]>(
-    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active`,
+    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active&employeeStatuses=Marked%20leaver`,
   );
 
   return response.data;
