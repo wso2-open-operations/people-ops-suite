@@ -36,7 +36,12 @@ type CreateParkingReservationRequest record {|
     # Slot identifier (e.g. B-01)
     string slotId;
     # Booking date (YYYY-MM-DD), same-day only
-    @constraint:String {pattern: re `${database:DATE_PATTERN_STRING}`}
+    @constraint:String {
+        pattern: {
+            value: re `${database:DATE_PATTERN_STRING}`,
+            message: "Booking date must be in YYYY-MM-DD format."
+        }
+    }
     string bookingDate;
     # Registered vehicle ID (car only)
     int vehicleId;
