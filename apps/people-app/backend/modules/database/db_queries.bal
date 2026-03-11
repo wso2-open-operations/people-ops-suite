@@ -688,16 +688,16 @@ isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int s
 # + payload - Fields for the deletion (updatedBy)
 # + buId - ID of the business unit to delete
 # + return - Parameterized UPDATE query for soft deletion
-isolated function deleteBusinessUnitQuery(DeleteBusinessUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
       UPDATE
         business_unit
       SET
         is_active = 0,
-        updated_by = ${payload.updatedBy},
+        updated_by = ${email},
         updated_on = current_timestamp
       WHERE 
-        business_unit_id = ${buId}
+        id = ${buId}
     `;
 
     return query;
@@ -709,14 +709,14 @@ isolated function deleteBusinessUnitQuery(DeleteBusinessUnitPayload payload, int
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - Parameterized UPDATE query for soft deletion
-isolated function deleteBusinessUnitTeamQuery(DeleteBusinessUnitTeamPayload payload, int buId, int teamId)
+isolated function deleteBusinessUnitTeamQuery(string email, int buId, int teamId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
       UPDATE
         business_unit_team
       SET
         is_active = 0,
-        updated_by = ${payload.updatedBy},
+        updated_by = ${email},
         updated_on = current_timestamp
       WHERE
         business_unit_id = ${buId} AND team_id = ${teamId}
@@ -731,14 +731,14 @@ isolated function deleteBusinessUnitTeamQuery(DeleteBusinessUnitTeamPayload payl
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - Parameterized UPDATE query for soft deletion
-isolated function deleteTeamSubTeamQuery(DeleteTeamSubTeamPayload payload, int teamId, int subTeamId)
+isolated function deleteTeamSubTeamQuery(string email, int teamId, int subTeamId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
       UPDATE
         business_unit_team_sub_team
       SET
         is_active = 0,
-        updated_by = ${payload.updatedBy},
+        updated_by = ${email},
         updated_on = current_timestamp
       WHERE
         business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
@@ -753,14 +753,14 @@ isolated function deleteTeamSubTeamQuery(DeleteTeamSubTeamPayload payload, int t
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - Parameterized UPDATE query for soft deletion
-isolated function deleteSubTeamUnitQuery(DeleteSubTeamUnitPayload payload, int subTeamId, int unitId)
+isolated function deleteSubTeamUnitQuery(string email, int subTeamId, int unitId)
     returns sql:ParameterizedQuery {
     sql:ParameterizedQuery query = `
       UPDATE
         business_unit_team_sub_team_unit
       SET
         is_active = 0,
-        updated_by = ${payload.updatedBy},
+        updated_by = ${email},
         updated_on = current_timestamp
       WHERE
         business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
@@ -1022,7 +1022,6 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
     current_timestamp
   )
 `;
-
 
 # Build query to insert a new business-unit-team.
 #
