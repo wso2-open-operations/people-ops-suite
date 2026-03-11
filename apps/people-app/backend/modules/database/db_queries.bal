@@ -579,7 +579,7 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status = 'CONFIRMED'
+              AND pr.status = ${CONFIRMED}
         ) THEN 1 ELSE 0 END as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
@@ -613,7 +613,7 @@ isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, 
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status = 'CONFIRMED'
+      AND status = ${CONFIRMED}
     LIMIT 1`;
 
 # Insert parking reservation (PENDING).
@@ -639,7 +639,7 @@ isolated function addParkingReservationQuery(AddParkingReservationPayload payloa
         ${payload.bookingDate}, 
         ${payload.employeeEmail}, 
         ${payload.vehicleId},
-        'PENDING', 
+        ${PENDING}, 
         ${payload.coinsAmount}, 
         ${payload.createdBy}, 
         ${payload.createdBy}
