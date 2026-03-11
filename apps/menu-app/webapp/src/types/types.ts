@@ -15,6 +15,13 @@
 // under the License.
 import type { NonIndexRouteObject } from "react-router-dom";
 
+export enum State {
+  failed = "failed",
+  success = "success",
+  loading = "loading",
+  idle = "idle",
+}
+
 export type NavState = {
   hovered: number | null;
   active: number | null;
