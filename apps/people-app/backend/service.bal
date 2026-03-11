@@ -871,7 +871,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + body - Request containing transaction hash and optional reservation ID
     # + return - Reservation details with CONFIRMED status or error response
     resource function post parkings/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
-        returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:NotFound|http:Forbidden {
+        returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -888,13 +888,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: "Error occurred while confirming reservation."}
             };
         }
-        if reservation is () {
-            return <http:NotFound>{
-                body: {message: "Reservation not found for the provided reservation ID."}
-            };
-        }
-
-        if reservation.employeeEmail != userInfo.email {
+        if reservation is () || reservation.employeeEmail != userInfo.email {
             return <http:Forbidden>{
                 body: {message: "You are not allowed to confirm this reservation."}
             };
