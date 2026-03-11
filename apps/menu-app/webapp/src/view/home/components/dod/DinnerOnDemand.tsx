@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { SerializedError } from "@reduxjs/toolkit";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { useFormik } from "formik";
 import Lottie from "lottie-react";
 import { FishIcon } from "lucide-react";
@@ -25,9 +27,8 @@ import { useMemo, useState } from "react";
 import { DinnerRequest, MealOption } from "@/types/types";
 import emptyLogo from "@assets/animations/clock-time.json";
 import ErrorHandler from "@component/common/ErrorHandler";
-import BackdropProgress from "@component/ui/BackdropProgress";
 import { useRecolorLottie } from "@hooks/useRecolorLottie";
-import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
+import { useSubmitDinnerRequestMutation } from "@services/dod.api";
 import { RootState, useAppSelector } from "@slices/store";
 
 import CancelModal from "./CancelModal";
@@ -41,12 +42,16 @@ const mealOptionsBox = [
   { value: "Vegetarian", label: "Vegetarian", icon: <LeafyGreen /> },
 ];
 
-export default function DinnerOnDemand() {
+interface DinnerOnDemandProps {
+  dinner: DinnerRequest | undefined;
+  error: FetchBaseQueryError | SerializedError | undefined;
+}
+
+export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const userInfo = useAppSelector((state: RootState) => state.user.userInfo);
-  const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
   const [submitDinner] = useSubmitDinnerRequestMutation();
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
@@ -117,10 +122,6 @@ export default function DinnerOnDemand() {
       formik.setFieldValue("mealOption", mealValue);
     }
   };
-
-  if (isLoading) {
-    return <BackdropProgress open={isLoading} />;
-  }
 
   if (error && !is404) {
     return <ErrorHandler message="Failed to load dinner request" />;
