@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
@@ -142,16 +141,16 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = async (): Promise<{ accessToken: string }> => {
+  const refreshToken = async (): Promise<{ idToken: string }> => {
     if (state.isAuthenticated) {
-      const accessToken = await getIDToken();
-      return { accessToken };
+      const idToken = await getIDToken();
+      return { idToken };
     }
 
     try {
       await refreshAccessToken();
-      const accessToken = await getAccessToken();
-      return { accessToken };
+      const idToken = await getIDToken();
+      return { idToken };
     } catch (error) {
       console.error("Token refresh failed: ", error);
       await appSignOut();
