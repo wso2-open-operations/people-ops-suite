@@ -14,16 +14,21 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, Button, Typography, useMediaQuery, useTheme } from "@mui/material";
+import { useFormik } from "formik";
 import Lottie from "lottie-react";
 import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
+import { useMemo, useState } from "react";
+
+import { DinnerRequest, MealOption } from "@/types/types";
 import emptyLogo from "@assets/animations/clock-time.json";
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
 import { useRecolorLottie } from "@hooks/useRecolorLottie";
-import { useDinnerOnDemand } from "@view/home/hooks/useDinnerOnDemand";
+import { useGetDinnerRequestQuery, useSubmitDinnerRequestMutation } from "@services/dod.api";
+import { RootState, useAppSelector } from "@slices/store";
 
 import CancelModal from "./CancelModal";
 import DodInfoMessage from "./DodInfoMessage";
@@ -40,21 +45,55 @@ export default function DinnerOnDemand() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const {
-    userInfo,
-    isUserLoading,
-    error,
-    isLoading,
-    is404,
-    formik,
-    isDodTimeActive,
-    isFormDisabled,
-    mealOptionsDefault,
-    orderPlaced,
-    isCancelDialogOpen,
-    handleOpenCancelDialog,
-    handleCloseCancelDialog,
-  } = useDinnerOnDemand();
+  const userInfo = useAppSelector((state: RootState) => state.user.userInfo);
+  const { data: dinner, error, isLoading } = useGetDinnerRequestQuery();
+  const [submitDinner] = useSubmitDinnerRequestMutation();
+
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
+
+  const isDodTimeActive = useMemo(() => {
+    const now = new Date();
+    const startTime = new Date(now);
+    startTime.setHours(16, 0, 0, 0);
+    const endTime = new Date(now);
+    endTime.setHours(19, 0, 0, 0);
+
+    return now >= startTime && now <= endTime;
+  }, []);
+
+  const is404 = error && "status" in error && error.status === 404;
+  const mealOptionsDefault: MealOption | null = is404 ? null : dinner?.mealOption || null;
+  const orderPlaced = mealOptionsDefault !== null;
+
+  const formik = useFormik({
+    initialValues: { mealOption: mealOptionsDefault },
+    enableReinitialize: true,
+    onSubmit: async (values) => {
+      try {
+        if (!values?.mealOption || !userInfo) return;
+
+        const date = new Date().toLocaleDateString("en-CA");
+
+        const submitPayload: DinnerRequest = {
+          id: dinner?.id,
+          mealOption: values.mealOption,
+          date: date,
+          department: userInfo.department,
+          team: userInfo.team,
+          managerEmail: userInfo.managerEmail,
+        };
+
+        await submitDinner(submitPayload);
+      } catch (error) {
+        console.error("Failed to submit dinner request:", error);
+      }
+    },
+  });
+
+  const isFormDisabled = formik.isSubmitting || !isDodTimeActive;
+
+  const handleOpenCancelDialog = () => setIsCancelDialogOpen(true);
+  const handleCloseCancelDialog = () => setIsCancelDialogOpen(false);
 
   const logoStyle = {
     height: "150px",
@@ -79,12 +118,8 @@ export default function DinnerOnDemand() {
     }
   };
 
-  if (isUserLoading || isLoading) {
+  if (isLoading) {
     return <BackdropProgress open={isLoading} />;
-  }
-
-  if (!userInfo) {
-    return <ErrorHandler message={"Failed to load user info"} />;
   }
 
   if (error && !is404) {
