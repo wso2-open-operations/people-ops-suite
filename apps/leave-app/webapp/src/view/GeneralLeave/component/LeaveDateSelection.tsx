@@ -33,6 +33,7 @@ interface LeaveDateSelectionProps {
   onDaysChange: (days: number) => void;
   onDatesChange: (startDate: Dayjs | null, endDate: Dayjs | null) => void;
   onWorkingDaysChange: (workingDays: number) => void;
+  onValidatingChange?: (validating: boolean) => void;
   selectedDayPortion?: DayPortion | null;
   hasError?: boolean;
   onErrorClear?: () => void;
@@ -43,6 +44,7 @@ export default function LeaveDateSelection({
   onDaysChange,
   onDatesChange,
   onWorkingDaysChange,
+  onValidatingChange,
   selectedDayPortion,
   hasError = false,
   onErrorClear,
@@ -94,6 +96,7 @@ export default function LeaveDateSelection({
     }
 
     setIsValidating(true);
+    onValidatingChange?.(true);
     try {
       const totalDays = calculateTotalDays(start, end);
       let periodType: PeriodType;
@@ -135,6 +138,7 @@ export default function LeaveDateSelection({
       onWorkingDaysChange(0);
     } finally {
       setIsValidating(false);
+      onValidatingChange?.(false);
     }
   };
 
@@ -279,15 +283,19 @@ export default function LeaveDateSelection({
             textAlign: "center",
           }}
         >
-          <Typography
-            variant="h5"
-            sx={{
-              color: theme.palette.primary.main,
-              fontWeight: 600,
-            }}
-          >
-            {workingDaysSelected}
-          </Typography>
+          {isValidating ? (
+            <CircularProgress size={24} sx={{ color: theme.palette.primary.main, my: 0.25 }} />
+          ) : (
+            <Typography
+              variant="h5"
+              sx={{
+                color: theme.palette.primary.main,
+                fontWeight: 600,
+              }}
+            >
+              {workingDaysSelected}
+            </Typography>
+          )}
           <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p3.active }}>
             Working days
           </Typography>

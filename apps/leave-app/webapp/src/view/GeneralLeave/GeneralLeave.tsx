@@ -92,6 +92,7 @@ export default function GeneralLeave() {
   const [comment, setComment] = useState("");
   const [isPublicComment, setIsPublicComment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDateValidating, setIsDateValidating] = useState(false);
   const [dateError, setDateError] = useState(false);
 
   useEffect(() => {
@@ -261,6 +262,7 @@ export default function GeneralLeave() {
               setEndDate(end);
             }}
             onWorkingDaysChange={setWorkingDays}
+            onValidatingChange={setIsDateValidating}
             hasError={dateError}
             onErrorClear={() => setDateError(false)}
             selectedLeaveType={selectedLeaveType}
@@ -323,9 +325,9 @@ export default function GeneralLeave() {
         <Button
           variant="contained"
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isDateValidating}
           startIcon={
-            isSubmitting ? (
+            isSubmitting || isDateValidating ? (
               <CircularProgress size={18} color="inherit" />
             ) : (
               <SendRoundedIcon sx={{ fontSize: 18 }} />
@@ -340,7 +342,11 @@ export default function GeneralLeave() {
             minWidth: 140,
           }}
         >
-          {isSubmitting ? "Submitting\u2026" : "Submit Leave"}
+          {isSubmitting
+            ? "Submitting\u2026"
+            : isDateValidating
+              ? "Validating\u2026"
+              : "Submit Leave"}
         </Button>
       </Box>
     </Stack>
