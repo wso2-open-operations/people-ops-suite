@@ -78,8 +78,8 @@ export default function LeaveDateSelection({
     const today = dayjs().startOf("day");
     setStartDate(today);
     setEndDate(today);
+    setDaysSelected(calculateTotalDays(today, today));
     onDatesChange(today, today);
-    validateDates(today, today);
   }, []);
 
   const validateDates = async (start: Dayjs | null, end: Dayjs | null) => {

@@ -75,6 +75,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getDecodedIDToken,
     getBasicUserInfo,
     refreshAccessToken,
+    isAuthenticated,
     getIDToken,
     trySignInSilently,
     state,
@@ -140,21 +141,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = async (): Promise<{ idToken: string }> => {
-    if (state.isAuthenticated) {
-      const idToken = await getIDToken();
-      return { idToken };
-    }
-
-    try {
-      await refreshAccessToken();
-      const idToken = await getIDToken();
-      return { idToken };
-    } catch (error) {
-      console.error("Token refresh failed: ", error);
-      await appSignOut();
-      throw error;
-    }
+  const refreshToken = (): Promise<{ idToken: string }> => {
+    return new Promise<{ idToken: string }>(async (resolve) => {
+      const userIsAuthenticated = await isAuthenticated();
+      if (userIsAuthenticated) {
+        resolve({ idToken: await getIDToken() });
+      } else {
+        refreshAccessToken()
+          .then(async () => {
+            const idToken = await getIDToken();
+            resolve({ idToken });
+          })
+          .catch(() => {
+            appSignOut();
+          });
+      }
+    });
   };
 
   const appSignOut = async () => {
