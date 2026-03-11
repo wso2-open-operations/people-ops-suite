@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Box,
@@ -22,6 +21,7 @@ import {
   Stack,
   Tooltip,
   Typography,
+  alpha,
   useTheme,
 } from "@mui/material";
 import dayjs from "dayjs";
@@ -39,17 +39,14 @@ import {
   LeaveType,
 } from "@root/src/types/types";
 
-/** A single balance row configuration. */
 interface BalanceRow {
   label: string;
   tooltip?: string;
-  /** null means unlimited (e.g. sick leave). */
   entitled: number | null;
   consumed: number;
   periodLabel?: string;
 }
 
-/** Map a leave-type key to a friendly label. */
 const LEAVE_KEY_LABEL: Record<string, { label: string; tooltip?: string }> = {
   congesPayes: { label: LeaveLabel.CONGES_PAYES, tooltip: LeaveTooltip[LeaveType.CONGES_PAYES] },
   rtt: { label: LeaveLabel.RTT, tooltip: LeaveTooltip[LeaveType.RTT] },
@@ -64,13 +61,11 @@ const LEAVE_KEY_LABEL: Record<string, { label: string; tooltip?: string }> = {
   sick: { label: LeaveLabel.SICK },
 };
 
-/** Keys to display for each location. */
 const LOCATION_KEYS: Record<string, string[]> = {
   [EmployeeLocation.FR]: ["congesPayes", "rtt", "sick"],
   [EmployeeLocation.ES]: ["spainAnnual", "spainCasual", "sick"],
 };
 
-/** Format a period label from ISO dates. */
 function formatPeriod(start?: string | null, end?: string | null): string | undefined {
   if (!start || !end) return undefined;
   return `${dayjs(start).format("MMM YYYY")} – ${dayjs(end).format("MMM YYYY")}`;
@@ -88,7 +83,6 @@ export default function LeaveBalanceSummary() {
 
   const fetchEntitlement = useCallback(async () => {
     if (!email || !location) return;
-    // Only show for France & Spain
     if (location !== EmployeeLocation.FR && location !== EmployeeLocation.ES) return;
 
     setLoading(true);
@@ -110,7 +104,6 @@ export default function LeaveBalanceSummary() {
     void fetchEntitlement();
   }, [fetchEntitlement]);
 
-  // Only render for France and Spain employees
   if (!location || (location !== EmployeeLocation.FR && location !== EmployeeLocation.ES)) {
     return null;
   }
@@ -154,72 +147,111 @@ export default function LeaveBalanceSummary() {
   if (rows.length === 0) return null;
 
   return (
-    <Stack gap={1.5} py={1}>
-      <Stack direction="row" alignItems="center" gap={0.5}>
-        <Typography variant="subtitle2" fontWeight={600} color={theme.palette.text.primary}>
+    <Box
+      sx={{
+        backgroundColor: theme.palette.background.paper,
+        border: `1px solid ${theme.palette.customBorder.territory.active}`,
+        borderRadius: "12px",
+        p: { xs: 2, md: 3 },
+      }}
+    >
+      <Stack direction="row" alignItems="center" gap={1} mb={2}>
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
           Leave Balance
         </Typography>
         {rows[0]?.periodLabel && (
-          <Typography variant="caption" color={theme.palette.text.secondary}>
-            ({rows[0].periodLabel})
+          <Typography
+            variant="caption"
+            sx={{
+              color: theme.palette.customText.primary.p4.active,
+              backgroundColor: theme.palette.surface.territory.active,
+              px: 1,
+              py: 0.25,
+              borderRadius: "6px",
+            }}
+          >
+            {rows[0].periodLabel}
           </Typography>
         )}
       </Stack>
 
-      {rows.map((row) => {
-        const isUnlimited = row.entitled === null;
-        const entitled = row.entitled ?? 0;
-        const remaining = isUnlimited ? null : Math.max(entitled - row.consumed, 0);
-        const progress = !isUnlimited && entitled > 0 ? (row.consumed / entitled) * 100 : 0;
-        const isOverLimit = !isUnlimited && row.consumed > entitled && entitled > 0;
+      <Stack direction={{ xs: "column", md: "row" }} gap={2}>
+        {rows.map((row) => {
+          const isUnlimited = row.entitled === null;
+          const entitled = row.entitled ?? 0;
+          const remaining = isUnlimited ? null : Math.max(entitled - row.consumed, 0);
+          const progress = !isUnlimited && entitled > 0 ? (row.consumed / entitled) * 100 : 0;
+          const isOverLimit = !isUnlimited && row.consumed > entitled && entitled > 0;
 
-        return (
-          <Stack key={row.label} gap={0.5}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center">
-              <Stack direction="row" alignItems="center" gap={0.5}>
-                <Typography variant="body2" fontWeight={500}>
+          const barColor = isOverLimit
+            ? theme.palette.error.main
+            : progress > 80
+              ? theme.palette.warning.main
+              : theme.palette.primary.main;
+
+          return (
+            <Box
+              key={row.label}
+              sx={{
+                flex: 1,
+                px: 2,
+                py: 1.5,
+                borderRadius: "10px",
+                border: `1px solid ${theme.palette.customBorder.territory.active}`,
+                backgroundColor: theme.palette.surface.territory.active,
+              }}
+            >
+              <Stack direction="row" alignItems="center" gap={0.5} mb={1}>
+                <Typography variant="body2" fontWeight={600}>
                   {row.label}
                 </Typography>
                 {row.tooltip && (
                   <Tooltip title={row.tooltip} arrow>
                     <InfoOutlinedIcon
-                      sx={{ fontSize: 14, color: theme.palette.text.secondary, cursor: "help" }}
+                      sx={{
+                        fontSize: 14,
+                        color: theme.palette.customText.primary.p4.active,
+                        cursor: "help",
+                      }}
                     />
                   </Tooltip>
                 )}
               </Stack>
+
+              {!isUnlimited && (
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(progress, 100)}
+                  sx={{
+                    height: 6,
+                    borderRadius: 3,
+                    mb: 1,
+                    backgroundColor: alpha(barColor, 0.12),
+                    "& .MuiLinearProgress-bar": {
+                      borderRadius: 3,
+                      backgroundColor: barColor,
+                    },
+                  }}
+                />
+              )}
+
               <Typography
-                variant="body2"
-                fontWeight={500}
-                color={isOverLimit ? theme.palette.error.main : theme.palette.text.secondary}
+                variant="caption"
+                sx={{
+                  color: isOverLimit
+                    ? theme.palette.error.main
+                    : theme.palette.customText.primary.p3.active,
+                  fontWeight: 500,
+                }}
               >
                 {isUnlimited
                   ? `${row.consumed} used · Unlimited`
-                  : `${row.consumed} / ${entitled} used${remaining != null && remaining > 0 ? ` · ${remaining} remaining` : ""}`}
+                  : `${row.consumed} / ${entitled} used${remaining != null && remaining > 0 ? ` · ${remaining} left` : ""}`}
               </Typography>
-            </Stack>
-            {!isUnlimited && (
-              <LinearProgress
-                variant="determinate"
-                value={Math.min(progress, 100)}
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: theme.palette.action.hover,
-                  "& .MuiLinearProgress-bar": {
-                    borderRadius: 3,
-                    backgroundColor: isOverLimit
-                      ? theme.palette.error.main
-                      : progress > 80
-                        ? theme.palette.warning.main
-                        : theme.palette.primary.main,
-                  },
-                }}
-              />
-            )}
-          </Stack>
-        );
-      })}
-    </Stack>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Box>
   );
 }

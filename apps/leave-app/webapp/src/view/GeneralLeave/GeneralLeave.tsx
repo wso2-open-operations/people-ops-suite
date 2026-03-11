@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,19 +13,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Stack } from "@mui/material";
+import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import { Box, Button, CircularProgress, Divider, Stack, Typography, useTheme } from "@mui/material";
 import { Dayjs } from "dayjs";
 import { useSnackbar } from "notistack";
 
 import { useEffect, useState } from "react";
 
-import { FormContainer } from "@root/src/component/common/FormContainer";
-import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { formatDateForApi, getLeaveEntitlement, submitLeaveRequest } from "@root/src/services/leaveService";
+import {
+  formatDateForApi,
+  getLeaveEntitlement,
+  submitLeaveRequest,
+} from "@root/src/services/leaveService";
 import { useAppSelector } from "@root/src/slices/store";
-import { DayPortion, EmployeeLocation, LeaveLabel, LeavePolicy, LeaveType, PeriodType } from "@root/src/types/types";
+import {
+  DayPortion,
+  EmployeeLocation,
+  LeaveLabel,
+  LeavePolicy,
+  LeaveType,
+  PeriodType,
+} from "@root/src/types/types";
 import AdditionalComment from "@root/src/view/GeneralLeave/component/AdditionalComment";
 import LeaveBalanceSummary from "@root/src/view/GeneralLeave/component/LeaveBalanceSummary";
 import LeaveDateSelection from "@root/src/view/GeneralLeave/component/LeaveDateSelection";
@@ -33,12 +42,12 @@ import LeaveSelection from "@root/src/view/GeneralLeave/component/LeaveSelection
 import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 
 export default function GeneralLeave() {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const userInfo = useAppSelector((state) => state.user.userInfo);
   const userLocation = userInfo?.location ?? null;
   const email = userInfo?.workEmail ?? "";
 
-  /** Return the primary leave type for the employee's location. */
   const getDefaultLeaveType = (location: string | null): LeaveType => {
     switch (location) {
       case EmployeeLocation.FR:
@@ -50,7 +59,6 @@ export default function GeneralLeave() {
     }
   };
 
-  /** Map a LeaveType enum value to its entitlement object key. */
   const LEAVE_TYPE_KEY_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: "congesPayes",
     [LeaveType.RTT]: "rtt",
@@ -61,7 +69,6 @@ export default function GeneralLeave() {
     [LeaveType.ANNUAL]: "annual",
   };
 
-  /** Map a LeaveType enum value to its user-friendly label. */
   const LEAVE_TYPE_LABEL_MAP: Record<string, string> = {
     [LeaveType.CONGES_PAYES]: LeaveLabel.CONGES_PAYES,
     [LeaveType.RTT]: LeaveLabel.RTT,
@@ -87,7 +94,6 @@ export default function GeneralLeave() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dateError, setDateError] = useState(false);
 
-  // Update the selected leave type when the user's location loads asynchronously.
   useEffect(() => {
     setSelectedLeaveType(getDefaultLeaveType(userLocation));
   }, [userLocation]);
@@ -121,7 +127,6 @@ export default function GeneralLeave() {
     try {
       setIsSubmitting(true);
 
-      // Determine periodType based on day portion selection
       let periodType: PeriodType;
       let isMorningLeave: boolean | null = null;
 
@@ -141,9 +146,8 @@ export default function GeneralLeave() {
           periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
           break;
       }
-      // Filter out mandatory emails from the recipients list for the API call
       const filteredEmailRecipients = emailRecipients.filter(
-        (email) => !mandatoryEmails.includes(email),
+        (recipientEmail) => !mandatoryEmails.includes(recipientEmail),
       );
 
       const payload = {
@@ -157,11 +161,7 @@ export default function GeneralLeave() {
         isPublicComment,
       };
 
-      // Over-limit warning for France/Spain locations (non-blocking)
-      if (
-        userLocation === EmployeeLocation.FR ||
-        userLocation === EmployeeLocation.ES
-      ) {
+      if (userLocation === EmployeeLocation.FR || userLocation === EmployeeLocation.ES) {
         try {
           const entitlements = await getLeaveEntitlement(email);
           if (entitlements.length > 0) {
@@ -180,16 +180,13 @@ export default function GeneralLeave() {
               }
             }
           }
-        } catch {
-          // Silently ignore — this is a best-effort check
-        }
+        } catch {}
       }
 
       await submitLeaveRequest(payload);
 
       enqueueSnackbar("Leave request submitted successfully!", { variant: "success" });
 
-      // Reset form
       setStartDate(null);
       setEndDate(null);
       setSelectedLeaveType(getDefaultLeaveType(userLocation));
@@ -206,16 +203,55 @@ export default function GeneralLeave() {
     }
   };
 
+  const sectionCard = {
+    backgroundColor: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.customBorder.territory.active}`,
+    borderRadius: "12px",
+    p: { xs: 2, md: 3 },
+  };
+
   return (
-    <Stack direction="column" gap="1rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
-      <FormContainer>
-        <Title firstWord="General" secondWord="Leave Submission" />
-        <LeaveBalanceSummary />
+    <Stack direction="column" gap={2.5} maxWidth={PAGE_MAX_WIDTH} mx="auto">
+      {/* Page Header */}
+      <Box>
+        <Typography
+          variant="h4"
+          sx={{
+            color: theme.palette.customText.primary.p1.active,
+            fontWeight: 600,
+          }}
+        >
+          <Box component="span" sx={{ color: theme.palette.primary.main }}>
+            General
+          </Box>{" "}
+          Leave Submission
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ color: theme.palette.customText.primary.p3.active, mt: 0.5 }}
+        >
+          Submit your leave request by filling in the details below
+        </Typography>
+      </Box>
+
+      {/* Leave Balance (France/Spain only) */}
+      <LeaveBalanceSummary />
+
+      {/* Date & Leave Type Section */}
+      <Box sx={sectionCard}>
         <Stack
-          direction={{ xs: "column", md: "row" }}
-          width="100%"
-          justifyContent={{ md: "space-between" }}
-          gap={{ xs: "1.5rem" }}
+          direction={{ xs: "column", lg: "row" }}
+          gap={3}
+          divider={
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                display: { xs: "none", lg: "block" },
+                borderColor: theme.palette.customBorder.territory.active,
+              }}
+            />
+          }
         >
           <LeaveDateSelection
             onDaysChange={setDaysSelected}
@@ -229,6 +265,15 @@ export default function GeneralLeave() {
             onErrorClear={() => setDateError(false)}
             selectedLeaveType={selectedLeaveType}
           />
+
+          {/* Mobile-only horizontal divider */}
+          <Divider
+            sx={{
+              display: { xs: "block", lg: "none" },
+              borderColor: theme.palette.customBorder.territory.active,
+            }}
+          />
+
           <LeaveSelection
             daysSelected={daysSelected}
             selectedLeaveType={selectedLeaveType}
@@ -238,20 +283,66 @@ export default function GeneralLeave() {
             location={userLocation}
           />
         </Stack>
-        <NotifyPeople
-          selectedEmails={emailRecipients}
-          onEmailsChange={setEmailRecipients}
-          onMandatoryEmailsChange={setMandatoryEmails}
-        />
-        <AdditionalComment
-          comment={comment}
-          onCommentChange={setComment}
-          isPublicComment={isPublicComment}
-          onPublicCommentChange={setIsPublicComment}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-        />
-      </FormContainer>
+      </Box>
+
+      {/* Notify & Comment Section */}
+      <Box sx={sectionCard}>
+        <Stack gap={3}>
+          <NotifyPeople
+            selectedEmails={emailRecipients}
+            onEmailsChange={setEmailRecipients}
+            onMandatoryEmailsChange={setMandatoryEmails}
+          />
+
+          <Divider sx={{ borderColor: theme.palette.customBorder.territory.active }} />
+
+          <AdditionalComment
+            comment={comment}
+            onCommentChange={setComment}
+            isPublicComment={isPublicComment}
+            onPublicCommentChange={setIsPublicComment}
+          />
+        </Stack>
+      </Box>
+
+      {/* Submit Bar */}
+      <Box
+        sx={{
+          ...sectionCard,
+          display: "flex",
+          justifyContent: "flex-end",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <Typography variant="caption" sx={{ color: theme.palette.customText.primary.p4.active }}>
+          {isPublicComment
+            ? "Your comment will be visible to all email recipients."
+            : "Your comment will only be visible to your lead."}
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          startIcon={
+            isSubmitting ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <SendRoundedIcon sx={{ fontSize: 18 }} />
+            )
+          }
+          sx={{
+            px: 4,
+            py: 1,
+            borderRadius: "10px",
+            fontWeight: 600,
+            textTransform: "none",
+            minWidth: 140,
+          }}
+        >
+          {isSubmitting ? "Submitting\u2026" : "Submit Leave"}
+        </Button>
+      </Box>
     </Stack>
   );
 }
