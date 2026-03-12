@@ -46,7 +46,7 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
   const is404 = error && "status" in error && error.status === 404;
   const initialMealOption = is404 ? null : (dinner?.mealOption ?? null);
   const orderPlaced = !!initialMealOption;
-  const isFormDisabled = isDodTimeActive;
+  const isFormDisabled = !isDodTimeActive;
 
   const handleOpenCancelDialog = useCallback(() => setIsCancelDialogOpen(true), []);
   const handleCloseCancelDialog = useCallback(() => setIsCancelDialogOpen(false), []);
