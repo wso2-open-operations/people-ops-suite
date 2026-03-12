@@ -803,7 +803,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                 'id', CAST(t.id AS CHAR),
-                                'businessUnitTeamId', CAST(but.business_unit_id AS CHAR),
+                                'mappingId', CAST(but.id AS CHAR),
                                 'name', t.name,
                                 'headCount', COALESCE((
                                     SELECT COUNT(*) FROM employee e
@@ -830,7 +830,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                     (
                                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                             'id', CAST(st.id AS CHAR),
-                                            'businessUnitTeamSubTeamId', CAST(butst.business_unit_team_id AS CHAR),
+                                            'mappingId', CAST(butst.id AS CHAR),
                                             'name', st.name,
                                             'headCount', COALESCE((
                                                 SELECT COUNT(*) FROM employee e
@@ -859,7 +859,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                 (
                                                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                                         'id', CAST(u.id AS CHAR),
-                                                        'businessUnitTeamSubTeamUnitId', CAST(butstu.business_unit_team_sub_team_id AS CHAR),
+                                                        'mappingId', CAST(butstu.id AS CHAR),
                                                         'name', u.name,
                                                         'headCount', COALESCE((
                                                             SELECT COUNT(*) FROM employee e
