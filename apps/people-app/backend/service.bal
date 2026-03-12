@@ -116,6 +116,55 @@ service http:InterceptableService / on new http:Listener(9090) {
         return {...employeeBasicInfo, privileges};
     }
 
+    # Validate EPF uniqueness.
+    #
+    # + epf - EPF number to validate
+    # + return - Whether the EPF already exists, or HTTP errors
+    resource function get employees/validate\-epf(http:RequestContext ctx, string epf)
+        returns record {|boolean exists;|}|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to validate EPF", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to validate EPF"
+                }
+            };
+        }
+
+        if epf.trim() == "" {
+            string customErr = "EPF is a mandatory query parameter";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        string|error? existing = database:getEmployeeByEpf(epf);
+        if existing is error {
+            string customErr = "Error occurred while validating EPF uniqueness";
+            log:printError(customErr, existing, epf = epf);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return {exists: existing is string};
+    }
+
     # Fetch employee detailed information.
     #
     # + employeeId - Employee ID
@@ -687,6 +736,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? epfOpt = payload.epf;
+        if epfOpt is string && epfOpt.trim() != "" {
+            string|error? existingEmp = database:getEmployeeByEpf(epfOpt);
+            if existingEmp is error {
+                string customErr = "Error occurred while validating EPF uniqueness";
+                log:printError(customErr, existingEmp, epf = epfOpt);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if existingEmp is string {
+                string customErr = "EPF already exists";
+                log:printWarn(customErr, epf = epfOpt);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+        }
+
         int|error employeeId = database:addEmployee(payload, userInfo.email);
         if employeeId is error {
             log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
@@ -810,7 +882,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK or HTTP errors
     resource function patch employees/[string employeeId]/job\-info(http:RequestContext ctx,
             database:UpdateEmployeeJobInfoPayload payload)
-        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -849,6 +921,29 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: "Employee information not found"
                 }
             };
+        }
+
+        string? epfOpt = payload.epf;
+        if epfOpt is string && epfOpt.trim() != "" {
+            string|error? existingEmp = database:getEmployeeByEpf(epfOpt);
+            if existingEmp is error {
+                string customErr = "Error occurred while validating EPF uniqueness for update";
+                log:printError(customErr, existingEmp, epf = epfOpt);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                    }
+                };
+            }
+            if existingEmp is string && existingEmp != employeeId {
+                string customErr = "EPF already exists for another employee";
+                log:printWarn(customErr, epf = epfOpt, employeeId = employeeId);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
         }
 
         error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);

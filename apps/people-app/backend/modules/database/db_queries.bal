@@ -48,6 +48,13 @@ isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery
 isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE id = ${id};`;
 
+# Fetch employee ID by EPF.
+#
+# + epf - Employee Provident Fund number
+# + return - Query to get employee ID by EPF number
+isolated function getEmployeeByEpfQuery(string epf) returns sql:ParameterizedQuery =>
+    `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
+
 # Fetch employee detailed information.
 #
 # + employeeId - Employee ID
@@ -353,6 +360,7 @@ isolated function getContinuousServiceRecordQuery(string workEmail) returns sql:
         e.secondary_job_title AS secondaryJobTitle,
         o.name AS office,
         bu.name AS businessUnit,
+        c.name AS company,
         t.name AS team,
         st.name AS subTeam,
         u.name AS unit
@@ -420,6 +428,7 @@ isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:Pa
         nic_or_passport,
         p.first_name AS firstName,
         p.last_name AS lastName,
+        full_name,
         title,
         dob,
         gender,
@@ -660,6 +669,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             nic_or_passport,
             first_name,
             last_name,
+            full_name,
             title,
             dob,
             gender,
@@ -681,6 +691,7 @@ isolated function addEmployeePersonalInfoQuery(CreatePersonalInfoPayload payload
             ${payload.nicOrPassport},
             ${payload.firstName},
             ${payload.lastName},
+            ${payload.fullName},
             ${payload.title},
             ${payload.dob},
             ${payload.gender},
@@ -812,6 +823,10 @@ isolated function updateEmployeePersonalInfoQuery(string employeeId, UpdateEmplo
 
     if payload.lastName != () {
         updates.push(`last_name = ${payload.lastName}`);
+    }
+
+    if payload.fullName != () {
+        updates.push(`full_name = ${payload.fullName}`);
     }
 
     if payload.title != () {
@@ -988,8 +1003,12 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`start_date = ${payload.startDate}`);
     }
 
-    if payload.secondaryJobTitle != () {
-        updates.push(`secondary_job_title = ${payload.secondaryJobTitle}`);
+    if payload.secondaryJobTitle is string {
+        if payload.secondaryJobTitle == "" {
+            updates.push(`secondary_job_title = NULL`);
+        } else {
+            updates.push(`secondary_job_title = ${payload.secondaryJobTitle}`);
+        }
     }
 
     if payload.managerEmail != () {
