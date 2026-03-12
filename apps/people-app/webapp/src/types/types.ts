@@ -59,7 +59,6 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   element?: React.ReactNode;
 }
 
-///
 export enum State {
   failed = "failed",
   success = "success",
