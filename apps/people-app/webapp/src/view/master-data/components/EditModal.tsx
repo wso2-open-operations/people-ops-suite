@@ -32,10 +32,10 @@ interface EditModalProps {
   onClose: () => void;
   data: Company | BusinessUnit | Team | SubTeam | Unit;
   type: string;
-  parentNode: Company | BusinessUnit | Team | SubTeam | null;
+  parentId: string;
 }
 
-export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, parentNode }) => {
+export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, parentId }) => {
   const theme = useTheme();
 
   const {
@@ -46,7 +46,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
     handleRenameCurrent,
     isLoading,
     isError,
-  } = useOrgEntityActions({ data, parentNode });
+  } = useOrgEntityActions({ data, parentId });
 
   if (isError || !entityTypeName) {
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
