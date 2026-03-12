@@ -48,7 +48,7 @@ export const DodForm = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const dispatch = useAppDispatch();
-  const [submitDinner] = useSubmitDinnerRequestMutation();
+  const [submitDinner, { isLoading: isSubmittingDinner }] = useSubmitDinnerRequestMutation();
 
   const handleSubmit = useCallback(
     async (mealOption: MealOption | null) => {
@@ -112,6 +112,7 @@ export const DodForm = ({
   const isUpdatingOrder = orderPlaced && formik.values.mealOption !== initialMealOption;
 
   const isSubmitDisabled =
+    isSubmittingDinner ||
     isFormDisabled ||
     !formik.values.mealOption ||
     (orderPlaced && formik.values.mealOption === initialMealOption);
