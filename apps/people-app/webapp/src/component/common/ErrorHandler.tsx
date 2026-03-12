@@ -13,13 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Container } from "@mui/material";
 
+import ErrorSvg from "@assets/images/error.svg";
 import Wso2Logo from "@assets/images/wso2-logo.svg";
 import StateWithImage from "@component/ui/StateWithImage";
-import ErrorSvg from "@assets/images/error.svg"
-import { ErrorHandlerProps } from "@root/src/utils/types";
+
+export interface ErrorHandlerProps {
+  message: string | null;
+}
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
   return (
@@ -30,17 +32,12 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
       }}
     >
       <Container maxWidth="md">
-        <Box sx={{display: "flex", flexDirection: "column", alignItems: "center", gap: 2}}>
-            <img
-              alt="logo"
-              width="150"
-              height="auto"
-              src={Wso2Logo}
-            />
-            <StateWithImage
-              message={props.message || "Something went wrong! Please try again later."}
-              imageUrl={ErrorSvg}
-            />
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <img alt="logo" width="150" height="auto" src={Wso2Logo} />
+          <StateWithImage
+            message={props.message || "Something went wrong! Please try again later."}
+            imageUrl={ErrorSvg}
+          />
         </Box>
       </Container>
     </Box>
