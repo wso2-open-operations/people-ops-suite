@@ -45,7 +45,7 @@ export interface Unit {
 
 export interface SubTeam {
   id: string;
-  mappingId: string
+  mappingId: string;
   name: string;
   headCount: number;
   head?: Head;
@@ -72,7 +72,7 @@ export interface BusinessUnit {
   teams: Team[];
 }
 
-export type OrgStructure = Company | BusinessUnit | Team | SubTeam | Unit
+export type OrgStructure = Company | BusinessUnit | Team | SubTeam | Unit;
 
 export interface Company {
   id: string;
@@ -87,6 +87,16 @@ export interface PayloadType {
   name: string;
   headEmail: string;
   functionalLeadEmail: string;
+}
+
+interface OrgNodeLinkInfo {
+  id: string;
+  functionalLeadEmail: string;
+}
+export interface OrgNodePayload {
+  name: string;
+  headEmail: string;
+  orgNodeLinkInfo?: OrgNodeLinkInfo;
 }
 
 export const organizationApi = createApi({
@@ -132,6 +142,54 @@ export const organizationApi = createApi({
         return response;
       },
       providesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    addBusinessUnits: builder.mutation<void, OrgNodePayload>({
+      queryFn: async (payload, { getState }, _extraOptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/business-units`,
+          method: "POST",
+          body: payload,
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    addTeam: builder.mutation<void, { buId: string; payload: OrgNodePayload }>({
+      queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/teams`,
+          method: "POST",
+          body: payload,
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    addSubTeam: builder.mutation<void, { teamId: string; payload: OrgNodePayload }>({
+      queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/sub-teams`,
+          method: "POST",
+          body: payload,
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
+    }),
+
+    addUnit: builder.mutation<void, { subTeamId: string; payload: OrgNodePayload }>({
+      queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
+        const data = await baseQuery({
+          url: `${AppConfig.serviceUrls.organization}/units`,
+          method: "POST",
+          body: payload,
+        });
+        return data.error ? { error: data.error } : { data: undefined };
+      },
+      invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
     updateBusinessUnit: builder.mutation<void, { id: string; payload: Partial<PayloadType> }>({
@@ -321,6 +379,10 @@ export const organizationApi = createApi({
 
 export const {
   useGetOrgStructureQuery,
+  useAddBusinessUnitsMutation,
+  useAddTeamMutation,
+  useAddSubTeamMutation,
+  useAddUnitMutation,
   useUpdateBusinessUnitMutation,
   useUpdateTeamMutation,
   useUpdateSubTeamMutation,
