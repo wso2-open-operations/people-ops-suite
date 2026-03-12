@@ -20,7 +20,6 @@ import type {
   OrganizationInfo,
   SubTeamState,
   TeamState,
-  UnitState,
 } from "@slices/organizationSlice/organizationStructure";
 
 export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState;
@@ -44,47 +43,37 @@ export default function useFindParent(
   return allChildren.find((node) => node.id === parentId) ?? null;
 }
 
-export function useFindParentTwo(
+export function useFindMappingId(
   orgItems: OrganizationInfo | null,
   parentId: string,
+  nodeType: NodeType,
 ): string | null {
   if (!orgItems) return null;
 
-  if (orgItems.company.id === parentId) {
-    return parentId;
-  }
-
-  const allChildren: OrgStructureState[] = [
-    ...orgItems.businessUnits,
-    ...orgItems.teams,
-    ...orgItems.subTeams,
-  ];
-
-  const t = allChildren.find((node) => node.id === parentId) ?? null;
-
-  if (!t) return null;
-
-  let selectedId: string | null = null;
-
-  switch (t.type) {
-    case NodeType.Company:
-      selectedId = t.id;
-      break;
+  switch (nodeType) {
     case NodeType.BusinessUnit:
-      selectedId = t.id;
-      break;
-    case NodeType.Team:
-      selectedId = (t as TeamState).mappingId;
-      break;
-    case NodeType.SubTeam:
-      selectedId = (t as SubTeamState).mappingId;
-      break;
-    case NodeType.Unit:
-      selectedId = (t as UnitState).mappingId;
-      break;
-    default:
-      selectedId = null;
-  }
+      // Parent is the company; its id is the mapping reference
+      return orgItems.company.id === parentId ? orgItems.company.id : null;
 
-  return selectedId;
+    case NodeType.Team: {
+      // Parent is a BusinessUnit → BU has no mappingId, use its id
+      const bu = orgItems.businessUnits.find((node) => node.id === parentId) ?? null;
+      return bu ? bu.id : null;
+    }
+
+    case NodeType.SubTeam: {
+      // Parent is a Team → Team has a mappingId
+      const team = orgItems.teams.find((node) => node.id === parentId) ?? null;
+      return team ? team.mappingId : null;
+    }
+
+    case NodeType.Unit: {
+      // Parent is a SubTeam → SubTeam has a mappingId
+      const subTeam = orgItems.subTeams.find((node) => node.id === parentId) ?? null;
+      return subTeam ? subTeam.mappingId : null;
+    }
+
+    default:
+      return null;
+  }
 }
