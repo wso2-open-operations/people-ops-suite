@@ -62,7 +62,6 @@ export interface Team {
   functionalLead?: FunctionalLead;
   subTeams: SubTeam[];
 }
-
 export interface BusinessUnit {
   id: string;
   name: string;
