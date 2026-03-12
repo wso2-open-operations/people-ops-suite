@@ -13,9 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Email } from "@mui/icons-material";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Autocomplete,
+  Avatar,
+  Box,
+  Chip,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
+} from "@mui/material";
 
 import { useEffect, useState } from "react";
 
@@ -26,6 +34,7 @@ import { CachedMail, State } from "@root/src/types/types";
 
 interface EmployeeOption {
   label: string;
+  displayName: string;
   email: string;
   thumbnail: string | null;
   isFixed?: boolean;
@@ -58,6 +67,7 @@ export default function NotifyPeople({
 
     const mandatoryOptions = defaultMails.mandatoryMails.map((mail) => ({
       label: mail.email,
+      displayName: mail.email,
       email: mail.email,
       thumbnail: mail.thumbnail || null,
       isFixed: true,
@@ -67,6 +77,7 @@ export default function NotifyPeople({
       .filter((mail) => !defaultMails.mandatoryMails.find((m) => m.email === mail.email))
       .map((mail) => ({
         label: mail.email,
+        displayName: mail.email,
         email: mail.email,
         thumbnail: mail.thumbnail || null,
         isFixed: false,
@@ -85,15 +96,28 @@ export default function NotifyPeople({
     if (employees.length > 0) {
       const employeeOptionsFromApi = employees.map((employee) => ({
         label: `${employee.firstName} ${employee.lastName} (${employee.workEmail})`,
+        displayName: `${employee.firstName} ${employee.lastName}`.trim(),
         email: employee.workEmail,
         thumbnail: employee.employeeThumbnail,
         isFixed: fixedEmails.includes(employee.workEmail),
       }));
 
       setEmployeeOptions((prev) => {
+        const apiByEmail = new Map(employeeOptionsFromApi.map((o) => [o.email, o]));
         const existingEmails = new Set(prev.map((o) => o.email));
 
-        return [...prev, ...employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email))];
+        // Update existing cached entries with real name + thumbnail from API
+        const updated = prev.map((opt) => {
+          const apiMatch = apiByEmail.get(opt.email);
+          if (apiMatch) {
+            return { ...opt, displayName: apiMatch.displayName, thumbnail: apiMatch.thumbnail };
+          }
+          return opt;
+        });
+
+        // Append API employees not already in the list
+        const newEntries = employeeOptionsFromApi.filter((opt) => !existingEmails.has(opt.email));
+        return [...updated, ...newEntries];
       });
     }
   }, [employees, fixedEmails]);
@@ -130,59 +154,43 @@ export default function NotifyPeople({
         }}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(option, value) => option.email === value.email}
+        renderOption={(props, option) => (
+          <li
+            {...props}
+            key={option.email}
+            style={{ display: "flex", alignItems: "center", gap: 12 }}
+          >
+            <Avatar src={option.thumbnail ?? undefined} sx={{ width: 32, height: 32 }}>
+              {option.displayName.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="body2" noWrap>
+                {option.displayName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {option.email}
+              </Typography>
+            </Box>
+          </li>
+        )}
         renderInput={(params) => (
           <TextField {...params} label="Search people or groups" size="small" />
         )}
         renderTags={(value, getTagProps) =>
-          value.map((option, index) => {
-            const ChipAvatar = option.thumbnail ? (
-              <Avatar
-                src={option.thumbnail}
-                alt={option.email}
-                imgProps={{
-                  onError: (e: any) => {
-                    e.target.style.display = "none";
-                  },
-                }}
-                sx={{ width: 24, height: 24 }}
-              >
-                {!option.thumbnail && (
-                  <Email
-                    sx={{
-                      fontSize: 12,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  />
-                )}
-              </Avatar>
-            ) : (
-              <Avatar
-                sx={{
-                  bgcolor: theme.palette.primary.main,
-                  width: 24,
-                  height: 24,
-                }}
-              >
-                <Email
-                  sx={{
-                    fontSize: 12,
-                    color: theme.palette.primary.contrastText,
-                  }}
-                />
-              </Avatar>
-            );
-
-            return (
-              <Chip
-                {...getTagProps({ index })}
-                key={option.email}
-                label={option.email}
-                avatar={ChipAvatar}
-                size="small"
-                onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
-              />
-            );
-          })
+          value.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option.email}
+              label={option.displayName}
+              avatar={
+                <Avatar src={option.thumbnail ?? undefined} sx={{ width: 24, height: 24 }}>
+                  {option.displayName.charAt(0).toUpperCase()}
+                </Avatar>
+              }
+              size="small"
+              onDelete={option.isFixed ? undefined : getTagProps({ index }).onDelete}
+            />
+          ))
         }
         sx={{
           "& .MuiChip-root": {
