@@ -15,7 +15,7 @@
 // under the License.
 import { useEffect, useState } from "react";
 
-import { DOD_END_HOUR, DOD_START_HOUR } from "../constants";
+import { DOD_END_HOUR, DOD_START_HOUR } from "@config/constant";
 
 export const useDodTimeActive = () => {
   const computeIsActive = () => {
