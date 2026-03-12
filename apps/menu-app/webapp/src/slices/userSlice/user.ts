@@ -60,10 +60,12 @@ export const UserSlice = createSlice({
       .addMatcher(userApi.endpoints.getUserInfo.matchFulfilled, (state, action) => {
         state.userInfo = action.payload;
         state.state = State.success;
+        state.stateMessage = "Successfully fetched user info";
         state.errorMessage = null;
       })
       .addMatcher(userApi.endpoints.getUserInfo.matchRejected, (state, action) => {
         state.state = State.failed;
+        state.stateMessage = null;
         if (action.payload?.status === 401) {
           state.errorMessage =
             "Oops! Looks like you are not authorized to access this application.";
