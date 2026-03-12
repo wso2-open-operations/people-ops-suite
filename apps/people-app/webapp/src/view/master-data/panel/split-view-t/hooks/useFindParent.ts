@@ -13,12 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { NodeType } from "@root/src/utils/types";
 import type {
   BusinessUnitState,
   CompanyState,
   OrganizationInfo,
   SubTeamState,
   TeamState,
+  UnitState,
 } from "@slices/organizationSlice/organizationStructure";
 
 export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState;
@@ -40,4 +42,49 @@ export default function useFindParent(
   ];
 
   return allChildren.find((node) => node.id === parentId) ?? null;
+}
+
+export function useFindParentTwo(
+  orgItems: OrganizationInfo | null,
+  parentId: string,
+): string | null {
+  if (!orgItems) return null;
+
+  if (orgItems.company.id === parentId) {
+    return parentId;
+  }
+
+  const allChildren: OrgStructureState[] = [
+    ...orgItems.businessUnits,
+    ...orgItems.teams,
+    ...orgItems.subTeams,
+  ];
+
+  const t = allChildren.find((node) => node.id === parentId) ?? null;
+
+  if (!t) return null;
+
+  let selectedId: string | null = null;
+
+  switch (t.type) {
+    case NodeType.Company:
+      selectedId = t.id;
+      break;
+    case NodeType.BusinessUnit:
+      selectedId = t.id;
+      break;
+    case NodeType.Team:
+      selectedId = (t as TeamState).mappingId;
+      break;
+    case NodeType.SubTeam:
+      selectedId = (t as SubTeamState).mappingId;
+      break;
+    case NodeType.Unit:
+      selectedId = (t as UnitState).mappingId;
+      break;
+    default:
+      selectedId = null;
+  }
+
+  return selectedId;
 }
