@@ -262,6 +262,8 @@ export default function JobInfoStep() {
     designations: false,
     offices: false,
   });
+  
+  const latestEpfRef = useRef<string>("");
 
   const textFieldSx = useMemo(
     () => ({
@@ -755,19 +757,22 @@ export default function JobInfoStep() {
               onBlur={async (e: { target: { value: string } }) => {
                 handleBlur(e);
                 const epf = e.target.value?.trim();
+                latestEpfRef.current = epf;
                 if (!epf) {
-                  setFieldError("epf", undefined as any);
+                  setFieldError("epf", undefined);
                   return;
                 }
 
                 try {
                   const exists = await dispatch(validateEpf(epf)).unwrap();
+                  if (latestEpfRef.current !== epf) return;
                   if (exists) {
                     setFieldError("epf", "EPF already exists");
                   } else {
-                    setFieldError("epf", undefined as any);
+                    setFieldError("epf", undefined);
                   }
                 } catch (err) {
+                  if (latestEpfRef.current !== epf) return;
                   setFieldError("epf", "Failed to validate EPF");
                 }
               }}

@@ -383,8 +383,12 @@ function FormActionsBar({
         }
         onClick={async () => {
           if (activeStep === 1) {
-            const epf = (values.epf ?? "").toString().trim();
-            const initialEpf = (initialEditValues?.epf ?? "").toString().trim();
+            const epf = (values.epf ?? "")
+              .toString()
+              .trim();
+            const initialEpf = (initialEditValues?.epf ?? "")
+              .toString()
+              .trim();
             if (epf && (!isEditMode || epf !== initialEpf)) {
               const fieldErrors = await validateForm();
               if (fieldErrors.epf) {
