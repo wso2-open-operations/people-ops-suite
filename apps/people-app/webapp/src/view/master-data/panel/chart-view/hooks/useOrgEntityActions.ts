@@ -22,10 +22,10 @@ import { useOrgMutation } from "./useOrgMutations";
 
 interface UseOrgEntityActionsParams {
   data: Company | BusinessUnit | Team | SubTeam | Unit;
-  parentNode: Company | BusinessUnit | Team | SubTeam | null;
+  parentId: string;
 }
 
-export function useOrgEntityActions({ data, parentNode }: UseOrgEntityActionsParams) {
+export function useOrgEntityActions({ data, parentId }: UseOrgEntityActionsParams) {
   const {
     updateBusinessUnit,
     updateTeam,
@@ -49,7 +49,6 @@ export function useOrgEntityActions({ data, parentNode }: UseOrgEntityActionsPar
   const handleLeadSwap = async (selectedEmployee: EmployeeBasicInfo) => {
     const payload = { functionalLeadEmail: selectedEmployee.workEmail };
     const entityId = data.id;
-    const parentId = parentNode?.id ?? null;
 
     switch (entityTypeName) {
       case UnitType.Team:
@@ -94,13 +93,13 @@ export function useOrgEntityActions({ data, parentNode }: UseOrgEntityActionsPar
         await deleteBusinessUnit({ id: data.id });
         break;
       case UnitType.Team:
-        if (parentNode) await deleteBusinessUnitTeam({ buId: parentNode.id, teamId: data.id });
+        deleteBusinessUnitTeam({ buId: parentId, teamId: data.id });
         break;
       case UnitType.SubTeam:
-        if (parentNode) await deleteTeamSubTeam({ teamId: parentNode.id, subTeamId: data.id });
+        await deleteTeamSubTeam({ teamId: parentId, subTeamId: data.id });
         break;
       case UnitType.Unit:
-        if (parentNode) await deleteSubTeamUnit({ subTeamId: parentNode.id, unitId: data.id });
+        await deleteSubTeamUnit({ subTeamId: parentId, unitId: data.id });
         break;
     }
   };
