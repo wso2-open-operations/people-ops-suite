@@ -79,16 +79,12 @@ interface AddOrgItemPayload {
 export default function AddPage(props: AddPageProps) {
   const { open, orgInfo, nodeType, parentId, onClose } = props;
 
-  console.log("Add page : ", parentId);
-
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const theme = useTheme();
   const [addBusinessUnits] = useAddBusinessUnitsMutation();
   const [addTeam] = useAddTeamMutation();
   const [addSubTeam] = useAddSubTeamMutation();
   const [addUnit] = useAddUnitMutation();
-
-  console.log("Org info : ", orgInfo);
 
   const {
     control,
