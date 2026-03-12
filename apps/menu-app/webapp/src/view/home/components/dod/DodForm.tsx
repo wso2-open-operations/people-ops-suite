@@ -19,6 +19,7 @@ import { useFormik } from "formik";
 import { useCallback } from "react";
 
 import { DinnerRequest, MealOption } from "@/types/types";
+import { MEAL_OPTIONS } from "@config/constant";
 import { useSubmitDinnerRequestMutation } from "@services/dod.api";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { useAppDispatch } from "@slices/store";
@@ -26,7 +27,6 @@ import { useAppDispatch } from "@slices/store";
 import DodInfoMessage from "./DodInfoMessage";
 import { MealOptionBox } from "./MealOptionBox";
 import { OrderInfoSection } from "./OrderInfo";
-import { MEAL_OPTIONS } from "./constants";
 
 interface DodFormProps {
   dinner: DinnerRequest | undefined;
