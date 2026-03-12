@@ -19,6 +19,8 @@ import {
   Avatar,
   Box,
   Chip,
+  CircularProgress,
+  InputAdornment,
   Stack,
   TextField,
   Typography,
@@ -57,7 +59,7 @@ export default function NotifyPeople({
 
   const employeeState = useAppSelector(selectEmployeeState);
   const employees = useAppSelector(selectEmployees);
-  const loading = employeeState === State.loading;
+  const loading = employeeState === State.idle || employeeState === State.loading;
 
   const appConfig = useAppSelector(selectAppConfig);
   useEffect(() => {
@@ -173,8 +175,29 @@ export default function NotifyPeople({
             </Box>
           </li>
         )}
+        disabled={loading}
         renderInput={(params) => (
-          <TextField {...params} label="Search people or groups" size="small" />
+          <TextField
+            {...params}
+            label="Search people or groups"
+            size="small"
+            placeholder={loading ? "Loading employees..." : undefined}
+            slotProps={{
+              input: {
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loading && (
+                      <InputAdornment position="end">
+                        <CircularProgress size={18} />
+                      </InputAdornment>
+                    )}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              },
+            }}
+          />
         )}
         renderTags={(value, getTagProps) =>
           value.map((option, index) => (
