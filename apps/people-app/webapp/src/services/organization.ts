@@ -36,6 +36,7 @@ export interface FunctionalLead {
 
 export interface Unit {
   id: string;
+  mappingId: string;
   name: string;
   headCount: number;
   head?: Head;
@@ -44,6 +45,7 @@ export interface Unit {
 
 export interface SubTeam {
   id: string;
+  mappingId: string
   name: string;
   headCount: number;
   head?: Head;
@@ -53,6 +55,7 @@ export interface SubTeam {
 
 export interface Team {
   id: string;
+  mappingId: string;
   name: string;
   headCount: number;
   head?: Head;
