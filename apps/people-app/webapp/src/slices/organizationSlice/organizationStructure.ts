@@ -27,25 +27,21 @@ export interface CompanyState extends Company {
 }
 
 export interface BusinessUnitState extends BusinessUnit {
-  parentId: string;
   type: NodeType;
   teams: TeamState[];
 }
 
 export interface TeamState extends Team {
-  parentId: string;
   type: NodeType;
   subTeams: SubTeamState[];
 }
 
 export interface SubTeamState extends SubTeam {
-  parentId: string;
   type: NodeType;
   units: UnitState[];
 }
 
 export interface UnitState extends Unit {
-  parentId: string;
   type: NodeType;
 }
 
