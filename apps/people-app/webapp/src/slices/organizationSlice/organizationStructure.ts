@@ -19,29 +19,32 @@ import { NodeType } from "@root/src/utils/types";
 import { normalizeCompanyToOrganizationState } from "@root/src/utils/utils";
 import type { BusinessUnit, Company, SubTeam, Team, Unit } from "@services/organization";
 import { organizationApi } from "@services/organization";
-
-import { State } from "../authSlice/auth";
+import { State } from "@slices/authSlice/auth";
 
 export interface CompanyState extends Company {
   type: NodeType;
 }
 
 export interface BusinessUnitState extends BusinessUnit {
+  parentId: string;
   type: NodeType;
   teams: TeamState[];
 }
 
 export interface TeamState extends Team {
+  parentId: string;
   type: NodeType;
   subTeams: SubTeamState[];
 }
 
 export interface SubTeamState extends SubTeam {
+  parentId: string;
   type: NodeType;
   units: UnitState[];
 }
 
 export interface UnitState extends Unit {
+  parentId: string;
   type: NodeType;
 }
 
