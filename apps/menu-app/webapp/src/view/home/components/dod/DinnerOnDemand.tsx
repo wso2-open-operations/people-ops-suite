@@ -22,7 +22,7 @@ import { FishIcon } from "lucide-react";
 import { Ham } from "lucide-react";
 import { LeafyGreen } from "lucide-react";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DinnerRequest, MealOption } from "@/types/types";
 import emptyLogo from "@assets/animations/clock-time.json";
@@ -36,6 +36,7 @@ import CancelModal from "./CancelModal";
 import DodInfoMessage from "./DodInfoMessage";
 import { MealOptionBox } from "./MealOptionBox";
 import { OrderInfoSection } from "./OrderInfo";
+import { isDodTimeActive } from "../utils/utils.ts"
 
 const mealOptionsBox = [
   { value: "Chicken", label: "Chicken", icon: <Ham /> },
@@ -57,17 +58,6 @@ export default function DinnerOnDemand({ dinner, error }: DinnerOnDemandProps) {
   const [submitDinner] = useSubmitDinnerRequestMutation();
 
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState<boolean>(false);
-
-  const isDodTimeActive = useMemo(() => {
-    const now = new Date();
-    const startTime = new Date(now);
-    startTime.setHours(16, 0, 0, 0);
-    const endTime = new Date(now);
-    endTime.setHours(19, 0, 0, 0);
-
-    return now >= startTime && now <= endTime;
-  }, []);
-
   const is404 = error && "status" in error && error.status === 404;
   const mealOptionsDefault: MealOption | null = is404 ? null : dinner?.mealOption || null;
   const orderPlaced = mealOptionsDefault !== null;
