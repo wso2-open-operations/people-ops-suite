@@ -28,6 +28,7 @@ export interface EmployeePersonalInfo {
   nicOrPassport: string;
   firstName: string;
   lastName: string;
+  fullName: string;
   title: string;
   dob: string;
   gender: string;
@@ -48,6 +49,7 @@ export interface EmployeePersonalInfoUpdate {
   nicOrPassport?: string | null;
   firstName?: string | null;
   lastName?: string | null;
+  fullName?: string | null;
   title?: string | null;
   dob?: string | null;
   gender?: string | null;

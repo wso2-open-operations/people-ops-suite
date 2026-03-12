@@ -32,7 +32,7 @@ export interface Employee {
   lastName: string;
   workEmail: string;
   employeeThumbnail: string | null;
-  secondaryJobTitle: string;
+  secondaryJobTitle: string | null;
   epf: string;
   workLocation: string;
   startDate: string;
@@ -87,6 +87,7 @@ export type CreatePersonalInfoPayload = {
   nicOrPassport: string;
   firstName?: string;
   lastName?: string;
+  fullName?: string;
   title?: string;
   gender?: string;
   dob?: string;
@@ -146,7 +147,7 @@ export type CreateEmployeePayload = {
   firstName: string;
   lastName: string;
   epf?: string;
-  secondaryJobTitle: string;
+  secondaryJobTitle?: string;
   workLocation: string;
   workEmail: string;
   startDate: string;
@@ -157,6 +158,7 @@ export type CreateEmployeePayload = {
   probationEndDate?: string;
   agreementEndDate?: string;
   employmentTypeId?: number;
+  employeeId?: string;
   designationId: number;
   companyId: number;
   officeId?: number;
@@ -199,7 +201,7 @@ export interface ContinuousServiceRecordInfo {
   managerEmail: string;
   additionalManagerEmails?: string | null;
   designation: string;
-  secondaryJobTitle: string;
+  secondaryJobTitle?: string | null;
   company: string;
   office?: string | null;
   businessUnit: string;
@@ -462,6 +464,33 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
           ? "Error fetching continuous service record"
           : error.response?.data?.message ||
             "An unknown error occurred while fetching continuous service record";
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const validateEpf = createAsyncThunk(
+  "employees/validateEpf",
+  async (epf: string, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.validateEpf}?epf=${encodeURIComponent(epf)}`,
+      );
+      return resp?.data?.exists as boolean;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const errorMessage =
+        status === HttpStatusCode.InternalServerError
+          ? "Error validating EPF"
+          : error.response?.data?.message || "Failed to validate EPF";
 
       dispatch(
         enqueueSnackbarMessage({
