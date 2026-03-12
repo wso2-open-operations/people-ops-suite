@@ -26,10 +26,10 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import { useRecolorLottie } from "@hooks/useRecolorLottie";
 import { RootState, useAppSelector } from "@slices/store";
 
-import CancelModal from "./CancelModal";
-import { DodForm } from "./DodForm";
-import DodInfoMessage from "./DodInfoMessage";
-import { useDodTimeActive } from "./hooks/useDodTimeActive";
+import CancelModal from "./components/dod/CancelModal";
+import { DodForm } from "./components/dod/DodForm";
+import DodInfoMessage from "./components/dod/DodInfoMessage";
+import { useDodTimeActive } from "./components/dod/hooks/useDodTimeActive";
 
 interface DinnerOnDemandProps {
   dinner?: DinnerRequest;

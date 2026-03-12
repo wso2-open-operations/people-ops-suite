@@ -21,8 +21,8 @@ import PreLoader from "@root/src/component/common/PreLoader";
 import { useGetDinnerRequestQuery } from "@root/src/services/dod.api";
 import { useGetMenuQuery } from "@root/src/services/menu.api";
 
-import DinnerOnDemand from "./components/dod/DinnerOnDemand";
-import Menu from "./components/menu/Menu";
+import DinnerOnDemand from "./DinnerOnDemand";
+import Menu from "./Menu";
 
 export default function Home() {
   const { data: menuData, isLoading: isMenuLoading, isError: isMenuError } = useGetMenuQuery();

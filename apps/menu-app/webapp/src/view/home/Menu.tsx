@@ -19,7 +19,7 @@ import ErrorHandler from "@component/common/ErrorHandler";
 import { formatMenuData } from "@root/src/utils/utils";
 import { Menu as MenuData } from "@services/menu.api";
 
-import MenuCard from "./MenuCard";
+import MenuCard from "./components/menu/MenuCard";
 
 interface MenuProps {
   data: MenuData | undefined;
