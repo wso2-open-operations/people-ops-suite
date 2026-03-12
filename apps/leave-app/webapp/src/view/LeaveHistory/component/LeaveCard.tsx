@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
   Box,
   Button,
@@ -79,9 +79,12 @@ export default function LeaveCard({
     today.setHours(0, 0, 0, 0);
     const leaveStart = new Date(startDate);
     leaveStart.setHours(0, 0, 0, 0);
-    const diffInDays = (leaveStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-    return diffInDays < 1;
+    // Block cancellation if leave start date is more than 30 days in the past
+    const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
+    const diffInMs = leaveStart.getTime() - today.getTime();
+    return diffInMs < -oneMonthMs;
   };
+
   const formattedLabel = `${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()} Leave`;
 
   return (
@@ -122,22 +125,19 @@ export default function LeaveCard({
                       width: "32px",
                       height: "32px",
                       borderRadius: "4px",
+                      backgroundColor: "transparent",
                       color: isCancelDisabled()
                         ? theme.palette.text.disabled
-                        : theme.palette.common.white,
-                      backgroundColor: isCancelDisabled()
-                        ? theme.palette.action.disabledBackground
-                        : theme.palette.error.main,
-                      "&:hover": {
-                        backgroundColor: theme.palette.error.dark,
-                      },
+                        : theme.palette.primary.main,
                       "&.Mui-disabled": {
-                        backgroundColor: theme.palette.action.disabledBackground,
                         color: theme.palette.text.disabled,
+                      },
+                      "&:hover": {
+                        backgroundColor: "transparent",
                       },
                     }}
                   >
-                    <CloseIcon fontSize="small" />
+                    <DeleteIcon fontSize="medium" />
                   </IconButton>
                 </span>
               </Tooltip>
@@ -160,8 +160,8 @@ export default function LeaveCard({
                 {/* Month header */}
                 <Box
                   sx={{
-                    backgroundColor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
+                    borderBottom: `2px solid ${theme.palette.primary.main}`,
+                    color: theme.palette.text.primary,
                     textAlign: "center",
                     py: "2px",
                     flex: "0 0 auto",

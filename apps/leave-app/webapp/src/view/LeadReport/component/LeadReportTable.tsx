@@ -14,6 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
@@ -27,6 +28,7 @@ interface LeadReportTableProps {
 }
 
 export default function LeadReportTable({ reportData, loading }: LeadReportTableProps) {
+  const theme = useTheme();
   const rows = useMemo(() => {
     if (!reportData) return [];
 
@@ -34,6 +36,11 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
       id: email,
       employee: email,
       annual: data.casual || 0, // since annual and casual are combined
+      congesPayes: data.conges_payes || 0,
+      rtt: data.rtt || 0,
+      spainAnnual: data.spain_annual || 0,
+      spainCasual: data.spain_casual || 0,
+      sick: data.sick || 0,
       paternity: data.paternity || 0,
       maternity: data.maternity || 0,
       lieu: data.lieu || 0,
@@ -52,6 +59,36 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
     {
       field: "annual",
       headerName: "Annual/Casual",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "congesPayes",
+      headerName: "Congés Payés",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "rtt",
+      headerName: "RTT",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "spainAnnual",
+      headerName: "Annual (ES)",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "spainCasual",
+      headerName: "Casual (ES)",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "sick",
+      headerName: "Sick",
       type: "number",
       flex: 1,
     },
@@ -102,6 +139,16 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
         initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
         pageSizeOptions={[5, 10, 25]}
         disableRowSelectionOnClick
+        showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
     </Box>
   );

@@ -15,6 +15,7 @@
 // under the License.
 
 import List from "@mui/material/List";
+import pJson from "@root/package.json";
 import { SIDEBAR_WIDTH } from "@config/ui";
 import { ColorModeContext } from "@src/App";
 import MuiDrawer from "@mui/material/Drawer";
@@ -158,7 +159,7 @@ const Sidebar = (props: SidebarProps) => {
                         </Typography>
                       </span>
                     </IconButton>
-                  )
+                  ),
               )}
               <IconButton
                 onClick={colorMode.toggleColorMode}
@@ -228,6 +229,25 @@ const Sidebar = (props: SidebarProps) => {
               </IconButton>
             </Stack>
           </DrawerFooter>
+          <Typography
+            variant="caption"
+            sx={{
+              position: "absolute",
+              bottom: 4,
+              left: 0,
+              right: 0,
+              textAlign: "center",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "0.65rem",
+              whiteSpace: props.open ? "nowrap" : "normal",
+              lineHeight: props.open ? "inherit" : 1.2,
+              px: 0.5,
+            }}
+          >
+            {props.open
+              ? `v ${pJson.version} | © ${new Date().getFullYear()} WSO2 LLC`
+              : `v${pJson.version}`}
+          </Typography>
         </Drawer>
       )}
     </ColorModeContext.Consumer>
@@ -309,5 +329,5 @@ export const DrawerHeader = styled("div")<DrawerHeaderInterface>(
     ...(open && {
       justifyContent: "flex-start",
     }),
-  })
+  }),
 );

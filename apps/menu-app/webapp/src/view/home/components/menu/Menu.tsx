@@ -13,16 +13,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Box } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 
 import ErrorHandler from "@component/common/ErrorHandler";
 import BackdropProgress from "@component/ui/BackdropProgress";
+import { formatMenuData } from "@root/src/utils/utils";
 import { useGetMenuQuery } from "@services/menu.api";
 
 import MenuCard from "./MenuCard";
 
 export default function Menu() {
   const { data, isLoading, isError } = useGetMenuQuery();
+  const theme = useTheme();
 
   if (isLoading) {
     return <BackdropProgress open={isLoading} />;
@@ -33,35 +35,35 @@ export default function Menu() {
   }
 
   const { date, ...meals } = data;
+  const formatDate = formatMenuData(date);
 
   if (!meals.breakfast.title && !meals.lunch.title) {
-    const date = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-
-    return <ErrorHandler message={`No menu available on ${date}`} />;
+    return <ErrorHandler message={`No menu available on ${formatDate}`} />;
   }
 
   return (
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "1fr",
-          md: "repeat(2, 1fr)",
-          lg: "repeat(3, 1fr)",
-        },
-        gap: 2,
-      }}
-    >
-      {Object.entries(meals).map(([mealType, mealData]) => {
-        if (!mealData.title) return null;
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Typography variant="body1" sx={{ color: theme.palette.customText.primary.p2.active, ml: 1 }}>
+        {formatDate}
+      </Typography>
 
-        return <MenuCard key={mealType} mealType={mealType} mealData={mealData} />;
-      })}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "repeat(2, 1fr)",
+            lg: "repeat(3, 1fr)",
+          },
+          gap: 2,
+        }}
+      >
+        {Object.entries(meals).map(([mealType, mealData]) => {
+          if (!mealData.title) return null;
+
+          return <MenuCard key={mealType} mealType={mealType} mealData={mealData} />;
+        })}
+      </Box>
     </Box>
   );
 }

@@ -16,9 +16,16 @@
 
 import React from "react";
 
-import { NonIndexRouteObject } from "react-router-dom";
+import {
+  NonIndexRouteObject,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import GroupsIcon from "@mui/icons-material/Groups";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import GroupIcon from "@mui/icons-material/Group";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
@@ -31,6 +38,7 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
+  hideFromSidebar?: boolean;
 }
 
 export interface RouteDetail {
@@ -42,7 +50,18 @@ export interface RouteDetail {
   text: string;
   children?: RouteObjectWithRole[];
   bottomNav?: boolean;
+  hideFromSidebar?: boolean;
 }
+
+const EmployeesRoot = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  if (pathname === "/employees") {
+    navigate("/employees/view", { replace: true });
+    return null;
+  }
+  return React.createElement(Outlet);
+};
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -50,14 +69,30 @@ export const routes: RouteObjectWithRole[] = [
     text: "Me",
     icon: React.createElement(AccountCircleIcon),
     element: React.createElement(View.me),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/onboarding",
-    text: "Onboarding",
+    path: "/employees",
+    text: "Employees",
     icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.employees),
+    element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/employees/view",
+        text: "All",
+        element: React.createElement(View.employeesList),
+        icon: React.createElement(GroupIcon),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/employees/onboarding",
+        text: "Onboarding",
+        icon: React.createElement(GroupAddIcon),
+        element: React.createElement(View.employeeOnboarding),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   // Todo: Uncomment when help view is ready
   // {
@@ -68,10 +103,26 @@ export const routes: RouteObjectWithRole[] = [
   //   allowRoles: [Role.ADMIN, Role.TEAM],
   //   bottomNav: true,
   // },
+  {
+    path: "/employees/:employeeId",
+    text: "Employees",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeeDetails),
+    allowRoles: [Role.ADMIN],
+    hideFromSidebar: true,
+  },
+  {
+    path: "/employees/:employeeId/edit",
+    text: "Edit Employee",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeeEdit),
+    allowRoles: [Role.ADMIN],
+    hideFromSidebar: true,
+  },
 ];
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
-  roles: string[]
+  roles: string[],
 ): RouteObjectWithRole[] => {
   if (!routes) return [];
   var routesObj: RouteObjectWithRole[] = [];

@@ -49,6 +49,8 @@ public type Document record {|
     string contentType;
     # Document content byte array
     byte[] attachment;
+    # Content ID for referencing the attachment in email templates
+    string contentId?;
 |};
 
 # Payload of the email alerting service.

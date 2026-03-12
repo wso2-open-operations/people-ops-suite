@@ -16,7 +16,9 @@
 
 # Employee location.
 public enum EmployeeLocation {
-    LK = "Sri Lanka"
+    LK = "Sri Lanka",
+    FR = "France",
+    ES = "Spain"
 }
 
 # Employee status.

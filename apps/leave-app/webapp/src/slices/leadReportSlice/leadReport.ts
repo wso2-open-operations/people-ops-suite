@@ -50,6 +50,10 @@ export const fetchLeadReport = createAsyncThunk<
     );
     return response;
   } catch (err) {
+    if (axios.isCancel(err)) {
+      return rejectWithValue("Request canceled");
+    }
+
     if (axios.isAxiosError(err)) {
       const errorMessage =
         (err.response?.data as { message?: string })?.message ??
@@ -80,7 +84,7 @@ const LeadReportSlice = createSlice({
   initialState,
   reducers: {
     resetLeadReportState(state) {
-      state.state = State.idle;
+      state.state = State.loading;
       state.report = null;
       state.errorMessage = null;
     },
@@ -95,6 +99,9 @@ const LeadReportSlice = createSlice({
         state.report = action.payload;
       })
       .addCase(fetchLeadReport.rejected, (state, action) => {
+        if (action.payload === "Request canceled" || action.meta.aborted) {
+          return;
+        }
         state.state = State.failed;
         state.errorMessage = action.payload ?? null;
       });

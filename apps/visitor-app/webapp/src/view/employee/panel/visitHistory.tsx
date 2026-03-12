@@ -111,18 +111,13 @@ function VisitHistory() {
       headerName: "Contact Number",
       minWidth: 160,
       flex: 1,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "email",
       headerName: "Email Address",
       minWidth: 200,
       flex: 2,
-    },
-    {
-      field: "companyName",
-      headerName: "Company Name",
-      minWidth: 150,
-      flex: 1,
       renderCell: (params) => params.value || "N/A",
     },
     {

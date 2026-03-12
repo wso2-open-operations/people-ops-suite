@@ -22,6 +22,7 @@ import { AppConfig } from "@config/config";
 import { SnackMessage } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
+import { RootState } from "@slices/store";
 
 interface AppConfigState {
   state: State;
@@ -103,4 +104,5 @@ const AppConfigSlice = createSlice({
 });
 
 export const { resetSubmitState } = AppConfigSlice.actions;
+export const selectAppConfig = (state: RootState) => state.appConfig.config;
 export default AppConfigSlice.reducer;

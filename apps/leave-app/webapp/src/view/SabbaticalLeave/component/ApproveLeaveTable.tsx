@@ -156,10 +156,17 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
       renderCell: (params) => <span>{String(params.row?.endDate ?? "").substring(0, 10)}</span>,
     },
     {
+      field: "numberOfDays",
+      headerName: "Day Count",
+      type: "string",
+      flex: 1,
+      editable: false,
+    },
+    {
       field: "approval",
       headerName: "Approval",
       type: "actions",
-      flex: 1,
+      flex: 1.4,
       editable: false,
       align: "center",
       headerAlign: "center",
@@ -212,6 +219,15 @@ export default function ApproveLeaveTable({ rows, onRefresh }: ApproveLeaveTable
         pageSizeOptions={[5]}
         disableRowSelectionOnClick
         showToolbar
+        slotProps={{
+          columnsPanel: {
+            sx: {
+              "& .MuiTypography-root": {
+                color: theme.palette.text.primary,
+              },
+            },
+          },
+        }}
       />
 
       {/* Confirmation Dialog */}
