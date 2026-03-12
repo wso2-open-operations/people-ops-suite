@@ -20,10 +20,6 @@ A comprehensive visitor management web application for managing visitor registra
 - [Key Dependencies](#key-dependencies)
 - [Development Guidelines](#development-guidelines)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [License](#license)
-
----
 
 ## Overview
 
