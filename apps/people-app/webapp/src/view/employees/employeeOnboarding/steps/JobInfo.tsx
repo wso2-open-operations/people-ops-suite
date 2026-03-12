@@ -418,10 +418,11 @@ export default function JobInfoStep() {
   }, [internshipTypeId, values.employmentTypeId]);
 
   const showAgreementEndDate = useMemo(() => {
-    if (!values.employmentTypeId) return false;
-    const et = employmentTypes.find((e) => e.id === values.employmentTypeId);
-    if (!et?.name) return false;
-    return !/^permanent$/i.test(et.name.trim());
+  const normalized = employmentTypes
+      .find((e) => e.id === values.employmentTypeId)
+      ?.name?.trim()
+      .toLowerCase();
+    return normalized === "internship" || normalized === "consultancy";
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {

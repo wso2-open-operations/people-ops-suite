@@ -169,6 +169,8 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
+  fullName:
+    values.personalInfo.fullName === "" ? null : values.personalInfo.fullName,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -330,7 +332,6 @@ function FormActionsBar({
     validateForm,
     setTouched,
     submitForm,
-    errors: formikErrors,
     setFieldError,
     setFieldTouched,
   } = useFormikContext<CreateEmployeeFormValues>();
@@ -383,8 +384,10 @@ function FormActionsBar({
         onClick={async () => {
           if (activeStep === 1) {
             const epf = (values.epf ?? "").toString().trim();
-            if (epf) {
-              if (formikErrors.epf) {
+            const initialEpf = (initialEditValues?.epf ?? "").toString().trim();
+            if (epf && (!isEditMode || epf !== initialEpf)) {
+              const fieldErrors = await validateForm();
+              if (fieldErrors.epf) {
                 setFieldTouched("epf", true, false);
                 document
                   .querySelector<HTMLElement>('[name="epf"]')
