@@ -595,6 +595,8 @@ public type FunctionalLead record {|
 public type OrgUnit record {|
     # Unique identifier of the unit
     string id;
+    # Unique identifier of the business_unit_team_sub_team_unit mapping row
+    string businessUnitTeamSubTeamUnitId;
     # Display name of the unit
     string name;
     # Total number of employees or members in the unit
@@ -609,6 +611,8 @@ public type OrgUnit record {|
 public type OrgSubTeam record {|
     # Unique identifier of the sub-team
     string id;
+    # Unique identifier of the business_unit_team_sub_team mapping row
+    string businessUnitTeamSubTeamId;
     # Display name of the sub-team
     string name;
     # Total number of employees or members in the sub-team
@@ -625,6 +629,8 @@ public type OrgSubTeam record {|
 public type OrgTeam record {|
     # Unique identifier of the team
     string id;
+    # Unique identifier of the business_unit_team mapping row
+    string businessUnitTeamId;
     # Display name of the team
     string name;
     # Total number of employees or members in the team
