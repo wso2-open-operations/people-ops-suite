@@ -244,6 +244,9 @@ export default function ReviewStep() {
             <ReviewField label="Last Name" value={p.lastName} />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
+            <ReviewField label="Full Name" value={p.fullName} />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
             <ReviewField label="NIC" value={p.nicOrPassport} />
           </Grid>
         </Grid>
