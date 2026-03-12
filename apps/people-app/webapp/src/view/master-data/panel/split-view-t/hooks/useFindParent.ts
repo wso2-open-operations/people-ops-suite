@@ -77,3 +77,32 @@ export function useFindMappingId(
       return null;
   }
 }
+
+export function useFindParentMappingId(
+  orgItems: OrganizationInfo,
+  id: string,
+  nodeType: NodeType,
+): string | null {
+  switch (nodeType) {
+    case NodeType.Company:
+      return orgItems.company.id;
+
+    case NodeType.BusinessUnit:
+      return orgItems.company.id;
+
+    case NodeType.Team:
+      const s = [...orgItems.businessUnits].find((node) => node.id === id) ?? null;
+      return (s as BusinessUnitState).id ?? null;
+
+    case NodeType.SubTeam:
+      const d = [...orgItems.teams].find((node) => node.id === id) ?? null;
+      return (d as TeamState).id ?? null;
+
+    case NodeType.Unit:
+      const a = [...orgItems.subTeams].find((node) => node.id === id) ?? null;
+      return (a as SubTeamState).id ?? null;
+
+    default:
+      return null;
+  }
+}
