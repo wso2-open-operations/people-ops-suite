@@ -30,7 +30,6 @@ import {
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 
-import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
   BusinessUnitState,
@@ -38,6 +37,14 @@ import {
   TeamState,
   UnitState,
 } from "@root/src/slices/organizationSlice/organizationStructure";
+import { NodeType } from "@root/src/utils/types";
+import {
+  OrgNodePayload,
+  useAddBusinessUnitsMutation,
+  useAddSubTeamMutation,
+  useAddTeamMutation,
+  useAddUnitMutation,
+} from "@services/organization";
 
 import { SectionHeader } from "../../components/edit-modal/SectionHeader";
 import EmployeeOption from "./EmployeeOption";
@@ -52,19 +59,36 @@ const filter = createFilterOptions<OrgOption>();
 interface AddPageProps {
   open: boolean;
   orgInfo: OrgOption[] | null;
+  nodeType: NodeType | null;
+  parentId: string | null;
   onClose: () => void;
 }
 
-interface AddOrgItemProps {
+interface AddOrgItemFormValues {
   team: OrgOption | null;
   teamHead: EmployeeBasicInfo | null;
   functionalLead: EmployeeBasicInfo | null;
 }
 
+interface AddOrgItemPayload {
+  team: OrgOption;
+  teamHead: EmployeeBasicInfo;
+  functionalLead: EmployeeBasicInfo | null; // optional by design
+}
+
 export default function AddPage(props: AddPageProps) {
-  const { open, orgInfo, onClose } = props;
+  const { open, orgInfo, nodeType, parentId, onClose } = props;
+
+  console.log("Add page : ", parentId);
+
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const theme = useTheme();
+  const [addBusinessUnits] = useAddBusinessUnitsMutation();
+  const [addTeam] = useAddTeamMutation();
+  const [addSubTeam] = useAddSubTeamMutation();
+  const [addUnit] = useAddUnitMutation();
+
+  console.log("Org info : ", orgInfo);
 
   const {
     control,
@@ -72,7 +96,7 @@ export default function AddPage(props: AddPageProps) {
     reset,
     watch,
     formState: { errors },
-  } = useForm<AddOrgItemProps>({
+  } = useForm<AddOrgItemFormValues>({
     defaultValues: {
       team: null,
       teamHead: null,
@@ -82,8 +106,64 @@ export default function AddPage(props: AddPageProps) {
 
   const selectedTeam = watch("team");
 
-  const onSubmit = (data: AddOrgItemProps) => {
-    console.log("form submit with the data : ", data);
+  const onSubmit = async (data: AddOrgItemFormValues) => {
+    console.log("On submit : ", data);
+
+    const { team, teamHead, functionalLead } = data as AddOrgItemPayload;
+
+    if (!team || !team.name || !teamHead || !parentId) {
+      console.error("Team and team head are required");
+      return;
+    }
+
+    const apiPayload: OrgNodePayload = {
+      name: team.name,
+      headEmail: teamHead.workEmail,
+      ...(functionalLead && {
+        orgNodeLinkInfo: {
+          id: parentId,
+          functionalLeadEmail: functionalLead.workEmail,
+        },
+      }),
+    };
+
+    try {
+      // Route API call based on nodeType
+      switch (nodeType) {
+        case NodeType.BusinessUnit:
+          await addBusinessUnits(apiPayload);
+          break;
+        case NodeType.Team:
+          if (!parentId) {
+            console.error("Parent Business Unit ID is required");
+            return;
+          }
+          await addTeam({ buId: parentId, payload: apiPayload });
+          break;
+        case NodeType.SubTeam:
+          if (!parentId) {
+            console.error("Parent Team ID is required");
+            return;
+          }
+          await addSubTeam({ teamId: parentId, payload: apiPayload });
+          break;
+        case NodeType.Unit:
+          if (!parentId) {
+            console.error("Parent Sub Team ID is required");
+            return;
+          }
+          await addUnit({ subTeamId: parentId, payload: apiPayload });
+          break;
+        default:
+          console.error("Invalid node type");
+          return;
+      }
+
+      reset();
+      onClose();
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
   };
 
   const handleCancel = () => {
@@ -297,7 +377,7 @@ export default function AddPage(props: AddPageProps) {
             )}
           />
 
-          {selectedTeam && selectedTeam.inputValue && (
+          {nodeType !== NodeType.BusinessUnit && selectedTeam && selectedTeam.inputValue && (
             <Controller
               name="functionalLead"
               control={control}
