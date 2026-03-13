@@ -52,7 +52,7 @@ export interface RouteDetail {
     | React.ReactElement<any, string | React.JSXElementConstructor<any>>
     | undefined;
   text: string;
-  children?: RouteObjectWithRole[];
+  children?: RouteDetail[];
   bottomNav?: boolean;
   hideFromSidebar?: boolean;
 }
@@ -171,9 +171,9 @@ export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
     routeList.reduce<RouteDetail[]>((acc, routeObj) => {
       if (isRouteActive(routeObj, roles)) {
         acc.push({
-          path: routeObj.path ? routeObj.path : "",
           ...routeObj,
-          children: routeObj.children ? filterRoutes(routeObj.children) as RouteObjectWithRole[] : undefined,
+          path: routeObj.path ?? "",
+          children: routeObj.children ? filterRoutes(routeObj.children) : undefined,
         });
       }
       return acc;

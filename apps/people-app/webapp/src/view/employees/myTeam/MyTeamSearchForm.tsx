@@ -23,7 +23,7 @@ import {
 } from "@config/constant";
 import { FilterAltOutlined } from "@mui/icons-material";
 import ClearIcon from "@mui/icons-material/Clear";
-import GroupsIcon from "@mui/icons-material/Groups";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import SearchIcon from "@mui/icons-material/Search";
 import {
   Badge,
@@ -135,6 +135,12 @@ export function MyTeamSearchForm({
   useEffect(() => {
     filterRef.current = filterPayload;
   }, [filterPayload]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const normalizeSearchString = (value?: string): string | undefined =>
     value === undefined ? undefined : value.trim().length > 0 ? value : undefined;
@@ -319,7 +325,7 @@ export function MyTeamSearchForm({
             {/* Left: title + count chips */}
             <Grid item flex={1}>
               <Stack display="flex" direction="row" alignItems="center" gap={1} sx={{ pl: 0.5 }}>
-                <GroupsIcon sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+                <PeopleAltIcon sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
                 <Typography variant="h5" fontWeight={700} sx={{ letterSpacing: "-0.3px" }}>
                   My Team
                 </Typography>

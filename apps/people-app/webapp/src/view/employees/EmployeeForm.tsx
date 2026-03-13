@@ -434,7 +434,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       >
         <Box sx={{ mb: 1 }}>
           <Typography variant="h4" fontWeight={700} gutterBottom>
-            {isEditMode ? "Edit Employee" : "Add Employee"}
+            {isEditMode ? "Edit Employee" : "Onboarding"}
           </Typography>
           <Typography
             variant="body1"
