@@ -208,8 +208,8 @@ export default function MyTeamTable() {
         ),
       },
       {
-        field: "team",
-        headerName: "Team",
+        field: "employmentType",
+        headerName: "Employment Type",
         flex: 0.8,
         minWidth: 120,
         resizable: false,
