@@ -39,6 +39,7 @@ interface OrgStructureCardProps {
   onEdit?: () => void;
   onAdd?: () => void;
   onClick?: () => void;
+  isHighlighted?: boolean;
 }
 
 const TYPE_LABELS = {
@@ -76,6 +77,7 @@ const OrgStructureCard = ({
   onAdd,
   onClick,
   isPeopleSectionVertical,
+  isHighlighted,
 }: OrgStructureCardProps) => {
   const theme = useTheme();
   const isCompanyNode = type === NodeType.Company;
@@ -114,29 +116,114 @@ const OrgStructureCard = ({
   return (
     <Box
       sx={{
-        minWidth: "350PX",
-        backgroundColor: theme.palette.surface.secondary.active,
-        borderTop: "2px solid",
-        borderTopColor: theme.palette.customBorder.brand.b1.active,
-        borderRadius: "6px",
-        padding: "12px",
-        boxShadow: "0px 1px 6px 0px rgba(0, 0, 0, 0.12)",
-        display: "flex",
-        cursor: "pointer",
-        flexDirection: "column",
-        gap: "16px",
+        p: 0.25,
+        borderRadius: 1,
+        border: isHighlighted ? `1px solid ${theme.palette.customBorder.secondary.b1.active}` : "none"
       }}
-      onClick={handleClick}
     >
-      {/* Top Section */}
       <Box
         sx={{
+          minWidth: "350PX",
+          backgroundColor: theme.palette.surface.secondary.active,
+          borderTop: "2px solid",
+          borderTopColor: theme.palette.customBorder.brand.b1.active,
+          borderRadius: "6px",
+          padding: "12px",
+          boxShadow: "0px 1px 6px 0px rgba(0, 0, 0, 0.12)",
           display: "flex",
+          cursor: "pointer",
           flexDirection: "column",
-          gap: "8px",
+          gap: "16px",
         }}
+        onClick={handleClick}
       >
-        {/* Header: Title and Collapse Icon */}
+        {/* Top Section */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "8px",
+          }}
+        >
+          {/* Header: Title and Collapse Icon */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                color: theme.palette.customText.primary.p2.active,
+              }}
+            >
+              {name}
+            </Typography>
+
+            <IconButton
+              onClick={handleCollapse}
+              size="small"
+              disabled={!hasChildren}
+              sx={{
+                width: "20px",
+                height: "20px",
+                padding: 0,
+                color: theme.palette.customText.primary.p3.active,
+                transform: isIconRotated ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.3s ease",
+                opacity: hasChildren ? 1 : 0.3,
+                cursor: hasChildren ? "pointer" : "default",
+              }}
+            >
+              <ExpandMoreIcon sx={{ fontSize: "20px" }} />
+            </IconButton>
+          </Box>
+
+          {/* Team Head and Function Lead */}
+          {isPeopleSectionVisible && (
+            <Box
+              sx={{
+                display: "flex",
+                gap: isPeopleSectionVertical ? "8px" : "16px",
+                alignItems: "flex-start",
+                width: "100%",
+                flexDirection: isPeopleSectionVertical ? "column" : "row",
+              }}
+            >
+              {/* Team Head */}
+              {primaryPerson && (
+                <PersonCard
+                  name={primaryPerson.name}
+                  title={primaryPerson.title}
+                  avatar={primaryPerson.avatar}
+                />
+              )}
+
+              {/* Function Lead */}
+              {secondaryPerson && (
+                <PersonCard
+                  name={secondaryPerson.name}
+                  title={secondaryPerson.title}
+                  avatar={secondaryPerson.avatar}
+                />
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Divider - Only for types with heads/leads */}
+        {isPeopleSectionVisible && (
+          <Box
+            sx={{
+              height: "1px",
+              backgroundColor: theme.palette.customBorder.primary.b2.active,
+            }}
+          />
+        )}
+
+        {/* Bottom Section */}
         <Box
           sx={{
             display: "flex",
@@ -144,186 +231,109 @@ const OrgStructureCard = ({
             justifyContent: "space-between",
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              color: theme.palette.customText.primary.p2.active,
-            }}
-          >
-            {name}
-          </Typography>
-
-          <IconButton
-            onClick={handleCollapse}
-            size="small"
-            disabled={!hasChildren}
-            sx={{
-              width: "20px",
-              height: "20px",
-              padding: 0,
-              color: theme.palette.customText.primary.p3.active,
-              transform: isIconRotated ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.3s ease",
-              opacity: hasChildren ? 1 : 0.3,
-              cursor: hasChildren ? "pointer" : "default",
-            }}
-          >
-            <ExpandMoreIcon sx={{ fontSize: "20px" }} />
-          </IconButton>
-        </Box>
-
-        {/* Team Head and Function Lead */}
-        {isPeopleSectionVisible && (
-          <Box
-            sx={{
-              display: "flex",
-              gap: isPeopleSectionVertical ? "8px" : "16px",
-              alignItems: "flex-start",
-              width: "100%",
-              flexDirection: isPeopleSectionVertical ? "column" : "row",
-            }}
-          >
-            {/* Team Head */}
-            {primaryPerson && (
-              <PersonCard
-                name={primaryPerson.name}
-                title={primaryPerson.title}
-                avatar={primaryPerson.avatar}
-              />
-            )}
-
-            {/* Function Lead */}
-            {secondaryPerson && (
-              <PersonCard
-                name={secondaryPerson.name}
-                title={secondaryPerson.title}
-                avatar={secondaryPerson.avatar}
-              />
-            )}
-          </Box>
-        )}
-      </Box>
-
-      {/* Divider - Only for types with heads/leads */}
-      {isPeopleSectionVisible && (
-        <Box
-          sx={{
-            height: "1px",
-            backgroundColor: theme.palette.customBorder.primary.b2.active,
-          }}
-        />
-      )}
-
-      {/* Bottom Section */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        {/* Left: Type Label and Count */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          {/* Type Badge */}
-          {type && (
-            < Box
-              sx={{
-                backgroundColor: theme.palette.fill.primary.light.active,
-                padding: "4px 8px",
-                borderRadius: "4px",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: theme.palette.primary.main,
-                  textTransform: "uppercase",
-                }}
-              >
-                {TYPE_LABELS[type]}
-              </Typography>
-            </Box>
-          )}
-
+          {/* Left: Type Label and Count */}
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
-              gap: "5px",
+              gap: "12px",
             }}
           >
-            <PeopleAltOutlinedIcon
-              sx={{
-                fontSize: "16px",
-                color: theme.palette.customText.primary.p3.active,
-              }}
-            />
+            {/* Type Badge */}
+            {type && (
+              < Box
+                sx={{
+                  backgroundColor: theme.palette.fill.primary.light.active,
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: theme.palette.primary.main,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {TYPE_LABELS[type]}
+                </Typography>
+              </Box>
+            )}
 
-            <Typography
-              variant="body2"
+            <Box
               sx={{
-                color: theme.palette.customText.primary.p3.active,
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
               }}
             >
-              {headCount}
-            </Typography>
+              <PeopleAltOutlinedIcon
+                sx={{
+                  fontSize: "16px",
+                  color: theme.palette.customText.primary.p3.active,
+                }}
+              />
+
+              <Typography
+                variant="body2"
+                sx={{
+                  color: theme.palette.customText.primary.p3.active,
+                }}
+              >
+                {headCount}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Right: Action Icons */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+            }}
+          >
+            {onEdit && (
+              <IconButton
+                onClick={handleEdit}
+                size="small"
+                sx={{
+                  width: "16px",
+                  height: "16px",
+                  padding: 0,
+                  color: theme.palette.customText.primary.p3.active,
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <EditOutlinedIcon sx={{ fontSize: "16px" }} />
+              </IconButton>
+            )}
+
+            {onAdd && (
+              <IconButton
+                onClick={handleAdd}
+                size="small"
+                sx={{
+                  width: "16px",
+                  height: "16px",
+                  padding: 0,
+                  color: theme.palette.customText.primary.p3.active,
+                  "&:hover": {
+                    color: theme.palette.primary.main,
+                  },
+                }}
+              >
+                <AddCircleOutlineIcon sx={{ fontSize: "16px" }} />
+              </IconButton>
+            )}
           </Box>
         </Box>
-
-        {/* Right: Action Icons */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-          }}
-        >
-          {onEdit && (
-            <IconButton
-              onClick={handleEdit}
-              size="small"
-              sx={{
-                width: "16px",
-                height: "16px",
-                padding: 0,
-                color: theme.palette.customText.primary.p3.active,
-                "&:hover": {
-                  color: theme.palette.primary.main,
-                },
-              }}
-            >
-              <EditOutlinedIcon sx={{ fontSize: "16px" }} />
-            </IconButton>
-          )}
-
-          {onAdd && (
-            <IconButton
-              onClick={handleAdd}
-              size="small"
-              sx={{
-                width: "16px",
-                height: "16px",
-                padding: 0,
-                color: theme.palette.customText.primary.p3.active,
-                "&:hover": {
-                  color: theme.palette.primary.main,
-                },
-              }}
-            >
-              <AddCircleOutlineIcon sx={{ fontSize: "16px" }} />
-            </IconButton>
-          )}
-        </Box>
-      </Box>
-    </Box >
+      </Box >
+    </Box>
   );
 };
 
