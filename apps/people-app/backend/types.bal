@@ -12,7 +12,8 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
+
 import people.database;
 
 import ballerina/constraint;
@@ -36,7 +37,12 @@ type CreateParkingReservationRequest record {|
     # Slot identifier (e.g. B-01)
     string slotId;
     # Booking date (YYYY-MM-DD), same-day only
-    @constraint:String {pattern: re `${database:DATE_PATTERN_STRING}`}
+    @constraint:String {
+        pattern: {
+            value: re `${database:DATE_PATTERN_STRING}`,
+            message: "Booking date must be in YYYY-MM-DD format."
+        }
+    }
     string bookingDate;
     # Registered vehicle ID (car only)
     int vehicleId;

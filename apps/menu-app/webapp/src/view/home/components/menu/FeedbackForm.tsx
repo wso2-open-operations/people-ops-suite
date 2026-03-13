@@ -87,8 +87,14 @@ const FeedbackForm = (props: FeedbackFormProps) => {
           },
         }}
       >
-        Feedback is anonymous and accepted only on <strong>{date}</strong> from
-        <strong> 12:00PM - 04:15PM</strong>
+        Feedback is anonymous and accepted only on {"\u00A0"}
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
+          {date}
+        </span>
+        {"\u00A0"} from
+        <span style={{ color: theme.palette.customText.brand.p1.active, fontWeight: 500 }}>
+          {"\u00A0"} 12:00PM - 04:15PM
+        </span>
       </Typography>
     );
   }
@@ -151,7 +157,7 @@ const FeedbackForm = (props: FeedbackFormProps) => {
         }}
       />
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "right", gap: 2 }}>
         <Button
           variant="outlined"
           onClick={() => {
@@ -162,6 +168,7 @@ const FeedbackForm = (props: FeedbackFormProps) => {
         >
           Cancel
         </Button>
+
         <Button type="submit" variant="contained" disabled={formik.isSubmitting}>
           {formik.isSubmitting ? "Submitting..." : "Submit"}
         </Button>

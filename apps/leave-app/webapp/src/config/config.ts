@@ -50,5 +50,6 @@ export const AppConfig = {
     appConfig: ServiceBaseUrl + "/app-configs",
     leaves: ServiceBaseUrl + "/leaves",
     leadReport: ServiceBaseUrl + "/leaves/report",
+    leaveEntitlement: ServiceBaseUrl + "/employees",
   },
 };

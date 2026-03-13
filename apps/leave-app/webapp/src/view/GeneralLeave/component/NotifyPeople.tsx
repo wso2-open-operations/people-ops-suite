@@ -19,9 +19,9 @@ import { Autocomplete, Avatar, Chip, Stack, TextField, Typography, useTheme } fr
 
 import { useEffect, useState } from "react";
 
+import { selectAppConfig } from "@root/src/slices/configSlice/config";
 import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
 import { useAppSelector } from "@root/src/slices/store";
-import { selectUser } from "@root/src/slices/userSlice/user";
 import { CachedMail, State } from "@root/src/types/types";
 
 interface EmployeeOption {
@@ -50,12 +50,12 @@ export default function NotifyPeople({
   const employees = useAppSelector(selectEmployees);
   const loading = employeeState === State.loading;
 
-  const defaultMails: CachedMail = useAppSelector(selectUser)?.cachedEmails || {
-    mandatoryMails: [],
-    optionalMails: [],
-  };
-
+  const appConfig = useAppSelector(selectAppConfig);
   useEffect(() => {
+    if (!appConfig?.cachedEmails) return;
+
+    const defaultMails: CachedMail = appConfig.cachedEmails;
+
     const mandatoryOptions = defaultMails.mandatoryMails.map((mail) => ({
       label: mail.email,
       email: mail.email,
@@ -79,7 +79,7 @@ export default function NotifyPeople({
     onEmailsChange([...fixedEmailList, ...optionalOptions.map((o) => o.email)]);
 
     setEmployeeOptions([...mandatoryOptions, ...optionalOptions]);
-  }, []);
+  }, [appConfig, onMandatoryEmailsChange, onEmailsChange]);
 
   useEffect(() => {
     if (employees.length > 0) {

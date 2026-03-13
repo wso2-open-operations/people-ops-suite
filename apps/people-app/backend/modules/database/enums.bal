@@ -31,3 +31,9 @@ public enum ParkingReservationStatus {
     PENDING,
     CONFIRMED
 }
+
+# [Database] Enum for employee statuses.
+public enum EmployeeStatus {
+    EMPLOYEE_ACTIVE = "ACTIVE",
+    EMPLOYEE_INACTIVE = "INACTIVE"
+}

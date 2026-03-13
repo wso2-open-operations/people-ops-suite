@@ -219,7 +219,7 @@ const LeaveSlice = createSlice({
   initialState,
   reducers: {
     resetLeaveState(state) {
-      state.state = State.idle;
+      state.state = State.loading;
       state.stateMessage = null;
       state.errorMessage = null;
       state.leaves = [];
@@ -241,6 +241,9 @@ const LeaveSlice = createSlice({
         state.leaves = action.payload.leaves;
       })
       .addCase(fetchLeaveHistory.rejected, (state, action) => {
+        if (action.payload === "Request canceled" || action.meta.aborted) {
+          return;
+        }
         state.state = State.failed;
         state.stateMessage = "Failed to fetch leave history.";
         state.errorMessage = (action.payload as string | undefined) ?? action.error.message ?? null;

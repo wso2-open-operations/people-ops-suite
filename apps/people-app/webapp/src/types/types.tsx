@@ -44,13 +44,11 @@ export interface EmergencyContact {
 export interface CreateEmployeeFormValues {
   personalInfo: {
     nicOrPassport: string;
-    fullName: string;
-    nameWithInitials: string;
     firstName: string;
     lastName: string;
     title: string;
     dob: string | null;
-    age: number | null;
+    gender: string;
     personalEmail: string | null;
     personalPhone: string | null;
     residentNumber: string | null;
@@ -69,17 +67,17 @@ export interface CreateEmployeeFormValues {
   teamId: number;
   subTeamId: number;
   unitId: number;
-  officeId: number;
-  employmentLocation: string;
+  companyId: number;
+  officeId: number | null;
   workLocation: string;
   employmentTypeId: number;
   startDate: string;
   probationEndDate: string | null;
   agreementEndDate: string | null;
+  isRelocation: boolean;
   continuousServiceRecord?: string | null;
   managerEmail: string;
   additionalManagerEmail: string[];
-  workPhoneNumber: string;
   careerFunctionId: number;
   designationId: number;
   secondaryJobTitle: string;
@@ -88,13 +86,11 @@ export interface CreateEmployeeFormValues {
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   personalInfo: {
     nicOrPassport: "",
-    fullName: "",
-    nameWithInitials: "",
     firstName: "",
     lastName: "",
     title: "",
     dob: null,
-    age: null,
+    gender: "",
     personalEmail: null,
     personalPhone: null,
     residentNumber: null,
@@ -113,18 +109,23 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   teamId: 0,
   subTeamId: 0,
   unitId: 0,
+  companyId: 0,
   officeId: 0,
-  employmentLocation: "",
   workLocation: "",
   employmentTypeId: 0,
   startDate: "",
   probationEndDate: null,
   agreementEndDate: null,
+  isRelocation: false,
   continuousServiceRecord: null,
   managerEmail: "",
   additionalManagerEmail: [],
-  workPhoneNumber: "",
   careerFunctionId: 0,
   designationId: 0,
   secondaryJobTitle: "",
 };
+
+export interface ServiceLength {
+  years: number;
+  months: number;
+}

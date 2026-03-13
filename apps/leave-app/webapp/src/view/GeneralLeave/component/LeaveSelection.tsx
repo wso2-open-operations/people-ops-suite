@@ -15,17 +15,89 @@
 // under the License.
 
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import BeachAccessIcon from "@mui/icons-material/BeachAccess";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FamilyRestroomIcon from "@mui/icons-material/FamilyRestroom";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import PregnantWomanIcon from "@mui/icons-material/PregnantWoman";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import WorkOffIcon from "@mui/icons-material/WorkOff";
-import { Stack, Typography, useTheme } from "@mui/material";
+import { Box, Stack, Tooltip, Typography, useTheme } from "@mui/material";
+import { SvgIconComponent } from "@mui/icons-material";
 
-import { useEffect } from "react";
+import { useMemo, useEffect } from "react";
 
-import { DayPortion, DayPortionLabel, LeaveLabel, LeaveType } from "@root/src/types/types";
+import {
+  DayPortion,
+  DayPortionLabel,
+  EmployeeLocation,
+  LeaveLabel,
+  LeaveTooltip,
+  LeaveType,
+} from "@root/src/types/types";
 
 import DatePill from "./DatePill";
 import LeaveSelectionIcon from "./LeaveSelectionIcon";
+
+/** Describes a leave type option shown in the UI. */
+interface LeaveTypeOption {
+  type: LeaveType;
+  label: LeaveLabel;
+  icon: SvgIconComponent;
+  tooltip?: string;
+}
+
+/** Shared leave types available to all locations. */
+const COMMON_LEAVE_TYPES: LeaveTypeOption[] = [
+  { type: LeaveType.MATERNITY, label: LeaveLabel.MATERNITY, icon: PregnantWomanIcon },
+  { type: LeaveType.PATERNITY, label: LeaveLabel.PATERNITY, icon: FamilyRestroomIcon },
+  { type: LeaveType.LIEU, label: LeaveLabel.LIEU, icon: AccessTimeIcon },
+];
+
+/** Location‑specific leave types (rendered before the common ones). */
+const LOCATION_LEAVE_TYPES: Record<string, LeaveTypeOption[]> = {
+  [EmployeeLocation.LK]: [
+    { type: LeaveType.CASUAL, label: LeaveLabel.CASUAL, icon: WorkOffIcon },
+  ],
+  [EmployeeLocation.FR]: [
+    {
+      type: LeaveType.CONGES_PAYES,
+      label: LeaveLabel.CONGES_PAYES,
+      icon: BeachAccessIcon,
+      tooltip: LeaveTooltip[LeaveType.CONGES_PAYES],
+    },
+    {
+      type: LeaveType.RTT,
+      label: LeaveLabel.RTT,
+      icon: ScheduleIcon,
+      tooltip: LeaveTooltip[LeaveType.RTT],
+    },
+    {
+      type: LeaveType.SICK,
+      label: LeaveLabel.SICK,
+      icon: LocalHospitalIcon,
+    },
+  ],
+  [EmployeeLocation.ES]: [
+    {
+      type: LeaveType.SPAIN_ANNUAL,
+      label: LeaveLabel.SPAIN_ANNUAL,
+      icon: EventAvailableIcon,
+      tooltip: LeaveTooltip[LeaveType.SPAIN_ANNUAL],
+    },
+    {
+      type: LeaveType.SPAIN_CASUAL,
+      label: LeaveLabel.SPAIN_CASUAL,
+      icon: WorkOffIcon,
+      tooltip: LeaveTooltip[LeaveType.SPAIN_CASUAL],
+    },
+    {
+      type: LeaveType.SICK,
+      label: LeaveLabel.SICK,
+      icon: LocalHospitalIcon,
+    },
+  ],
+};
 
 interface LeaveSelectionProps {
   daysSelected: number;
@@ -33,6 +105,8 @@ interface LeaveSelectionProps {
   onLeaveTypeChange: (leaveType: LeaveType) => void;
   selectedDayPortion: DayPortion | null;
   onDayPortionChange: (dayPortion: DayPortion | null) => void;
+  /** Employee location (e.g. "Sri Lanka", "France", "Spain"). */
+  location: string | null;
 }
 
 export default function LeaveSelection({
@@ -41,9 +115,18 @@ export default function LeaveSelection({
   onLeaveTypeChange,
   selectedDayPortion,
   onDayPortionChange,
+  location,
 }: LeaveSelectionProps) {
   const theme = useTheme();
   const isHalfDayDisabled = daysSelected !== 1;
+
+  /** Build the list of leave type options based on the employee location. */
+  const leaveTypeOptions = useMemo<LeaveTypeOption[]>(() => {
+    const locationSpecific =
+      LOCATION_LEAVE_TYPES[location ?? EmployeeLocation.LK] ??
+      LOCATION_LEAVE_TYPES[EmployeeLocation.LK];
+    return [...locationSpecific, ...COMMON_LEAVE_TYPES];
+  }, [location]);
 
   useEffect(() => {
     if (
@@ -68,32 +151,30 @@ export default function LeaveSelection({
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Leave Type
       </Typography>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <LeaveSelectionIcon
-          Icon={WorkOffIcon}
-          label={LeaveLabel.CASUAL}
-          isSelected={selectedLeaveType === LeaveType.CASUAL}
-          onClick={() => handleLeaveTypeSelection(LeaveType.CASUAL)}
-        />
-        <LeaveSelectionIcon
-          Icon={PregnantWomanIcon}
-          label={LeaveLabel.MATERNITY}
-          isSelected={selectedLeaveType === LeaveType.MATERNITY}
-          onClick={() => handleLeaveTypeSelection(LeaveType.MATERNITY)}
-        />
-        <LeaveSelectionIcon
-          Icon={FamilyRestroomIcon}
-          label={LeaveLabel.PATERNITY}
-          isSelected={selectedLeaveType === LeaveType.PATERNITY}
-          onClick={() => handleLeaveTypeSelection(LeaveType.PATERNITY)}
-        />
-        <LeaveSelectionIcon
-          Icon={AccessTimeIcon}
-          label={LeaveLabel.LIEU}
-          isSelected={selectedLeaveType === LeaveType.LIEU}
-          onClick={() => handleLeaveTypeSelection(LeaveType.LIEU)}
-        />
-      </Stack>
+      <Box
+        display="grid"
+        gridTemplateColumns="repeat(auto-fill, minmax(4.5rem, 1fr))"
+        gap="0.75rem"
+        width="100%"
+      >
+        {leaveTypeOptions.map((opt) => {
+          const iconEl = (
+            <LeaveSelectionIcon
+              Icon={opt.icon}
+              label={opt.label}
+              isSelected={selectedLeaveType === opt.type}
+              onClick={() => handleLeaveTypeSelection(opt.type)}
+            />
+          );
+          return opt.tooltip ? (
+            <Tooltip key={opt.type} title={opt.tooltip} arrow placement="top">
+              <Box>{iconEl}</Box>
+            </Tooltip>
+          ) : (
+            <Box key={opt.type}>{iconEl}</Box>
+          );
+        })}
+      </Box>
       <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
         Portion of the day
       </Typography>

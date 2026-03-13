@@ -75,14 +75,14 @@ function SidebarNavItem({
           },
         }}
       >
-        {route.element ? (
+        {route.element && !(route.children && route.children.length > 0) ? (
           <Link
             to={route.path}
             style={{ width: "100%", display: "block", textDecoration: "none" }}
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}
@@ -105,7 +105,7 @@ function SidebarNavItem({
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}

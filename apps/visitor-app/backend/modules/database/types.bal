@@ -18,6 +18,9 @@ import ballerina/sql;
 import ballerina/time;
 import ballerinax/mysql;
 
+# Error type for duplicate database entry (MySQL error code 1062).
+public type DuplicateEntryError distinct error;
+
 # [Configurable] Database configs.
 type DatabaseConfig record {|
     # If the MySQL server is secured, the username
@@ -56,27 +59,27 @@ public type Visitor record {|
 
 # [Database] Insert record for visitor.
 public type AddVisitorPayload record {|
-    # Encrypted email hash of the visitor
+    # Email or phone number hash of the visitor
     @constraint:String {
         pattern: {
             value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The email Hash should be a non-empty string with printable characters."
+            message: "The ID Hash should be a non-empty string with printable characters."
         }
     }
-    string emailHash;
+    string idHash;
     # First name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The first name should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The first name should be in international format."
         }
     }
-    string? firstName = ();
+    string firstName;
     # Last name of the visitor
     @constraint:String {
         pattern: {
-            value: NONE_EMPTY_PRINTABLE_STRING_REGEX,
-            message: "The last name should be a non-empty string with printable characters."
+            value: INTERNATIONAL_NAME_REGEX,
+            message: "The last name should be in international format."
         }
     }
     string? lastName = ();
@@ -95,7 +98,7 @@ public type AddVisitorPayload record {|
             message: "The email should be a valid email address."
         }
     }
-    string email;
+    string? email = ();
 |};
 
 # [Database] Floor record.
@@ -108,8 +111,8 @@ public type Floor record {|
 
 # [Database] Insert record for visit.
 public type AddVisitPayload record {|
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Company name of visitor
     string? companyName = ();
     # Number in the tag given to visitor
@@ -138,15 +141,15 @@ public type VisitRecord record {|
     # Unique identifier for the visit
     int id;
     # First name of the visitor
-    string? firstName;
+    string firstName;
     # Last name of the visitor
     string? lastName;
     # Working phone number of visitor
     string? contactNumber;
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash of the visitor
+    string visitorIdHash;
     # Email of the visitor
-    string email;
+    string? email = ();
     # Company name of visitor
     string? companyName;
     # Number in the tag given to visitor
@@ -176,8 +179,8 @@ public type Visit record {|
     *AuditFields;
     # Unique identifier for the visit
     int id;
-    # Email Hash of the visitor
-    string emailHash;
+    # Visitor ID Hash
+    string visitorIdHash;
     # Company name of visitor
     string? companyName = ();
     # Number in the tag given to visitor
@@ -197,13 +200,13 @@ public type Visit record {|
     # Status of the visit
     Status status;
     # First name of the visitor
-    string? firstName = ();
+    string firstName;
     # Last name of the visitor
     string? lastName = ();
     # Working phone number of visitor
     string? contactNumber = ();
     # Email of the visitor
-    string email;
+    string? email = ();
     # Invitation ID associated with the visit
     int? invitationId = ();
 |};
@@ -294,6 +297,8 @@ public type UpdateVisitPayload record {|
     time:Utc? timeOfEntry = ();
     # Time of departure
     time:Utc? timeOfDeparture = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode?;
 |};
 
 # Payload to update Invitation details.
@@ -321,4 +326,6 @@ public type VisitFilters record {|
     int? offset = ();
     # UUID of the visit
     string? uuid = ();
+    # SMS verification code for check-in/check-out
+    int? smsVerificationCode = ();
 |};
