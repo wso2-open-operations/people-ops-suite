@@ -22,6 +22,9 @@ import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
 
+# Master wallet address for car park O2C payments.
+configurable string masterWalletAddress = ?;
+
 @display {
     label: "People Service",
     id: "people-ops-suite/people-service"
@@ -974,6 +977,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Get car park config for the micro app (e.g. public wallet address for Wallet app redirect).
+    #
+    # + return - Public wallet address for O2C payments or error response
+    resource function get parkings/config(http:RequestContext ctx)
+        returns CarParkConfigResponse|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        return {publicWalletAddress: masterWalletAddress};
+    }
+
     # List parking floors.
     #
     # + return - List of parking floors or error response
@@ -1207,7 +1225,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? confirmErr = tx:confirmTransaction(body.transactionHash);
+        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
