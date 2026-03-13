@@ -163,9 +163,7 @@ public isolated function isDuplicatePromotionRequest(
             promotionCycleId));
 
     if count is error {
-        string cusError = "An error occurred while searching for duplicate promotion requests";
-        log:printError(cusError, count);
-        return error(cusError);
+        return count;
     }
 
     return count > 0;
@@ -178,14 +176,14 @@ public isolated function isDuplicatePromotionRequest(
 public isolated function insertPromotionRequest(PromotionRequestDbInsertPayload payload)
     returns int|error {
 
-    sql:ExecutionResult|sql:Error result = databaseClient->execute(insertPromotionRequestQuery(payload));
+    sql:ExecutionResult result = check databaseClient->execute(insertPromotionRequestQuery(payload));
 
-    if result is error {
-        log:printError(result.toString());
-        return error("An error occurred during the insertion of promotion data!");
+    int|string? lastInsertId = result.lastInsertId;
+    if lastInsertId is int {
+        return lastInsertId;
     }
 
-    return <int>result.lastInsertId;
+    return error("Failed to retrieve last inserted promotion ID!");
 }
 
 # Insert New Promotion Recommendation.
@@ -195,12 +193,13 @@ public isolated function insertPromotionRequest(PromotionRequestDbInsertPayload 
 public isolated function insertPromotionRecommendation(PromotionRecommendationInsertPayload payload)
         returns int|error {
 
-    sql:ExecutionResult|sql:Error result = databaseClient->execute(insertPromotionRecommendationQuery(payload));
+    sql:ExecutionResult result = check databaseClient->execute(insertPromotionRecommendationQuery(payload));
 
-    if result is error {
-        log:printError(result.toString());
-        return error("An error occurred during the insertion of promotion recommendation data!");
+    int|string? lastInsertId = result.lastInsertId;
+
+    if lastInsertId is int {
+        return lastInsertId;
     }
 
-    return <int>result.lastInsertId;
+    return error("Failed to retrieve last inserted promotion recommendation ID!");
 }
