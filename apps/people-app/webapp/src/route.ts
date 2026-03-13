@@ -30,7 +30,6 @@ import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
 import { BadgeSharp, Groups } from "@mui/icons-material";
-import { Badge } from "@mui/material";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
@@ -168,17 +167,16 @@ export const getActiveRoutesV2 = (
 };
 
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
-  var routesObj: RouteDetail[] = [];
-  routes.forEach((routeObj) => {
-    if (isRouteActive(routeObj, roles)) {
-      routesObj.push({
-        path: routeObj.path ? routeObj.path : "",
-        ...routeObj,
-        children: routeObj.children
-          ? routeObj.children.filter((child) => isIncludedRole(roles, child.allowRoles))
-          : undefined,
-      });
-    }
-  });
-  return routesObj;
+  const filterRoutes = (routeList: RouteObjectWithRole[]): RouteDetail[] =>
+    routeList.reduce<RouteDetail[]>((acc, routeObj) => {
+      if (isRouteActive(routeObj, roles)) {
+        acc.push({
+          path: routeObj.path ? routeObj.path : "",
+          ...routeObj,
+          children: routeObj.children ? filterRoutes(routeObj.children) as RouteObjectWithRole[] : undefined,
+        });
+      }
+      return acc;
+    }, []);
+  return filterRoutes(routes);
 };

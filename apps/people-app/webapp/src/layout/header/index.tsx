@@ -16,6 +16,8 @@
 
 import React from "react";
 import { APP_NAME } from "@config/config";
+import logoBlack from "@assets/images/WSO2-Logo-Black.png";
+import logoWhite from "@assets/images/WSO2-Logo-White.png";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useAppAuthContext } from "@context/AuthContext";
@@ -93,7 +95,7 @@ const Header = () => {
             paddingRight: "2px"
           }}
           onClick={() => (window.location.href = "/")}
-          src={require(theme.palette.mode === "dark" ? "@assets/images/WSO2-Logo-White.png" : "@assets/images/WSO2-Logo-Black.png")}
+          src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
         ></img>
         <Typography
           variant="h5"

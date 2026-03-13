@@ -49,7 +49,7 @@ export function FilterChipSelect<T>({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const accentColor = theme.palette.secondary.contrastText;
-  const hasValue = value !== undefined && value !== null;
+  const hasValue = value !== undefined && value !== null && value !== "";
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
 

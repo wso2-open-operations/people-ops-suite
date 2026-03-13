@@ -158,21 +158,25 @@ export function MyTeamSearchForm({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onFilterChange({
       searchString: normalizeSearchString(searchText),
-      filters: { directReports: true },
+      filters: { directReports: true, employeeStatus: EmployeeStatus.Active },
       pagination: { limit: DEFAULT_LIMIT_VALUE, offset: DEFAULT_OFFSET_VALUE },
       sort: filterRef.current.sort,
     });
   };
 
-  // Filters beyond the default "Active" baseline (used for showing "Filtered" chip and "Clear filters" button).
+  // Filters beyond the default "Active + directReports" baseline (used for showing "Filtered" chip and "Clear filters" button).
   function hasNonBaselineFilters(filters: EmployeeSearchPayload["filters"]): boolean {
     const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId } = filters;
     return Boolean(businessUnitId || teamId || subTeamId || unitId || careerFunctionId || gender || designationId || employmentTypeId || managerEmail || companyId || officeId);
   }
 
   const activeFilterCount = useMemo(() => {
-    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus } = filterPayload.filters;
-    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus].filter(Boolean).length;
+    const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReports } = filterPayload.filters;
+    // employeeStatus === Active is the baseline — don't count it. Any other status is a deliberate filter.
+    const nonBaselineStatus = employeeStatus !== undefined && employeeStatus !== EmployeeStatus.Active;
+    // directReports defaults to true; turning it off is a meaningful change worth counting.
+    const directReportsOff = directReports === false;
+    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, nonBaselineStatus || undefined, directReportsOff || undefined].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   const active = activeFilterCount > 0;

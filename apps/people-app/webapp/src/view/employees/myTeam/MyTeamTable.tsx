@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { DEFAULT_LIMIT_VALUE, DEFAULT_OFFSET_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
+import { DEFAULT_LIMIT_VALUE, PAGE_SIZE_OPTIONS } from "@config/constant";
 import { alpha, Avatar, Box, Chip, Skeleton, Tooltip, useTheme } from "@mui/material";
 import {
   DataGrid,
@@ -97,6 +97,7 @@ export default function MyTeamTable() {
   }, [dispatch, appliedFilter]);
 
   // Capture team active count when only the baseline Active filter is applied.
+  // directReports is intentionally excluded: toggling it should still refresh the count.
   const isBaselineFilter = useMemo(() => {
     const { employeeStatus, directReports: _dr, ...rest } = filterState.filters;
     return (
@@ -107,11 +108,12 @@ export default function MyTeamTable() {
   }, [filterState]);
 
   useEffect(() => {
+    if (!isBaselineFilter) return;
     const count = employeeState.filteredEmployeesResponse.totalCount;
     if (typeof count === "number") {
       setTeamActiveCount(count);
     }
-  }, [employeeState.filteredEmployeesResponse.totalCount]);
+  }, [employeeState.filteredEmployeesResponse.totalCount, isBaselineFilter]);
 
   const rows: Employee[] = employeeState.filteredEmployeesResponse.employees ?? [];
   const isLoading: boolean = employeeState.filteredEmployeesResponseState === State.loading;

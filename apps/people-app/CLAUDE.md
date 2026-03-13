@@ -111,8 +111,41 @@ Runtime config injected via `window.config` (same pattern as webapp).
 
 ## Role-Based Access
 
-The backend enforces two roles configured in `Config.toml`:
-- **EMPLOYEE_ROLE** — Can view/edit own employee record and personal info only
-- **ADMIN_ROLE** — Full access: view all employees, create/update any employee, access managers list, etc.
+### Backend privilege levels
 
-Frontend routes use `allowRoles: [Role.ADMIN]` or `[Role.ADMIN, Role.EMPLOYEE]`. Admin-only routes include the employees list, onboarding, and employee edit views.
+The backend issues three privilege levels, returned as an array in the `/user-info` response:
+
+| Constant | Value | How it is granted |
+|---|---|---|
+| `EMPLOYEE_PRIVILEGE` | 1 | Every authenticated user |
+| `LEAD_PRIVILEGE` | 993 | Dynamically: `database:isLead(email)` — no static IAM group |
+| `ADMIN_PRIVILEGE` | 2 | IAM group membership (`ADMIN_ROLE` in `Config.toml`) |
+
+`LEAD_ROLE` is **not** configured in `Config.toml`; lead status is resolved at request time from the DB.
+
+For employee-detail and employee-list endpoints the backend also checks `leadOnly` in the request payload. When `leadOnly = true` only team members that report to the caller are returned; when `false` (admin path) all employees are returned.
+
+### Frontend roles (`Role` enum in `authSlice`)
+
+`loadPrivileges` thunk maps the privilege array → `Role[]`:
+
+- `Role.EMPLOYEE` — always added
+- `Role.LEAD` — added when the privileges array contains `LEAD_PRIVILEGE` (993)
+- `Role.ADMIN` — added when the privileges array contains `ADMIN_PRIVILEGE` (2)
+
+A user may hold more than one role simultaneously (e.g., `[EMPLOYEE, LEAD]` or `[EMPLOYEE, LEAD, ADMIN]`).
+
+### Route access matrix
+
+| Route | `allowRoles` | `excludeRoles` | Visible to |
+|---|---|---|---|
+| `/` (Me) | `ADMIN, EMPLOYEE` | — | Everyone |
+| `/employees` (parent) | `ADMIN` | — | Admins |
+| `/employees/view` (All) | `ADMIN` | — | Admins |
+| `/employees/onboarding` | `ADMIN` | — | Admins |
+| `/employees/my-team` *(nested)* | `LEAD` | — | Admin+Lead (nested under Employees sidebar group) |
+| `/employees/my-team` *(top-level)* | `LEAD` | `ADMIN` | Lead-only users (shown as top-level sidebar item) |
+| `/employees/:employeeId` | `ADMIN, LEAD` | — | Admins and Leads (not in sidebar) |
+| `/employees/:employeeId/edit` | `ADMIN` | — | Admins only (not in sidebar) |
+
+The dual `/employees/my-team` route entries ensure that lead+admin users see **My Team** nested under the **Employees** group, while lead-only users see it as a standalone top-level entry. The `excludeRoles` guard on the top-level entry prevents duplication for admin+lead users.
