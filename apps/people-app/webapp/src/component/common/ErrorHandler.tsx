@@ -15,6 +15,8 @@
 // under the License.
 
 import StateWithImage from "@component/ui/StateWithImage";
+import logoBlack from "@assets/images/WSO2-Logo-Black.png";
+import logoWhite from "@assets/images/WSO2-Logo-White.png";
 import { Box, Container, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
 
@@ -44,7 +46,7 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
               alt="logo"
               width="150"
               height="auto"
-              src={require(theme.palette.mode === "dark" ? "@assets/images/WSO2-Logo-White.png" : "@assets/images/WSO2-Logo-Black.png")}
+              src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
             />
           </Grid>
           <Grid item xs={12}>

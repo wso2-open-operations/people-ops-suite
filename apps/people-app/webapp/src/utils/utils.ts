@@ -114,6 +114,7 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
 export const toSentenceCase = (value: string): string => {
   if (!value) return value;
   return value
+    .replace(/[_-]/g, " ")
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
