@@ -15,6 +15,7 @@
 // under the License. 
 import people.authorization;
 import people.database;
+import people.gsheet;
 
 import ballerina/http;
 import ballerina/log;
@@ -1231,6 +1232,14 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: "Reservation confirmed but failed to fetch updated details."}
             };
         }
+
+        // Append to Google Sheet.
+        error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
+        if sheetErr is error {
+            log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
+                reservationId = confirmedReservation.id);
+        }
+
         return confirmedReservation;
     }
 }
