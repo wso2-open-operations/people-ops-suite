@@ -26,8 +26,10 @@ import {
   Button,
   Divider,
   Drawer,
+  FormControlLabel,
   Grid,
   IconButton,
+  Switch,
   Typography,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
@@ -75,6 +77,8 @@ type FilterDrawerProps = {
   managerEmails: string[];
   companies: Company[];
   offices: Office[];
+  /** When true, renders a "Direct Reports Only" toggle inside the drawer (My Team view). */
+  showDirectReportsFilter?: boolean;
 };
 
 export function FilterDrawer({
@@ -94,6 +98,7 @@ export function FilterDrawer({
   managerEmails,
   companies,
   offices,
+  showDirectReportsFilter = false,
 }: FilterDrawerProps) {
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
 
@@ -295,6 +300,25 @@ export function FilterDrawer({
                 )}
               />
             </Grid>
+            {showDirectReportsFilter && (
+              <>
+                <Grid item>
+                  <Divider />
+                </Grid>
+                <Grid item>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={draft.filters.directReports === true}
+                        onChange={(e) => set({ directReports: e.target.checked })}
+                        color="secondary"
+                      />
+                    }
+                    label="Direct Reports Only"
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </Box>
 

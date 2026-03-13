@@ -50,7 +50,7 @@ export default function MyTeamTable() {
   const [sortModel, setSortModel] = useState<GridSortModel>([]);
 
   const [filterState, setFilterState] = useState<Pick<EmployeeSearchPayload, "filters" | "searchString">>({
-    filters: { employeeStatus: EmployeeStatus.Active, directReports: true },
+    filters: { employeeStatus: EmployeeStatus.Active, directReports: false },
     searchString: undefined,
   });
 

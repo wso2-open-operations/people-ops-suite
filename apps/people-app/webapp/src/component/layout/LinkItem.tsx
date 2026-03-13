@@ -145,6 +145,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
                   color: colors.grey[500],
                   fontSize: 18,
                   ml: 0.5,
+                  mr: 0.5,
                 }}
               />
             ) : (
@@ -153,6 +154,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
                   color: colors.grey[500],
                   fontSize: 18,
                   ml: 0.5,
+                  mr: 0.5,
                 }}
               />
             ))}

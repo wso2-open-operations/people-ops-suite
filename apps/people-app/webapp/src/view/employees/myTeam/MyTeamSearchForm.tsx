@@ -158,7 +158,7 @@ export function MyTeamSearchForm({
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     onFilterChange({
       searchString: normalizeSearchString(searchText),
-      filters: { directReports: true, employeeStatus: EmployeeStatus.Active },
+      filters: { directReports: false },
       pagination: { limit: DEFAULT_LIMIT_VALUE, offset: DEFAULT_OFFSET_VALUE },
       sort: filterRef.current.sort,
     });
@@ -172,11 +172,10 @@ export function MyTeamSearchForm({
 
   const activeFilterCount = useMemo(() => {
     const { businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReports } = filterPayload.filters;
-    // employeeStatus === Active is the baseline — don't count it. Any other status is a deliberate filter.
-    const nonBaselineStatus = employeeStatus !== undefined && employeeStatus !== EmployeeStatus.Active;
-    // directReports defaults to true; turning it off is a meaningful change worth counting.
-    const directReportsOff = directReports === false;
-    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, nonBaselineStatus || undefined, directReportsOff || undefined].filter(Boolean).length;
+    // employeeStatus is always applied (Active by default) — count it so the badge reflects it.
+    // directReports defaults to false (show all); turning it on (Direct Reports Only) is an active filter.
+    const directReportsOn = directReports === true;
+    return [businessUnitId, teamId, subTeamId, unitId, careerFunctionId, designationId, gender, employmentTypeId, managerEmail, companyId, officeId, employeeStatus, directReportsOn || undefined].filter(Boolean).length;
   }, [filterPayload.filters]);
 
   const active = activeFilterCount > 0;
@@ -416,7 +415,7 @@ export function MyTeamSearchForm({
               <FormControlLabel
                 control={
                   <Switch
-                    checked={filterPayload.filters.directReports !== false}
+                    checked={filterPayload.filters.directReports === true}
                     onChange={(e) =>
                       updateSearchPayload({ filters: { directReports: e.target.checked } })
                     }
@@ -437,7 +436,7 @@ export function MyTeamSearchForm({
                     variant="body2"
                     fontWeight={600}
                     sx={{
-                      color: filterPayload.filters.directReports !== false
+                      color: filterPayload.filters.directReports === true
                         ? theme.palette.secondary.contrastText
                         : theme.palette.text.secondary,
                       fontSize: "0.8rem",
@@ -639,6 +638,7 @@ export function MyTeamSearchForm({
         managerEmails={managerEmails}
         companies={companies}
         offices={offices}
+        showDirectReportsFilter
       />
     </Box>
   );
