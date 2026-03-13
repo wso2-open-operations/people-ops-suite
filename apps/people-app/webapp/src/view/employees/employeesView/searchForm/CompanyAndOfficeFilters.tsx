@@ -20,6 +20,7 @@ import {
   Company,
   Office
 } from "@root/src/slices/organizationSlice/organization";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 
 export type CompanyAndOfficeSelection = {
   companyId?: number;
@@ -82,8 +83,8 @@ export function CompanyAndOfficeFilters({
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
           <Autocomplete<Company, false, false, false>
-            options={companies}
-            getOptionLabel={(company: Company) => company.name}
+            options={sortAndFormatOptions(companies, (c) => c.name)}
+            getOptionLabel={(company: Company) => toSentenceCase(company.name)}
             value={
               companies.find((company: Company) => company.id === value.companyId) ?? null
             }
@@ -101,8 +102,8 @@ export function CompanyAndOfficeFilters({
           <Box>
             <Box sx={treeItemSx}>
               <Autocomplete<Office, false, false, false>
-                options={offices}
-                getOptionLabel={(office: Office) => office.name}
+                options={sortAndFormatOptions(offices, (o) => o.name)}
+                getOptionLabel={(office: Office) => toSentenceCase(office.name)}
                 value={offices.find((office: Office) => office.id === value.officeId) ?? null}
                 onChange={(_, selected) => onChangeOffice(selected)}
                 renderInput={(params) => (

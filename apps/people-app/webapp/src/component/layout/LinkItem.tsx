@@ -144,6 +144,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
                 sx={{
                   color: colors.grey[500],
                   fontSize: 18,
+                  ml: 0.5,
                 }}
               />
             ) : (
@@ -151,6 +152,7 @@ const ListItemLink = (props: ListItemLinkProps) => {
                 sx={{
                   color: colors.grey[500],
                   fontSize: 18,
+                  ml: 0.5,
                 }}
               />
             ))}

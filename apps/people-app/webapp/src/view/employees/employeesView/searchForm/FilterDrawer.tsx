@@ -31,6 +31,7 @@ import {
   Typography,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 import { EmployeeSearchPayload, EmployeeStatus, Filters } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
@@ -220,8 +221,8 @@ export function FilterDrawer({
             </Grid>
             <Grid item>
               <Autocomplete<EmploymentType, false, false, false>
-                options={employmentTypes.map((et) => et)}
-                getOptionLabel={(o) => o.name}
+                options={sortAndFormatOptions(employmentTypes, (et) => et.name)}
+                getOptionLabel={(o) => toSentenceCase(o.name)}
                 value={
                   employmentTypes.find(
                     (et) => et.id === draft.filters.employmentTypeId,
@@ -266,8 +267,8 @@ export function FilterDrawer({
             </Grid>
             <Grid item>
               <Autocomplete<string, false, false, false>
-                options={EmployeeGenders}
-                getOptionLabel={(o) => o}
+                options={sortAndFormatOptions(EmployeeGenders, (g) => g)}
+                getOptionLabel={(o) => toSentenceCase(o)}
                 value={EmployeeGenders.find((g) => g === draft.filters.gender) ?? null}
                 autoHighlight
                 autoSelect
@@ -281,8 +282,8 @@ export function FilterDrawer({
             </Grid>
             <Grid item>
               <Autocomplete<EmployeeStatus, false, false, false>
-                options={Object.values(EmployeeStatus)}
-                getOptionLabel={(o) => o}
+                options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
+                getOptionLabel={(o) => toSentenceCase(o)}
                 value={ Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null }
                 autoHighlight
                 autoSelect
@@ -301,6 +302,7 @@ export function FilterDrawer({
           sx={{
             mt: 1,
             pt: 2,
+            pb: 2,
             px: 2,
             width: "100%",
             display: "flex",

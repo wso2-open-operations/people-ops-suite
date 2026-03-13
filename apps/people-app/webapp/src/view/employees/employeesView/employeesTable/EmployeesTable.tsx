@@ -268,7 +268,7 @@ export default function EmployeesTable() {
   const SkeletonRowsOverlay = useMemo(() => {
     return function Overlay() {
       return (
-        <Box sx={{ width: "100%" }}>
+        <Box sx={{ width: "100%", pb: 1 }}>
           {Array.from({ length: paginationModel.pageSize }).map((_, index) => (
             <Box
               key={index}
@@ -280,7 +280,7 @@ export default function EmployeesTable() {
                   return "1fr";
                 }).join(" "),
                 alignItems: "center",
-                minHeight: 52,
+                height: 52,
                 px: 2,
                 gap: 2,
                 borderBottom: `1px solid ${theme.palette.divider}`,
@@ -412,7 +412,7 @@ export default function EmployeesTable() {
               fontWeight: 700,
             },
             "& .MuiDataGrid-virtualScroller": {
-              minHeight: "100px !important",
+              ...(isLoading && { minHeight: `${paginationModel.pageSize * 52}px !important` }),
             },
             "& .MuiDataGrid-cell": {
               display: "flex",

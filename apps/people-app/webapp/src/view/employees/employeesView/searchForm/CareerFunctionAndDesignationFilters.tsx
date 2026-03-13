@@ -20,6 +20,7 @@ import {
   CareerFunction,
   Designation
 } from "@root/src/slices/organizationSlice/organization";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 
 export type CareerFunctionsAndDesignationsSelection = {
   careerFunctionId?: number;
@@ -82,8 +83,8 @@ export function CareerFunctionAndDesignationFilters({
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
           <Autocomplete<CareerFunction, false, false, false>
-            options={careerFunctions}
-            getOptionLabel={(o) => o.careerFunction}
+            options={sortAndFormatOptions(careerFunctions, (c) => c.careerFunction)}
+            getOptionLabel={(o) => toSentenceCase(o.careerFunction)}
             value={
               careerFunctions.find((c) => c.id === value.careerFunctionId) ?? null
             }
@@ -101,8 +102,8 @@ export function CareerFunctionAndDesignationFilters({
           <Box>
             <Box sx={treeItemSx}>
               <Autocomplete<Designation, false, false, false>
-                options={designations}
-                getOptionLabel={(o) => o.designation}
+                options={sortAndFormatOptions(designations, (d) => d.designation)}
+                getOptionLabel={(o) => toSentenceCase(o.designation)}
                 value={designations.find((d) => d.id === value.designationId) ?? null}
                 onChange={(_, selected) => onChangeDesignation(selected)}
                 renderInput={(params) => (

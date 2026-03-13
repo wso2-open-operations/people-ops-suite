@@ -22,6 +22,7 @@ import {
   Team,
   Unit,
 } from "@root/src/slices/organizationSlice/organization";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 
 export type OrganizationSelection = {
   businessUnitId?: number;
@@ -97,8 +98,8 @@ export function OrganizationTreeFilters({
       <Box sx={{ pl: 0.5 }}>
         <Box sx={treeItemSx}>
           <Autocomplete<BusinessUnit, false, false, false>
-            options={businessUnits}
-            getOptionLabel={(o) => o.name}
+            options={sortAndFormatOptions(businessUnits, (b) => b.name)}
+            getOptionLabel={(o) => toSentenceCase(o.name)}
             value={
               businessUnits.find((b) => b.id === value.businessUnitId) ?? null
             }
@@ -116,8 +117,8 @@ export function OrganizationTreeFilters({
           <Box>
             <Box sx={treeItemSx}>
               <Autocomplete<Team, false, false, false>
-                options={teams}
-                getOptionLabel={(o) => o.name}
+                options={sortAndFormatOptions(teams, (t) => t.name)}
+                getOptionLabel={(o) => toSentenceCase(o.name)}
                 value={teams.find((t) => t.id === value.teamId) ?? null}
                 onChange={(_, selected) => onChangeTeam(selected)}
                 renderInput={(params) => (
@@ -133,8 +134,8 @@ export function OrganizationTreeFilters({
               <Box>
                 <Box sx={treeItemSx}>
                   <Autocomplete<SubTeam, false, false, false>
-                    options={subTeams}
-                    getOptionLabel={(o) => o.name}
+                    options={sortAndFormatOptions(subTeams, (st) => st.name)}
+                    getOptionLabel={(o) => toSentenceCase(o.name)}
                     value={
                       subTeams.find((st) => st.id === value.subTeamId) ?? null
                     }
@@ -152,8 +153,8 @@ export function OrganizationTreeFilters({
                   <Box>
                     <Box sx={treeItemSx}>
                       <Autocomplete<Unit, false, false, false>
-                        options={units}
-                        getOptionLabel={(o) => o.name}
+                        options={sortAndFormatOptions(units, (u) => u.name)}
+                        getOptionLabel={(o) => toSentenceCase(o.name)}
                         value={units.find((u) => u.id === value.unitId) ?? null}
                         onChange={(_, selected) => onChangeUnit(selected)}
                         renderInput={(params) => (
