@@ -123,7 +123,12 @@ The backend issues three privilege levels, returned as an array in the `/user-in
 
 `LEAD_ROLE` is **not** configured in `Config.toml`; lead status is resolved at request time from the DB.
 
-For employee-detail and employee-list endpoints the backend also checks `leadOnly` in the request payload. When `leadOnly = true` only team members that report to the caller are returned; when `false` (admin path) all employees are returned.
+For employee-list endpoints the backend checks `leadOnly` and `directReports` in the request payload. The two flags operate independently:
+
+- **`leadOnly = true`** (always set by `MyTeamTable`, never by the admin view): the backend scopes the query to employees who are subordinates of the caller. Within that scoped result, the `directReports` filter further narrows the set:
+  - `directReports = true` — return only *direct* reports of the caller.
+  - `directReports = false` (default) — return *all* subordinates of the caller (direct and indirect).
+- **`leadOnly = false`** (admin path only): no caller-scoping is applied; all employees matching the other filters are returned. A lead user never sends this value.
 
 ### Frontend roles (`Role` enum in `authSlice`)
 
