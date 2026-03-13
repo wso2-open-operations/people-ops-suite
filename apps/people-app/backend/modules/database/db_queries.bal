@@ -116,8 +116,9 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
 # Fetch employees with filters.
 #
 # + payload - Get employees filter payload
+# + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - Parameterized query for fetching employees
-isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:ParameterizedQuery {
+isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadEmail = ()) returns sql:ParameterizedQuery {
 
     int 'limit = payload.pagination.'limit;
     int offset = payload.pagination.offset;
@@ -191,6 +192,47 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload) returns sql:P
 
     sql:ParameterizedQuery[] filters = [];
 
+    // Lead restriction: must be the first filter so it cannot be bypassed.
+    if leadEmail is string {
+        if payload.filters.directReports == false {
+            // Show all subordinates recursively
+            sql:ParameterizedQuery ctePrefix = `WITH RECURSIVE subordinate_tree (pk_id, w_email, visited) AS (
+                SELECT id, work_email, CAST(id AS CHAR(1000))
+                FROM employee
+                WHERE LOWER(manager_email) = LOWER(${leadEmail})
+                UNION
+                SELECT e2.id, e2.work_email, CAST(e2.id AS CHAR(1000))
+                FROM employee e2
+                JOIN employee_additional_managers eam2 ON eam2.employee_pk_id = e2.id
+                WHERE LOWER(eam2.additional_manager_email) = LOWER(${leadEmail})
+                UNION ALL
+                SELECT e2.id, e2.work_email, CONCAT(st.visited, ',', e2.id)
+                FROM employee e2
+                JOIN subordinate_tree st ON LOWER(e2.manager_email) = LOWER(st.w_email)
+                WHERE NOT FIND_IN_SET(e2.id, st.visited)
+                UNION ALL
+                SELECT e2.id, e2.work_email, CONCAT(st.visited, ',', e2.id)
+                FROM employee e2
+                JOIN employee_additional_managers eam2 ON eam2.employee_pk_id = e2.id
+                JOIN subordinate_tree st ON LOWER(eam2.additional_manager_email) = LOWER(st.w_email)
+                WHERE NOT FIND_IN_SET(e2.id, st.visited)
+            ) `;
+            baseQuery = sql:queryConcat(ctePrefix, baseQuery);
+            filters.push(`e.id IN (SELECT pk_id FROM subordinate_tree)`);
+        } else {
+            // Direct reports only (default)
+            filters.push(`(
+                LOWER(e.manager_email) = LOWER(${leadEmail})
+                OR EXISTS (
+                    SELECT 1
+                    FROM employee_additional_managers leam
+                    WHERE leam.employee_pk_id = e.id
+                      AND LOWER(leam.additional_manager_email) = LOWER(${leadEmail})
+                )
+            )`);
+        }
+    }
+
     appendStringFilter(filters, payload.filters.title, `pi.title = ${payload.filters.title}`);
     appendStringFilter(filters, payload.filters.firstName, `LOWER(pi.first_name) = LOWER(${payload.filters.firstName})`);
     appendStringFilter(filters, payload.filters.lastName, `LOWER(pi.last_name) = LOWER(${payload.filters.lastName})`);
@@ -245,6 +287,54 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
     FROM employee e
     JOIN employee m ON e.manager_email = m.work_email
     WHERE e.manager_email IS NOT NULL AND e.manager_email <> '';`;
+
+# Check if a target employee is a direct or additional subordinate of a lead.
+#
+# + leadEmail - Work email of the potential lead
+# + employeeId - Employee ID of the target employee
+# + return - Parameterized query returning 1 row if the relationship exists
+isolated function isSubordinateOfLeadQuery(string leadEmail, string employeeId) returns sql:ParameterizedQuery =>
+    `WITH RECURSIVE subordinate_tree (pk_id, w_email, visited) AS (
+        SELECT id, work_email, CAST(id AS CHAR(1000))
+        FROM employee
+        WHERE LOWER(manager_email) = LOWER(${leadEmail})
+        UNION
+        SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000))
+        FROM employee e
+        JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id
+        WHERE LOWER(eam.additional_manager_email) = LOWER(${leadEmail})
+        UNION ALL
+        SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id)
+        FROM employee e
+        JOIN subordinate_tree st ON LOWER(e.manager_email) = LOWER(st.w_email)
+        WHERE NOT FIND_IN_SET(e.id, st.visited)
+        UNION ALL
+        SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id)
+        FROM employee e
+        JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id
+        JOIN subordinate_tree st ON LOWER(eam.additional_manager_email) = LOWER(st.w_email)
+        WHERE NOT FIND_IN_SET(e.id, st.visited)
+    )
+    SELECT 1
+    FROM subordinate_tree
+    WHERE pk_id = (SELECT id FROM employee WHERE employee_id = ${employeeId})
+    LIMIT 1`;
+
+# Check if an employee is a lead (has at least one direct or additional subordinate).
+#
+# + leadEmail - Work email of the employee to check
+# + return - Parameterized query returning 1 row if the employee is a lead
+isolated function isLeadQuery(string leadEmail) returns sql:ParameterizedQuery =>
+    `SELECT 1
+     FROM employee
+     WHERE LOWER(manager_email) = LOWER(${leadEmail})
+       AND manager_email IS NOT NULL
+       AND manager_email <> ''
+     UNION ALL
+     SELECT 1
+     FROM employee_additional_managers
+     WHERE LOWER(additional_manager_email) = LOWER(${leadEmail})
+     LIMIT 1;`;
 
 # Fetch continuous service record by work email.
 #

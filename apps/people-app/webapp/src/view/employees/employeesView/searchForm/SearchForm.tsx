@@ -69,6 +69,7 @@ import {
 } from "@slices/organizationSlice/organization";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@src/types/types";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FilterChipSelect, FilterChipSelectProps } from "./FilterChipSelect";
 import { FilterDrawer } from "./FilterDrawer";
@@ -266,11 +267,11 @@ export function SearchForm() {
       {
         kind: "businessUnit",
         label: "Business Unit",
-        value: businessUnits.find(
+        value: toSentenceCase(businessUnits.find(
           (bu) => bu.id === filterPayload.filters.businessUnitId,
-        )?.name,
-        options: businessUnits,
-        getLabel: (businessUnit: BusinessUnit) => businessUnit.name,
+        )?.name ?? ""),
+        options: sortAndFormatOptions(businessUnits, (bu) => bu.name),
+        getLabel: (businessUnit: BusinessUnit) => toSentenceCase(businessUnit.name),
         onChange: (businessUnit: BusinessUnit) =>
           updateSearchPayload({ filters: { businessUnitId: businessUnit.id } }),
         onClear: () =>
@@ -279,10 +280,9 @@ export function SearchForm() {
       {
         kind: "team",
         label: "Team",
-        value: teams.find((team) => team.id === filterPayload.filters.teamId)
-          ?.name,
-        options: teams,
-        getLabel: (team: Team) => team.name,
+        value: toSentenceCase(teams.find((team) => team.id === filterPayload.filters.teamId)?.name ?? ""),
+        options: sortAndFormatOptions(teams, (t) => t.name),
+        getLabel: (team: Team) => toSentenceCase(team.name),
         onChange: (team: Team) =>
           updateSearchPayload({ filters: { teamId: team.id } }),
         onClear: () => updateSearchPayload({ filters: { teamId: undefined } }),
@@ -290,11 +290,11 @@ export function SearchForm() {
       {
         kind: "subTeam",
         label: "Sub Team",
-        value: subTeams.find(
+        value: toSentenceCase(subTeams.find(
           (subTeam) => subTeam.id === filterPayload.filters.subTeamId,
-        )?.name,
-        options: subTeams,
-        getLabel: (subTeam: SubTeam) => subTeam.name,
+        )?.name ?? ""),
+        options: sortAndFormatOptions(subTeams, (st) => st.name),
+        getLabel: (subTeam: SubTeam) => toSentenceCase(subTeam.name),
         onChange: (subTeam: SubTeam) =>
           updateSearchPayload({ filters: { subTeamId: subTeam.id } }),
         onClear: () =>
@@ -303,10 +303,9 @@ export function SearchForm() {
       {
         kind: "unit",
         label: "Unit",
-        value: units.find((unit) => unit.id === filterPayload.filters.unitId)
-          ?.name,
-        options: units,
-        getLabel: (unit: Unit) => unit.name,
+        value: toSentenceCase(units.find((unit) => unit.id === filterPayload.filters.unitId)?.name ?? ""),
+        options: sortAndFormatOptions(units, (u) => u.name),
+        getLabel: (unit: Unit) => toSentenceCase(unit.name),
         onChange: (unit: Unit) =>
           updateSearchPayload({ filters: { unitId: unit.id } }),
         onClear: () => updateSearchPayload({ filters: { unitId: undefined } }),
@@ -314,12 +313,12 @@ export function SearchForm() {
       {
         kind: "careerFunction",
         label: "Career Function",
-        value: careerFunctions.find(
+        value: toSentenceCase(careerFunctions.find(
           (cf) => cf.id === filterPayload.filters.careerFunctionId,
-        )?.careerFunction,
-        options: careerFunctions,
+        )?.careerFunction ?? ""),
+        options: sortAndFormatOptions(careerFunctions, (cf) => cf.careerFunction),
         getLabel: (careerFunction: CareerFunction) =>
-          careerFunction.careerFunction,
+          toSentenceCase(careerFunction.careerFunction),
         onChange: (careerFunction: CareerFunction) =>
           updateSearchPayload({
             filters: { careerFunctionId: careerFunction.id },
@@ -330,12 +329,12 @@ export function SearchForm() {
       {
         kind: "designation",
         label: "Designation",
-        value: designations.find(
+        value: toSentenceCase(designations.find(
           (designation) =>
             designation.id === filterPayload.filters.designationId,
-        )?.designation,
-        options: designations,
-        getLabel: (designation: Designation) => designation.designation,
+        )?.designation ?? ""),
+        options: sortAndFormatOptions(designations, (d) => d.designation),
+        getLabel: (designation: Designation) => toSentenceCase(designation.designation),
         onChange: (designation: Designation) => {
           updateSearchPayload({
             filters: { designationId: designation.id },
@@ -347,11 +346,11 @@ export function SearchForm() {
       {
         kind: "company",
         label: "Company",
-        value: companies.find(
+        value: toSentenceCase(companies.find(
           (company) => company.id === filterPayload.filters.companyId,
-        )?.name,
-        options: companies,
-        getLabel: (company: Company) => company.name,
+        )?.name ?? ""),
+        options: sortAndFormatOptions(companies, (c) => c.name),
+        getLabel: (company: Company) => toSentenceCase(company.name),
         onChange: (company: Company) =>
           updateSearchPayload({ filters: { companyId: company.id } }),
         onClear: () =>
@@ -360,11 +359,11 @@ export function SearchForm() {
       {
         kind: "office",
         label: "Office",
-        value: offices.find(
+        value: toSentenceCase(offices.find(
           (office) => office.id === filterPayload.filters.officeId,
-        )?.name,
-        options: offices,
-        getLabel: (office: Office) => office.name,
+        )?.name ?? ""),
+        options: sortAndFormatOptions(offices, (o) => o.name),
+        getLabel: (office: Office) => toSentenceCase(office.name),
         onChange: (office: Office) => {
           updateSearchPayload({ filters: { officeId: office.id } });
         },
@@ -374,11 +373,11 @@ export function SearchForm() {
       {
         kind: "employmentType",
         label: "Employment Type",
-        value: employmentTypes.find(
+        value: toSentenceCase(employmentTypes.find(
           (et) => et.id === filterPayload.filters.employmentTypeId,
-        )?.name,
-        options: employmentTypes,
-        getLabel: (employeeType: EmploymentType) => employeeType.name,
+        )?.name ?? ""),
+        options: sortAndFormatOptions(employmentTypes, (et) => et.name),
+        getLabel: (employeeType: EmploymentType) => toSentenceCase(employeeType.name),
         onChange: (employeeType: EmploymentType) =>
           updateSearchPayload({
             filters: { employmentTypeId: employeeType.id },
@@ -394,7 +393,7 @@ export function SearchForm() {
         value: managerEmails.find(
           (email) => email === filterPayload.filters.managerEmail,
         ),
-        options: managerEmails,
+        options: sortAndFormatOptions(managerEmails, (e) => e),
         getLabel: (managerEmail: string) => managerEmail,
         onChange: (managerEmail: string) =>
           updateSearchPayload({ filters: { managerEmail } }),
@@ -404,9 +403,9 @@ export function SearchForm() {
       {
         kind: "employeeStatus",
         label: "Employee Status",
-        value: filterPayload.filters.employeeStatus,
-        options: Object.values(EmployeeStatus),
-        getLabel: (status: EmployeeStatus) => status,
+        value: toSentenceCase(filterPayload.filters.employeeStatus ?? ""),
+        options: sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s),
+        getLabel: (status: EmployeeStatus) => toSentenceCase(status),
         onChange: (status: EmployeeStatus) =>
           updateSearchPayload({ filters: { employeeStatus: status } }),
         onClear: () =>
@@ -415,9 +414,9 @@ export function SearchForm() {
       {
         kind: "gender",
         label: "Gender",
-        value: filterPayload.filters.gender,
-        options: EmployeeGenders,
-        getLabel: (gender: string) => gender,
+        value: toSentenceCase(filterPayload.filters.gender ?? ""),
+        options: sortAndFormatOptions(EmployeeGenders, (g) => g),
+        getLabel: (gender: string) => toSentenceCase(gender),
         onChange: (gender: string) =>
           updateSearchPayload({ filters: { gender } }),
         onClear: () => updateSearchPayload({ filters: { gender: undefined } }),
@@ -474,10 +473,10 @@ export function SearchForm() {
             container
             justifyContent="flex-end"
             spacing={2}
-            alignItems="flex-end"
+            alignItems="center"
           >
             {/* Left: title + count-pills */}
-            <Grid item flex={1} alignSelf="flex-start" height="100%">
+            <Grid item flex={1}>
               <Stack
                 display="flex"
                 direction="row"
@@ -616,7 +615,7 @@ export function SearchForm() {
             {/* Center: search input */}
             <Grid
               item
-              sx={{ display: "flex", alignItems: "center", width: "40%" }}
+              sx={{ display: "flex", width: "40%" }}
             >
               <BaseTextField
                 id="searchString"
@@ -702,7 +701,6 @@ export function SearchForm() {
               item
               sx={{
                 display: "flex",
-                alignSelf: "flex-start",
                 pr: 0.5,
               }}
             >
@@ -766,6 +764,7 @@ export function SearchForm() {
         {/* Active filter chips row */}
         <Grid
           item
+          width="100%"
           sx={{ display: "flex", minHeight: filtersAppliedOnce ? 32 : 0 }}
         >
           {filtersAppliedOnce && (
@@ -775,7 +774,7 @@ export function SearchForm() {
               useFlexGap
               flexWrap="wrap"
               alignItems="center"
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, width: "100%" }}
             >
               {filterChipConfigs.map((config) => {
                 switch (config.kind) {
