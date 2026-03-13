@@ -15,10 +15,8 @@
 // under the License.
 import ballerinax/googleapis.sheets as sheets;
 
-import people.gsheet;
-
 # Create Google Sheets client for parking reservations.
-configurable gsheet:ParkingSheetConfig parkingSheetConfig = ?;
+configurable ParkingSheetConfig parkingSheetConfig = ?;
 
 final sheets:ConnectionConfig parkingSheetsConfig = {
     auth: {

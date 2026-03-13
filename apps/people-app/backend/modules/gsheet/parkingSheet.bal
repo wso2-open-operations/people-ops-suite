@@ -17,11 +17,11 @@ import ballerina/log;
 import ballerinax/googleapis.sheets as sheets;
 
 import people.database;
-import people.gsheet;
 
 # Append a confirmed parking reservation to the Google Sheet.
 #
 # + reservation - Confirmed parking reservation details
+# + return - () on success, error if failed
 public isolated function appendParkingReservation(database:ParkingReservationDetails reservation) returns error? {
     string now = getCurrentTimestamp();
     // Columns: Timestamp | Booking Date | Employee Email | Vehicle Number | Slot Id | Floor
