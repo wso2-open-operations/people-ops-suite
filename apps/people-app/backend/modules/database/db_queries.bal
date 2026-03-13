@@ -1262,6 +1262,18 @@ isolated function getParkingReservationByIdQuery(int reservationId) returns sql:
     INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
     WHERE pr.id = ${reservationId}`;
 
+# Get parking reservation id by transaction hash.
+#
+# + transactionHash - Blockchain transaction hash
+# + return - Query to get reservation id if hash is already used
+isolated function getParkingReservationByTransactionHashQuery(string transactionHash)
+    returns sql:ParameterizedQuery =>
+    `SELECT
+        id
+    FROM parking_reservation
+    WHERE transaction_hash = ${transactionHash}
+    LIMIT 1`;
+
 # Update parking reservation status and optional transaction_hash.
 #
 # + payload - Update payload

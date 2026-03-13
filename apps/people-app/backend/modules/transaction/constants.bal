@@ -16,3 +16,6 @@
 
 # Transaction status value when the transaction succeeded on-chain.
 public const string TRANSACTION_STATUS_SUCCESS = "SUCCESS";
+
+# Transaction status when the node does not know this transaction.
+public const string TRANSACTION_STATUS_NOT_FOUND = "NOT_FOUND";

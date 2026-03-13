@@ -18,9 +18,10 @@ import ballerina/http;
 # Confirms the transaction from the transaction hash.
 #
 # + txHash - Transaction hash
-# + return - () on success, error if not found/failed
-public isolated function confirmTransaction(string txHash) returns error? {
-    http:Response response = check transactionClient->/api/v1/blockchain/confirm\-transaction/[txHash].get();
+# + masterWalletAddress - Expected recipient address
+# + return - () on success, error if not found/failed or recipient mismatch
+public isolated function confirmTransaction(string txHash, string masterWalletAddress) returns error? {
+    http:Response response = check transactionClient->/api/v1/blockchain/get\-transaction\-details/[txHash].get();
 
     if response.statusCode != http:STATUS_OK {
         json|error errBody = response.getJsonPayload();
@@ -34,14 +35,28 @@ public isolated function confirmTransaction(string txHash) returns error? {
         return jsonPayload;
     }
 
-    TransactionStatusResponse|error parsed = jsonPayload.cloneWithType(TransactionStatusResponse);
+    TransactionDetailsResponse|error parsed = jsonPayload.cloneWithType(TransactionDetailsResponse);
     if parsed is error {
         return parsed;
     }
 
-    TransactionStatusPayload payload = parsed.payload;
+    TransactionDetailsPayload payload = parsed.payload;
     if !payload.found {
         return error("Transaction not found on-chain.");
+    }
+    if payload.txDetails is () {
+        return error("Transaction details missing; cannot verify recipient.");
+    }
+    TxDetailsToRecord|error detailsParsed = payload.txDetails.cloneWithType(TxDetailsToRecord);
+    if detailsParsed is error {
+        return error("Transaction details invalid; cannot verify recipient.");
+    }
+    string? toAddress = detailsParsed.'to;
+    if toAddress is () {
+        return error("Transaction 'to' address missing or invalid.");
+    }
+    if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
+        return error(string `Transaction recipient does not match master wallet.`);
     }
     if !payload.success || payload.status != TRANSACTION_STATUS_SUCCESS {
         return error(string `Transaction not successful: ${payload.status}.`);

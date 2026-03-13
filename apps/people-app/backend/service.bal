@@ -1225,6 +1225,21 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
+        database:ReservationIdRow|error? existingTx =
+            database:getParkingReservationByTransactionHash(body.transactionHash);
+        if existingTx is error {
+            log:printError("Error checking transaction hash reuse", existingTx);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while verifying transaction hash."}
+            };
+        }
+        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
+            return <http:BadRequest>{
+                body: {message: "This transaction hash has already been used for another reservation."}
+            };
+        }
+
         error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);

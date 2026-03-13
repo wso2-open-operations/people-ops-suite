@@ -24,28 +24,38 @@ public type ClientAuthConfig record {|
     string clientSecret;
 |};
 
-# Transaction status payload.
-public type TransactionStatusPayload record {|
+# Transaction details payload.
+public type TransactionDetailsPayload record {|
     # Transaction hash (0x-prefixed).
     string txHash;
-    # Whether the transaction was found and mined.
+    # Whether the node knows this transaction.
     boolean found;
-    # Whether the transaction executed successfully.
+    # True when mined and executed successfully.
     boolean success;
-    # Human-readable status: SUCCESS, FAILED, or PENDING.
+    # "SUCCESS" | "FAILED" | "PENDING" | "NOT_FOUND".
     string status;
-    # Block number the transaction was mined in, or () if pending.
-    int? blockNumber;
-    # Number of blocks mined after this transaction.
-    int confirmations;
+    # ISO-8601 block time, or () if not mined/unknown.
+    string? timestamp;
+    # Readable token amount for transfer, or ().
+    string? amountFormatted;
+    # Raw provider transaction, or () when transaction not found.
+    json? txDetails;
+    # Decoded calldata when ABI matches, otherwise ().
+    json? decodedData;
 |};
 
-# Response from transaction service.
-public type TransactionStatusResponse record {|
+# Transaction details for recipient validation.
+public type TxDetailsToRecord record {|
+    # Recipient address of the transaction.
+    string? 'to;
+|};
+
+# Response envelope.
+public type TransactionDetailsResponse record {|
     # API response message.
     string message;
     # HTTP status code of the response.
     int httpCode;
-    # Transaction confirmation status.
-    TransactionStatusPayload payload;
+    # Transaction details payload.
+    TransactionDetailsPayload payload;
 |};
