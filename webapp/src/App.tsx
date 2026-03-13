@@ -27,7 +27,6 @@ import AppAuthProvider from "@context/AuthContext";
 import { store } from "@slices/store";
 import { themeSettings } from "@root/src/theme";
 import { ThemeMode } from "@utils/types";
-
 import "./index.css";
 
 export const ColorModeContext = createContext({
