@@ -19,16 +19,13 @@ import { SearchIcon } from "lucide-react";
 
 import { useState } from "react";
 
+import ErrorHandler from "@root/src/component/common/ErrorHandler.tsx";
+import PreLoader from "@root/src/component/common/PreLoader.tsx";
 import { RootState, useAppSelector } from "@root/src/slices/store";
 import { NodeType } from "@root/src/utils/types";
-import {
-  BusinessUnit,
-  Company,
-  SubTeam,
-  Team,
-  useGetOrgStructureQuery,
-} from "@services/organization";
+import { useGetOrgStructureQuery } from "@services/organization";
 import type { OrgStructure } from "@services/organization";
+import { State } from "@slices/authSlice/auth.ts";
 import {
   BusinessUnitState,
   OrgStructureState,
@@ -38,43 +35,43 @@ import {
 } from "@slices/organizationSlice/organizationStructure";
 import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
-import AddPage from "./AddPage.tsx"
 
-import useFindParent from "./hooks/useFindParent";
+import AddPage from "./AddPage.tsx";
+import { useFindMappingId, useFindParentMappingId } from "./hooks/useFindParent";
 
 type OnEdit = {
   open: boolean;
   data: OrgStructure | null;
   type: NodeType | null;
-  parentNode: Company | BusinessUnit | Team | SubTeam | null;
+  parentId: string | null;
 };
 
 type OnAdd = {
   open: boolean;
   data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
-  type: NodeType | null
-}
+  type: NodeType | null;
+  parentId: string | null;
+};
 
 export default function SplitView() {
-  const orgItems = useAppSelector(
-    (state: RootState) => state.organizationStructure.organizationInfo,
-  );
+  useGetOrgStructureQuery();
 
-
-  const { data: orgStructure } = useGetOrgStructureQuery();
+  const orgItemState = useAppSelector((state: RootState) => state.organizationStructure);
+  const orgItems = orgItemState.organizationInfo;
 
   const theme = useTheme();
   const [editModal, setEditModal] = useState<OnEdit>({
     open: false,
     data: null,
     type: null,
-    parentNode: null,
+    parentId: null,
   });
 
   const [addModal, setAddModal] = useState<OnAdd>({
     open: false,
     data: null,
-    type: null
+    type: null,
+    parentId: null,
   });
 
   const [searchTerm, setSearchTerm] = useState<string | null>();
@@ -85,17 +82,29 @@ export default function SplitView() {
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedSubTeamId, setSelectedSubTeamId] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
 
-  const [selectedTeams, setSelectedTeams] = useState<TeamState[] | null>(null);
-  const [selectedSubTeams, setSelectedSubTeams] = useState<SubTeamState[] | null>(null);
-  const [selectedUnits, setSelectedUnits] = useState<UnitState[] | null>(null);
+  if (orgItemState.state === State.Loading) {
+    return <PreLoader isLoading message="We are retrieving org data" />;
+  }
+
+  if (!orgItems || orgItemState.state === State.Failed) {
+    return <ErrorHandler message={"An unknown error occurred when fetching org items"} />;
+  }
+
+  const selectedTeams =
+    orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId)?.teams ?? null;
+  const selectedSubTeams =
+    selectedTeams?.find((team) => team.id === selectedTeamId)?.subTeams ?? null;
+  const selectedUnits =
+    selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId)?.units ?? null;
 
   const handleClose = () => {
     setEditModal({
       open: false,
       data: null,
       type: null,
-      parentNode: null,
+      parentId: null,
     });
   };
 
@@ -103,75 +112,77 @@ export default function SplitView() {
     setAddModal({
       open: false,
       data: null,
-      type: null
+      type: null,
+      parentId: null,
     });
-  }
+  };
 
   const onEdit = (data: OrgStructureState, nodeType: NodeType) => {
-    const parent = useFindParent(orgItems, data.parentId);
+    const parentId = useFindParentMappingId(orgItems, data.parentId, nodeType);
 
     setEditModal({
       open: true,
       data: data,
       type: nodeType,
-      parentNode: parent,
+      parentId: parentId,
     });
   };
 
-  const onAdd = (data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null, nodeType: NodeType) => {
+  const onAdd = (
+    data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null,
+    nodeType: NodeType,
+    parentId: string,
+  ) => {
+    const parentMappingId = useFindMappingId(orgItems, parentId, nodeType);
+
     setAddModal({
       open: true,
       data: data,
       type: nodeType,
+      parentId: parentMappingId,
     });
   };
 
   const handleBusinessUnitClick = (bu: BusinessUnitState) => {
-    // If clicking the same BU, deselect it
     if (selectedBusinessUnitId === bu.id) {
-      setSelectedTeams(null);
       setSelectedBusinessUnitId(null);
-      setSelectedSubTeams(null);
       setSelectedTeamId(null);
-      setSelectedUnits(null);
       setSelectedSubTeamId(null);
     } else {
-      // Otherwise, select the new BU's teams
-      setSelectedTeams(bu.teams);
       setSelectedBusinessUnitId(bu.id);
-      setSelectedSubTeams(null);
       setSelectedTeamId(null);
-      setSelectedUnits(null);
       setSelectedSubTeamId(null);
     }
   };
 
   const handleTeamClick = (team: TeamState) => {
     if (selectedTeamId === team.id) {
-      setSelectedSubTeams(null);
       setSelectedTeamId(null);
-      setSelectedUnits(null);
       setSelectedSubTeamId(null);
     } else {
-      setSelectedSubTeams(team.subTeams);
       setSelectedTeamId(team.id);
-      setSelectedUnits(null);
       setSelectedSubTeamId(null);
     }
   };
 
   const handleSubTeamClick = (subTeam: SubTeamState) => {
     if (selectedSubTeamId === subTeam.id) {
-      setSelectedUnits(null);
       setSelectedSubTeamId(null);
     } else {
-      setSelectedUnits(subTeam.units);
       setSelectedSubTeamId(subTeam.id);
     }
   };
 
+  const handleUnitClick = (unit: UnitState) => {
+    if (selectedUnitId === unit.id) {
+      setSelectedUnitId(null);
+    } else {
+      setSelectedUnitId(unit.id);
+    }
+  }
+
   const filteredBusinessUnits =
-    orgItems?.businessUnits.filter((bu) => {
+    orgItems.businessUnits.filter((bu) => {
       if (!searchTerm || searchTerm.trim() === "") return true;
 
       return bu.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -198,26 +209,24 @@ export default function SplitView() {
       return unit.name.toLowerCase().includes(unitSearchTerm.toLowerCase());
     }) || [];
 
-  if (!orgItems) return;
-
+  // Add handlers
   const handleBusinessUnitAdd = () => {
-    console.log("click business unit add");
-    onAdd(orgItems.businessUnits, NodeType.BusinessUnit);
+    onAdd(orgItems.businessUnits, NodeType.BusinessUnit, orgItems.company.id);
   };
 
   const handleTeamAdd = () => {
-    console.log("click team add");
-    onAdd(orgItems.teams, NodeType.BusinessUnit);
+    if (!selectedBusinessUnitId) return;
+    onAdd(selectedTeams, NodeType.Team, selectedBusinessUnitId);
   };
 
   const handleSubTeamAdd = () => {
-    console.log("click sub team add");
-    onAdd(orgItems.subTeams, NodeType.BusinessUnit);
+    if (!selectedTeamId) return;
+    onAdd(selectedSubTeams, NodeType.SubTeam, selectedTeamId);
   };
 
   const handleUnitAdd = () => {
-    console.log("click unit add");
-    onAdd(orgItems.units, NodeType.BusinessUnit);
+    if (!selectedSubTeamId) return;
+    onAdd(selectedUnits, NodeType.Unit, selectedSubTeamId);
   };
 
   return (
@@ -298,7 +307,7 @@ export default function SplitView() {
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredBusinessUnits.map((bu) => (
+              {filteredBusinessUnits.map((bu, index) => (
                 <OrgStructureCard
                   key={bu.id}
                   name={bu.name}
@@ -310,6 +319,7 @@ export default function SplitView() {
                   onEdit={() => onEdit(bu, NodeType.BusinessUnit)}
                   onClick={() => handleBusinessUnitClick(bu)}
                   isPeopleSectionVertical={true}
+                  isHighlighted={selectedBusinessUnitId === bu.id}
                 />
               ))}
             </Box>
@@ -357,6 +367,7 @@ export default function SplitView() {
                 value={teamSearchTerm}
                 onChange={(e) => setTeamSearchTerm(e.target.value)}
                 placeholder="Search teams"
+                disabled={!selectedBusinessUnitId}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -378,7 +389,9 @@ export default function SplitView() {
                   border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
                   px: "6px",
                   borderRadius: "6px",
-                  cursor: "pointer",
+                  cursor: selectedBusinessUnitId ? "pointer" : "not-allowed",
+                  opacity: selectedBusinessUnitId ? 1 : 0.4,
+                  pointerEvents: selectedBusinessUnitId ? "auto" : "none",
                 }}
                 onClick={handleTeamAdd}
               >
@@ -399,6 +412,7 @@ export default function SplitView() {
                   onEdit={() => onEdit(team, NodeType.Team)}
                   onClick={() => handleTeamClick(team)}
                   isPeopleSectionVertical={true}
+                  isHighlighted={selectedTeamId === team.id}
                 />
               ))}
             </Box>
@@ -446,6 +460,7 @@ export default function SplitView() {
                 value={subTeamSearchTerm}
                 onChange={(e) => setSubTeamSearchTerm(e.target.value)}
                 placeholder="Search sub teams"
+                disabled={!selectedTeamId}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -467,7 +482,9 @@ export default function SplitView() {
                   border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
                   px: "6px",
                   borderRadius: "6px",
-                  cursor: "pointer",
+                  cursor: selectedTeamId ? "pointer" : "not-allowed",
+                  opacity: selectedTeamId ? 1 : 0.4,
+                  pointerEvents: selectedTeamId ? "auto" : "none",
                 }}
                 onClick={handleSubTeamAdd}
               >
@@ -488,6 +505,7 @@ export default function SplitView() {
                   onEdit={() => onEdit(subTeam, NodeType.SubTeam)}
                   onClick={() => handleSubTeamClick(subTeam)}
                   isPeopleSectionVertical={true}
+                  isHighlighted={selectedSubTeamId === subTeam.id}
                 />
               ))}
             </Box>
@@ -535,6 +553,7 @@ export default function SplitView() {
                 value={unitSearchTerm}
                 onChange={(e) => setUnitSearchTerm(e.target.value)}
                 placeholder="Search units"
+                disabled={!selectedSubTeamId}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -556,7 +575,9 @@ export default function SplitView() {
                   border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
                   px: "6px",
                   borderRadius: "6px",
-                  cursor: "pointer",
+                  cursor: selectedSubTeamId ? "pointer" : "not-allowed",
+                  opacity: selectedSubTeamId ? 1 : 0.4,
+                  pointerEvents: selectedSubTeamId ? "auto" : "none",
                 }}
                 onClick={handleUnitAdd}
               >
@@ -576,6 +597,8 @@ export default function SplitView() {
                   functionLead={unit.functionalLead}
                   onEdit={() => onEdit(unit, NodeType.Unit)}
                   isPeopleSectionVertical={true}
+                  onClick={() => handleUnitClick(unit)}
+                  isHighlighted={selectedUnitId === unit.id}
                 />
               ))}
             </Box>
@@ -583,30 +606,23 @@ export default function SplitView() {
         </Box>
       </Box>
 
-      {editModal.open && editModal.data && editModal.type && (
+      {editModal.open && editModal.data && editModal.type && editModal.parentId !== null && (
         <EditModal
           open={editModal.open}
           data={editModal.data}
           type={editModal.type}
-          parentNode={editModal.parentNode}
+          parentId={editModal.parentId}
           onClose={handleClose}
         />
       )}
 
-      <AddPage open={addModal.open} orgInfo={addModal.data} onClose={handleAddModalClose} />
-
-      {/* {/* Add modal */}
-      {/* {addModal.context && ( */}
-      {/*   <AddPage */}
-      {/*     open={addModal.open} */}
-      {/*     context={addModal.context} */}
-      {/*     onClose={handleCloseAdd} */}
-      {/*     onSubmit={(_ctx, _values) => { */}
-      {/*       handleCloseAdd(); */}
-      {/*     }} */}
-      {/*   /> */}
-      {/* )} */}
-      {/**/}
+      <AddPage
+        open={addModal.open}
+        orgInfo={addModal.data}
+        onClose={handleAddModalClose}
+        nodeType={addModal.type}
+        parentId={addModal.parentId}
+      />
     </Box>
   );
 }
