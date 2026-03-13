@@ -28,11 +28,13 @@ import {
   MenuItem,
   Stack,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import { resetEmployee } from "@root/src/slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
 const Header = () => {
+  const theme = useTheme();
   const authContext = useAppAuthContext();
   const dispatch = useAppDispatch();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
@@ -84,12 +86,14 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "40px",
-            maxWidth: "100px",
+            height: "20px",
+            width: "auto",
             cursor: "pointer",
+            paddingLeft: "5px",
+            paddingRight: "2px"
           }}
           onClick={() => (window.location.href = "/")}
-          src={require("@assets/images/wso2-logo.svg").default}
+          src={require(theme.palette.mode === "dark" ? "@assets/images/WSO2-Logo-White.png" : "@assets/images/WSO2-Logo-Black.png")}
         ></img>
         <Typography
           variant="h5"
