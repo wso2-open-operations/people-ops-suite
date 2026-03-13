@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerina/log;
 import ballerinax/googleapis.sheets as sheets;
 
 import people.database;
@@ -41,7 +40,6 @@ public isolated function appendParkingReservation(database:ParkingReservationDet
     );
 
     if result is error {
-        log:printError("Failed to append parking reservation to Google Sheet", result, reservationId = reservation.id);
         return result;
     }
     return ();
