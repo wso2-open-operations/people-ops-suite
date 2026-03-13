@@ -138,8 +138,8 @@ export function FilterDrawer({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ pt: 2 }}>
-        <Grid container spacing={3}>
+      <DialogContent dividers sx={{ pt: 2, px: 4, overflow: "hidden" }}>
+        <Grid container spacing={6} alignItems="flex-start">
 
           {/* Column 1 — Organization */}
           <Grid item xs={12} md={4}>

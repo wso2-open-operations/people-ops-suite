@@ -80,13 +80,18 @@ export function OrganizationTreeFilters({
       bottom: 0,
       bgcolor: "text.disabled",
     },
+    // stop vertical line at the horizontal connector for the last child
+    "&:last-child::after": {
+      bottom: "auto",
+      height: "38px",
+    },
   };
 
   return (
     <Box
       sx={{
         width: "100%",
-        height: "100%",
+
       }}
     >
       <Grid container direction="column">

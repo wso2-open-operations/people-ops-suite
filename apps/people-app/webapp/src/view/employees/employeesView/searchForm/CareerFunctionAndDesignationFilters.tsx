@@ -65,6 +65,11 @@ export function CareerFunctionAndDesignationFilters({
       bottom: 0,
       bgcolor: "text.disabled",
     },
+    // stop vertical line at the horizontal connector for the last child
+    "&:last-child::after": {
+      bottom: "auto",
+      height: "38px",
+    },
   };
 
   return (
