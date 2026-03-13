@@ -286,7 +286,7 @@ export const shortDateFormat = "D MMM 'YY";
 export const autoSaveCountdownDuration = 5; // in seconds
 
 export const wso2LogoUrl =
-  "https://wso2.cachefly.net/wso2/sites/images/brand/downloads/wso2-logo.png";
+  "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png";
 export const asgardeoLogoUrl =
   "https://wso2.cachefly.net/wso2/sites/all/2023/images/asgardeo-logo.webp";
 export const choreoLogoUrl =

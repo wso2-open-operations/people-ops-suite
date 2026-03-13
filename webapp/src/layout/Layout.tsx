@@ -67,7 +67,7 @@ export default function Layout() {
           flexDirection: "column",
           height: "100vh",
           width: "100vw",
-          backgroundColor: theme.palette.surface.primary.active,
+          backgroundColor: theme.palette.background.default,
         }}
       >
         {/* Header */}
@@ -95,7 +95,7 @@ export default function Layout() {
               flexDirection: "column",
             }}
           >
-            <Suspense fallback={<PreLoader isLoading message="Loading page data" />}>
+            <Suspense fallback={<PreLoader isLoading message="Grabbing the latest data..." />}>
               <Outlet />
             </Suspense>
           </Box>

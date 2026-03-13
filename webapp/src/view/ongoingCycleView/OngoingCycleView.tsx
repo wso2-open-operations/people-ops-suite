@@ -223,7 +223,7 @@ const OngoingCycleView = () => {
               </Tabs>
             </Box>
           </Box>
-          <Box sx={{ height: "100%" }}>
+          <Box sx={{ height: "calc(100vh - 15rem)" }}>
             {employeeStatus === RequestState.LOADING && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}
