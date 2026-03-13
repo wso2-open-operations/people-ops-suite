@@ -22,11 +22,13 @@ const employeesList = lazy(() => import("@view/employees/employeesView/Employees
 const help = lazy(() => import("@view/help/help"));
 const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
 const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
+const myTeamView = lazy(() => import("@view/employees/myTeam/MyTeamView"));
 
 export const View = {
   me,
   employeeOnboarding,
   employeesList,
+  myTeamView,
   employeeDetails,
   employeeEdit,
   help,
