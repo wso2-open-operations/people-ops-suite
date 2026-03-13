@@ -58,15 +58,15 @@ Runtime config injected via `window.config` (same pattern as webapp).
 
 - Ballerina 2201.12.7, organized as package `wso2_open_operations/people`
 - Two modules:
-  - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE` and `ADMIN_ROLE`.
+  - **`authorization`** — `JwtInterceptor` reads the `x-jwt-assertion` header, decodes the JWT, validates group membership, and stores `CustomJwtPayload` in the request context. Roles configured via `Config.toml`: `EMPLOYEE_ROLE`, `LEAD_ROLE`, and `ADMIN_ROLE`.
   - **`database`** — MySQL client, all DB queries (`db_queries.bal`), DB functions (`db_functions.bal`), types, enums, and utils.
 - Every resource function in `service.bal` extracts `userInfo` from `ctx` and checks role permissions before executing business logic.
-- Two privilege levels: `EMPLOYEE_PRIVILEGE` (1) and `ADMIN_PRIVILEGE` (2) returned to the frontend in `/user-info`.
+- Three privilege levels — `EMPLOYEE_PRIVILEGE`, `LEAD_PRIVILEGE`, and `ADMIN_PRIVILEGE` — are returned to the frontend in `/user-info`. The numeric IDs for these privileges are defined in the backend and should be treated as opaque by the frontend.
 
 ### Webapp
 
 **State management:** Redux Toolkit with these slices in `src/slices/`:
-- `authSlice` — Asgardeo auth state, roles (`Role.ADMIN | Role.EMPLOYEE`), and app mode (`active | maintenance`)
+- `authSlice` — Asgardeo auth state, roles (`Role.EMPLOYEE | Role.LEAD | Role.ADMIN`), and app mode (`active | maintenance`). The Lead role has permissions between Employee and Admin; exact behavior is driven by backend privilege checks and route guards.
 - `userSlice` — logged-in user's employee info fetched from `/user-info`
 - `employeeSlice` — employee list, selected employee details
 - `employeePersonalInfo` — personal info for selected employee
