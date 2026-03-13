@@ -15,7 +15,6 @@
 // under the License. 
 import ballerina/lang.regexp as regex;
 import ballerina/sql;
-import ballerina/log;
 
 # Retrieving user by id.
 #
@@ -137,17 +136,10 @@ public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? sta
     stream<PromotionCycle, error?> resultStream = databaseClient->query(getPromotionCyclesByStatusQuery(statusArray));
 
     PromotionCycle[] cycles = [];
-    error? queryError = from PromotionCycle promotionCycle in resultStream
+    _ = check from PromotionCycle promotionCycle in resultStream
         do {
             cycles.push(promotionCycle);
         };
-
-    if queryError is error {
-        _ = check resultStream.close();
-        log:printError(queryError.toString());
-        return error("An error occurred while retrieving promotion cycles");
-    }
-
     return cycles;
 }
 
