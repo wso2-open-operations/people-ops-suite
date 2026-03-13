@@ -141,7 +141,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if epf.trim() == "" {
+        string trimmedEpf = epf.trim();
+        if trimmedEpf == "" {
             string customErr = "EPF is a mandatory query parameter";
             log:printWarn(customErr);
             return <http:BadRequest>{
@@ -151,10 +152,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error? existing = database:getEmployeeByEpf(epf);
+        string|error? existing = database:getEmployeeByEpf(trimmedEpf);
         if existing is error {
             string customErr = "Error occurred while validating EPF uniqueness";
-            log:printError(customErr, existing, epf = epf);
+            log:printError(customErr, existing, epf = trimmedEpf);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
