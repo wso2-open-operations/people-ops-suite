@@ -18,14 +18,12 @@ import ballerinax/googleapis.sheets as sheets;
 
 import people.database;
 import people.gsheet;
-import people.gsheet.client;
-import people.gsheet.utils;
 
-# Append a confirmed parking reservation to the Google Sheet used by Security.
+# Append a confirmed parking reservation to the Google Sheet.
 #
 # + reservation - Confirmed parking reservation details
 public isolated function appendParkingReservation(database:ParkingReservationDetails reservation) returns error? {
-    string now = utils:getCurrentTimestamp();
+    string now = getCurrentTimestamp();
     // Columns: Timestamp | Booking Date | Employee Email | Vehicle Number | Slot Id | Floor
     string[] row = [
         now,
@@ -36,10 +34,10 @@ public isolated function appendParkingReservation(database:ParkingReservationDet
         reservation.floorName
     ];
 
-    sheets:ValueRange|error result = client:parkingSpreadsheetClient->appendValue(
-        gsheet:parkingSheetConfig.sheetId,
+    sheets:ValueRange|error result = parkingSpreadsheetClient->appendValue(
+        parkingSheetConfig.sheetId,
         row,
-        <sheets:A1Range>{sheetName: gsheet:parkingSheetConfig.sheetName}
+        <sheets:A1Range>{sheetName: parkingSheetConfig.sheetName}
     );
 
     if result is error {
