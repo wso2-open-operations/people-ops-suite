@@ -14,13 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, Container, LinearProgress, Typography, useTheme } from "@mui/material";
-import Grid from "@mui/material/Grid";
-
+import { Box, LinearProgress, Typography } from "@mui/material";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
-  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -28,45 +25,28 @@ const PreLoader = (props: PreLoaderProps) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        height: "100vh",
+        alignItems: "center",
+        height: "100%",
+        width: "100%",
+        flex: 1,
       }}
     >
-      <Container maxWidth="md">
-        <Box>
-          <Grid
-            container
-            direction="column"
-            justifyContent="center"
-            alignItems="center"
-            spacing={2}
-          >
-            <Grid size={{ xs: 12 }}>
-              {props.isLoading && (
-                <LinearProgress
-                  sx={{
-                    width: "150px",
-                  }}
-                />
-              )}
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Typography
-                variant="inherit"
-                sx={{
-                  fontSize: theme.typography.body2.fontSize,
-                  fontWeight: 500,
-                  color: (theme) =>
-                    theme.palette.mode === "light"
-                      ? theme.palette.common.black
-                      : theme.palette.common.white,
-                }}
-              >
-                {props.message}
-              </Typography>
-            </Grid>
-          </Grid>
-        </Box>
-      </Container>
+      {props.isLoading && (
+        <LinearProgress
+          sx={{
+            width: "150px",
+            mb: 2,
+          }}
+        />
+      )}
+      <Typography
+        variant="caption"
+        sx={{
+          color: (theme) => theme.palette.customText.primary.p1.active
+        }}
+      >
+        {props.message}
+      </Typography>
     </Box>
   );
 };
