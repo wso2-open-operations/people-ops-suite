@@ -18,7 +18,8 @@ import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/mate
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import Wso2Logo from "../../assets/images/wso2-logo.svg";
+import Wso2Logo from "@assets/images/wso2-logo.png";
+import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { useAppSelector } from "@slices/store";
@@ -30,6 +31,7 @@ const Header = () => {
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const userInfo = useAppSelector(selectUserInfoData);
+  const activeLogo = theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2Logo
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
@@ -49,39 +51,37 @@ const Header = () => {
       <Toolbar
         variant="dense"
         sx={{
-          py: "0.5rem",
+          py: 1,
+          px: { xs: 1, md: 4 },
           display: "flex",
-          gap: 0.5,
-          "&.MuiToolbar-root": {
-            pl: 0.3,
-          },
+          gap: 2,
         }}
       >
         <img
           alt="wso2"
           style={{
-            height: "40px",
+            height: "25px",
             maxWidth: "100px",
+            cursor: "pointer",
           }}
           onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
-        ></img>
+          src={activeLogo}
+        />
 
         <Box
           sx={{
             display: "flex",
             flexDirection: "row",
-            gap: theme.spacing(0.5),
-            width: "100%",
+            gap: 2,
             alignItems: "center",
-            height: "100%",
+            flexGrow: 1,
           }}
         >
           <Typography
-            variant="h5"
+            variant="caption"
             sx={{
               color: theme.palette.customText.primary.p1.active,
-              fontWeight: "600",
+              fontSize: "1.5rem",
             }}
           >
             {APP_NAME}
@@ -89,14 +89,20 @@ const Header = () => {
           <BasicBreadcrumbs />
         </Box>
 
-        <Box sx={{ flexGrow: 0 }}>
+        <Box sx={{ flexShrink: 0 }}>
           {userInfo && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
-                <Box sx={{ width: "fit-content" }}>
+              <Stack flexDirection={"row"} alignItems={"center"} gap={2}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-end"
+                  }}
+                >
                   <Typography
                     noWrap
-                    variant="body1"
+                    variant="body2"
                     sx={{
                       color: theme.palette.customText.primary.p2.active,
                     }}
@@ -105,7 +111,7 @@ const Header = () => {
                   </Typography>
                   <Typography
                     noWrap
-                    variant="body2"
+                    variant="caption"
                     sx={{
                       color: theme.palette.customText.primary.p3.active,
                     }}
@@ -117,9 +123,10 @@ const Header = () => {
                   <Avatar
                     onClick={handleOpenUserMenu}
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: 44,
+                      height: 44,
                       border: 1,
+                      cursor: "pointer",
                       borderColor: theme.palette.customBorder.territory.active,
                     }}
                     src={userInfo.employeeThumbnail || ""}
@@ -150,6 +157,7 @@ const Header = () => {
                   key={"logout"}
                   onClick={() => {
                     authContext.appSignOut();
+                    handleCloseUserMenu();
                   }}
                 >
                   <Typography textAlign="center">Logout</Typography>
