@@ -196,24 +196,26 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     if leadEmail is string {
         if payload.filters.directReports == false {
             // Show all subordinates recursively
-            sql:ParameterizedQuery ctePrefix = `WITH RECURSIVE subordinate_tree (pk_id, w_email) AS (
-                SELECT id, work_email
+            sql:ParameterizedQuery ctePrefix = `WITH RECURSIVE subordinate_tree (pk_id, w_email, visited) AS (
+                SELECT id, work_email, CAST(id AS CHAR(1000))
                 FROM employee
                 WHERE LOWER(manager_email) = LOWER(${leadEmail})
                 UNION
-                SELECT e2.id, e2.work_email
+                SELECT e2.id, e2.work_email, CAST(e2.id AS CHAR(1000))
                 FROM employee e2
                 JOIN employee_additional_managers eam2 ON eam2.employee_pk_id = e2.id
                 WHERE LOWER(eam2.additional_manager_email) = LOWER(${leadEmail})
                 UNION ALL
-                SELECT e2.id, e2.work_email
+                SELECT e2.id, e2.work_email, CONCAT(st.visited, ',', e2.id)
                 FROM employee e2
                 JOIN subordinate_tree st ON LOWER(e2.manager_email) = LOWER(st.w_email)
+                WHERE NOT FIND_IN_SET(e2.id, st.visited)
                 UNION ALL
-                SELECT e2.id, e2.work_email
+                SELECT e2.id, e2.work_email, CONCAT(st.visited, ',', e2.id)
                 FROM employee e2
                 JOIN employee_additional_managers eam2 ON eam2.employee_pk_id = e2.id
                 JOIN subordinate_tree st ON LOWER(eam2.additional_manager_email) = LOWER(st.w_email)
+                WHERE NOT FIND_IN_SET(e2.id, st.visited)
             ) `;
             baseQuery = sql:queryConcat(ctePrefix, baseQuery);
             filters.push(`e.id IN (SELECT pk_id FROM subordinate_tree)`);
@@ -292,24 +294,26 @@ isolated function getManagersQuery() returns sql:ParameterizedQuery =>
 # + employeeId - Employee ID of the target employee
 # + return - Parameterized query returning 1 row if the relationship exists
 isolated function isSubordinateOfLeadQuery(string leadEmail, string employeeId) returns sql:ParameterizedQuery =>
-    `WITH RECURSIVE subordinate_tree (pk_id, w_email) AS (
-        SELECT id, work_email
+    `WITH RECURSIVE subordinate_tree (pk_id, w_email, visited) AS (
+        SELECT id, work_email, CAST(id AS CHAR(1000))
         FROM employee
         WHERE LOWER(manager_email) = LOWER(${leadEmail})
         UNION
-        SELECT e.id, e.work_email
+        SELECT e.id, e.work_email, CAST(e.id AS CHAR(1000))
         FROM employee e
         JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id
         WHERE LOWER(eam.additional_manager_email) = LOWER(${leadEmail})
         UNION ALL
-        SELECT e.id, e.work_email
+        SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id)
         FROM employee e
         JOIN subordinate_tree st ON LOWER(e.manager_email) = LOWER(st.w_email)
+        WHERE NOT FIND_IN_SET(e.id, st.visited)
         UNION ALL
-        SELECT e.id, e.work_email
+        SELECT e.id, e.work_email, CONCAT(st.visited, ',', e.id)
         FROM employee e
         JOIN employee_additional_managers eam ON eam.employee_pk_id = e.id
         JOIN subordinate_tree st ON LOWER(eam.additional_manager_email) = LOWER(st.w_email)
+        WHERE NOT FIND_IN_SET(e.id, st.visited)
     )
     SELECT 1
     FROM subordinate_tree

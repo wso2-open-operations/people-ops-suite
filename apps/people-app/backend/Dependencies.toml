@@ -413,7 +413,6 @@ dependencies = [
 modules = [
 	{org = "wso2_open_operations", packageName = "people", moduleName = "people"},
 	{org = "wso2_open_operations", packageName = "people", moduleName = "people.authorization"},
-	{org = "wso2_open_operations", packageName = "people", moduleName = "people.database"},
-	{org = "wso2_open_operations", packageName = "people", moduleName = "people.gsheet"}
+	{org = "wso2_open_operations", packageName = "people", moduleName = "people.database"}
 ]
 
