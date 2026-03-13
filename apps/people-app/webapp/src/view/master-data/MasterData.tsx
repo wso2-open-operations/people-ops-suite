@@ -17,10 +17,10 @@ import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 import ViewWeekOutlinedIcon from "@mui/icons-material/ViewWeekOutlined";
 
 import TabsPage from "@layout/pages/TabsPage";
-
 import OrgStructure from "@view/master-data/panel/chart-view/OrgStructure.tsx";
-import OrgSplitView from "@view/master-data/panel/split-view/OrgSplitView.tsx";
-import Test from "@view/master-data/panel/Test.tsx";
+import SplitView from "@view/master-data/panel/split-view-t/SplitView.tsx";
+
+import OrgSplitView from "./panel/split-view/OrgSplitView";
 
 export default function MasterData() {
   return (
@@ -34,22 +34,16 @@ export default function MasterData() {
           page: <OrgSplitView />,
         },
         {
+          tabTitle: "Org Structure Remake",
+          tabPath: "org-structure-split-view-remake",
+          icon: <AccountTreeOutlinedIcon />,
+          page: <SplitView />,
+        },
+        {
           tabTitle: "Org Structure Chart",
           tabPath: "org-structure-chart",
           icon: <AccountTreeOutlinedIcon />,
           page: <OrgStructure />,
-        },
-        {
-          tabTitle: "Org Structure",
-          tabPath: "org-structure-split-view",
-          icon: <ViewWeekOutlinedIcon />,
-          page: <OrgSplitView />,
-        },
-        {
-          tabTitle: "Edit Org Structure",
-          tabPath: "edit-org-structure",
-          icon: <AccountTreeOutlinedIcon />,
-          page: <Test />,
         },
       ]}
     />
