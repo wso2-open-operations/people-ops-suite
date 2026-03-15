@@ -826,6 +826,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 payload.nicOrPassport is string ||
                 payload.firstName is string ||
                 payload.lastName is string ||
+                payload.fullName is string ||
                 payload.title is string ||
                 payload.dob is string ||
                 payload.gender is string ||

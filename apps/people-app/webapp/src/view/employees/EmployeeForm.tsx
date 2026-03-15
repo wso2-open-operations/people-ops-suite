@@ -71,6 +71,12 @@ import {
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
+const deriveFullName = (
+  full: string | null | undefined,
+  first?: string,
+  last?: string,
+): string => (full ?? `${first ?? ""} ${last ?? ""}`).trim();
+
 const toFormValues = (
   employee: Employee | null,
   personal: EmployeePersonalInfo | null,
@@ -109,9 +115,11 @@ const toFormValues = (
     base.personalInfo = {
       nicOrPassport: personal.nicOrPassport ?? "",
       firstName: personal.firstName ?? "",
-      fullName:
-        personal.fullName ??
-        `${employee?.firstName ?? ""} ${employee?.lastName ?? ""}`,
+      fullName: deriveFullName(
+        personal.fullName,
+        employee?.firstName,
+        employee?.lastName,
+      ),
       lastName: personal.lastName ?? "",
       title: personal.title ?? "",
       dob: personal.dob ?? null,
@@ -383,12 +391,8 @@ function FormActionsBar({
         }
         onClick={async () => {
           if (activeStep === 1) {
-            const epf = (values.epf ?? "")
-              .toString()
-              .trim();
-            const initialEpf = (initialEditValues?.epf ?? "")
-              .toString()
-              .trim();
+            const epf = (values.epf ?? "").toString().trim();
+            const initialEpf = (initialEditValues?.epf ?? "").toString().trim();
             if (epf && (!isEditMode || epf !== initialEpf)) {
               const fieldErrors = await validateForm();
               if (fieldErrors.epf) {
