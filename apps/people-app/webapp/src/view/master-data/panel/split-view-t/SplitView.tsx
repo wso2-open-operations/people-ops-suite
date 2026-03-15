@@ -14,7 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 import AddIcon from "@mui/icons-material/Add";
-import { Box, InputAdornment, InputBase, TextField, Typography, useTheme } from "@mui/material";
+import ClearIcon from "@mui/icons-material/Clear";
+import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
 import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
 import { useState } from "react";
@@ -234,24 +235,8 @@ export default function SplitView() {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {/* ── Global Search ── */}
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-        {/* Search input */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "40px",
-            width: "287px",
-            px: "12px",
-            py: "8px",
-            gap: "12px",
-            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
-            borderRadius: "8px",
-            backgroundColor: theme.palette.fill.neutral.light.active,
-          }}
-        >
-          {/* Left: icon + input */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
+        {/* Left: icon + input */}
+        {/* <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
             <SearchIcon
               size={16}
               color={theme.palette.customText.primary.p3.active}
@@ -262,58 +247,77 @@ export default function SplitView() {
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Search..."
               sx={{
-                flex: 1,
-                fontSize: "14px",
-                fontWeight: 400,
-                lineHeight: 1.5,
-                color: theme.palette.customText.primary.p3.active,
-                "& input::placeholder": {
-                  color: theme.palette.customText.primary.p3.active,
-                  opacity: 1,
-                },
                 "& input": { padding: 0 },
               }}
             />
-          </Box>
-
-          {/* Right: prev / next chevrons */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
-            <ChevronLeftIcon
-              size={12}
-              color={theme.palette.customText.primary.p3.active}
-              style={{ cursor: "pointer" }}
-            />
-            <ChevronRightIcon
-              size={12}
-              color={theme.palette.customText.primary.p3.active}
-              style={{ cursor: "pointer" }}
-            />
-          </Box>
-        </Box>
-
-        {/* Result counter: 1 / 3 */}
-        <Box
+          </Box> */}
+        <TextField
+          placeholder="Search..."
+          value={globalSearch}
+          onChange={(e) => setGlobalSearch(e.target.value)}
+          size="small"
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            pr: "6px",
+            backgroundColor: theme.palette.surface.secondary.active,
           }}
-        >
-          {["1", "/", "3"].map((token, i) => (
-            <Typography
-              key={i}
-              sx={{
-                fontSize: "12px",
-                fontWeight: 500,
-                lineHeight: 1.6,
-                letterSpacing: "0.12px",
-                color: theme.palette.customText.primary.p3.active,
-              }}
-            >
-              {token}
-            </Typography>
-          ))}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} />
+                </InputAdornment>
+              ),
+              endAdornment: globalSearch ? (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    sx={{
+                      padding: 0,
+                      color: theme.palette.customText.primary.p3.active,
+                      "&:hover": {
+                        color: theme.palette.customText.primary.p2.active,
+                      },
+                    }}
+                  >
+                    <ClearIcon sx={{ fontSize: "16px" }} />
+                  </IconButton>
+                </InputAdornment>
+              ) : null,
+            },
+          }}
+        />
+
+        {/* Right: prev / next chevrons */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+          <ChevronLeftIcon
+            size={14}
+            color={theme.palette.customText.primary.p3.active}
+            style={{ cursor: "pointer" }}
+          />
+          {/* Result counter: 1 / 3 */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            {["1", "/", "3"].map((token, i) => (
+              <Typography
+                variant="caption"
+                key={i}
+                sx={{
+                  color: theme.palette.customText.primary.p3.active,
+                }}
+              >
+                {token}
+              </Typography>
+            ))}
+          </Box>
+          <ChevronRightIcon
+            size={12}
+            color={theme.palette.customText.primary.p3.active}
+            style={{ cursor: "pointer" }}
+          />
         </Box>
       </Box>
 
