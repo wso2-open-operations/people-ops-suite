@@ -139,7 +139,11 @@ const toFormValues = (
   } else if (employee) {
     base.personalInfo.firstName = employee.firstName ?? "";
     base.personalInfo.lastName = employee.lastName ?? "";
-    base.personalInfo.fullName = `${employee.firstName ?? ""} ${employee.lastName ?? ""}`;
+    base.personalInfo.fullName = deriveFullName(
+      undefined,
+      employee.firstName,
+      employee.lastName,
+    );
   }
 
   return base;
@@ -177,8 +181,7 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
-  fullName:
-    values.personalInfo.fullName === "" ? null : values.personalInfo.fullName,
+  fullName: values.personalInfo.fullName?.trim() || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -683,8 +686,11 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
                   fullName:
-                    values.personalInfo.fullName ||
-                    `${values.personalInfo.firstName || ""} ${values.personalInfo.lastName || ""}`,
+                    deriveFullName(
+                      values.personalInfo.fullName,
+                      values.personalInfo.firstName,
+                      values.personalInfo.lastName,
+                    ) || undefined,
                   firstName: values.personalInfo.firstName || undefined,
                   lastName: values.personalInfo.lastName || undefined,
                   title: values.personalInfo.title || undefined,
