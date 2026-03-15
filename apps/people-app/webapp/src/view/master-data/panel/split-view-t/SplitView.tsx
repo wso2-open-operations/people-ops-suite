@@ -14,8 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 import AddIcon from "@mui/icons-material/Add";
-import { Box, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
-import { SearchIcon } from "lucide-react";
+import { Box, InputAdornment, InputBase, TextField, Typography, useTheme } from "@mui/material";
+import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
 import { useState } from "react";
 
@@ -78,6 +78,7 @@ export default function SplitView() {
   const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>();
   const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>();
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
+  const [globalSearch, setGlobalSearch] = useState<string>("");
 
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -179,7 +180,7 @@ export default function SplitView() {
     } else {
       setSelectedUnitId(unit.id);
     }
-  }
+  };
 
   const filteredBusinessUnits =
     orgItems.businessUnits.filter((bu) => {
@@ -230,9 +231,90 @@ export default function SplitView() {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column" }}>
-      <Box>
-        <Typography>remaking split view</Typography>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* ── Global Search ── */}
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+        {/* Search input */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: "40px",
+            width: "287px",
+            px: "12px",
+            py: "8px",
+            gap: "12px",
+            border: `1px solid ${theme.palette.customBorder.primary.b3.active}`,
+            borderRadius: "8px",
+            backgroundColor: theme.palette.fill.neutral.light.active,
+          }}
+        >
+          {/* Left: icon + input */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
+            <SearchIcon
+              size={16}
+              color={theme.palette.customText.primary.p3.active}
+              style={{ flexShrink: 0 }}
+            />
+            <InputBase
+              value={globalSearch}
+              onChange={(e) => setGlobalSearch(e.target.value)}
+              placeholder="Search..."
+              sx={{
+                flex: 1,
+                fontSize: "14px",
+                fontWeight: 400,
+                lineHeight: 1.5,
+                color: theme.palette.customText.primary.p3.active,
+                "& input::placeholder": {
+                  color: theme.palette.customText.primary.p3.active,
+                  opacity: 1,
+                },
+                "& input": { padding: 0 },
+              }}
+            />
+          </Box>
+
+          {/* Right: prev / next chevrons */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: "2px", flexShrink: 0 }}>
+            <ChevronLeftIcon
+              size={12}
+              color={theme.palette.customText.primary.p3.active}
+              style={{ cursor: "pointer" }}
+            />
+            <ChevronRightIcon
+              size={12}
+              color={theme.palette.customText.primary.p3.active}
+              style={{ cursor: "pointer" }}
+            />
+          </Box>
+        </Box>
+
+        {/* Result counter: 1 / 3 */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+            pr: "6px",
+          }}
+        >
+          {["1", "/", "3"].map((token, i) => (
+            <Typography
+              key={i}
+              sx={{
+                fontSize: "12px",
+                fontWeight: 500,
+                lineHeight: 1.6,
+                letterSpacing: "0.12px",
+                color: theme.palette.customText.primary.p3.active,
+              }}
+            >
+              {token}
+            </Typography>
+          ))}
+        </Box>
       </Box>
 
       <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
@@ -307,7 +389,7 @@ export default function SplitView() {
             </Box>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-              {filteredBusinessUnits.map((bu, index) => (
+              {filteredBusinessUnits.map((bu) => (
                 <OrgStructureCard
                   key={bu.id}
                   name={bu.name}
