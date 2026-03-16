@@ -46,7 +46,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
     handleRenameCurrent,
     isLoading,
     isError,
-  } = useOrgEntityActions({ data, parentId });
+  } = useOrgEntityActions({ data, parentId, onClose });
 
   if (isError || !entityTypeName) {
     return <ErrorHandler message={"Something went wrong. Please try again..."} />;
@@ -198,6 +198,7 @@ export const EditModal: React.FC<EditModalProps> = ({ open, onClose, data, paren
                 backgroundColor: theme.palette.customBorder.primary.b2.active,
               }}
             /> */}
+
             {/* 
             {children.length > 0 && (
               <DeleteChild

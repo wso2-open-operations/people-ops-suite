@@ -23,9 +23,10 @@ import { useOrgMutation } from "./useOrgMutations";
 interface UseOrgEntityActionsParams {
   data: Company | BusinessUnit | Team | SubTeam | Unit;
   parentId: string;
+  onClose?: () => void;
 }
 
-export function useOrgEntityActions({ data, parentId }: UseOrgEntityActionsParams) {
+export function useOrgEntityActions({ data, parentId, onClose }: UseOrgEntityActionsParams) {
   const {
     updateBusinessUnit,
     updateTeam,
@@ -88,19 +89,24 @@ export function useOrgEntityActions({ data, parentId }: UseOrgEntityActionsParam
   };
 
   const handleDeleteCurrent = async (_reason: string) => {
-    switch (entityTypeName) {
-      case UnitType.BusinessUnit:
-        await deleteBusinessUnit({ id: data.id });
-        break;
-      case UnitType.Team:
-        deleteBusinessUnitTeam({ buId: parentId, teamId: data.id });
-        break;
-      case UnitType.SubTeam:
-        await deleteTeamSubTeam({ teamId: parentId, subTeamId: data.id });
-        break;
-      case UnitType.Unit:
-        await deleteSubTeamUnit({ subTeamId: parentId, unitId: data.id });
-        break;
+    try {
+      switch (entityTypeName) {
+        case UnitType.BusinessUnit:
+          await deleteBusinessUnit({ id: data.id }).unwrap();
+          break;
+        case UnitType.Team:
+          await deleteBusinessUnitTeam({ buId: parentId, teamId: data.id }).unwrap();
+          break;
+        case UnitType.SubTeam:
+          await deleteTeamSubTeam({ teamId: parentId, subTeamId: data.id }).unwrap();
+          break;
+        case UnitType.Unit:
+          await deleteSubTeamUnit({ subTeamId: parentId, unitId: data.id }).unwrap();
+          break;
+      }
+      if (onClose) onClose();
+    } catch (err) {
+      console.error("Failed to delete entity", err);
     }
   };
 
