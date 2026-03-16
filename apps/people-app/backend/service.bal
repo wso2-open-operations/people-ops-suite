@@ -118,10 +118,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Validate EPF uniqueness.
     #
-    # + epf - EPF number to validate
+    # + payload - EPF validation payload
     # + return - Whether the EPF already exists, or HTTP errors
-    resource function get employees/validate\-epf(http:RequestContext ctx, string epf)
-        returns record {|boolean exists;|}|http:Forbidden|http:BadRequest|http:InternalServerError {
+    resource function post employees/validate\-epf(http:RequestContext ctx, database:EpfValidationPayload payload)
+        returns database:EpfValidationResponse|http:Forbidden|http:BadRequest|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -141,7 +141,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string trimmedEpf = epf.trim();
+        string trimmedEpf = payload.epf.trim();
         if trimmedEpf == "" {
             string customErr = "EPF validation failed: EPF cannot be empty";
             log:printWarn(customErr);
@@ -152,10 +152,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        string|error? existing = database:getEmployeeByEpf(trimmedEpf);
-        if existing is error {
+        string|error? employeeId = database:getEmployeeIdByEpf(trimmedEpf);
+        if employeeId is error {
             string customErr = "Error occurred while validating EPF uniqueness";
-            log:printError(customErr, existing, epf = trimmedEpf);
+            log:printError(customErr, employeeId, epf = trimmedEpf);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
@@ -163,7 +163,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {exists: existing is string};
+        return {epfExists: employeeId is string};
     }
 
     # Fetch employee detailed information.
@@ -739,7 +739,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? epfOpt = payload.epf;
         if epfOpt is string && epfOpt.trim() != "" {
-            string|error? existingEmp = database:getEmployeeByEpf(epfOpt);
+            string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
             if existingEmp is error {
                 string customErr = "Error occurred while validating EPF uniqueness";
                 log:printError(customErr, existingEmp, epf = epfOpt);
@@ -927,7 +927,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string? epfOpt = payload.epf;
         if epfOpt is string && epfOpt.trim() != "" {
-            string|error? existingEmp = database:getEmployeeByEpf(epfOpt);
+            string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
             if existingEmp is error {
                 string customErr = "Error occurred while validating EPF uniqueness for update";
                 log:printError(customErr, existingEmp, epf = epfOpt);

@@ -78,6 +78,19 @@ public type UserInfo record {|
     int[] privileges = [];
 |};
 
+# Request payload for EPF uniqueness validation.
+public type EpfValidationPayload record {|
+    # EPF number to validate
+    @constraint:String {maxLength: 45}
+    string epf;
+|};
+
+# Response for EPF uniqueness validation.
+public type EpfValidationResponse record {|
+    # Whether the EPF already exists
+    boolean epfExists;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|

@@ -38,8 +38,8 @@ public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|
 #
 # + epf - Employee Provident Fund number
 # + return - Employee ID string, nil if not found, or error
-public isolated function getEmployeeByEpf(string epf) returns string|error? {
-    string|error result = databaseClient->queryRow(getEmployeeByEpfQuery(epf));
+public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
+    string|error result = databaseClient->queryRow(getEmployeeIdByEpfQuery(epf));
     return result is sql:NoRowsError ? () : result;
 }
 

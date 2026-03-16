@@ -481,10 +481,11 @@ export const validateEpf = createAsyncThunk(
   "employees/validateEpf",
   async (epf: string, { dispatch, rejectWithValue }) => {
     try {
-      const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.validateEpf}?epf=${encodeURIComponent(epf)}`,
+      const resp = await APIService.getInstance().post(
+        AppConfig.serviceUrls.validateEpf,
+        { epf },
       );
-      return resp?.data?.exists as boolean;
+      return (resp?.data?.epfExists ?? false) as boolean;
     } catch (error: any) {
       const status = error.response?.status;
       const errorMessage =

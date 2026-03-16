@@ -52,7 +52,7 @@ isolated function getEmployeeIdQuery(int id) returns sql:ParameterizedQuery =>
 #
 # + epf - Employee Provident Fund number
 # + return - Query to get employee ID by EPF number
-isolated function getEmployeeByEpfQuery(string epf) returns sql:ParameterizedQuery =>
+isolated function getEmployeeIdByEpfQuery(string epf) returns sql:ParameterizedQuery =>
     `SELECT employee_id FROM employee WHERE epf = ${epf} LIMIT 1;`;
 
 # Fetch employee detailed information.
