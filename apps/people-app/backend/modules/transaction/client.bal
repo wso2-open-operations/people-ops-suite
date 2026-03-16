@@ -18,4 +18,10 @@ import ballerina/http;
 configurable ClientAuthConfig clientAuthConfig = ?;
 configurable string transactionEndpoint = ?;
 
-final http:Client transactionClient = check new (transactionEndpoint, {auth: {...clientAuthConfig}});
+final http:Client transactionClient = check new (transactionEndpoint, {
+    auth: {
+        ...clientAuthConfig
+    },
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {keepAlive: http:KEEPALIVE_NEVER}
+});
