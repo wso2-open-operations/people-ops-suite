@@ -158,7 +158,7 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
 # + return - The escaped string value
 isolated function csvEscape(string? value) returns string {
     string v = value ?: "";
-    if v.includes(",") || v.includes("\"") || v.includes("\n") {
+    if v.includes(",") || v.includes("\"") || v.includes("\n") || v.includes("\r") {
         return "\"" + regex:replaceAll(v, "\"", "\"\"") + "\"";
     }
     return v;
