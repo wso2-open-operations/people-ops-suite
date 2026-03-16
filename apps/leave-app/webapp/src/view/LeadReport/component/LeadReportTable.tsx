@@ -18,115 +18,56 @@ import { useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
-import { useMemo } from "react";
-
-import { LeadReportResponse } from "@root/src/types/types";
+import { SingleLeaveHistory } from "@root/src/types/types";
 
 interface LeadReportTableProps {
-  reportData: LeadReportResponse | null;
+  rows: SingleLeaveHistory[];
   loading: boolean;
 }
 
-export default function LeadReportTable({ reportData, loading }: LeadReportTableProps) {
+export default function LeadReportTable({ rows, loading }: LeadReportTableProps) {
   const theme = useTheme();
-  const rows = useMemo(() => {
-    if (!reportData) return [];
-
-    return Object.entries(reportData).map(([email, data]) => ({
-      id: email,
-      employee: email,
-      annual: data.casual || 0, // since annual and casual are combined
-      congesPayes: data.conges_payes || 0,
-      rtt: data.rtt || 0,
-      spainAnnual: data.spain_annual || 0,
-      spainCasual: data.spain_casual || 0,
-      sick: data.sick || 0,
-      paternity: data.paternity || 0,
-      maternity: data.maternity || 0,
-      lieu: data.lieu || 0,
-      sabbatical: data.sabbatical || 0,
-      totalExclLieu: data.totalExLieu || 0,
-      total: data.total || 0,
-    }));
-  }, [reportData]);
 
   const columns: GridColDef[] = [
     {
-      field: "employee",
-      headerName: "Employee Name",
-      flex: 1,
+      field: "email",
+      headerName: "Employee",
+      flex: 1.5,
     },
     {
-      field: "annual",
-      headerName: "Annual/Casual",
-      type: "number",
+      field: "leaveType",
+      headerName: "Leave Type",
       flex: 1,
+      renderCell: (params) => (
+        <span>
+          {String(params.value)
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())}
+        </span>
+      ),
     },
     {
-      field: "congesPayes",
-      headerName: "Congés Payés",
-      type: "number",
+      field: "startDate",
+      headerName: "Start Date",
       flex: 1,
+      renderCell: (params) => <span>{String(params.value ?? "").substring(0, 10)}</span>,
     },
     {
-      field: "rtt",
-      headerName: "RTT",
-      type: "number",
+      field: "endDate",
+      headerName: "End Date",
       flex: 1,
+      renderCell: (params) => <span>{String(params.value ?? "").substring(0, 10)}</span>,
     },
     {
-      field: "spainAnnual",
-      headerName: "Annual (ES)",
+      field: "numberOfDays",
+      headerName: "Days",
       type: "number",
-      flex: 1,
+      flex: 0.6,
     },
     {
-      field: "spainCasual",
-      headerName: "Casual (ES)",
-      type: "number",
-      flex: 1,
-    },
-    {
-      field: "sick",
-      headerName: "Sick",
-      type: "number",
-      flex: 1,
-    },
-    {
-      field: "paternity",
-      headerName: "Paternity",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "maternity",
-      headerName: "Maternity",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "lieu",
-      headerName: "Lieu",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "sabbatical",
-      headerName: "Sabbatical",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "totalExclLieu",
-      headerName: "Total (Excl. Lieu)",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "total",
-      headerName: "Total",
-      flex: 1,
-      type: "number",
+      field: "periodType",
+      headerName: "Period",
+      flex: 0.8,
     },
   ];
 
