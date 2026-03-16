@@ -221,11 +221,11 @@ export default function GeneralLeave() {
         : `${startDate!.format("MMM D")} – ${endDate!.format("MMM D, YYYY")}`;
 
     showConfirmation(
-      "Submit Leave Request",
-      `${leaveLabel} · ${dateRange} · ${workingDays} working day${workingDays !== 1 ? "s" : ""} · ${portionLabel}`,
+      "Do you want to submit this leave?",
+      `This will submit a ${leaveLabel} request for ${workingDays} working day${workingDays !== 1 ? "s" : ""} (${dateRange}, ${portionLabel}). This action cannot be undone.`,
       ConfirmationType.send,
       () => executeSubmit(periodType, isMorningLeave),
-      "Submit",
+      "Yes, Submit",
       "Cancel",
     );
   };
