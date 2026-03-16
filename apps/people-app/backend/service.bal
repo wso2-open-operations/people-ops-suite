@@ -977,10 +977,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
-    # Get car park config for the micro app (e.g. public wallet address for Wallet app redirect).
+    # Get car park configs.
     #
-    # + return - Public wallet address for O2C payments or error response
-    resource function get parkings/config(http:RequestContext ctx)
+    # + return - Car park configs or error response
+    resource function get parkings/configs(http:RequestContext ctx)
         returns CarParkConfigResponse|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
