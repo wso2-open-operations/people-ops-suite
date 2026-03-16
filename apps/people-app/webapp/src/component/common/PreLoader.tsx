@@ -14,14 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import Grid from "@mui/material/Grid";
 import { APP_NAME } from "@config/config";
-import StateWithImage from "@component/ui/StateWithImage";
-import { Box, Container, Paper, alpha, useTheme } from "@mui/material";
-import CircularProgress, {
-  circularProgressClasses,
-  CircularProgressProps,
-} from "@mui/material/CircularProgress";
+import logoBlack from "@assets/images/WSO2-Logo-Black.png";
+import logoWhite from "@assets/images/WSO2-Logo-White.png";
+import { alpha, Box, Typography, useTheme } from "@mui/material";
 
 interface StatusWithActionProps {
   message: string | null;
@@ -29,89 +25,104 @@ interface StatusWithActionProps {
   isLoading?: boolean;
 }
 
-function CustomCircularProgress(props: CircularProgressProps) {
-  return (
-    <Box sx={{ position: "relative" }}>
-      <CircularProgress
-        variant="determinate"
-        sx={{
-          color: (theme) => theme.palette.grey[800],
-        }}
-        size={40}
-        thickness={4}
-        {...props}
-        value={100}
-      />
-      <CircularProgress
-        variant="indeterminate"
-        disableShrink
-        sx={{
-          color: (theme) => theme.palette.primary.main,
-          animationDuration: "550ms",
-          position: "absolute",
-          left: 0,
-          [`& .${circularProgressClasses.circle}`]: {
-            strokeLinecap: "round",
-          },
-        }}
-        size={40}
-        thickness={4}
-        {...props}
-      />
-    </Box>
-  );
-}
-
 const PreLoader = (props: StatusWithActionProps) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
   return (
-    <Paper
-      elevation={4}
+    <Box
       sx={{
-        background: alpha(
-          theme.palette.primary.main,
-          theme.palette.action.hoverOpacity
-        ),
+        width: "100vw",
+        height: "100vh",
         display: "flex",
+        alignItems: "center",
         justifyContent: "center",
-        borderRadius: 2,
-        paddingY: 5,
-        position: "relative",
-        top: 60,
-        m: "auto",
-        maxWidth: "40vw",
+        background: theme.palette.background.gradient,
       }}
     >
-      <Container maxWidth="md">
-        <Grid
-          container
-          direction="column"
-          justifyContent="center"
-          alignItems="center"
-          gap={2}
-        >
-          <Grid item xs={12}>
-            {!props.hideLogo && (
-              <img
-                alt="logo"
-                width="150"
-                height="auto"
-                src={require("@assets/images/wso2-logo.svg").default}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 2.5,
+          px: 7,
+          py: 6,
+          borderRadius: 3,
+          backgroundColor: alpha(
+            theme.palette.background.paper,
+            isDark ? 0.55 : 0.75,
+          ),
+          backdropFilter: "blur(16px)",
+          boxShadow: isDark
+            ? "0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)"
+            : "0 16px 48px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
+          minWidth: 300,
+        }}
+      >
+        {/* Logo */}
+        {!props.hideLogo && (
+          <Box
+            component="img"
+            alt="logo"
+            src={isDark ? logoWhite : logoBlack}
+            sx={{ width: 110, height: "auto", opacity: isDark ? 0.9 : 1 }}
+          />
+        )}
+
+        {/* App name */}
+        <Box sx={{ textAlign: "center" }}>
+          <Typography
+            variant="h5"
+            fontWeight={700}
+            color="text.primary"
+            sx={{ letterSpacing: "-0.3px" }}
+          >
+            {APP_NAME}
+          </Typography>
+        </Box>
+
+        {/* Animated dots */}
+        {props.isLoading && (
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center", my: 0.5 }}>
+            {[0, 1, 2].map((i) => (
+              <Box
+                key={i}
+                sx={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: "50%",
+                  backgroundColor: "#ff7300",
+                  "@keyframes dotPulse": {
+                    "0%, 60%, 100%": {
+                      opacity: 0.2,
+                      transform: "scale(0.75)",
+                    },
+                    "30%": {
+                      opacity: 1,
+                      transform: "scale(1)",
+                    },
+                  },
+                  animation: "dotPulse 1.2s ease-in-out infinite",
+                  animationDelay: `${i * 0.2}s`,
+                }}
               />
-            )}
-          </Grid>
-          <Grid item xs={12}>
-            <StateWithImage
-              message={"Loading " + APP_NAME + " Data..."}
-              imageUrl={require("@assets/images/loading.svg").default}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            {props.isLoading && <CustomCircularProgress />}
-          </Grid>
-        </Grid>
-      </Container>
-    </Paper>
+            ))}
+          </Box>
+        )}
+
+        {/* Status message */}
+        {props.message && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ fontSize: "0.78rem", letterSpacing: "0.2px" }}
+          >
+            {props.message}
+          </Typography>
+        )}
+      </Box>
+    </Box>
   );
 };
 
