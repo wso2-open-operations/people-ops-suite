@@ -35,5 +35,4 @@ react-app-env.d.ts
 node_modules
 
 apps/leave-app/.claude/settings.local.json
-.gitignore
 apps/leave-app/skills.md
