@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 
+import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
   BusinessUnitState,
@@ -73,7 +74,7 @@ interface AddOrgItemFormValues {
 interface AddOrgItemPayload {
   team: OrgOption;
   teamHead: EmployeeBasicInfo;
-  functionalLead: EmployeeBasicInfo | null; // optional by design
+  functionalLead: EmployeeBasicInfo | null;
 }
 
 export default function AddPage(props: AddPageProps) {
@@ -103,8 +104,6 @@ export default function AddPage(props: AddPageProps) {
   const selectedTeam = watch("team");
 
   const onSubmit = async (data: AddOrgItemFormValues) => {
-    console.log("On submit : ", data);
-
     const { team, teamHead, functionalLead } = data as AddOrgItemPayload;
 
     if (!team || !team.name || !teamHead || !parentId) {
@@ -188,14 +187,14 @@ export default function AddPage(props: AddPageProps) {
         },
       }}
     >
-      {/*<BackdropProgress
-          open={isLoading}
-          sx={{
-            position: "absolute",
-            zIndex: (theme) => theme.zIndex.modal + 1,
-            borderRadius: "8px",
-          }}
-        /> */}
+      <BackdropProgress
+        open={isLoading}
+        sx={{
+          position: "absolute",
+          zIndex: (theme) => theme.zIndex.modal + 1,
+          borderRadius: "8px",
+        }}
+      />
 
       <DialogTitle
         sx={{
