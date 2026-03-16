@@ -63,3 +63,9 @@ type ConfirmParkingReservationRequest record {|
     # Transaction hash from payment
     string transactionHash;
 |};
+
+# Car park config returned to the micro app (e.g. for Wallet app redirect).
+type CarParkConfigResponse record {|
+    # Master wallet address for O2C car park payments (0x-prefixed).
+    string publicWalletAddress;
+|};

@@ -46,9 +46,10 @@ public isolated function getEmployeeInfo(string employeeId) returns Employee|err
 # Fetch employees with filters.
 #
 # + payload - Get employees filter payload
+# + leadEmail - If provided, restricts results to subordinates of this lead
 # + return - List of employees or error
-public isolated function getEmployees(EmployeeSearchPayload payload) returns EmployeesResponse|error {
-    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload));
+public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = ()) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload, leadEmail));
 
     int totalCount = 0;
     Employee[] employees = [];
@@ -220,6 +221,37 @@ public isolated function getManagers() returns Manager[]|error {
     stream<Manager, error?> managerStream = databaseClient->query(getManagersQuery());
     return from Manager manager in managerStream
         select manager;
+}
+
+# Check if a target employee is a direct or additional subordinate of a lead.
+#
+# + leadEmail - Work email of the potential lead
+# + employeeId - Employee ID of the target employee
+# + return - True if the employee is a subordinate, false if not, or error
+public isolated function isSubordinateOfLead(string leadEmail, string employeeId) returns boolean|error {
+    int|error result = databaseClient->queryRow(isSubordinateOfLeadQuery(leadEmail, employeeId));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
+}
+
+# Check if an employee is a lead (manages at least one employee).
+#
+# + leadEmail - Work email of the employee
+# + return - True if the employee is a lead, false if not, or error
+public isolated function isLead(string leadEmail) returns boolean|error {
+    int|error result = databaseClient->queryRow(isLeadQuery(leadEmail));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
 }
 
 # Add new employee.
@@ -513,6 +545,20 @@ public isolated function addParkingReservation(AddParkingReservationPayload payl
 public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
     ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
     return row is sql:NoRowsError ? () : row;
+}
+
+# Get parking reservation id by transaction hash.
+#
+# + transactionHash - Blockchain transaction hash
+# + return - Reservation id or nil
+public isolated function getParkingReservationByTransactionHash(string transactionHash)
+        returns ReservationIdRow|error? {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getParkingReservationByTransactionHashQuery(transactionHash));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    return row;
 }
 
 # Update reservation status and optional transaction_hash.

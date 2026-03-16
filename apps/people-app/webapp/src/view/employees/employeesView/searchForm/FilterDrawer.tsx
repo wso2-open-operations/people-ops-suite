@@ -22,15 +22,20 @@ import {
 import ClearIcon from "@mui/icons-material/Clear";
 import {
   Autocomplete,
-  Box,
   Button,
-  Divider,
-  Drawer,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
   Grid,
   IconButton,
+  Stack,
+  Switch,
   Typography,
 } from "@mui/material";
 import { BaseTextField } from "@root/src/component/common/FieldInput/BasicFieldInput/BaseTextField";
+import { toSentenceCase, sortAndFormatOptions } from "@utils/utils";
 import { EmployeeSearchPayload, EmployeeStatus, Filters } from "@slices/employeeSlice/employee";
 import {
   BusinessUnit,
@@ -74,6 +79,8 @@ type FilterDrawerProps = {
   managerEmails: string[];
   companies: Company[];
   offices: Office[];
+  /** When true, renders a "Direct Reports Only" toggle inside the drawer (My Team view). */
+  showDirectReportsFilter?: boolean;
 };
 
 export function FilterDrawer({
@@ -93,6 +100,7 @@ export function FilterDrawer({
   managerEmails,
   companies,
   offices,
+  showDirectReportsFilter = false,
 }: FilterDrawerProps) {
   const [draft, setDraft] = useState<EmployeeSearchPayload>(appliedFilter);
 
@@ -107,121 +115,116 @@ export function FilterDrawer({
   };
 
   return (
-    <Drawer
-      anchor="right"
+    <Dialog
       open={drawerOpen}
       onClose={() => setDrawerOpen(false)}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{ sx: { borderRadius: 2 } }}
     >
-      <Box sx={{ width: 600, mt: 6 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pl: 3,
-            pr: 2,
-            py: 1,
-            borderBottom: 1,
-            borderColor: "divider",
-          }}
-        >
-          <Typography variant="h5" color="primary">
-            Filters
-          </Typography>
-          <IconButton
-            size="small"
-            color="primary"
-            sx={{
-              textTransform: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            onClick={() => setDrawerOpen(false)}
-          >
-            <ClearIcon />
-          </IconButton>
-        </Box>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          pb: 1,
+        }}
+      >
+        <Typography variant="h5" color="primary">
+          Filters
+        </Typography>
+        <IconButton size="small" color="primary" onClick={() => setDrawerOpen(false)}>
+          <ClearIcon />
+        </IconButton>
+      </DialogTitle>
 
-        <Box sx={{ flex: 1, overflowY: "auto", px: 3, py: 1.5 }}>
-          <Grid container direction="column" spacing={2}>
-            <Grid item>
-              <OrganizationTreeFilters
-                value={
-                  {
-                    businessUnitId: draft.filters.businessUnitId,
-                    teamId: draft.filters.teamId,
-                    subTeamId: draft.filters.subTeamId,
-                    unitId: draft.filters.unitId,
-                  } as OrganizationSelection
-                }
-                businessUnits={businessUnits}
-                teams={teams}
-                subTeams={subTeams}
-                units={units}
-                onChangeBusinessUnit={(selected: BusinessUnit | null) => {
-                  set({ businessUnitId: selected?.id });
-                }}
-                onChangeTeam={(selected: Team | null) => {
-                  set({ teamId: selected?.id });
-                }}
-                onChangeSubTeam={(selected: SubTeam | null) => {
-                  set({ subTeamId: selected?.id });
-                }}
-                onChangeUnit={(selected: Unit | null) => {
-                  set({ unitId: selected?.id });
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <Divider />
-            </Grid>
-            <Grid item>
-              <CareerFunctionAndDesignationFilters
-                value={
-                  {
-                    careerFunctionId: draft.filters.careerFunctionId,
-                    designationId: draft.filters.designationId,
-                  } as CareerFunctionsAndDesignationsSelection
-                }
-                careerFunctions={careerFunctions}
-                designations={designations}
-                onChangeCareerFunction={(selected: CareerFunction | null) => {
-                  set({ careerFunctionId: selected?.id });
-                }}
-                onChangeDesignation={(selected: Designation | null) => {
-                  set({ designationId: selected?.id });
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <Divider />
-            </Grid>
-            <Grid item>
-              <CompanyAndOfficeFilters
-                value={
-                  {
-                    companyId: draft.filters.companyId,
-                    officeId: draft.filters.officeId,
-                  } as CompanyAndOfficeSelection
-                }
-                companies={companies}
-                offices={offices}
-                onChangeCompany={(selected: Company | null) => {
-                  set({ companyId: selected?.id });
-                }}
-                onChangeOffice={(selected: Office | null) => {
-                  set({ officeId: selected?.id });
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <Divider />
-            </Grid>
-            <Grid item>
+      <DialogContent dividers sx={{ pt: 2, px: 4, overflow: "hidden" }}>
+        <Grid container spacing={6} alignItems="flex-start">
+
+          {/* Column 1 — Organization */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+              Organization
+            </Typography>
+            <OrganizationTreeFilters
+              value={
+                {
+                  businessUnitId: draft.filters.businessUnitId,
+                  teamId: draft.filters.teamId,
+                  subTeamId: draft.filters.subTeamId,
+                  unitId: draft.filters.unitId,
+                } as OrganizationSelection
+              }
+              businessUnits={businessUnits}
+              teams={teams}
+              subTeams={subTeams}
+              units={units}
+              onChangeBusinessUnit={(selected: BusinessUnit | null) => {
+                set({ businessUnitId: selected?.id });
+              }}
+              onChangeTeam={(selected: Team | null) => {
+                set({ teamId: selected?.id });
+              }}
+              onChangeSubTeam={(selected: SubTeam | null) => {
+                set({ subTeamId: selected?.id });
+              }}
+              onChangeUnit={(selected: Unit | null) => {
+                set({ unitId: selected?.id });
+              }}
+            />
+          </Grid>
+
+          {/* Column 2 — Career & Location */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+              Career
+            </Typography>
+            <CareerFunctionAndDesignationFilters
+              value={
+                {
+                  careerFunctionId: draft.filters.careerFunctionId,
+                  designationId: draft.filters.designationId,
+                } as CareerFunctionsAndDesignationsSelection
+              }
+              careerFunctions={careerFunctions}
+              designations={designations}
+              onChangeCareerFunction={(selected: CareerFunction | null) => {
+                set({ careerFunctionId: selected?.id });
+              }}
+              onChangeDesignation={(selected: Designation | null) => {
+                set({ designationId: selected?.id });
+              }}
+            />
+            <Typography variant="overline" color="text.secondary" sx={{ mt: 2, mb: 1, display: "block" }}>
+              Location
+            </Typography>
+            <CompanyAndOfficeFilters
+              value={
+                {
+                  companyId: draft.filters.companyId,
+                  officeId: draft.filters.officeId,
+                } as CompanyAndOfficeSelection
+              }
+              companies={companies}
+              offices={offices}
+              onChangeCompany={(selected: Company | null) => {
+                set({ companyId: selected?.id });
+              }}
+              onChangeOffice={(selected: Office | null) => {
+                set({ officeId: selected?.id });
+              }}
+            />
+          </Grid>
+
+          {/* Column 3 — Other */}
+          <Grid item xs={12} md={4}>
+            <Typography variant="overline" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+              Other
+            </Typography>
+            <Stack spacing={2}>
               <Autocomplete<EmploymentType, false, false, false>
-                options={employmentTypes.map((et) => et)}
-                getOptionLabel={(o) => o.name}
+                options={sortAndFormatOptions(employmentTypes, (et) => et.name)}
+                getOptionLabel={(o) => toSentenceCase(o.name)}
                 value={
                   employmentTypes.find(
                     (et) => et.id === draft.filters.employmentTypeId,
@@ -234,15 +237,9 @@ export function FilterDrawer({
                 }
                 ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
                 renderInput={(params) => (
-                  <BaseTextField
-                    {...params}
-                    size="small"
-                    label="Employment Type"
-                  />
+                  <BaseTextField {...params} size="small" label="Employment Type" />
                 )}
               />
-            </Grid>
-            <Grid item>
               <Autocomplete<string, false, false, false>
                 options={managerEmails}
                 getOptionLabel={(email) => email}
@@ -256,18 +253,12 @@ export function FilterDrawer({
                 }
                 ListboxProps={{ style: { maxHeight: 240, overflow: "auto" } }}
                 renderInput={(params) => (
-                  <BaseTextField
-                    {...params}
-                    size="small"
-                    label="Manager Email"
-                  />
+                  <BaseTextField {...params} size="small" label="Manager Email" />
                 )}
               />
-            </Grid>
-            <Grid item>
               <Autocomplete<string, false, false, false>
-                options={EmployeeGenders}
-                getOptionLabel={(o) => o}
+                options={sortAndFormatOptions(EmployeeGenders, (g) => g)}
+                getOptionLabel={(o) => toSentenceCase(o)}
                 value={EmployeeGenders.find((g) => g === draft.filters.gender) ?? null}
                 autoHighlight
                 autoSelect
@@ -278,12 +269,10 @@ export function FilterDrawer({
                   <BaseTextField {...params} size="small" label="Gender" />
                 )}
               />
-            </Grid>
-            <Grid item>
               <Autocomplete<EmployeeStatus, false, false, false>
-                options={Object.values(EmployeeStatus)}
-                getOptionLabel={(o) => o}
-                value={ Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null }
+                options={sortAndFormatOptions(Object.values(EmployeeStatus), (s) => s)}
+                getOptionLabel={(o) => toSentenceCase(o)}
+                value={Object.values(EmployeeStatus).find((es) => es === draft.filters.employeeStatus) ?? null}
                 autoHighlight
                 autoSelect
                 onChange={(_, selected) =>
@@ -293,56 +282,55 @@ export function FilterDrawer({
                   <BaseTextField {...params} size="small" label="Employee Status" />
                 )}
               />
-            </Grid>
+              {showDirectReportsFilter && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={draft.filters.directReports === true}
+                      onChange={(e) => set({ directReports: e.target.checked })}
+                      color="secondary"
+                    />
+                  }
+                  label="Direct Reports Only"
+                />
+              )}
+            </Stack>
           </Grid>
-        </Box>
 
-        <Box
-          sx={{
-            mt: 1,
-            pt: 2,
-            px: 2,
-            width: "100%",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-            borderTop: 1,
-            borderColor: "divider",
+        </Grid>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ textTransform: "none" }}
+          onClick={clearAll}
+        >
+          Clear all
+        </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          sx={{ textTransform: "none" }}
+          onClick={() => {
+            const nextDraft = {
+              ...draft,
+              filters: { ...draft.filters },
+              pagination: {
+                limit: DEFAULT_LIMIT_VALUE,
+                offset: DEFAULT_OFFSET_VALUE,
+              },
+            };
+            onApply(nextDraft);
+            setDraft(nextDraft);
+            setDrawerOpen(false);
+            setFiltersAppliedOnce(true);
           }}
         >
-          <Button
-            variant="outlined"
-            color="primary"
-            sx={{ textTransform: "none" }}
-            onClick={clearAll}
-          >
-            Clear all
-          </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={() => {
-              const nextDraft = {
-                ...draft,
-                filters: {
-                  ...draft.filters,
-                },
-                pagination: {
-                  limit: DEFAULT_LIMIT_VALUE,
-                  offset: DEFAULT_OFFSET_VALUE,
-                },
-              };  
-              onApply(nextDraft);  
-              setDraft(nextDraft);  
-              setDrawerOpen(false);
-              setFiltersAppliedOnce(true);
-            }}
-            sx={{ textTransform: "none" }}
-          >
-            Apply
-          </Button>
-        </Box>
-      </Box>
-    </Drawer>
+          Apply
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

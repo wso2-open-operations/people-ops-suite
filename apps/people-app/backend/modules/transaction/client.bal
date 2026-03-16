@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,12 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+import ballerina/http;
 
-# Authorization Constants.
-public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
-public const HEADER_USER_INFO = "user-info";
+configurable ClientAuthConfig clientAuthConfig = ?;
+configurable string transactionEndpoint = ?;
 
-# Privileges.
-public const ADMIN_PRIVILEGE = 999;
-public const EMPLOYEE_PRIVILEGE = 987;
-public const LEAD_PRIVILEGE = 993;
+final http:Client transactionClient = check new (transactionEndpoint, {
+    auth: {
+        ...clientAuthConfig
+    },
+    httpVersion: http:HTTP_1_1,
+    http1Settings: {keepAlive: http:KEEPALIVE_NEVER}
+});

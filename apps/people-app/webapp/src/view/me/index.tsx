@@ -68,8 +68,9 @@ import {
   getIn,
 } from "formik";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
+import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 
 const ReadOnly = ({
@@ -199,7 +200,9 @@ export default function Me({
 }: { employeeId?: string; readOnly?: boolean } = {}) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showConfirmation } = useConfirmationModalContext();
+  const roles = useAppSelector(selectRoles);
   const { userInfo } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector(
@@ -495,7 +498,7 @@ export default function Me({
               </Stack>
             </Box>
           </Stack>
-          {readOnly && targetEmployeeId && (
+          {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
             <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>
               <Button
                 variant="contained"

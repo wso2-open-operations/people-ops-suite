@@ -121,6 +121,7 @@ export type Filters = {
   managerEmail?: string;
   gender?: string;
   employeeStatus?: EmployeeStatus;
+  directReports?: boolean;
 };
 
 export type Pagination = {
@@ -138,6 +139,7 @@ export type EmployeeSearchPayload = {
   filters: Filters;
   pagination: Pagination;
   sort: Sort;
+  leadOnly?: boolean;
 };
 
 export type CreateEmployeePayload = {

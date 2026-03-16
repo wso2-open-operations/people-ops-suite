@@ -16,11 +16,15 @@
 import people.authorization;
 import people.database;
 import people.gsheet;
+import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
+
+# Master wallet address for car park O2C payments.
+configurable string masterWalletAddress = ?;
 
 @display {
     label: "People Service",
@@ -101,6 +105,19 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
         }
+        boolean|error isLeadUser = database:isLead(userInfo.email);
+        if isLeadUser is error {
+            string customErr = "Error occurred while checking lead status";
+            log:printError(customErr, isLeadUser, email = userInfo.email);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if isLeadUser {
+            privileges.push(authorization:LEAD_PRIVILEGE);
+        }
         return {...employeeBasicInfo, privileges};
     }
 
@@ -132,25 +149,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+        boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
+        if !hasAdminAccess && !isSelf {
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isSubordinate {
                 log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{
-                    body: {
-                        message: "You are not authorized to view this employee's information"
-                    }
-                };
+                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
             }
         }
 
         if employeeInfo is () {
             string customErr = "Employee information not found";
             log:printWarn(customErr, employeeId = employeeId);
-            return <http:NotFound>{
-                body: {
-                    message: customErr
-                }
-            };
+            return <http:NotFound>{body: {message: customErr}};
         }
 
         return employeeInfo;
@@ -184,25 +200,24 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
-        if !hasAdminAccess {
-            if employeeInfo is () || employeeInfo.workEmail != userInfo.email {
+        boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
+        if !hasAdminAccess && !isSelf {
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isSubordinate {
                 log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
-                return <http:Forbidden>{
-                    body: {
-                        message: "You are not authorized to view this employee's information"
-                    }
-                };
+                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
             }
         }
 
         if employeeInfo is () {
             string customErr = "Employee information not found";
             log:printWarn(customErr, employeeId = employeeId);
-            return <http:NotFound>{
-                body: {
-                    message: customErr
-                }
-            };
+            return <http:NotFound>{body: {message: customErr}};
         }
 
         database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
@@ -246,12 +261,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
         if !hasAdminAccess {
-            log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view managers"
-                }
-            };
+            boolean|error isLeadUser = database:isLead(userInfo.email);
+            if isLeadUser is error {
+                string customErr = "Error occurred while checking lead status";
+                log:printError(customErr, isLeadUser, email = userInfo.email);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isLeadUser {
+                log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to view managers"}};
+            }
         }
 
         database:Manager[]|error managers = database:getManagers();
@@ -286,15 +305,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean hasAdminAccess
             = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        if !hasAdminAccess {
-            log:printWarn("User is not authorized to view employee list", invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not authorized to view employee list"
-                }
-            };
-        }
-
         if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
             string customErr = "Invalid sort field: " + payload.sort.sortField;
             log:printWarn(customErr, sortField = payload.sort.sortField);
@@ -315,7 +325,42 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeesResponse|error employees = database:getEmployees(payload);
+        if hasAdminAccess && !payload.leadOnly {
+            database:EmployeesResponse|error employees = database:getEmployees(payload);
+            if employees is error {
+                string customErr = "Error occurred while fetching employees";
+                log:printError(customErr, employees);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            return <http:Ok>{body: employees};
+        }
+
+        // Lead path: verify the caller manages at least one employee.
+        boolean|error isLeadUser = database:isLead(userInfo.email);
+        if isLeadUser is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, isLeadUser);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if !isLeadUser {
+            log:printWarn("User is not authorized to view employee list", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employee list"
+                }
+            };
+        }
+
+        // Lead: results restricted to their subordinates.
+        database:EmployeesResponse|error employees = database:getEmployees(payload, userInfo.email);
         if employees is error {
             string customErr = "Error occurred while fetching employees";
             log:printError(customErr, employees);
@@ -325,9 +370,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
-        return <http:Ok>{
-            body: employees
-        };
+        return <http:Ok>{body: employees};
     }
 
     # Fetch continuous service record by work email.
@@ -974,6 +1017,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Get car park configs.
+    #
+    # + return - Car park configs or error response
+    resource function get parkings/configs(http:RequestContext ctx)
+        returns CarParkConfigResponse|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        return {publicWalletAddress: masterWalletAddress};
+    }
+
     # List parking floors.
     #
     # + return - List of parking floors or error response
@@ -1204,6 +1262,30 @@ service http:InterceptableService / on new http:Listener(9090) {
         if reservation.status != database:PENDING {
             return <http:BadRequest>{
                 body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
+        database:ReservationIdRow|error? existingTx =
+            database:getParkingReservationByTransactionHash(body.transactionHash);
+        if existingTx is error {
+            log:printError("Error checking transaction hash reuse", existingTx);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while verifying transaction hash."}
+            };
+        }
+        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
+            return <http:BadRequest>{
+                body: {message: "This transaction hash has already been used for another reservation."}
+            };
+        }
+
+        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
+            reservation.coinsAmount);
+        if confirmErr is error {
+            log:printError("Error confirming transaction", confirmErr);
+            return <http:BadRequest>{
+                body: {message: "Transaction verification failed."}
             };
         }
 

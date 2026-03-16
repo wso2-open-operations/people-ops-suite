@@ -186,6 +186,8 @@ public type EmployeeFilters record {|
     int? employmentTypeId = ();
     # Employee Status
     string? employeeStatus = ();
+    # Direct reports only (true = direct only, false = all subordinates recursively)
+    boolean? directReports = ();
 |};
 
 # Pagination information.
@@ -246,6 +248,9 @@ public type EmployeeSearchPayload record {|
     Pagination pagination;
     # Sort configuration
     Sort sort;
+    # When true, restricts results to the caller's direct and additional subordinates
+    # even if the caller has admin access. Used by the "My Team" view.
+    boolean leadOnly = false;
 |};
 
 # Employee record with total count.

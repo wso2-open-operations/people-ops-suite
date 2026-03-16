@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -12,13 +12,19 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 
-# Authorization Constants.
-public const JWT_ASSERTION_HEADER = "x-jwt-assertion";
-public const HEADER_USER_INFO = "user-info";
+import CommonPage from "@layout/pages/CommonPage";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
+import MyTeamTable from "./MyTeamTable";
 
-# Privileges.
-public const ADMIN_PRIVILEGE = 999;
-public const EMPLOYEE_PRIVILEGE = 987;
-public const LEAD_PRIVILEGE = 993;
+export default function MyTeamView() {
+  return (
+    <CommonPage
+      title="My Team"
+      icon={<PeopleAltIcon />}
+      commonPageTabs={[]}
+      page={<MyTeamTable />}
+    />
+  );
+}
