@@ -13,23 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
 import { FormControlLabel, Stack, Switch, TextField, Typography, useTheme } from "@mui/material";
-import { useSelector } from "react-redux";
-
-import { useEffect, useState } from "react";
-
-import CustomButton from "@root/src/component/common/CustomButton";
-import { selectAppConfig } from "@root/src/slices/configSlice/config";
-import { CachedMail } from "@root/src/types/types";
 
 interface AdditionalCommentProps {
   comment: string;
   onCommentChange: (comment: string) => void;
   isPublicComment: boolean;
   onPublicCommentChange: (isPublic: boolean) => void;
-  onSubmit: () => void;
-  isSubmitting: boolean;
 }
 
 export default function AdditionalComment({
@@ -37,72 +28,41 @@ export default function AdditionalComment({
   onCommentChange,
   isPublicComment,
   onPublicCommentChange,
-  onSubmit,
-  isSubmitting,
 }: AdditionalCommentProps) {
   const theme = useTheme();
 
-  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    onPublicCommentChange(event.target.checked);
-  };
-
-  const [defaultMails, setDefaultMails] = useState<CachedMail>({
-    mandatoryMails: [],
-    optionalMails: [],
-  });
-
-  const appConfig = useSelector(selectAppConfig);
-
-  useEffect(() => {
-    if (appConfig?.cachedEmails) {
-      setDefaultMails(appConfig.cachedEmails);
-    }
-  }, [appConfig]);
-
-  const EmailGroupToNotify = defaultMails.mandatoryMails[1]?.email || "";
   return (
-    <Stack gap="1rem">
-      <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>
-        Additional Comments
-      </Typography>
+    <Stack gap={2}>
+      <Stack direction="row" alignItems="center" gap={1}>
+        <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 20, color: theme.palette.primary.main }} />
+        <Typography variant="h6" sx={{ color: theme.palette.customText.primary.p1.active }}>
+          Additional Comments
+        </Typography>
+      </Stack>
       <TextField
-        label="Add a comment..."
+        placeholder="Add a comment (optional)..."
         multiline
         minRows={3}
         fullWidth
         variant="outlined"
+        size="small"
         value={comment}
         onChange={(e) => onCommentChange(e.target.value)}
       />
-
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "center" }}
-        width="100%"
-        gap="0.5rem"
-      >
-        <Stack direction="row" gap="0.5rem" alignItems="center">
-          <FormControlLabel
-            control={<Switch checked={isPublicComment} onChange={handleCheckboxChange} />}
-            label="Public comment"
-            sx={{ color: theme.palette.text.secondary }}
+      <FormControlLabel
+        control={
+          <Switch
+            checked={isPublicComment}
+            onChange={(e) => onPublicCommentChange(e.target.checked)}
+            size="small"
           />
-        </Stack>
-
-        <Stack direction={{ xs: "column", md: "row" }} alignItems="center" gap="1rem">
-          <Typography
-            variant="body2"
-            sx={{ color: theme.palette.text.secondary }}
-            textAlign="center"
-          >
-            {isPublicComment
-              ? `Your comment will be shown to all email recipients including WSO2 Vacation Group (${EmailGroupToNotify}).`
-              : "Your comment will only be shown to your lead and any emails that have been added."}
+        }
+        label={
+          <Typography variant="body2" sx={{ color: theme.palette.customText.primary.p3.active }}>
+            Public comment
           </Typography>
-          <CustomButton label="Submit" onClick={onSubmit} disabled={isSubmitting} />
-        </Stack>
-      </Stack>
+        }
+      />
     </Stack>
   );
 }
