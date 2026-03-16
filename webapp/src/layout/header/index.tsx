@@ -80,8 +80,9 @@ const Header = () => {
           <Typography
             variant="caption"
             sx={{
-              color: theme.palette.customText.primary.p1.active,
-              fontSize: "1.5rem",
+              color: theme.palette.brandColors.lightOrange,
+              fontSize: { xs: "1.1rem", md: "1.5rem" },
+              fontWeight: 600,
             }}
           >
             {APP_NAME}

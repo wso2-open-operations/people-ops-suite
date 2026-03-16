@@ -112,7 +112,7 @@ export default function BasicBreadcrumbs() {
   return (
     <Box
       sx={{
-        ml: -0.5,
+        ml: -2.5,
         display: { xs: "none", md: "flex" },
       }}
     >
