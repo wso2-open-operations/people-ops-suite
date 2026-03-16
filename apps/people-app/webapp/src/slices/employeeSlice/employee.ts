@@ -447,7 +447,7 @@ export const downloadEmployeeReport = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.reportsEmployeesActive,
+        AppConfig.serviceUrls.reportsEmployees(EmployeeStatus.Active),
         { responseType: "text" },
       );
       return response.data as string;
@@ -462,7 +462,7 @@ export const downloadResignationReport = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.reportsEmployeesInactive,
+        AppConfig.serviceUrls.reportsEmployees(EmployeeStatus.Left),
         { responseType: "text" },
       );
       return response.data as string;
