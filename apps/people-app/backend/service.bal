@@ -1211,6 +1211,108 @@ service http:InterceptableService / on new http:Listener(9090) {
         return reservation;
     }
 
+    # Export all Active employees as a CSV file.
+    #
+    # + return - CSV file response or HTTP errors
+    resource function get reports/employees/active(http:RequestContext ctx)
+        returns http:Response|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to access reports"}
+            };
+        }
+
+        int offset = 0;
+        database:Employee[] allEmployees = [];
+        boolean isFetchMore = true;
+
+        while isFetchMore {
+            database:EmployeesResponse|error pageResult = database:getEmployees({
+                searchString: (),
+                filters: {employeeStatus: database:EMPLOYEE_ACTIVE},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
+            if pageResult is error {
+                log:printError("Error fetching employees for report", pageResult);
+                return <http:InternalServerError>{
+                    body: {message: "Error generating report"}
+                };
+            }
+            allEmployees.push(...pageResult.employees);
+            if pageResult.employees.length() < database:DEFAULT_LIMIT {
+                isFetchMore = false;
+            }
+            offset += database:DEFAULT_LIMIT;
+        }
+
+        string csvContent = database:buildEmployeeCsv(allEmployees);
+        string filename = "active_employees_report" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
+
+        http:Response response = new;
+        response.setHeader("Content-Type", "text/csv");
+        response.setHeader("Content-Disposition", string `attachment; filename="${filename}"`);
+        response.setTextPayload(csvContent);
+        return response;
+    }
+
+    # Export all resigned (Inactive) employees as a CSV file.
+    #
+    # + return - CSV file response or HTTP errors
+    resource function get reports/employees/inactive(http:RequestContext ctx)
+        returns http:Response|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to access reports"}
+            };
+        }
+
+        int offset = 0;
+        database:ResignedEmployee[] allEmployees = [];
+        boolean isFetchMore = true;
+
+        while isFetchMore {
+            database:ResignedEmployee[]|error pageResult =
+                database:getResignedEmployees({'limit: database:DEFAULT_LIMIT, offset: offset});
+            if pageResult is error {
+                log:printError("Error fetching resigned employees for report", pageResult);
+                return <http:InternalServerError>{
+                    body: {message: "Error generating report"}
+                };
+            }
+            allEmployees.push(...pageResult);
+            if pageResult.length() < database:DEFAULT_LIMIT {
+                isFetchMore = false;
+            }
+            offset += database:DEFAULT_LIMIT;
+        }
+
+        string csvContent = database:buildResignationCsv(allEmployees);
+        string filename = "inactive_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
+
+        http:Response response = new;
+        response.setHeader("Content-Type", "text/csv");
+        response.setHeader("Content-Disposition", string `attachment; filename="${filename}"`);
+        response.setTextPayload(csvContent);
+        return response;
+    }
+
     # Confirm parking reservation with transaction hash.
     #
     # + body - Request containing transaction hash and optional reservation ID
@@ -1246,11 +1348,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-            reservationId: reservation.id,
-            status: database:CONFIRMED,
-            transactionHash: body.transactionHash,
-            updatedBy: userInfo.email
-        });
+                                                                            reservationId: reservation.id,
+                                                                            status: database:CONFIRMED,
+                                                                            transactionHash: body.transactionHash,
+                                                                            updatedBy: userInfo.email
+                                                                        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{

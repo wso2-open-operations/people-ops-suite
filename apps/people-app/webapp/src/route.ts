@@ -23,7 +23,9 @@ import {
   useNavigate,
 } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import { Role } from "@slices/authSlice/auth";
@@ -62,6 +64,16 @@ const EmployeesRoot = () => {
   const navigate = useNavigate();
   if (pathname === "/employees") {
     navigate("/employees/view", { replace: true });
+    return null;
+  }
+  return React.createElement(Outlet);
+};
+
+const ReportsRoot = () => {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  if (pathname === "/reports") {
+    navigate("/reports/active-employees", { replace: true });
     return null;
   }
   return React.createElement(Outlet);
@@ -114,6 +126,29 @@ export const routes: RouteObjectWithRole[] = [
     element: React.createElement(View.myTeamView),
     allowRoles: [Role.LEAD],
     excludeRoles: [Role.ADMIN],
+  },
+  {
+    path: "/reports",
+    text: "Reports",
+    icon: React.createElement(AssessmentIcon),
+    element: React.createElement(ReportsRoot),
+    allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/reports/active-employees",
+        text: "Active Employees",
+        icon: React.createElement(Groups),
+        element: React.createElement(View.activeEmployeesReport),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/reports/inactive-employees",
+        text: "Resignations",
+        icon: React.createElement(PersonOffIcon),
+        element: React.createElement(View.resignationReport),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   // Todo: Uncomment when help view is ready
   // {

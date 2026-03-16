@@ -277,6 +277,62 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
     return retrieveEmployeeQuery;
 };
 
+# Build the paginated SQL query for the resignation report.
+# LEFT JOINs the resignation table so employees without a record are still included.
+#
+# + 'limit - Page size
+# + offset - Page offset
+# + return - Parameterized query
+isolated function getResignedEmployeesQuery(int 'limit, int offset)
+        returns sql:ParameterizedQuery =>
+    `SELECT
+        e.employee_id             AS employeeId,
+        e.first_name              AS firstName,
+        e.last_name               AS lastName,
+        e.work_email              AS workEmail,
+        e.employee_thumbnail      AS employeeThumbnail,
+        e.epf                     AS epf,
+        c.name                    AS company,
+        e.work_location           AS workLocation,
+        e.start_date              AS startDate,
+        e.manager_email           AS managerEmail,
+        COALESCE(eam.additionalManagerEmails, '') AS additionalManagerEmails,
+        e.employee_status         AS employeeStatus,
+        et.name                   AS employmentType,
+        d.designation             AS designation,
+        bu.name                   AS businessUnit,
+        t.name                    AS team,
+        st.name                   AS subTeam,
+        u.name                    AS unit,
+        o.name                    AS office,
+        e.secondary_job_title     AS secondaryJobTitle,
+        e.probation_end_date      AS probationEndDate,
+        e.agreement_end_date      AS agreementEndDate,
+        r.date                    AS resignationDate,
+        r.final_day_in_office     AS finalDayInOffice,
+        r.final_day_of_employment AS finalDayOfEmployment,
+        r.reason                  AS resignationReason
+    FROM employee e
+        LEFT JOIN (
+            SELECT employee_pk_id,
+                   GROUP_CONCAT(additional_manager_email
+                       ORDER BY additional_manager_email SEPARATOR ',') AS additionalManagerEmails
+            FROM employee_additional_managers
+            GROUP BY employee_pk_id
+        ) eam ON eam.employee_pk_id = e.id
+        LEFT JOIN resignation      r  ON r.employee_id  = e.id
+        INNER JOIN employment_type et ON et.id = e.employment_type_id
+        INNER JOIN designation     d  ON d.id  = e.designation_id
+        INNER JOIN company         c  ON c.id  = e.company_id
+        LEFT  JOIN office          o  ON o.id  = e.office_id
+        INNER JOIN business_unit   bu ON bu.id = e.business_unit_id
+        INNER JOIN team            t  ON t.id  = e.team_id
+        INNER JOIN sub_team        st ON st.id = e.sub_team_id
+        LEFT  JOIN unit            u  ON u.id  = e.unit_id
+    WHERE LOWER(e.employee_status) = LOWER(${EMPLOYEE_LEFT})
+    ORDER BY e.employee_id ASC
+    LIMIT ${'limit} OFFSET ${offset}`;
+
 # Fetch distinct managers.
 #
 # + return - Parameterized query for fetching distinct managers

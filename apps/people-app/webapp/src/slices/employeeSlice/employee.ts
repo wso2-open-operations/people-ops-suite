@@ -62,12 +62,9 @@ export interface Employee {
 }
 
 export enum EmployeeStatus {
-  Active = "ACTIVE",
-  Inactive = "INACTIVE",
-  Terminated = "TERMINATED",
-  Probation = "PROBATION",
-  Suspended = "SUSPENDED",
-  OnLeave = "ON_LEAVE",
+  Active = "Active",
+  Left = "Left",
+  MarkedLeaver = "Marked leaver",
 }
 
 export interface EmployeeBasicInfo {
@@ -441,6 +438,36 @@ export const updateEmployeeJobInfo = createAsyncThunk(
       );
 
       return rejectWithValue(errorMessage);
+    }
+  },
+);
+
+export const downloadEmployeeReport = createAsyncThunk(
+  "employee/downloadEmployeeReport",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.reportsEmployeesActive,
+        { responseType: "text" },
+      );
+      return response.data as string;
+    } catch (e) {
+      return rejectWithValue("Failed to download report");
+    }
+  },
+);
+
+export const downloadResignationReport = createAsyncThunk(
+  "employee/downloadResignationReport",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.reportsEmployeesInactive,
+        { responseType: "text" },
+      );
+      return response.data as string;
+    } catch (e) {
+      return rejectWithValue("Failed to download report");
     }
   },
 );

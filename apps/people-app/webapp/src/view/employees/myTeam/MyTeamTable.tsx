@@ -126,10 +126,9 @@ export default function MyTeamTable() {
     switch (status?.toLowerCase()) {
       case "active":
         return "success";
-      case "probation":
+      case "marked leaver":
         return "warning";
-      case "inactive":
-      case "terminated":
+      case "left":
         return "error";
       default:
         return "default";

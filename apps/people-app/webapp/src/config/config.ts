@@ -60,6 +60,9 @@ export const AppConfig = {
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
 
+    reportsEmployeesActive: SERVICE_BASE_URL + "/reports/employees/active",
+    reportsEmployeesInactive: SERVICE_BASE_URL + "/reports/employees/inactive",
+
     businessUnits: SERVICE_BASE_URL + "/business-units",
     careerFunctions: SERVICE_BASE_URL + "/career-functions",
     designations: SERVICE_BASE_URL + "/designations",

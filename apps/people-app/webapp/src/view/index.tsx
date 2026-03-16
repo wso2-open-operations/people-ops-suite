@@ -23,6 +23,8 @@ const help = lazy(() => import("@view/help/help"));
 const employeeDetails = lazy(() => import("@view/employees/employeeDetail/employeeDetail"));
 const employeeEdit = lazy(() => import("@view/employees/employeeEdit/employeeEdit"));
 const myTeamView = lazy(() => import("@view/employees/myTeam/MyTeamView"));
+const activeEmployeesReport = lazy(() => import("@view/reports/ActiveEmployeesReportView"));
+const resignationReport = lazy(() => import("@view/reports/ResignationReportView"));
 
 export const View = {
   me,
@@ -31,5 +33,7 @@ export const View = {
   myTeamView,
   employeeDetails,
   employeeEdit,
+  activeEmployeesReport,
+  resignationReport,
   help,
 };

@@ -140,6 +140,53 @@ public type Employee record {|
     int subordinateCount;
 |};
 
+# Employee record joined with optional resignation information for the resignation report.
+public type ResignedEmployee record {|
+    *EmployeeBasicInfo;
+    # Employees' Provident Fund number
+    string? epf;
+    # Company the employee belongs to
+    string company;
+    # Office work location
+    string workLocation;
+    # Employment start date (YYYY-MM-DD)
+    string startDate;
+    # Work email of the direct manager
+    string managerEmail;
+    # Comma-separated work emails of additional managers
+    string? additionalManagerEmails;
+    # Current employment status
+    string employeeStatus;
+    # Employment type (e.g. Permanent, Contract)
+    string employmentType;
+    # Job designation / title
+    string designation;
+    # Business unit
+    string businessUnit;
+    # Team
+    string team;
+    # Sub-team
+    string subTeam;
+    # Unit, if applicable
+    string? unit;
+    # Physical office location, if applicable
+    string? office;
+    # Secondary job title
+    string secondaryJobTitle;
+    # Probation period end date (YYYY-MM-DD), if applicable
+    string? probationEndDate;
+    # Fixed-term agreement end date (YYYY-MM-DD), if applicable
+    string? agreementEndDate;
+    # Resignation date (YYYY-MM-DD), if recorded
+    string? resignationDate;
+    # Last day physically in the office (YYYY-MM-DD), if recorded
+    string? finalDayInOffice;
+    # Last official day of employment (YYYY-MM-DD), if recorded
+    string? finalDayOfEmployment;
+    # Reason for resignation, if recorded
+    string? resignationReason;
+|};
+
 # Filters for getting employees.
 public type EmployeeFilters record {|
     # Title
