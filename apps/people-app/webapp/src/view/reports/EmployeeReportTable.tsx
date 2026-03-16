@@ -28,14 +28,12 @@ import {
 import DownloadIcon from "@mui/icons-material/Download";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
-  clearFilteredEmployees,
   downloadEmployeeReportByStatus,
   Employee,
   EmployeeStatus,
   fetchFilteredEmployees,
 } from "@slices/employeeSlice/employee";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { State } from "@src/types/types";
+import { useAppDispatch } from "@slices/store";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getEmployeeStatusColor } from "@utils/utils";
@@ -57,14 +55,16 @@ export default function EmployeeReportTable({
 }: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const employeeState = useAppSelector((state) => state.employee);
   const [downloading, setDownloading] = useState(false);
-  const [ownFetchDone, setOwnFetchDone] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [rows, setRows] = useState<Employee[]>([]);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setOwnFetchDone(false);
-    dispatch(clearFilteredEmployees());
+    setIsLoading(true);
+    setRows([]);
+    setTotalCount(null);
     dispatch(
       fetchFilteredEmployees({
         filters: { employeeStatus },
@@ -72,20 +72,18 @@ export default function EmployeeReportTable({
         sort: { sortField: "employeeId", sortOrder: "ASC" },
         leadOnly: false,
       }),
-    ).finally(() => {
-      if (!cancelled) setOwnFetchDone(true);
+    ).then((action) => {
+      if (cancelled) return;
+      if (fetchFilteredEmployees.fulfilled.match(action)) {
+        setRows(action.payload.employees ?? []);
+        setTotalCount(action.payload.totalCount ?? null);
+      }
+      setIsLoading(false);
     });
     return () => {
       cancelled = true;
     };
   }, [dispatch, employeeStatus]);
-
-  const isLoading = !ownFetchDone;
-  const rows: Employee[] =
-    ownFetchDone &&
-    employeeState.filteredEmployeesResponseState === State.success
-      ? (employeeState.filteredEmployeesResponse.employees ?? [])
-      : [];
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
@@ -371,7 +369,7 @@ export default function EmployeeReportTable({
               >
                 {isLoading
                   ? "—"
-                  : (employeeState.filteredEmployeesResponse.totalCount ?? "—")}
+                  : (totalCount ?? "—")}
               </Box>
             </>
           }
