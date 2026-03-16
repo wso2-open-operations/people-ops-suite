@@ -78,6 +78,19 @@ public type UserInfo record {|
     int[] privileges = [];
 |};
 
+# Request payload for EPF uniqueness validation.
+public type EpfValidationPayload record {|
+    # EPF number to validate
+    @constraint:String {maxLength: 45}
+    string epf;
+|};
+
+# Response for EPF uniqueness validation.
+public type EpfValidationResponse record {|
+    # Whether the EPF already exists
+    boolean epfExists;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|
@@ -115,7 +128,7 @@ public type Employee record {|
     # Designation ID
     int designationId;
     # Job role of the user
-    string secondaryJobTitle;
+    string? secondaryJobTitle;
     # Office
     string? office;
     # Office ID
@@ -277,6 +290,9 @@ public type EmployeePersonalInfo record {|
     string firstName;
     # Last name
     string lastName;
+    # Full name
+    @sql:Column {name: "full_name"}
+    string fullName;
     # Title (Mr./Ms./Dr./etc.)
     string title;
     # Date of birth
@@ -322,6 +338,8 @@ public type ContinuousServiceRecordInfo record {|
     string firstName;
     # Last name
     string lastName;
+    # Company name
+    string company;
     # Work location
     string workLocation;
     # Start date
@@ -333,7 +351,7 @@ public type ContinuousServiceRecordInfo record {|
     # Designation
     string designation;
     # Job role of the user
-    string secondaryJobTitle;
+    string? secondaryJobTitle;
     # Office
     string? office;
     # Business unit
@@ -514,6 +532,9 @@ public type CreatePersonalInfoPayload record {|
     # Last name
     @constraint:String {maxLength: 100}
     string lastName;
+    # Full name
+    @constraint:String {maxLength: 255}
+    string fullName;
     # Title (Mr./Ms./Dr./etc.)
     @constraint:String {maxLength: 20}
     string title;
@@ -581,7 +602,7 @@ public type CreateEmployeePayload record {|
     string startDate;
     # Secondary job title
     @constraint:String {maxLength: 100}
-    string secondaryJobTitle;
+    string? secondaryJobTitle = ();
     # Manager email
     @constraint:String {maxLength: 254, pattern: re `${EMAIL_PATTERN_STRING}`}
     string managerEmail;
@@ -597,7 +618,7 @@ public type CreateEmployeePayload record {|
     @constraint:String {pattern: re `${DATE_PATTERN_STRING}`}
     string? agreementEndDate = ();
     # Employment type ID
-    int? employmentTypeId = ();
+    int employmentTypeId;
     # Designation ID
     int designationId;
     # Office ID
@@ -630,6 +651,9 @@ public type UpdateEmployeePersonalInfoPayload record {|
     # Last name
     @constraint:String {maxLength: 100}
     string? lastName = ();
+    # Full name
+    @constraint:String {maxLength: 255}
+    string? fullName = ();
     # Title (Mr./Ms./Dr./etc.)
     @constraint:String {maxLength: 20}
     string? title = ();

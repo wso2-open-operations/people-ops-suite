@@ -44,6 +44,7 @@ import {
   fetchEmployeesBasicInfo,
   fetchContinuousServiceRecord,
   resetContinuousService,
+  validateEpf,
   type ContinuousServiceRecordInfo,
 } from "@slices/employeeSlice/employee";
 import {
@@ -111,7 +112,10 @@ export const jobInfoValidationSchema = Yup.object().shape({
   designationId: Yup.number()
     .required("Designation is required")
     .min(1, "Select a valid designation"),
-  secondaryJobTitle: Yup.string().required("Secondary job title is required"),
+  secondaryJobTitle: Yup.string()
+    .max(20, "Secondary job title must be at most 20 characters")
+    .transform((value) => (value === "" ? null : value))
+    .nullable(),
   companyId: Yup.number()
     .required("Company is required")
     .min(1, "Select a valid company"),
@@ -219,8 +223,15 @@ const InfoTooltipAdornment = React.memo(
 export default function JobInfoStep() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const { values, handleChange, handleBlur, touched, errors, setFieldValue } =
-    useFormikContext<CreateEmployeeFormValues>();
+  const {
+    values,
+    handleChange,
+    handleBlur,
+    touched,
+    errors,
+    setFieldValue,
+    setFieldError,
+  } = useFormikContext<CreateEmployeeFormValues>();
   const {
     employeesBasicInfo,
     employeeBasicInfoState,
@@ -251,6 +262,8 @@ export default function JobInfoStep() {
     designations: false,
     offices: false,
   });
+  
+  const latestEpfRef = useRef<string>("");
 
   const textFieldSx = useMemo(
     () => ({
@@ -379,6 +392,123 @@ export default function JobInfoStep() {
     const index = selectedRecordIndex ?? 0;
     return continuousServiceRecord[index] ?? null;
   }, [continuousServiceRecord, selectedRecordIndex]);
+
+  const internshipTypeId = useMemo(() => {
+    const t = employmentTypes.find((et) => /^internship$/i.test(et.name));
+    return t?.id ?? null;
+  }, [employmentTypes]);
+
+  const [internshipDurationMonths, setInternshipDurationMonths] =
+    useState<number>(0);
+
+  const computeAgreementEndDate = useCallback(
+    (startDate: string | null, months: number) => {
+      if (!startDate || !months) return null;
+      try {
+        return dayjs(startDate).add(months, "month").format("YYYY-MM-DD");
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
+  const isInternship = useMemo(() => {
+    return (
+      internshipTypeId !== null && values.employmentTypeId === internshipTypeId
+    );
+  }, [internshipTypeId, values.employmentTypeId]);
+
+  const showAgreementEndDate = useMemo(() => {
+  const normalized = employmentTypes
+      .find((e) => e.id === values.employmentTypeId)
+      ?.name?.trim()
+      .toLowerCase();
+    return normalized === "internship" || normalized === "consultancy";
+  }, [employmentTypes, values.employmentTypeId]);
+
+  const computedAgreementDate = useMemo(() => {
+    if (!isInternship || !internshipDurationMonths) return null;
+    return computeAgreementEndDate(
+      values.startDate ?? null,
+      internshipDurationMonths,
+    );
+  }, [
+    isInternship,
+    values.startDate,
+    internshipDurationMonths,
+    computeAgreementEndDate,
+  ]);
+
+  const handleEmploymentTypeChange = useCallback(
+    (newEmploymentTypeId: number) => {
+      setFieldValue("employmentTypeId", newEmploymentTypeId);
+
+      const isNewInternship =
+        internshipTypeId !== null && newEmploymentTypeId === internshipTypeId;
+
+      const isPermanent = employmentTypes
+        .find((e) => e.id === newEmploymentTypeId)
+        ?.name?.match(/^permanent$/i);
+
+      if (isNewInternship) {
+        setInternshipDurationMonths(6);
+        const computed = computeAgreementEndDate(values.startDate ?? null, 6);
+        if (computed) {
+          setFieldValue("agreementEndDate", computed);
+        }
+      } else {
+        setInternshipDurationMonths(0);
+        if (isPermanent) {
+          setFieldValue("agreementEndDate", null);
+        }
+      }
+    },
+    [
+      setFieldValue,
+      internshipTypeId,
+      employmentTypes,
+      values.startDate,
+      computeAgreementEndDate,
+    ],
+  );
+
+  const handleInternshipDurationChange = useCallback(
+    (months: number) => {
+      setInternshipDurationMonths(months);
+      const computed = computeAgreementEndDate(
+        values.startDate ?? null,
+        months,
+      );
+      if (computed) {
+        setFieldValue("agreementEndDate", computed);
+      }
+    },
+    [setFieldValue, values.startDate, computeAgreementEndDate],
+  );
+
+  const handleStartDateChange = useCallback(
+    (val: any) => {
+      const newStartDate = val ? val.format("YYYY-MM-DD") : "";
+      setFieldValue("startDate", newStartDate);
+
+      if (isInternship && internshipDurationMonths && newStartDate) {
+        const computed = computeAgreementEndDate(
+          newStartDate,
+          internshipDurationMonths,
+        );
+        if (computed) {
+          setFieldValue("agreementEndDate", computed);
+        }
+      }
+    },
+    [
+      setFieldValue,
+      isInternship,
+      internshipDurationMonths,
+      computeAgreementEndDate,
+    ],
+  );
 
   const handleCareerFunctionChange = useCallback(
     (newCareerFunctionId: number) => {
@@ -624,7 +754,28 @@ export default function JobInfoStep() {
               name="epf"
               value={values.epf ?? ""}
               onChange={handleChange}
-              onBlur={handleBlur}
+              onBlur={async (e: { target: { value: string } }) => {
+                handleBlur(e);
+                const epf = e.target.value?.trim();
+                latestEpfRef.current = epf;
+                if (!epf) {
+                  setFieldError("epf", undefined);
+                  return;
+                }
+
+                try {
+                  const exists = await dispatch(validateEpf(epf)).unwrap();
+                  if (latestEpfRef.current !== epf) return;
+                  if (exists) {
+                    setFieldError("epf", "EPF already exists");
+                  } else {
+                    setFieldError("epf", undefined);
+                  }
+                } catch (err) {
+                  if (latestEpfRef.current !== epf) return;
+                  setFieldError("epf", "Failed to validate EPF");
+                }
+              }}
               error={Boolean(touched.epf && errors.epf)}
               helperText={touched.epf && errors.epf}
               sx={textFieldSx}
@@ -845,7 +996,6 @@ export default function JobInfoStep() {
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               fullWidth
-              required
               label="Secondary Job Title"
               name="secondaryJobTitle"
               value={values.secondaryJobTitle ?? ""}
@@ -982,7 +1132,7 @@ export default function JobInfoStep() {
               name="employmentTypeId"
               value={values.employmentTypeId || ""}
               onChange={(e) =>
-                setFieldValue("employmentTypeId", Number(e.target.value))
+                handleEmploymentTypeChange(Number(e.target.value))
               }
               onBlur={handleBlur}
               error={Boolean(
@@ -1007,13 +1157,36 @@ export default function JobInfoStep() {
               )}
             </TextField>
           </Grid>
+          {isInternship ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                select
+                fullWidth
+                label="Internship Duration"
+                value={internshipDurationMonths || ""}
+                onChange={(e) =>
+                  handleInternshipDurationChange(Number(e.target.value))
+                }
+                sx={textFieldSx}
+                helperText={
+                  isInternship && internshipDurationMonths
+                    ? "Agreement end date will be calculated from start date"
+                    : ""
+                }
+              >
+                {Array.from({ length: 10 }, (_, i) => i + 3).map((m) => (
+                  <MenuItem key={m} value={m}>
+                    {m} months
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          ) : null}
           <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
-              onChange={(val) =>
-                setFieldValue("startDate", val ? val.format("YYYY-MM-DD") : "")
-              }
+              onChange={handleStartDateChange}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -1051,32 +1224,42 @@ export default function JobInfoStep() {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <DatePicker
-              label="Agreement End Date"
-              value={
-                values.agreementEndDate ? dayjs(values.agreementEndDate) : null
-              }
-              onChange={(val) =>
-                setFieldValue(
-                  "agreementEndDate",
-                  val ? val.format("YYYY-MM-DD") : null,
-                )
-              }
-              slotProps={{
-                field: { clearable: true },
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(
-                    touched.agreementEndDate && errors.agreementEndDate,
-                  ),
-                  helperText:
-                    touched.agreementEndDate && errors.agreementEndDate,
-                  sx: textFieldSx,
-                },
-              }}
-            />
-          </Grid>
+          {showAgreementEndDate ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <DatePicker
+                label="Agreement End Date"
+                value={
+                  values.agreementEndDate
+                    ? dayjs(values.agreementEndDate)
+                    : null
+                }
+                onChange={(val) => {
+                  if (isInternship && internshipDurationMonths) return;
+                  setFieldValue(
+                    "agreementEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  );
+                }}
+                disabled={isInternship && !!internshipDurationMonths}
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    error: Boolean(
+                      touched.agreementEndDate && errors.agreementEndDate,
+                    ),
+                    helperText:
+                      isInternship && internshipDurationMonths
+                        ? computedAgreementDate
+                          ? `Auto: ${computedAgreementDate}`
+                          : "Select start date to compute agreement end date"
+                        : touched.agreementEndDate && errors.agreementEndDate,
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+          ) : null}
         </Grid>
       </Box>
 

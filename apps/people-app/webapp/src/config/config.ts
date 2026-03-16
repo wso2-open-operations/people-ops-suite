@@ -53,6 +53,7 @@ export const AppConfig = {
     searchEmployees: SERVICE_BASE_URL + "/employees/search",
     managers: SERVICE_BASE_URL + "/employees/managers",
     continuousServiceRecord: SERVICE_BASE_URL + "/continuous-service-records",
+    validateEpf: SERVICE_BASE_URL + "/employees/validate-epf",
     employee: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}`,
     employeePersonalInfo: (employeeId: string) =>

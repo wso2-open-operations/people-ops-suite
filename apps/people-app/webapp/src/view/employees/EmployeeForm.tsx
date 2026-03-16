@@ -14,7 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  useAppDispatch,
+  useAppSelector,
+  type AppDispatch,
+} from "@slices/store";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useConfirmationModalContext } from "@context/DialogContext";
@@ -34,7 +38,7 @@ import {
   styled,
   alpha,
 } from "@mui/material";
-import { Formik, Form } from "formik";
+import { Formik, Form, useFormikContext } from "formik";
 import PersonalInfoStep from "./employeeOnboarding/steps/PersonalInfo";
 import JobInfoStep from "./employeeOnboarding/steps/JobInfo";
 import ReviewStep from "./employeeOnboarding/steps/Review";
@@ -55,6 +59,7 @@ import {
   updateEmployeeJobInfo,
   resetUpdateEmployeeJobInfoState,
   type Employee,
+  validateEpf,
 } from "@slices/employeeSlice/employee";
 import { EmployeeFormSteps } from "@root/src/config/constant";
 import {
@@ -65,6 +70,12 @@ import {
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
+
+const deriveFullName = (
+  full: string | null | undefined,
+  first?: string,
+  last?: string,
+): string => (full ?? `${first ?? ""} ${last ?? ""}`).trim();
 
 const toFormValues = (
   employee: Employee | null,
@@ -104,6 +115,11 @@ const toFormValues = (
     base.personalInfo = {
       nicOrPassport: personal.nicOrPassport ?? "",
       firstName: personal.firstName ?? "",
+      fullName: deriveFullName(
+        personal.fullName,
+        employee?.firstName,
+        employee?.lastName,
+      ),
       lastName: personal.lastName ?? "",
       title: personal.title ?? "",
       dob: personal.dob ?? null,
@@ -123,6 +139,11 @@ const toFormValues = (
   } else if (employee) {
     base.personalInfo.firstName = employee.firstName ?? "";
     base.personalInfo.lastName = employee.lastName ?? "";
+    base.personalInfo.fullName = deriveFullName(
+      undefined,
+      employee.firstName,
+      employee.lastName,
+    );
   }
 
   return base;
@@ -144,8 +165,7 @@ const toJobUpdatePayload = (
     values.employmentTypeId > 0 ? values.employmentTypeId : null,
   designationId: values.designationId > 0 ? values.designationId : null,
   companyId: values.companyId > 0 ? values.companyId : null,
-  officeId:
-    values.officeId != null && values.officeId > 0 ? values.officeId : null,
+  officeId: values.officeId > 0 ? values.officeId : null,
   teamId: values.teamId > 0 ? values.teamId : null,
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
@@ -161,6 +181,7 @@ const toPersonalUpdatePayload = (
   nicOrPassport: values.personalInfo.nicOrPassport ?? null,
   firstName: values.personalInfo.firstName ?? null,
   lastName: values.personalInfo.lastName ?? null,
+  fullName: values.personalInfo.fullName?.trim() || null,
   title: values.personalInfo.title ?? null,
   dob: values.personalInfo.dob ?? null,
   gender: values.personalInfo.gender ?? null,
@@ -294,6 +315,142 @@ const diffObject = <T extends Record<string, any>>(
 };
 
 export type Mode = "edit" | "create";
+
+type FormActionsBarProps = {
+  activeStep: number;
+  isEditMode: boolean;
+  initialEditValues: CreateEmployeeFormValues | null;
+  employeeId: string | undefined;
+  employeeSlice: { state: State; updateJobInfoState: State };
+  onBack: () => void;
+  onNext: () => void;
+  dispatch: AppDispatch;
+};
+
+function FormActionsBar({
+  activeStep,
+  isEditMode,
+  initialEditValues,
+  employeeId,
+  employeeSlice,
+  onBack,
+  onNext,
+  dispatch,
+}: FormActionsBarProps) {
+  const {
+    values,
+    isSubmitting,
+    validateForm,
+    setTouched,
+    submitForm,
+    setFieldError,
+    setFieldTouched,
+  } = useFormikContext<CreateEmployeeFormValues>();
+
+  const hasActualChanges = useMemo(() => {
+    if (!isEditMode || !initialEditValues || !employeeId) return true;
+    const jobPatch = diffObject(
+      toJobUpdatePayload(initialEditValues),
+      toJobUpdatePayload(values),
+    );
+    const personalPatch = diffObject(
+      toPersonalUpdatePayload(initialEditValues),
+      toPersonalUpdatePayload(values),
+    );
+    return (
+      Object.keys(jobPatch).length > 0 || Object.keys(personalPatch).length > 0
+    );
+  }, [isEditMode, initialEditValues, employeeId, values]);
+
+  return (
+    <Box mt={3} width="100%" display="flex" justifyContent="flex-end" gap={2}>
+      {activeStep > 0 && (
+        <Button
+          startIcon={<ArrowBack />}
+          sx={{ textTransform: "none" }}
+          variant="outlined"
+          color="primary"
+          onClick={onBack}
+        >
+          Back
+        </Button>
+      )}
+
+      <Button
+        endIcon={
+          activeStep === EmployeeFormSteps.length - 1 ? null : <ArrowForward />
+        }
+        sx={{ textTransform: "none" }}
+        variant="contained"
+        color="secondary"
+        type="button"
+        disabled={
+          isSubmitting ||
+          employeeSlice.state === State.loading ||
+          employeeSlice.updateJobInfoState === State.loading ||
+          (isEditMode &&
+            activeStep === EmployeeFormSteps.length - 1 &&
+            !hasActualChanges)
+        }
+        onClick={async () => {
+          if (activeStep === 1) {
+            const epf = (values.epf ?? "").toString().trim();
+            const initialEpf = (initialEditValues?.epf ?? "").toString().trim();
+            if (epf && (!isEditMode || epf !== initialEpf)) {
+              const fieldErrors = await validateForm();
+              if (fieldErrors.epf) {
+                setFieldTouched("epf", true, false);
+                document
+                  .querySelector<HTMLElement>('[name="epf"]')
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+              }
+
+              try {
+                const exists = await dispatch(validateEpf(epf)).unwrap();
+                if (exists) {
+                  setFieldError("epf", "EPF already exists");
+                  setFieldTouched("epf", true, false);
+                  document
+                    .querySelector<HTMLElement>('[name="epf"]')
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  return;
+                }
+              } catch {
+                setFieldError("epf", "Failed to validate EPF");
+                setFieldTouched("epf", true, false);
+                document
+                  .querySelector<HTMLElement>('[name="epf"]')
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                return;
+              }
+            }
+          }
+
+          const validationErrors = await validateForm();
+          if (Object.keys(validationErrors).length === 0) {
+            if (activeStep === EmployeeFormSteps.length - 1) {
+              submitForm();
+            } else {
+              onNext();
+            }
+          } else {
+            setTouched(markAllFieldsTouched(validationErrors));
+          }
+        }}
+      >
+        {employeeSlice.state === State.loading ||
+        employeeSlice.updateJobInfoState === State.loading
+          ? "Saving..."
+          : activeStep === EmployeeFormSteps.length - 1
+            ? isEditMode
+              ? "Update"
+              : "Submit"
+            : "Next"}
+      </Button>
+    </Box>
+  );
+}
 
 type EmployeeFormProps = {
   mode: Mode;
@@ -528,6 +685,12 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                   : {}),
                 personalInfo: {
                   nicOrPassport: values.personalInfo.nicOrPassport,
+                  fullName:
+                    deriveFullName(
+                      values.personalInfo.fullName,
+                      values.personalInfo.firstName,
+                      values.personalInfo.lastName,
+                    ) || undefined,
                   firstName: values.personalInfo.firstName || undefined,
                   lastName: values.personalInfo.lastName || undefined,
                   title: values.personalInfo.title || undefined,
@@ -666,92 +829,25 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
           validateOnChange={false}
           validateOnBlur={true}
         >
-          {({ isSubmitting, validateForm, setTouched, submitForm, dirty, values }) => {
-            let hasActualChanges = true;
-            
-            if (isEditMode && initialEditValues && employeeId) {
-              const initialJob = toJobUpdatePayload(initialEditValues);
-              const currentJob = toJobUpdatePayload(values);
-              const initialPersonal = toPersonalUpdatePayload(initialEditValues);
-              const currentPersonal = toPersonalUpdatePayload(values);
-              
-              const jobPatch = diffObject(initialJob, currentJob);
-              const personalPatch = diffObject(initialPersonal, currentPersonal);
-              
-              hasActualChanges = Object.keys(jobPatch).length > 0 || Object.keys(personalPatch).length > 0;
-            }
-
-            return (
+          {() => (
             <Form
               onKeyDown={(e) => {
                 if (e.key === "Enter") e.preventDefault();
               }}
             >
               {renderStepContent(activeStep)}
-
-              <Box
-                mt={3}
-                width="100%"
-                display="flex"
-                justifyContent="flex-end"
-                gap={2}
-              >
-                {activeStep > 0 && (
-                  <Button
-                    startIcon={<ArrowBack />}
-                    sx={{ textTransform: "none" }}
-                    variant="outlined"
-                    color="primary"
-                    onClick={handleBack}
-                  >
-                    Back
-                  </Button>
-                )}
-
-                <Button
-                  endIcon={
-                    activeStep === EmployeeFormSteps.length - 1 ? null : (
-                      <ArrowForward />
-                    )
-                  }
-                  sx={{ textTransform: "none" }}
-                  variant="contained"
-                  color="secondary"
-                  type="button"
-                  disabled={
-                    isSubmitting ||
-                    employeeSlice.state === State.loading ||
-                    employeeSlice.updateJobInfoState === State.loading ||
-                    (isEditMode &&
-                      activeStep === EmployeeFormSteps.length - 1 &&
-                      !hasActualChanges)
-                  }
-                  onClick={async () => {
-                    const errors = await validateForm();
-                    if (Object.keys(errors).length === 0) {
-                      if (activeStep === EmployeeFormSteps.length - 1) {
-                        submitForm();
-                      } else {
-                        handleNext();
-                      }
-                    } else {
-                      setTouched(markAllFieldsTouched(errors));
-                    }
-                  }}
-                >
-                  {employeeSlice.state === State.loading ||
-                  employeeSlice.updateJobInfoState === State.loading
-                    ? "Saving..."
-                    : activeStep === EmployeeFormSteps.length - 1
-                      ? isEditMode
-                        ? "Update"
-                        : "Submit"
-                      : "Next"}
-                </Button>
-              </Box>
+              <FormActionsBar
+                activeStep={activeStep}
+                isEditMode={isEditMode}
+                initialEditValues={initialEditValues}
+                employeeId={employeeId}
+                employeeSlice={employeeSlice}
+                onBack={handleBack}
+                onNext={handleNext}
+                dispatch={dispatch}
+              />
             </Form>
-            );
-          }}
+          )}
         </Formik>
       </Paper>
     </Box>

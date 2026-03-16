@@ -67,7 +67,7 @@ import {
   FormikValues,
   getIn,
 } from "formik";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
 import { Role, selectRoles } from "@slices/authSlice/auth";
@@ -226,6 +226,14 @@ export default function Me({
   const serviceText = formatServiceLength(serviceLength);
 
   const age = personalInfo?.dob ? calculateAge(personalInfo.dob) : null;
+
+  const designationText = useMemo(() => {
+    if (!employee) return "-";
+    const parts = [employee.designation, employee.secondaryJobTitle].filter(
+      Boolean,
+    );
+    return parts.length > 0 ? parts.join(" — ") : "-";
+  }, [employee]);
 
   useEffect(() => {
     const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;
@@ -473,7 +481,7 @@ export default function Me({
                   <Chip
                     size="medium"
                     icon={<WorkOutline />}
-                    label={employee.designation}
+                    label={designationText}
                     sx={(theme) => chipSx(theme)}
                   />
                 )}
@@ -589,15 +597,7 @@ export default function Me({
                     Designation
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.designation}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Secondary Job Title
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.secondaryJobTitle || "N/A"}
+                    {designationText}
                   </Typography>
                 </Grid>
               </Grid>
@@ -877,6 +877,9 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Last Name" value={values.lastName} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="Full Name" value={values.fullName} />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>

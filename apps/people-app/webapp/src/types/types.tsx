@@ -46,6 +46,7 @@ export interface CreateEmployeeFormValues {
     nicOrPassport: string;
     firstName: string;
     lastName: string;
+    fullName: string;
     title: string;
     dob: string | null;
     gender: string;
@@ -68,7 +69,7 @@ export interface CreateEmployeeFormValues {
   subTeamId: number;
   unitId: number;
   companyId: number;
-  officeId: number | null;
+  officeId: number;
   workLocation: string;
   employmentTypeId: number;
   startDate: string;
@@ -88,6 +89,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
     nicOrPassport: "",
     firstName: "",
     lastName: "",
+    fullName: "",
     title: "",
     dob: null,
     gender: "",
