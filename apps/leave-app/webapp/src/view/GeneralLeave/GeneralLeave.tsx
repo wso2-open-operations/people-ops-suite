@@ -215,18 +215,17 @@ export default function GeneralLeave() {
         : selectedDayPortion === DayPortion.FIRST
           ? "Morning"
           : "Afternoon";
-    const dateRange =
-      startDate!.isSame(endDate, "day")
-        ? startDate!.format("MMM D, YYYY")
-        : `${startDate!.format("MMM D")} – ${endDate!.format("MMM D, YYYY")}`;
+    const dateRange = startDate!.isSame(endDate, "day")
+      ? startDate!.format("MMM D, YYYY")
+      : `${startDate!.format("MMM D")} – ${endDate!.format("MMM D, YYYY")}`;
 
     showConfirmation(
       "Do you want to submit this leave?",
       `This will submit a ${leaveLabel} request for ${workingDays} working day${workingDays !== 1 ? "s" : ""} (${dateRange}, ${portionLabel}). This action cannot be undone.`,
       ConfirmationType.send,
       () => executeSubmit(periodType, isMorningLeave),
-      "Yes, Submit",
-      "Cancel",
+      "Yes",
+      "No",
     );
   };
 

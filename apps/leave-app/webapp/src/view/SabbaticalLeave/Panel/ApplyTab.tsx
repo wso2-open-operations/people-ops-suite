@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import {
   Alert,
   Box,
@@ -34,10 +33,10 @@ import { useSnackbar } from "notistack";
 import { ReactNode, useEffect, useState } from "react";
 
 import CustomButton from "@root/src/component/common/CustomButton";
-import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import {
   fetchLeaveHistory,
   resetLeaveState,
@@ -48,7 +47,14 @@ import {
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { ConfirmationType, EligibilityResponse, LeaveType, OrderBy, State, Status } from "@root/src/types/types";
+import {
+  ConfirmationType,
+  EligibilityResponse,
+  LeaveType,
+  OrderBy,
+  State,
+  Status,
+} from "@root/src/types/types";
 
 interface ApplyTabProps {
   sabbaticalPolicyUrl: string;
@@ -341,8 +347,8 @@ export default function ApplyTab({
       `This will submit your sabbatical leave request for ${dateRange} and send it${leadInfo} for approval.`,
       ConfirmationType.send,
       handleConfirmSubmit,
-      "Yes, Submit",
-      "Cancel",
+      "Yes",
+      "No",
     );
   };
 
@@ -588,7 +594,6 @@ export default function ApplyTab({
           </FormContainer>
         </Stack>
       )}
-
     </>
   );
 }
