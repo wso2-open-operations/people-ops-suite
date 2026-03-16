@@ -14,13 +14,16 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/http;
+import ballerina/decimal;
 
 # Confirms the transaction from the transaction hash.
 #
 # + txHash - Transaction hash
 # + masterWalletAddress - Expected recipient address
-# + return - () on success, error if not found/failed or recipient mismatch
-public isolated function confirmTransaction(string txHash, string masterWalletAddress) returns error? {
+# + expectedAmount - Expected coins amount to be paid for the reservation
+# + return - () on success, error if not found/failed or recipient/amount mismatch
+public isolated function confirmTransaction(string txHash, string masterWalletAddress, decimal expectedAmount)
+        returns error? {
     http:Response response = check transactionClient->/api/v1/blockchain/get\-transaction\-details/[txHash].get();
 
     if response.statusCode != http:STATUS_OK {
@@ -51,6 +54,13 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
     }
     if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
         return error(string `Transaction recipient does not match master wallet.`);
+    }
+    if payload.amountFormatted is () {
+        return error("Transaction amount missing; cannot verify.");
+    }
+    decimal actualAmount = check decimal:fromString(payload.amountFormatted);
+    if actualAmount != expectedAmount {
+        return error("Transaction amount does not match expected reservation amount.");
     }
     if !payload.success || payload.status != TransactionStatus.SUCCESS.toString() {
         return error(string `Transaction not successful: ${payload.status}.`);

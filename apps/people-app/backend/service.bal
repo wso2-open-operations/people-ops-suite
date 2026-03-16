@@ -1240,7 +1240,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress);
+        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
+            reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
