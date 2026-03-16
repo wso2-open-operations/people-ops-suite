@@ -296,8 +296,12 @@ export default function ResignationReportTable() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `resigned-employees_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
     } catch {
       dispatch(
         enqueueSnackbarMessage({
