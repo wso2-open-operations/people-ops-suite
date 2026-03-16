@@ -29,6 +29,7 @@ import { State } from "@src/types/types";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchForm } from "../searchForm/SearchForm";
+import { getEmployeeStatusColor } from "@utils/utils";
 
 export default function EmployeesTable() {
   const theme = useTheme();
@@ -79,21 +80,6 @@ export default function EmployeesTable() {
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
-  }
-
-  function getEmployeeStatusColor(
-    status: string,
-  ): "default" | "success" | "warning" | "error" {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "success";
-      case "marked leaver":
-        return "warning";
-      case "left":
-        return "error";
-      default:
-        return "default";
-    }
   }
 
   const columns: GridColDef<Employee>[] = useMemo(() => [

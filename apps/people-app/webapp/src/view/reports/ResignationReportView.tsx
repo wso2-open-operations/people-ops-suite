@@ -37,7 +37,6 @@ export default function ResignationReportView() {
           }
           countChipLabel="Total Resigned"
           downloadFilename={`resigned-employees_${new Date().toISOString().slice(0, 10)}.csv`}
-          downloadErrorMessage="Failed to download resignation report"
         />
       }
     />

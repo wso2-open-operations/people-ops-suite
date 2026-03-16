@@ -130,3 +130,18 @@ export const sortAndFormatOptions = <T>(
     return aLabel.localeCompare(bLabel, undefined, { sensitivity: "base" });
   });
 };
+
+export function getEmployeeStatusColor(
+  status: string,
+): "default" | "success" | "warning" | "error" {
+  switch (status?.toLowerCase()) {
+    case "active":
+      return "success";
+    case "marked leaver":
+      return "warning";
+    case "left":
+      return "error";
+    default:
+      return "default";
+  }
+}

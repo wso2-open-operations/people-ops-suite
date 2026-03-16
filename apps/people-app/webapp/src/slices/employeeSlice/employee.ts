@@ -444,15 +444,18 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
-  async (status: EmployeeStatus, { rejectWithValue }) => {
+  async (status: EmployeeStatus, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
         AppConfig.serviceUrls.reportsEmployees(status),
         { responseType: "text" },
       );
       return response.data as string;
-    } catch (e) {
-      return rejectWithValue("Failed to download report");
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message ?? "Failed to download report";
+      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      return rejectWithValue(errorMessage);
     }
   },
 );
@@ -524,6 +527,10 @@ const EmployeeSlice = createSlice({
       state.state = State.idle;
       state.stateMessage = null;
       state.errorMessage = null;
+    },
+    clearFilteredEmployees(state) {
+      state.filteredEmployeesResponse = { employees: [], totalCount: 0 };
+      state.filteredEmployeesResponseState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -662,5 +669,6 @@ export const {
   resetCreateEmployeeState,
   resetUpdateEmployeeJobInfoState,
   resetContinuousService,
+  clearFilteredEmployees,
 } = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

@@ -36,7 +36,6 @@ export default function ActiveEmployeesReportView() {
           }
           countChipLabel="Total Active"
           downloadFilename={`active-employees_${new Date().toISOString().slice(0, 10)}.csv`}
-          downloadErrorMessage="Failed to download employee report"
         />
       }
     />

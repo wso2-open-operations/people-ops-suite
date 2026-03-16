@@ -17,10 +17,10 @@
 import React from "react";
 
 import {
+  Navigate,
   NonIndexRouteObject,
   Outlet,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssessmentIcon from "@mui/icons-material/Assessment";
@@ -61,20 +61,16 @@ export interface RouteDetail {
 
 const EmployeesRoot = () => {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   if (pathname === "/employees") {
-    navigate("/employees/view", { replace: true });
-    return null;
+    return React.createElement(Navigate, { to: "/employees/view", replace: true });
   }
   return React.createElement(Outlet);
 };
 
 const ReportsRoot = () => {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   if (pathname === "/reports") {
-    navigate("/reports/active-employees", { replace: true });
-    return null;
+    return React.createElement(Navigate, { to: "/reports/active-employees", replace: true });
   }
   return React.createElement(Outlet);
 };

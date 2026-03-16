@@ -28,6 +28,7 @@ import {
 import DownloadIcon from "@mui/icons-material/Download";
 import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
+  clearFilteredEmployees,
   downloadEmployeeReportByStatus,
   Employee,
   EmployeeStatus,
@@ -37,7 +38,7 @@ import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@src/types/types";
 import { unwrapResult } from "@reduxjs/toolkit";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { getEmployeeStatusColor } from "@utils/utils";
 
 const PREVIEW_LIMIT = 10;
 
@@ -46,7 +47,6 @@ interface EmployeeReportTableProps {
   previewAlertText: ReactNode;
   countChipLabel: string;
   downloadFilename: string;
-  downloadErrorMessage?: string;
 }
 
 export default function EmployeeReportTable({
@@ -54,45 +54,41 @@ export default function EmployeeReportTable({
   previewAlertText,
   countChipLabel,
   downloadFilename,
-  downloadErrorMessage = "Failed to download report",
 }: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const employeeState = useAppSelector((state) => state.employee);
   const [downloading, setDownloading] = useState(false);
+  const [ownFetchDone, setOwnFetchDone] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    setOwnFetchDone(false);
+    dispatch(clearFilteredEmployees());
     dispatch(
       fetchFilteredEmployees({
         filters: { employeeStatus },
         pagination: { limit: PREVIEW_LIMIT, offset: 0 },
         sort: { sortField: "employeeId", sortOrder: "ASC" },
+        leadOnly: false,
       }),
-    );
+    ).finally(() => {
+      if (!cancelled) setOwnFetchDone(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [dispatch, employeeStatus]);
 
+  const isLoading = !ownFetchDone;
   const rows: Employee[] =
-    employeeState.filteredEmployeesResponse.employees ?? [];
-  const isLoading =
-    employeeState.filteredEmployeesResponseState === State.loading;
+    ownFetchDone &&
+    employeeState.filteredEmployeesResponseState === State.success
+      ? (employeeState.filteredEmployeesResponse.employees ?? [])
+      : [];
 
   function getFullName(firstName: string, lastName: string) {
     return `${firstName || ""} ${lastName || ""}`.trim();
-  }
-
-  function getEmployeeStatusColor(
-    status: string,
-  ): "default" | "success" | "warning" | "error" {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "success";
-      case "marked leaver":
-        return "warning";
-      case "left":
-        return "error";
-      default:
-        return "default";
-    }
   }
 
   const columns: GridColDef<Employee>[] = useMemo(
@@ -308,15 +304,12 @@ export default function EmployeeReportTable({
       const a = document.createElement("a");
       a.href = url;
       a.download = downloadFilename;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch {
-      dispatch(
-        enqueueSnackbarMessage({
-          message: downloadErrorMessage,
-          type: "error",
-        }),
-      );
+      // Error message already dispatched by the thunk.
     } finally {
       setDownloading(false);
     }
