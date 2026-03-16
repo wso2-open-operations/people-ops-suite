@@ -25,27 +25,29 @@ interface TitleProps {
 }
 
 export default function Title({ firstWord, secondWord, borderEnabled = true, icon }: TitleProps) {
-  const theme = useTheme();
+    const theme = useTheme();
 
     return (
         <Box
             sx={{
                 width: "100%",
                 pb: borderEnabled ? 2 : 0,
-                borderBottom: borderEnabled ? `1px solid ${theme.palette.divider}` : "none",
+                borderBottom: borderEnabled
+                    ? `1px solid ${theme.palette.customBorder.territory.active}`
+                    : "none",
             }}
         >
             <Stack
                 direction="row"
                 gap={1}
-                justifyContent={{ xs: "center", md: "left" }}
+                alignItems="center"
+                justifyContent={{ xs: "center", md: "flex-start" }}
             >
                 {icon && (
                     <Box
                         sx={{
-                            marginTop: "3px",
                             display: "flex",
-                            color: theme.palette.primary.main
+                            color: theme.palette.brandColors.orange,
                         }}
                     >
                         {icon}
@@ -53,13 +55,15 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
                 )}
                 <Typography
                     variant="h5"
+                    component="h2"
                     sx={{
-                        color: theme.palette.text.primary,
-                        fontWeight: 550,
-                        letterSpacing: 0,
+                        color: theme.palette.customText.primary.p1.active,
                     }}
                 >
-                    <span style={{ color: theme.palette.primary.main }}>{firstWord}</span>{" "}{secondWord}
+                    <Box component="span" sx={{ color: theme.palette.brandColors.orange }}>
+                        {firstWord}
+                    </Box>{" "}
+                    {secondWord}
                 </Typography>
             </Stack>
         </Box>
