@@ -143,7 +143,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         string trimmedEpf = epf.trim();
         if trimmedEpf == "" {
-            string customErr = "EPF is a mandatory query parameter";
+            string customErr = "EPF validation failed: EPF cannot be empty";
             log:printWarn(customErr);
             return <http:BadRequest>{
                 body: {
