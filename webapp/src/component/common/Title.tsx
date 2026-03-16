@@ -47,7 +47,7 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
                     <Box
                         sx={{
                             display: "flex",
-                            color: theme.palette.brandColors.orange,
+                            color: theme.palette.brandColors.lightOrange,
                         }}
                     >
                         {icon}
@@ -60,7 +60,7 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
                         color: theme.palette.customText.primary.p1.active,
                     }}
                 >
-                    <Box component="span" sx={{ color: theme.palette.brandColors.orange }}>
+                    <Box component="span" sx={{ color: theme.palette.brandColors.lightOrange }}>
                         {firstWord}
                     </Box>{" "}
                     {secondWord}

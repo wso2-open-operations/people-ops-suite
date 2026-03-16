@@ -15,7 +15,7 @@
 // under the License.
 
 import { useState, useEffect } from "react";
-import { Box, Button, Fade, Stack } from "@mui/material";
+import { Box, Button, Fade, Stack, Typography } from "@mui/material";
 import ShieldIcon from "@mui/icons-material/Shield";
 
 import { useAppDispatch, useAppSelector } from "@slices/store";
@@ -33,12 +33,12 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { ParCycleStatus, RequestState } from "@utils/types";
 import { SnackMessage, uiMessages } from "@config/constant";
 
-import { FormContainer } from "../../component/common/FormContainer";
-import Title from "../../component/common/Title";
+import { FormContainer } from "@component/common/FormContainer";
+import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
-import { ParCreationForm } from "..//adminPortal/components/ParCreationForm";
-import { OrgSummary } from "..//adminPortal/components/OrgSummary";
-import { AssignQuota } from "..//adminPortal/components/AssignQuota";
+import { ParCreationForm } from "@view/adminPortal/components/ParCreationForm";
+import { OrgSummary } from "@view/adminPortal/components/OrgSummary";
+import { AssignQuota } from "@view/adminPortal/components/AssignQuota";
 
 export default function AdminOngoingView() {
   const isParCycleOngoing = useAppSelector(selectIsParCycleOngoing);
@@ -148,14 +148,14 @@ export default function AdminOngoingView() {
                       flexDirection="column"
                       justifyContent="center"
                       alignItems="center"
-                      sx={{ height: "100%", textAlign: "center" }}
+                      sx={{ height: "100%", textAlign: "center", mt: 4 }}
                     >
-                      <Box paddingBottom={2}>PAR cycle not in progress.</Box>
-                      <Box>
-                        <Button variant="contained" onClick={handleFormOpen}>
-                          Create Cycle
-                        </Button>
-                      </Box>
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        No ongoing PAR cycles found.
+                      </Typography>
+                      <Button variant="contained" onClick={handleFormOpen}>
+                        Create Cycle
+                      </Button>
                     </Box>
                   )}
               </Stack>
