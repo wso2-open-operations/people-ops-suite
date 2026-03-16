@@ -24,23 +24,38 @@ import type {
 
 export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState;
 
-export default function useFindParent(
+export function useFindParent(
   orgItems: OrganizationInfo | null,
-  parentId: string,
+  id: string,
+  nodeType: NodeType
 ): CompanyState | OrgStructureState | null {
   if (!orgItems) return null;
 
-  if (orgItems.company.id === parentId) {
-    return orgItems.company;
+  switch (nodeType) {
+    case NodeType.BusinessUnit:
+      // Parent is the company; its id is the mapping reference
+      return orgItems.company;
+    case NodeType.Team: {
+      // Parent is a BusinessUnit → BU has no mappingId, use its id
+      const bu = orgItems.businessUnits.find((node) => node.id === id) ?? null;
+      return bu ? bu : null;
+    }
+
+    case NodeType.SubTeam: {
+      // Parent is a Team → Team has a mappingId
+      const team = orgItems.teams.find((node) => node.id === id) ?? null;
+      return team ? team : null;
+    }
+
+    case NodeType.Unit: {
+      // Parent is a SubTeam → SubTeam has a mappingId
+      const subTeam = orgItems.subTeams.find((node) => node.id === id) ?? null;
+      return subTeam ? subTeam : null;
+    }
+
+    default:
+      return null;
   }
-
-  const allChildren: OrgStructureState[] = [
-    ...orgItems.businessUnits,
-    ...orgItems.teams,
-    ...orgItems.subTeams,
-  ];
-
-  return allChildren.find((node) => node.id === parentId) ?? null;
 }
 
 export function useFindMappingId(
