@@ -482,5 +482,5 @@ CREATE TABLE `parking_reservation` (
   CONSTRAINT `fk_pr_slot` FOREIGN KEY (`slot_id`) REFERENCES `parking_slot` (`slot_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_pr_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`vehicle_id`) ON DELETE RESTRICT,
   UNIQUE KEY `uk_slot_booking_date` (`slot_id`, `booking_date`),
-  UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`);
+  UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
 );
