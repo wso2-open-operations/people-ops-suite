@@ -64,7 +64,7 @@ public isolated function getEmployees(EmployeeSearchPayload payload, string? lea
     return {employees, totalCount};
 }
 
-# Fetch a page of resigned (INACTIVE) employees joined with resignation info.
+# Fetch a page of resigned (Left) employees joined with resignation info.
 #
 # + pagination - Pagination parameters (limit and offset)
 # + return - Array of ResignedEmployee or error
