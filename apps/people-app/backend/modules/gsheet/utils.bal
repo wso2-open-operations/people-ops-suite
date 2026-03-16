@@ -18,8 +18,5 @@ import ballerina/time;
 # Get the current date and time in ISO-8601 UTC format for logging in Google Sheets.
 #
 # + return - Current timestamp in ISO-8601 UTC format as a string
-public isolated function getCurrentTimestamp() returns string {
-    time:Utc utc = time:utcNow();
-    return time:utcToString(utc);
-}
-
+public isolated function getCurrentTimestamp() returns string =>
+    time:utcToString(time:utcNow());
