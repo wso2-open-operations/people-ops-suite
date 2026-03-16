@@ -14,9 +14,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, CircularProgress, Stack, Typography, useTheme } from "@mui/material";
+import { Box, CircularProgress, Stack, MenuItem, Select, SelectChangeEvent, Typography, useTheme } from "@mui/material";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
@@ -41,6 +41,7 @@ interface LeaveHistoryProps {
 export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {}) {
   const dispatch = useAppDispatch();
   const [currentYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const userInfo = useAppSelector(selectUser);
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
@@ -48,19 +49,33 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
   const loading = leaveState === State.loading;
   const theme = useTheme();
 
+  const availableYears = useMemo(() => {
+    const parsedEmploymentStartYear = userInfo?.employmentStartDate
+      ? new Date(userInfo.employmentStartDate).getFullYear()
+      : currentYear;
+    const employmentStartYear = Number.isNaN(parsedEmploymentStartYear)
+      ? currentYear
+      : parsedEmploymentStartYear;
+    return Array.from(
+      { length: currentYear - employmentStartYear + 1 },
+      (_, i) => currentYear - i,
+    );
+  }, [userInfo?.employmentStartDate, currentYear]);
+
   useEffect(() => {
     if (userInfo?.workEmail) {
       dispatch(
         fetchLeaveHistory({
           email: userInfo.workEmail,
-          startDate: `${currentYear}-01-01`, // first day of the current year
+          startDate: `${selectedYear}-01-01`,
+          endDate: `${selectedYear}-12-31`,
           statuses: [Status.APPROVED, Status.PENDING],
           orderBy: OrderBy.DESC,
           leaveCategory: leaveType,
         }),
       );
     }
-  }, [dispatch, currentYear, userInfo?.workEmail, leaveType]);
+  }, [dispatch, selectedYear, userInfo?.workEmail, leaveType]);
 
   const getMonthAndDay = (dateString: string) => {
     const date = new Date(dateString);
@@ -73,12 +88,46 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
     dispatch(cancelLeave(id));
   };
 
+  const handleYearChange = (event: SelectChangeEvent<number>) => {
+    setSelectedYear(Number(event.target.value));
+  };
+
   return (
     <Stack maxWidth={PAGE_MAX_WIDTH} margin="auto" gap="1.5rem">
-      <Title
-        firstWord={title?.firstWord ?? "Leave"}
-        secondWord={title?.secondWord ?? `History (${currentYear})`}
-      />
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
+        <Title
+          firstWord={title?.firstWord ?? "Leave"}
+          secondWord={title?.secondWord ?? "History"}
+        />
+        <Select
+          value={selectedYear}
+          inputProps={{ "aria-label": "Leave history year" }}
+          onChange={handleYearChange}
+          size="small"
+          sx={{
+            color: theme.palette.text.primary,
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.divider,
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.text.secondary,
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.primary.main,
+            },
+            "& .MuiSelect-icon": {
+              color: theme.palette.text.secondary,
+            },
+            minWidth: 100,
+          }}
+        >
+          {availableYears.map((year) => (
+            <MenuItem key={year} value={year}>
+              {year}
+            </MenuItem>
+          ))}
+        </Select>
+      </Stack>
       <Box
         gap="2rem"
         display="grid"
@@ -99,7 +148,7 @@ export default function LeaveHistory({ leaveType, title }: LeaveHistoryProps = {
         )}
         {!loading && leaves.length === 0 && (
           <Typography color={theme.palette.text.primary}>
-            No leave history available for the current year.
+            No leave history available for {selectedYear}.
           </Typography>
         )}
         {!loading &&
