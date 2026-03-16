@@ -26,13 +26,9 @@ import {
   useTheme,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
+import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-} from "@mui/x-data-grid";
-import {
-  downloadResignationReport,
+  downloadEmployeeReportByStatus,
   Employee,
   EmployeeStatus,
   fetchFilteredEmployees,
@@ -40,26 +36,40 @@ import {
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { State } from "@src/types/types";
 import { unwrapResult } from "@reduxjs/toolkit";
-import { useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useState } from "react";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 const PREVIEW_LIMIT = 10;
 
-const PREVIEW_FILTER = {
-  filters: { employeeStatus: EmployeeStatus.Left },
-  pagination: { limit: PREVIEW_LIMIT, offset: 0 },
-  sort: { sortField: "employeeId", sortOrder: "ASC" as const },
-};
+interface EmployeeReportTableProps {
+  employeeStatus: EmployeeStatus;
+  previewAlertText: ReactNode;
+  countChipLabel: string;
+  downloadFilename: string;
+  downloadErrorMessage?: string;
+}
 
-export default function ResignationReportTable() {
+export default function EmployeeReportTable({
+  employeeStatus,
+  previewAlertText,
+  countChipLabel,
+  downloadFilename,
+  downloadErrorMessage = "Failed to download report",
+}: EmployeeReportTableProps) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const employeeState = useAppSelector((state) => state.employee);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchFilteredEmployees(PREVIEW_FILTER));
-  }, [dispatch]);
+    dispatch(
+      fetchFilteredEmployees({
+        filters: { employeeStatus },
+        pagination: { limit: PREVIEW_LIMIT, offset: 0 },
+        sort: { sortField: "employeeId", sortOrder: "ASC" },
+      }),
+    );
+  }, [dispatch, employeeStatus]);
 
   const rows: Employee[] =
     employeeState.filteredEmployeesResponse.employees ?? [];
@@ -290,22 +300,20 @@ export default function ResignationReportTable() {
   async function handleExport() {
     setDownloading(true);
     try {
-      const csvText = unwrapResult(await dispatch(downloadResignationReport()));
+      const csvText = unwrapResult(
+        await dispatch(downloadEmployeeReportByStatus(employeeStatus)),
+      );
       const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `resigned-employees_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
+      a.download = downloadFilename;
       a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 0);
+      URL.revokeObjectURL(url);
     } catch {
       dispatch(
         enqueueSnackbarMessage({
-          message: "Failed to download resignation report",
+          message: downloadErrorMessage,
           type: "error",
         }),
       );
@@ -326,10 +334,16 @@ export default function ResignationReportTable() {
           gap: 2,
         }}
       >
-        <Alert severity="info" sx={{ py: 0.5, flex: 1, fontSize: "0.875rem", "& .MuiAlert-icon": { alignItems: "center" } }}>
-          Showing a preview of the first {PREVIEW_LIMIT} resigned employees.  <br />
-          Export CSV to download the complete dataset including resignation dates
-          and reason.
+        <Alert
+          severity="info"
+          sx={{
+            py: 0.5,
+            flex: 1,
+            fontSize: "0.875rem",
+            "& .MuiAlert-icon": { alignItems: "center" },
+          }}
+        >
+          {previewAlertText}
         </Alert>
         <Chip
           size="small"
@@ -348,7 +362,7 @@ export default function ResignationReportTable() {
                   textTransform: "capitalize",
                 }}
               >
-                Total Resigned
+                {countChipLabel}
               </Box>
               <Box
                 component="span"
@@ -362,7 +376,9 @@ export default function ResignationReportTable() {
                       : theme.palette.grey[800],
                 }}
               >
-                {isLoading ? "—" : (employeeState.filteredEmployeesResponse.totalCount ?? "—")}
+                {isLoading
+                  ? "—"
+                  : (employeeState.filteredEmployeesResponse.totalCount ?? "—")}
               </Box>
             </>
           }

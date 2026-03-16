@@ -16,7 +16,8 @@
 
 import CommonPage from "@layout/pages/CommonPage";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
-import ResignationReportTable from "./ResignationReportTable";
+import { EmployeeStatus } from "@slices/employeeSlice/employee";
+import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ResignationReportView() {
   return (
@@ -24,7 +25,21 @@ export default function ResignationReportView() {
       title="Resigned Employees"
       icon={<PersonOffIcon />}
       commonPageTabs={[]}
-      page={<ResignationReportTable />}
+      page={
+        <EmployeeReportTable
+          employeeStatus={EmployeeStatus.Left}
+          previewAlertText={
+            <>
+              Showing a preview of the first 10 resigned employees. <br />
+              Export CSV to download the complete dataset including resignation
+              dates and reason.
+            </>
+          }
+          countChipLabel="Total Resigned"
+          downloadFilename={`resigned-employees_${new Date().toISOString().slice(0, 10)}.csv`}
+          downloadErrorMessage="Failed to download resignation report"
+        />
+      }
     />
   );
 }

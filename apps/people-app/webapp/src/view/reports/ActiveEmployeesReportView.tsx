@@ -16,7 +16,8 @@
 
 import CommonPage from "@layout/pages/CommonPage";
 import AssessmentIcon from "@mui/icons-material/Assessment";
-import ActiveEmployeesReportTable from "./ActiveEmployeesReportTable";
+import { EmployeeStatus } from "@slices/employeeSlice/employee";
+import EmployeeReportTable from "./EmployeeReportTable";
 
 export default function ActiveEmployeesReportView() {
   return (
@@ -24,7 +25,20 @@ export default function ActiveEmployeesReportView() {
       title="Active Employees"
       icon={<AssessmentIcon />}
       commonPageTabs={[]}
-      page={<ActiveEmployeesReportTable />}
+      page={
+        <EmployeeReportTable
+          employeeStatus={EmployeeStatus.Active}
+          previewAlertText={
+            <>
+              Showing a preview of the first 10 active employees. <br />
+              Export CSV to download the complete dataset with all fields.
+            </>
+          }
+          countChipLabel="Total Active"
+          downloadFilename={`active-employees_${new Date().toISOString().slice(0, 10)}.csv`}
+          downloadErrorMessage="Failed to download employee report"
+        />
+      }
     />
   );
 }

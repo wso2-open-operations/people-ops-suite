@@ -442,27 +442,12 @@ export const updateEmployeeJobInfo = createAsyncThunk(
   },
 );
 
-export const downloadEmployeeReport = createAsyncThunk(
-  "employee/downloadEmployeeReport",
-  async (_, { rejectWithValue }) => {
+export const downloadEmployeeReportByStatus = createAsyncThunk(
+  "employee/downloadEmployeeReportByStatus",
+  async (status: EmployeeStatus, { rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.reportsEmployees(EmployeeStatus.Active),
-        { responseType: "text" },
-      );
-      return response.data as string;
-    } catch (e) {
-      return rejectWithValue("Failed to download report");
-    }
-  },
-);
-
-export const downloadResignationReport = createAsyncThunk(
-  "employee/downloadResignationReport",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.reportsEmployees(EmployeeStatus.Left),
+        AppConfig.serviceUrls.reportsEmployees(status),
         { responseType: "text" },
       );
       return response.data as string;
