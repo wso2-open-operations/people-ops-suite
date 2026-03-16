@@ -429,7 +429,7 @@ isolated function getEmployeePersonalInfoQuery(string employeeId) returns sql:Pa
         nic_or_passport,
         p.first_name AS firstName,
         p.last_name AS lastName,
-        p.full_name AS fullName,
+        full_name
         title,
         dob,
         gender,
