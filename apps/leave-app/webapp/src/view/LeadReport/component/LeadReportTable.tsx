@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useTheme } from "@mui/material";
+import { Chip, Stack, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 
@@ -27,6 +27,14 @@ interface LeadReportTableProps {
 
 export default function LeadReportTable({ rows, loading }: LeadReportTableProps) {
   const theme = useTheme();
+  const totalDays = rows.reduce((sum, r) => sum + (r.numberOfDays ?? 0), 0);
+
+  const perEmployeeDays = rows.reduce<Record<string, number>>((acc, r) => {
+    acc[r.email] = (acc[r.email] ?? 0) + (r.numberOfDays ?? 0);
+    return acc;
+  }, {});
+  const uniqueEmployees = Object.keys(perEmployeeDays);
+  const isMultipleEmployees = uniqueEmployees.length > 1;
 
   const columns: GridColDef[] = [
     {
@@ -73,6 +81,22 @@ export default function LeadReportTable({ rows, loading }: LeadReportTableProps)
 
   return (
     <Box sx={{ width: "100%" }}>
+      <Stack direction="row" justifyContent="flex-end" flexWrap="wrap" gap={1} mb={1}>
+        {isMultipleEmployees
+          ? uniqueEmployees.map((email) => (
+              <Chip
+                key={email}
+                label={`${email}: ${perEmployeeDays[email]} day${perEmployeeDays[email] !== 1 ? "s" : ""}`}
+                size="small"
+              />
+            ))
+          : null}
+        <Chip
+          label={`Total: ${totalDays} day${totalDays !== 1 ? "s" : ""}`}
+          size="small"
+          color="primary"
+        />
+      </Stack>
       <DataGrid
         rows={rows}
         columns={columns}
