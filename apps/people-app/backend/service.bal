@@ -15,11 +15,15 @@
 // under the License. 
 import people.authorization;
 import people.database;
+import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
+
+# Master wallet address for car park O2C payments.
+configurable string masterWalletAddress = ?;
 
 @display {
     label: "People Service",
@@ -1012,6 +1016,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Get car park configs.
+    #
+    # + return - Car park configs or error response
+    resource function get parkings/configs(http:RequestContext ctx)
+        returns CarParkConfigResponse|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        return {publicWalletAddress: masterWalletAddress};
+    }
+
     # List parking floors.
     #
     # + return - List of parking floors or error response
@@ -1242,6 +1261,30 @@ service http:InterceptableService / on new http:Listener(9090) {
         if reservation.status != database:PENDING {
             return <http:BadRequest>{
                 body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
+            };
+        }
+
+        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
+        database:ReservationIdRow|error? existingTx =
+            database:getParkingReservationByTransactionHash(body.transactionHash);
+        if existingTx is error {
+            log:printError("Error checking transaction hash reuse", existingTx);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while verifying transaction hash."}
+            };
+        }
+        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
+            return <http:BadRequest>{
+                body: {message: "This transaction hash has already been used for another reservation."}
+            };
+        }
+
+        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
+            reservation.coinsAmount);
+        if confirmErr is error {
+            log:printError("Error confirming transaction", confirmErr);
+            return <http:BadRequest>{
+                body: {message: "Transaction verification failed."}
             };
         }
 
