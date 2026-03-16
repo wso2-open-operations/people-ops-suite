@@ -52,7 +52,7 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
     if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
         return error(string `Transaction recipient does not match master wallet.`);
     }
-    if !payload.success || payload.status != TRANSACTION_STATUS_SUCCESS {
+    if !payload.success || payload.status != TransactionStatus.SUCCESS.toString() {
         return error(string `Transaction not successful: ${payload.status}.`);
     }
 

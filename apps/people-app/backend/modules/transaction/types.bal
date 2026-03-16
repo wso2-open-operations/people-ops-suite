@@ -32,7 +32,7 @@ public type TransactionDetailsPayload record {|
     boolean found;
     # True when mined and executed successfully.
     boolean success;
-    # "SUCCESS" | "FAILED" | "PENDING" | "NOT_FOUND".
+    # One of TransactionStatus values.
     string status;
     # ISO-8601 block time, or () if not mined/unknown.
     string? timestamp;
@@ -59,3 +59,11 @@ public type TransactionDetailsResponse record {|
     # Transaction details payload.
     TransactionDetailsPayload payload;
 |};
+
+# Transaction status from get-transaction-details API.
+public enum TransactionStatus {
+    SUCCESS = "SUCCESS",
+    FAILED = "FAILED",
+    PENDING = "PENDING",
+    NOT_FOUND = "NOT_FOUND"
+}
