@@ -30,15 +30,9 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
             response.statusCode, info = errInfo);
     }
 
-    json|error jsonPayload = response.getJsonPayload();
-    if jsonPayload is error {
-        return jsonPayload;
-    }
+    json jsonPayload = check response.getJsonPayload();
 
-    TransactionDetailsResponse|error parsed = jsonPayload.cloneWithType(TransactionDetailsResponse);
-    if parsed is error {
-        return parsed;
-    }
+    TransactionDetailsResponse parsed = check jsonPayload.cloneWithType(TransactionDetailsResponse);
 
     TransactionDetailsPayload payload = parsed.payload;
     if !payload.found {
