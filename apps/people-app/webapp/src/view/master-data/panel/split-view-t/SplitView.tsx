@@ -38,7 +38,7 @@ import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
 
 import AddPage from "./AddPage.tsx";
-import { useFindMappingId, useFindParentMappingId } from "./hooks/useFindParent";
+import { useFindMappingId, useFindParentMappingId, useFindParent } from "./hooks/useFindParent";
 
 type OnEdit = {
   open: boolean;
@@ -52,6 +52,14 @@ type OnAdd = {
   data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
   type: NodeType | null;
   parentId: string | null;
+};
+
+type MatchSearch = {
+  type: NodeType;
+  buId?: string | null;
+  teamId?: string | null;
+  subTeamId?: string | null;
+  unitId?: string | null;
 };
 
 export default function SplitView() {
@@ -79,7 +87,8 @@ export default function SplitView() {
   const [teamSearchTerm, setTeamSearchTerm] = useState<string | null>();
   const [subTeamSearchTerm, setSubTeamSearchTerm] = useState<string | null>();
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
-  const [globalSearch, setGlobalSearch] = useState<string>("");
+  const [globalSearchTerm, setGlobalSearchTerm] = useState<string>("");
+  const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
 
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
@@ -96,8 +105,10 @@ export default function SplitView() {
 
   const selectedTeams =
     orgItems.businessUnits.find((bu) => bu.id === selectedBusinessUnitId)?.teams ?? null;
+
   const selectedSubTeams =
     selectedTeams?.find((team) => team.id === selectedTeamId)?.subTeams ?? null;
+
   const selectedUnits =
     selectedSubTeams?.find((subTeam) => subTeam.id === selectedSubTeamId)?.units ?? null;
 
@@ -231,30 +242,103 @@ export default function SplitView() {
     onAdd(selectedUnits, NodeType.Unit, selectedSubTeamId);
   };
 
+  // Global search handlers
+  const handleGlobalSearch = () => {
+    console.log("search term : ", globalSearchTerm);
+    if (!globalSearchTerm.trim()) {
+      setSearchMatches([]);
+      return;
+    }
+
+    const term = globalSearchTerm.toLowerCase();
+
+    const allOrgItems = [
+      ...orgItems.businessUnits,
+      ...orgItems.teams,
+      ...orgItems.subTeams,
+      ...orgItems.units,
+    ];
+
+    const matches = allOrgItems.filter((item) => item.name.toLowerCase().includes(term));
+
+    console.log("matches : ", matches);
+
+    const sMatches = [];
+
+    matches.map((match) => {
+      switch (match.type) {
+        case NodeType.BusinessUnit:
+          const t = {
+            buId: match.id,
+            teamId: null,
+            subTeamId: null,
+            unitId: null
+          }
+          sMatches.push(t)
+          break;
+        case NodeType.Team:
+          const tt = {
+            buId: match.parentId,
+            teamId: match.id,
+            subTeamId: null,
+            unitId: null
+          }
+          sMatches.push(tt);
+          // handle team match
+          break;
+        case NodeType.SubTeam:
+          const sBuId = useFindParent(orgItems, match.parentId, NodeType.Team);
+          console.log("bu id : ", sBuId);
+
+          const ttt = {
+            buId: sBuId.id,
+            teamId: match.parentId,
+            subTeamId: match.id,
+            unitId: null
+          }
+          sMatches.push(ttt);
+          // handle sub team match
+          break;
+        case NodeType.Unit:
+          const sTeam = useFindParent(orgItems, match.parentId, NodeType.SubTeam);
+          const sBu = useFindParent(orgItems, match.parentId, NodeType.Team);
+
+          const tttt = {
+            buId: sBu.id,
+            teamId: sTeam.id,
+            subTeamId: match.parentId,
+            unitId: match.id,
+          }
+
+          sMatches.push(tttt);
+
+          // handle unit match
+          break;
+      }
+
+      console.log("s matches : ", sMatches);
+    })
+
+  };
+
+  const handleClearGlobalSearch = () => {
+    console.log("clear global search");
+    setGlobalSearchTerm("");
+  };
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      {/* ── Global Search ── */}
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-        {/* Left: icon + input */}
-        {/* <Box sx={{ display: "flex", alignItems: "center", gap: "12px", flex: 1, minWidth: 0 }}>
-            <SearchIcon
-              size={16}
-              color={theme.palette.customText.primary.p3.active}
-              style={{ flexShrink: 0 }}
-            />
-            <InputBase
-              value={globalSearch}
-              onChange={(e) => setGlobalSearch(e.target.value)}
-              placeholder="Search..."
-              sx={{
-                "& input": { padding: 0 },
-              }}
-            />
-          </Box> */}
         <TextField
           placeholder="Search..."
-          value={globalSearch}
-          onChange={(e) => setGlobalSearch(e.target.value)}
+          value={globalSearchTerm}
+          onChange={(e) => setGlobalSearchTerm(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleGlobalSearch();
+            }
+          }}
           size="small"
           sx={{
             backgroundColor: theme.palette.surface.secondary.active,
@@ -266,10 +350,11 @@ export default function SplitView() {
                   <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} />
                 </InputAdornment>
               ),
-              endAdornment: globalSearch ? (
+              endAdornment: globalSearchTerm ? (
                 <InputAdornment position="end">
                   <IconButton
                     size="small"
+                    onClick={handleClearGlobalSearch}
                     sx={{
                       padding: 0,
                       color: theme.palette.customText.primary.p3.active,
