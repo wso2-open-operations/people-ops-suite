@@ -402,10 +402,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            // Logic for all other leave types (casual, maternity, paternity, lieu...etc)
-            log:printInfo(string `Leave${isValidationOnlyMode ? " validation " : " "}request received from email: ${
-                        email} with payload: ${payload.toString()}`);
-
             [time:Utc, time:Utc]|error validatedDateRange = validateDateRange(payload.startDate, payload.endDate);
             if validatedDateRange is error {
                 log:printError(ERR_MSG_INVALID_DATE_FORMAT, validatedDateRange);
@@ -483,7 +479,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 email: leave.email,
                 isMorningLeave: leave.isMorningLeave
             };
-            log:printInfo(string `Submitted leave successfully. ID: ${leaveResponse.id}.`);
 
             future<error?> notificationFuture = start email:sendLeaveNotification(
                         emailContentForLeave,
