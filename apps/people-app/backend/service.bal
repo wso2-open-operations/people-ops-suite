@@ -991,9 +991,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Delete a business unit by ID.
+    # Delete a BusinessUnit by ID.
     #
-    # + buId - ID of the business unit to delete
+    # + buId - ID of the BusinessUnit
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/business\-unit/[int buId](http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1003,6 +1003,30 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        boolean|error hasChildren = database:businessUnitHasChildren(buId);
+        if hasChildren is error {
+            string customErr = "Error while checking business unit children";
+            log:printError(customErr, hasChildren, buId = buId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if hasChildren {
+            log:printWarn(
+                "Cannot delete business unit because it has child teams",
+                buId = buId,
+                invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: "Cannot delete business unit because it has child teams. Remove or deactivate child teams first."
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1032,10 +1056,78 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Delete a team-sub team mapping by IDs.
+    # Delete a BusinessUnit-Team mapping.
     #
-    # + teamId - ID of the team
-    # + subTeamId - ID of the sub team
+    # + businessUnitId - ID of the BusinessUnit
+    # + teamId - ID of the Team
+    # + return - HTTP OK on success, or HTTP errors on failure
+    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
+            (http:RequestContext ctx)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error hasChildren = database:businessUnitTeamHasChildren(businessUnitId, teamId);
+        if hasChildren is error {
+            string customErr = "Error while checking business unit team children";
+            log:printError(customErr, hasChildren, buId = businessUnitId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if hasChildren {
+            log:printWarn(
+                "Cannot delete business unit-team mapping because it has child sub-teams",
+                buId = businessUnitId,
+                teamId = teamId,
+                invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: "Cannot delete this business unit-team mapping because it has child sub-teams. Remove or deactivate child sub-teams first."
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        error|boolean deleteResult = database:deleteBusinessUnitTeam(workEmail, businessUnitId, teamId);
+        if deleteResult is error {
+            log:printError("Error while deleting business_unit_team : ", deleteResult, buId = businessUnitId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while deleting the business unit team mapping"
+                }
+            };
+        }
+
+        if deleteResult == false {
+            log:printError(string `No business unit team mapping found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
+            return <http:BadRequest>{
+                body: {
+                    message: "No team mapping found to delete"
+                }
+            };
+        }
+
+        return <http:Ok>{
+            body: {
+                message: "Successfully deleted the team"
+            }
+        };
+    }
+
+    # Delete a Team-SubTeam mapping by IDs.
+    #
+    # + teamId - ID of the BusinessUnit-Team
+    # + subTeamId - ID of the SubTeam
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId]
             (http:RequestContext ctx)
@@ -1046,6 +1138,31 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        boolean|error hasChildren = database:teamSubTeamHasChildren(teamId, subTeamId);
+        if hasChildren is error {
+            string customErr = "Error while checking team sub-team children";
+            log:printError(customErr, hasChildren, teamId = teamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if hasChildren {
+            log:printWarn(
+                "Cannot delete team-sub team mapping because it has child units",
+                teamId = teamId,
+                subTeamId = subTeamId,
+                invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: "Cannot delete this team-sub team mapping because it has child units. Remove or deactivate child units first."
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1075,10 +1192,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Delete a sub team-unit mapping by IDs.
+    # Delete a SubTeam-Unit mapping by IDs.
     #
-    # + subTeamId - ID of the sub team
-    # + unitId - ID of the unit
+    # + subTeamId - ID of the BusinessUnit-Team-SubTeam
+    # + unitId - ID of the Unit
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId]
             (http:RequestContext ctx)
@@ -1089,6 +1206,31 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        boolean|error hasChildren = database:subTeamUnitHasChildren(subTeamId, unitId);
+        if hasChildren is error {
+            string customErr = "Error while checking sub-team unit children";
+            log:printError(customErr, hasChildren, subTeamId = subTeamId, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if hasChildren {
+            log:printWarn(
+                "Cannot delete sub-team unit mapping because it has assigned employees",
+                subTeamId = subTeamId,
+                unitId = unitId,
+                invokerEmail = validatedUserInfo.email
+            );
+            return <http:BadRequest>{
+                body: {
+                    message: "Cannot delete this sub-team unit mapping because it has assigned employees. Reassign employees first."
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1114,49 +1256,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         return <http:Ok>{
             body: {
                 message: "Successfully deleted the sub team unit mapping"
-            }
-        };
-    }
-
-    # Delete a business unit-team mapping by IDs.
-    #
-    # + businessUnitId - ID of the business unit
-    # + teamId - ID of the team
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
-            (http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean deleteResult = database:deleteBusinessUnitTeam(workEmail, businessUnitId, teamId);
-        if deleteResult is error {
-            log:printError("Error while deleting business_unit_team : ", deleteResult, buId = businessUnitId, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while deleting the business unit team mapping"
-                }
-            };
-        }
-
-        if deleteResult == false {
-            log:printError(string `No business unit team mapping found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
-            return <http:BadRequest>{
-                body: {
-                    message: "No team mapping found to delete"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully deleted the team"
             }
         };
     }
