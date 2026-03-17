@@ -31,7 +31,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { DataGrid, GridRenderCellParams, GridToolbar, GridToolbarExportContainer } from "@mui/x-data-grid";
+import { DataGrid, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
 import { useLocation } from "react-router-dom";
 import { alpha } from "@mui/material/styles";
 import { useDebounce } from "use-debounce";
@@ -40,7 +40,13 @@ import DateRangeIcon from "@mui/icons-material/DateRange";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus } from "@slices/teamSlice/team";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import UpdateIcon from "@mui/icons-material/Update";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+import dayjs from "dayjs";
+
+import { fetchTeams, selectAllTeams, selectAllTeamsSummary, selectTeamStatus, Team } from "@slices/teamSlice/team";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { closeParCycle, fetchOpenParCycle, selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import {
@@ -51,24 +57,7 @@ import {
   selectParticipants,
   selectParticipantsStatus,
 } from "@slices/metaSlice/meta";
-import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
-import { ParCycleSettingsForm } from "./ParCycleSettingsForm";
-import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
-import { CustomModal } from "@component/common/CustomModal";
-import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
-import { LoadingEffect } from "@component/ui/Loading";
-import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
-import { calculateAllTeamsSummary } from "@utils/utils";
-import { RequestState } from "@utils/types";
-import { Team } from "@slices/teamSlice/team";
-import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { shortDateFormat } from "@config/constant";
-import dayjs from "dayjs";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import NoDataView from "@component/common/NoDataView";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
 import {
   fetchRejectedReviews,
   postReviews,
@@ -76,20 +65,41 @@ import {
   selectRejectedReviews,
   selectThreeSixtyReviewStatus,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import UpdateIcon from "@mui/icons-material/Update";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
-import { fetchParRatingSummary } from "@slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail } from "@slices/authSlice/auth";
+
+import { BulkReminderModal } from "@view/adminPortal/components/BulkReminderModal";
+import { ParCycleSettingsForm } from "./ParCycleSettingsForm";
+import { CompletionStatusCard } from "@component/common/CompletionStatusCard";
+import { CustomModal } from "@component/common/CustomModal";
+import { CycleDatesStepper } from "@component/common/CycleDatesStepper";
+import { LoadingEffect } from "@component/ui/Loading";
+import { ConfirmationDialog } from "@component/common/ConfirmationDialog";
+import { TeamSummary } from "@view/leadPortal/components/TeamSummary";
+import { Review } from "@view/leadPortal/components/Review";
+import { Report } from "@view/adminPortal/components/Report";
+import { Completion } from "@view/adminPortal/components/Completion";
+import NoDataView from "@component/common/NoDataView";
 import SummarizedParHistoryView from "./SummarizedParHistoryView";
 import SpecialRatingAllocationView from "@component/common/SpecialRatingAllocationView";
-import EmployeeSyncModal from "@view/adminPortal/components/EmployeeSyncModal";
-import { Review } from "../../leadPortal/components/Review";
-import { TeamSummary } from "../../leadPortal/components/TeamSummary";
-import { Completion } from "./Completion";
+import EmployeeSyncModal from "@view/leadPortal/components/EmployeeSyncModal";
+
+import { calculateAllTeamsSummary } from "@utils/utils";
+import { RequestState } from "@utils/types";
+import { ParLeadStatus } from "@slices/employeeHistorySlice/employeeHistory";
+import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { tooltipVisibilityDelay, uiMessages, shortDateFormat } from "@config/constant";
 
 interface DashboardProps {
   closeOrgSummaryView?: () => void;
   isAdminAuditViewOn?: boolean;
   isAdminHistoryViewOn?: boolean;
+}
+
+interface FormattedTeam extends Team {
+  id: number;
+  employeePARCompletion: string;
+  leadReviewCompletion: string;
+  f2fCompletion: string;
 }
 
 export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHistoryViewOn }: DashboardProps) => {
@@ -235,11 +245,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
     const filteredTeams = formattedTeams.filter((team) =>
       Object.values(team).some((value) => String(value).toLowerCase().includes(debouncedSearchText.toLowerCase()))
     );
-
-    const filteredTeamIds = new Set(filteredTeams.map((t) => t.parTeamId));
-    const originalFilteredTeams = teams.filter((t) => filteredTeamIds.has(t.parTeamId));
-
-    const newFilteredSummary = calculateAllTeamsSummary(originalFilteredTeams);
+    const newFilteredSummary = calculateAllTeamsSummary(filteredTeams);
     setFilteredSummary(newFilteredSummary);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchText]);
@@ -324,7 +330,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       field: "employeePARCompletion",
       headerName: "Employee PAR",
       flex: 0.09,
-      renderCell: (params: GridRenderCellParams) => (
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
         <Chip size="small" label={params.row.employeePARCompletion} />
       ),
     },
@@ -332,13 +338,13 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       field: "leadReviewCompletion",
       headerName: "Lead's Feedback",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams) => <Chip size="small" label={params.row.leadReviewCompletion} />,
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => <Chip size="small" label={params.row.leadReviewCompletion} />,
     },
     {
       field: "f2fCompletion",
       headerName: "F2F",
       flex: 0.08,
-      renderCell: (params: GridRenderCellParams) => <Chip size="small" label={params.row.f2fCompletion} />,
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => <Chip size="small" label={params.row.f2fCompletion} />,
     },
     { field: "numberOf5pSlots", headerName: "5% Slots", flex: 0.09 },
     { field: "numberOf20pSlots", headerName: "20% Slots", flex: 0.09 },
@@ -348,7 +354,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
       sortable: false,
       flex: 0.1,
       disableExport: true,
-      renderCell: (params: GridRenderCellParams) => (
+      renderCell: (params: GridRenderCellParams<FormattedTeam>) => (
         <Tooltip arrow title="Open Team" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
           <Button
             variant="outlined"
@@ -413,7 +419,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
             }}
             onClick={() => handleEmployeeSelect(params.row, false)}
           >
-            {/* {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
+            {params.row.parLeadStatus === ParLeadStatus.SHARED || isAdminHistoryViewOn ? (
               <Tooltip arrow title="View" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
                 <VisibilityIcon />
               </Tooltip>
@@ -421,7 +427,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               <Tooltip arrow title="Review" enterDelay={tooltipVisibilityDelay} enterNextDelay={tooltipVisibilityDelay}>
                 <RateReviewIcon />
               </Tooltip>
-            )} */}
+            )}
           </IconButton>
           <IconButton
             sx={{
@@ -844,6 +850,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   placeholder: "Search Team",
                                 },
                               }}
+                              onFilterModelChange={(model) => {
+                                setSearchText(model.quickFilterValues?.[0]?.toString() || "");
+                              }}
                               initialState={{
                                 pagination: {
                                   paginationModel: { pageSize: 10, page: 0 },
@@ -938,6 +947,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   baseTextField: {
                                     placeholder: "Search Employee",
                                   },
+                              }}
+                                onFilterModelChange={(model) => {
+                                  setEmployeeSearchText(model.quickFilterValues?.[0]?.toString() || "");
                                 }}
                                 initialState={{
                                   pagination: {
@@ -1051,6 +1063,9 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   baseTextField: {
                                     placeholder: "Search Reviews",
                                   },
+                              }}
+                                onFilterModelChange={(model) => {
+                                  setReviewSearchText(model.quickFilterValues?.[0]?.toString() || "");
                                 }}
                                 initialState={{
                                   pagination: {
@@ -1155,14 +1170,13 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
               />
             )}
 
-          {/* Uncommented the Report component since it is being used here */}
-          {/* {reportView && currentCycle?.parCycleId && (
+          {reportView && currentCycle?.parCycleId && (
             <Report
               parCycle={currentCycle}
               closeReportView={closeReportView}
               isAdminHistoryViewOn={isAdminHistoryViewOn}
             />
-          )} */}
+          )}
 
           {isParCompletionViewOpen && currentCycle?.parCycleId && (
             <Completion parCycle={currentCycle} closeCompletionView={closeParCompletionView} />
