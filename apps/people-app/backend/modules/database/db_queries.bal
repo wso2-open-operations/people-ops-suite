@@ -1136,3 +1136,56 @@ isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:P
         WHERE is_active = 1 AND name = ${unitName}
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
+
+isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team
+        WHERE is_active = 1 AND business_unit_id = ${buId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team butst
+        INNER JOIN business_unit_team but
+          ON butst.business_unit_team_id = but.id
+        WHERE but.business_unit_id = ${businessUnitId}
+          AND but.team_id = ${teamId}
+          AND but.is_active = 1
+          AND butst.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team_unit butstu
+        INNER JOIN business_unit_team_sub_team butst
+          ON butstu.business_unit_team_sub_team_id = butst.id
+        WHERE butst.business_unit_team_id = ${teamId}
+          AND butst.sub_team_id = ${subTeamId}
+          AND butst.is_active = 1
+          AND butstu.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function subTeamUnitHasChildrenQuery(int subTeamMappingId, int unitId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM employee e
+        INNER JOIN business_unit_team_sub_team butst
+          ON butst.id = ${subTeamMappingId}
+        INNER JOIN business_unit_team but
+          ON but.id = butst.business_unit_team_id
+        WHERE e.unit_id = ${unitId}
+          AND e.sub_team_id = butst.sub_team_id
+          AND e.team_id = but.team_id
+          AND e.business_unit_id = but.business_unit_id
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
