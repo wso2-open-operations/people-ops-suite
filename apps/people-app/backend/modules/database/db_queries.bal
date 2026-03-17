@@ -1101,6 +1101,10 @@ isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeM
   )
 `;
 
+# Build query to check if a business unit name is unique.
+#
+# + businessUnitName - Business unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
 isolated function validateBusinessUnitNameUniquenessQuery(string businessUnitName) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1110,6 +1114,10 @@ isolated function validateBusinessUnitNameUniquenessQuery(string businessUnitNam
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check if a team name is unique.
+#
+# + teamName - Team name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
 isolated function validateTeamNameUniquenessQuery(string teamName) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1119,6 +1127,10 @@ isolated function validateTeamNameUniquenessQuery(string teamName) returns sql:P
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check if a sub-team name is unique.
+#
+# + subTeamName - Sub-team name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
 isolated function validateSubTeamNameUniquenessQuery(string subTeamName) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1128,6 +1140,10 @@ isolated function validateSubTeamNameUniquenessQuery(string subTeamName) returns
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check if a unit name is unique.
+#
+# + unitName - Unit name to check
+# + return - Query returning `exists_flag` (1 if exists, else 0)
 isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1137,6 +1153,10 @@ isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:P
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check whether a business unit has child teams.
+#
+# + buId - Business unit ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
 isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1146,6 +1166,11 @@ isolated function businessUnitHasChildrenQuery(int buId) returns sql:Parameteriz
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check whether a business unit-team mapping has child sub-teams.
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
 isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamId) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1160,6 +1185,11 @@ isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamI
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check whether a team-sub-team mapping has child units.
+#
+# + teamId - Team ID
+# + subTeamId - Sub-team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
 isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
@@ -1174,6 +1204,11 @@ isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
+# Build query to check whether a sub-team unit mapping has assigned employees.
+#
+# + subTeamMappingId - business_unit_team_sub_team mapping ID
+# + unitId - Unit ID
+# + return - Query returning `exists_flag` (1 if assigned employees exist, else 0)
 isolated function subTeamUnitHasChildrenQuery(int subTeamMappingId, int unitId) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
