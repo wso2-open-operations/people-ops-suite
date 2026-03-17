@@ -54,7 +54,7 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
     if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
         return error(string `Transaction recipient does not match master wallet.`);
     }
-    string amountFormatted = payload.amountFormatted;
+    string? amountFormatted = payload.amountFormatted;
     if amountFormatted is () {
         return error("Transaction amount missing; cannot verify.");
     }
