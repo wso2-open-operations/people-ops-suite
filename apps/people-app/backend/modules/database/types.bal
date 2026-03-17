@@ -91,6 +91,16 @@ public type EpfValidationResponse record {|
     boolean epfExists;
 |};
 
+# Context record returned by the employee ID generation query.
+public type EmployeeIdContext record {|
+   # Company prefix
+   string companyPrefix;
+   # Employment type
+   string employmentType;
+    # Last numeric ID used for the given company and employment type
+   int lastNumericId;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|
@@ -644,6 +654,9 @@ public type CreateEmployeePayload record {|
     string? continuousServiceRecord = ();
     # Employee Status
     EmployeeStatus employeeStatus = EMPLOYEE_ACTIVE;
+    # Employee ID (required for fixed-term employment type)
+    @constraint:String {maxLength: 50}
+    string? employeeId = ();
     # Employee personal information
     CreatePersonalInfoPayload personalInfo;
 |};

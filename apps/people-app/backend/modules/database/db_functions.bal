@@ -265,18 +265,52 @@ public isolated function isLead(string leadEmail) returns boolean|error {
 
 # Add new employee.
 #
-# + payload - Add employee payload  
+# + payload - Add employee payload
 # + createdBy - Creator of the employee record
 # + return - Created employee ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
-    transaction {
+    int lastInsertedId = 0;
+    string employeeId = "";
+
+    retry transaction {
         int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
-        int lastInsertedEmployeeId = check addEmployeeRecord(payload, createdBy, personalInfoId);
-        string employeeId = check getGeneratedEmployeeId(lastInsertedEmployeeId);
+
+        employeeId = check resolveEmployeeId(payload);
+
+        lastInsertedId = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
         check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
-        check addAdditionalManagers(lastInsertedEmployeeId, payload.additionalManagerEmails, createdBy);
+        check addAdditionalManagers(lastInsertedId, payload.additionalManagerEmails, createdBy);
         check commit;
-        return lastInsertedEmployeeId;
+    }
+    return lastInsertedId;
+}
+
+# Generate the next employee ID using a single DB query to fetch all required context.
+#
+# + payload - Add employee payload
+# + return - Generated employee ID string, nil for fixed-term types, or error
+isolated function resolveEmployeeId(CreateEmployeePayload payload) returns string|error {
+    EmployeeIdContext ctx = check databaseClient->queryRow(
+        getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
+    );
+
+    match ctx.employmentType {
+        EMP_TYPE_PERMANENT|EMP_TYPE_INTERNSHIP => {
+            return string `${ctx.companyPrefix}${ctx.lastNumericId + 1}`;
+        }
+        EMP_TYPE_CONSULTANCY|EMP_TYPE_ADVISORY_CONSULTANCY|EMP_TYPE_PART_TIME_CONSULTANCY => {
+            return string `${CONSULTANCY_ID_PREFIX}${ctx.lastNumericId + 1}`;
+        }
+        EMP_TYPE_FIXED_TERM => {
+            string manualId = (payload.employeeId ?: "").trim();
+            if manualId.length() == 0 {
+                return error("Employee ID must be provided manually for fixed-term employment type");
+            }
+            return manualId;
+        }
+        _ => {
+            return error(string `Unsupported employment type: ${ctx.employmentType}`);
+        }
     }
 }
 
@@ -295,10 +329,11 @@ isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string
 # + payload - Add employee payload
 # + createdBy - Creator of the employee record
 # + personalInfoId - Personal info ID to be linked with the employee record
+# + employeeId - Employee ID to be used in the employee record
 # + return - Created employee ID or error
-isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId, string employeeId)
     returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId, employeeId));
     return check result.lastInsertId.ensureType(int);
 }
 

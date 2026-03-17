@@ -744,16 +744,72 @@ isolated function addPersonalInfoEmergencyContactQuery(string employeeId, Emerge
             ${createdBy}
         );`;
 
+# Fetch all context needed to generate the next employee ID in a single query.
+#
+# + companyId - Company ID of the new employee
+# + employmentTypeId - Employment type ID of the new employee
+# + return - Query to get employee ID generation context
+isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
+    returns sql:ParameterizedQuery =>
+    `SELECT
+       c.prefix                                                AS companyPrefix,
+       UPPER(et.name)                                          AS employmentType,
+       COALESCE(
+           (
+               SELECT MAX(
+                   CAST(
+                       SUBSTRING(
+                           e.employee_id,
+                           CHAR_LENGTH(
+                               CASE
+                                   WHEN UPPER(et.name) IN (${EMP_TYPE_CONSULTANCY}, 
+                                   ${EMP_TYPE_ADVISORY_CONSULTANCY}, ${EMP_TYPE_PART_TIME_CONSULTANCY})
+                                       THEN ${CONSULTANCY_ID_PREFIX}
+                                   ELSE c.prefix
+                               END
+                           ) + 1
+                       ) AS UNSIGNED
+                   )
+               )
+               FROM employee e
+               INNER JOIN employment_type et2 ON et2.id = e.employment_type_id
+               WHERE
+                   CASE
+                       WHEN UPPER(et.name) IN (${EMP_TYPE_PERMANENT}, ${EMP_TYPE_INTERNSHIP}) THEN
+                           UPPER(et2.name) = UPPER(et.name)
+                           AND e.employee_id REGEXP CONCAT('^', c.prefix, '[0-9]+$')
+                       WHEN UPPER(et.name) IN (${EMP_TYPE_CONSULTANCY}, ${EMP_TYPE_ADVISORY_CONSULTANCY}, 
+                       ${EMP_TYPE_PART_TIME_CONSULTANCY}) 
+                       THEN
+                           UPPER(et2.name) IN (${EMP_TYPE_CONSULTANCY}, 
+                           ${EMP_TYPE_ADVISORY_CONSULTANCY}, ${EMP_TYPE_PART_TIME_CONSULTANCY})
+                           AND e.employee_id REGEXP CONCAT('^', ${CONSULTANCY_ID_PREFIX}, '[0-9]+$')
+                       ELSE
+                           FALSE
+                   END
+           ),
+           0
+       )                                                       AS lastNumericId
+   FROM
+       employment_type et,
+       company c
+   WHERE
+       et.id = ${employmentTypeId}
+       AND c.id = ${companyId}
+       FOR UPDATE;`;
+
 # Add employee query.
 #
 # + payload - Add employee payload
 # + createdBy - Creator of the employee record
 # + personalInfoId - Personal info ID
+# + employeeId - Employee ID to be inserted
 # + return - Employee insert query
-isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+isolated function addEmployeeQuery(CreateEmployeePayload payload, string createdBy, int personalInfoId, string employeeId)
     returns sql:ParameterizedQuery =>
     `INSERT INTO employee
         (
+            employee_id,
             first_name,
             last_name,
             epf,
@@ -781,6 +837,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
         )
     VALUES
         (
+            ${employeeId},
             ${payload.firstName},
             ${payload.lastName},
             ${payload.epf},

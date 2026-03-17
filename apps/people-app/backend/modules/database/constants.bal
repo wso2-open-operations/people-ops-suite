@@ -28,3 +28,14 @@ const int DEFAULT_PAGE_NUMBER = 1;
 
 # A constant default records per page
 const int DEFAULT_RECORDS_PER_PAGE = 20;
+
+# Employment type names
+const string EMP_TYPE_PERMANENT = "PERMANENT";
+const string EMP_TYPE_INTERNSHIP = "INTERNSHIP";
+const string EMP_TYPE_CONSULTANCY = "CONSULTANCY";
+const string EMP_TYPE_ADVISORY_CONSULTANCY = "ADVISORY CONSULTANCY";
+const string EMP_TYPE_PART_TIME_CONSULTANCY = "PART TIME CONSULTANCY";
+const string EMP_TYPE_FIXED_TERM = "FIXED TERM";
+
+# Prefix shared by all consultancy-type employee IDs 
+const string CONSULTANCY_ID_PREFIX = "CON";
