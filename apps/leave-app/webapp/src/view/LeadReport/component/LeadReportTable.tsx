@@ -110,7 +110,6 @@ export default function LeadReportTable({ rows, loading }: LeadReportTableProps)
     {
       field: "numberOfDays",
       headerName: "Days",
-      type: "number",
       flex: 0.6,
       renderCell: (params) => (
         <Typography variant="body2" fontWeight={700}>{params.value}</Typography>
