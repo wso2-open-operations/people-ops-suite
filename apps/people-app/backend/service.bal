@@ -681,10 +681,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         if payload.name is () && payload.headEmail is () {
@@ -742,10 +743,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         if payload.name is () && payload.headEmail is () {
@@ -783,10 +785,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         if payload.name is () && payload.headEmail is () {
@@ -824,10 +827,11 @@ service http:InterceptableService / on new http:Listener(9090) {
     resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         if payload.name is () && payload.headEmail is () {
@@ -867,10 +871,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         error|boolean updateResult = database:updateBusinessUnitTeam(payload, buId, teamId);
@@ -910,10 +915,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         error|boolean updateResult = database:updateTeamSubTeam(payload, teamId, subTeamId);
@@ -952,10 +958,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         error|boolean updateResult = database:updateSubTeamUnit(payload, subTeamId, unitId);
@@ -987,18 +994,19 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Delete a business unit by ID.
     #
     # + buId - ID of the business unit to delete
-    # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/business\-unit/[int buId](http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        error|boolean deleteResult = database:deleteBusinessUnit(payload, buId);
+        string workEmail = validatedUserInfo.email;
+        error|boolean deleteResult = database:deleteBusinessUnit(workEmail, buId);
         if deleteResult is error {
             log:printError("Error while deleting business unit : ", deleteResult, buId = buId);
             return <http:InternalServerError>{
@@ -1028,19 +1036,20 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + teamId - ID of the team
     # + subTeamId - ID of the sub team
-    # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId]
-            (http:RequestContext ctx, DeleteTeamSubTeamPayload payload)
+            (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        error|boolean deleteResult = database:deleteTeamSubTeam(payload, teamId, subTeamId);
+        string workEmail = validatedUserInfo.email;
+        error|boolean deleteResult = database:deleteTeamSubTeam(workEmail, teamId, subTeamId);
         if deleteResult is error {
             log:printError("Error while deleting team_sub_team : ", deleteResult, teamId = teamId, subTeamId = subTeamId);
             return <http:InternalServerError>{
@@ -1070,19 +1079,20 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + subTeamId - ID of the sub team
     # + unitId - ID of the unit
-    # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId]
-            (http:RequestContext ctx, DeleteSubTeamUnitPayload payload)
+            (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        error|boolean deleteResult = database:deleteSubTeamUnit(payload, subTeamId, unitId);
+        string workEmail = validatedUserInfo.email;
+        error|boolean deleteResult = database:deleteSubTeamUnit(workEmail, subTeamId, unitId);
         if deleteResult is error {
             log:printError("Error while deleting sub_team_unit : ", deleteResult, subTeamId = subTeamId, unitId = unitId);
             return <http:InternalServerError>{
@@ -1112,19 +1122,20 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + businessUnitId - ID of the business unit
     # + teamId - ID of the team
-    # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
-            (http:RequestContext ctx, DeleteBusinessUnitTeamPayload payload)
+            (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
-            validateOrganizationPatchRequest(ctx, payload);
-        if validationResult is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validationResult;
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        error|boolean deleteResult = database:deleteBusinessUnitTeam(payload, businessUnitId, teamId);
+        string workEmail = validatedUserInfo.email;
+        error|boolean deleteResult = database:deleteBusinessUnitTeam(workEmail, businessUnitId, teamId);
         if deleteResult is error {
             log:printError("Error while deleting business_unit_team : ", deleteResult, buId = businessUnitId, teamId = teamId);
             return <http:InternalServerError>{
@@ -1153,26 +1164,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get organization details (full hierarchy with business units, teams, sub-teams, units).
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get organization(http:RequestContext ctx) returns http:BadRequest|http:InternalServerError|Company {
+    resource function get organization(http:RequestContext ctx) 
+        returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
 
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
-        }
+       http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
         database:Company|error orgStructure = database:getOrganizationDetails();
@@ -1194,29 +1193,18 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload) 
+        returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
+        
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnit(workEmail, payload);
-
         if result is error {
             string customErr = "Error while adding a business unit";
             log:printError(customErr, result);
@@ -1238,27 +1226,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Team details; include `orgNodeLinkInfo` to map to an existing business unit
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
@@ -1301,27 +1279,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Sub-team details; include `orgNodeLinkInfo` with the `business_unit_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addSubTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
@@ -1364,26 +1332,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Unit details; include `orgNodeLinkInfo` with the `business_unit_team_sub_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
+        string workEmail = validatedUserInfo.email;
 
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
@@ -1427,27 +1386,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnitTeam(workEmail, payload);
         if result is error {
             string customErr = "Error while adding BusinessUnit-Team";
@@ -1470,27 +1419,17 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit-team ID, `childId` = sub-team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnitTeam(workEmail, payload);
         if result is error {
             string customErr = "Error while adding BusinessUnit-Team-SubTeam";
@@ -1509,30 +1448,20 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
-        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
-        if userInfo is error {
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
-                }
-            };
+    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
         }
 
-        string workEmail = userInfo.email;
-        if !regex:matches(workEmail, database:EMAIL_PATTERN_STRING) {
-            string customErr = "Invalid work email format";
-            log:printWarn(customErr, workEmail = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
+        string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnitTeam(workEmail, payload);
         if result is error {
-            string customErr = "Error while adding BusinessUnit-Team-Subteam-Unit";
+            string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
             log:printError(customErr, result);
             return <http:InternalServerError>{
                 body: {
