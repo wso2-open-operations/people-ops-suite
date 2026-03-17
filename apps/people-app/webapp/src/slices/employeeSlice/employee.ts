@@ -444,10 +444,11 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
 export const downloadEmployeeReportByStatus = createAsyncThunk(
   "employee/downloadEmployeeReportByStatus",
-  async (status: EmployeeStatus, { dispatch, rejectWithValue }) => {
+  async (status: EmployeeStatus | undefined, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().get(
+      const response = await APIService.getInstance().post(
         AppConfig.serviceUrls.reportsEmployees(status),
+        {},
         { responseType: "text" },
       );
       return response.data as string;

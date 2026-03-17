@@ -1211,12 +1211,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         return reservation;
     }
 
-    # Export employees as a CSV file filtered by status.
+    # Export employees as a CSV file, optionally filtered by status.
     #
-    # + status - Employee status path parameter (e.g. "Active", "Left")
+    # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
     # + return - CSV file response or HTTP errors
-    resource function get reports/employees/[database:EmployeeStatus status](http:RequestContext ctx)
-        returns http:Response|http:NotFound|http:Forbidden|http:InternalServerError {
+    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+        returns http:Response|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -1258,7 +1258,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         string csvContent = status == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees)
             : database:buildEmployeeCsv(allEmployees);
-        string statusLabel = re` `.replaceAll(status.toLowerAscii(), "_");
+        string statusLabel = status is () ? "all" : re` `.replaceAll(status.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
