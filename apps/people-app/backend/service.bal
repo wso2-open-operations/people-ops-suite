@@ -1377,7 +1377,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            int|error result = database:addTeamWithMapping(
+                workEmail,
+                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
             if result is error {
                 string customErr = "Error while adding a team";
                 log:printError(customErr, result);
@@ -1449,7 +1453,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addSubTeamWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            int|error result = database:addSubTeamWithMapping(
+                workEmail, 
+                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
             if result is error {
                 string customErr = "Error while adding a sub-team";
                 log:printError(customErr, result);
@@ -1521,7 +1529,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addUnitWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
+            int|error result = database:addUnitWithMapping(
+                workEmail, 
+                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
             if result is error {
                 string customErr = "Error while adding a unit";
                 log:printError(customErr, result);
