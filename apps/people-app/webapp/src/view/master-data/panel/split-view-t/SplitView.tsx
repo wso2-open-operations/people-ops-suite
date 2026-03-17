@@ -15,7 +15,15 @@
 // under the License.
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
-import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  InputAdornment,
+  TextField,
+  Tooltip,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -291,51 +299,61 @@ export default function SplitView() {
     setActiveMatchIndex(-1);
   };
 
+  const isDisabled = Boolean(searchTerm || teamSearchTerm || subTeamSearchTerm || unitSearchTerm);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-        <TextField
-          placeholder="Search..."
-          value={globalSearchTerm}
-          onChange={(e) => setGlobalSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              handleGlobalSearch();
-            }
-          }}
-          size="small"
-          sx={{
-            backgroundColor: theme.palette.surface.secondary.active,
-          }}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} />
-                </InputAdornment>
-              ),
-              endAdornment: globalSearchTerm ? (
-                <InputAdornment position="end">
-                  <IconButton
-                    size="small"
-                    onClick={handleClearGlobalSearch}
-                    sx={{
-                      padding: 0,
-                      color: theme.palette.customText.primary.p3.active,
-                      "&:hover": {
-                        color: theme.palette.customText.primary.p2.active,
-                      },
-                    }}
-                  >
-                    <ClearIcon sx={{ fontSize: "16px" }} />
-                  </IconButton>
-                </InputAdornment>
-              ) : null,
-            },
-          }}
-        />
-
+        <Tooltip
+          placement="top"
+          title={isDisabled ? "Clear other filters to enable global search" : ""}
+          disableHoverListener={!isDisabled}
+          disableFocusListener={!isDisabled}
+          disableTouchListener={!isDisabled}
+        >
+          <TextField
+            placeholder="Search..."
+            value={globalSearchTerm}
+            onChange={(e) => setGlobalSearchTerm(e.target.value)}
+            disabled={isDisabled}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleGlobalSearch();
+              }
+            }}
+            size="small"
+            sx={{
+              backgroundColor: theme.palette.surface.secondary.active,
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon size={16} color={theme.palette.customText.primary.p3.active} />
+                  </InputAdornment>
+                ),
+                endAdornment: globalSearchTerm ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={handleClearGlobalSearch}
+                      sx={{
+                        padding: 0,
+                        color: theme.palette.customText.primary.p3.active,
+                        "&:hover": {
+                          color: theme.palette.customText.primary.p2.active,
+                        },
+                      }}
+                    >
+                      <ClearIcon sx={{ fontSize: "16px" }} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
+              },
+            }}
+          />
+        </Tooltip>
         {/* Right: prev / next chevrons */}
         {searchMatches.length > 0 ? (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
@@ -440,7 +458,7 @@ export default function SplitView() {
                         </IconButton>
                       </InputAdornment>
                     ) : null,
-                  }
+                  },
                 }}
                 sx={{
                   width: "100%",
