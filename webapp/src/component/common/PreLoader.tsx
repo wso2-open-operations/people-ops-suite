@@ -14,10 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { Box, LinearProgress, Typography } from "@mui/material";
+import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -41,7 +42,8 @@ const PreLoader = (props: PreLoaderProps) => {
       <Typography
         variant="inherit"
         sx={{
-          color: (theme) => theme.palette.customText.primary.p1.active
+          fontSize: theme.typography.body1.fontSize,
+          color: theme.palette.customText.primary.p1.active
         }}
       >
         {props.message}
