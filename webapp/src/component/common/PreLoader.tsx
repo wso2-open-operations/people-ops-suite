@@ -39,7 +39,7 @@ const PreLoader = (props: PreLoaderProps) => {
         />
       )}
       <Typography
-        variant="caption"
+        variant="inherit"
         sx={{
           color: (theme) => theme.palette.customText.primary.p1.active
         }}
