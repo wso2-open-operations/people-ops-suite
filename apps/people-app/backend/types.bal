@@ -17,7 +17,15 @@ import people.database;
 
 import ballerina/constraint;
 
-// # Payload for adding a vehicle.
+# User information from the JWT payload.
+public type JwtPayloadUserInfo record {|
+    # User email 
+    string email;
+    # User groups
+    string[] groups;
+|};
+
+# Payload for adding a vehicle.
 type NewVehicle record {|
     # Registration number of the vehicle
     @constraint:String {
