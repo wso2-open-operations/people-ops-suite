@@ -1100,3 +1100,39 @@ isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeM
     current_timestamp
   )
 `;
+
+isolated function validateBusinessUnitNameUniquenessQuery(string businessUnitName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit
+        WHERE is_active = 1 AND name = ${businessUnitName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function validateTeamNameUniquenessQuery(string teamName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM team
+        WHERE is_active = 1 AND name = ${teamName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function validateSubTeamNameUniquenessQuery(string subTeamName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM sub_team
+        WHERE is_active = 1 AND name = ${subTeamName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM unit
+        WHERE is_active = 1 AND name = ${unitName}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
