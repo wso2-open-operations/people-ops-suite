@@ -515,56 +515,56 @@ public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNod
 }
 
 public isolated function validateBusinessUnitNameUniqueness(string businessUnitName) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(validateBusinessUnitNameUniquenessQuery(businessUnitName));
 
     return result.exists_flag == 0;
 }
 
 public isolated function validateTeamNameUniqueness(string teamName) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(validateTeamNameUniquenessQuery(teamName));
 
     return result.exists_flag == 0;
 }
 
 public isolated function validateSubTeamNameUniqueness(string subTeamName) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(validateSubTeamNameUniquenessQuery(subTeamName));
 
     return result.exists_flag == 0;
 }
 
 public isolated function validateUnitNameUniqueness(string unitName) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(validateUnitNameUniquenessQuery(unitName));
 
     return result.exists_flag == 0;
 }
 
 public isolated function businessUnitHasChildren(int buId) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
 
     return result.exists_flag == 1;
 }
 
 public isolated function businessUnitTeamHasChildren(int businessUnitId, int teamId) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
 
     return result.exists_flag == 1;
 }
 
 public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
 
     return result.exists_flag == 1;
 }
 
 public isolated function subTeamUnitHasChildren(int subTeamMappingId, int unitId) returns boolean|error {
-    record {| int exists_flag; |} result =
+    ExistsFlagResult result =
         check databaseClient->queryRow(subTeamUnitHasChildrenQuery(subTeamMappingId, unitId));
 
     return result.exists_flag == 1;
