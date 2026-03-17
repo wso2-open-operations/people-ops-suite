@@ -685,7 +685,7 @@ isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int s
 
 # Build query to soft delete a business unit.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + email - Email of the user performing the update
 # + buId - ID of the business unit to delete
 # + return - Parameterized UPDATE query for soft deletion
 isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:ParameterizedQuery {
@@ -705,7 +705,7 @@ isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:Pa
 
 # Build query to soft delete a business unit-team mapping.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + email - Email of the user performing the update
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - Parameterized UPDATE query for soft deletion
@@ -727,7 +727,7 @@ isolated function deleteBusinessUnitTeamQuery(string email, int buId, int teamId
 
 # Build query to soft delete a team-sub team mapping.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + email - Email of the user performing the update
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - Parameterized UPDATE query for soft deletion
@@ -749,7 +749,7 @@ isolated function deleteTeamSubTeamQuery(string email, int teamId, int subTeamId
 
 # Build query to soft delete a sub team-unit mapping.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + email - Email of the user performing the update
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - Parameterized UPDATE query for soft deletion
