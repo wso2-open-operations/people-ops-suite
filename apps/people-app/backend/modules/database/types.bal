@@ -74,6 +74,12 @@ public type UserInfo record {|
     int[] privileges = [];
 |};
 
+# Generic single-flag DB result shape for EXISTS-based checks.
+public type ExistsFlagResult record {|
+    # 1 when a matching row exists, otherwise 0
+    int exists_flag;
+|};
+
 # Employee information.
 public type Employee record {|
     *EmployeeBasicInfo;
