@@ -313,7 +313,7 @@ public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int
 
 # Delete a business unit.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + userEmail - Email of the user performing the deletion
 # + buId - ID of the business unit to delete
 # + return - True if deleted, false if not found, error on failure
 public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
@@ -326,7 +326,7 @@ public isolated function deleteBusinessUnit(string userEmail, int buId) returns 
 
 # Delete a business unit-team mapping.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + userEmail - Email of the user performing the deletion
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - True if deleted, false if not found, error on failure
@@ -340,8 +340,8 @@ public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int 
 }
 
 # Delete a team-sub team mapping.
-#
-# + payload - Fields for the deletion (updatedBy)
+#   
+# + userEmail - Email of the user performing the deletion
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - True if deleted, false if not found, error on failure
@@ -355,7 +355,7 @@ public isolated function deleteTeamSubTeam(string userEmail, int teamId, int sub
 
 # Delete a sub team-unit mapping.
 #
-# + payload - Fields for the deletion (updatedBy)
+# + userEmail - Email of the user performing the deletion
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - True if deleted, false if not found, error on failure
