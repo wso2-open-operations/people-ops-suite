@@ -64,17 +64,6 @@ public isolated function getEmployees(EmployeeSearchPayload payload, string? lea
     return {employees, totalCount};
 }
 
-# Fetch a page of resigned (Left) employees joined with resignation info.
-#
-# + pagination - Pagination parameters (limit and offset)
-# + return - Array of ResignedEmployee or error
-public isolated function getResignedEmployees(Pagination pagination) returns ResignedEmployee[]|error {
-    stream<ResignedEmployee, error?> resultStream =
-        databaseClient->query(getResignedEmployeesQuery(pagination.'limit, pagination.offset));
-    return from ResignedEmployee emp in resultStream
-        select emp;
-}
-
 # Fetch continuous service record by work email.
 #
 # + workEmail - Work email of the employee

@@ -226,7 +226,7 @@ public isolated function buildEmployeeCsv(Employee[] employees) returns string {
 #
 # + employees - List of resigned employees
 # + return - CSV string
-public isolated function buildResignationCsv(ResignedEmployee[] employees) returns string {
+public isolated function buildResignationCsv(Employee[] employees) returns string {
     string[] headers = [
         "Employee ID",
         "First Name",
@@ -255,7 +255,7 @@ public isolated function buildResignationCsv(ResignedEmployee[] employees) retur
         "Resignation Reason"
     ];
     string[] lines = [string:'join(",", ...headers)];
-    foreach ResignedEmployee e in employees {
+    foreach Employee e in employees {
         string[] row = [
             csvEscape(e.employeeId),
             csvEscape(e.firstName),

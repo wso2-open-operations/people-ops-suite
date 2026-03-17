@@ -1231,55 +1231,35 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        database:Employee[] allEmployees = [];
+        boolean fetchMore = true;
         int offset = 0;
-        boolean isFetchMore = true;
-        string csvContent;
-        string filename;
 
-        if status == database:EMPLOYEE_LEFT {
-            database:ResignedEmployee[] allEmployees = [];
-            while isFetchMore {
-                database:ResignedEmployee[]|error pageResult =
-                    database:getResignedEmployees({'limit: database:DEFAULT_LIMIT, offset: offset});
-                if pageResult is error {
-                    log:printError("Error fetching resigned employees for report", pageResult);
-                    return <http:InternalServerError>{
-                        body: {message: "Error generating report"}
-                    };
-                }
-                allEmployees.push(...pageResult);
-                if pageResult.length() < database:DEFAULT_LIMIT {
-                    isFetchMore = false;
-                }
-                offset += database:DEFAULT_LIMIT;
+        while fetchMore {
+            database:EmployeesResponse|error pageResult = database:getEmployees({
+                searchString: (),
+                filters: {employeeStatus: status},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
+            if pageResult is error {
+                log:printError("Error fetching employees for report", pageResult);
+                return <http:InternalServerError>{
+                    body: {message: "Error generating report"}
+                };
             }
-            csvContent = database:buildResignationCsv(allEmployees);
-            filename = "resigned_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
-        } else {
-            database:Employee[] allEmployees = [];
-            while isFetchMore {
-                database:EmployeesResponse|error pageResult = database:getEmployees({
-                    searchString: (),
-                    filters: {employeeStatus: status},
-                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                });
-                if pageResult is error {
-                    log:printError("Error fetching employees for report", pageResult);
-                    return <http:InternalServerError>{
-                        body: {message: "Error generating report"}
-                    };
-                }
-                allEmployees.push(...pageResult.employees);
-                if pageResult.employees.length() < database:DEFAULT_LIMIT {
-                    isFetchMore = false;
-                }
-                offset += database:DEFAULT_LIMIT;
+            allEmployees.push(...pageResult.employees);
+            if pageResult.employees.length() < database:DEFAULT_LIMIT {
+                fetchMore = false;
             }
-            csvContent = database:buildEmployeeCsv(allEmployees);
-            string statusLabel = re` `.replaceAll(status.toLowerAscii(), "_");
-            filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
+            offset += database:DEFAULT_LIMIT;
         }
+
+        string csvContent = status == database:EMPLOYEE_LEFT
+            ? database:buildResignationCsv(allEmployees)
+            : database:buildEmployeeCsv(allEmployees);
+        string statusLabel = re` `.replaceAll(status.toLowerAscii(), "_");
+        string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
         response.setHeader("Content-Type", "text/csv");
