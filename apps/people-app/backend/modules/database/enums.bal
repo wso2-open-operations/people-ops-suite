@@ -34,6 +34,7 @@ public enum ParkingReservationStatus {
 
 # [Database] Enum for employee statuses.
 public enum EmployeeStatus {
-    EMPLOYEE_ACTIVE = "ACTIVE",
-    EMPLOYEE_INACTIVE = "INACTIVE"
+    EMPLOYEE_ACTIVE = "Active",
+    EMPLOYEE_LEFT = "Left",
+    EMPLOYEE_MARKED_LEAVER = "Marked leaver"
 }

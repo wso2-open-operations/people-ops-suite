@@ -146,11 +146,12 @@ const FieldInput = ({
 export const getEmployeeStatusChipStyles =
   (status?: string) => (theme: Theme) => {
     const normalized = (status ?? "").trim().toLowerCase();
-    const isActive = normalized === "active";
-
-    const mainColor = isActive
-      ? theme.palette.success.main
-      : theme.palette.error.main;
+    const mainColor =
+      normalized === "active"
+        ? theme.palette.success.main
+        : normalized === "marked leaver"
+          ? theme.palette.warning.main
+          : theme.palette.error.main;
 
     return {
       borderRadius: 999,
