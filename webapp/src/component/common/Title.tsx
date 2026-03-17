@@ -56,6 +56,7 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
                 <Typography
                     variant="h5"
                     component="h2"
+                    fontWeight={600}
                     sx={{
                         color: theme.palette.customText.primary.p1.active,
                     }}
