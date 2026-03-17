@@ -1343,7 +1343,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addUnitWithMapping(workEmail, {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo});
