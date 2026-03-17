@@ -38,7 +38,8 @@ import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
 
 import AddPage from "./AddPage.tsx";
-import { useFindMappingId, useFindParentMappingId, useFindParent } from "./hooks/useFindParent";
+import { useFindMappingId, useFindParentMappingId } from "./hooks/useFindParent";
+import { type MatchSearch, itemToMatchSearch } from "./utils/utils.ts";
 
 type OnEdit = {
   open: boolean;
@@ -52,14 +53,6 @@ type OnAdd = {
   data: BusinessUnitState[] | TeamState[] | SubTeamState[] | UnitState[] | null;
   type: NodeType | null;
   parentId: string | null;
-};
-
-type MatchSearch = {
-  type: NodeType;
-  buId?: string | null;
-  teamId?: string | null;
-  subTeamId?: string | null;
-  unitId?: string | null;
 };
 
 export default function SplitView() {
@@ -244,14 +237,12 @@ export default function SplitView() {
 
   // Global search handlers
   const handleGlobalSearch = () => {
-    console.log("search term : ", globalSearchTerm);
     if (!globalSearchTerm.trim()) {
       setSearchMatches([]);
       return;
     }
 
     const term = globalSearchTerm.toLowerCase();
-
     const allOrgItems = [
       ...orgItems.businessUnits,
       ...orgItems.teams,
@@ -260,65 +251,9 @@ export default function SplitView() {
     ];
 
     const matches = allOrgItems.filter((item) => item.name.toLowerCase().includes(term));
+    const searchResults: MatchSearch[] = matches.map((match) => itemToMatchSearch(orgItems, match));
 
-    console.log("matches : ", matches);
-
-    const sMatches = [];
-
-    matches.map((match) => {
-      switch (match.type) {
-        case NodeType.BusinessUnit:
-          const t = {
-            buId: match.id,
-            teamId: null,
-            subTeamId: null,
-            unitId: null
-          }
-          sMatches.push(t)
-          break;
-        case NodeType.Team:
-          const tt = {
-            buId: match.parentId,
-            teamId: match.id,
-            subTeamId: null,
-            unitId: null
-          }
-          sMatches.push(tt);
-          // handle team match
-          break;
-        case NodeType.SubTeam:
-          const sBuId = useFindParent(orgItems, match.parentId, NodeType.Team);
-          console.log("bu id : ", sBuId);
-
-          const ttt = {
-            buId: sBuId.id,
-            teamId: match.parentId,
-            subTeamId: match.id,
-            unitId: null
-          }
-          sMatches.push(ttt);
-          // handle sub team match
-          break;
-        case NodeType.Unit:
-          const sTeam = useFindParent(orgItems, match.parentId, NodeType.SubTeam);
-          const sBu = useFindParent(orgItems, match.parentId, NodeType.Team);
-
-          const tttt = {
-            buId: sBu.id,
-            teamId: sTeam.id,
-            subTeamId: match.parentId,
-            unitId: match.id,
-          }
-
-          sMatches.push(tttt);
-
-          // handle unit match
-          break;
-      }
-
-      console.log("s matches : ", sMatches);
-    })
-
+    setSearchMatches(searchResults);
   };
 
   const handleClearGlobalSearch = () => {
