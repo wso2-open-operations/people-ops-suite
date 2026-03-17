@@ -219,6 +219,8 @@ const InfoTooltipAdornment = React.memo(
     </InputAdornment>
   ),
 );
+export const AUTO_ID_EMPLOYMENT_TYPES =
+  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
 
 export default function JobInfoStep() {
   const theme = useTheme();
@@ -262,7 +264,7 @@ export default function JobInfoStep() {
     designations: false,
     offices: false,
   });
-  
+
   const latestEpfRef = useRef<string>("");
 
   const textFieldSx = useMemo(
@@ -419,12 +421,21 @@ export default function JobInfoStep() {
     );
   }, [internshipTypeId, values.employmentTypeId]);
 
+  const isFixedTerm = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    if (!selectedType) return false;
+    return !AUTO_ID_EMPLOYMENT_TYPES.test(selectedType.name.trim());
+  }, [employmentTypes, values.employmentTypeId]);
+
   const showAgreementEndDate = useMemo(() => {
-  const normalized = employmentTypes
+    const normalized = employmentTypes
       .find((e) => e.id === values.employmentTypeId)
       ?.name?.trim()
       .toLowerCase();
-    return normalized === "internship" || normalized === "consultancy";
+    if (!normalized) return false;
+    return /internship|consultancy/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {
@@ -444,33 +455,25 @@ export default function JobInfoStep() {
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
 
-      const isNewInternship =
-        internshipTypeId !== null && newEmploymentTypeId === internshipTypeId;
-
-      const isPermanent = employmentTypes
-        .find((e) => e.id === newEmploymentTypeId)
-        ?.name?.match(/^permanent$/i);
+      const selectedType = employmentTypes.find(
+        (e) => e.id === newEmploymentTypeId,
+      );
+      const typeName = selectedType?.name?.trim() ?? "";
+      const isNewInternship = /^internship$/i.test(typeName);
+      const isPermanent = /^permanent$/i.test(typeName);
+      const isNewFixedTerm = !AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
         const computed = computeAgreementEndDate(values.startDate ?? null, 6);
-        if (computed) {
-          setFieldValue("agreementEndDate", computed);
-        }
+        if (computed) setFieldValue("agreementEndDate", computed);
       } else {
         setInternshipDurationMonths(0);
-        if (isPermanent) {
-          setFieldValue("agreementEndDate", null);
-        }
+        if (isPermanent) setFieldValue("agreementEndDate", null);
+        if (!isNewFixedTerm) setFieldValue("employeeId", "");
       }
     },
-    [
-      setFieldValue,
-      internshipTypeId,
-      employmentTypes,
-      values.startDate,
-      computeAgreementEndDate,
-    ],
+    [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
   );
 
   const handleInternshipDurationChange = useCallback(
@@ -1180,6 +1183,22 @@ export default function JobInfoStep() {
                   </MenuItem>
                 ))}
               </TextField>
+            </Grid>
+          ) : null}
+          {isFixedTerm ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                required
+                label="Employee ID"
+                name="employeeId"
+                value={values.employeeId ?? ""}
+                onChange={(e) => setFieldValue("employeeId", e.target.value)}
+                onBlur={handleBlur}
+                error={Boolean(touched.employeeId && errors.employeeId)}
+                helperText={touched.employeeId && (errors.employeeId as string)}
+                sx={textFieldSx}
+              />
             </Grid>
           ) : null}
           <Grid item xs={12} sm={6} md={3}>

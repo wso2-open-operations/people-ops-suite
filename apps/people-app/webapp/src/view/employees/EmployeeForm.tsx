@@ -109,6 +109,7 @@ const toFormValues = (
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
+    base.employeeId = employee.employeeId ?? "";
   }
 
   if (personal) {
@@ -680,6 +681,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
+                employeeId: values.employeeId?.trim() || undefined,
                 ...(values.isRelocation && values.continuousServiceRecord
                   ? { continuousServiceRecord: values.continuousServiceRecord }
                   : {}),

@@ -82,6 +82,7 @@ export interface CreateEmployeeFormValues {
   careerFunctionId: number;
   designationId: number;
   secondaryJobTitle: string;
+  employeeId?: string;
 }
 
 export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
@@ -125,6 +126,7 @@ export const emptyCreateEmployeeValues: CreateEmployeeFormValues = {
   careerFunctionId: 0,
   designationId: 0,
   secondaryJobTitle: "",
+  employeeId: "",
 };
 
 export interface ServiceLength {
