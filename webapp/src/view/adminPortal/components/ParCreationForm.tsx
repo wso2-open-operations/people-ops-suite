@@ -41,19 +41,39 @@ interface FormProps {
   handleFormClose: () => void;
 }
 
-// Reusable Layout Wrapper for exact spacing and responsive stacking
-const FormRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <>
-    {/* xs=12 makes it stack on mobile. md=4 makes it side-by-side on desktop */}
-    <Grid size={{ xs:12, md:4}}>
-      <Typography paddingTop={1}>{label}</Typography>
-    </Grid>
-    <Grid size={{ xs:12, md:6}}>
-      {children}
-    </Grid>
-    {/* Empty column to force a line break on desktop */}
-    <Grid size={{ xs:12, md:2 }} sx={{ display: { xs: "none", md: "block" } }} />
-  </>
+interface FormRowProps {
+  label: string;
+  children: React.ReactNode;
+  halfWidth?: boolean; 
+}
+
+const FormRow = ({ label, children, halfWidth = false }: FormRowProps) => (
+  <Grid size={{ xs: 12, lg: halfWidth ? 6 : 12 }}>
+    <Box 
+      sx={{ 
+        display: "flex", 
+        flexDirection: { xs: "column", lg: "row" }, 
+        alignItems: "flex-start" 
+      }}
+    >
+      <Typography 
+        variant="body2" 
+        sx={{
+          width: { xs: "100%", lg: "240px" }, 
+          flexShrink: 0, 
+          mb: { xs: 1, md: 0 },
+          mt: { md: 1 },
+          fontWeight: 500, 
+          color: (theme) => theme.palette.customText?.primary?.p2?.active || "text.secondary" 
+        }}
+      >
+        {label}
+      </Typography>
+      <Box sx={{ flexGrow: 1, width: "100%" }}>
+        {children}
+      </Box>
+    </Box>
+  </Grid>
 );
 
 // validationSchema moved outside the component for performance
@@ -128,16 +148,16 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
   };
 
   return (
-    <Box alignItems="center" maxHeight={"100%"} sx={{ overflow: "hidden" }}>
-      <Box pb={1} pt={0}>
-        <Typography variant="h5" sx={{ mt: 0, mb: 0.5 }}>
+    <Box sx={{ overflow: "hidden", display: "flex", flexDirection: "column", height: "100%" }}>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h5" pt={1} pb={1}>
           Create PAR Cycle
         </Typography>
         <Divider />
       </Box>
 
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2} sx={{ overflow: "auto", maxHeight: "calc(100vh - 15rem)", pt: 1 }}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ flexGrow: 1, overflow: "auto", pr: 1 }}>
+        <Grid container spacing={3}>
           
           <FormRow label="Name:">
             <TextField
@@ -154,7 +174,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
           </FormRow>
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <FormRow label="PAR cycle start date:">
+            <FormRow label="PAR cycle start date:" halfWidth>
               <FormDatePicker
                 name="parCycleStartDate"
                 value={values.parCycleStartDate}
@@ -165,7 +185,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="PAR cycle end date:">
+            <FormRow label="PAR cycle end date:" halfWidth>
               <FormDatePicker
                 name="parCycleEndDate"
                 value={values.parCycleEndDate}
@@ -178,7 +198,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="PAR creation date:">
+            <FormRow label="PAR creation date:" halfWidth>
               <DatePicker
                 disabled
                 value={dayjs(values.parEvaluationStartDate)}
@@ -187,7 +207,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="PAR evaluation closing date:">
+            <FormRow label="PAR evaluation closing date:" halfWidth>
               <FormDatePicker
                 name="parEvaluationEndDate"
                 value={values.parEvaluationEndDate}
@@ -200,7 +220,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="Deadline for employee PAR:">
+            <FormRow label="Deadline for employee PAR:" halfWidth>
               <FormDatePicker
                 name="parEmployeeDeadline"
                 value={values.parEmployeeDeadline}
@@ -214,7 +234,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="Deadline for 360° feedback:">
+            <FormRow label="Deadline for 360° feedback:" halfWidth>
               <FormDatePicker
                 name="parThreeSixtyRatingDeadline"
                 value={values.parThreeSixtyRatingDeadline}
@@ -228,7 +248,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="Deadline for lead's feedback:">
+            <FormRow label="Deadline for lead's feedback:" halfWidth>
               <FormDatePicker
                 name="parLeadDeadline"
                 value={values.parLeadDeadline}
@@ -241,8 +261,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
                 helperText={touched.parLeadDeadline && errors.parLeadDeadline}
               />
             </FormRow>
-
-            <FormRow label="Top 5%/20% rating submission:">
+            <FormRow label="Top 5%/20% rating submission:" halfWidth>
               <FormDatePicker
                 name="parSpecialRatingDeadline"
                 value={values.parSpecialRatingDeadline}
@@ -256,7 +275,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
               />
             </FormRow>
 
-            <FormRow label="PAR F2F deadline:">
+            <FormRow label="PAR F2F deadline:" halfWidth>
               <FormDatePicker
                 name="parF2FDeadline"
                 value={values.parF2FDeadline}
@@ -349,7 +368,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
           </FormRow>
 
           {/* Buttons */}
-          <Grid size={{ xs: 12 }} display="flex" justifyContent="flex-end" gap={2} pt={2} pb={5}>
+          <Grid size={{ xs: 12 }} display="flex" justifyContent="flex-end" gap={2} pt={3} pb={4}>
             <Button variant="outlined" onClick={handleFormClose}>
               Cancel
             </Button>
@@ -358,7 +377,7 @@ export const ParCreationForm = ({ handleFormClose }: FormProps) => {
             </Button>
           </Grid>
         </Grid>
-      </form>
+      </Box>
 
       <ConfirmationDialog
         open={isConfirmationDialogOpen}
