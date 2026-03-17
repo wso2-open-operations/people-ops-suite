@@ -161,6 +161,8 @@ public type ResignedEmployee record {|
     string employmentType;
     # Job designation / title
     string designation;
+    # Secondary job title
+    string secondaryJobTitle;
     # Business unit
     string businessUnit;
     # Team
@@ -171,8 +173,6 @@ public type ResignedEmployee record {|
     string? unit;
     # Physical office location, if applicable
     string? office;
-    # Secondary job title
-    string secondaryJobTitle;
     # Probation period end date (YYYY-MM-DD), if applicable
     string? probationEndDate;
     # Fixed-term agreement end date (YYYY-MM-DD), if applicable
