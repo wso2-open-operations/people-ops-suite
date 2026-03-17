@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 import ballerina/http;
-import ballerina/decimal;
 
 # Confirms the transaction from the transaction hash.
 #
@@ -55,14 +54,15 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
     if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
         return error(string `Transaction recipient does not match master wallet.`);
     }
-    if payload.amountFormatted is () {
+    string amountFormatted = payload.amountFormatted;
+    if amountFormatted is () {
         return error("Transaction amount missing; cannot verify.");
     }
-    decimal actualAmount = check decimal:fromString(payload.amountFormatted);
+    decimal actualAmount = check decimal:fromString(amountFormatted);
     if actualAmount != expectedAmount {
         return error("Transaction amount does not match expected reservation amount.");
     }
-    if !payload.success || payload.status != TransactionStatus.SUCCESS.toString() {
+    if !payload.success || payload.status != SUCCESS {
         return error(string `Transaction not successful: ${payload.status}.`);
     }
 
