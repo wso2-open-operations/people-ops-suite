@@ -24,10 +24,9 @@ import ballerina/regex;
 # Validate and authorize organization entity patch requests.
 #
 # + ctx - Request context
-# + payload - Patch payload
 # + return - `()` when valid, otherwise corresponding http error response
-function validateOrganizationPatchRequest(http:RequestContext ctx, OrgPatchPayload payload)
-    returns http:InternalServerError|http:Forbidden|http:BadRequest? {
+function validateOrganizationRequest(http:RequestContext ctx)
+    returns http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo {
 
     authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
     if userInfo is error {
@@ -49,16 +48,6 @@ function validateOrganizationPatchRequest(http:RequestContext ctx, OrgPatchPaylo
         };
     }
 
-    if payload.updatedBy != workEmail {
-        log:printWarn("Payload updatedBy does not match authenticated user", payloadUpdater = payload.updatedBy,
-                authenticatedUser = workEmail);
-        return <http:Forbidden>{
-            body: {
-                message: "You are not authorized to update data for another user"
-            }
-        };
-    }
-
     boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
     if !hasAdminAccess {
         log:printWarn("User is not authorized to update organization hierarchy", invokerEmail = workEmail);
@@ -69,5 +58,5 @@ function validateOrganizationPatchRequest(http:RequestContext ctx, OrgPatchPaylo
         };
     }
 
-    return ();
+   return <JwtPayloadUserInfo>userInfo;
 }
