@@ -513,3 +513,31 @@ public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNod
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
+
+public isolated function validateBusinessUnitNameUniqueness(string businessUnitName) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(validateBusinessUnitNameUniquenessQuery(businessUnitName));
+
+    return result.exists_flag == 0;
+}
+
+public isolated function validateTeamNameUniqueness(string teamName) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(validateTeamNameUniquenessQuery(teamName));
+
+    return result.exists_flag == 0;
+}
+
+public isolated function validateSubTeamNameUniqueness(string subTeamName) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(validateSubTeamNameUniquenessQuery(subTeamName));
+
+    return result.exists_flag == 0;
+}
+
+public isolated function validateUnitNameUniqueness(string unitName) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(validateUnitNameUniquenessQuery(unitName));
+
+    return result.exists_flag == 0;
+}
