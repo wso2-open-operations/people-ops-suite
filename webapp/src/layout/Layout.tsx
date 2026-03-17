@@ -66,7 +66,7 @@ export default function Layout() {
           display: "flex",
           flexDirection: "column",
           height: "100vh",
-          width: "100vw",
+          width: "100%",
           backgroundColor: theme.palette.background.default,
         }}
       >
@@ -93,6 +93,7 @@ export default function Layout() {
               padding: theme.spacing(3),
               display: "flex",
               flexDirection: "column",
+              minWidth: 0,
             }}
           >
             <Suspense fallback={<PreLoader isLoading message="Grabbing the latest data..." />}>

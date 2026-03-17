@@ -947,7 +947,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   baseTextField: {
                                     placeholder: "Search Employee",
                                   },
-                              }}
+                                }}
                                 onFilterModelChange={(model) => {
                                   setEmployeeSearchText(model.quickFilterValues?.[0]?.toString() || "");
                                 }}
@@ -1063,7 +1063,7 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                                   baseTextField: {
                                     placeholder: "Search Reviews",
                                   },
-                              }}
+                                }}
                                 onFilterModelChange={(model) => {
                                   setReviewSearchText(model.quickFilterValues?.[0]?.toString() || "");
                                 }}
