@@ -1215,7 +1215,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + status - Employee status path parameter (e.g. "Active", "Left")
     # + return - CSV file response or HTTP errors
-    resource function get reports/employees/[string status](http:RequestContext ctx)
+    resource function get reports/employees/[database:EmployeeStatus status](http:RequestContext ctx)
         returns http:Response|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -1231,19 +1231,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeeStatus|error resolvedStatus = status.cloneWithType(database:EmployeeStatus);
-        if resolvedStatus is error {
-            return <http:NotFound>{
-                body: {message: string `Invalid employee status: ${status}`}
-            };
-        }
-
         int offset = 0;
         boolean isFetchMore = true;
         string csvContent;
         string filename;
 
-        if resolvedStatus == database:EMPLOYEE_LEFT {
+        if status == database:EMPLOYEE_LEFT {
             database:ResignedEmployee[] allEmployees = [];
             while isFetchMore {
                 database:ResignedEmployee[]|error pageResult =
@@ -1267,7 +1260,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             while isFetchMore {
                 database:EmployeesResponse|error pageResult = database:getEmployees({
                     searchString: (),
-                    filters: {employeeStatus: resolvedStatus},
+                    filters: {employeeStatus: status},
                     pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                     sort: {sortField: "employeeId", sortOrder: "ASC"}
                 });
@@ -1284,7 +1277,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 offset += database:DEFAULT_LIMIT;
             }
             csvContent = database:buildEmployeeCsv(allEmployees);
-            string statusLabel = re` `.replaceAll(resolvedStatus.toLowerAscii(), "_");
+            string statusLabel = re` `.replaceAll(status.toLowerAscii(), "_");
             filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
         }
 
