@@ -989,7 +989,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + buId - ID of the business unit to delete
     # + payload - Fields for the deletion (updatedBy)
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int buId](http:RequestContext ctx, DeleteBusinessUnitPayload payload)
+    resource function delete organization/business\-unit/[int buId](http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest? validationResult =
@@ -1194,7 +1194,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post business\-units(http:RequestContext ctx, OrgNodeInfo payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1238,7 +1238,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Team details; include `orgNodeLinkInfo` to map to an existing business unit
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1301,7 +1301,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Sub-team details; include `orgNodeLinkInfo` with the `business_unit_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post sub\-teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1364,7 +1364,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Unit details; include `orgNodeLinkInfo` with the `business_unit_team_sub_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post units(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1427,7 +1427,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization\-business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1470,7 +1470,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit-team ID, `childId` = sub-team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization\-teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
@@ -1509,11 +1509,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a sub-team-unit mapping.
-    #
-    # + payload - Mapping details; `parentId` = business-unit-team-sub-team ID, `childId` = unit ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization\-sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
+    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) returns http:InternalServerError|http:BadRequest|http:Created {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{
