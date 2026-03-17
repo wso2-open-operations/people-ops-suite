@@ -20,10 +20,8 @@ import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
-import ErrorHandler from "@root/src/component/common/ErrorHandler.tsx";
-import PreLoader from "@root/src/component/common/PreLoader.tsx";
-import { RootState, useAppSelector } from "@root/src/slices/store";
-import { NodeType } from "@root/src/utils/types";
+import ErrorHandler from "@component/common/ErrorHandler.tsx";
+import PreLoader from "@component/common/PreLoader.tsx";
 import { useGetOrgStructureQuery } from "@services/organization";
 import type { OrgStructure } from "@services/organization";
 import { State } from "@slices/authSlice/auth.ts";
@@ -34,6 +32,8 @@ import {
   TeamState,
   UnitState,
 } from "@slices/organizationSlice/organizationStructure";
+import { RootState, useAppSelector } from "@slices/store";
+import { NodeType } from "@utils/types";
 import { EditModal } from "@view/master-data/components/EditModal";
 import OrgStructureCard from "@view/master-data/panel/chart-view/components/OrgStructureCard";
 
@@ -423,12 +423,30 @@ export default function SplitView() {
                         <SearchIcon size={18} />
                       </InputAdornment>
                     ),
-                  },
+                    endAdornment: searchTerm ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setSearchTerm("")}
+                          sx={{
+                            padding: 0,
+                            color: theme.palette.customText.primary.p3.active,
+                            "&:hover": {
+                              color: theme.palette.customText.primary.p2.active,
+                            },
+                          }}
+                        >
+                          <ClearIcon sx={{ fontSize: "16px" }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }
                 }}
                 sx={{
                   width: "100%",
                 }}
               />
+
               <Box
                 sx={{
                   height: "100%",
@@ -514,6 +532,23 @@ export default function SplitView() {
                         <SearchIcon size={18} />
                       </InputAdornment>
                     ),
+                    endAdornment: teamSearchTerm ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setTeamSearchTerm("")}
+                          sx={{
+                            padding: 0,
+                            color: theme.palette.customText.primary.p3.active,
+                            "&:hover": {
+                              color: theme.palette.customText.primary.p2.active,
+                            },
+                          }}
+                        >
+                          <ClearIcon sx={{ fontSize: "16px" }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
                 sx={{
@@ -607,6 +642,23 @@ export default function SplitView() {
                         <SearchIcon size={18} />
                       </InputAdornment>
                     ),
+                    endAdornment: subTeamSearchTerm ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setSubTeamSearchTerm("")}
+                          sx={{
+                            padding: 0,
+                            color: theme.palette.customText.primary.p3.active,
+                            "&:hover": {
+                              color: theme.palette.customText.primary.p2.active,
+                            },
+                          }}
+                        >
+                          <ClearIcon sx={{ fontSize: "16px" }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
                 sx={{
@@ -700,6 +752,23 @@ export default function SplitView() {
                         <SearchIcon size={18} />
                       </InputAdornment>
                     ),
+                    endAdornment: unitSearchTerm ? (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          onClick={() => setUnitSearchTerm("")}
+                          sx={{
+                            padding: 0,
+                            color: theme.palette.customText.primary.p3.active,
+                            "&:hover": {
+                              color: theme.palette.customText.primary.p2.active,
+                            },
+                          }}
+                        >
+                          <ClearIcon sx={{ fontSize: "16px" }} />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
                 sx={{
