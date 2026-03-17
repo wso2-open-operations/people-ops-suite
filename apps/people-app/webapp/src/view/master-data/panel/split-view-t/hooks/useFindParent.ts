@@ -20,35 +20,61 @@ import type {
   OrganizationInfo,
   SubTeamState,
   TeamState,
+  UnitState,
 } from "@slices/organizationSlice/organizationStructure";
 
 export type OrgStructureState = BusinessUnitState | TeamState | SubTeamState;
 
+export function useFindNodeById(
+  orgItems: OrganizationInfo | null,
+  id: string,
+  nodeType: NodeType,
+): CompanyState | OrgStructureState | UnitState | null {
+  if (!orgItems) return null;
+
+  switch (nodeType) {
+    case NodeType.Company:
+      return orgItems.company.id === id ? orgItems.company : null;
+
+    case NodeType.BusinessUnit:
+      return orgItems.businessUnits.find((node) => node.id === id) ?? null;
+
+    case NodeType.Team:
+      return orgItems.teams.find((node) => node.id === id) ?? null;
+
+    case NodeType.SubTeam:
+      return orgItems.subTeams.find((node) => node.id === id) ?? null;
+
+    case NodeType.Unit:
+      return orgItems.units.find((node) => node.id === id) ?? null;
+
+    default:
+      return null;
+  }
+}
+
 export function useFindParent(
   orgItems: OrganizationInfo | null,
   id: string,
-  nodeType: NodeType
+  nodeType: NodeType,
 ): CompanyState | OrgStructureState | null {
   if (!orgItems) return null;
 
   switch (nodeType) {
     case NodeType.BusinessUnit:
-      // Parent is the company; its id is the mapping reference
       return orgItems.company;
+
     case NodeType.Team: {
-      // Parent is a BusinessUnit → BU has no mappingId, use its id
       const bu = orgItems.businessUnits.find((node) => node.id === id) ?? null;
       return bu ? bu : null;
     }
 
     case NodeType.SubTeam: {
-      // Parent is a Team → Team has a mappingId
       const team = orgItems.teams.find((node) => node.id === id) ?? null;
       return team ? team : null;
     }
 
     case NodeType.Unit: {
-      // Parent is a SubTeam → SubTeam has a mappingId
       const subTeam = orgItems.subTeams.find((node) => node.id === id) ?? null;
       return subTeam ? subTeam : null;
     }
