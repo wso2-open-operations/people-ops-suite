@@ -15,6 +15,7 @@
 // under the License.
 
 import leave_service.authorization;
+import leave_service.calendar_events;
 import leave_service.database;
 import leave_service.email;
 import leave_service.employee;
@@ -241,6 +242,50 @@ service http:InterceptableService / on new http:Listener(9090) {
             if leaves is error {
                 fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, leaves);
             }
+
+            // Clip first element: if the leave starts before the given startDate,
+            // recalculate numberOfDays from startDate to the leave's endDate.
+            if startDate is string && leaves.length() > 0 {
+                database:Leave firstLeave = leaves[0];
+                if firstLeave.periodType != database:HALF_DAY_LEAVE &&
+                    firstLeave.startDate.substring(0, 10) < startDate.substring(0, 10) {
+                    time:Utc|error rangeStart = getUtcDateFromString(startDate);
+                    time:Utc|error leaveEnd = getUtcDateFromString(firstLeave.endDate);
+                    if rangeStart is time:Utc && leaveEnd is time:Utc {
+                        database:Day[] weekdays = getWeekdaysFromRange(rangeStart, leaveEnd);
+                        database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
+                            firstLeave.location ?: "", startDate, firstLeave.endDate);
+                        if holidays is database:Holiday[] {
+                            weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                        }
+                        leaves[0].numberOfDays = <float>weekdays.length();
+                        leaves[0].startDate = startDate;
+                    }
+                }
+            }
+
+            // Clip last element: if the leave ends after the given endDate,
+            // recalculate numberOfDays from the leave's startDate to endDate.
+            if endDate is string && leaves.length() > 0 {
+                int lastIdx = leaves.length() - 1;
+                database:Leave lastLeave = leaves[lastIdx];
+                if lastLeave.periodType != database:HALF_DAY_LEAVE &&
+                    lastLeave.endDate.substring(0, 10) > endDate.substring(0, 10) {
+                    time:Utc|error leaveStart = getUtcDateFromString(lastLeave.startDate);
+                    time:Utc|error rangeEnd = getUtcDateFromString(endDate);
+                    if leaveStart is time:Utc && rangeEnd is time:Utc {
+                        database:Day[] weekdays = getWeekdaysFromRange(leaveStart, rangeEnd);
+                        database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
+                            lastLeave.location ?: "", lastLeave.startDate, endDate);
+                        if holidays is database:Holiday[] {
+                            weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                        }
+                        leaves[lastIdx].numberOfDays = <float>weekdays.length();
+                        leaves[lastIdx].endDate = endDate;
+                    }
+                }
+            }
+
             return {
                 leaves
             };
