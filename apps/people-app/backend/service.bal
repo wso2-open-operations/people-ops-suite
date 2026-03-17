@@ -1203,6 +1203,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+
+        boolean|error nameUniqueness = database:validateBusinessUnitNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating business unit name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Business unit name already exists"
+                }
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnit(workEmail, payload);
         if result is error {
@@ -1234,6 +1254,25 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        boolean|error nameUniqueness = database:validateTeamNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating team name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Team name already exists"
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1289,6 +1328,25 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        boolean|error nameUniqueness = database:validateSubTeamNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating sub-team name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Sub-team name already exists"
+                }
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
@@ -1342,6 +1400,25 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        boolean|error nameUniqueness = database:validateUnitNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating unit name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Unit name already exists"
+                }
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
@@ -1381,7 +1458,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a business unit-team mapping.
+    # Create a business-unit-team mapping.
     #
     # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
