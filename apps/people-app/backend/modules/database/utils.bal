@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/regex;
 import ballerina/sql;
 
 # Build the database select query with dynamic filter attributes.
@@ -159,7 +158,7 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
 isolated function csvEscape(string? value) returns string {
     string v = value ?: "";
     if v.includes(",") || v.includes("\"") || v.includes("\n") || v.includes("\r") {
-        return "\"" + regex:replaceAll(v, "\"", "\"\"") + "\"";
+        return "\"" + re`"`.replaceAll(v, "\"\"") + "\"";
     }
     return v;
 }
