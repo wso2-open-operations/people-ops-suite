@@ -18,7 +18,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { Box, IconButton, InputAdornment, TextField, Typography, useTheme } from "@mui/material";
 import { ChevronLeftIcon, ChevronRightIcon, SearchIcon } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import ErrorHandler from "@root/src/component/common/ErrorHandler.tsx";
 import PreLoader from "@root/src/component/common/PreLoader.tsx";
@@ -82,11 +82,38 @@ export default function SplitView() {
   const [unitSearchTerm, setUnitSearchTerm] = useState<string | null>();
   const [globalSearchTerm, setGlobalSearchTerm] = useState<string>("");
   const [searchMatches, setSearchMatches] = useState<MatchSearch[]>([]);
+  const [activeMatchIndex, setActiveMatchIndex] = useState<number>(-1);
 
   const [selectedBusinessUnitId, setSelectedBusinessUnitId] = useState<string | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [selectedSubTeamId, setSelectedSubTeamId] = useState<string | null>(null);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const currentMatch = activeMatchIndex >= 0 ? searchMatches[activeMatchIndex] : null;
+
+  const goToPreviousMatch = () => {
+    setActiveMatchIndex((i) =>
+      searchMatches.length ? (i - 1 + searchMatches.length) % searchMatches.length : -1,
+    );
+  };
+
+  const goToNextMatch = () => {
+    setActiveMatchIndex((i) => (searchMatches.length ? (i + 1) % searchMatches.length : -1));
+  };
+
+  useEffect(() => {
+    if (!currentMatch) {
+      setSelectedBusinessUnitId(null);
+      setSelectedTeamId(null);
+      setSelectedSubTeamId(null);
+      setSelectedUnitId(null);
+      return;
+    }
+
+    setSelectedBusinessUnitId(currentMatch.buId);
+    setSelectedTeamId(currentMatch.teamId);
+    setSelectedSubTeamId(currentMatch.subTeamId);
+    setSelectedUnitId(currentMatch.unitId);
+  }, [currentMatch]);
 
   if (orgItemState.state === State.Loading) {
     return <PreLoader isLoading message="We are retrieving org data" />;
@@ -239,6 +266,7 @@ export default function SplitView() {
   const handleGlobalSearch = () => {
     if (!globalSearchTerm.trim()) {
       setSearchMatches([]);
+      setActiveMatchIndex(-1);
       return;
     }
 
@@ -254,11 +282,13 @@ export default function SplitView() {
     const searchResults: MatchSearch[] = matches.map((match) => itemToMatchSearch(orgItems, match));
 
     setSearchMatches(searchResults);
+    setActiveMatchIndex(searchResults.length ? 0 : -1);
   };
 
   const handleClearGlobalSearch = () => {
-    console.log("clear global search");
     setGlobalSearchTerm("");
+    setSearchMatches([]);
+    setActiveMatchIndex(-1);
   };
 
   return (
@@ -307,38 +337,41 @@ export default function SplitView() {
         />
 
         {/* Right: prev / next chevrons */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-          <ChevronLeftIcon
-            size={14}
-            color={theme.palette.customText.primary.p3.active}
-            style={{ cursor: "pointer" }}
-          />
-          {/* Result counter: 1 / 3 */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            {["1", "/", "3"].map((token, i) => (
-              <Typography
-                variant="caption"
-                key={i}
-                sx={{
-                  color: theme.palette.customText.primary.p3.active,
-                }}
-              >
-                {token}
-              </Typography>
-            ))}
+        {searchMatches.length > 0 ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+            <ChevronLeftIcon
+              size={14}
+              color={theme.palette.customText.primary.p3.active}
+              onClick={goToPreviousMatch}
+              style={{ cursor: "pointer" }}
+            />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              {[String(activeMatchIndex + 1), "/", String(searchMatches.length)].map((token, i) => (
+                <Typography
+                  variant="caption"
+                  key={i}
+                  sx={{
+                    color: theme.palette.customText.primary.p3.active,
+                  }}
+                >
+                  {token}
+                </Typography>
+              ))}
+            </Box>
+            <ChevronRightIcon
+              size={12}
+              color={theme.palette.customText.primary.p3.active}
+              onClick={goToNextMatch}
+              style={{ cursor: "pointer" }}
+            />
           </Box>
-          <ChevronRightIcon
-            size={12}
-            color={theme.palette.customText.primary.p3.active}
-            style={{ cursor: "pointer" }}
-          />
-        </Box>
+        ) : null}
       </Box>
 
       <Box sx={{ width: "100%", display: "flex", gap: 2 }}>
