@@ -541,3 +541,31 @@ public isolated function validateUnitNameUniqueness(string unitName) returns boo
 
     return result.exists_flag == 0;
 }
+
+public isolated function businessUnitHasChildren(int buId) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
+
+    return result.exists_flag == 1;
+}
+
+public isolated function businessUnitTeamHasChildren(int businessUnitId, int teamId) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
+
+    return result.exists_flag == 1;
+}
+
+public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
+
+    return result.exists_flag == 1;
+}
+
+public isolated function subTeamUnitHasChildren(int subTeamMappingId, int unitId) returns boolean|error {
+    record {| int exists_flag; |} result =
+        check databaseClient->queryRow(subTeamUnitHasChildrenQuery(subTeamMappingId, unitId));
+
+    return result.exists_flag == 1;
+}
