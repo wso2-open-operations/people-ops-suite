@@ -58,5 +58,8 @@ function validateOrganizationRequest(http:RequestContext ctx)
         };
     }
 
-   return <JwtPayloadUserInfo>userInfo;
+   return <JwtPayloadUserInfo> {
+    email: workEmail,
+    groups: userInfo.groups
+   };
 }
