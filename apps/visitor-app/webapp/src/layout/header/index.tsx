@@ -28,8 +28,8 @@ import {
   MenuItem,
   Stack,
   Tooltip,
-  useTheme,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 const Header = () => {
   const theme = useTheme();

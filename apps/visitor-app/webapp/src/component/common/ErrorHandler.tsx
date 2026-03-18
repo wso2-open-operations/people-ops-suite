@@ -15,7 +15,8 @@
 // under the License.
 
 import Grid from "@mui/material/Grid";
-import { Container, Box, useTheme } from "@mui/material";
+import { Container, Box } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import StateWithImage from "@component/ui/StateWithImage";
 
 interface ErrorHandlerProps {

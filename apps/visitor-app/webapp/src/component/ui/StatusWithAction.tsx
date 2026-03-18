@@ -16,7 +16,8 @@
 
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Box, Container, Button, useTheme } from "@mui/material";
+import { Box, Container, Button } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 interface PreLoaderProps {
   message?: string | null;
