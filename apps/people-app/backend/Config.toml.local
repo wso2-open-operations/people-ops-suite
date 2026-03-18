@@ -1,3 +1,6 @@
+[people]
+masterWalletAddress = ""
+
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
 
@@ -15,3 +18,19 @@ EMPLOYEE_ROLE = ""
     connectTimeout = 
     [people.database.dbConfig.options.ssl]
     mode = "PREFERRED"
+
+[people.transaction.client]
+    transactionEndpoint = ""
+
+[people.transaction.client.clientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""
+
+[people.gsheet.parkingSheetConfig]
+    tokenUrl = ""
+    refreshToken = ""
+    clientId = ""
+    clientSecret = ""
+    sheetId = ""
+    sheetName = ""
