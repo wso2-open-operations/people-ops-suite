@@ -24,7 +24,7 @@ import ballerina/regex;
 # Validate and authorize organization entity patch requests.
 #
 # + ctx - Request context
-# + return - `()` when valid, otherwise corresponding http error response
+# + return - `JwtPayloadUserInfo` when valid, otherwise corresponding http error response
 function validateOrganizationRequest(http:RequestContext ctx)
     returns http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo {
 
