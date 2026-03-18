@@ -1080,11 +1080,11 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         };
     }
-    
-    # Update a business unit by ID.
+
+    # Update a BusinessUnit by ID.
     #
-    # + buId - ID of the business unit to update
-    # + payload - Fields to update in the business unit
+    # + buId - ID of the BusinessUnit to update
+    # + payload - name or headEmail to update in the BusinessUnit
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1148,10 +1148,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Update a team by ID.
+    # Update a Team by ID.
     #
-    # + teamId - ID of the team to update
-    # + payload - Fields to update in the team
+    # + teamId - ID of the Team to update
+    # + payload - name or headEmail to update in the Team
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1194,10 +1194,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Update a sub team by ID.
+    # Update a SubTeam by ID.
     #
-    # + subTeamId - ID of the sub team to update
-    # + payload - Fields to update in the sub team
+    # + subTeamId - ID of the SubTeam to update
+    # + payload - name or headEmail to update in the SubTeam
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1240,10 +1240,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Update a unit by ID.
+    # Update a Unit by ID.
     #
-    # + unitId - ID of the unit to update
-    # + payload - Fields to update in the unit
+    # + unitId - ID of the Unit to update
+    # + payload - name or headEmail to update in the Unit
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1286,11 +1286,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Update the functional lead of a business unit-team mapping.
+    # Update a BusinessUnit-Team mapping by IDs.
     #
-    # + buId - ID of the business unit
-    # + teamId - ID of the team
-    # + payload - Fields to update in the mapping
+    # + buId - ID of the BusinessUnit
+    # + teamId - ID of the Team
+    # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/business\-unit/[int buId]/team/[int teamId]
             (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload)
@@ -1331,11 +1331,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     }
 
-    # Update the functional lead of a team-sub team mapping.
+    # Update a Team-SubTeam mapping by IDs.
     #
-    # + teamId - ID of the team
-    # + subTeamId - ID of the sub team
-    # + payload - Fields to update in the mapping
+    # + teamId - ID of the Team
+    # + subTeamId - ID of the SubTeam
+    # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId]
             (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
@@ -1375,11 +1375,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Update the functional lead of a sub team-unit mapping.
+    # Update a SubTeam-Unit mapping by IDs.
     #
-    # + subTeamId - ID of the sub team
-    # + unitId - ID of the unit
-    # + payload - Fields to update in the mapping
+    # + subTeamId - ID of the SubTeam
+    # + unitId - ID of the Unit
+    # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId]
             (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
