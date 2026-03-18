@@ -14,10 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
-import Lottie from "lottie-react";
 
-import animatedLogoLight from "@assets/animations/animation-light.json";
-import animatedLogoDark from "@assets/animations/animation-logo-dark.json";
 import { APP_NAME } from "@root/src/config/config";
 import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
 
@@ -45,7 +42,7 @@ const PreLoader = (props: PreLoaderProps) => {
         height: "100vh",
         width: "100%",
         backgroundColor: theme.palette.surface.primary.active,
-        gap: 2,
+        gap: 2.5,
       }}
     >
       {!hideImage && <img alt="logo" width="150" height="auto" src={wso2Logo} />}
@@ -55,6 +52,11 @@ const PreLoader = (props: PreLoaderProps) => {
           sx={{
             position: "relative",
             width: "150px",
+            borderRadius: "8px",
+            backgroundColor: "#D9E8F2",
+            "& .MuiLinearProgress-bar": {
+              background: "linear-gradient(90deg, #E8F4FC 0%, #1B2A49 38.94%, #17223A 78.85%)",
+            },
           }}
         />
       )}
