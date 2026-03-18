@@ -673,6 +673,414 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
+    # Get organization details (full hierarchy with business units, teams, sub-teams, units).
+    #
+    # + return - Organization hierarchy with head, functional lead, and headcount per node
+    resource function get organization(http:RequestContext ctx)
+        returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        database:Company|error orgStructure = database:getOrganizationDetails();
+
+        if orgStructure is error {
+            string customErr = "Error while fetching organization details";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return orgStructure;
+    }
+
+    # Add new BusinessUnit.
+    #
+    # + payload - Business-unit details
+    # + return - HTTP Created on success, or HTTP errors on failure 
+    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload)
+        returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error nameUniqueness = database:validateBusinessUnitNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating business unit name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Business unit name already exists"
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        int|error result = database:addBusinessUnit(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding a business unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Business unit ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Create a new Team, and optionally map it to a BusinessUnit-Team.
+    #
+    # + payload - Team details & businessUnit ID and functionalLeadEmail to create the mapping
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error nameUniqueness = database:validateTeamNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating team name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Team name already exists"
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addTeamWithMapping(
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
+            if result is error {
+                string customErr = "Error while adding a team";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            return <http:Created>{
+                body: {
+                    message: string `Team ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
+        if result is error {
+            string customErr = "Error while adding a team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Team ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Create a new SubTeam, and optionally map it to a BusinessUnit-Team-SubTeam
+    #
+    # + payload - SubTeam details & businessUnit-team ID and functionalLeadEmail to create the mapping
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error nameUniqueness = database:validateSubTeamNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating sub-team name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Sub-team name already exists"
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addSubTeamWithMapping(
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
+            if result is error {
+                string customErr = "Error while adding a sub-team";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            return <http:Created>{
+                body: {
+                    message: string `Sub-team ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addSubTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
+        if result is error {
+            string customErr = "Error while adding a sub-team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Sub-team ${payload.name} Successfully created`
+            }
+        };
+    }
+
+    # Create a new Unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
+    #
+    # + payload - Unit details & businessUnit-team-subTeam ID and functionalLeadEmail to create the mapping
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        boolean|error nameUniqueness = database:validateUnitNameUniqueness(payload.name);
+        if nameUniqueness is error {
+            string customErr = "Error while validating unit name uniqueness";
+            log:printError(customErr, nameUniqueness);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if nameUniqueness == false {
+            return <http:BadRequest>{
+                body: {
+                    message: "Unit name already exists"
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
+        if orgNodeLinkInfo is OrgNodeLinkInfo {
+            int|error result = database:addUnitWithMapping(
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+            );
+
+            if result is error {
+                string customErr = "Error while adding a unit";
+                log:printError(customErr, result);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            return <http:Created>{
+                body: {
+                    message: string `Unit ${payload.name} Successfully created`
+                }
+            };
+        }
+
+        int|error result = database:addUnit(workEmail, {name: payload.name, headEmail: payload.headEmail});
+        if result is error {
+            string customErr = "Error while adding a unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `Unit ${payload.name} Successfully created`
+            }
+        };
+    }
+
+
+    # Create a BusinessUnit-Team mapping.
+    #
+    # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        string workEmail = validatedUserInfo.email;
+        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team Successfully created`
+            }
+        };
+    }
+
+    # Create a BusinessUnit-Team-SubTeam mapping.
+    #
+    # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        string workEmail = validatedUserInfo.email;
+        int|error result = database:addBusinessUnitTeamSubTeam(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team-SubTeam";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team-SubTeam Successfully created`
+            }
+        };
+    }
+
+    # Create a BusinessUnit-Team-SubTeam-Unit mapping.
+    #
+    # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
+    # + return - HTTP Created on success, or HTTP errors on failure
+    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
+        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+            validateOrganizationRequest(ctx);
+
+        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
+            return validatedUserInfo;
+        }
+
+        string workEmail = validatedUserInfo.email;
+        int|error result = database:addBusinessUnitTeamSubTeamUnit(workEmail, payload);
+        if result is error {
+            string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
+            log:printError(customErr, result);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return <http:Created>{
+            body: {
+                message: string `BusinessUnit-Team-SubTeam-Unit Successfully created`
+            }
+        };
+    }
+    
     # Update a business unit by ID.
     #
     # + buId - ID of the business unit to update
@@ -1280,412 +1688,5 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Get organization details (full hierarchy with business units, teams, sub-teams, units).
-    #
-    # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get organization(http:RequestContext ctx)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        database:Company|error orgStructure = database:getOrganizationDetails();
-
-        if orgStructure is error {
-            string customErr = "Error while fetching organization details";
-            log:printError(customErr, orgStructure);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return orgStructure;
-    }
-
-    # Add new BusinessUnit.
-    #
-    # + payload - Business-unit details
-    # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateBusinessUnitNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating business unit name uniqueness";
-            log:printError(customErr, nameUniqueness);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Business unit name already exists"
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnit(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding a business unit";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Business unit ${payload.name} Successfully created`
-            }
-        };
-    }
-
-    # Create a new Team, and optionally map it to a BusinessUnit-Team.
-    #
-    # + payload - Team details & businessUnit ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateTeamNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating team name uniqueness";
-            log:printError(customErr, nameUniqueness);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Team name already exists"
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addTeamWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
-
-            if result is error {
-                string customErr = "Error while adding a team";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-
-            return <http:Created>{
-                body: {
-                    message: string `Team ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a team";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Team ${payload.name} Successfully created`
-            }
-        };
-    }
-
-    # Create a new SubTeam, and optionally map it to a BusinessUnit-Team-SubTeam
-    #
-    # + payload - SubTeam details & businessUnit-team ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateSubTeamNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating sub-team name uniqueness";
-            log:printError(customErr, nameUniqueness);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Sub-team name already exists"
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addSubTeamWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
-
-            if result is error {
-                string customErr = "Error while adding a sub-team";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-
-            return <http:Created>{
-                body: {
-                    message: string `Sub-team ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addSubTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a sub-team";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Sub-team ${payload.name} Successfully created`
-            }
-        };
-    }
-
-    # Create a new Unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
-    #
-    # + payload - Unit details & businessUnit-team-subTeam ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateUnitNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating unit name uniqueness";
-            log:printError(customErr, nameUniqueness);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Unit name already exists"
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addUnitWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
-
-            if result is error {
-                string customErr = "Error while adding a unit";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-
-            return <http:Created>{
-                body: {
-                    message: string `Unit ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addUnit(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a unit";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Unit ${payload.name} Successfully created`
-            }
-        };
-    }
-
-
-    # Create a BusinessUnit-Team mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeam(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team Successfully created`
-            }
-        };
-    }
-
-    # Create a BusinessUnit-Team-SubTeam mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeamSubTeam(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team-SubTeam";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team-SubTeam Successfully created`
-            }
-        };
-    }
-
-    # Create a BusinessUnit-Team-SubTeam-Unit mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeamSubTeamUnit(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team-SubTeam-Unit Successfully created`
-            }
-        };
-    }
 }
 
