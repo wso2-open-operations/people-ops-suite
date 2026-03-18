@@ -1224,3 +1224,81 @@ isolated function subTeamUnitHasChildrenQuery(int subTeamMappingId, int unitId) 
           AND e.business_unit_id = but.business_unit_id
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
+
+# Build query to check if a BusinessUnit exists by ID.
+#
+# + buId - BusinessUnit ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitExistsQuery(int buId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit
+        WHERE is_active = 1 AND id = ${buId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a Team exists by ID.
+#
+# + teamId - Team ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function teamExistsQuery(int teamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM team
+        WHERE is_active = 1 AND id = ${teamId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a SubTeam exists by ID.
+#
+# + subTeamId - Sub-team ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function subTeamExistsQuery(int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM sub_team
+        WHERE is_active = 1 AND id = ${subTeamId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a Unit exists by ID.
+#
+# + unitId - Unit ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function unitExistsQuery(int unitId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM unit
+        WHERE is_active = 1 AND id = ${unitId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a BusinessUnit-Team mapping exists by ID.
+#
+# + id - business_unit_team mapping ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitTeamMappingExistsQuery(int id) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team
+        WHERE is_active = 1 AND id = ${id}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
+
+# Build query to check if a BusinessUnit-Team-SubTeam mapping exists by ID.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - Query returning `exists_flag` (1 if exists, else 0)
+isolated function businessUnitTeamSubTeamMappingExistsQuery(int id) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team
+        WHERE is_active = 1 AND id = ${id}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
