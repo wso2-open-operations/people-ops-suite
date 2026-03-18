@@ -20,11 +20,23 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useAppAuthContext } from "@context/AuthContext";
 import { RootState, useAppSelector } from "@slices/store";
-import { AppBar, Avatar, Box, Menu, MenuItem, Stack, Tooltip } from "@mui/material";
+import {
+  AppBar,
+  Avatar,
+  Box,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  useTheme,
+} from "@mui/material";
 
 const Header = () => {
+  const theme = useTheme();
   const authContext = useAppAuthContext();
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
+  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
+    null,
+  );
   const user = useAppSelector((state: RootState) => state.user);
 
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -40,10 +52,15 @@ const Header = () => {
       position="fixed"
       sx={{
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        color: (theme) => (theme.palette.mode === "light" ? theme.palette.primary.main : theme.palette.common.white),
+        color: (theme) =>
+          theme.palette.mode === "light"
+            ? theme.palette.primary.main
+            : theme.palette.common.white,
 
         background: (theme) =>
-          theme.palette.mode === "light" ? theme.palette.common.white : theme.palette.primary.dark,
+          theme.palette.mode === "light"
+            ? theme.palette.common.white
+            : theme.palette.primary.dark,
         boxShadow: 2,
       }}
     >
@@ -59,12 +76,17 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "40px",
+            height: "auto",
             maxWidth: "100px",
+            padding: "3px",
           }}
           onClick={() => (window.location.href = "/")}
-          src={require("@assets/images/wso2-logo.svg").default}
-        ></img>
+          src={
+            theme.palette.mode === "light"
+              ? require("@assets/images/wso2-logo-black.png")
+              : require("@assets/images/wso2-logo-white.png")
+          }
+        />
         <Typography
           variant="h5"
           sx={{
@@ -84,7 +106,9 @@ const Header = () => {
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {user.userInfo?.firstName + " " + user.userInfo.lastName}
                   </Typography>
-                  <Typography variant="body2">{user.userInfo?.jobRole}</Typography>
+                  <Typography variant="body2">
+                    {user.userInfo?.jobRole}
+                  </Typography>
                 </Box>
                 <Tooltip title="Open settings">
                   <Avatar
