@@ -25,7 +25,7 @@ import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { RootState, useAppSelector } from "@slices/store";
 
-const Header = () => {
+const Header = ({ sidebarOpen }: { sidebarOpen: boolean }) => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -58,17 +58,27 @@ const Header = () => {
           },
         }}
       >
-        <img
-          alt="wso2"
-          style={{
-            height: "45px",
-            maxWidth: "100px",
-            objectFit: "contain",
-            cursor: "pointer",
-          }}
+        <Box
+          key={String(sidebarOpen)}
           onClick={() => (window.location.href = "/")}
-          src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
-        ></img>
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            perspective: "600px",
+            "@keyframes flipIn": {
+              "0%": { transform: "rotateY(90deg)", opacity: 0 },
+              "100%": { transform: "rotateY(0deg)", opacity: 1 },
+            },
+            animation: "flipIn 0.3s ease-out",
+          }}
+        >
+          <img
+            alt="wso2"
+            style={{ height: "45px", width: "auto", objectFit: "contain" }}
+            src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
+          />
+        </Box>
 
         <Box
           sx={{
