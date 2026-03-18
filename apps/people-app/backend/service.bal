@@ -1360,9 +1360,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a new team, and optionally map it to a business unit.
+    # Create a new team, and optionally map it to a BusinessUnit-Team.
     #
-    # + payload - Team details; include `orgNodeLinkInfo` to map to an existing business unit
+    # + payload - Team details & businessUnit ID and functionalLeadEmail to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
@@ -1436,9 +1436,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a new sub-team, and optionally map it to a business unit-team.
+    # Create a new SubTeam, and optionally map it to a BusinessUnit-Team-SubTeam
     #
-    # + payload - Sub-team details; include `orgNodeLinkInfo` with the `business_unit_team` ID to create the mapping
+    # + payload - SubTeam details & businessUnit-team ID and functionalLeadEmail to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
@@ -1512,9 +1512,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a new unit, and optionally map it to a business unit-team-sub-team.
+    # Create a new unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
     #
-    # + payload - Unit details; include `orgNodeLinkInfo` with the `business_unit_team_sub_team` ID to create the mapping
+    # + payload - Unit details & businessUnit-team-subTeam ID and functionalLeadEmail to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
@@ -1588,9 +1588,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a business-unit-team mapping.
+
+    # Create a BusinessUnit-Team mapping.
     #
-    # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
+    # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
@@ -1621,9 +1622,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a team-sub-team mapping.
+    # Create a BusinessUnit-Team-SubTeam mapping.
     #
-    # + payload - Mapping details; `parentId` = business-unit-team ID, `childId` = sub-team ID
+    # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
     # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
@@ -1654,6 +1655,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
+    # Create a BusinessUnit-Team-SubTeam-Unit mapping.
+    #
+    # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
+    # + return - HTTP Created on success, or HTTP errors on failure
     resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
