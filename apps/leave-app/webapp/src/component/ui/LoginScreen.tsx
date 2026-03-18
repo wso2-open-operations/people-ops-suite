@@ -24,7 +24,7 @@ import { APP_DESC } from "@root/src/config/constant";
 import { useAppAuthContext } from "@root/src/context/AuthContext";
 import BackgroundImage from "@src/assets/images/app-login-background.png";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
-import logo from "@src/assets/images/wso2-logo-black.png";
+const logo = "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
