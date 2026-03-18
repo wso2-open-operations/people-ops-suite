@@ -1606,7 +1606,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit-team ID, `childId` = sub-team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1617,7 +1617,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        int|error result = database:addBusinessUnitTeamSubTeam(workEmail, payload);
         if result is error {
             string customErr = "Error while adding BusinessUnit-Team-SubTeam";
             log:printError(customErr, result);
@@ -1635,7 +1635,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1646,7 +1646,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeam(workEmail, payload);
+        int|error result = database:addBusinessUnitTeamSubTeamUnit(workEmail, payload);
         if result is error {
             string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
             log:printError(customErr, result);
