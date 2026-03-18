@@ -330,8 +330,8 @@ isolated function getDuplicatePromotionRequestCountQuery(string employeeEmail, i
 # + payload - Promotion Request Insert Payload  
 # + return - sql:ParameterizedQuery - Inset query for the promotion request table
 isolated function insertPromotionRequestQuery(PromotionRequestDbInsertPayload payload)
-    returns sql:ParameterizedQuery {
-    return `
+    returns sql:ParameterizedQuery 
+    => `
         INSERT INTO 
             hris_promotion_request 
             ( 
@@ -366,16 +366,15 @@ isolated function insertPromotionRequestQuery(PromotionRequestDbInsertPayload pa
                 ${payload.createdBy},
                 ${payload.createdBy}
             )`;
-}
 
 # Insert Promotion Recommendation Query.
 #
 # + payload - Promotion Recommendation Data
 # + return - sql:ParameterizedQuery - Insert query for the promotion recommendation table
 isolated function insertPromotionRecommendationQuery(PromotionRecommendationInsertPayload payload)
-    returns sql:ParameterizedQuery {
-
-    return `
+    returns sql:ParameterizedQuery 
+    
+    => `
         INSERT INTO 
             hris_promotion_recommendation 
             ( 
@@ -399,4 +398,3 @@ isolated function insertPromotionRecommendationQuery(PromotionRecommendationInse
                 ${payload.createdBy},
                 ${payload.createdBy}
             )`;
-}
