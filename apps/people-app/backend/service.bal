@@ -1095,7 +1095,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
         }
-        
+
+        boolean|error buExists = database:businessUnitExists(buId);
+        if buExists is error {
+            log:printError("Error while validating business unit", buExists, buId = buId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the business unit"}
+            };
+        }
+
+        if !buExists {
+            return <http:BadRequest>{
+                body: {message: string `Business unit with ID ${buId} not found`}
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
@@ -1163,6 +1177,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        boolean|error teamExists = database:teamExists(teamId);
+        if teamExists is error {
+            log:printError("Error while validating team", teamExists, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the team"}
+            };
+        }
+
+        if !teamExists {
+            return <http:BadRequest>{
+                body: {message: string `Team with ID ${teamId} not found`}
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
@@ -1209,6 +1237,20 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
+        boolean|error subTeamExists = database:subTeamExists(subTeamId);
+        if subTeamExists is error {
+            log:printError("Error while validating sub team", subTeamExists, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the sub team"}
+            };
+        }
+
+        if !subTeamExists {
+            return <http:BadRequest>{
+                body: {message: string `Sub team with ID ${subTeamId} not found`}
+            };
+        }
+
         string workEmail = validatedUserInfo.email;
         if payload.name is () && payload.headEmail is () {
             string customErr = "At least one field should be provided for update";
@@ -1253,6 +1295,20 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        boolean|error unitExists = database:unitExists(unitId);
+        if unitExists is error {
+            log:printError("Error while validating unit", unitExists, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the unit"}
+            };
+        }
+
+        if !unitExists {
+            return <http:BadRequest>{
+                body: {message: string `Unit with ID ${unitId} not found`}
+            };
         }
 
         string workEmail = validatedUserInfo.email;
