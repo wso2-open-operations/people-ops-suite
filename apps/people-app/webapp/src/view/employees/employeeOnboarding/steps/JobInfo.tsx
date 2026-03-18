@@ -87,57 +87,76 @@ const SECTION_HEADER_BOX_SX = {
   mt: 4,
 } as const;
 
-export const jobInfoValidationSchema = Yup.object().shape({
-  workEmail: Yup.string()
-    .required("Work email is required")
-    .email("Invalid email format")
-    .max(254, "Email must be at most 254 characters"),
-  epf: Yup.string()
-    .max(45, "EPF must be at most 45 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  businessUnitId: Yup.number()
-    .required("Business unit is required")
-    .min(1, "Select a valid business unit"),
-  teamId: Yup.number()
-    .required("Team is required")
-    .min(1, "Select a valid team"),
-  subTeamId: Yup.number()
-    .required("Sub Team is required")
-    .min(1, "Select a valid sub team"),
-  unitId: Yup.number().optional(),
-  careerFunctionId: Yup.number()
-    .required("Career function is required")
-    .min(1, "Select a valid career function"),
-  designationId: Yup.number()
-    .required("Designation is required")
-    .min(1, "Select a valid designation"),
-  secondaryJobTitle: Yup.string()
-    .max(20, "Secondary job title must be at most 20 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  companyId: Yup.number()
-    .required("Company is required")
-    .min(1, "Select a valid company"),
-  officeId: Yup.number().optional(),
-  workLocation: Yup.string()
-    .required("Work location is required")
-    .min(1, "Select a valid work location"),
-  employmentTypeId: Yup.number()
-    .required("Employment type is required")
-    .min(1, "Select a valid employment type"),
-  startDate: Yup.string().required("Start date is required"),
-  probationEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  agreementEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  managerEmail: Yup.string().required("Manager email is required"),
-  additionalManagerEmail: Yup.array()
-    .of(Yup.string().email("Invalid email format"))
-    .nullable(),
-});
+export const createJobInfoValidationSchema = (
+  employmentTypes?: { id: number; name: string }[],
+) =>
+  Yup.object().shape({
+    workEmail: Yup.string()
+      .required("Work email is required")
+      .email("Invalid email format")
+      .max(254, "Email must be at most 254 characters"),
+    epf: Yup.string()
+      .max(45, "EPF must be at most 45 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    businessUnitId: Yup.number()
+      .required("Business unit is required")
+      .min(1, "Select a valid business unit"),
+    teamId: Yup.number()
+      .required("Team is required")
+      .min(1, "Select a valid team"),
+    subTeamId: Yup.number()
+      .required("Sub Team is required")
+      .min(1, "Select a valid sub team"),
+    unitId: Yup.number().optional(),
+    careerFunctionId: Yup.number()
+      .required("Career function is required")
+      .min(1, "Select a valid career function"),
+    designationId: Yup.number()
+      .required("Designation is required")
+      .min(1, "Select a valid designation"),
+    secondaryJobTitle: Yup.string()
+      .max(20, "Secondary job title must be at most 20 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    companyId: Yup.number()
+      .required("Company is required")
+      .min(1, "Select a valid company"),
+    officeId: Yup.number().optional(),
+    workLocation: Yup.string()
+      .required("Work location is required")
+      .min(1, "Select a valid work location"),
+    employmentTypeId: Yup.number()
+      .required("Employment type is required")
+      .min(1, "Select a valid employment type"),
+    startDate: Yup.string().required("Start date is required"),
+    probationEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    agreementEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    managerEmail: Yup.string().required("Manager email is required"),
+    additionalManagerEmail: Yup.array()
+      .of(Yup.string().email("Invalid email format"))
+      .nullable(),
+    employeeId: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable()
+      .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
+        if (!employmentTypeId) return schema;
+        if (!employmentTypes || employmentTypes.length === 0) return schema;
+        const selected = employmentTypes.find(
+          (et) => et.id === employmentTypeId,
+        );
+        const isFixed = selected
+          ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
+          : false;
+        return isFixed
+          ? schema.required("Employee ID is required for fixed-term employment")
+          : schema;
+      }),
+  });
 
 const SectionHeader = React.memo(
   ({ icon, title, headerBoxSx, iconBoxSx }: any) => {
@@ -221,8 +240,9 @@ const InfoTooltipAdornment = React.memo(
 );
 export const AUTO_ID_EMPLOYMENT_TYPES =
   /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
+export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed[\s-]?term$/i;
 
-export default function JobInfoStep() {
+export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
@@ -426,7 +446,7 @@ export default function JobInfoStep() {
       (et) => et.id === values.employmentTypeId,
     );
     if (!selectedType) return false;
-    return !AUTO_ID_EMPLOYMENT_TYPES.test(selectedType.name.trim());
+    return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
   }, [employmentTypes, values.employmentTypeId]);
 
   const showAgreementEndDate = useMemo(() => {
@@ -1198,6 +1218,7 @@ export default function JobInfoStep() {
                 error={Boolean(touched.employeeId && errors.employeeId)}
                 helperText={touched.employeeId && (errors.employeeId as string)}
                 sx={textFieldSx}
+                InputProps={{ readOnly: Boolean(isEditMode) }}
               />
             </Grid>
           ) : null}

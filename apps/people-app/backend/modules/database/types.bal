@@ -97,8 +97,8 @@ public type EmployeeIdContext record {|
    string companyPrefix;
    # Employment type
    string employmentType;
-    # Last numeric ID used for the given company and employment type
-   int lastNumericId;
+   # Last numeric ID used for the given company and employment type
+   decimal lastNumericId;
 |};
 
 # TODO: Add structured types for org structure fields and company details

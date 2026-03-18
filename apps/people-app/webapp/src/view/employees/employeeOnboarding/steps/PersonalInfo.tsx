@@ -14,7 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import React, { useCallback, useMemo, useRef, ChangeEvent } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  ChangeEvent,
+} from "react";
 import {
   Box,
   Grid,
@@ -217,6 +223,18 @@ export default function PersonalInfoStep() {
   valuesRef.current = values;
   const isFullNameManuallyEdited = useRef<boolean>(false);
 
+  useEffect(() => {
+    const derived =
+      `${values.personalInfo.firstName ?? ""} ${values.personalInfo.lastName ?? ""}`.trim();
+    isFullNameManuallyEdited.current =
+      (values.personalInfo.fullName ?? "").trim() !== derived &&
+      (values.personalInfo.fullName ?? "").trim() !== "";
+  }, [
+    values.personalInfo.firstName,
+    values.personalInfo.lastName,
+    values.personalInfo.fullName,
+  ]);
+
   const handleFirstNameChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
       const newFirst = e.target.value;
@@ -250,7 +268,8 @@ export default function PersonalInfoStep() {
       const newFullName = e.target.value;
       const derived =
         `${valuesRef.current.personalInfo.firstName ?? ""} ${valuesRef.current.personalInfo.lastName ?? ""}`.trim();
-      isFullNameManuallyEdited.current = newFullName.trim() !== derived;
+      isFullNameManuallyEdited.current =
+        newFullName.trim() !== derived && newFullName.trim() !== "";
       handleChange(e);
     },
     [handleChange],

@@ -288,23 +288,46 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 # Generate the next employee ID using a single DB query to fetch all required context.
 #
 # + payload - Add employee payload
-# + return - Generated employee ID string, nil for fixed-term types, or error
+# + return - Generated or manually provided employee ID string, or error
 isolated function resolveEmployeeId(CreateEmployeePayload payload) returns string|error {
     EmployeeIdContext ctx = check databaseClient->queryRow(
         getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
     );
 
     match ctx.employmentType {
-        EMP_TYPE_PERMANENT|EMP_TYPE_INTERNSHIP => {
-            return string `${ctx.companyPrefix}${ctx.lastNumericId + 1}`;
+        EMP_TYPE_PERMANENT => {
+            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
+                getAndLockLastNumericIdQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT])
+            );
+            return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
+        }
+        EMP_TYPE_INTERNSHIP => {
+            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
+                getAndLockLastNumericIdQuery(ctx.companyPrefix, [EMP_TYPE_INTERNSHIP])
+            );
+            return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         EMP_TYPE_CONSULTANCY|EMP_TYPE_ADVISORY_CONSULTANCY|EMP_TYPE_PART_TIME_CONSULTANCY => {
-            return string `${CONSULTANCY_ID_PREFIX}${ctx.lastNumericId + 1}`;
+            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
+                getAndLockLastNumericIdQuery(CONSULTANCY_ID_PREFIX, [
+                        EMP_TYPE_CONSULTANCY,
+                        EMP_TYPE_ADVISORY_CONSULTANCY,
+                        EMP_TYPE_PART_TIME_CONSULTANCY
+                    ])
+            );
+            return string `${CONSULTANCY_ID_PREFIX}${<int>row.lastNumericId + 1}`;
         }
         EMP_TYPE_FIXED_TERM => {
             string manualId = (payload.employeeId ?: "").trim();
             if manualId.length() == 0 {
                 return error("Employee ID must be provided manually for fixed-term employment type");
+            }
+            Employee|error? existing = getEmployeeInfo(manualId);
+            if existing is error {
+                return existing;
+            }
+            if existing is Employee {
+                return error(string `Employee ID already in use: ${manualId}`);
             }
             return manualId;
         }
