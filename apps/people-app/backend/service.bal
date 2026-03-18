@@ -1303,29 +1303,65 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateBusinessUnitTeam({...payload,updatedBy: workEmail}, buId, teamId);
-        if updateResult is error {
-            log:printError("Error while updating business_unit_team : ", updateResult, buId = buId, teamId = teamId);
+        boolean|error buExists = database:businessUnitExists(buId);
+        if buExists is error {
+            log:printError("Error while validating business unit", buExists, buId = buId);
             return <http:InternalServerError>{
                 body: {
-                    message: "Error while updating the unit"
+                    message: "Error while validating the business unit"
                 }
             };
         }
 
-        if updateResult == false {
-            log:printError(string `No team is found with businessUnitId ${buId} and teamId = ${teamId} to update!`);
+        if !buExists {
             return <http:BadRequest>{
                 body: {
-                    message: "No team found to update"
+                    message: string `Business unit with ID ${buId} not found`
+                }
+            };
+        }
+
+        boolean|error teamExists = database:teamExists(teamId);
+        if teamExists is error {
+            log:printError("Error while validating team", teamExists, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while validating the team"
+                }
+            };
+        }
+
+        if !teamExists {
+            return <http:BadRequest>{
+                body: {
+                    message: string `Team with ID ${teamId} not found`
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        error|boolean updateResult = database:updateBusinessUnitTeam({...payload, updatedBy: workEmail}, buId, teamId);
+        if updateResult is error {
+            log:printError("Error while updating business_unit_team", updateResult, buId = buId, teamId = teamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the business unit team mapping"
+                }
+            };
+        }
+
+        if !updateResult {
+            log:printError(string `No mapping found for businessUnitId ${buId} and teamId ${teamId} to update`);
+            return <http:BadRequest>{
+                body: {
+                    message: string `Unknown error while updating BusinessUnit Team`
                 }
             };
         }
 
         return <http:Ok>{
             body: {
-                message: "Successfully updated the team"
+                message: string `Successfully updated the business unit team mapping`
             }
         };
 
@@ -1348,22 +1384,58 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
-        if updateResult is error {
-            log:printError("Error while updating team_sub_team : ", updateResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
+        boolean|error mappingExists = database:businessUnitTeamMappingExists(businessUnitTeamId);
+        if mappingExists is error {
+            log:printError("Error while validating business unit team mapping", mappingExists, businessUnitTeamId = businessUnitTeamId);
             return <http:InternalServerError>{
                 body: {
-                    message: "Error while updating the unit"
+                    message: "Error while validating the business unit team mapping"
                 }
             };
         }
 
-        if updateResult == false {
-            log:printError(string `No sub team is found with businessUnitTeamId ${businessUnitTeamId} and subTeamId = ${subTeamId} to update!`);
+        if !mappingExists {
             return <http:BadRequest>{
                 body: {
-                    message: "No sub team found to update"
+                    message: string `Business unit team mapping with ID ${businessUnitTeamId} not found`
+                }
+            };
+        }
+
+        boolean|error subTeamExists = database:subTeamExists(subTeamId);
+        if subTeamExists is error {
+            log:printError("Error while validating sub team", subTeamExists, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while validating the sub team"
+                }
+            };
+        }
+
+        if !subTeamExists {
+            return <http:BadRequest>{
+                body: {
+                    message: string `Sub team with ID ${subTeamId} not found`
+                }
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
+        if updateResult is error {
+            log:printError("Error while updating team_sub_team", updateResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
+            return <http:InternalServerError>{
+                body: {
+                    message: "Error while updating the team sub team mapping"
+                }
+            };
+        }
+
+        if !updateResult {
+            log:printError(string `No mapping found for businessUnitTeamId ${businessUnitTeamId} and subTeamId ${subTeamId} to update`);
+            return <http:BadRequest>{
+                body: {
+                    message: string `Unknown error while updating BusinessUnit Team SubTeam`
                 }
             };
         }
@@ -1392,30 +1464,52 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
-        if updateResult is error {
-            log:printError("Error while updating sub_team_unit : ", updateResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
+        boolean|error mappingExists = database:businessUnitTeamSubTeamMappingExists(businessUnitTeamSubTeamId);
+        if mappingExists is error {
+            log:printError("Error while validating business unit team sub team mapping", mappingExists, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId);
             return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the unit"
-                }
+                body: {message: "Error while validating the business unit team sub team mapping"}
             };
         }
 
-        if updateResult == false {
-            log:printError(string `No unit is found with businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId = ${unitId} to update!`);
+        if !mappingExists {
             return <http:BadRequest>{
-                body: {
-                    message: "No unit found to update"
-                }
+                body: {message: string `Business unit team sub team mapping with ID ${businessUnitTeamSubTeamId} not found`}
+            };
+        }
+
+        boolean|error unitExists = database:unitExists(unitId);
+        if unitExists is error {
+            log:printError("Error while validating unit", unitExists, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {message: "Error while validating the unit"}
+            };
+        }
+
+        if !unitExists {
+            return <http:BadRequest>{
+                body: {message: string `Unit with ID ${unitId} not found`}
+            };
+        }
+
+        string workEmail = validatedUserInfo.email;
+        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
+        if updateResult is error {
+            log:printError("Error while updating sub_team_unit", updateResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
+            return <http:InternalServerError>{
+                body: {message: "Error while updating the sub team unit mapping"}
+            };
+        }
+
+        if !updateResult {
+            log:printError(string `No mapping found for businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId} to update`);
+            return <http:BadRequest>{
+                body: {message: string `No mapping found between sub team ${businessUnitTeamSubTeamId} and unit ${unitId}`}
             };
         }
 
         return <http:Ok>{
-            body: {
-                message: "Successfully updated the unit"
-            }
+            body: {message: "Successfully updated the unit"}
         };
     }
 
