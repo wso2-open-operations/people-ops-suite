@@ -34,6 +34,12 @@ export const SnackMessage = {
   warning: {},
 };
 
+export const WSO2_LOGO_LIGHT =
+  "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png";
+
+export const WSO2_LOGO_DARK =
+  "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png";
+
 export const APP_DESC = " Menu App";
 
 export const redirectUrl = "menu-app-redirect-url";
