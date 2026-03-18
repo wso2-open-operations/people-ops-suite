@@ -136,11 +136,12 @@ export const createJobInfoValidationSchema = (
     agreementEndDate: Yup.string()
       .transform((value) => (value === "" ? null : value))
       .nullable(),
-    managerEmail: Yup.string().required("Manager email is required"),
+    managerEmail: Yup.string().required("Lead email is required"),
     additionalManagerEmail: Yup.array()
       .of(Yup.string().email("Invalid email format"))
       .nullable(),
     employeeId: Yup.string()
+      .trim()
       .transform((value) => (value === "" ? null : value))
       .nullable()
       .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
@@ -196,8 +197,11 @@ const ContinuousServiceTooltip = React.memo(
           ? dayjs(record.startDate).format("YYYY-MM-DD")
           : null,
       },
-      { label: "Manager Email", value: record.managerEmail },
-      { label: "Additional Managers", value: record.additionalManagerEmails },
+      { label: "Lead Email", value: record.managerEmail },
+      {
+        label: "Additional Lead Emails",
+        value: record.additionalManagerEmails,
+      },
       { label: "Business Unit", value: record.businessUnit },
       { label: "Team", value: record.team },
       ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
@@ -485,6 +489,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
+        setFieldValue("employeeId", "");
         const computed = computeAgreementEndDate(values.startDate ?? null, 6);
         if (computed) setFieldValue("agreementEndDate", computed);
       } else {
@@ -1306,7 +1311,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       <Box>
         <SectionHeader
           icon={SECTION_ICONS.supervisor}
-          title="Manager & Reports"
+          title="Lead & Reports"
           headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
@@ -1316,8 +1321,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               select
               fullWidth
               required
-              label="Manager Email"
-              name="managerEmail"
+              label="Lead Email"
+              name="leadEmail"
               value={values.managerEmail || ""}
               onChange={(e) => setFieldValue("managerEmail", e.target.value)}
               onBlur={handleBlur}
@@ -1346,8 +1351,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             <TextField
               select
               fullWidth
-              label="Additional Manager Email"
-              name="additionalManagerEmail"
+              label="Additional Lead Emails"
+              name="additionalLeadEmail"
               value={values.additionalManagerEmail || []}
               onChange={(e) => {
                 const value = e.target.value;
@@ -1418,8 +1423,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : values.managerEmail
-                      ? "No other managers available"
-                      : "Select primary manager first"}
+                      ? "No other leads available"
+                      : "Select primary lead first"}
                 </MenuItem>
               )}
             </TextField>

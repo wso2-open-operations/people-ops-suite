@@ -763,22 +763,37 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
 # + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
 # + employmentTypes - The employment type names that share this sequence
 # + return - Query to lock the sequence and return the last numeric ID
-isolated function getAndLockLastNumericIdQuery(string prefix, string[] employmentTypes)
-    returns sql:ParameterizedQuery =>
-    `SELECT
-        COALESCE(
-            MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
-            0
-        ) AS lastNumericId
-    FROM employee e
-    JOIN employment_type et ON et.id = e.employment_type_id
-    WHERE
-        e.employee_id LIKE ${prefix + "%"}
-        AND e.employee_id NOT LIKE ${prefix + "%_%-%"}
-        AND UPPER(et.name) IN (${employmentTypes})
-    ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
-    LIMIT 1
-    FOR UPDATE`;
+isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, string[] employmentTypes)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery inClause = ``;
+    foreach int i in 0 ..< employmentTypes.length() {
+        if i == 0 {
+            inClause = sql:queryConcat(inClause, `${employmentTypes[i]}`);
+        } else {
+            inClause = sql:queryConcat(inClause, `, `, `${employmentTypes[i]}`);
+        }
+    }
+
+    return sql:queryConcat(
+        `SELECT
+            COALESCE(
+                MAX(CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED)),
+                0
+            ) AS lastNumericId
+        FROM employee e
+        JOIN employment_type et ON et.id = e.employment_type_id
+        WHERE
+            e.employee_id LIKE ${prefix + "%"}
+            AND e.employee_id NOT LIKE ${prefix + "_%-%"}
+            AND UPPER(et.name) IN (`,
+        inClause,
+        `)
+        ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
+        LIMIT 1
+        FOR UPDATE`
+    );
+}
 
 # Add employee query.
 #

@@ -297,19 +297,19 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
     match ctx.employmentType {
         EMP_TYPE_PERMANENT => {
             record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
-                getAndLockLastNumericIdQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT])
+                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT, EMP_TYPE_INTERNSHIP])
             );
             return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         EMP_TYPE_INTERNSHIP => {
             record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
-                getAndLockLastNumericIdQuery(ctx.companyPrefix, [EMP_TYPE_INTERNSHIP])
+                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT, EMP_TYPE_INTERNSHIP])
             );
             return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         EMP_TYPE_CONSULTANCY|EMP_TYPE_ADVISORY_CONSULTANCY|EMP_TYPE_PART_TIME_CONSULTANCY => {
             record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
-                getAndLockLastNumericIdQuery(CONSULTANCY_ID_PREFIX, [
+                getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
                         EMP_TYPE_CONSULTANCY,
                         EMP_TYPE_ADVISORY_CONSULTANCY,
                         EMP_TYPE_PART_TIME_CONSULTANCY
