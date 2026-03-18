@@ -99,6 +99,12 @@ public type EmployeeIdContext record {|
    string employmentType;
 |};
 
+# Result record for the last numeric suffix query used in employee ID generation.
+public type EmployeeIdSequence record {|
+   # Last numeric ID used for the given prefix and employment type sequence
+   decimal lastNumericId;
+|};
+
 # TODO: Add structured types for org structure fields and company details
 # Employee information.
 public type Employee record {|

@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/regex;
+import ballerina/lang.regexp;
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -296,20 +296,14 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
     );
 
     match ctx.employmentType {
-        EMP_TYPE_PERMANENT => {
-            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
-                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT, EMP_TYPE_INTERNSHIP])
-            );
-            return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
-        }
-        EMP_TYPE_INTERNSHIP => {
-            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
+        EMP_TYPE_PERMANENT|EMP_TYPE_INTERNSHIP => {
+            EmployeeIdSequence row = check databaseClient->queryRow(
                 getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT, EMP_TYPE_INTERNSHIP])
             );
             return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         EMP_TYPE_CONSULTANCY|EMP_TYPE_ADVISORY_CONSULTANCY|EMP_TYPE_PART_TIME_CONSULTANCY => {
-            record {|decimal lastNumericId;|} row = check databaseClient->queryRow(
+            EmployeeIdSequence row = check databaseClient->queryRow(
                 getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
                         EMP_TYPE_CONSULTANCY,
                         EMP_TYPE_ADVISORY_CONSULTANCY,
@@ -324,9 +318,9 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
                 return error("Employee ID must be provided manually for fixed-term employment type");
             }
 
-            boolean matchesCompanyPattern = regex:matches(manualId, ctx.companyPrefix + "[0-9]+");
-            boolean matchesConsultancyPattern = regex:matches(manualId, CONSULTANCY_ID_PREFIX + "[0-9]+");
-            if matchesCompanyPattern || matchesConsultancyPattern {
+            regexp:RegExp companyPattern = check regexp:fromString(ctx.companyPrefix + "[0-9]+");
+            regexp:RegExp consultancyPattern = check regexp:fromString(CONSULTANCY_ID_PREFIX + "[0-9]+");
+            if manualId.matches(companyPattern) || manualId.matches(consultancyPattern) {
                 return error(string `Employee ID '${manualId}' is reserved for auto-generation and cannot be assigned manually`);
             }
 
