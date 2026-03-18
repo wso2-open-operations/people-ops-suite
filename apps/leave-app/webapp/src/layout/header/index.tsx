@@ -65,12 +65,6 @@ const Header = ({ sidebarOpen }: { sidebarOpen: boolean }) => {
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            perspective: "600px",
-            "@keyframes flipIn": {
-              "0%": { transform: "rotateY(90deg)", opacity: 0 },
-              "100%": { transform: "rotateY(0deg)", opacity: 1 },
-            },
-            animation: "flipIn 0.3s ease-out",
           }}
         >
           <img
