@@ -254,10 +254,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                     if rangeStart is time:Utc && leaveEnd is time:Utc {
                         database:Day[] weekdays = getWeekdaysFromRange(rangeStart, leaveEnd);
                         database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
-                            firstLeave.location ?: "", startDate, firstLeave.endDate);
-                        if holidays is database:Holiday[] {
-                            weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                                firstLeave.location ?: "", startDate, firstLeave.endDate);
+
+                        if holidays is error {
+                            string errMsg = "Error occurred while fetching holidays for calendar event";
+                            log:printError(errMsg, holidays);
+                            return <http:InternalServerError>{
+                                body: {
+                                    message: errMsg
+                                }
+                            };
                         }
+                        weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+
                         leaves[0].numberOfDays = <float>weekdays.length();
                         leaves[0].startDate = startDate;
                     }
@@ -276,10 +285,19 @@ service http:InterceptableService / on new http:Listener(9090) {
                     if leaveStart is time:Utc && rangeEnd is time:Utc {
                         database:Day[] weekdays = getWeekdaysFromRange(leaveStart, rangeEnd);
                         database:Holiday[]|error holidays = calendar_events:getHolidaysForCountry(
-                            lastLeave.location ?: "", lastLeave.startDate, endDate);
-                        if holidays is database:Holiday[] {
-                            weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+                                lastLeave.location ?: "", lastLeave.startDate, endDate);
+
+                        if holidays is error {
+                            string errMsg = "Error occurred while fetching holidays for calendar event";
+                            log:printError(errMsg, holidays);
+                            return <http:InternalServerError>{
+                                body: {
+                                    message: errMsg
+                                }
+                            };
                         }
+                        weekdays = getWorkingDaysAfterHolidays(weekdays, holidays);
+
                         leaves[lastIdx].numberOfDays = <float>weekdays.length();
                         leaves[lastIdx].endDate = endDate;
                     }
