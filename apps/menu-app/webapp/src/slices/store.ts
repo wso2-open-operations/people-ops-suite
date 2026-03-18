@@ -23,6 +23,7 @@ import { menuApi } from "@services/menu.api";
 import { userApi } from "@services/user.api";
 import authReducer from "@slices/authSlice/auth";
 import commonReducer from "@slices/commonSlice/common";
+import userReducer from "@slices/userSlice/user";
 
 enableMapSet();
 
@@ -30,6 +31,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     common: commonReducer,
+    user: userReducer,
 
     // RTK Query API reducers
     [menuApi.reducerPath]: menuApi.reducer,

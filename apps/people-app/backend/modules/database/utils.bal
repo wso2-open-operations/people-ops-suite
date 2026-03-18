@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Build the database select query with dynamic filter attributes.
@@ -148,4 +149,140 @@ public isolated function checkAffectedCount(int? affectedRowCount) returns error
         return error(ERROR_NO_ROWS_UPDATED);
     }
     return;
+}
+
+# Escape a value for CSV (RFC 4180).
+#
+# + value - The string value to escape
+# + return - The escaped string value
+isolated function csvEscape(string? value) returns string {
+    string v = value ?: "";
+    if v.includes(",") || v.includes("\"") || v.includes("\n") || v.includes("\r") {
+        return "\"" + re`"`.replaceAll(v, "\"\"") + "\"";
+    }
+    return v;
+}
+
+# Build a CSV string from a list of employees.
+#
+# + employees - List of employees
+# + return - CSV string
+public isolated function buildEmployeeCsv(Employee[] employees) returns string {
+    string[] headers = [
+        "Employee ID",
+        "First Name",
+        "Last Name",
+        "Work Email",
+        "EPF",
+        "Company",
+        "Work Location",
+        "Start Date",
+        "Lead's Email",
+        "Additional Leads' Emails",
+        "Employee Status",
+        "Employment Type",
+        "Designation",
+        "Business Unit",
+        "Team",
+        "Sub Team",
+        "Unit",
+        "Office",
+        "Secondary Job Title",
+        "Probation End Date",
+        "Agreement End Date"
+    ];
+    string[] lines = [string:'join(",", ...headers)];
+    foreach Employee e in employees {
+        string[] row = [
+            csvEscape(e.employeeId),
+            csvEscape(e.firstName),
+            csvEscape(e.lastName),
+            csvEscape(e.workEmail),
+            csvEscape(e.epf),
+            csvEscape(e.company),
+            csvEscape(e.workLocation),
+            csvEscape(e.startDate),
+            csvEscape(e.managerEmail),
+            csvEscape(e.additionalManagerEmails),
+            csvEscape(e.employeeStatus),
+            csvEscape(e.employmentType),
+            csvEscape(e.designation),
+            csvEscape(e.businessUnit),
+            csvEscape(e.team),
+            csvEscape(e.subTeam),
+            csvEscape(e.unit),
+            csvEscape(e.office),
+            csvEscape(e.secondaryJobTitle),
+            csvEscape(e.probationEndDate),
+            csvEscape(e.agreementEndDate)
+        ];
+        lines.push(string:'join(",", ...row));
+    }
+    return string:'join("\n", ...lines);
+}
+
+# Build a CSV string from a list of resigned employees.
+#
+# + employees - List of resigned employees
+# + return - CSV string
+public isolated function buildResignationCsv(Employee[] employees) returns string {
+    string[] headers = [
+        "Employee ID",
+        "First Name",
+        "Last Name",
+        "Work Email",
+        "EPF",
+        "Company",
+        "Work Location",
+        "Start Date",
+        "Lead's Email",
+        "Additional Leads' Emails",
+        "Employee Status",
+        "Employment Type",
+        "Designation",
+        "Business Unit",
+        "Team",
+        "Sub Team",
+        "Unit",
+        "Office",
+        "Secondary Job Title",
+        "Probation End Date",
+        "Agreement End Date",
+        "Resignation Date",
+        "Final Day in Office",
+        "Final Day of Employment",
+        "Resignation Reason"
+    ];
+    string[] lines = [string:'join(",", ...headers)];
+    foreach Employee e in employees {
+        string[] row = [
+            csvEscape(e.employeeId),
+            csvEscape(e.firstName),
+            csvEscape(e.lastName),
+            csvEscape(e.workEmail),
+            csvEscape(e.epf),
+            csvEscape(e.company),
+            csvEscape(e.workLocation),
+            csvEscape(e.startDate),
+            csvEscape(e.managerEmail),
+            csvEscape(e.additionalManagerEmails),
+            csvEscape(e.employeeStatus),
+            csvEscape(e.employmentType),
+            csvEscape(e.designation),
+            csvEscape(e.businessUnit),
+            csvEscape(e.team),
+            csvEscape(e.subTeam),
+            csvEscape(e.unit),
+            csvEscape(e.office),
+            csvEscape(e.secondaryJobTitle),
+            csvEscape(e.probationEndDate),
+            csvEscape(e.agreementEndDate),
+            csvEscape(e.resignationDate),
+            csvEscape(e.finalDayInOffice),
+            csvEscape(e.finalDayOfEmployment),
+            csvEscape(e.resignationReason)
+        ];
+        lines.push(string:'join(",", ...row));
+    }
+    return string:'join("\n", ...lines);
 }

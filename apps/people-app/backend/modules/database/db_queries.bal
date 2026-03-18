@@ -165,6 +165,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.unit_id AS unitId,
             c.name AS company,
             e.company_id AS companyId,
+            r.date                    AS resignationDate,
+            r.final_day_in_office     AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason                  AS resignationReason,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -195,6 +199,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
+            LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
     sql:ParameterizedQuery[] filters = [];
