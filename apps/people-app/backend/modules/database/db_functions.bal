@@ -604,3 +604,69 @@ public isolated function subTeamUnitHasChildren(int subTeamMappingId, int unitId
 
     return result.exists_flag == 1;
 }
+
+# Check whether a BusinessUnit exists by ID.
+#
+# + buId - Business unit ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitExists(int buId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitExistsQuery(buId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a Team exists by ID.
+#
+# + teamId - Team ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function teamExists(int teamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(teamExistsQuery(teamId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a SubTeam exists by ID.
+#
+# + subTeamId - Sub-team ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function subTeamExists(int subTeamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(subTeamExistsQuery(subTeamId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a unit exists by ID.
+#
+# + unitId - Unit ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function unitExists(int unitId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(unitExistsQuery(unitId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a BusinessUnit-Team mapping exists by ID.
+#
+# + id - business_unit_team mapping ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitTeamMappingExists(int id) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamMappingExistsQuery(id));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a BusinessUnit-Team-SubTeam mapping exists by ID.
+#
+# + id - business_unit_team_sub_team mapping ID
+# + return - True if exists, false otherwise (or error on failure)
+public isolated function businessUnitTeamSubTeamMappingExists(int id) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamSubTeamMappingExistsQuery(id));
+
+    return result.exists_flag == 1;
+}
