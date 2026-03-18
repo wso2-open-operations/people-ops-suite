@@ -80,12 +80,16 @@ const Sidebar = (props: SidebarProps) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
+  const [expandedPaths, setExpandedPaths] = useState<string[]>(() =>
+    getActiveRouteDetails(props.roles)
+      .filter((r) => !r.hideFromSidebar && r.children && r.children.length > 0)
+      .map((r) => r.path),
+  );
   const SIDEBAR_OPEN_KEY = "sidebar-open";
 
   const [isOpen, setIsOpen] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_OPEN_KEY);
-    return stored === "true";
+    return stored === null ? true : stored === "true";
   });
 
   const handleExpandCollapse = (item: RouteDetail) => {

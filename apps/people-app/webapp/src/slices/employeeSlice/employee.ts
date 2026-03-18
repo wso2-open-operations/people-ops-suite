@@ -24,7 +24,7 @@ import {
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { APIService } from "@utils/apiService";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 
 export interface Employee {
   employeeId: string;
@@ -269,6 +269,7 @@ export const fetchEmployee = createAsyncThunk(
       );
       return response.data as Employee;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -296,6 +297,7 @@ export const fetchEmployeesBasicInfo = createAsyncThunk(
       );
       return resp.data as EmployeeBasicInfo[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employees' basic information"
@@ -322,6 +324,7 @@ export const fetchManagers = createAsyncThunk<Manager[]>(
       );
       return resp.data as Manager[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching manager emails"
@@ -354,6 +357,7 @@ export const fetchFilteredEmployees = createAsyncThunk<
       );
       return response.data as FilteredEmployeesResponse;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployees
@@ -389,6 +393,7 @@ export const createEmployee = createAsyncThunk(
       );
       return employeeId;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.addEmployee
@@ -426,6 +431,7 @@ export const updateEmployeeJobInfo = createAsyncThunk(
 
       return;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Failed to update employee job information"
@@ -455,6 +461,7 @@ export const downloadEmployeeReportByStatus = createAsyncThunk(
       );
       return response.data as string;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.data?.message ?? "Failed to download report";
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
@@ -474,6 +481,7 @@ export const fetchContinuousServiceRecord = createAsyncThunk(
       );
       return response.data as ContinuousServiceRecordInfo[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const status = error.response?.status;
       const errorMessage =
         status === HttpStatusCode.InternalServerError
@@ -503,6 +511,7 @@ export const validateEpf = createAsyncThunk(
       );
       return (resp?.data?.epfExists ?? false) as boolean;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const status = error.response?.status;
       const errorMessage =
         status === HttpStatusCode.InternalServerError

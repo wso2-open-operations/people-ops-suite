@@ -47,10 +47,14 @@ import {
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
-import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
+import {
+  fetchEmployee,
+  resetEmployee,
+} from "@root/src/slices/employeeSlice/employee";
 import {
   EmployeePersonalInfo,
   fetchEmployeePersonalInfo,
+  resetPersonalInfo,
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import {
@@ -290,6 +294,8 @@ export default function Me({
   useEffect(() => {
     if (!targetEmployeeId) return;
 
+    dispatch(resetEmployee());
+    dispatch(resetPersonalInfo());
     dispatch(fetchEmployee(targetEmployeeId));
     dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
   }, [targetEmployeeId, dispatch]);
@@ -450,62 +456,77 @@ export default function Me({
             alignItems="center"
             sx={{ minWidth: 0, flex: 1 }}
           >
-            <Avatar
-              src={employee?.employeeThumbnail ?? undefined}
-              sx={(theme) => avatarSx(theme)}
-            >
-              {employee?.firstName?.[0]?.toUpperCase() ?? "M"}
-            </Avatar>
+            {employeeState === "loading" ? (
+              <>
+                <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Skeleton width={220} height={44} />
+                  <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+                    <Skeleton width={90} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={150} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={200} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={130} height={32} sx={{ borderRadius: 4 }} />
+                  </Stack>
+                </Box>
+              </>
+            ) : (
+              <>
+                <Avatar
+                  src={employee?.employeeThumbnail ?? undefined}
+                  sx={(theme) => avatarSx(theme)}
+                >
+                  {employee?.firstName?.[0]?.toUpperCase() ?? ""}
+                </Avatar>
 
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="h4" fontWeight={850} noWrap>
-                {employee
-                  ? `${employee.firstName} ${employee.lastName}`
-                  : "My Profile"}
-              </Typography>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="h4" fontWeight={850} noWrap>
+                    {employee ? `${employee.firstName} ${employee.lastName}` : ""}
+                  </Typography>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
-              >
-                {employee?.employeeId && (
-                  <Chip
-                    size="medium"
-                    icon={<BadgeOutlined />}
-                    label={`ID: ${employee.employeeId}`}
-                    sx={(theme) => chipSx(theme)}
-                  />
-                )}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
+                  >
+                    {employee?.employeeId && (
+                      <Chip
+                        size="medium"
+                        icon={<BadgeOutlined />}
+                        label={`ID: ${employee.employeeId}`}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-                {employee?.designation && (
-                  <Chip
-                    size="medium"
-                    icon={<WorkOutline />}
-                    label={designationText}
-                    sx={(theme) => chipSx(theme)}
-                  />
-                )}
+                    {employee?.designation && (
+                      <Chip
+                        size="medium"
+                        icon={<WorkOutline />}
+                        label={designationText}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-                {employee?.workEmail && (
-                  <Chip
-                    size="medium"
-                    icon={<EmailOutlined />}
-                    label={employee.workEmail}
-                    sx={(theme) => chipSx(theme)}
-                  />
-                )}
+                    {employee?.workEmail && (
+                      <Chip
+                        size="medium"
+                        icon={<EmailOutlined />}
+                        label={employee.workEmail}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-                {employee?.businessUnit && (
-                  <Chip
-                    size="medium"
-                    icon={<BusinessOutlined />}
-                    label={employee.businessUnit}
-                    sx={(theme) => chipSx(theme)}
-                  />
-                )}
-              </Stack>
-            </Box>
+                    {employee?.businessUnit && (
+                      <Chip
+                        size="medium"
+                        icon={<BusinessOutlined />}
+                        label={employee.businessUnit}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
+                  </Stack>
+                </Box>
+              </>
+            )}
           </Stack>
           {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
             <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>

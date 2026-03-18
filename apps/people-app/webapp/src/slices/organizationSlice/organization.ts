@@ -18,7 +18,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { APIService } from "@utils/apiService";
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 export interface BusinessUnit {
@@ -128,6 +128,7 @@ export const fetchBusinessUnits = createAsyncThunk(
       }
       return resp.data as BusinessUnit[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching business units"
@@ -159,6 +160,7 @@ export const fetchTeams = createAsyncThunk(
       }
       return resp.data as Team[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching teams"
@@ -190,6 +192,7 @@ export const fetchSubTeams = createAsyncThunk(
       }
       return resp.data as SubTeam[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching sub teams"
@@ -224,6 +227,7 @@ export const fetchUnits = createAsyncThunk(
       }
       return resp.data as Unit[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching units"
@@ -256,6 +260,7 @@ export const fetchCareerFunctions = createAsyncThunk(
       }
       return resp.data as CareerFunction[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching career functions"
@@ -289,6 +294,7 @@ export const fetchDesignations = createAsyncThunk(
       }
       return resp.data as Designation[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching designations"
@@ -346,6 +352,7 @@ export const fetchCompanies = createAsyncThunk(
 
       return companies;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching companies"
@@ -388,6 +395,7 @@ export const fetchOffices = createAsyncThunk(
       }));
       return offices;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching offices"
@@ -420,6 +428,7 @@ export const fetchEmploymentTypes = createAsyncThunk(
       }
       return resp.data as EmploymentType[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching employment types"
