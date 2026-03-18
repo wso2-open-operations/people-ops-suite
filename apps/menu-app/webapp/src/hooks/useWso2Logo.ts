@@ -15,9 +15,10 @@
 // under the License.
 import { useTheme } from "@mui/material";
 
-import { WSO2_LOGO_DARK, WSO2_LOGO_LIGHT } from "@config/constant";
+import wso2LogoBlack from "@assets/images/WSO2-Logo-Black.png";
+import wso2LogoWhite from "@assets/images/WSO2-Logo-White.png";
 
 export const useWso2Logo = (): string => {
   const theme = useTheme();
-  return theme.palette.mode === "dark" ? WSO2_LOGO_DARK : WSO2_LOGO_LIGHT;
+  return theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack;
 };
