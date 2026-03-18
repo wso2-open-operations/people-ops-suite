@@ -721,8 +721,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         error? updateResult = database:updateBusinessUnit(
             {
-                name: payload.name,
-                headEmail: payload.headEmail,
+                ...payload,
                 updatedBy: workEmail
             }, buId);
         if updateResult is error {
@@ -768,8 +767,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateTeam({
-            name: payload.name,
-            headEmail: payload.headEmail,
+            ...payload,
             updatedBy: workEmail
         }, teamId);
         if updateResult is error {
@@ -815,8 +813,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateSubTeam({
-            name: payload.name,
-            headEmail: payload.headEmail,
+            ...payload,
             updatedBy: workEmail
         }, subTeamId);
         if updateResult is error {
@@ -862,8 +859,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateUnit({
-            name: payload.name,
-            headEmail: payload.headEmail,
+            ...payload,
             updatedBy: workEmail
         }, unitId);
         if updateResult is error {
@@ -900,10 +896,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateBusinessUnitTeam({
-            functionalLeadEmail: payload.functionalLeadEmail,
-            updatedBy: workEmail
-        }, buId, teamId);
+        error|boolean updateResult = database:updateBusinessUnitTeam({...payload,updatedBy: workEmail}, buId, teamId);
         if updateResult is error {
             log:printError("Error while updating business_unit_team : ", updateResult, buId = buId, teamId = teamId);
             return <http:InternalServerError>{
@@ -948,10 +941,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateTeamSubTeam({
-            functionalLeadEmail: payload.functionalLeadEmail,
-            updatedBy: workEmail
-        }, teamId, subTeamId);
+        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, teamId, subTeamId);
         if updateResult is error {
             log:printError("Error while updating team_sub_team : ", updateResult, teamId = teamId, subTeamId = subTeamId);
             return <http:InternalServerError>{
@@ -995,10 +985,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateSubTeamUnit({
-            functionalLeadEmail: payload.functionalLeadEmail,
-            updatedBy: workEmail
-        }, subTeamId, unitId);
+        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, subTeamId, unitId);
         if updateResult is error {
             log:printError("Error while updating sub_team_unit : ", updateResult, subTeamId = subTeamId, unitId = unitId);
             return <http:InternalServerError>{
