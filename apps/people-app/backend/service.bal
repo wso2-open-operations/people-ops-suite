@@ -1308,7 +1308,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         return orgStructure;
     }
 
-    # Add new business unit.
+    # Add new BusinessUnit.
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
@@ -1360,7 +1360,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a new team, and optionally map it to a BusinessUnit-Team.
+    # Create a new Team, and optionally map it to a BusinessUnit-Team.
     #
     # + payload - Team details & businessUnit ID and functionalLeadEmail to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
@@ -1512,7 +1512,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-    # Create a new unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
+    # Create a new Unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
     #
     # + payload - Unit details & businessUnit-team-subTeam ID and functionalLeadEmail to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
