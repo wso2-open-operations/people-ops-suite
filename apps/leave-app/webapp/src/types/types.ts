@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import type { RouteObject } from "react-router-dom";
 
 export type NavState = {
@@ -213,6 +212,13 @@ export interface LeaveHistoryResponse {
   leaves: SingleLeaveHistory[];
 }
 
+// Employee status enum (mirrors backend EmployeeStatus).
+export enum EmployeeStatus {
+  ACTIVE = "Active",
+  MARKED_LEAVER = "Marked leaver",
+  LEFT = "Left",
+}
+
 // Query parameters for leave history request.
 export interface LeaveHistoryQueryParam {
   email?: string;
@@ -224,6 +230,7 @@ export interface LeaveHistoryQueryParam {
   limit?: number;
   offset?: number;
   orderBy?: OrderBy;
+  employeeStatuses?: EmployeeStatus[];
 }
 
 // Lead report request type.

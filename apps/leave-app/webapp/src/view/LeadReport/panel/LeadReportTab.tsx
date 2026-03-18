@@ -26,7 +26,7 @@ import { formatDateForApi, getLeaveHistory } from "@root/src/services/leaveServi
 import { Privileges } from "@root/src/slices/authSlice/auth";
 import { useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { SingleLeaveHistory, Status } from "@root/src/types/types";
+import { EmployeeStatus, SingleLeaveHistory, Status } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
@@ -37,7 +37,7 @@ export default function LeadReportTab() {
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string>("");
-  const [activeEmployeesOnly, setActiveEmployeesOnly] = useState(false);
+  const [employeeStatuses, setEmployeeStatuses] = useState<EmployeeStatus[]>([EmployeeStatus.ACTIVE, EmployeeStatus.MARKED_LEAVER]);
   const [records, setRecords] = useState<SingleLeaveHistory[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -53,6 +53,7 @@ export default function LeadReportTab() {
         ...(showAllEmployees ? {} : { approverEmail: userInfo?.workEmail }),
         ...(selectedEmail ? { email: selectedEmail } : {}),
         statuses: [Status.APPROVED],
+        ...(employeeStatuses.length > 0 ? { employeeStatuses } : {}),
       });
       setRecords(response.leaves);
     } catch {
@@ -73,7 +74,7 @@ export default function LeadReportTab() {
       return;
     }
     handleFetchReport();
-  }, [showAllEmployees, selectedEmail, activeEmployeesOnly]);
+  }, [showAllEmployees, selectedEmail, employeeStatuses]);
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -90,8 +91,8 @@ export default function LeadReportTab() {
         onToggleChange={setShowAllEmployees}
         selectedEmail={selectedEmail}
         onEmailChange={setSelectedEmail}
-        activeEmployeesOnly={activeEmployeesOnly}
-        onActiveEmployeesChange={setActiveEmployeesOnly}
+        employeeStatuses={employeeStatuses}
+        onEmployeeStatusesChange={setEmployeeStatuses}
       />
       <LeadReportTable rows={records} loading={loading} />
     </Stack>

@@ -191,7 +191,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - List of leaves
     resource function get leaves(http:RequestContext ctx, string? email = (), string? startDate = (),
             string? endDate = (), string? approverEmail = (), database:LeaveType[]? leaveCategory = (),
-            Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC
+            Status[] statuses = [], int? 'limit = (), int? offset = 0, database:OrderBy? orderBy = database:ASC,
+            EmployeeStatus[]? employeeStatuses = ()
     ) returns FetchedLeavesRecord|http:Forbidden|http:InternalServerError|http:BadRequest {
 
         if email is string && !email.matches(WSO2_EMAIL_PATTERN) {
@@ -229,13 +230,37 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            string[]? emails = (email is string) ? [email] : ();
+            string[]? emails;
+            string? effectiveApproverEmail = approverEmail;
+            EmployeeStatus[]? effectiveStatuses = employeeStatuses is EmployeeStatus[] && employeeStatuses.length() > 0
+                ? employeeStatuses
+                : ();
+
+            if effectiveStatuses is EmployeeStatus[] {
+                employee:Employee[]|error activeEmployees = employee:getEmployees({
+                                                                                      status: effectiveStatuses,
+                                                                                      leadEmail: approverEmail
+                                                                                  });
+                if activeEmployees is error {
+                    fail error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, activeEmployees);
+                }
+                string[] activeEmails = from employee:Employee emp in activeEmployees
+                    select emp.workEmail;
+                emails = email is string
+                    ? (from string e in activeEmails
+                        where e == email
+                        select e)
+                    : activeEmails;
+                effectiveApproverEmail = ();
+            } else {
+                emails = (email is string) ? [email] : ();
+            }
             database:Leave[]|error leaves = database:getLeaves({
                                                                    emails,
                                                                    statuses,
                                                                    startDate,
                                                                    endDate,
-                                                                   approverEmail,
+                                                                   approverEmail: effectiveApproverEmail,
                                                                    leaveTypes: leaveCategory,
                                                                    orderBy: orderBy
                                                                }, 'limit);

@@ -110,6 +110,7 @@ export const getLeaveHistory = async (
     orderBy,
     limit,
     offset,
+    employeeStatuses,
   } = params;
 
   // Build query parameters
@@ -146,6 +147,9 @@ export const getLeaveHistory = async (
   }
   if (offset !== undefined && offset !== null) {
     queryParts.push(`offset=${encodeURIComponent(String(offset))}`);
+  }
+  if (Array.isArray(employeeStatuses) && employeeStatuses.length > 0) {
+    employeeStatuses.forEach((s) => queryParts.push(`employeeStatuses=${encodeURIComponent(String(s))}`));
   }
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
