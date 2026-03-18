@@ -19,6 +19,8 @@ import Typography from "@mui/material/Typography";
 
 import React from "react";
 
+import Wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
+import Wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { RootState, useAppSelector } from "@slices/store";
@@ -59,17 +61,13 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "28px",
-            width: "auto",
+            height: "45px",
+            maxWidth: "100px",
             objectFit: "contain",
             cursor: "pointer",
           }}
           onClick={() => (window.location.href = "/")}
-          src={
-            theme.palette.mode === "dark"
-              ? "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
-              : "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
-          }
+          src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
         ></img>
 
         <Box

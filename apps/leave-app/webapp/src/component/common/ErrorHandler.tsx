@@ -16,6 +16,8 @@
 import { Box, Container, useTheme } from "@mui/material";
 
 import ErrorSvg from "@assets/images/error.svg";
+import Wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
+import Wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import StateWithImage from "@component/ui/StateWithImage";
 import { ErrorHandlerProps } from "@root/src/utils/types";
 
@@ -40,11 +42,7 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
             alt="logo"
             width="150"
             height="auto"
-            src={
-              theme.palette.mode === "dark"
-                ? "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
-                : "https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
-            }
+            src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
           />
           <StateWithImage
             message={props.message || "Something went wrong! Please try again later."}
