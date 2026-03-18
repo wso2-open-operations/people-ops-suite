@@ -22,51 +22,51 @@ import { useEffect, useRef, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { formatDateForApi, getLeaveHistory } from "@root/src/services/leaveService";
+import { formatDateForApi } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
-import { useAppSelector } from "@root/src/slices/store";
+import { fetchLeaveHistory, selectLeaves, selectLeaveState } from "@root/src/slices/leaveSlice/leave";
+import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { EmployeeStatus, SingleLeaveHistory, Status } from "@root/src/types/types";
+import { EmployeeStatus, State, Status } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
 
 export default function LeadReportTab() {
+  const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
+  const records = useAppSelector(selectLeaves);
+  const leaveState = useAppSelector(selectLeaveState);
+  const loading = leaveState === State.loading;
+
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string>("");
   const [employeeStatuses, setEmployeeStatuses] = useState<EmployeeStatus[]>([EmployeeStatus.ACTIVE, EmployeeStatus.MARKED_LEAVER]);
-  const [records, setRecords] = useState<SingleLeaveHistory[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const pendingFetch = useRef<{ abort: () => void } | null>(null);
 
   const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
-  const handleFetchReport = async () => {
+  const handleFetchReport = () => {
     if (!startDate || !endDate) return;
-    setLoading(true);
-    try {
-      const response = await getLeaveHistory({
-        startDate: formatDateForApi(startDate),
-        endDate: formatDateForApi(endDate),
-        ...(showAllEmployees ? {} : { approverEmail: userInfo?.workEmail }),
-        ...(selectedEmail ? { email: selectedEmail } : {}),
-        statuses: [Status.APPROVED],
-        ...(employeeStatuses.length > 0 ? { employeeStatuses } : {}),
-      });
-      setRecords(response.leaves);
-    } catch {
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
+    pendingFetch.current?.abort();
+    pendingFetch.current = dispatch(fetchLeaveHistory({
+      startDate: formatDateForApi(startDate),
+      endDate: formatDateForApi(endDate),
+      ...(showAllEmployees ? {} : { approverEmail: userInfo?.workEmail }),
+      ...(selectedEmail ? { email: selectedEmail } : {}),
+      statuses: [Status.APPROVED],
+      ...(employeeStatuses.length > 0 ? { employeeStatuses } : {}),
+    }));
   };
 
   useEffect(() => {
     if (isPeopleOpsTeam) setShowAllEmployees(true);
     else handleFetchReport();
   }, []);
+
   const firstRender = useRef(true);
   useEffect(() => {
     if (firstRender.current) {

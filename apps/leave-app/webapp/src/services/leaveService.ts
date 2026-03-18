@@ -98,6 +98,7 @@ export const cancelLeaveRequest = async (id: number) => {
  */
 export const getLeaveHistory = async (
   params: LeaveHistoryQueryParam,
+  signal?: AbortSignal,
 ): Promise<LeaveHistoryResponse> => {
   const apiInstance = APIService.getInstance();
   const {
@@ -156,6 +157,7 @@ export const getLeaveHistory = async (
 
   const response = await apiInstance.get<LeaveHistoryResponse>(
     `${AppConfig.serviceUrls.leaves}${queryString}`,
+    { signal },
   );
 
   return response.data;
