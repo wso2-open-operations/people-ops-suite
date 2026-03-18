@@ -1333,11 +1333,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update a Team-SubTeam mapping by IDs.
     #
-    # + teamId - ID of the Team
+    # + businessUnitTeamId - ID of the BusinessUnit-Team
     # + subTeamId - ID of the SubTeam
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/team/[int teamId]/sub\-team/[int subTeamId]
+    resource function patch organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
             (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -1349,9 +1349,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, teamId, subTeamId);
+        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
         if updateResult is error {
-            log:printError("Error while updating team_sub_team : ", updateResult, teamId = teamId, subTeamId = subTeamId);
+            log:printError("Error while updating team_sub_team : ", updateResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
             return <http:InternalServerError>{
                 body: {
                     message: "Error while updating the unit"
@@ -1360,7 +1360,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if updateResult == false {
-            log:printError(string `No sub team is found with teamId ${teamId} and subTeamId = ${subTeamId} to update!`);
+            log:printError(string `No sub team is found with businessUnitTeamId ${businessUnitTeamId} and subTeamId = ${subTeamId} to update!`);
             return <http:BadRequest>{
                 body: {
                     message: "No sub team found to update"
@@ -1377,11 +1377,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update a SubTeam-Unit mapping by IDs.
     #
-    # + subTeamId - ID of the SubTeam
+    # + businessUnitTeamSubTeamId - ID of the BusinessUnit-Team-SubTeam
     # + unitId - ID of the Unit
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/sub\-team/[int subTeamId]/unit/[int unitId]
+    resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
             (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
@@ -1393,9 +1393,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, subTeamId, unitId);
+        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
         if updateResult is error {
-            log:printError("Error while updating sub_team_unit : ", updateResult, subTeamId = subTeamId, unitId = unitId);
+            log:printError("Error while updating sub_team_unit : ", updateResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
             return <http:InternalServerError>{
                 body: {
                     message: "Error while updating the unit"
@@ -1404,7 +1404,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if updateResult == false {
-            log:printError(string `No unit is found with subTeamId ${subTeamId} and unitId = ${unitId} to update!`);
+            log:printError(string `No unit is found with businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId = ${unitId} to update!`);
             return <http:BadRequest>{
                 body: {
                     message: "No unit found to update"
