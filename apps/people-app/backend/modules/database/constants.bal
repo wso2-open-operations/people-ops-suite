@@ -18,4 +18,3 @@
 public const DEFAULT_LIMIT = 100;
 
 const ERROR_NO_ROWS_UPDATED = "No rows were updated";
-const ERROR_INVALID_UPDATE_PAYLOAD = "At least one field should be provided for update";
