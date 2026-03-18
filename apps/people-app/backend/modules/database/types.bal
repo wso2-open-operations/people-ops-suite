@@ -549,34 +549,6 @@ public type UpdateSubTeamUnitPayload record {|
     string updatedBy;
 |};
 
-# Payload for deleting a business unit.
-public type DeleteBusinessUnitPayload record {|
-    # Email of the user performing the deletion
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for deleting a business unit-team mapping.
-public type DeleteBusinessUnitTeamPayload record {|
-    # Email of the user performing the deletion
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for deleting a team-sub team mapping.
-public type DeleteTeamSubTeamPayload record {|
-    # Email of the user performing the deletion
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for deleting a sub team-unit mapping.
-public type DeleteSubTeamUnitPayload record {|
-    # Email of the user performing the deletion
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
 # Represents a head or leader of an organization unit.
 public type Head record {|
     # Display name of the head
