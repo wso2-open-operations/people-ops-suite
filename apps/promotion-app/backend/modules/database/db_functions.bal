@@ -151,12 +151,8 @@ public isolated function getPromotionCyclesByStatus(PromotionCyclesStatus[]? sta
 public isolated function isDuplicatePromotionRequest(
         string employeeEmail, int promotionCycleId) returns boolean|error {
 
-    int|sql:Error count = databaseClient->queryRow(getDuplicatePromotionRequestCountQuery(employeeEmail,
+    int count = check databaseClient->queryRow(getDuplicatePromotionRequestCountQuery(employeeEmail,
             promotionCycleId));
-
-    if count is error {
-        return count;
-    }
 
     return count > 0;
 }
