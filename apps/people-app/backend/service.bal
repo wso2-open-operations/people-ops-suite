@@ -1018,9 +1018,9 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                "Cannot delete business unit because it has child teams",
-                buId = buId,
-                invokerEmail = validatedUserInfo.email
+                    "Cannot delete business unit because it has child teams",
+                    buId = buId,
+                    invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
@@ -1085,10 +1085,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                "Cannot delete business unit-team mapping because it has child sub-teams",
-                buId = businessUnitId,
-                teamId = teamId,
-                invokerEmail = validatedUserInfo.email
+                    "Cannot delete business unit-team mapping because it has child sub-teams",
+                    buId = businessUnitId,
+                    teamId = teamId,
+                    invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
@@ -1153,10 +1153,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                "Cannot delete team-sub team mapping because it has child units",
-                teamId = teamId,
-                subTeamId = subTeamId,
-                invokerEmail = validatedUserInfo.email
+                    "Cannot delete team-sub team mapping because it has child units",
+                    teamId = teamId,
+                    subTeamId = subTeamId,
+                    invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
@@ -1221,10 +1221,10 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                "Cannot delete sub-team unit mapping because it has assigned employees",
-                subTeamId = subTeamId,
-                unitId = unitId,
-                invokerEmail = validatedUserInfo.email
+                    "Cannot delete sub-team unit mapping because it has assigned employees",
+                    subTeamId = subTeamId,
+                    unitId = unitId,
+                    invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
@@ -1263,10 +1263,10 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get organization details (full hierarchy with business units, teams, sub-teams, units).
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get organization(http:RequestContext ctx) 
+    resource function get organization(http:RequestContext ctx)
         returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
 
-       http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
+        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
             validateOrganizationRequest(ctx);
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
@@ -1292,16 +1292,15 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload) 
+    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload)
         returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
-        
+
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
             validateOrganizationRequest(ctx);
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
         }
-
 
         boolean|error nameUniqueness = database:validateBusinessUnitNameUniqueness(payload.name);
         if nameUniqueness is error {
@@ -1345,7 +1344,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Team details; include `orgNodeLinkInfo` to map to an existing business unit
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload) 
+    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1378,8 +1377,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addTeamWithMapping(
-                workEmail,
-                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
             );
 
             if result is error {
@@ -1421,7 +1420,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Sub-team details; include `orgNodeLinkInfo` with the `business_unit_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload) 
+    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1454,8 +1453,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addSubTeamWithMapping(
-                workEmail, 
-                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
             );
 
             if result is error {
@@ -1497,7 +1496,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Unit details; include `orgNodeLinkInfo` with the `business_unit_team_sub_team` ID to create the mapping
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload) 
+    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1530,8 +1529,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
         if orgNodeLinkInfo is OrgNodeLinkInfo {
             int|error result = database:addUnitWithMapping(
-                workEmail, 
-                {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
+                    workEmail,
+                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
             );
 
             if result is error {
@@ -1573,7 +1572,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = business-unit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload) 
+    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1645,7 +1644,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        string workEmail = validatedUserInfo.email;
+        string workEmail = validatUserInfo.email;
         int|error result = database:addBusinessUnitTeamSubTeamUnit(workEmail, payload);
         if result is error {
             string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
