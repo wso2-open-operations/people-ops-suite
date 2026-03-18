@@ -51,56 +51,24 @@ type UnitPayload record {|
     string name?;
     # Email of the new head of the unit
     string headEmail?;
-    # Email of the user performing the update
-    string updatedBy;
 |};
 
 # Payload for updating a business unit-team mapping.
 type UpdateBusinessUnitTeamPayload record {|
     # Email of the functional lead for the mapping
     string functionalLeadEmail?;
-    # Email of the user performing the update
-    string updatedBy;
 |};
 
 # Payload for updating a team-sub team mapping.
 type UpdateTeamSubTeamPayload record {|
     # Email of the functional lead for the mapping
     string functionalLeadEmail?;
-    # Email of the user performing the update
-    string updatedBy;
 |};
 
 # Payload for updating a sub team-unit mapping.
 type UpdateSubTeamUnitPayload record {|
     # Email of the functional lead for the mapping
     string functionalLeadEmail?;
-    # Email of the user performing the update
-    string updatedBy;
-|};
-
-# Payload for deleting a business unit.
-public type DeleteBusinessUnitPayload record {|
-    # Email of the user performing the deletion
-    string updatedBy;
-|};
-
-# Payload for deleting a business unit-team mapping.
-public type DeleteBusinessUnitTeamPayload record {|
-    # Email of the user performing the deletion
-    string updatedBy;
-|};
-
-# Payload for deleting a team-sub team mapping.
-public type DeleteTeamSubTeamPayload record {|
-    # Email of the user performing the deletion
-    string updatedBy;
-|};
-
-# Payload for deleting a sub team-unit mapping.
-public type DeleteSubTeamUnitPayload record {|
-    # Email of the user performing the deletion
-    string updatedBy;
 |};
 
 # Employee basic information.
