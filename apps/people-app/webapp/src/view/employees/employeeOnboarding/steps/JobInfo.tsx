@@ -244,7 +244,8 @@ const InfoTooltipAdornment = React.memo(
 );
 export const AUTO_ID_EMPLOYMENT_TYPES =
   /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
-export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed[\s-]?term$/i;
+
+export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
 
 export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();

@@ -295,24 +295,24 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
         getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
     );
 
-    match ctx.employmentType {
-        EMP_TYPE_PERMANENT|EMP_TYPE_INTERNSHIP => {
+    match ctx.employmentTypeName {
+        PERMANENT|INTERNSHIP => {
             EmployeeIdSequence row = check databaseClient->queryRow(
-                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [EMP_TYPE_PERMANENT, EMP_TYPE_INTERNSHIP])
+                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [PERMANENT, INTERNSHIP])
             );
             return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
-        EMP_TYPE_CONSULTANCY|EMP_TYPE_ADVISORY_CONSULTANCY|EMP_TYPE_PART_TIME_CONSULTANCY => {
+        CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
             EmployeeIdSequence row = check databaseClient->queryRow(
                 getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
-                        EMP_TYPE_CONSULTANCY,
-                        EMP_TYPE_ADVISORY_CONSULTANCY,
-                        EMP_TYPE_PART_TIME_CONSULTANCY
+                        CONSULTANCY,
+                        ADVISORY_CONSULTANCY,
+                        PART_TIME_CONSULTANCY
                     ])
             );
             return string `${CONSULTANCY_ID_PREFIX}${<int>row.lastNumericId + 1}`;
         }
-        EMP_TYPE_FIXED_TERM => {
+        FIXED_TERM => {
             string manualId = (payload.employeeId ?: "").trim();
             if manualId.length() == 0 {
                 return error("Employee ID must be provided manually for fixed-term employment type");
@@ -334,7 +334,7 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
             return manualId;
         }
         _ => {
-            return error(string `Unsupported employment type: ${ctx.employmentType}`);
+            return error(string `Unsupported employment type: ${ctx.employmentTypeName}`);
         }
     }
 }

@@ -29,13 +29,5 @@ const DEFAULT_PAGE_NUMBER = 1;
 # A constant default records per page
 const DEFAULT_RECORDS_PER_PAGE = 20;
 
-# Employment type names
-const EMP_TYPE_PERMANENT = "PERMANENT";
-const EMP_TYPE_INTERNSHIP = "INTERNSHIP";
-const EMP_TYPE_CONSULTANCY = "CONSULTANCY";
-const EMP_TYPE_ADVISORY_CONSULTANCY = "ADVISORY CONSULTANCY";
-const EMP_TYPE_PART_TIME_CONSULTANCY = "PART TIME CONSULTANCY";
-const EMP_TYPE_FIXED_TERM = "FIXED TERM";
-
 # Prefix shared by all consultancy-type employee IDs 
 const CONSULTANCY_ID_PREFIX = "CON";
