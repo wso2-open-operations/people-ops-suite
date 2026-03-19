@@ -1260,7 +1260,7 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
 # + payload - Fields to update in the business unit
 # + buId - ID of the business unit to update
 # + return - Parameterized UPDATE query for the business unit
-isolated function updateBusinessUnitQuery(UpdateUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+isolated function updateBusinessUnitQuery(UpdateOrgUnitPayload payload, int buId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit
@@ -1274,7 +1274,7 @@ isolated function updateBusinessUnitQuery(UpdateUnitPayload payload, int buId) r
 # + payload - Fields to update in the team
 # + teamId - ID of the team to update
 # + return - Parameterized UPDATE query for the team
-isolated function updateTeamQuery(UpdateUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
+isolated function updateTeamQuery(UpdateOrgUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         team
@@ -1288,7 +1288,7 @@ isolated function updateTeamQuery(UpdateUnitPayload payload, int teamId) returns
 # + payload - Fields to update in the sub team
 # + subTeamId - ID of the sub team to update
 # + return - Parameterized UPDATE query for the sub team
-isolated function updateSubTeamQuery(UpdateUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
+isolated function updateSubTeamQuery(UpdateOrgUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         sub_team
@@ -1302,7 +1302,7 @@ isolated function updateSubTeamQuery(UpdateUnitPayload payload, int subTeamId) r
 # + payload - Fields to update in the unit
 # + unitId - ID of the unit to update
 # + return - Parameterized UPDATE query for the unit
-isolated function updateUnitQuery(UpdateUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
+isolated function updateUnitQuery(UpdateOrgUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         unit

@@ -1489,7 +1489,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
     resource function get organization(http:RequestContext ctx)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
+        returns http:InternalServerError|http:Forbidden|http:BadRequest|OrgCompany {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
             validateOrganizationRequest(ctx);
@@ -1498,7 +1498,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        database:Company|error orgStructure = database:getOrganizationDetails();
+        OrgCompany|error orgStructure = database:getOrganizationDetails();
 
         if orgStructure is error {
             string customErr = "Error while fetching organization details";

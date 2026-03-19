@@ -598,7 +598,7 @@ public isolated function getParkingReservationsByEmployee(string employeeEmail, 
 # Get organization details with business units, teams, sub-teams, units,
 # including head, functional lead, and headcount for each node.
 # + return - Organization details
-public isolated function getOrganizationDetails() returns Company|error {
+public isolated function getOrganizationDetails() returns OrgCompany|error {
     CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
     if companyRow is sql:NoRowsError {
         return error("Organization details not found");
@@ -746,7 +746,7 @@ public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNod
 # + payload - Update payload  
 # + buId - Business unit ID
 # + return - Error when update fails
-public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId) returns error? {
+public isolated function updateBusinessUnit(UpdateOrgUnitPayload payload, int buId) returns error? {
     _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
 }
 
@@ -755,7 +755,7 @@ public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId)
 # + payload - Update payload
 # + teamId - Team ID
 # + return - Error when update fails
-public isolated function updateTeam(UpdateUnitPayload payload, int teamId) returns error? {
+public isolated function updateTeam(UpdateOrgUnitPayload payload, int teamId) returns error? {
     _ = check databaseClient->execute(updateTeamQuery(payload, teamId));
 }
 
@@ -764,7 +764,7 @@ public isolated function updateTeam(UpdateUnitPayload payload, int teamId) retur
 # + payload - Update payload
 # + subTeamId - Sub team ID
 # + return - Error when update fails
-public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId) returns error? {
+public isolated function updateSubTeam(UpdateOrgUnitPayload payload, int subTeamId) returns error? {
     _ = check databaseClient->execute(updateSubTeamQuery(payload, subTeamId));
 }
 
@@ -773,7 +773,7 @@ public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId)
 # + payload - Update payload
 # + unitId - Unit ID
 # + return - Error when update fails
-public isolated function updateUnit(UpdateUnitPayload payload, int unitId) returns error? {
+public isolated function updateUnit(UpdateOrgUnitPayload payload, int unitId) returns error? {
     _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
 }
 

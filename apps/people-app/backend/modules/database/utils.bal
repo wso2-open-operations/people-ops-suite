@@ -70,9 +70,9 @@ isolated function buildSqlUpdateQuery(sql:ParameterizedQuery mainQuery, sql:Para
 # + payload - Fields to update (name, head email, updated by)
 # + id - ID of the record to update
 # + return - Complete parameterized UPDATE query with SET clauses and WHERE condition
-isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateUnitPayload payload, int id)
+isolated function buildOrganizationUnitUpdateQuery(sql:ParameterizedQuery mainQuery, UpdateOrgUnitPayload payload, int id)
     returns sql:ParameterizedQuery {
-    UpdateUnitPayload {name, headEmail, updatedBy} = payload;
+    UpdateOrgUnitPayload {name, headEmail, updatedBy} = payload;
 
     sql:ParameterizedQuery[] filters = [];
 
