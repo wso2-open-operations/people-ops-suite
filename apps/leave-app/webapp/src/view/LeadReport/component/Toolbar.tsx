@@ -15,7 +15,8 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Autocomplete, Avatar, Box, Button, CircularProgress, InputAdornment, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Autocomplete, Avatar, Box, Button, Chip, CircularProgress, InputAdornment, Stack, Switch, TextField, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
@@ -25,7 +26,13 @@ import { useEffect, useState } from "react";
 
 import { selectEmployeeState, selectEmployees } from "@root/src/slices/employeeSlice/employee";
 import { useAppSelector } from "@root/src/slices/store";
-import { State } from "@root/src/types/types";
+import { EmployeeStatus, State } from "@root/src/types/types";
+
+const EMPLOYEE_STATUS_OPTIONS: EmployeeStatus[] = [
+  EmployeeStatus.ACTIVE,
+  EmployeeStatus.MARKED_LEAVER,
+  EmployeeStatus.LEFT,
+];
 
 interface ToolbarProps {
   startDate: Dayjs | null;
@@ -39,8 +46,8 @@ interface ToolbarProps {
   onToggleChange?: (checked: boolean) => void;
   selectedEmail?: string;
   onEmailChange?: (email: string) => void;
-  activeEmployeesOnly?: boolean;
-  onActiveEmployeesChange?: (checked: boolean) => void;
+  employeeStatuses?: EmployeeStatus[];
+  onEmployeeStatusesChange?: (statuses: EmployeeStatus[]) => void;
 }
 
 export default function Toolbar({
@@ -55,8 +62,8 @@ export default function Toolbar({
   onToggleChange,
   selectedEmail = "",
   onEmailChange,
-  activeEmployeesOnly = false,
-  onActiveEmployeesChange,
+  employeeStatuses = [EmployeeStatus.ACTIVE, EmployeeStatus.MARKED_LEAVER],
+  onEmployeeStatusesChange,
 }: ToolbarProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -245,57 +252,36 @@ export default function Toolbar({
           </Box>
         )}
 
-        {/* Active Employees Toggle for People Ops Team */}
-        {showToggle && onEmailChange && onActiveEmployeesChange && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              px: 2,
-              py: 1,
-              borderRadius: 1,
-              backgroundColor:
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.03)",
-              border: `1px solid ${
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.08)"
-              }`,
+        {/* Employee Status multi-select for People Ops Team */}
+        {showToggle && onEmployeeStatusesChange && (
+          <Autocomplete
+            multiple
+            disableCloseOnSelect
+            options={EMPLOYEE_STATUS_OPTIONS}
+            value={employeeStatuses}
+            onChange={(_, newValue) => onEmployeeStatusesChange(newValue as EmployeeStatus[])}
+            getOptionLabel={(option) => option}
+            isOptionEqualToValue={(option, value) => option === value}
+            slotProps={{
+              chip: {
+                size: "small",
+                sx: {
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  fontWeight: 600,
+                  "& .MuiChip-deleteIcon": { color: theme.palette.primary.main },
+                },
+              },
             }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 3,
-              }}
-            >
-              <Switch
-                checked={activeEmployeesOnly}
-                onChange={(e) => onActiveEmployeesChange?.(e.target.checked)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
                 size="small"
-                sx={{
-                  "& .MuiSwitch-switchBase.Mui-checked": {
-                    color: theme.palette.primary.main,
-                  },
-                  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                    backgroundColor: theme.palette.primary.main,
-                  },
-                }}
+                label="Employee Status"
+                sx={{ minWidth: 260 }}
               />
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: activeEmployeesOnly ? 600 : 400,
-                  color: activeEmployeesOnly
-                    ? theme.palette.text.primary
-                    : theme.palette.text.secondary,
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Active employees only
-              </Typography>
-            </Box>
-          </Box>
+            )}
+          />
         )}
       </Stack>
     </Stack>

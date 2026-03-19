@@ -96,7 +96,9 @@ export default function LeadReportTable({ rows, loading }: LeadReportTableProps)
       headerName: "Start Date",
       flex: 1,
       renderCell: (params) => (
-        <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        </Stack>
       ),
     },
     {
@@ -104,7 +106,9 @@ export default function LeadReportTable({ rows, loading }: LeadReportTableProps)
       headerName: "End Date",
       flex: 1,
       renderCell: (params) => (
-        <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        </Stack>
       ),
     },
     {
@@ -112,7 +116,9 @@ export default function LeadReportTable({ rows, loading }: LeadReportTableProps)
       headerName: "Days",
       flex: 0.6,
       renderCell: (params) => (
-        <Typography variant="body2" fontWeight={700}>{params.value}</Typography>
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2" fontWeight={700}>{params.value}</Typography>
+        </Stack>
       ),
     },
     {
