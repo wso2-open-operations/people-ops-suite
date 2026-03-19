@@ -1283,7 +1283,7 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status = ${CONFIRMED}
+              AND pr.status IN (${PENDING}, ${CONFIRMED})
         ) THEN 1 ELSE 0 END) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
