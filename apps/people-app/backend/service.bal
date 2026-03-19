@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import people.'transaction as tx;
 import people.authorization;
 import people.database;
 import people.gsheet;
-import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
@@ -1221,7 +1222,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if hour < reservationWindowStartHour || hour >= reservationWindowEndHour {
             return <http:BadRequest>{
-                body: {message: string `Reservations are only allowed between ${reservationWindowStartHour}:00 and ${reservationWindowEndHour}:00 (Sri Lanka time).`}
+                body: {
+                    message: string `Reservations are only allowed from ${reservationWindowStartHour}:00 to
+                     ${reservationWindowEndHour}:00 (Sri Lanka time).`
+                }
             };
         }
         if body.bookingDate != today {
@@ -1371,11 +1375,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: {employeeStatus: status},
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: {employeeStatus: status},
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1452,7 +1456,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
-            reservation.coinsAmount);
+                reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
@@ -1490,7 +1494,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
-                reservationId = confirmedReservation.id);
+                    reservationId = confirmedReservation.id);
         }
 
         return confirmedReservation;
