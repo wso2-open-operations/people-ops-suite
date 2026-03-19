@@ -18,7 +18,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { APIService } from "@utils/apiService";
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
 export interface BusinessUnit {
@@ -57,11 +57,24 @@ export interface Designation {
   jobBand: number;
 }
 
+export interface Company {
+  id: number;
+  name: string;
+  prefix: string;
+  location: string;
+  allowedLocations: string[];
+}
+
 export interface Office {
   id: number;
   name: string;
   location: string;
   workingLocations: string[];
+}
+
+export interface EmploymentType {
+  id: number;
+  name: string;
 }
 
 export interface OrganizationState {
@@ -74,7 +87,9 @@ export interface OrganizationState {
   units: Unit[];
   careerFunctions: CareerFunction[];
   designations: Designation[];
+  companies: Company[];
   offices: Office[];
+  employmentTypes: EmploymentType[];
 }
 
 const initialState: OrganizationState = {
@@ -87,7 +102,9 @@ const initialState: OrganizationState = {
   units: [],
   careerFunctions: [],
   designations: [],
+  companies: [],
   offices: [],
+  employmentTypes: [],
 };
 
 interface FetchParams {
@@ -97,18 +114,21 @@ interface FetchParams {
 interface FetchDesignationsParams {
   careerFunctionId?: number;
 }
+
+// Fetch Business Units
 export const fetchBusinessUnits = createAsyncThunk(
   "organization/fetchBusinessUnits",
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.businessUnits}`
+        `${AppConfig.serviceUrls.businessUnits}`,
       );
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: business units should be an array");
       }
       return resp.data as BusinessUnit[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching business units"
@@ -119,11 +139,11 @@ export const fetchBusinessUnits = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Fetch Teams
@@ -140,6 +160,7 @@ export const fetchTeams = createAsyncThunk(
       }
       return resp.data as Team[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching teams"
@@ -150,11 +171,11 @@ export const fetchTeams = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Fetch Sub Teams
@@ -171,6 +192,7 @@ export const fetchSubTeams = createAsyncThunk(
       }
       return resp.data as SubTeam[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching sub teams"
@@ -181,11 +203,11 @@ export const fetchSubTeams = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Fetch Units
@@ -193,7 +215,7 @@ export const fetchUnits = createAsyncThunk(
   "organization/fetchUnits",
   async (
     { id: subTeamId }: FetchParams = {},
-    { dispatch, rejectWithValue }
+    { dispatch, rejectWithValue },
   ) => {
     try {
       const url = subTeamId
@@ -205,6 +227,7 @@ export const fetchUnits = createAsyncThunk(
       }
       return resp.data as Unit[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching units"
@@ -215,11 +238,11 @@ export const fetchUnits = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Fetch Career Functions
@@ -228,15 +251,16 @@ export const fetchCareerFunctions = createAsyncThunk(
   async (_, { dispatch, rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.careerFunctions}`
+        `${AppConfig.serviceUrls.careerFunctions}`,
       );
       if (!Array.isArray(resp.data)) {
         throw new Error(
-          "Invalid response: career functions should be an array"
+          "Invalid response: career functions should be an array",
         );
       }
       return resp.data as CareerFunction[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching career functions"
@@ -246,11 +270,11 @@ export const fetchCareerFunctions = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 // Fetch Designations
@@ -258,7 +282,7 @@ export const fetchDesignations = createAsyncThunk(
   "organization/fetchDesignations",
   async (
     { careerFunctionId }: FetchDesignationsParams = {},
-    { dispatch, rejectWithValue }
+    { dispatch, rejectWithValue },
   ) => {
     try {
       const url = careerFunctionId
@@ -270,6 +294,7 @@ export const fetchDesignations = createAsyncThunk(
       }
       return resp.data as Designation[];
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching designations"
@@ -279,21 +304,84 @@ export const fetchDesignations = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
+);
+
+// Fetch Companies
+export const fetchCompanies = createAsyncThunk(
+  "organization/fetchCompanies",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.companies}`,
+      );
+      if (!Array.isArray(resp.data)) {
+        throw new Error("Invalid response: companies should be an array");
+      }
+      const companies: Company[] = resp.data.map((c: any) => {
+        let allowed: string[] = [];
+
+        if (Array.isArray(c.allowedLocations)) {
+          allowed = c.allowedLocations;
+        } else if (Array.isArray(c.allowed_locations)) {
+          allowed = c.allowed_locations;
+        } else if (typeof c.allowedLocations === "string") {
+          allowed = c.allowedLocations
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean);
+        } else if (typeof c.allowed_locations === "string") {
+          allowed = c.allowed_locations
+            .split(",")
+            .map((s: string) => s.trim())
+            .filter(Boolean);
+        }
+
+        return {
+          id: c.id,
+          name: c.name,
+          prefix: c.prefix,
+          location: c.location,
+          allowedLocations: allowed,
+        };
+      });
+
+      return companies;
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching companies"
+          : error.response?.data?.message ||
+            error.message ||
+            "An unknown error occurred while fetching companies.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
 );
 
 // Fetch Offices
 export const fetchOffices = createAsyncThunk(
   "organization/fetchOffices",
-  async (_, { dispatch, rejectWithValue }) => {
+  async (
+    { id: companyId }: FetchParams = {},
+    { dispatch, rejectWithValue },
+  ) => {
     try {
-      const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.offices}`
-      );
+      const url = companyId
+        ? `${AppConfig.serviceUrls.offices}?companyId=${companyId}`
+        : `${AppConfig.serviceUrls.offices}`;
+      const resp = await APIService.getInstance().get(url);
       if (!Array.isArray(resp.data)) {
         throw new Error("Invalid response: offices should be an array");
       }
@@ -307,6 +395,7 @@ export const fetchOffices = createAsyncThunk(
       }));
       return offices;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? "Error fetching offices"
@@ -317,11 +406,44 @@ export const fetchOffices = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       return rejectWithValue(errorMessage);
     }
-  }
+  },
+);
+
+// Fetch Employment Types
+export const fetchEmploymentTypes = createAsyncThunk(
+  "organization/fetchEmploymentTypes",
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const resp = await APIService.getInstance().get(
+        `${AppConfig.serviceUrls.employmentTypes}`,
+      );
+      if (!Array.isArray(resp.data)) {
+        throw new Error(
+          "Invalid response: employment types should be an array",
+        );
+      }
+      return resp.data as EmploymentType[];
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.status === HttpStatusCode.InternalServerError
+          ? "Error fetching employment types"
+          : error.response?.data?.message ||
+            error.message ||
+            "An unknown error occurred while fetching employment types.";
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      return rejectWithValue(errorMessage);
+    }
+  },
 );
 
 export const organizationSlice = createSlice({
@@ -341,7 +463,9 @@ export const organizationSlice = createSlice({
       state.units = [];
       state.careerFunctions = [];
       state.designations = [];
+      state.companies = [];
       state.offices = [];
+      state.employmentTypes = [];
     },
   },
   extraReducers: (builder) => {
@@ -442,8 +566,25 @@ export const organizationSlice = createSlice({
         state.errorMessage = action.payload as string;
         state.stateMessage = null;
       })
+      .addCase(fetchCompanies.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching companies...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchCompanies.fulfilled, (state, action) => {
+        state.companies = action.payload;
+        state.state = State.success;
+        state.stateMessage = "Companies fetched successfully";
+        state.errorMessage = null;
+      })
+      .addCase(fetchCompanies.rejected, (state, action) => {
+        state.state = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
       .addCase(fetchOffices.pending, (state) => {
         state.state = State.loading;
+        state.offices = [];
         state.stateMessage = "Fetching offices...";
         state.errorMessage = null;
       })
@@ -454,6 +595,22 @@ export const organizationSlice = createSlice({
         state.errorMessage = null;
       })
       .addCase(fetchOffices.rejected, (state, action) => {
+        state.state = State.failed;
+        state.errorMessage = action.payload as string;
+        state.stateMessage = null;
+      })
+      .addCase(fetchEmploymentTypes.pending, (state) => {
+        state.state = State.loading;
+        state.stateMessage = "Fetching employment types...";
+        state.errorMessage = null;
+      })
+      .addCase(fetchEmploymentTypes.fulfilled, (state, action) => {
+        state.employmentTypes = action.payload;
+        state.state = State.success;
+        state.stateMessage = "Employment types fetched successfully";
+        state.errorMessage = null;
+      })
+      .addCase(fetchEmploymentTypes.rejected, (state, action) => {
         state.state = State.failed;
         state.errorMessage = action.payload as string;
         state.stateMessage = null;

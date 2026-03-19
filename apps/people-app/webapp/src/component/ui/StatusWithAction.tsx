@@ -16,7 +16,9 @@
 
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { Box, Container, Button } from "@mui/material";
+import { Box, Container, Button, useTheme } from "@mui/material";
+import logoBlack from "@assets/images/WSO2-Logo-Black.png";
+import logoWhite from "@assets/images/WSO2-Logo-White.png";
 
 interface PreLoaderProps {
   message?: string | null;
@@ -24,6 +26,7 @@ interface PreLoaderProps {
 }
 
 const StatusWithAction = (props: PreLoaderProps) => {
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -48,7 +51,7 @@ const StatusWithAction = (props: PreLoaderProps) => {
                 alt="logo"
                 width="150"
                 height="auto"
-                src={require("@assets/images/wso2-logo.svg").default}
+                src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
               ></img>
             </Grid>
             <Grid item xs={12}></Grid>

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,9 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { SvgIconComponent } from "@mui/icons-material";
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Stack, Typography, alpha, useTheme } from "@mui/material";
 
 interface LeaveSelectionIconProps {
   Icon: SvgIconComponent;
@@ -34,21 +33,21 @@ export default function LeaveSelectionIcon({
   return (
     <Stack
       direction="column"
-      justifyContent="space-between"
+      justifyContent="flex-start"
       alignItems="center"
-      gap={1.5}
-      width={1}
+      gap={1}
       height="100%"
       onClick={onClick}
       sx={{
         cursor: onClick ? "pointer" : "default",
-        transition: "all 0.2s ease",
+        transition: "all 0.15s ease",
         "&:hover": onClick
           ? {
-              transform: "translateY(-2px)",
               "& .icon-box": {
                 borderColor: theme.palette.primary.main,
-                boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
+                backgroundColor: isSelected
+                  ? theme.palette.primary.main
+                  : alpha(theme.palette.primary.main, 0.06),
               },
             }
           : {},
@@ -56,34 +55,41 @@ export default function LeaveSelectionIcon({
     >
       <Box
         className="icon-box"
-        borderRadius="0.5rem"
-        border="1px solid"
-        width="3rem"
-        height="3rem"
         display="flex"
         alignItems="center"
         justifyContent="center"
         sx={{
-          borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
+          width: 48,
+          height: 48,
+          borderRadius: "12px",
+          border: "1.5px solid",
+          borderColor: isSelected
+            ? theme.palette.primary.main
+            : theme.palette.customBorder.territory.active,
           backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
-          transition: "all 0.2s ease",
+          transition: "all 0.15s ease",
         }}
       >
         <Icon
-          fontSize="large"
           sx={{
-            color: isSelected ? theme.palette.common.white : theme.palette.grey[600],
-            transition: "color 0.2s ease",
+            fontSize: 24,
+            color: isSelected
+              ? theme.palette.common.white
+              : theme.palette.customText.primary.p3.active,
+            transition: "color 0.15s ease",
           }}
         />
       </Box>
       <Typography
-        variant="subtitle2"
+        variant="caption"
         textAlign="center"
         sx={{
-          color: isSelected ? theme.palette.primary.main : theme.palette.grey[600],
+          color: isSelected
+            ? theme.palette.primary.main
+            : theme.palette.customText.primary.p3.active,
           fontWeight: isSelected ? 600 : 400,
-          transition: "all 0.2s ease",
+          lineHeight: 1.3,
+          transition: "all 0.15s ease",
         }}
       >
         {label}

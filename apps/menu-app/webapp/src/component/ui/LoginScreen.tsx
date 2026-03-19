@@ -21,12 +21,13 @@ import Typography from "@mui/material/Typography";
 import { APP_NAME } from "@root/src/config/config";
 import { APP_DESC } from "@root/src/config/constant";
 import { useAppAuthContext } from "@root/src/context/AuthContext";
-import BackgroundImage from "@src/assets/images/app-login-background.png";
+import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
 import ProductLogos from "@src/assets/images/app-login-logos.png";
-import logo from "@src/assets/images/wso2-logo-black.png";
+import BackgroundImage from "@src/assets/images/sample.png";
 
 const LoginScreen = () => {
   const { appSignIn, appSignOut } = useAppAuthContext();
+  const wso2Logo = useWso2Logo();
 
   return (
     <Box
@@ -66,7 +67,7 @@ const LoginScreen = () => {
                 spacing={2}
                 p={1}
               >
-                <img alt="logo" width="130" height="auto" src={logo}></img>
+                <img alt="logo" width="130" height="auto" src={wso2Logo}></img>
 
                 <Typography align="center" sx={{ fontWeight: "bold" }} variant="h5" color={"black"}>
                   {APP_NAME}

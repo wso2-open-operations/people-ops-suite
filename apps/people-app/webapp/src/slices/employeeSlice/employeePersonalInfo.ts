@@ -16,7 +16,7 @@
 
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -24,14 +24,14 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { EmergencyContact } from "@/types/types";
 
 export interface EmployeePersonalInfo {
-  id: number | null;
-  nicOrPassport: string | null;
+  id: number;
+  nicOrPassport: string;
+  firstName: string;
+  lastName: string;
   fullName: string;
-  nameWithInitials: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  title: string | null;
-  dob: string | null;
+  title: string;
+  dob: string;
+  gender: string;
   personalEmail: string | null;
   personalPhone: string | null;
   residentNumber: string | null;
@@ -41,21 +41,29 @@ export interface EmployeePersonalInfo {
   stateOrProvince: string | null;
   postalCode: string | null;
   country: string | null;
-  nationality: string | null;
+  nationality: string;
   emergencyContacts: EmergencyContact[] | null;
 }
 
 export interface EmployeePersonalInfoUpdate {
-  personalEmail: string | null;
-  personalPhone: string | null;
-  residentNumber: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  stateOrProvince: string | null;
-  postalCode: string | null;
-  country: string | null;
-  emergencyContacts: EmergencyContact[] | null;
+  nicOrPassport?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName?: string | null;
+  title?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  personalEmail?: string | null;
+  personalPhone?: string | null;
+  residentNumber?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  stateOrProvince?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  nationality?: string | null;
+  emergencyContacts?: EmergencyContact[] | null;
 }
 
 interface EmployeePersonalInfoState {
@@ -77,10 +85,11 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
   async (employeeId: string, { dispatch, rejectWithValue }) => {
     try {
       const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employeePersonalInfo(employeeId)
+        AppConfig.serviceUrls.employeePersonalInfo(employeeId),
       );
       return response.data as EmployeePersonalInfo;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -91,53 +100,51 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
 
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
-export const updateEmployeePersonalInfo = createAsyncThunk(
+export const updateEmployeePersonalInfo = createAsyncThunk<
+  void,
+  { employeeId: string; data: EmployeePersonalInfoUpdate },
+  { rejectValue: string }
+>(
   "employees/updateEmployeePersonalInfo",
-  async (
-    {
-      employeeId,
-      data,
-    }: { employeeId: string; data: EmployeePersonalInfoUpdate },
-    { dispatch, rejectWithValue }
-  ) => {
+  async ({ employeeId, data }, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().put(
+      await APIService.getInstance().patch(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
-        data
+        data,
       );
 
       dispatch(
         enqueueSnackbarMessage({
           message: "Successfully updated!",
           type: "success",
-        })
+        }),
       );
-      return response.data;
+      return;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
-        error.response?.status === HttpStatusCode.InternalServerError
+        error?.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.updateEmployeePersonalInfo
-          : error.response?.data?.message ||
+          : error?.response?.data?.message ||
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
-
       return rejectWithValue(errorMessage);
     }
-  }
+  },
 );
 
 const EmployeePersonalInfoSlice = createSlice({
@@ -181,9 +188,6 @@ const EmployeePersonalInfoSlice = createSlice({
         state.state = State.success;
         state.stateMessage =
           "Successfully updated employee personal information!";
-        if (action.payload) {
-          state.personalInfo = action.payload;
-        }
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {

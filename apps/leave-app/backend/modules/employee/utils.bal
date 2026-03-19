@@ -25,6 +25,7 @@ public isolated function toEmployee(EmployeeResponse response) returns readonly 
         lastName: response.lastName,
         workEmail: response.workEmail ?: "",
         startDate: response.startDate,
+        continuousServiceDate: response.continuousServiceDate,
         employeeThumbnail: response.employeeThumbnail,
         location: response.location,
         jobRole: response?.jobRole,

@@ -36,6 +36,11 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
       id: email,
       employee: email,
       annual: data.casual || 0, // since annual and casual are combined
+      congesPayes: data.conges_payes || 0,
+      rtt: data.rtt || 0,
+      spainAnnual: data.spain_annual || 0,
+      spainCasual: data.spain_casual || 0,
+      sick: data.sick || 0,
       paternity: data.paternity || 0,
       maternity: data.maternity || 0,
       lieu: data.lieu || 0,
@@ -54,6 +59,36 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
     {
       field: "annual",
       headerName: "Annual/Casual",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "congesPayes",
+      headerName: "Congés Payés",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "rtt",
+      headerName: "RTT",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "spainAnnual",
+      headerName: "Annual (ES)",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "spainCasual",
+      headerName: "Casual (ES)",
+      type: "number",
+      flex: 1,
+    },
+    {
+      field: "sick",
+      headerName: "Sick",
       type: "number",
       flex: 1,
     },

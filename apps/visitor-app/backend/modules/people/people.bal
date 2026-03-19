@@ -34,7 +34,7 @@ public isolated function fetchEmployee(string workEmail) returns Employee|error?
 # + 'limit - pagination limit
 # + offset - pagination offset
 # + return - Employees info
-public isolated function getEmployees(string search, int 'limit, int offset) returns EmployeeBasic[]|error {
+public isolated function fetchEmployees(string search, int 'limit, int offset) returns EmployeeBasic[]|error {
 
     string term = search.trim();
 

@@ -24,9 +24,9 @@ function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
   });
 }
 
-export async function hash(email: string): Promise<string> {
+export async function hash(id: string): Promise<string> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(email.trim().toLowerCase());
+  const data = encoder.encode(id.trim().toLowerCase());
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
 
   const hashArray = Array.from(new Uint8Array(hashBuffer));

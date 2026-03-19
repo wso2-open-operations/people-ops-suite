@@ -16,11 +16,12 @@
 import { Box, Container } from "@mui/material";
 
 import ErrorSvg from "@assets/images/error.svg";
-import Wso2Logo from "@assets/images/wso2-logo.svg";
 import StateWithImage from "@component/ui/StateWithImage";
+import { useWso2Logo } from "@root/src/hooks/useWso2Logo";
 import { ErrorHandlerProps } from "@root/src/utils/types";
 
 const ErrorHandler = (props: ErrorHandlerProps) => {
+  const wso2Logo = useWso2Logo();
   return (
     <Box
       sx={{
@@ -30,7 +31,7 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
     >
       <Container maxWidth="md">
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <img alt="logo" width="150" height="auto" src={Wso2Logo} />
+          <img alt="logo" width="150" height="auto" src={wso2Logo} />
           <StateWithImage
             message={props.message || "Something went wrong! Please try again later."}
             imageUrl={ErrorSvg}
