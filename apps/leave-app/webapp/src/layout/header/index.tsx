@@ -23,7 +23,7 @@ import React from "react";
 import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
-import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
+
 import { RootState, useAppSelector } from "@slices/store";
 
 const Header = () => {
@@ -88,7 +88,6 @@ const Header = () => {
           >
             {APP_NAME}
           </Typography>
-          <BasicBreadcrumbs />
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>

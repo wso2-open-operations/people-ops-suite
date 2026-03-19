@@ -22,54 +22,43 @@ import { useEffect, useRef, useState } from "react";
 
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
-import { formatDateForApi } from "@root/src/services/leaveService";
+import { formatDateForApi, getLeaveHistory } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
-import {
-  fetchLeadReport,
-  resetLeadReportState,
-  selectLeadReport,
-  selectLeadReportState,
-} from "@root/src/slices/leadReportSlice/leadReport";
-import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
+import { useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { LeadReportRequest, State } from "@root/src/types/types";
+import { SingleLeaveHistory, Status } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
 
 export default function LeadReportTab() {
-  const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string>("");
   const [activeEmployeesOnly, setActiveEmployeesOnly] = useState(false);
-
-  const reportData = useAppSelector(selectLeadReport);
-  const leadReportState = useAppSelector(selectLeadReportState);
-  const loading = leadReportState === State.loading;
+  const [records, setRecords] = useState<SingleLeaveHistory[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
-  const handleFetchReport = () => {
-    if (startDate && endDate) {
-      dispatch(resetLeadReportState());
-      const payload: LeadReportRequest = {
+  const handleFetchReport = async () => {
+    if (!startDate || !endDate) return;
+    setLoading(true);
+    try {
+      const response = await getLeaveHistory({
         startDate: formatDateForApi(startDate),
         endDate: formatDateForApi(endDate),
-        isAdminView: showAllEmployees,
-      };
-
-      if (selectedEmail) {
-        payload.employeeEmail = selectedEmail;
-      }
-
-      if (activeEmployeesOnly) {
-        payload.employeeStatuses = ["Active"];
-      }
-
-      dispatch(fetchLeadReport(payload));
+        ...(showAllEmployees ? {} : { approverEmail: userInfo?.workEmail }),
+        ...(selectedEmail ? { email: selectedEmail } : {}),
+        statuses: [Status.APPROVED],
+      });
+      setRecords(response.leaves);
+    } catch {
+      setRecords([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,7 +93,7 @@ export default function LeadReportTab() {
         activeEmployeesOnly={activeEmployeesOnly}
         onActiveEmployeesChange={setActiveEmployeesOnly}
       />
-      <LeadReportTable reportData={reportData} loading={loading} />
+      <LeadReportTable rows={records} loading={loading} />
     </Stack>
   );
 }

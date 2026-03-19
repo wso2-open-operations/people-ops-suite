@@ -15,7 +15,7 @@
 // under the License.
 
 import SearchIcon from "@mui/icons-material/Search";
-import { Autocomplete, Box, Button, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Autocomplete, Avatar, Box, Button, CircularProgress, InputAdornment, Stack, Switch, TextField, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Dayjs } from "dayjs";
@@ -65,17 +65,19 @@ export default function Toolbar({
   const employeeState = useAppSelector(selectEmployeeState);
   const employeesLoading = employeeState === State.loading;
 
-  const [employeeOptions, setEmployeeOptions] = useState<Array<{ label: string; email: string }>>([
-    { label: "All Employees", email: "" },
-  ]);
+  const [employeeOptions, setEmployeeOptions] = useState<
+    Array<{ label: string; displayName: string; email: string; thumbnail: string | null }>
+  >([{ label: "All Employees", displayName: "All Employees", email: "", thumbnail: null }]);
 
   useEffect(() => {
     if (employees.length > 0) {
       const options = [
-        { label: "All Employees", email: "" },
+        { label: "All Employees", displayName: "All Employees", email: "", thumbnail: null },
         ...employees.map((emp) => ({
           label: `${emp.firstName} ${emp.lastName} (${emp.workEmail})`,
+          displayName: `${emp.firstName} ${emp.lastName}`.trim(),
           email: emp.workEmail,
+          thumbnail: emp.employeeThumbnail ?? null,
         })),
       ];
       setEmployeeOptions(options);
@@ -107,10 +109,45 @@ export default function Toolbar({
             value={employeeOptions.find((opt) => opt.email === selectedEmail) || employeeOptions[0]}
             onChange={(_, newValue) => onEmailChange(newValue?.email || "")}
             getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, value) => option.email === value.email}
             loading={employeesLoading}
             loadingText="Loading employees..."
-            sx={{ flex: 1, minWidth: 200 }}
-            renderInput={(params) => <TextField {...params} label="Select Employee" size="small" />}
+            sx={{ flex: 1, minWidth: 220 }}
+            renderOption={(props, option) => (
+              <li {...props} key={option.email} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Avatar src={option.thumbnail ?? undefined} sx={{ width: 32, height: 32 }}>
+                  {option.displayName.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" noWrap>{option.displayName}</Typography>
+                  {option.email && (
+                    <Typography variant="caption" color="text.secondary" noWrap>{option.email}</Typography>
+                  )}
+                </Box>
+              </li>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Select Employee"
+                size="small"
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {employeesLoading && (
+                          <InputAdornment position="end">
+                            <CircularProgress size={16} />
+                          </InputAdornment>
+                        )}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  },
+                }}
+              />
+            )}
           />
         )}
 
