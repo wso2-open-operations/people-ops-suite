@@ -298,13 +298,13 @@ isolated function generateEmployeeId(CreateEmployeePayload payload) returns stri
     match ctx.employmentType {
         PERMANENT|INTERNSHIP => {
             EmployeeIdSequence row = check databaseClient->queryRow(
-                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [PERMANENT, INTERNSHIP])
+                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [ctx.employmentType])
             );
             return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
         }
         CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
             EmployeeIdSequence row = check databaseClient->queryRow(
-                getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
+            getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
                         CONSULTANCY,
                         ADVISORY_CONSULTANCY,
                         PART_TIME_CONSULTANCY
