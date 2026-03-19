@@ -2723,7 +2723,7 @@ public final string sabbaticalApplicationTemplate = string `
                                         width="100"
                                     />
                                       <img
-                                        alt="WSO2 Logo Dark"
+                                        alt="WSO2 Logo"
                                         height="40"
                                         id="footerImageDark"
                                         src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
@@ -4115,7 +4115,7 @@ public final string sabbaticalCancellationTemplate = string `
                                         width="100"
                                     />
                                       <img
-                                        alt="WSO2 Logo Dark"
+                                        alt="WSO2 Logo"
                                         height="40"
                                         id="footerImageDark"
                                         src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
