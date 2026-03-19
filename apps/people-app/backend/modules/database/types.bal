@@ -78,6 +78,12 @@ public type UserInfo record {|
     int[] privileges = [];
 |};
 
+# Generic single-flag DB result shape for EXISTS-based checks.
+public type ExistsFlagResult record {|
+    # 1 when a matching row exists, otherwise 0
+    int exists_flag;
+|};
+
 # Request payload for EPF uniqueness validation.
 public type EpfValidationPayload record {|
     # EPF number to validate
@@ -811,6 +817,7 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
+
 # [Database] Parking floor.
 public type ParkingFloor record {|
     # Floor identifier
@@ -931,4 +938,192 @@ public type ParkingReservationDetails record {|
 public type ReservationIdRow record {|
     # Reservation identifier
     int id;
+|};
+
+# Payload for updating an organization unit.
+public type UpdateOrgUnitPayload record {|
+    # New name for the unit
+    string name?;
+    # Email of the new head of the unit
+    @sql:Column {name: "head_email"}
+    string headEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a business unit-team mapping.
+public type UpdateBusinessUnitTeamPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a team-sub team mapping.
+public type UpdateTeamSubTeamPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a sub team-unit mapping.
+public type UpdateSubTeamUnitPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Represents a head or leader of an organization unit.
+public type Head record {|
+    # Display name of the head
+    string name;
+    # Work email of the head
+    string email;
+    # Optional URL to the head's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a functional lead responsible for an organization unit.
+public type FunctionalLead record {|
+    # Display name of the functional lead
+    string name;
+    # Work email of the functional lead
+    string email;
+    # Optional URL to the functional lead's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a unit within the organization hierarchy.
+public type OrgUnit record {|
+    # Unique identifier of the unit
+    string id;
+    # Unique identifier of the business_unit_team_sub_team_unit mapping row
+    string mappingId;
+    # Display name of the unit
+    string name;
+    # Total number of employees or members in the unit
+    int headCount;
+    # Optional head or direct manager of the unit
+    Head? head = ();
+    # Optional functional lead overseeing the unit
+    FunctionalLead? functionalLead = ();
+|};
+
+# Represents a sub-team within the organization hierarchy.
+public type OrgSubTeam record {|
+    # Unique identifier of the sub-team
+    string id;
+    # Unique identifier of the business_unit_team_sub_team mapping row
+    string mappingId;
+    # Display name of the sub-team
+    string name;
+    # Total number of employees or members in the sub-team
+    int headCount;
+    # Optional head or direct manager of the sub-team
+    Head? head = ();
+    # Optional functional lead overseeing the sub-team
+    FunctionalLead? functionalLead = ();
+    # List of units belonging to this sub-team
+    OrgUnit[] units = [];
+|};
+
+# Represents a team within the organization hierarchy.
+public type OrgTeam record {|
+    # Unique identifier of the team
+    string id;
+    # Unique identifier of the business_unit_team mapping row
+    string mappingId;
+    # Display name of the team
+    string name;
+    # Total number of employees or members in the team
+    int headCount;
+    # Optional head or direct manager of the team
+    Head? head = ();
+    # Optional functional lead overseeing the team
+    FunctionalLead? functionalLead = ();
+    # List of sub-teams belonging to this team
+    OrgSubTeam[] subTeams = [];
+|};
+
+# Represents a business unit within the organization hierarchy.
+public type OrgBusinessUnit record {|
+    # Unique identifier of the business unit
+    string id;
+    # Display name of the business unit
+    string name;
+    # Total number of employees or members in the business unit
+    int headCount;
+    # Optional head or direct manager of the business unit
+    Head? head = ();
+    # List of teams belonging to this business unit
+    OrgTeam[] teams = [];
+|};
+
+# Represents the top-level company in the organization hierarchy.
+public type OrgCompany record {|
+    # Unique identifier of the company
+    string id;
+    # Display name of the company
+    string name;
+    # Total number of employees or members in the company
+    int headCount;
+    # List of business units belonging to the company
+    OrgBusinessUnit[] businessUnits = [];
+|};
+
+# Raw database row type for the top-level company organization response.
+public type CompanyRaw record {|
+    # Unique identifier of the company
+    string id;
+    # Display name of the company
+    string name;
+    # Total number of employees or members in the company
+    int headCount;
+    # List of business units belonging to the company
+    json businessUnits = [];
+|};
+
+# Payload for adding a new organization node (business unit, team, sub-team, or unit).
+public type OrgNodeInfo record {|
+    # Name of the node
+    string name;
+    # Email of the head of the node
+    string headEmail;
+|};
+
+# Internal payload for inserting a row into any org-node mapping table.
+public type OrgNodeMappingPayload record {|
+    # ID of the parent junction row
+    string parentId;
+    # ID of the newly created child node
+    string childId;
+    # Functional lead email for the mapping
+    string functionalLeadEmail;
+|};
+
+# Reference to a parent organization node with mapping details.
+public type OrgNodeLinkInfo record {|
+    # ID of the parent node
+    string id;
+    # Functional lead email for the mapping
+    string functionalLeadEmail;
+|};
+
+# Payload for adding any organization node.
+public type OrgNodePayload record {|
+    # Name of the node
+    string name;
+    # Head email of the node
+    string headEmail;
+    # Parent node link details — required for mapping nodes only
+    OrgNodeLinkInfo orgNodeLinkInfo;
 |};
