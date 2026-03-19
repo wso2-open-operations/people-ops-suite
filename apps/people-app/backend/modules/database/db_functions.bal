@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import ballerina/lang.regexp;
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -268,16 +267,14 @@ public isolated function isLead(string leadEmail) returns boolean|error {
 #
 # + payload - Add employee payload
 # + createdBy - Creator of the employee record
-# + return - Created employee ID or error
-public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
+# + employeeId - Pre-resolved employee ID string
+# + return - Created employee record ID or error
+public isolated function addEmployee(CreateEmployeePayload payload, string createdBy, string employeeId)
+        returns int|error {
     int lastInsertedId = 0;
-    string employeeId = "";
 
     retry transaction {
         int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
-
-        employeeId = check generateEmployeeId(payload);
-
         lastInsertedId = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
         check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
         check addAdditionalManagers(lastInsertedId, payload.additionalManagerEmails, createdBy);
@@ -286,57 +283,24 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
     return lastInsertedId;
 }
 
-# Generate the next employee ID using a single DB query to fetch all required context.
+# Fetch employee ID generation context.
 #
-# + payload - Add employee payload
-# + return - Generated or manually provided employee ID string, or error
-isolated function generateEmployeeId(CreateEmployeePayload payload) returns string|error {
-    EmployeeIdContext ctx = check databaseClient->queryRow(
-        getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
-    );
+# + companyId - Company ID of the new employee
+# + employmentTypeId - Employment type ID of the new employee
+# + return - EmployeeIdContext or error
+public isolated function getEmployeeIdContext(int companyId, int employmentTypeId)
+        returns EmployeeIdContext|error {
+    return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
+}
 
-    match ctx.employmentType {
-        PERMANENT|INTERNSHIP => {
-            EmployeeIdSequence row = check databaseClient->queryRow(
-                getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [ctx.employmentType])
-            );
-            return string `${ctx.companyPrefix}${<int>row.lastNumericId + 1}`;
-        }
-        CONSULTANCY|ADVISORY_CONSULTANCY|PART_TIME_CONSULTANCY => {
-            EmployeeIdSequence row = check databaseClient->queryRow(
-            getAndLockLastEmployeeNumericSuffixQuery(CONSULTANCY_ID_PREFIX, [
-                        CONSULTANCY,
-                        ADVISORY_CONSULTANCY,
-                        PART_TIME_CONSULTANCY
-                    ])
-            );
-            return string `${CONSULTANCY_ID_PREFIX}${<int>row.lastNumericId + 1}`;
-        }
-        FIXED_TERM => {
-            string manualId = (payload.employeeId ?: "").trim();
-            if manualId.length() == 0 {
-                return error("Employee ID must be provided manually for fixed-term employment type");
-            }
-
-            regexp:RegExp companyPattern = check regexp:fromString(ctx.companyPrefix + "[0-9]+");
-            regexp:RegExp consultancyPattern = check regexp:fromString(CONSULTANCY_ID_PREFIX + "[0-9]+");
-            if manualId.matches(companyPattern) || manualId.matches(consultancyPattern) {
-                return error(string `Employee ID '${manualId}' is reserved for auto-generation and cannot be assigned manually`);
-            }
-
-            Employee|error? existing = getEmployeeInfo(manualId);
-            if existing is error {
-                return existing;
-            }
-            if existing is Employee {
-                return error(string `Employee ID already in use: ${manualId}`);
-            }
-            return manualId;
-        }
-        _ => {
-            return error(string `Unsupported employment type: ${ctx.employmentType}`);
-        }
-    }
+# Fetch and lock the last numeric suffix for the given prefix and employment types.
+#
+# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
+# + employmentTypes - Employment type names that share this sequence
+# + return - EmployeeIdSequence or error
+public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentTypeName[] employmentTypes)
+        returns EmployeeIdSequence|error {
+    return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
 }
 
 # Add employee personal information.

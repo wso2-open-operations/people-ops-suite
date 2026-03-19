@@ -39,6 +39,7 @@ public enum EmployeeStatus {
     EMPLOYEE_MARKED_LEAVER = "Marked leaver"
 }
 
+# [Database] Enum for employment types.
 public enum EmploymentTypeName {
     PERMANENT = "PERMANENT",
     INTERNSHIP = "INTERNSHIP",

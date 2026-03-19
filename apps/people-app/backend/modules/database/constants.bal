@@ -30,4 +30,4 @@ const DEFAULT_PAGE_NUMBER = 1;
 const DEFAULT_RECORDS_PER_PAGE = 20;
 
 # Prefix shared by all consultancy-type employee IDs 
-const CONSULTANCY_ID_PREFIX = "CON";
+public const CONSULTANCY_ID_PREFIX = "CON";

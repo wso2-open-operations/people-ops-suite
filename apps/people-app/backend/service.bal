@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import people.authorization;
 import people.database;
 import people.wso2_coin;
@@ -761,16 +762,39 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        int|error employeeId = database:addEmployee(payload, userInfo.email);
-        if employeeId is error {
-            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
+        string|error generatedEmployeeId = generateEmployeeId(payload);
+        if generatedEmployeeId is error {
+            string customErr = generatedEmployeeId.message();
+            log:printError("Error occurred while resolving employee ID", generatedEmployeeId);
+            boolean isValidationError =
+            customErr.includes("must be provided manually") ||
+            customErr.includes("is reserved for auto-generation") ||
+            customErr.includes("already in use");
+            if isValidationError {
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }
-        return employeeId;
+
+        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, generatedEmployeeId);
+        if newEmployeeId is error {
+            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, newEmployeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_CREATION_FAILED
+                }
+            };
+        }
+        return newEmployeeId;
+
     }
 
     # Update employee personal information.
@@ -1384,7 +1408,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         string csvContent = status == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees)
             : database:buildEmployeeCsv(allEmployees);
-        string statusLabel = status is () ? "all" : re` `.replaceAll(status.toLowerAscii(), "_");
+        string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;

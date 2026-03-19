@@ -763,7 +763,7 @@ isolated function getEmployeeIdContextQuery(int companyId, int employmentTypeId)
 # + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
 # + employmentTypes - The employment type names that share this sequence
 # + return - Query to lock the sequence and return the last numeric ID
-isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, string[] employmentTypes)
+isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, EmploymentTypeName[] employmentTypes)
     returns sql:ParameterizedQuery {
 
     sql:ParameterizedQuery inClause = ``;
