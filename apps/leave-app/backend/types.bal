@@ -64,6 +64,16 @@ public type LeavePolicy record {|
     float? annual?;
     # Casual leave count
     float? casual?;
+    # France: Congés Payés (paid annual leave) count
+    float? congesPayes?;
+    # France: RTT (Réduction du Temps de Travail) count
+    float? rtt?;
+    # Spain: Annual leave count
+    float? spainAnnual?;
+    # Spain: Casual leave count
+    float? spainCasual?;
+    # Sick leave count (open/unlimited when null)
+    float? sick?;
 |};
 
 # Leave.
@@ -111,6 +121,10 @@ public type LeaveEntitlement record {|
     LeavePolicy leavePolicy;
     # Leaves taken after policy adjustment
     LeavePolicy policyAdjustedLeave;
+    # Start date of the leave period (ISO 8601)
+    string? periodStart?;
+    # End date of the leave period (ISO 8601)
+    string? periodEnd?;
 |};
 
 # Leave input for leave creation.
@@ -222,6 +236,8 @@ public type UserInfo record {|
     boolean? isLead;
     # Subordinate count
     int subordinateCount;
+    # Employee location/country
+    string? location;
 |};
 
 # Sabbatical leave Process Payload.

@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { AppConfig } from "@root/src/config/config";
 import {
   Action,
@@ -22,6 +21,7 @@ import {
   Employee,
   LeadReportRequest,
   LeadReportResponse,
+  LeaveEntitlement,
   LeaveHistoryQueryParam,
   LeaveHistoryResponse,
   LeaveSubmissionRequest,
@@ -59,7 +59,7 @@ export const fetchEmployees = async (): Promise<Employee[]> => {
   const apiInstance = APIService.getInstance();
 
   const response = await apiInstance.get<Employee[]>(
-    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active`,
+    `${AppConfig.serviceUrls.employees}?employeeStatuses=Active&employeeStatuses=Marked%20leaver`,
   );
 
   return response.data;
@@ -216,4 +216,29 @@ export const formatDateForApi = (date: any): string => {
  */
 export const getPeriodType = (daysCount: number): PeriodType.ONE | PeriodType.MULTIPLE => {
   return daysCount === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+};
+
+/**
+ * Fetch leave entitlement for a given employee.
+ * @param email - Employee email
+ * @param years - Optional array of years (defaults to current year on backend)
+ * @returns Promise with array of leave entitlement records
+ */
+export const getLeaveEntitlement = async (
+  email: string,
+  years?: number[],
+): Promise<LeaveEntitlement[]> => {
+  const apiInstance = APIService.getInstance();
+
+  const queryParts: string[] = [];
+  if (Array.isArray(years) && years.length > 0) {
+    years.forEach((y) => queryParts.push(`years=${encodeURIComponent(y)}`));
+  }
+  const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+
+  const response = await apiInstance.get<LeaveEntitlement[]>(
+    `${AppConfig.serviceUrls.leaveEntitlement}/${encodeURIComponent(email)}/leave-entitlement${queryString}`,
+  );
+
+  return response.data;
 };

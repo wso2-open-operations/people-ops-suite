@@ -16,6 +16,8 @@
 
 import React from "react";
 import { APP_NAME } from "@config/config";
+import logoBlack from "@assets/images/WSO2-Logo-Black.png";
+import logoWhite from "@assets/images/WSO2-Logo-White.png";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useAppAuthContext } from "@context/AuthContext";
@@ -28,11 +30,13 @@ import {
   MenuItem,
   Stack,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import { resetEmployee } from "@root/src/slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 
 const Header = () => {
+  const theme = useTheme();
   const authContext = useAppAuthContext();
   const dispatch = useAppDispatch();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(
@@ -84,12 +88,14 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "40px",
-            maxWidth: "100px",
+            height: "20px",
+            width: "auto",
             cursor: "pointer",
+            paddingLeft: "5px",
+            paddingRight: "2px"
           }}
           onClick={() => (window.location.href = "/")}
-          src={require("@assets/images/wso2-logo.svg").default}
+          src={theme.palette.mode === "dark" ? logoWhite : logoBlack}
         ></img>
         <Typography
           variant="h5"

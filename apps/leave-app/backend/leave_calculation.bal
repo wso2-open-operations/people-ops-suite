@@ -213,7 +213,9 @@ isolated function getLeaveEntitlement(readonly & Employee employee, string token
             year,
             location: employee.location,
             leavePolicy,
-            policyAdjustedLeave
+            policyAdjustedLeave,
+            periodStart: getLeavePeriodStart(employee.location, year),
+            periodEnd: getLeavePeriodEnd(employee.location, year)
         };
 }
 
@@ -264,6 +266,19 @@ isolated function getLegallyEntitledLeave(readonly & Employee employee) returns 
                 casual: lkCasualLeave
             };
         }
+        FR => {
+            // France: 25 days Congés Payés (June–May period) + RTT days (calendar year) + open sick leave
+            return {
+                congesPayes: 25.0,
+                rtt: 9.0
+            };
+        }
+        ES => {
+            // Spain: 23 working days annual leave (calendar year) + open sick + open casual
+            return {
+                spainAnnual: 23.0
+            };
+        }
         _ => {
             return {};
         }
@@ -290,8 +305,13 @@ isolated function getLeaveReportContent(database:Leave[] leaves) returns ReportC
             continue;
         }
         if processedLeaveType is database:SICK_LEAVE {
-            processedLeaveType = database:CASUAL_LEAVE;
+            // For France and Spain, sick leave is tracked separately; for others merge into casual
+            string? leaveLocation = leave.location;
+            if leaveLocation !is FR && leaveLocation !is ES {
+                processedLeaveType = database:CASUAL_LEAVE;
+            }
         }
+        // France/Spain leave types are tracked as-is (conges_payes, rtt, spain_annual, spain_casual)
         map<float>? employeeLeaveMap = reportContent[email];
         if employeeLeaveMap is map<float> {
             float? leaveTypeCount = employeeLeaveMap[processedLeaveType];
@@ -402,9 +422,80 @@ isolated function getPolicyAdjustedLeaveCounts(readonly & Employee employee, str
     returns LeavePolicy|error {
 
     LeavePolicy leavePolicy = check getLegallyEntitledLeave(employee);
+    string email = employee.workEmail;
+    string? location = employee.location;
+    int effectiveYear = year ?: time:utcToCivil(time:utcNow()).year;
+
+    // France: track Congés Payés and RTT independently
+    if location is FR {
+        float congesPayesTaken = 0.0;
+        float rttTaken = 0.0;
+        float sickTaken = 0.0;
+
+        // Congés Payés: June 1 (prev year) to May 31 (current year)
+        [string, string] [cpStart, cpEnd] = getLeavePeriodBounds(location, database:CONGES_PAYES_LEAVE, effectiveYear);
+        database:Leave[]|error cpLeaves = database:getLeaves({emails: [email], statuses: [APPROVED], startDate: cpStart, endDate: cpEnd});
+        if cpLeaves is error {
+            return error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, cpLeaves);
+        }
+        foreach database:Leave leave in cpLeaves {
+            if leave.leaveType is database:CONGES_PAYES_LEAVE && leave.numberOfDays is float {
+                congesPayesTaken += <float>leave.numberOfDays;
+            }
+        }
+
+        // RTT + Sick: calendar year
+        [string, string] [rttStart, rttEnd] = getLeavePeriodBounds(location, database:RTT_LEAVE, effectiveYear);
+        database:Leave[]|error rttLeaves = database:getLeaves({emails: [email], statuses: [APPROVED], startDate: rttStart, endDate: rttEnd});
+        if rttLeaves is error {
+            return error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, rttLeaves);
+        }
+        foreach database:Leave leave in rttLeaves {
+            if leave.leaveType is database:RTT_LEAVE && leave.numberOfDays is float {
+                rttTaken += <float>leave.numberOfDays;
+            } else if leave.leaveType is database:SICK_LEAVE && leave.numberOfDays is float {
+                sickTaken += <float>leave.numberOfDays;
+            }
+        }
+
+        return {
+            congesPayes: congesPayesTaken,
+            rtt: rttTaken,
+            sick: sickTaken
+        };
+    }
+
+    // Spain: track annual, casual, and sick independently
+    if location is ES {
+        float spainAnnualTaken = 0.0;
+        float spainCasualTaken = 0.0;
+        float sickTaken = 0.0;
+
+        [string, string] [esStart, esEnd] = getLeavePeriodBounds(location, database:SPAIN_ANNUAL_LEAVE, effectiveYear);
+        database:Leave[]|error esLeaves = database:getLeaves({emails: [email], statuses: [APPROVED], startDate: esStart, endDate: esEnd});
+        if esLeaves is error {
+            return error(ERR_MSG_LEAVES_RETRIEVAL_FAILED, esLeaves);
+        }
+        foreach database:Leave leave in esLeaves {
+            if leave.leaveType is database:SPAIN_ANNUAL_LEAVE && leave.numberOfDays is float {
+                spainAnnualTaken += <float>leave.numberOfDays;
+            } else if leave.leaveType is database:SPAIN_CASUAL_LEAVE && leave.numberOfDays is float {
+                spainCasualTaken += <float>leave.numberOfDays;
+            } else if leave.leaveType is database:SICK_LEAVE && leave.numberOfDays is float {
+                sickTaken += <float>leave.numberOfDays;
+            }
+        }
+
+        return {
+            spainAnnual: spainAnnualTaken,
+            spainCasual: spainCasualTaken,
+            sick: sickTaken
+        };
+    }
+
+    // Sri Lanka and other locations: existing logic
     float? entitledCasualLeave = leavePolicy?.casual;
     float? entitledAnnualLeave = leavePolicy?.annual;
-    string email = employee.workEmail;
     if entitledCasualLeave !is float || entitledAnnualLeave !is float {
         return {};
     }

@@ -15,10 +15,16 @@
 // under the License. 
 import people.authorization;
 import people.database;
+import people.gsheet;
+import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
+import ballerina/time;
+
+# Master wallet address for car park O2C payments.
+configurable string masterWalletAddress = ?;
 
 @display {
     label: "People Service",
@@ -92,17 +98,84 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        int[] privileges = [authorization:ADMIN_PRIVILEGE, authorization:EMPLOYEE_PRIVILEGE];
-
-        // TODO: Fetch privileges and return along with the basic info
+        int[] privileges = [];
+        if authorization:checkPermissions([authorization:authorizedRoles.EMPLOYEE_ROLE], userInfo.groups) {
+            privileges.push(authorization:EMPLOYEE_PRIVILEGE);
+        }
+        if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            privileges.push(authorization:ADMIN_PRIVILEGE);
+        }
+        boolean|error isLeadUser = database:isLead(userInfo.email);
+        if isLeadUser is error {
+            string customErr = "Error occurred while checking lead status";
+            log:printError(customErr, isLeadUser, email = userInfo.email);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if isLeadUser {
+            privileges.push(authorization:LEAD_PRIVILEGE);
+        }
         return {...employeeBasicInfo, privileges};
+    }
+
+    # Validate EPF uniqueness.
+    #
+    # + payload - EPF validation payload
+    # + return - Whether the EPF already exists, or HTTP errors
+    resource function post employees/validate\-epf(http:RequestContext ctx, database:EpfValidationPayload payload)
+        returns database:EpfValidationResponse|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to validate EPF", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to validate EPF"
+                }
+            };
+        }
+
+        string trimmedEpf = payload.epf.trim();
+        if trimmedEpf == "" {
+            string customErr = "EPF validation failed: EPF cannot be empty";
+            log:printWarn(customErr);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        string|error? employeeId = database:getEmployeeIdByEpf(trimmedEpf);
+        if employeeId is error {
+            string customErr = "Error occurred while validating EPF uniqueness";
+            log:printError(customErr, employeeId, epf = trimmedEpf);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        return {epfExists: employeeId is string};
     }
 
     # Fetch employee detailed information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee detailed information
-    resource function get employees/[string id](http:RequestContext ctx)
+    resource function get employees/[string employeeId](http:RequestContext ctx)
         returns database:Employee|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -114,33 +187,46 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            string customErr = string `Error occurred while fetching employee information for ID: ${id}`;
-            log:printError(customErr, employeeInfo, id = id);
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
                 }
             };
         }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
+        if !hasAdminAccess && !isSelf {
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isSubordinate {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
+            }
+        }
+
         if employeeInfo is () {
             string customErr = "Employee information not found";
-            log:printWarn(customErr, id = id);
-            return <http:NotFound>{
-                body: {
-                    message: customErr
-                }
-            };
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
         }
+
         return employeeInfo;
     }
 
     # Fetch employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + return - Employee personal information
-    resource function get employees/[string id]/personal\-info(http:RequestContext ctx)
+    resource function get employees/[string employeeId]/personal\-info(http:RequestContext ctx)
         returns database:EmployeePersonalInfo|http:InternalServerError|http:NotFound|http:Forbidden {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
@@ -152,10 +238,42 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employeeInfo, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        boolean isSelf = employeeInfo != () && employeeInfo.workEmail == userInfo.email;
+        if !hasAdminAccess && !isSelf {
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isSubordinate {
+                log:printWarn("User is not authorized to view this employee's information", invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to view this employee's information"}};
+            }
+        }
+
+        if employeeInfo is () {
+            string customErr = "Employee information not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: customErr
@@ -164,7 +282,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -172,6 +290,137 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Fetch managers.
+    #
+    # + return - List of managers or error response
+    resource function get employees/managers(http:RequestContext ctx)
+        returns database:Manager[]|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !hasAdminAccess {
+            boolean|error isLeadUser = database:isLead(userInfo.email);
+            if isLeadUser is error {
+                string customErr = "Error occurred while checking lead status";
+                log:printError(customErr, isLeadUser, email = userInfo.email);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isLeadUser {
+                log:printWarn("User is not authorized to view managers", invokerEmail = userInfo.email);
+                return <http:Forbidden>{body: {message: "You are not authorized to view managers"}};
+            }
+        }
+
+        database:Manager[]|error managers = database:getManagers();
+        if managers is error {
+            string customErr = "Error occurred while fetching managers";
+            log:printError(customErr, managers);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return managers;
+    }
+
+    # Fetch employees based on filters.
+    #
+    # + payload - Get employees filter payload
+    # + return - List of employees or error response
+    resource function post employees/search(http:RequestContext ctx, database:EmployeeSearchPayload payload)
+        returns http:Ok|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess
+            = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        if !database:EmployeeSortField.hasKey(payload.sort.sortField) {
+            string customErr = "Invalid sort field: " + payload.sort.sortField;
+            log:printWarn(customErr, sortField = payload.sort.sortField);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if !database:SortOrder.hasKey(payload.sort.sortOrder) {
+            string customErr = "Invalid sort order: " + payload.sort.sortOrder;
+            log:printWarn(customErr, sortOrder = payload.sort.sortOrder);
+            return <http:BadRequest>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+
+        if hasAdminAccess && !payload.leadOnly {
+            database:EmployeesResponse|error employees = database:getEmployees(payload);
+            if employees is error {
+                string customErr = "Error occurred while fetching employees";
+                log:printError(customErr, employees);
+                return <http:InternalServerError>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+            return <http:Ok>{body: employees};
+        }
+
+        // Lead path: verify the caller manages at least one employee.
+        boolean|error isLeadUser = database:isLead(userInfo.email);
+        if isLeadUser is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, isLeadUser);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        if !isLeadUser {
+            log:printWarn("User is not authorized to view employee list", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employee list"
+                }
+            };
+        }
+
+        // Lead: results restricted to their subordinates.
+        database:EmployeesResponse|error employees = database:getEmployees(payload, userInfo.email);
+        if employees is error {
+            string customErr = "Error occurred while fetching employees";
+            log:printError(customErr, employees);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return <http:Ok>{body: employees};
     }
 
     # Fetch continuous service record by work email.
@@ -210,6 +459,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view continuous service records", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view continuous service records"
+                }
+            };
+        }
+
         database:ContinuousServiceRecordInfo[]|error serviceRecords = database:getContinuousServiceRecordsByEmail(workEmail);
         if serviceRecords is error {
             string customErr = "Error occurred while fetching continuous service records";
@@ -226,7 +485,28 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Fetch all employees' basic information.
     #
     # + return - All employees' basic information
-    resource function get employees/basic\-info() returns database:EmployeeBasicInfo[]|http:InternalServerError {
+    resource function get employees/basic\-info(http:RequestContext ctx)
+        returns database:EmployeeBasicInfo[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to view employees basic information", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to view employees basic information"
+                }
+            };
+        }
+
         database:EmployeeBasicInfo[]|error employeesBasicInfos = database:getAllEmployeesBasicInfo();
         if employeesBasicInfos is error {
             string customErr = "Error occurred while fetching employees' basic information";
@@ -310,6 +590,23 @@ service http:InterceptableService / on new http:Listener(9090) {
         return units;
     }
 
+    # Get full organization structure.
+    #
+    # + return - Full organization structure
+    resource function get organization\-structure() returns database:OrgStructureBusinessUnit[]|http:InternalServerError {
+        database:OrgStructureBusinessUnit[]|error orgStructure = database:getFullOrganizationStructure();
+        if orgStructure is error {
+            string customErr = "Error while fetching organization structure";
+            log:printError(customErr, orgStructure);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return orgStructure;
+    }
+
     # Get career functions.
     #
     # + return - Career functions
@@ -347,11 +644,29 @@ service http:InterceptableService / on new http:Listener(9090) {
         return designations;
     }
 
+    # Get companies.
+    #
+    # + return - Companies
+    resource function get companies() returns database:Company[]|http:InternalServerError {
+        database:Company[]|error companies = database:getCompanies();
+        if companies is error {
+            string customErr = "Error while fetching Companies";
+            log:printError(customErr, companies);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return companies;
+    }
+
     # Get offices.
     #
+    # + companyId - Company ID (optional)
     # + return - Offices
-    resource function get offices() returns database:Office[]|http:InternalServerError {
-        database:Office[]|error offices = database:getOffices();
+    resource function get offices(int? companyId = ()) returns database:Office[]|http:InternalServerError {
+        database:Office[]|error offices = database:getOffices(companyId);
         if offices is error {
             string customErr = "Error while fetching Offices";
             log:printError(customErr, offices);
@@ -362,6 +677,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return offices;
+    }
+
+    # Get employment types.
+    #
+    # + return - Employment types
+    resource function get employment\-types() returns database:EmploymentType[]|http:InternalServerError {
+        database:EmploymentType[]|error employmentTypes = database:getEmploymentTypes();
+        if employmentTypes is error {
+            string customErr = "Error while fetching Employment Types";
+            log:printError(customErr, employmentTypes);
+            return <http:InternalServerError>{
+                body: {
+                    message: customErr
+                }
+            };
+        }
+        return employmentTypes;
     }
 
     # Create a new employee.
@@ -410,6 +742,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? epfOpt = payload.epf;
+        if epfOpt is string && epfOpt.trim() != "" {
+            string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
+            if existingEmp is error {
+                string customErr = "Error occurred while validating EPF uniqueness";
+                log:printError(customErr, existingEmp, epf = epfOpt);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_CREATION_FAILED
+                    }
+                };
+            }
+            if existingEmp is string {
+                string customErr = "EPF already exists";
+                log:printWarn(customErr, epf = epfOpt);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+        }
+
         int|error employeeId = database:addEmployee(payload, userInfo.email);
         if employeeId is error {
             log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
@@ -424,12 +779,12 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Update employee personal information.
     #
-    # + id - Employee ID
+    # + employeeId - Employee ID
     # + payload - Employee personal information update payload
     # + return - HTTP OK or HTTP errors
-    resource function put employees/[string id]/personal\-info(http:RequestContext ctx,
+    resource function patch employees/[string employeeId]/personal\-info(http:RequestContext ctx,
             database:UpdateEmployeePersonalInfoPayload payload)
-        returns database:EmployeePersonalInfo|http:NotFound|http:Forbidden|http:InternalServerError {
+        returns http:Ok|http:NotFound|http:Forbidden|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
@@ -440,10 +795,12 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        database:Employee|error? employeeInfo = database:getEmployeeInfo(id);
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
         if employeeInfo is error {
-            log:printError(string `Error occurred while fetching employee information for ID: ${id}`,
-                    employeeInfo, id = id);
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -451,27 +808,50 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         if employeeInfo is () {
-            log:printWarn("Employee information not found", id = id);
+            log:printWarn("Employee information not found", employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
                 }
             };
         }
-        if employeeInfo.workEmail != userInfo.email {
-            log:printWarn("User is trying to update personal info of another employee", id = id,
-                    invokerEmail = userInfo.email);
-            return <http:Forbidden>{
-                body: {
-                    message: "You are not allowed to update personal information of other employees"
-                }
-            };
+
+        if !hasAdminAccess {
+            if employeeInfo.workEmail != userInfo.email {
+                string customErr = "You are not allowed to update personal information of another employee";
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email, targetEmail = employeeInfo.workEmail);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+
+            boolean hasRestrictedFields =
+                payload.nicOrPassport is string ||
+                payload.firstName is string ||
+                payload.lastName is string ||
+                payload.fullName is string ||
+                payload.title is string ||
+                payload.dob is string ||
+                payload.gender is string ||
+                payload.nationality is string;
+
+            if hasRestrictedFields {
+                string customErr = "You are not allowed to update one or more of the provided fields";
+                log:printWarn(customErr, employeeId = employeeId, invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
         }
 
-        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(id);
+        database:EmployeePersonalInfo|error? employeePersonalInfo = database:getEmployeePersonalInfo(employeeId);
         if employeePersonalInfo is error {
-            string customErr = string `Error occurred while fetching employee personal information for ID: ${id}`;
-            log:printError(customErr, employeePersonalInfo, id = id);
+            string customErr = string `Error occurred while fetching employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, employeePersonalInfo, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -480,7 +860,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if employeePersonalInfo is () {
             string customErr = "Employee personal information not found";
-            log:printWarn(customErr, id = id);
+            log:printWarn(customErr, employeeId = employeeId);
             return <http:NotFound>{
                 body: {
                     message: customErr
@@ -488,10 +868,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? updateResult = database:updateEmployeePersonalInfo(employeePersonalInfo.id, payload);
+        error? updateResult = database:updateEmployeePersonalInfo(employeeId, payload, userInfo.email);
         if updateResult is error {
-            string customErr = string `Error occurred while updating employee personal information for ID: ${id}`;
-            log:printError(customErr, updateResult, id = id);
+            string customErr = string `Error occurred while updating employee personal information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_PERSONAL_INFO_UPDATE_FAILED
@@ -499,27 +879,92 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        return {
-            id: employeePersonalInfo.id,
-            nicOrPassport: employeePersonalInfo.nicOrPassport,
-            fullName: employeePersonalInfo.fullName,
-            nameWithInitials: employeePersonalInfo.nameWithInitials,
-            firstName: employeePersonalInfo.firstName,
-            lastName: employeePersonalInfo.lastName,
-            title: employeePersonalInfo.title,
-            dob: employeePersonalInfo.dob,
-            nationality: employeePersonalInfo.nationality,
-            personalEmail: payload.personalEmail,
-            personalPhone: payload.personalPhone,
-            residentNumber: payload.residentNumber,
-            addressLine1: payload.addressLine1,
-            addressLine2: payload.addressLine2,
-            city: payload.city,
-            stateOrProvince: payload.stateOrProvince,
-            postalCode: payload.postalCode,
-            country: payload.country,
-            emergencyContacts: payload.emergencyContacts
-        };
+        return http:OK;
+    }
+
+    # Update employee job information.
+    #
+    # + employeeId - Employee ID
+    # + payload - Employee job info update payload
+    # + return - HTTP OK or HTTP errors
+    resource function patch employees/[string employeeId]/job\-info(http:RequestContext ctx,
+            database:UpdateEmployeeJobInfoPayload payload)
+        returns http:Ok|http:NotFound|http:Forbidden|http:BadRequest|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND
+                }
+            };
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
+        if !hasAdminAccess {
+            log:printWarn("User is not authorized to update an employee", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {
+                    message: "You are not authorized to update an employee"
+                }
+            };
+        }
+
+        database:Employee|error? employeeInfo = database:getEmployeeInfo(employeeId);
+        if employeeInfo is error {
+            log:printError(string `Error occurred while fetching employee information for ID: ${employeeId}`,
+                    employeeInfo, employeeId = employeeId);
+
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+        if employeeInfo is () {
+            log:printWarn("Employee information not found", employeeId = employeeId);
+            return <http:NotFound>{
+                body: {
+                    message: "Employee information not found"
+                }
+            };
+        }
+
+        string? epfOpt = payload.epf;
+        if epfOpt is string && epfOpt.trim() != "" {
+            string|error? existingEmp = database:getEmployeeIdByEpf(epfOpt);
+            if existingEmp is error {
+                string customErr = "Error occurred while validating EPF uniqueness for update";
+                log:printError(customErr, existingEmp, epf = epfOpt);
+                return <http:InternalServerError>{
+                    body: {
+                        message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                    }
+                };
+            }
+            if existingEmp is string && existingEmp != employeeId {
+                string customErr = "EPF already exists for another employee";
+                log:printWarn(customErr, epf = epfOpt, employeeId = employeeId);
+                return <http:BadRequest>{
+                    body: {
+                        message: customErr
+                    }
+                };
+            }
+        }
+
+        error? updateResult = database:updateEmployeeJobInfo(employeeId, payload, userInfo.email);
+        if updateResult is error {
+            string customErr = string `Error occurred while updating employee job information for ID: ${employeeId}`;
+            log:printError(customErr, updateResult, employeeId = employeeId);
+            return <http:InternalServerError>{
+                body: {
+                    message: ERROR_EMPLOYEE_INFO_UPDATE_FAILED
+                }
+            };
+        }
+
+        return http:OK;
     }
 
     # Fetch vehicles of a specific employee.
@@ -530,7 +975,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + 'limit - limit of the response
     # + return - List  of vehicles | Error
     resource function get employees/[string employeeEmail]/vehicles(http:RequestContext ctx,
-            database:VehicleStatus? vehicleStatus, int? offset, int? 'limit)
+            database:VehicleStatus? vehicleStatus, database:VehicleTypes? vehicleType, int? offset, int? 'limit)
         returns database:Vehicles|http:InternalServerError|http:NotFound|http:Forbidden {
 
         // User information header.
@@ -554,6 +999,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         database:Vehicles|error vehicles = database:fetchVehicles(
                 owner = employeeEmail,
                 vehicleStatus = vehicleStatus,
+                vehicleType = vehicleType,
                 'limit = 'limit,
                 offset = offset
             );
@@ -673,1170 +1119,368 @@ service http:InterceptableService / on new http:Listener(9090) {
         return http:OK;
     }
 
-    # Get organization details (full hierarchy with business units, teams, sub-teams, units).
+    # Get car park configs.
     #
-    # + return - Organization hierarchy with head, functional lead, and headcount per node
-    resource function get organization(http:RequestContext ctx)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|Company {
+    # + return - Car park configs or error response
+    resource function get parkings/configs(http:RequestContext ctx)
+        returns CarParkConfigResponse|http:InternalServerError {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        database:Company|error orgStructure = database:getOrganizationDetails();
-
-        if orgStructure is error {
-            string customErr = "Error while fetching organization details";
-            log:printError(customErr, orgStructure);
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-
-        return orgStructure;
+        return {publicWalletAddress: masterWalletAddress};
     }
 
-    # Add new BusinessUnit.
+    # List parking floors.
     #
-    # + payload - Business-unit details
-    # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
+    # + return - List of parking floors or error response
+    resource function get parkings/floors(http:RequestContext ctx)
+        returns database:ParkingFloor[]|http:InternalServerError {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateBusinessUnitNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating business unit name uniqueness";
-            log:printError(customErr, nameUniqueness);
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
 
-        if nameUniqueness == false {
+        database:ParkingFloor[]|error floors = database:getParkingFloors();
+        if floors is error {
+            log:printError("Error fetching parking floors", floors);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching parking floors."}
+            };
+        }
+        return floors;
+    }
+
+    # List parking slots for a floor with availability for a given date.
+    #
+    # + id - Floor identifier
+    # + date - Booking date
+    # + return - List of parking slots with availability status or error response
+    resource function get parkings/floors/[int id]/slots(http:RequestContext ctx, string date)
+        returns database:ParkingSlot[]|http:InternalServerError|http:BadRequest {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+
+        if !regex:matches(date, database:DATE_PATTERN_STRING) {
             return <http:BadRequest>{
-                body: {
-                    message: "Business unit name already exists"
-                }
+                body: {message: "Query parameter 'date' must be in YYYY-MM-DD format."}
             };
         }
 
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnit(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding a business unit";
-            log:printError(customErr, result);
+        database:ParkingSlot[]|error slots = database:getParkingSlotsByFloor(id, date);
+        if slots is error {
+            log:printError("Error fetching parking slots", slots);
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: "Error occurred while fetching parking slots."}
+            };
+        }
+        return slots;
+    }
+
+    # Create a parking reservation.
+    #
+    # + body - Reservation creation details
+    # + return - Reservation ID and amount to be paid in coins, or error response
+    resource function post parkings/reservations(http:RequestContext ctx, CreateParkingReservationRequest body)
+        returns CreateParkingReservationResponse|http:InternalServerError|http:BadRequest|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
 
-        return <http:Created>{
-            body: {
-                message: string `Business unit ${payload.name} Successfully created`
-            }
+        time:Utc nowUtc = time:utcNow();
+        string today;
+        time:Zone? sriLankaZone = time:getZone("Asia/Colombo");
+        if sriLankaZone is time:Zone {
+            time:Civil civil = sriLankaZone.utcToCivil(nowUtc);
+            string|error civilStr = time:civilToString(civil);
+            today = civilStr is string ? civilStr.substring(0, 10) : time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+        } else {
+            today = time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+        }
+        if body.bookingDate != today {
+            return <http:BadRequest>{
+                body: {message: "Reservations are only allowed for the same day. Use date " + today + "."}
+            };
+        }
+
+        string|error? vehicleOwner = database:getVehicleOwner(body.vehicleId);
+        if vehicleOwner is error {
+            log:printError("Error fetching vehicle owner", vehicleOwner);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating vehicle."}
+            };
+        }
+        if vehicleOwner is () || vehicleOwner != userInfo.email {
+            return <http:Forbidden>{
+                body: {message: "Vehicle not found or you are not the owner. Use one of your registered (active) vehicles."}
+            };
+        }
+
+        database:ParkingSlot|error? slot = database:getParkingSlotById(body.slotId);
+        if slot is error {
+            log:printError("Error fetching slot for reservation", slot);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot."}
+            };
+        }
+        if slot is () {
+            return <http:BadRequest>{
+                body: {message: string `Parking slot '${body.slotId}' not found.`}
+            };
+        }
+
+        boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
+        if booked is error {
+            log:printError("Error checking slot availability", booked);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while checking slot availability."}
+            };
+        }
+        if booked {
+            return <http:BadRequest>{
+                body: {message: string `Slot ${body.slotId} is already booked for ${body.bookingDate}.`}
+            };
+        }
+
+        int|error reservationId = database:addParkingReservation({
+                                                                     slotId: body.slotId,
+                                                                     bookingDate: body.bookingDate,
+                                                                     employeeEmail: userInfo.email,
+                                                                     vehicleId: body.vehicleId,
+                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                     createdBy: userInfo.email
+                                                                 });
+        if reservationId is error {
+            log:printError("Error creating parking reservation", reservationId);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while creating reservation."}
+            };
+        }
+
+        return {
+            reservationId,
+            coinsAmount: slot.coinsPerSlot
         };
     }
 
-    # Create a new Team, and optionally map it to a BusinessUnit-Team.
+    # Get current user's parking reservations.
     #
-    # + payload - Team details & businessUnit ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+    # + fromDate - Filter reservations from this date
+    # + toDate - Filter reservations up to this date
+    # + return - List of parking reservations or error response
+    resource function get parkings/reservations(http:RequestContext ctx, string? fromDate, string? toDate)
+        returns database:ParkingReservationDetails[]|http:InternalServerError {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateTeamNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating team name uniqueness";
-            log:printError(customErr, nameUniqueness);
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
 
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Team name already exists"
-                }
+        database:ParkingReservationDetails[]|error list = database:getParkingReservationsByEmployee(
+                userInfo.email, fromDate, toDate);
+        if list is error {
+            log:printError("Error fetching parking reservations", list);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching reservations."}
+            };
+        }
+        return list;
+    }
+
+    # Get a single reservation.
+    #
+    # + id - Reservation identifier
+    # + return - Parking reservation details or error response
+    resource function get parkings/reservations/[int id](http:RequestContext ctx)
+        returns database:ParkingReservationDetails|http:InternalServerError|http:Forbidden {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
 
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addTeamWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
+        database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(id);
+        if reservation is error {
+            log:printError("Error fetching parking reservation", reservation);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while fetching reservation."}
+            };
+        }
+        if reservation is () || reservation.employeeEmail != userInfo.email {
+            return <http:Forbidden>{
+                body: {message: "You are not allowed to view this reservation."}
+            };
+        }
+        return reservation;
+    }
 
-            if result is error {
-                string customErr = "Error while adding a team";
-                log:printError(customErr, result);
+    # Export employees as a CSV file, optionally filtered by status.
+    #
+    # + status - Optional employee status query parameter (e.g. "Active", "Left"); omit to export all employees
+    # + return - CSV file response or HTTP errors
+    resource function post reports/employees/generate(http:RequestContext ctx, database:EmployeeStatus? status = ())
+        returns http:Response|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
+            };
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to access reports", invokerEmail = userInfo.email);
+            return <http:Forbidden>{
+                body: {message: "You are not authorized to access reports"}
+            };
+        }
+
+        database:Employee[] allEmployees = [];
+        boolean fetchMore = true;
+        int offset = 0;
+
+        while fetchMore {
+            database:EmployeesResponse|error pageResult = database:getEmployees({
+                searchString: (),
+                filters: {employeeStatus: status},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
+            if pageResult is error {
+                log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
+                    body: {message: "Error generating report"}
                 };
             }
-
-            return <http:Created>{
-                body: {
-                    message: string `Team ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a team";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Team ${payload.name} Successfully created`
+            allEmployees.push(...pageResult.employees);
+            if pageResult.employees.length() < database:DEFAULT_LIMIT {
+                fetchMore = false;
             }
-        };
+            offset += database:DEFAULT_LIMIT;
+        }
+
+        string csvContent = status == database:EMPLOYEE_LEFT
+            ? database:buildResignationCsv(allEmployees)
+            : database:buildEmployeeCsv(allEmployees);
+        string statusLabel = status is () ? "all" : re` `.replaceAll(status.toLowerAscii(), "_");
+        string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
+
+        http:Response response = new;
+        response.setHeader("Content-Type", "text/csv");
+        response.setHeader("Content-Disposition", string `attachment; filename="${filename}"`);
+        response.setTextPayload(csvContent);
+        return response;
     }
 
-    # Create a new SubTeam, and optionally map it to a BusinessUnit-Team-SubTeam
+    # Confirm parking reservation with transaction hash.
     #
-    # + payload - SubTeam details & businessUnit-team ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
+    # + body - Request containing transaction hash and optional reservation ID
+    # + return - Reservation details with CONFIRMED status or error response
+    resource function post parkings/reservations/confirm(http:RequestContext ctx, ConfirmParkingReservationRequest body)
+        returns database:ParkingReservationDetails|http:BadRequest|http:InternalServerError|http:Forbidden {
 
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateSubTeamNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating sub-team name uniqueness";
-            log:printError(customErr, nameUniqueness);
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
 
-        if nameUniqueness == false {
+        database:ParkingReservationDetails|error? reservation = database:getParkingReservationById(body.reservationId);
+
+        if reservation is error {
+            log:printError("Error fetching reservation", reservation);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+        if reservation is () || reservation.employeeEmail != userInfo.email {
+            return <http:Forbidden>{
+                body: {message: "You are not allowed to confirm this reservation."}
+            };
+        }
+
+        if reservation.status != database:PENDING {
             return <http:BadRequest>{
-                body: {
-                    message: "Sub-team name already exists"
-                }
+                body: {message: string `Reservation is already ${reservation.status.toString()}. Cannot confirm.`}
             };
         }
 
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addSubTeamWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
-
-            if result is error {
-                string customErr = "Error while adding a sub-team";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-
-            return <http:Created>{
-                body: {
-                    message: string `Sub-team ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addSubTeam(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a sub-team";
-            log:printError(customErr, result);
+        // Prevent reuse of the same blockchain transaction hash across multiple reservations.
+        database:ReservationIdRow|error? existingTx =
+            database:getParkingReservationByTransactionHash(body.transactionHash);
+        if existingTx is error {
+            log:printError("Error checking transaction hash reuse", existingTx);
             return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
+                body: {message: "Error occurred while verifying transaction hash."}
+            };
+        }
+        if existingTx is database:ReservationIdRow && existingTx.id != reservation.id {
+            return <http:BadRequest>{
+                body: {message: "This transaction hash has already been used for another reservation."}
             };
         }
 
-        return <http:Created>{
-            body: {
-                message: string `Sub-team ${payload.name} Successfully created`
-            }
-        };
+        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
+            reservation.coinsAmount);
+        if confirmErr is error {
+            log:printError("Error confirming transaction", confirmErr);
+            return <http:BadRequest>{
+                body: {message: "Transaction verification failed."}
+            };
+        }
+
+        boolean|error updated = database:updateParkingReservationStatus({
+                                                                            reservationId: reservation.id,
+                                                                            status: database:CONFIRMED,
+                                                                            transactionHash: body.transactionHash,
+                                                                            updatedBy: userInfo.email
+                                                                        });
+        if updated is error {
+            log:printError("Error confirming reservation", updated);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while confirming reservation."}
+            };
+        }
+        if !updated {
+            return <http:InternalServerError>{
+                body: {message: "Failed to update reservation status."}
+            };
+        }
+
+        database:ParkingReservationDetails|error? confirmedReservation = database:getParkingReservationById(reservation.id);
+        if confirmedReservation is error || confirmedReservation is () {
+            log:printError("Error fetching confirmed reservation", confirmedReservation);
+            return <http:InternalServerError>{
+                body: {message: "Reservation confirmed but failed to fetch updated details."}
+            };
+        }
+
+        // Append to Google Sheet.
+        error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
+        if sheetErr is error {
+            log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
+                reservationId = confirmedReservation.id);
+        }
+
+        return confirmedReservation;
     }
-
-    # Create a new Unit, and optionally map it to a BusinessUnit-Team-SubTeam-Unit.
-    #
-    # + payload - Unit details & businessUnit-team-subTeam ID and functionalLeadEmail to create the mapping
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/units(http:RequestContext ctx, OrgNodePayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error nameUniqueness = database:validateUnitNameUniqueness(payload.name);
-        if nameUniqueness is error {
-            string customErr = "Error while validating unit name uniqueness";
-            log:printError(customErr, nameUniqueness);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if nameUniqueness == false {
-            return <http:BadRequest>{
-                body: {
-                    message: "Unit name already exists"
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        OrgNodeLinkInfo? orgNodeLinkInfo = payload.orgNodeLinkInfo;
-        if orgNodeLinkInfo is OrgNodeLinkInfo {
-            int|error result = database:addUnitWithMapping(
-                    workEmail,
-                    {name: payload.name, headEmail: payload.headEmail, orgNodeLinkInfo: orgNodeLinkInfo}
-            );
-
-            if result is error {
-                string customErr = "Error while adding a unit";
-                log:printError(customErr, result);
-                return <http:InternalServerError>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-
-            return <http:Created>{
-                body: {
-                    message: string `Unit ${payload.name} Successfully created`
-                }
-            };
-        }
-
-        int|error result = database:addUnit(workEmail, {name: payload.name, headEmail: payload.headEmail});
-        if result is error {
-            string customErr = "Error while adding a unit";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `Unit ${payload.name} Successfully created`
-            }
-        };
-    }
-
-
-    # Create a BusinessUnit-Team mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeam(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team Successfully created`
-            }
-        };
-    }
-
-    # Create a BusinessUnit-Team-SubTeam mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeamSubTeam(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team-SubTeam";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team-SubTeam Successfully created`
-            }
-        };
-    }
-
-    # Create a BusinessUnit-Team-SubTeam-Unit mapping.
-    #
-    # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
-    # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
-        returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        string workEmail = validatedUserInfo.email;
-        int|error result = database:addBusinessUnitTeamSubTeamUnit(workEmail, payload);
-        if result is error {
-            string customErr = "Error while adding BusinessUnit-Team-SubTeam-Unit";
-            log:printError(customErr, result);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        return <http:Created>{
-            body: {
-                message: string `BusinessUnit-Team-SubTeam-Unit Successfully created`
-            }
-        };
-    }
-
-    # Update a BusinessUnit by ID.
-    #
-    # + buId - ID of the BusinessUnit to update
-    # + payload - name or headEmail to update in the BusinessUnit
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/business\-unit/[int buId](http:RequestContext ctx, UnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error buExists = database:businessUnitExists(buId);
-        if buExists is error {
-            log:printError("Error while validating business unit", buExists, buId = buId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the business unit"}
-            };
-        }
-
-        if !buExists {
-            return <http:BadRequest>{
-                body: {message: string `Business unit with ID ${buId} not found`}
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        if payload.name is () && payload.headEmail is () {
-            string customErr = "At least one field should be provided for update";
-            log:printWarn(customErr, updatedBy = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        string? headEmail = payload.headEmail;
-        if headEmail is string {
-            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
-            if headsBasicInfo is error {
-                return <http:InternalServerError>{
-                    body: {
-                        message: "Error while validating head's email"
-                    }
-                };
-            }
-
-            if headsBasicInfo is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "No head is found for given email"
-                    }
-                };
-            }
-        }
-
-        error? updateResult = database:updateBusinessUnit(
-            {
-                ...payload,
-                updatedBy: workEmail
-            }, buId);
-        if updateResult is error {
-            log:printError("Error while updating business unit : ", updateResult);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the business unit"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the business unit"
-            }
-        };
-    }
-
-    # Update a Team by ID.
-    #
-    # + teamId - ID of the Team to update
-    # + payload - name or headEmail to update in the Team
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/team/[int teamId](http:RequestContext ctx, UnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error teamExists = database:teamExists(teamId);
-        if teamExists is error {
-            log:printError("Error while validating team", teamExists, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the team"}
-            };
-        }
-
-        if !teamExists {
-            return <http:BadRequest>{
-                body: {message: string `Team with ID ${teamId} not found`}
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        if payload.name is () && payload.headEmail is () {
-            string customErr = "At least one field should be provided for update";
-            log:printWarn(customErr, updatedBy = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        error? updateResult = database:updateTeam({
-            ...payload,
-            updatedBy: workEmail
-        }, teamId);
-        if updateResult is error {
-            log:printError("Error while updating team : ", updateResult, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the team"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the team"
-            }
-        };
-    }
-
-    # Update a SubTeam by ID.
-    #
-    # + subTeamId - ID of the SubTeam to update
-    # + payload - name or headEmail to update in the SubTeam
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/sub\-team/[int subTeamId](http:RequestContext ctx, UnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error subTeamExists = database:subTeamExists(subTeamId);
-        if subTeamExists is error {
-            log:printError("Error while validating sub team", subTeamExists, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the sub team"}
-            };
-        }
-
-        if !subTeamExists {
-            return <http:BadRequest>{
-                body: {message: string `Sub team with ID ${subTeamId} not found`}
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        if payload.name is () && payload.headEmail is () {
-            string customErr = "At least one field should be provided for update";
-            log:printWarn(customErr, updatedBy = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        error? updateResult = database:updateSubTeam({
-            ...payload,
-            updatedBy: workEmail
-        }, subTeamId);
-        if updateResult is error {
-            log:printError("Error while updating sub team : ", updateResult, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the sub team"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the sub team"
-            }
-        };
-    }
-
-    # Update a Unit by ID.
-    #
-    # + unitId - ID of the Unit to update
-    # + payload - name or headEmail to update in the Unit
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/unit/[int unitId](http:RequestContext ctx, UnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error unitExists = database:unitExists(unitId);
-        if unitExists is error {
-            log:printError("Error while validating unit", unitExists, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the unit"}
-            };
-        }
-
-        if !unitExists {
-            return <http:BadRequest>{
-                body: {message: string `Unit with ID ${unitId} not found`}
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        if payload.name is () && payload.headEmail is () {
-            string customErr = "At least one field should be provided for update";
-            log:printWarn(customErr, updatedBy = workEmail);
-            return <http:BadRequest>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        error? updateResult = database:updateUnit({
-            ...payload,
-            updatedBy: workEmail
-        }, unitId);
-        if updateResult is error {
-            log:printError("Error while updating unit : ", updateResult, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the unit"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the unit"
-            }
-        };
-    }
-
-    # Update a BusinessUnit-Team mapping by IDs.
-    #
-    # + buId - ID of the BusinessUnit
-    # + teamId - ID of the Team
-    # + payload - functionalLeadEmail to update in the mapping
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/business\-unit/[int buId]/team/[int teamId]
-            (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error buExists = database:businessUnitExists(buId);
-        if buExists is error {
-            log:printError("Error while validating business unit", buExists, buId = buId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while validating the business unit"
-                }
-            };
-        }
-
-        if !buExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Business unit with ID ${buId} not found`
-                }
-            };
-        }
-
-        boolean|error teamExists = database:teamExists(teamId);
-        if teamExists is error {
-            log:printError("Error while validating team", teamExists, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while validating the team"
-                }
-            };
-        }
-
-        if !teamExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Team with ID ${teamId} not found`
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateBusinessUnitTeam({...payload, updatedBy: workEmail}, buId, teamId);
-        if updateResult is error {
-            log:printError("Error while updating business_unit_team", updateResult, buId = buId, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the business unit team mapping"
-                }
-            };
-        }
-
-        if !updateResult {
-            log:printError(string `No mapping found for businessUnitId ${buId} and teamId ${teamId} to update`);
-            return <http:BadRequest>{
-                body: {
-                    message: string `Unknown error while updating BusinessUnit Team`
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: string `Successfully updated the business unit team mapping`
-            }
-        };
-
-    }
-
-    # Update a Team-SubTeam mapping by IDs.
-    #
-    # + businessUnitTeamId - ID of the BusinessUnit-Team
-    # + subTeamId - ID of the SubTeam
-    # + payload - functionalLeadEmail to update in the mapping
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
-            (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error mappingExists = database:businessUnitTeamMappingExists(businessUnitTeamId);
-        if mappingExists is error {
-            log:printError("Error while validating business unit team mapping", mappingExists, businessUnitTeamId = businessUnitTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while validating the business unit team mapping"
-                }
-            };
-        }
-
-        if !mappingExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Business unit team mapping with ID ${businessUnitTeamId} not found`
-                }
-            };
-        }
-
-        boolean|error subTeamExists = database:subTeamExists(subTeamId);
-        if subTeamExists is error {
-            log:printError("Error while validating sub team", subTeamExists, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while validating the sub team"
-                }
-            };
-        }
-
-        if !subTeamExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Sub team with ID ${subTeamId} not found`
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
-        if updateResult is error {
-            log:printError("Error while updating team_sub_team", updateResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while updating the team sub team mapping"
-                }
-            };
-        }
-
-        if !updateResult {
-            log:printError(string `No mapping found for businessUnitTeamId ${businessUnitTeamId} and subTeamId ${subTeamId} to update`);
-            return <http:BadRequest>{
-                body: {
-                    message: string `Unknown error while updating BusinessUnit Team SubTeam`
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully updated the sub team"
-            }
-        };
-    }
-
-    # Update a SubTeam-Unit mapping by IDs.
-    #
-    # + businessUnitTeamSubTeamId - ID of the BusinessUnit-Team-SubTeam
-    # + unitId - ID of the Unit
-    # + payload - functionalLeadEmail to update in the mapping
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
-            (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error mappingExists = database:businessUnitTeamSubTeamMappingExists(businessUnitTeamSubTeamId);
-        if mappingExists is error {
-            log:printError("Error while validating business unit team sub team mapping", mappingExists, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the business unit team sub team mapping"}
-            };
-        }
-
-        if !mappingExists {
-            return <http:BadRequest>{
-                body: {message: string `Business unit team sub team mapping with ID ${businessUnitTeamSubTeamId} not found`}
-            };
-        }
-
-        boolean|error unitExists = database:unitExists(unitId);
-        if unitExists is error {
-            log:printError("Error while validating unit", unitExists, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the unit"}
-            };
-        }
-
-        if !unitExists {
-            return <http:BadRequest>{
-                body: {message: string `Unit with ID ${unitId} not found`}
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
-        if updateResult is error {
-            log:printError("Error while updating sub_team_unit", updateResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {message: "Error while updating the sub team unit mapping"}
-            };
-        }
-
-        if !updateResult {
-            log:printError(string `No mapping found for businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId} to update`);
-            return <http:BadRequest>{
-                body: {message: string `No mapping found between sub team ${businessUnitTeamSubTeamId} and unit ${unitId}`}
-            };
-        }
-
-        return <http:Ok>{
-            body: {message: "Successfully updated the unit"}
-        };
-    }
-
-    # Delete a BusinessUnit by ID.
-    #
-    # + buId - ID of the BusinessUnit
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int buId](http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error hasChildren = database:businessUnitHasChildren(buId);
-        if hasChildren is error {
-            string customErr = "Error while checking business unit children";
-            log:printError(customErr, hasChildren, buId = buId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if hasChildren {
-            log:printWarn(
-                    "Cannot delete business unit because it has child teams",
-                    buId = buId,
-                    invokerEmail = validatedUserInfo.email
-            );
-            return <http:BadRequest>{
-                body: {
-                    message: "Cannot delete business unit because it has child teams. Remove or deactivate child teams first."
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean deleteResult = database:deleteBusinessUnit(workEmail, buId);
-        if deleteResult is error {
-            log:printError("Error while deleting business unit : ", deleteResult, buId = buId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while deleting the business unit"
-                }
-            };
-        }
-
-        if deleteResult == false {
-            log:printError(string `No business unit found with ID ${buId}`);
-            return <http:BadRequest>{
-                body: {
-                    message: "No business unit found to delete"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully deleted the business unit"
-            }
-        };
-    }
-
-    # Delete a BusinessUnit-Team mapping.
-    #
-    # + businessUnitId - ID of the BusinessUnit
-    # + teamId - ID of the Team
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
-            (http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error hasChildren = database:businessUnitTeamHasChildren(businessUnitId, teamId);
-        if hasChildren is error {
-            string customErr = "Error while checking business unit team children";
-            log:printError(customErr, hasChildren, buId = businessUnitId, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if hasChildren {
-            log:printWarn(
-                    "Cannot delete business unit-team mapping because it has child sub-teams",
-                    buId = businessUnitId,
-                    teamId = teamId,
-                    invokerEmail = validatedUserInfo.email
-            );
-            return <http:BadRequest>{
-                body: {
-                    message: "Cannot delete this business unit-team mapping because it has child sub-teams. Remove or deactivate child sub-teams first."
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean deleteResult = database:deleteBusinessUnitTeam(workEmail, businessUnitId, teamId);
-        if deleteResult is error {
-            log:printError("Error while deleting business_unit_team : ", deleteResult, buId = businessUnitId, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while deleting the business unit team mapping"
-                }
-            };
-        }
-
-        if deleteResult == false {
-            log:printError(string `No business unit team mapping found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
-            return <http:BadRequest>{
-                body: {
-                    message: "No team mapping found to delete"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully deleted the team"
-            }
-        };
-    }
-
-    # Delete a Team-SubTeam mapping by IDs.
-    #
-    # + teamId - ID of the BusinessUnit-Team
-    # + subTeamId - ID of the SubTeam
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/team/[int teamId]/sub\-team/[int subTeamId]
-            (http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error hasChildren = database:teamSubTeamHasChildren(teamId, subTeamId);
-        if hasChildren is error {
-            string customErr = "Error while checking team sub-team children";
-            log:printError(customErr, hasChildren, teamId = teamId, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if hasChildren {
-            log:printWarn(
-                    "Cannot delete team-sub team mapping because it has child units",
-                    teamId = teamId,
-                    subTeamId = subTeamId,
-                    invokerEmail = validatedUserInfo.email
-            );
-            return <http:BadRequest>{
-                body: {
-                    message: "Cannot delete this team-sub team mapping because it has child units. Remove or deactivate child units first."
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean deleteResult = database:deleteTeamSubTeam(workEmail, teamId, subTeamId);
-        if deleteResult is error {
-            log:printError("Error while deleting team_sub_team : ", deleteResult, teamId = teamId, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while deleting the team sub team mapping"
-                }
-            };
-        }
-
-        if deleteResult == false {
-            log:printError(string `No team sub team mapping found with teamId ${teamId} and subTeamId ${subTeamId}`);
-            return <http:BadRequest>{
-                body: {
-                    message: "No team sub team mapping found to delete"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully deleted the team sub team mapping"
-            }
-        };
-    }
-
-    # Delete a SubTeam-Unit mapping by IDs.
-    #
-    # + subTeamId - ID of the BusinessUnit-Team-SubTeam
-    # + unitId - ID of the Unit
-    # + return - HTTP OK on success, or HTTP errors on failure
-    resource function delete organization/sub\-team/[int subTeamId]/unit/[int unitId]
-            (http:RequestContext ctx)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
-        boolean|error hasChildren = database:subTeamUnitHasChildren(subTeamId, unitId);
-        if hasChildren is error {
-            string customErr = "Error while checking sub-team unit children";
-            log:printError(customErr, hasChildren, subTeamId = subTeamId, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if hasChildren {
-            log:printWarn(
-                    "Cannot delete sub-team unit mapping because it has assigned employees",
-                    subTeamId = subTeamId,
-                    unitId = unitId,
-                    invokerEmail = validatedUserInfo.email
-            );
-            return <http:BadRequest>{
-                body: {
-                    message: "Cannot delete this sub-team unit mapping because it has assigned employees. Reassign employees first."
-                }
-            };
-        }
-
-        string workEmail = validatedUserInfo.email;
-        error|boolean deleteResult = database:deleteSubTeamUnit(workEmail, subTeamId, unitId);
-        if deleteResult is error {
-            log:printError("Error while deleting sub_team_unit : ", deleteResult, subTeamId = subTeamId, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {
-                    message: "Error while deleting the sub team unit mapping"
-                }
-            };
-        }
-
-        if deleteResult == false {
-            log:printError(string `No sub team unit mapping found with subTeamId ${subTeamId} and unitId ${unitId}`);
-            return <http:BadRequest>{
-                body: {
-                    message: "No sub team unit mapping found to delete"
-                }
-            };
-        }
-
-        return <http:Ok>{
-            body: {
-                message: "Successfully deleted the sub team unit mapping"
-            }
-        };
-    }
-
 }
-

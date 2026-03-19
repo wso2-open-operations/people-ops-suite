@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography, alpha, useTheme } from "@mui/material";
 
 interface DatePillProps {
   partOfDay: string;
@@ -33,40 +32,41 @@ export default function DatePill({
 
   return (
     <Box
-      py={1}
-      width={1}
-      borderRadius="0.5rem"
-      textAlign="center"
-      border="1px solid"
-      maxWidth="20rem"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       sx={{
-        borderColor: isSelected ? theme.palette.primary.main : theme.palette.grey[300],
+        flex: 1,
+        py: 1,
+        px: 2,
+        borderRadius: "10px",
+        textAlign: "center",
+        border: "1.5px solid",
+        borderColor: isSelected
+          ? theme.palette.primary.main
+          : theme.palette.customBorder.territory.active,
         backgroundColor: isSelected ? theme.palette.primary.main : "transparent",
         cursor: disabled ? "not-allowed" : onClick ? "pointer" : "default",
-        opacity: disabled ? 0.5 : 1,
-        transition: "all 0.2s ease",
+        opacity: disabled ? 0.4 : 1,
+        transition: "all 0.15s ease",
         "&:hover":
           onClick && !disabled
             ? {
                 borderColor: theme.palette.primary.main,
-                transform: "translateY(-1px)",
-                boxShadow: "0 2px 8px rgba(255, 115, 0, 0.2)",
+                backgroundColor: isSelected
+                  ? theme.palette.primary.main
+                  : alpha(theme.palette.primary.main, 0.06),
               }
             : {},
-        "&:active": onClick
-          ? {
-              transform: "translateY(0)",
-            }
-          : {},
       }}
     >
       <Typography
-        variant="subtitle2"
+        variant="body2"
         sx={{
-          color: isSelected ? theme.palette.common.white : theme.palette.grey[600],
-          fontWeight: 400,
-          transition: "color 0.2s ease",
+          color: isSelected
+            ? theme.palette.common.white
+            : theme.palette.customText.primary.p2.active,
+          fontWeight: isSelected ? 600 : 400,
+          transition: "color 0.15s ease",
+          whiteSpace: "nowrap",
         }}
       >
         {partOfDay}

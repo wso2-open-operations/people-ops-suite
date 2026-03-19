@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
@@ -76,9 +75,9 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     getDecodedIDToken,
     getBasicUserInfo,
     refreshAccessToken,
+    isAuthenticated,
     getIDToken,
     trySignInSilently,
-    getAccessToken,
     state,
   } = useAuthContext();
 
@@ -142,21 +141,22 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     };
   }, [state.isAuthenticated, state.isLoading]);
 
-  const refreshToken = async (): Promise<{ accessToken: string }> => {
-    if (state.isAuthenticated) {
-      const accessToken = await getIDToken();
-      return { accessToken };
-    }
-
-    try {
-      await refreshAccessToken();
-      const accessToken = await getAccessToken();
-      return { accessToken };
-    } catch (error) {
-      console.error("Token refresh failed: ", error);
-      await appSignOut();
-      throw error;
-    }
+  const refreshToken = (): Promise<{ idToken: string }> => {
+    return new Promise<{ idToken: string }>(async (resolve) => {
+      const userIsAuthenticated = await isAuthenticated();
+      if (userIsAuthenticated) {
+        resolve({ idToken: await getIDToken() });
+      } else {
+        refreshAccessToken()
+          .then(async () => {
+            const idToken = await getIDToken();
+            resolve({ idToken });
+          })
+          .catch(() => {
+            appSignOut();
+          });
+      }
+    });
   };
 
   const appSignOut = async () => {
