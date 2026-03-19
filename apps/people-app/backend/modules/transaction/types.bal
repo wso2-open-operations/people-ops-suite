@@ -44,11 +44,13 @@ public type TransactionDetailsPayload record {|
     json? decodedData;
 |};
 
-# Transaction details for recipient validation.
-public type TxDetailsToRecord record {|
-    # Recipient address of the transaction.
-    string? 'to;
-|};
+# Decoded transaction data for recipient validation.
+public type DecodedDataForRecipient record {
+    # Decoded function name (e.g., transfer).
+    string name;
+    # Decoded argument list.
+    string[] args;
+};
 
 # Response envelope.
 public type TransactionDetailsResponse record {|
