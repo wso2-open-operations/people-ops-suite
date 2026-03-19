@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
 import people.authorization;
 import people.database;
 import people.wso2_coin;
+
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
@@ -1363,11 +1363,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                                                                                    searchString: (),
-                                                                                    filters: {employeeStatus: status},
-                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                                                                                });
+                searchString: (),
+                filters: {employeeStatus: status},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
