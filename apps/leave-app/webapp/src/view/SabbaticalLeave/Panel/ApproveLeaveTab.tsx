@@ -26,7 +26,6 @@ import {
   selectLeaves,
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
-import { selectUser } from "@root/src/slices/userSlice/user";
 import { LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
 import ApproveLeaveTable from "../component/ApproveLeaveTable";
@@ -34,27 +33,24 @@ import ApproveLeaveTable from "../component/ApproveLeaveTable";
 export default function ApproveLeaveTab() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
-  const userInfo = useAppSelector(selectUser);
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const loading = leaveState === State.loading;
 
   const handleRefresh = () => {
-    if (userInfo?.workEmail) {
-      dispatch(
-        fetchLeaveHistory({
-          approverEmail: userInfo.workEmail,
-          leaveCategory: [LeaveType.SABBATICAL],
-          statuses: [Status.PENDING],
-          orderBy: OrderBy.DESC,
-        }),
-      );
-    }
+    dispatch(
+      fetchLeaveHistory({
+        subordinatesLeaves: true,
+        leaveCategory: [LeaveType.SABBATICAL],
+        statuses: [Status.PENDING],
+        orderBy: OrderBy.DESC,
+      }),
+    );
   };
 
   useEffect(() => {
     handleRefresh();
-  }, [userInfo?.workEmail]);
+  }, []);
 
   return (
     <Stack gap="2rem" flexDirection="column" maxWidth={PAGE_MAX_WIDTH} mx="auto">

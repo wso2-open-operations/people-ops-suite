@@ -231,6 +231,7 @@ export interface LeaveHistoryQueryParam {
   offset?: number;
   orderBy?: OrderBy;
   employeeStatuses?: EmployeeStatus[];
+  subordinatesLeaves?: boolean;
 }
 
 // Lead report request type.

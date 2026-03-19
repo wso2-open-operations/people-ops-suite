@@ -158,14 +158,28 @@ isolated function insertLeaveQuery(LeaveInput input, float numberOfDays, string 
 # + status - Status of the leave to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + leaveId - ID of the leave record 
 # + return - Update query to approve or reject leave application
-isolated function setLeaveStatusQuery(Status status, int leaveId) returns sql:ParameterizedQuery => `
+isolated function setLeaveStatusQuery(Status status, int leaveId, string? approverEmail = ())
+    returns sql:ParameterizedQuery {
+    if approverEmail is string {
+        return `
+            UPDATE
+                leave_submissions
+            SET
+                status = ${status},
+                approver_email = ${approverEmail}
+            WHERE
+                id = ${leaveId}
+        `;
+    }
+    return `
         UPDATE
             leave_submissions
         SET
             status = ${status}
-        WHERE 
+        WHERE
             id = ${leaveId}
     `;
+}
 
 # Query to get the end date of the last approved sabbatical leave for an employee.
 #
