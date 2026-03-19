@@ -3,6 +3,7 @@ masterWalletAddress = ""
 
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
+ADMIN_ROLE = ""
 
 [people.database.dbConfig]
     host = ""
