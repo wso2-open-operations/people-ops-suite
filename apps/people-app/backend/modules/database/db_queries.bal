@@ -1306,18 +1306,18 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
 
-# Get confirmed reservation id for slot and date (existence check).
+# Get active reservation id for slot and date (existence check).
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get reservation id if booked
+# + return - Query to get reservation id if slot is unavailable
 isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status = ${CONFIRMED}
+      AND status IN (${PENDING}, ${CONFIRMED})
     LIMIT 1`;
 
 # Insert parking reservation (PENDING).

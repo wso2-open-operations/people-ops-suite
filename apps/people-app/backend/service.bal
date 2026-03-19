@@ -1269,7 +1269,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is already booked for ${body.bookingDate}.`}
+                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
             };
         }
 

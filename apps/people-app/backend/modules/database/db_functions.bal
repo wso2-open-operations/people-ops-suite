@@ -541,11 +541,11 @@ public isolated function getParkingSlotById(string slotId) returns ParkingSlot|e
     };
 }
 
-# Check if slot is booked for date.
+# Check if slot is unavailable for date.
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - True if booked, false otherwise, or error
+# + return - True if slot has an active reservation (PENDING/CONFIRMED), false otherwise, or error
 public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
     ReservationIdRow|error row = databaseClient->queryRow(
         getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
