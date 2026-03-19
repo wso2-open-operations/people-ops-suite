@@ -847,7 +847,7 @@ public type ParkingSlotRow record {|
     string floorName;
     # Number of coins per slot
     decimal coinsPerSlot;
-    # Availability flag for the given date
+    # Booked status flag (0 = available, 1 = booked)
     int isBooked;
 |};
 
