@@ -1,5 +1,7 @@
 [people]
 masterWalletAddress = ""
+reservationWindowStartHour = 
+reservationWindowEndHour = 
 
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""

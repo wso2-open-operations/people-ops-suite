@@ -26,6 +26,12 @@ import ballerina/time;
 # Master wallet address for car park O2C payments.
 configurable string masterWalletAddress = ?;
 
+# Reservation start hour in Sri Lanka time.
+configurable int reservationWindowStartHour = 5;
+
+# Reservation end hour in Sri Lanka time.
+configurable int reservationWindowEndHour = 7;
+
 @display {
     label: "People Service",
     id: "people-ops-suite/people-service"
@@ -1199,13 +1205,24 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         time:Utc nowUtc = time:utcNow();
         string today;
+        int hour;
         time:Zone? sriLankaZone = time:getZone("Asia/Colombo");
         if sriLankaZone is time:Zone {
             time:Civil civil = sriLankaZone.utcToCivil(nowUtc);
             string|error civilStr = time:civilToString(civil);
             today = civilStr is string ? civilStr.substring(0, 10) : time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+            hour = civil.hour;
         } else {
-            today = time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+            time:Utc slTime = time:utcAddSeconds(nowUtc, 19800);
+            today = time:utcToString(slTime).substring(0, 10);
+            string hourStr = time:utcToString(slTime).substring(11, 13);
+            int|error parsedHour = int:fromString(hourStr);
+            hour = parsedHour is int ? parsedHour : 0;
+        }
+        if hour < reservationWindowStartHour || hour >= reservationWindowEndHour {
+            return <http:BadRequest>{
+                body: {message: string `Reservations are only allowed between ${reservationWindowStartHour}:00 and ${reservationWindowEndHour}:00 (Sri Lanka time).`}
+            };
         }
         if body.bookingDate != today {
             return <http:BadRequest>{
