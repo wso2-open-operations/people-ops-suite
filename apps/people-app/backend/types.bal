@@ -92,7 +92,7 @@ public type OrgBusinessUnit record {|
 |};
 
 # Represents the top-level company in the organization hierarchy.
-public type Company record {|
+public type OrgCompany record {|
     # Unique identifier of the company
     string id;
     # Display name of the company
