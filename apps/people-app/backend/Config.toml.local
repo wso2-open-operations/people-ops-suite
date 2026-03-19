@@ -19,10 +19,10 @@ EMPLOYEE_ROLE = ""
     [people.database.dbConfig.options.ssl]
     mode = "PREFERRED"
 
-[people.transaction.client]
+[people.transaction]
     transactionEndpoint = ""
 
-[people.transaction.client.clientAuthConfig]
+[people.transaction.clientAuthConfig]
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
@@ -34,3 +34,4 @@ EMPLOYEE_ROLE = ""
     clientSecret = ""
     sheetId = ""
     sheetName = ""
+    
