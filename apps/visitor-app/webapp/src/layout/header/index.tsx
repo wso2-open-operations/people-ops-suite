@@ -76,15 +76,15 @@ const Header = () => {
         <img
           alt="wso2"
           style={{
-            height: "auto",
+            height: "40px",
             maxWidth: "100px",
             padding: "3px",
           }}
           onClick={() => (window.location.href = "/")}
           src={
             theme.palette.mode === "light"
-              ? require("@assets/images/wso2-logo-black.png")
-              : require("@assets/images/wso2-logo-white.png")
+              ? require("@assets/images/wso2-logo-black.svg").default
+              : require("@assets/images/wso2-logo-white.svg").default
           }
         />
         <Typography

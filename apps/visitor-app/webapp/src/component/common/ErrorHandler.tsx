@@ -47,8 +47,8 @@ const ErrorHandler = (props: ErrorHandlerProps) => {
               height="auto"
               src={
                 theme.palette.mode === "light"
-                  ? require("@assets/images/wso2-logo-black.png")
-                  : require("@assets/images/wso2-logo-white.png")
+                  ? require("@assets/images/wso2-logo-black.svg").default
+                  : require("@assets/images/wso2-logo-white.svg").default
               }
             />
           </Grid>
