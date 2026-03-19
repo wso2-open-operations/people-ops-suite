@@ -17,22 +17,37 @@ import { Box, Divider } from "@mui/material";
 
 import { MicroAppType } from "@/types/types";
 import { isMicroApp } from "@config/config";
+import PreLoader from "@root/src/component/common/PreLoader";
+import { useGetDinnerRequestQuery } from "@root/src/services/dod.api";
+import { useGetMenuQuery } from "@root/src/services/menu.api";
 
-import DinnerOnDemand from "./components/dod/DinnerOnDemand";
-import Menu from "./components/menu/Menu";
+import DinnerOnDemand from "./DinnerOnDemand";
+import Menu from "./Menu";
 
 export default function Home() {
-  if (isMicroApp === MicroAppType.Menu) return <Menu />;
+  const { data: menuData, isLoading: isMenuLoading, isError: isMenuError } = useGetMenuQuery();
+  const {
+    data: dinnerData,
+    isLoading: isDinnerLoading,
+    error: dinnerError,
+  } = useGetDinnerRequestQuery();
 
-  if (isMicroApp === MicroAppType.Dod) return <DinnerOnDemand />;
+  if (isMenuLoading || isDinnerLoading) {
+    return <PreLoader />;
+  }
+
+  if (isMicroApp === MicroAppType.Menu) return <Menu data={menuData} isError={isMenuError} />;
+
+  if (isMicroApp === MicroAppType.Dod)
+    return <DinnerOnDemand dinner={dinnerData} error={dinnerError} />;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <Menu />
+      <Menu data={menuData} isError={isMenuError} />
 
       <Divider />
 
-      <DinnerOnDemand />
+      <DinnerOnDemand dinner={dinnerData} error={dinnerError} />
     </Box>
   );
 }

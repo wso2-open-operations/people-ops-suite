@@ -2044,12 +2044,12 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        CASE WHEN EXISTS (
+        EXISTS (
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
               AND pr.status = ${CONFIRMED}
-        ) THEN 1 ELSE 0 END as 'isBooked'
+        ) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
@@ -2066,7 +2066,7 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        0 as 'isBooked'
+        FALSE as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;

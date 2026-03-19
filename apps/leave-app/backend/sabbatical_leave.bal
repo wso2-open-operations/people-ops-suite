@@ -108,7 +108,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
             }
-            _ = check database:setLeaveStatus(leaveId, APPROVED);
+            _ = check database:setLeaveStatus(leaveId, APPROVED, approverEmail);
             // Create calendar event for approved sabbatical leave
             string calendarEventId = createUuidForCalendarEvent();
             SabbaticalLeaveResponse leaveResponse = {
@@ -134,7 +134,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
             if leaveId is () {
                 return error("Leave ID is required for REJECT action");
             }
-            _ = check database:setLeaveStatus(leaveId, REJECTED);
+            _ = check database:setLeaveStatus(leaveId, REJECTED, approverEmail);
         }
         CANCEL => {
             template = email:bindKeyValues(email:sabbaticalCancellationTemplate, {
@@ -155,8 +155,7 @@ function processSabbaticalLeaveRequest(SabbaticalProcessPayload payload)
                 emailSubject: emailSubject,
                 emailRecipients: recipientsList,
                 isMorningLeave: (),
-                status: PENDING,
-                approverEmail: approverEmail
+                status: PENDING
             };
 
             template = email:bindKeyValues(email:sabbaticalApplicationTemplate, {

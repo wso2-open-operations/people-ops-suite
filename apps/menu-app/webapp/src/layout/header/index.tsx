@@ -28,9 +28,9 @@ import Typography from "@mui/material/Typography";
 
 import React from "react";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
+import { useWso2Logo } from "@hooks/useWso2Logo";
 import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 import { userApi } from "@services/user.api";
 import { useAppSelector } from "@slices/store";
@@ -38,6 +38,7 @@ import { useAppSelector } from "@slices/store";
 const Header = () => {
   const { appSignOut } = useAppAuthContext();
   const theme = useTheme();
+  const wso2Logo = useWso2Logo();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
 
   const user = useAppSelector((state) => userApi.endpoints.getUserInfo.select()(state)?.data);
@@ -64,21 +65,20 @@ const Header = () => {
         sx={{
           paddingY: 0.3,
           display: "flex",
-          gap: 0.5,
+          gap: 2,
           "&.MuiToolbar-root": {
             p: 0.5,
-            pr: 2,
+            px: 2,
           },
         }}
       >
         <img
           alt="wso2"
           style={{
-            height: "40px",
             maxWidth: "100px",
           }}
           onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
+          src={wso2Logo}
         ></img>
 
         <Box
