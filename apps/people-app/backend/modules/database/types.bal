@@ -817,8 +817,131 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
+
+# [Database] Parking floor.
+public type ParkingFloor record {|
+    # Floor identifier
+    int id;
+    # Floor name (e.g. "Ground Floor")
+    string name;
+    # Display order of the floor
+    int displayOrder;
+    # Number of coins per slot on the floor
+    decimal coinsPerSlot;
+|};
+
+# [Database] Parking slot.
+public type ParkingSlot record {|
+    # Slot identifier (e.g. B-01)
+    string slotId;
+    # Floor identifier
+    int floorId;
+    # Floor name
+    string floorName;
+    # Number of coins per slot
+    decimal coinsPerSlot;
+    # Availability status for the given date
+    boolean isBooked;
+|};
+
+# [Database] Parking reservation.
+public type ParkingReservation record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Payload to create parking reservation.
+public type AddParkingReservationPayload record {|
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # User who created the parking reservation record
+    string createdBy;
+|};
+
+# [Database] Payload to update parking reservation status.
+public type UpdateParkingReservationStatusPayload record {|
+    # Reservation id
+    int reservationId;
+    # New status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Updated by
+    string updatedBy;
+|};
+
+# [Database] Parking reservation details (slot, floor, vehicle).
+public type ParkingReservationDetails record {|
+    # Reservation identifier
+    int id;
+    # Slot identifier
+    string slotId;
+    # Booking date
+    string bookingDate;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID 
+    int vehicleId;
+    # Vehicle registration number
+    string vehicleRegistrationNumber;
+    # Vehicle type
+    string? vehicleType;
+    # Reservation status
+    ParkingReservationStatus status;
+    # Transaction hash
+    string? transactionHash;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # Floor name (e.g. "Ground Floor")
+    string floorName;
+    # Timestamp when created
+    string createdOn;
+    # Person who created the parking reservation record
+    string createdBy;
+    # Timestamp when updated
+    string updatedOn;
+    # Person who updated the parking reservation record
+    string updatedBy;
+|};
+
+# [Database] Reservation id row (existence check).
+public type ReservationIdRow record {|
+    # Reservation identifier
+    int id;
+|};
+
 # Payload for updating an organization unit.
-public type UpdateUnitPayload record {|
+public type UpdateOrgUnitPayload record {|
     # New name for the unit
     string name?;
     # Email of the new head of the unit
@@ -945,22 +1068,8 @@ public type OrgBusinessUnit record {|
     OrgTeam[] teams = [];
 |};
 
-# Represents a business unit within the organization hierarchy.
-public type OrgBusinessUnitRaw record {|
-    # Unique identifier of the business unit
-    string id;
-    # Display name of the business unit
-    string name;
-    # Total number of employees or members in the business unit
-    int headCount;
-    # Optional head or direct manager of the business unit
-    json? head = ();
-    # List of teams belonging to this business unit
-    json teams = [];
-|};
-
 # Represents the top-level company in the organization hierarchy.
-public type CompanySample record {|
+public type OrgCompany record {|
     # Unique identifier of the company
     string id;
     # Display name of the company
@@ -1017,126 +1126,4 @@ public type OrgNodePayload record {|
     string headEmail;
     # Parent node link details — required for mapping nodes only
     OrgNodeLinkInfo orgNodeLinkInfo;
-|};
-
-# [Database] Parking floor.
-public type ParkingFloor record {|
-    # Floor identifier
-    int id;
-    # Floor name (e.g. "Ground Floor")
-    string name;
-    # Display order of the floor
-    int displayOrder;
-    # Number of coins per slot on the floor
-    decimal coinsPerSlot;
-|};
-
-# [Database] Parking slot.
-public type ParkingSlot record {|
-    # Slot identifier (e.g. B-01)
-    string slotId;
-    # Floor identifier
-    int floorId;
-    # Floor name
-    string floorName;
-    # Number of coins per slot
-    decimal coinsPerSlot;
-    # Availability status for the given date
-    boolean isBooked;
-|};
-
-# [Database] Parking reservation.
-public type ParkingReservation record {|
-    # Reservation identifier
-    int id;
-    # Slot identifier
-    string slotId;
-    # Booking date
-    string bookingDate;
-    # Employee email
-    string employeeEmail;
-    # Registered vehicle ID
-    int vehicleId;
-    # Reservation status
-    ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
-    # Amount to be paid in coins
-    decimal coinsAmount;
-    # Timestamp when created
-    string createdOn;
-    # Person who created the parking reservation record
-    string createdBy;
-    # Timestamp when updated
-    string updatedOn;
-    # Person who updated the parking reservation record
-    string updatedBy;
-|};
-
-# [Database] Payload to create parking reservation.
-public type AddParkingReservationPayload record {|
-    # Slot identifier
-    string slotId;
-    # Booking date
-    string bookingDate;
-    # Employee email
-    string employeeEmail;
-    # Registered vehicle ID
-    int vehicleId;
-    # Amount to be paid in coins
-    decimal coinsAmount;
-    # User who created the parking reservation record
-    string createdBy;
-|};
-
-# [Database] Payload to update parking reservation status.
-public type UpdateParkingReservationStatusPayload record {|
-    # Reservation id
-    int reservationId;
-    # New status
-    ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
-    # Updated by
-    string updatedBy;
-|};
-
-# [Database] Parking reservation details (slot, floor, vehicle).
-public type ParkingReservationDetails record {|
-    # Reservation identifier
-    int id;
-    # Slot identifier
-    string slotId;
-    # Booking date
-    string bookingDate;
-    # Employee email
-    string employeeEmail;
-    # Registered vehicle ID 
-    int vehicleId;
-    # Vehicle registration number
-    string vehicleRegistrationNumber;
-    # Vehicle type
-    string? vehicleType;
-    # Reservation status
-    ParkingReservationStatus status;
-    # Transaction hash
-    string? transactionHash;
-    # Amount to be paid in coins
-    decimal coinsAmount;
-    # Floor name (e.g. "Ground Floor")
-    string floorName;
-    # Timestamp when created
-    string createdOn;
-    # Person who created the parking reservation record
-    string createdBy;
-    # Timestamp when updated
-    string updatedOn;
-    # Person who updated the parking reservation record
-    string updatedBy;
-|};
-
-# [Database] Reservation id row (existence check).
-public type ReservationIdRow record {|
-    # Reservation identifier
-    int id;
 |};
