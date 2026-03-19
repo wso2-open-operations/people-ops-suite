@@ -165,6 +165,10 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             e.unit_id AS unitId,
             c.name AS company,
             e.company_id AS companyId,
+            r.date                    AS resignationDate,
+            r.final_day_in_office     AS finalDayInOffice,
+            r.final_day_of_employment AS finalDayOfEmployment,
+            r.reason                  AS resignationReason,
             COUNT(*) OVER() AS totalCount
         FROM
             employee e
@@ -195,6 +199,7 @@ isolated function getEmployeesQuery(EmployeeSearchPayload payload, string? leadE
             INNER JOIN team t ON t.id = e.team_id
             INNER JOIN sub_team st ON st.id = e.sub_team_id
             LEFT JOIN unit u ON u.id = e.unit_id
+            LEFT JOIN resignation r ON r.employee_id = e.id
         `;
 
     sql:ParameterizedQuery[] filters = [];
@@ -1274,12 +1279,12 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        CASE WHEN EXISTS (
+        EXISTS (
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
               AND pr.status = ${CONFIRMED}
-        ) THEN 1 ELSE 0 END as 'isBooked'
+        ) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
@@ -1296,7 +1301,7 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        0 as 'isBooked'
+        FALSE as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;

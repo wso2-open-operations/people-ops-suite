@@ -117,6 +117,14 @@ public type Employee record {|
     string? probationEndDate;
     # Agreement end date
     string? agreementEndDate;
+    # Resignation date
+    string? resignationDate;
+    # Final day in office
+    string? finalDayInOffice;
+    # Final day of employment
+    string? finalDayOfEmployment;
+    # Resignation reason
+    string? resignationReason;
     # Employment type
     string employmentType;
     # Employment type ID

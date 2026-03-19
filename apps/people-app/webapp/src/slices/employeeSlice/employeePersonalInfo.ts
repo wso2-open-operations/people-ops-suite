@@ -16,7 +16,7 @@
 
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -89,6 +89,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
       );
       return response.data as EmployeePersonalInfo;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -128,6 +129,7 @@ export const updateEmployeePersonalInfo = createAsyncThunk<
       );
       return;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error?.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.updateEmployeePersonalInfo

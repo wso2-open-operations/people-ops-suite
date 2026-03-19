@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -12,29 +12,13 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
+import { useTheme } from "@mui/material";
 
-# [Database] Enum for vehicle types.
-public enum VehicleTypes {
-    CAR,
-    MOTORCYCLE
-}
+import wso2LogoBlack from "@assets/images/WSO2-Logo-Black.png";
+import wso2LogoWhite from "@assets/images/WSO2-Logo-White.png";
 
-# [Database] Enum for vehicle statuses.
-public enum VehicleStatus {
-    ACTIVE,
-    INACTIVE
-}
-
-# [Database] Enum for parking reservation status.
-public enum ParkingReservationStatus {
-    PENDING,
-    CONFIRMED
-}
-
-# [Database] Enum for employee statuses.
-public enum EmployeeStatus {
-    EMPLOYEE_ACTIVE = "Active",
-    EMPLOYEE_LEFT = "Left",
-    EMPLOYEE_MARKED_LEAVER = "Marked leaver"
-}
+export const useWso2Logo = (): string => {
+  const theme = useTheme();
+  return theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack;
+};
