@@ -1,8 +1,3 @@
-[people]
-masterWalletAddress = ""
-reservationWindowStartHour = 
-reservationWindowEndHour = 
-
 [people.authorization.authorizedRoles]
 EMPLOYEE_ROLE = ""
 ADMIN_ROLE = ""
@@ -22,15 +17,18 @@ ADMIN_ROLE = ""
     [people.database.dbConfig.options.ssl]
     mode = "PREFERRED"
 
-[people.transaction]
+[people.wso2_coin]
+    masterWalletAddress = ""
+    reservationWindowStartHour = 
+    reservationWindowEndHour = 
     transactionEndpoint = ""
 
-[people.transaction.clientAuthConfig]
+[people.wso2_coin.clientAuthConfig]
     tokenUrl = ""
     clientId = ""
     clientSecret = ""
 
-[people.gsheet.parkingSheetConfig]
+[people.wso2_coin.parkingSheetConfig]
     tokenUrl = ""
     refreshToken = ""
     clientId = ""

@@ -12,7 +12,23 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
+
+# [Configurable] Google sheet OAuth2 application configuration for parking reservations.
+public type ParkingSheetConfig record {|
+    # OAuth2 token endpoint.
+    string tokenUrl;
+    # OAuth 2 refresh token.
+    string refreshToken;
+    # OAuth2 client ID.
+    string clientId;
+    # OAuth2 client secret.
+    string clientSecret;
+    # Sheet ID.
+    string sheetId;
+    # Sheet name (tab) to append reservations to.
+    string sheetName;
+|};
 
 # OAuth2 client auth configurations.
 public type ClientAuthConfig record {|
