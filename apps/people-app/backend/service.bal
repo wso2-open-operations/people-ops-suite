@@ -1223,8 +1223,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if hour < reservationWindowStartHour || hour >= reservationWindowEndHour {
             return <http:BadRequest>{
                 body: {
-                    message: string `Reservations are only allowed from ${reservationWindowStartHour}:00 to
-                     ${reservationWindowEndHour}:00 (Sri Lanka time).`
+                    message: string `Reservations are only allowed from ${reservationWindowStartHour}:00 to ${reservationWindowEndHour}:00.`
                 }
             };
         }
