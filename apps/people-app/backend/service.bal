@@ -1373,6 +1373,16 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // Expire stale pending reservations so the slot/date becomes reusable.
+        boolean|error cleared = database:expireStalePendingParkingReservationForSlotDate(body.slotId, body.bookingDate,
+            wso2_coin:pendingReservationExpiryMinutes);
+        if cleared is error {
+            log:printError("Error expiring stale pending reservations", cleared);
+            return <http:InternalServerError>{
+                body: {message: "Error occurred while validating slot availability."}
+            };
+        }
+
         boolean|error booked = database:isParkingSlotBookedForDate(body.slotId, body.bookingDate);
         if booked is error {
             log:printError("Error checking slot availability", booked);
@@ -1386,6 +1396,29 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        // If there is a previously expired reservation for the same slot/date, reuse the latest one.
+        int|error? latestExpiredId = database:getLatestExpiredParkingReservationForSlotDate(body.slotId, body.bookingDate);
+        if latestExpiredId is int {
+            boolean|error reused = database:reuseExpiredParkingReservationToPending({
+                                                                                     reservationId: latestExpiredId,
+                                                                                     employeeEmail: userInfo.email,
+                                                                                     vehicleId: body.vehicleId,
+                                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                                     createdBy: userInfo.email
+                                                                                 });
+            if reused is error || !reused {
+                log:printError("Error reusing expired reservation");
+                return <http:InternalServerError>{
+                    body: {message: "Error occurred while reusing reservation."}
+                };
+            }
+            return {
+                reservationId: latestExpiredId,
+                coinsAmount: slot.coinsPerSlot
+            };
+        }
+
+        // Otherwise create a new PENDING reservation.
         int|error reservationId = database:addParkingReservation({
             slotId: body.slotId,
             bookingDate: body.bookingDate,
@@ -1491,7 +1524,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
                 searchString: (),
-                filters: {employeeStatus: status, excludeFutureStartDate: excludeFutureStartDate},
+                filters: {employeeStatus: status},
                 pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
                 sort: {sortField: "employeeId", sortOrder: "ASC"}
             });

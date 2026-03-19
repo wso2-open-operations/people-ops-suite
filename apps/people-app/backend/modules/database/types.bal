@@ -971,6 +971,20 @@ public type AddParkingReservationPayload record {|
     string createdBy;
 |};
 
+# [Database] Payload to reuse an EXPIRED reservation as a new PENDING one.
+public type ReuseExpiredParkingReservationToPendingPayload record {|
+    # Reservation id to update
+    int reservationId;
+    # Employee email
+    string employeeEmail;
+    # Registered vehicle ID
+    int vehicleId;
+    # Amount to be paid in coins
+    decimal coinsAmount;
+    # User who created/updated the parking reservation record
+    string createdBy;
+|};
+
 # [Database] Payload to update parking reservation status.
 public type UpdateParkingReservationStatusPayload record {|
     # Reservation id

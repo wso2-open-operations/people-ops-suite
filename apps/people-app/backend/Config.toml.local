@@ -21,6 +21,7 @@ ADMIN_ROLE = ""
     masterWalletAddress = ""
     reservationWindowStartHour = 
     reservationWindowEndHour = 
+    pendingReservationExpiryMinutes = 
     transactionEndpoint = ""
 
 [people.wso2_coin.clientAuthConfig]
