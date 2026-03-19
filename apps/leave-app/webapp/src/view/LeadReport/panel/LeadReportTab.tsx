@@ -24,15 +24,10 @@ import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
 import { formatDateForApi } from "@root/src/services/leaveService";
 import { Privileges } from "@root/src/slices/authSlice/auth";
-import {
-  fetchLeadReport,
-  resetLeadReportState,
-  selectLeadReport,
-  selectLeadReportState,
-} from "@root/src/slices/leadReportSlice/leadReport";
+import { fetchLeaveHistory, selectLeaves, selectLeaveState } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { LeadReportRequest, State } from "@root/src/types/types";
+import { EmployeeStatus, State, Status } from "@root/src/types/types";
 
 import LeadReportTable from "../component/LeadReportTable";
 import Toolbar from "../component/Toolbar";
@@ -40,43 +35,38 @@ import Toolbar from "../component/Toolbar";
 export default function LeadReportTab() {
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
+  const records = useAppSelector(selectLeaves);
+  const leaveState = useAppSelector(selectLeaveState);
+  const loading = leaveState === State.loading;
+
   const [startDate, setStartDate] = useState<Dayjs | null>(dayjs().startOf("year"));
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs());
   const [showAllEmployees, setShowAllEmployees] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string>("");
-  const [activeEmployeesOnly, setActiveEmployeesOnly] = useState(false);
+  const [employeeStatuses, setEmployeeStatuses] = useState<EmployeeStatus[]>([EmployeeStatus.ACTIVE, EmployeeStatus.MARKED_LEAVER]);
 
-  const reportData = useAppSelector(selectLeadReport);
-  const leadReportState = useAppSelector(selectLeadReportState);
-  const loading = leadReportState === State.loading;
+  const pendingFetch = useRef<{ abort: () => void } | null>(null);
 
   const isPeopleOpsTeam = userInfo?.privileges.includes(Privileges.PEOPLE_OPS_TEAM);
 
   const handleFetchReport = () => {
-    if (startDate && endDate) {
-      dispatch(resetLeadReportState());
-      const payload: LeadReportRequest = {
-        startDate: formatDateForApi(startDate),
-        endDate: formatDateForApi(endDate),
-        isAdminView: showAllEmployees,
-      };
-
-      if (selectedEmail) {
-        payload.employeeEmail = selectedEmail;
-      }
-
-      if (activeEmployeesOnly) {
-        payload.employeeStatuses = ["Active"];
-      }
-
-      dispatch(fetchLeadReport(payload));
-    }
+    if (!startDate || !endDate) return;
+    pendingFetch.current?.abort();
+    pendingFetch.current = dispatch(fetchLeaveHistory({
+      startDate: formatDateForApi(startDate),
+      endDate: formatDateForApi(endDate),
+      ...(showAllEmployees ? {} : { approverEmail: userInfo?.workEmail }),
+      ...(selectedEmail ? { email: selectedEmail } : {}),
+      statuses: [Status.APPROVED],
+      ...(employeeStatuses.length > 0 ? { employeeStatuses } : {}),
+    }));
   };
 
   useEffect(() => {
     if (isPeopleOpsTeam) setShowAllEmployees(true);
     else handleFetchReport();
   }, []);
+
   const firstRender = useRef(true);
   useEffect(() => {
     if (firstRender.current) {
@@ -84,7 +74,7 @@ export default function LeadReportTab() {
       return;
     }
     handleFetchReport();
-  }, [showAllEmployees, selectedEmail, activeEmployeesOnly]);
+  }, [showAllEmployees, selectedEmail, employeeStatuses]);
 
   return (
     <Stack gap="1.5rem" maxWidth={PAGE_MAX_WIDTH} mx="auto">
@@ -101,10 +91,10 @@ export default function LeadReportTab() {
         onToggleChange={setShowAllEmployees}
         selectedEmail={selectedEmail}
         onEmailChange={setSelectedEmail}
-        activeEmployeesOnly={activeEmployeesOnly}
-        onActiveEmployeesChange={setActiveEmployeesOnly}
+        employeeStatuses={employeeStatuses}
+        onEmployeeStatusesChange={setEmployeeStatuses}
       />
-      <LeadReportTable reportData={reportData} loading={loading} />
+      <LeadReportTable rows={records} loading={loading} />
     </Stack>
   );
 }

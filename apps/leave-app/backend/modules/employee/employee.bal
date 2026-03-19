@@ -79,8 +79,7 @@ public isolated function getEmployees(EmployeeFilter filters = {}) returns Emplo
         employeeStatus: filters.status,
         managerEmail: filters.leadEmail,
         employmentType: filters.employmentType,
-        lead: filters.lead,
-        isActive: true
+        lead: filters.lead
     };
 
     string document = string `

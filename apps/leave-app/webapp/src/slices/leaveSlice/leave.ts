@@ -62,9 +62,9 @@ export const fetchLeaveHistory = createAsyncThunk<
   LeaveHistoryResponse,
   LeaveHistoryQueryParam,
   { rejectValue: string }
->("leave/fetchLeaveHistory", async (params, { dispatch, rejectWithValue }) => {
+>("leave/fetchLeaveHistory", async (params, { dispatch, signal, rejectWithValue }) => {
   try {
-    return await getLeaveHistory(params);
+    return await getLeaveHistory(params, signal);
   } catch (err) {
     if (axios.isCancel(err)) {
       return rejectWithValue("Request canceled");
