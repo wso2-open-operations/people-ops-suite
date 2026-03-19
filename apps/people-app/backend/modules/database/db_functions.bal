@@ -295,7 +295,7 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
         getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
     );
 
-    match ctx.employmentTypeName {
+    match ctx.employmentType {
         PERMANENT|INTERNSHIP => {
             EmployeeIdSequence row = check databaseClient->queryRow(
                 getAndLockLastEmployeeNumericSuffixQuery(ctx.companyPrefix, [PERMANENT, INTERNSHIP])
@@ -334,7 +334,7 @@ isolated function resolveEmployeeId(CreateEmployeePayload payload) returns strin
             return manualId;
         }
         _ => {
-            return error(string `Unsupported employment type: ${ctx.employmentTypeName}`);
+            return error(string `Unsupported employment type: ${ctx.employmentType}`);
         }
     }
 }

@@ -96,7 +96,7 @@ public type EmployeeIdContext record {|
    # Company prefix
    string companyPrefix;
    # Employment type
-   EmploymentTypeName employmentTypeName;
+   EmploymentTypeName employmentType;
 |};
 
 # Result record for the last numeric suffix query used in employee ID generation.
