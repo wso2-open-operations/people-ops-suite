@@ -509,8 +509,15 @@ public isolated function getParkingFloors() returns ParkingFloor[]|error {
 # + bookingDate - Booking date (YYYY-MM-DD)
 # + return - Parking slots (with isBooked)
 public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
-    stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
-    return from ParkingSlot s in slotStream select s;
+    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+    return from ParkingSlotRow r in slotStream
+        select {
+            slotId: r.slotId,
+            floorId: r.floorId,
+            floorName: r.floorName,
+            coinsPerSlot: r.coinsPerSlot,
+            isBooked: r.isBooked == 1
+        };
 }
 
 # Get parking slot by ID.
@@ -518,8 +525,20 @@ public isolated function getParkingSlotsByFloor(int floorId, string bookingDate)
 # + slotId - Slot id
 # + return - Parking slot or nil
 public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
-    ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
-    return row is sql:NoRowsError ? () : row;
+    ParkingSlotRow|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    if row is error {
+        return row;
+    }
+    return {
+        slotId: row.slotId,
+        floorId: row.floorId,
+        floorName: row.floorName,
+        coinsPerSlot: row.coinsPerSlot,
+        isBooked: row.isBooked == 1
+    };
 }
 
 # Check if slot is booked for date.

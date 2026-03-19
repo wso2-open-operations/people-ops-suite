@@ -1301,7 +1301,7 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        FALSE as 'isBooked'
+        0 as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
