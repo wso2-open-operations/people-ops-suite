@@ -493,143 +493,110 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
     return false;
 }
 
-# Update business unit.
+# Get active parking floors.
 #
-# + payload - Update payload  
-# + buId - Business unit ID
-# + return - Error when update fails
-public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId) returns error? {
-    _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
+# + return - Parking floors
+public isolated function getParkingFloors() returns ParkingFloor[]|error {
+    stream<ParkingFloor, error?> floorStream = databaseClient->query(getParkingFloorsQuery());
+    return from ParkingFloor f in floorStream
+        select f;
 }
 
-# Update team.
+# Get parking slots for a floor for a date.
+#
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Parking slots (with isBooked)
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
+    stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+    return from ParkingSlot s in slotStream select s;
+}
+
+# Get parking slot by ID.
+#
+# + slotId - Slot id
+# + return - Parking slot or nil
+public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
+    ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Check if slot is booked for date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - True if booked, false otherwise, or error
+public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
+    if row is sql:NoRowsError {
+        return false;
+    }
+    if row is error {
+        return row;
+    }
+    return true;
+}
+
+# Create parking reservation (PENDING).
+#
+# + payload - Reservation payload
+# + return - New reservation id
+public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
+    return result.lastInsertId.ensureType(int);
+}
+
+# Get parking reservation by ID.
+#
+# + reservationId - Reservation id
+# + return - Reservation details or nil
+public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
+    ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Get parking reservation id by transaction hash.
+#
+# + transactionHash - Blockchain transaction hash
+# + return - Reservation id or nil
+public isolated function getParkingReservationByTransactionHash(string transactionHash)
+        returns ReservationIdRow|error? {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getParkingReservationByTransactionHashQuery(transactionHash));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    return row;
+}
+
+# Update reservation status and optional transaction_hash.
 #
 # + payload - Update payload
-# + teamId - Team ID
-# + return - Error when update fails
-public isolated function updateTeam(UpdateUnitPayload payload, int teamId) returns error? {
-    _ = check databaseClient->execute(updateTeamQuery(payload, teamId));
-}
-
-# Update sub team.
-#
-# + payload - Update payload
-# + subTeamId - Sub team ID
-# + return - Error when update fails
-public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId) returns error? {
-    _ = check databaseClient->execute(updateSubTeamQuery(payload, subTeamId));
-}
-
-# Update unit.
-#
-# + payload - Update payload
-# + unitId - Unit ID
-# + return - Error when update fails
-public isolated function updateUnit(UpdateUnitPayload payload, int unitId) returns error? {
-    _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
-}
-
-# Update the functional lead of a business unit-team mapping.
-#
-# + payload - Fields to update in the business unit-team mapping
-# + buId - ID of the business unit
-# + teamId - ID of the team
-# + return - Nil on success, error if the update fails
-public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns boolean|error {
-    sql:ExecutionResult executionResults = check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
-}
-
-# Update the functional lead of a team-sub team mapping.
-#
-# + payload - Fields to update in the team-sub team mapping
-# + teamId - ID of the team
-# + subTeamId - ID of the sub team
-# + return - Nil on success, error if the update fails
-public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns boolean|error {
-    sql:ExecutionResult executionResults = check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
-}
-
-# Update the functional lead of a sub team-unit mapping.
-#
-# + payload - Fields to update in the sub team-unit mapping
-# + subTeamId - ID of the sub team
-# + unitId - ID of the unit
-# + return - Nil on success, error if the update fails
-public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
-    sql:ExecutionResult executionResults = check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
-}
-
-# Delete a business unit.
-#
-# + userEmail - Email of the user performing the deletion
-# + buId - ID of the business unit to delete
-# + return - True if deleted, false if not found, error on failure
-public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
-}
-
-# Delete a business unit-team mapping.
-#
-# + userEmail - Email of the user performing the deletion
-# + buId - ID of the business unit
-# + teamId - ID of the team
-# + return - True if deleted, false if not found, error on failure
-public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int teamId)
+# + return - True if updated
+public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
     returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationStatusQuery(payload));
+    return result.affectedRowCount > 0;
 }
 
-# Delete a team-sub team mapping.
-#   
-# + userEmail - Email of the user performing the deletion
-# + teamId - ID of the team
-# + subTeamId - ID of the sub team
-# + return - True if deleted, false if not found, error on failure
-public isolated function deleteTeamSubTeam(string userEmail, int teamId, int subTeamId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
-}
-
-# Delete a sub team-unit mapping.
+# Get parking reservations by employee.
 #
-# + userEmail - Email of the user performing the deletion
-# + subTeamId - ID of the sub team
-# + unitId - ID of the unit
-# + return - True if deleted, false if not found, error on failure
-public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int unitId) returns boolean|error {
-    sql:ExecutionResult executionResult = check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Reservations
+public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
+        string? toDate = ()) returns ParkingReservationDetails[]|error {
+    stream<ParkingReservationDetails, error?> resStream = databaseClient->query(
+        getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
+    return from ParkingReservationDetails r in resStream
+        select r;
 }
 
 # Get organization details with business units, teams, sub-teams, units,
 # including head, functional lead, and headcount for each node.
-#
 # + return - Organization details
 public isolated function getOrganizationDetails() returns Company|error {
     CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
@@ -772,6 +739,140 @@ public isolated function addBusinessUnitTeamSubTeam(string userEmail, OrgNodeMap
 public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNodeMappingPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
+}
+
+# Update business unit.
+#
+# + payload - Update payload  
+# + buId - Business unit ID
+# + return - Error when update fails
+public isolated function updateBusinessUnit(UpdateUnitPayload payload, int buId) returns error? {
+    _ = check databaseClient->execute(updateBusinessUnitQuery(payload, buId));
+}
+
+# Update team.
+#
+# + payload - Update payload
+# + teamId - Team ID
+# + return - Error when update fails
+public isolated function updateTeam(UpdateUnitPayload payload, int teamId) returns error? {
+    _ = check databaseClient->execute(updateTeamQuery(payload, teamId));
+}
+
+# Update sub team.
+#
+# + payload - Update payload
+# + subTeamId - Sub team ID
+# + return - Error when update fails
+public isolated function updateSubTeam(UpdateUnitPayload payload, int subTeamId) returns error? {
+    _ = check databaseClient->execute(updateSubTeamQuery(payload, subTeamId));
+}
+
+# Update unit.
+#
+# + payload - Update payload
+# + unitId - Unit ID
+# + return - Error when update fails
+public isolated function updateUnit(UpdateUnitPayload payload, int unitId) returns error? {
+    _ = check databaseClient->execute(updateUnitQuery(payload, unitId));
+}
+
+# Update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Nil on success, error if the update fails
+public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Nil on success, error if the update fails
+public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Nil on success, error if the update fails
+public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResults = check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
+    if executionResults.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a business unit.
+#
+# + userEmail - Email of the user performing the deletion
+# + buId - ID of the business unit to delete
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnit(string userEmail, int buId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a business unit-team mapping.
+#
+# + userEmail - Email of the user performing the deletion
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int teamId)
+    returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a team-sub team mapping.
+#   
+# + userEmail - Email of the user performing the deletion
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteTeamSubTeam(string userEmail, int teamId, int subTeamId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
+}
+
+# Delete a sub team-unit mapping.
+#
+# + userEmail - Email of the user performing the deletion
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - True if deleted, false if not found, error on failure
+public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int unitId) returns boolean|error {
+    sql:ExecutionResult executionResult = check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
+    if executionResult.affectedRowCount > 0 {
+        return true;
+    }
+    return false;
 }
 
 # Check whether a business unit name is unique among active rows.
@@ -929,106 +1030,4 @@ public isolated function businessUnitTeamSubTeamMappingExists(int id) returns bo
         check databaseClient->queryRow(businessUnitTeamSubTeamMappingExistsQuery(id));
 
     return result.exists_flag == 1;
-}
-
-# Get active parking floors.
-#
-# + return - Parking floors
-public isolated function getParkingFloors() returns ParkingFloor[]|error {
-    stream<ParkingFloor, error?> floorStream = databaseClient->query(getParkingFloorsQuery());
-    return from ParkingFloor f in floorStream
-        select f;
-}
-
-# Get parking slots for a floor for a date.
-#
-# + floorId - Floor id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Parking slots (with isBooked)
-public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
-    stream<ParkingSlot, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
-    return from ParkingSlot s in slotStream select s;
-}
-
-# Get parking slot by ID.
-#
-# + slotId - Slot id
-# + return - Parking slot or nil
-public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
-    ParkingSlot|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
-    return row is sql:NoRowsError ? () : row;
-}
-
-# Check if slot is booked for date.
-#
-# + slotId - Slot id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - True if booked, false otherwise, or error
-public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
-    ReservationIdRow|error row = databaseClient->queryRow(
-        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
-    if row is sql:NoRowsError {
-        return false;
-    }
-    if row is error {
-        return row;
-    }
-    return true;
-}
-
-# Create parking reservation (PENDING).
-#
-# + payload - Reservation payload
-# + return - New reservation id
-public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
-    return result.lastInsertId.ensureType(int);
-}
-
-# Get parking reservation by ID.
-#
-# + reservationId - Reservation id
-# + return - Reservation details or nil
-public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
-    ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
-    return row is sql:NoRowsError ? () : row;
-}
-
-# Get parking reservation id by transaction hash.
-#
-# + transactionHash - Blockchain transaction hash
-# + return - Reservation id or nil
-public isolated function getParkingReservationByTransactionHash(string transactionHash)
-        returns ReservationIdRow|error? {
-    ReservationIdRow|error row = databaseClient->queryRow(
-        getParkingReservationByTransactionHashQuery(transactionHash));
-    if row is sql:NoRowsError {
-        return ();
-    }
-    return row;
-}
-
-# Update reservation status and optional transaction_hash.
-#
-# + payload - Update payload
-# + return - True if updated
-public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
-    returns boolean|error {
-    sql:ExecutionResult result = check databaseClient->execute(
-        updateParkingReservationStatusQuery(payload));
-    return result.affectedRowCount > 0;
-}
-
-# Get parking reservations by employee.
-#
-# + employeeEmail - Employee email
-# + fromDate - From date (optional)
-# + toDate - To date (optional)
-# + return - Reservations
-public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
-        string? toDate = ()) returns ParkingReservationDetails[]|error {
-    stream<ParkingReservationDetails, error?> resStream = databaseClient->query(
-        getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
-    return from ParkingReservationDetails r in resStream
-        select r;
 }
