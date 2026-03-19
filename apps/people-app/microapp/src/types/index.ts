@@ -18,3 +18,4 @@ export * from "@/types/user";
 export * from "@/types/vehicle";
 export * from "@/types/service";
 export * from "@/types/page";
+export * from "@/types/parking";

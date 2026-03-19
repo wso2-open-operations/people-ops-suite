@@ -20,7 +20,7 @@ import { Header } from "@/components/core";
 import { PageTransitionWrapper } from "@/components/shared";
 import { ServiceTile } from "@/components/features/services";
 
-function HomePage({ user }: PageProps) {
+function HomePage({ user: _user }: PageProps) {
   return (
     <PageTransitionWrapper type="main">
       <Header />
