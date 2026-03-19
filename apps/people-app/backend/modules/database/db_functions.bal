@@ -276,7 +276,7 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
     retry transaction {
         int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
 
-        employeeId = check resolveEmployeeId(payload);
+        employeeId = check generateEmployeeId(payload);
 
         lastInsertedId = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
         check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
@@ -290,7 +290,7 @@ public isolated function addEmployee(CreateEmployeePayload payload, string creat
 #
 # + payload - Add employee payload
 # + return - Generated or manually provided employee ID string, or error
-isolated function resolveEmployeeId(CreateEmployeePayload payload) returns string|error {
+isolated function generateEmployeeId(CreateEmployeePayload payload) returns string|error {
     EmployeeIdContext ctx = check databaseClient->queryRow(
         getEmployeeIdContextQuery(payload.companyId, payload.employmentTypeId)
     );
