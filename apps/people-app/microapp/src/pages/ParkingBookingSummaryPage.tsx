@@ -1,3 +1,19 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -51,6 +67,7 @@ function ParkingBookingSummaryPage() {
   const [vehicleId, setVehicleId] = useState<number | undefined>(undefined);
 
   const [loadingVehicles, setLoadingVehicles] = useState(true);
+  const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
   const [busyConfirm, setBusyConfirm] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
@@ -76,16 +93,30 @@ function ParkingBookingSummaryPage() {
           null,
           (data) => {
             if (cancelled) return;
-            const res = data as { vehicles?: VehicleResponse[] };
-            const options: VehicleOption[] = (res.vehicles ?? [])
+            const res = data as { vehicles?: VehicleResponse[] | null };
+            const rawVehicles = res?.vehicles ?? null;
+
+            // Backend can return `null` when the user hasn't registered vehicles.
+            if (!rawVehicles || rawVehicles.length === 0) {
+              setVehicles([]);
+              setVehicleId(undefined);
+              setVehiclesSetupRequired(true);
+              setLoadingVehicles(false);
+              return;
+            }
+
+            const options: VehicleOption[] = rawVehicles
               .filter((v) => String(v.vehicleType) === "CAR")
               .map((v) => ({
                 vehicleId: v.vehicleId as number,
-                vehicleRegistrationNumber: String(v.vehicleRegistrationNumber),
+                vehicleRegistrationNumber: String(
+                  v.vehicleRegistrationNumber,
+                ),
               }));
 
             setVehicles(options);
             setVehicleId(options[0]?.vehicleId);
+            setVehiclesSetupRequired(options.length === 0);
             setLoadingVehicles(false);
           },
           (err) => {
@@ -94,6 +125,7 @@ function ParkingBookingSummaryPage() {
             setShowPaymentFailureModal(false);
             setVehicles([]);
             setVehicleId(undefined);
+            setVehiclesSetupRequired(true);
             setLoadingVehicles(false);
           },
           (loading) => {
@@ -105,6 +137,7 @@ function ParkingBookingSummaryPage() {
         setError(String(e ?? "Failed to load vehicles"));
         setVehicles([]);
         setVehicleId(undefined);
+        setVehiclesSetupRequired(true);
         setLoadingVehicles(false);
       }
     };
@@ -334,7 +367,7 @@ function ParkingBookingSummaryPage() {
             <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
               <DirectionsCarSharp style={{ color: "#0B64C0" }} />
             </div>
-            <div className="text-[13px] font-bold text-[#808080]">SELECT VEHICLE</div>
+            <div className="text-[13px] font-bold text-[#808080]">Select Vehicle</div>
           </div>
 
           <div className="mt-3">
@@ -342,9 +375,18 @@ function ParkingBookingSummaryPage() {
               <div className="grid place-items-center py-6">
                 <CircularProgress size={26} sx={{ color: "#ff7300" }} />
               </div>
-            ) : vehicles.length === 0 ? (
-              <div className="text-sm font-medium text-[#808080] py-3">
-                No active vehicles found.
+            ) : vehiclesSetupRequired ? (
+              <div className="py-3">
+                <div className="text-sm font-medium text-[#808080]">
+                  Add a vehicle to confirm your booking.
+                </div>
+                <button
+                  type="button"
+                  className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
+                  onClick={() => navigate("/services/vehicles")}
+                >
+                  Manage Personal Vehicles
+                </button>
               </div>
             ) : (
               <Select
@@ -359,6 +401,9 @@ function ParkingBookingSummaryPage() {
                   height: 48,
                 }}
               >
+                <MenuItem value="" disabled>
+                  Select a vehicle
+                </MenuItem>
                 {vehicles.map((v) => (
                   <MenuItem key={v.vehicleId} value={v.vehicleId}>
                     {v.vehicleRegistrationNumber}
@@ -369,18 +414,18 @@ function ParkingBookingSummaryPage() {
           </div>
         </div>
 
-            <div className="mt-6 border-t border-[#E5E5E5] pt-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
-                  <CalendarMonthSharp style={{ color: "#0B64C0" }} />
-                </div>
-                <div className="text-[13px] font-bold text-[#808080]">DATE</div>
-              </div>
-
-              <div className="mt-3 text-[16px] font-bold text-[#1F2A44]">
-                {formatBookingDate(bookingDate)}
-              </div>
+        <div className="mt-6 border-t border-[#E5E5E5] pt-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#EAF3FF] grid place-items-center">
+              <CalendarMonthSharp style={{ color: "#0B64C0" }} />
             </div>
+            <div className="text-[13px] font-bold text-[#808080]">Date</div>
+          </div>
+
+          <div className="mt-3 text-[16px] font-bold text-[#1F2A44]">
+            {formatBookingDate(bookingDate)}
+          </div>
+        </div>
 
         <div className="mt-5 border-t border-dashed border-[#E5E5E5] pt-4">
           <div className="flex items-center justify-between">
@@ -428,10 +473,10 @@ function ParkingBookingSummaryPage() {
           <button
             type="button"
             className="w-full p-[0.9rem] text-lg font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
-            disabled={busyConfirm || !vehicleId}
+            disabled={busyConfirm || !vehicleId || vehiclesSetupRequired}
             onClick={handleConfirmAndPay}
           >
-            {busyConfirm ? "Confirming..." : "Confirm and Pay ->"}
+            {busyConfirm ? "Confirming..." : "Confirm & Pay"}
           </button>
         </div>
       </div>
