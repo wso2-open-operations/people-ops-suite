@@ -428,7 +428,7 @@ CREATE TABLE `personal_info_emergency_contacts` (
   `personal_info_id` INT NOT NULL,
   `name` VARCHAR(150) NOT NULL,
   `mobile` VARCHAR(20) NOT NULL,
-  `telephone` VARCHAR(20) NOT NULL,
+  `telephone` VARCHAR(20) NULL,
   `relationship` VARCHAR(100) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

@@ -537,7 +537,7 @@ public type EmergencyContact record {|
     # Relationship with the employee
     string relationship;
     # Telephone number of the emergency contact
-    string telephone;
+    string? telephone;
     # Mobile number of the emergency contact
     string mobile;
 |};
