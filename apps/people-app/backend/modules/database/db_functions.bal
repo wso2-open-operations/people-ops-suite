@@ -223,6 +223,14 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Get houses.
+#
+# + return - Houses
+public isolated function getHouses() returns House[]|error {
+    stream<House, sql:Error?> resultStream = databaseClient->query(getHousesQuery());
+    return from House house in resultStream select house;
+}
+
 # Get managers.
 #
 # + return - Managers

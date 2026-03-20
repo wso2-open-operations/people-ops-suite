@@ -696,6 +696,19 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employmentTypes;
     }
 
+    # Get houses.
+    #
+    # + return - Houses
+    resource function get houses() returns database:House[]|http:InternalServerError {
+        database:House[]|error houses = database:getHouses();
+        if houses is error {
+            string customError = "Error while fetching Houses";
+            log:printError(customError, houses);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        return houses;
+    }
+
     # Create a new employee.
     #
     # + return - The created employee ID as an integer, or HTTP errors
@@ -1044,12 +1057,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-                                                          owner: userInfo.email,
-                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-                                                          vehicleType: vehicle.vehicleType,
-                                                          vehicleStatus: database:ACTIVE,
-                                                          createdBy: userInfo.email
-                                                      });
+            owner: userInfo.email,
+            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+            vehicleType: vehicle.vehicleType,
+            vehicleStatus: database:ACTIVE,
+            createdBy: userInfo.email
+        });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1086,10 +1099,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-                                                                vehicleId: vehicleId,
-                                                                vehicleStatus: database:INACTIVE,
-                                                                updatedBy: userInfo.email
-                                                            });
+            vehicleId: vehicleId,
+            vehicleStatus: database:INACTIVE,
+            updatedBy: userInfo.email
+        });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1253,13 +1266,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error reservationId = database:addParkingReservation({
-                                                                     slotId: body.slotId,
-                                                                     bookingDate: body.bookingDate,
-                                                                     employeeEmail: userInfo.email,
-                                                                     vehicleId: body.vehicleId,
-                                                                     coinsAmount: slot.coinsPerSlot,
-                                                                     createdBy: userInfo.email
-                                                                 });
+            slotId: body.slotId,
+            bookingDate: body.bookingDate,
+            employeeEmail: userInfo.email,
+            vehicleId: body.vehicleId,
+            coinsAmount: slot.coinsPerSlot,
+            createdBy: userInfo.email
+        });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1375,7 +1388,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         string csvContent = status == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees)
             : database:buildEmployeeCsv(allEmployees);
-        string statusLabel = status is () ? "all" : re` `.replaceAll(status.toLowerAscii(), "_");
+        string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
@@ -1444,11 +1457,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-                                                                            reservationId: reservation.id,
-                                                                            status: database:CONFIRMED,
-                                                                            transactionHash: body.transactionHash,
-                                                                            updatedBy: userInfo.email
-                                                                        });
+            reservationId: reservation.id,
+            status: database:CONFIRMED,
+            transactionHash: body.transactionHash,
+            updatedBy: userInfo.email
+        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{
