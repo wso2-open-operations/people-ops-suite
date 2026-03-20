@@ -40,17 +40,17 @@ public isolated function confirmTransaction(string txHash, string masterWalletAd
     if !payload.found {
         return error("Transaction not found on-chain.");
     }
-    if payload.txDetails is () {
-        return error("Transaction details missing; cannot verify recipient.");
+    if payload.decodedData is () {
+        return error("Decoded transaction data missing; cannot verify recipient.");
     }
-    TxDetailsToRecord|error detailsParsed = payload.txDetails.cloneWithType(TxDetailsToRecord);
-    if detailsParsed is error {
-        return error("Transaction details invalid; cannot verify recipient.");
+    DecodedDataForRecipient|error decoded = payload.decodedData.cloneWithType(DecodedDataForRecipient);
+    if decoded is error {
+        return error("Decoded transaction data invalid; cannot verify recipient.");
     }
-    string? toAddress = detailsParsed.'to;
-    if toAddress is () {
-        return error("Transaction 'to' address missing or invalid.");
+    if decoded.name != "transfer" || decoded.args.length() < 1 {
+        return error("Decoded transfer recipient missing; cannot verify recipient.");
     }
+    string toAddress = decoded.args[0];
     if toAddress.toLowerAscii() != masterWalletAddress.toLowerAscii() {
         return error(string `Transaction recipient does not match master wallet.`);
     }

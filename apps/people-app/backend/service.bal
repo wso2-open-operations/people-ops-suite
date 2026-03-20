@@ -15,16 +15,12 @@
 // under the License. 
 import people.authorization;
 import people.database;
-import people.gsheet;
-import people.'transaction as tx;
+import people.wso2_coin;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
-
-# Master wallet address for car park O2C payments.
-configurable string masterWalletAddress = ?;
 
 @display {
     label: "People Service",
@@ -1126,7 +1122,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: masterWalletAddress};
+        return {publicWalletAddress: wso2_coin:masterWalletAddress};
     }
 
     # List parking floors.
@@ -1199,13 +1195,26 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         time:Utc nowUtc = time:utcNow();
         string today;
+        int hour;
         time:Zone? sriLankaZone = time:getZone("Asia/Colombo");
         if sriLankaZone is time:Zone {
             time:Civil civil = sriLankaZone.utcToCivil(nowUtc);
             string|error civilStr = time:civilToString(civil);
             today = civilStr is string ? civilStr.substring(0, 10) : time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+            hour = civil.hour;
         } else {
-            today = time:utcToString(time:utcAddSeconds(nowUtc, 19800)).substring(0, 10);
+            time:Utc slTime = time:utcAddSeconds(nowUtc, 19800);
+            today = time:utcToString(slTime).substring(0, 10);
+            string hourStr = time:utcToString(slTime).substring(11, 13);
+            int|error parsedHour = int:fromString(hourStr);
+            hour = parsedHour is int ? parsedHour : 0;
+        }
+        if hour < wso2_coin:reservationWindowStartHour || hour >= wso2_coin:reservationWindowEndHour {
+            return <http:BadRequest>{
+                body: {
+                    message: string `Reservations are only allowed from ${wso2_coin:reservationWindowStartHour}:00 to ${wso2_coin:reservationWindowEndHour}:00.`
+                }
+            };
         }
         if body.bookingDate != today {
             return <http:BadRequest>{
@@ -1248,7 +1257,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
         if booked {
             return <http:BadRequest>{
-                body: {message: string `Slot ${body.slotId} is already booked for ${body.bookingDate}.`}
+                body: {message: string `Slot ${body.slotId} is unavailable for ${body.bookingDate}. It may be temporarily reserved or already booked.`}
             };
         }
 
@@ -1434,8 +1443,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
-            reservation.coinsAmount);
+        error? confirmErr = wso2_coin:confirmTransaction(body.transactionHash, wso2_coin:masterWalletAddress,
+                reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
@@ -1470,10 +1479,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Append to Google Sheet.
-        error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
+        error? sheetErr = wso2_coin:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
-                reservationId = confirmedReservation.id);
+                    reservationId = confirmedReservation.id);
         }
 
         return confirmedReservation;

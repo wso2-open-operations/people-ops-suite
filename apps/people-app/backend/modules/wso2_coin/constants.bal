@@ -14,19 +14,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# [Configurable] Google sheet OAuth2 application configuration for parking reservations.
-public type ParkingSheetConfig record {|
-    # OAuth2 token endpoint.
-    string tokenUrl;
-    # OAuth 2 refresh token.
-    string refreshToken;
-    # OAuth2 client ID.
-    string clientId;
-    # OAuth2 client secret.
-    string clientSecret;
-    # Sheet ID.
-    string sheetId;
-    # Sheet name (tab) to append reservations to.
-    string sheetName;
-|};
+# Google Sheet retry configuration for max retry attempts.
+const int GSHEET_CONFIG_RETRY_COUNT = 3;
 
+# Google Sheet retry configuration for wait interval in seconds.
+const decimal GSHEET_CONFIG_RETRY_INTERVAL = 3.0;
+
+# Master wallet address for car park O2C payments.
+public configurable string masterWalletAddress = ?;
+
+# Reservation start hour in Sri Lanka time.
+public configurable int reservationWindowStartHour = 5;
+
+# Reservation end hour in Sri Lanka time.
+public configurable int reservationWindowEndHour = 7;
