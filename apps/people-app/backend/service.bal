@@ -1799,7 +1799,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-units/teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/business\-unit/team(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1832,7 +1832,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/teams\-sub\-teams(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/team/sub\-team(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1865,7 +1865,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-teams\-units(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/sub\-team\-unit(http:RequestContext ctx, OrgNodeMappingPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2162,7 +2162,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/business\-unit/[int buId]/team/[int teamId]
-            (http:RequestContext ctx, UpdateBusinessUnitTeamPayload payload)
+            (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2243,7 +2243,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
-            (http:RequestContext ctx, UpdateTeamSubTeamPayload payload)
+            (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2323,8 +2323,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
-            (http:RequestContext ctx, UpdateSubTeamUnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
+            (http:RequestContext ctx, UpdateOrgUnitPayload payload)
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {   
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
             validateOrganizationRequest(ctx);
