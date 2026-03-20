@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -17,6 +17,8 @@ import { Box, Button, Container } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 
+import { useWso2Logo } from "@src/hooks/useWso2Logo";
+
 interface PreLoaderProps {
   message?: string | null;
   hideLogo?: boolean;
@@ -24,14 +26,17 @@ interface PreLoaderProps {
 }
 
 const StatusWithAction = (props: PreLoaderProps) => {
+  const wso2Logo = useWso2Logo();
   return (
     <Box
       sx={{
         background: "#E7EBF0",
         display: "flex",
-        pt: "20vh",
         flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         height: "100vh",
+        width: "100vw",
       }}
     >
       <Container maxWidth="md">
@@ -43,24 +48,17 @@ const StatusWithAction = (props: PreLoaderProps) => {
             alignItems="center"
             spacing={2}
           >
-            <Grid size={{ xs: 12 }}>
-              {!props.hideLogo && (
-                <img
-                  alt="logo"
-                  width="150"
-                  height="auto"
-                  src="https://wso2.cachefly.net/wso2/sites/images/brand/downloads/wso2-logo.png"
-                />
-              )}
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
+              {!props.hideLogo && <img alt="logo" width="150" height="auto" src={wso2Logo} />}
             </Grid>
             <Grid size={{ xs: 12 }}></Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
               <Typography variant="h5">{props.message}</Typography>
             </Grid>
             <Grid size={{ xs: 12 }}></Grid>
 
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
               <Button
                 size="large"
                 variant="contained"

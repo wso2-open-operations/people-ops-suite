@@ -26,8 +26,6 @@ import {
 } from "date-fns";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
-  // TODO: Temporarily allow all roles. Remove this after the roles are finalized.
-  return true;
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
 };
 
@@ -112,3 +110,38 @@ export const formatServiceLength = (length: ServiceLength | null): string => {
   if (years > 0) return `${years} ${years === 1 ? "year" : "years"}`;
   return `${months} ${months === 1 ? "month" : "months"}`;
 };
+
+export const toSentenceCase = (value: string): string => {
+  if (!value) return value;
+  return value
+    .replace(/[_-]/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+export const sortAndFormatOptions = <T>(
+  options: T[],
+  getLabel: (option: T) => string,
+): T[] => {
+  return [...options].sort((a, b) => {
+    const aLabel = getLabel(a);
+    const bLabel = getLabel(b);
+    return aLabel.localeCompare(bLabel, undefined, { sensitivity: "base" });
+  });
+};
+
+export function getEmployeeStatusColor(
+  status: string,
+): "default" | "success" | "warning" | "error" {
+  switch (status?.toLowerCase()) {
+    case "active":
+      return "success";
+    case "marked leaver":
+      return "warning";
+    case "left":
+      return "error";
+    default:
+      return "default";
+  }
+}

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,6 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { FishIcon, Ham, LeafyGreen } from "lucide-react";
+
+import { MealOption } from "@/types/types";
 
 export const SnackMessage = {
   success: {
@@ -31,10 +34,26 @@ export const SnackMessage = {
   warning: {},
 };
 
-export const APP_DESC = " Internal App Product Template.";
+export const APP_DESC = " Menu App";
 
-export const redirectUrl = "iapm-marketplace-redirect-url";
+export const redirectUrl = "menu-app-redirect-url";
+
+export const localStorageTheme = "menu-app-theme";
 
 export const PRIVILEGE_ADMIN = 789;
 
-export const PRIVILEGE_EMPLOYEE = 987
+export const PRIVILEGE_EMPLOYEE = 987;
+
+export const FEEDBACK_TIME = {
+  START: [12, 0, 0, 0],
+  END: [16, 15, 0, 0],
+} as const;
+
+export const MEAL_OPTIONS = [
+  { value: "Chicken" as MealOption, label: "Chicken", icon: Ham },
+  { value: "Fish" as MealOption, label: "Fish", icon: FishIcon },
+  { value: "Vegetarian" as MealOption, label: "Vegetarian", icon: LeafyGreen },
+] as const;
+
+export const DOD_START_HOUR = 16;
+export const DOD_END_HOUR = 19;

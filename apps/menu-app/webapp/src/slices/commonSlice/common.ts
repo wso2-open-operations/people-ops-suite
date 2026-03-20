@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import type { VariantType } from "notistack";
+
 import type { AppDispatch } from "@slices/store";
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface CommonState {
   message: string;
@@ -39,7 +39,7 @@ export const CommonSlice = createSlice({
       action: PayloadAction<{
         message: string;
         type: "success" | "error" | "warning";
-      }>
+      }>,
     ) => {
       state.message = action.payload.message;
       state.type = action.payload.type;

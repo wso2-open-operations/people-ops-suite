@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -36,7 +36,6 @@ const item = {
 };
 
 function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open: boolean }) {
-
   return (
     <AnimatePresence>
       {parentRoute.children && parentRoute.children.length > 0 && (
@@ -55,11 +54,7 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
           }}
         >
           {parentRoute.children!.map((child) => (
-            <motion.div
-              key={child.path}
-              variants={item}
-              style={{ width: "100%" }}
-            >
+            <motion.div key={child.path} variants={item} style={{ width: "100%" }}>
               <SubLink
                 to={child.path as string}
                 parentPath={parentRoute.path}

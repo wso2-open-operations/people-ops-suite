@@ -23,11 +23,13 @@ import PreLoader from "@component/common/PreLoader";
 import Layout from "@layout/Layout";
 import NotFoundPage from "@layout/pages/404";
 import MaintenancePage from "@layout/pages/Maintenance";
-import { RootState, useAppSelector } from "@slices/store";
+import { fetchEmployees } from "@slices/employeeSlice/employee";
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
 
 import { getActiveRoutesV2, routes } from "../route";
 
 const AppHandler = () => {
+  const dispatch = useAppDispatch();
   const [appState, setAppState] = useState<"loading" | "success" | "failed" | "maintenance">(
     "loading",
   );
@@ -50,14 +52,15 @@ const AppHandler = () => {
   useEffect(() => {
     if (auth.status === "loading") {
       setAppState("loading");
-    } else if (auth.status === "success") {
+    } else if (auth.status === "success" && auth.roles.length > 0) {
       setAppState("success");
+      dispatch(fetchEmployees());
     } else if (auth.status === "failed") {
       setAppState("failed");
     } else if (auth.mode === "maintenance") {
       setAppState("maintenance");
     }
-  }, [auth.status, auth.mode]);
+  }, [auth.status, auth.mode, auth.roles, dispatch]);
 
   const renderApp = () => {
     switch (appState) {

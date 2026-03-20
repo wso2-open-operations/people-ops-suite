@@ -23,8 +23,17 @@ import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { RootState } from "@slices/store";
 
 export enum Role {
-  ADMIN = "ADMIN",
   EMPLOYEE = "EMPLOYEE",
+  INTERN = "INTERN",
+  LEAD = "LEAD",
+  PEOPLE_OPS_TEAM = "PEOPLE_OPS_TEAM",
+}
+
+export enum Privileges {
+  EMPLOYEE = 987,
+  INTERN = 678,
+  LEAD = 879,
+  PEOPLE_OPS_TEAM = 789,
 }
 
 // Custom extended interface
@@ -58,9 +67,14 @@ export interface UserInfoInterface {
   firstName: string;
   lastName: string;
   workEmail: string;
+  leadEmail: string;
   employeeThumbnail: string | null;
   jobRole: string;
+  isLead: boolean;
+  employmentStartDate: string;
+  subordinateCount: number | null;
   privileges: number[];
+  location: string | null;
 }
 
 const initialState: AuthState = {
@@ -89,11 +103,17 @@ export const loadPrivileges = createAsyncThunk(
     const userPrivileges = userInfo?.privileges || [];
     const roles: Role[] = [];
 
-    if (userPrivileges.includes(789)) {
-      roles.push(Role.ADMIN);
-    }
-    if (userPrivileges.includes(987)) {
+    if (userPrivileges.includes(Privileges.EMPLOYEE)) {
       roles.push(Role.EMPLOYEE);
+    }
+    if (userPrivileges.includes(Privileges.LEAD)) {
+      roles.push(Role.LEAD);
+    }
+    if (userPrivileges.includes(Privileges.INTERN)) {
+      roles.push(Role.INTERN);
+    }
+    if (userPrivileges.includes(Privileges.PEOPLE_OPS_TEAM)) {
+      roles.push(Role.PEOPLE_OPS_TEAM);
     }
 
     if (roles.length === 0) {

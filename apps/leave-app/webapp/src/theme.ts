@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 // MUI Import
 import { type PaletteMode } from "@mui/material";
 
@@ -422,6 +423,10 @@ export const themeSettings = (mode: PaletteMode) => {
         light: "#81c784",
         dark: "#388e3c",
       },
+      background: {
+        default: mode === "dark" ? colors.surface.primary.active : colors.neutral.white,
+        paper: mode === "dark" ? colors.surface.primary.hover : colors.neutral.white,
+      },
       // Custom palette extensions - preserve all color shades
       neutral: colors.neutral,
       primaryShades: colors.primary,
@@ -433,6 +438,7 @@ export const themeSettings = (mode: PaletteMode) => {
       customText: colors.text,
     },
     typography: {
+      fontFamily: "Poppins, Arial, sans-serif, Helvetica",
       fontSize: 14,
       h1: {
         fontSize: typography.h1.fontSize,

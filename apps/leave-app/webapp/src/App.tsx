@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import AppHandler from "@app/AppHandler";
 import { AuthProvider } from "@asgardeo/auth-react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -23,8 +24,8 @@ import { createContext, useEffect, useMemo, useState } from "react";
 
 import { APP_NAME, AsgardeoConfig } from "@config/config";
 import AppAuthProvider from "@context/AuthContext";
-import { store } from "@slices/store";
 import { themeSettings } from "@root/src/theme";
+import { store } from "@slices/store";
 import { ThemeMode } from "@utils/types";
 
 import "./index.css";
@@ -79,7 +80,11 @@ function App() {
 
   return (
     <ColorModeContext.Provider value={{ mode, toggleColorMode: colorMode.toggleColorMode }}>
-      <SnackbarProvider maxSnack={3} preventDuplicate>
+      <SnackbarProvider
+        maxSnack={3}
+        preventDuplicate
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <AuthProvider config={AsgardeoConfig}>

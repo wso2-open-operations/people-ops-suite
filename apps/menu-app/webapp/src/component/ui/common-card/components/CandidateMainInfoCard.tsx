@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,10 +13,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Theme } from "@mui/material";
+import { Grid, Stack, Typography, alpha } from "@mui/material";
 
 import React from "react";
-import { Theme } from "@mui/material";
-import { Grid, alpha, Typography, Stack } from "@mui/material";
 
 interface CandidateMainInfoCardProps {
   title: string;
@@ -24,21 +24,13 @@ interface CandidateMainInfoCardProps {
   icon: React.ReactElement<any, string | React.JSXElementConstructor<any>>;
 }
 
-const CandidateMainInfoCard = ({
-  title,
-  subTitle,
-  icon,
-}: CandidateMainInfoCardProps) => {
+const CandidateMainInfoCard = ({ title, subTitle, icon }: CandidateMainInfoCardProps) => {
   return (
     <Grid
       size={{ xs: 12 }}
       sx={{
         p: 1,
-        bgcolor: (theme) =>
-          alpha(
-            theme.palette.primary.main,
-            theme.palette.action.selectedOpacity
-          ),
+        bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.action.selectedOpacity),
         borderColor: "primary.main",
         borderRadius: 2.5,
         display: "flex",

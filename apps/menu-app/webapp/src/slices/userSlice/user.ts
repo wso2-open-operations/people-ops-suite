@@ -13,17 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { State } from "../../types/types";
-import { AppConfig } from "@config/config";
-import { APIService } from "@utils/apiService";
-import type { UserState, UserInfoInterface } from "@slices/authSlice/auth";
-import {
-  createSlice,
-  createAsyncThunk,
-  type PayloadAction,
-} from "@reduxjs/toolkit";
-import { AxiosError } from "axios";
+import { UserInfoInterface, userApi } from "@services/user.api";
+import { State } from "@utils/types";
+
+export interface UserState {
+  state: State;
+  stateMessage: string | null;
+  errorMessage: string | null;
+  userInfo: UserInfoInterface | null;
+}
 
 const initialState: UserState = {
   state: State.idle,
@@ -32,54 +32,50 @@ const initialState: UserState = {
   userInfo: null,
 };
 
-export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
-  return new Promise<{
-    UserInfo: UserInfoInterface;
-  }>((resolve, reject) => {
-    APIService.getInstance()
-      .get(AppConfig.serviceUrls.userInfo)
-      .then((resp) => {
-        resolve({
-          UserInfo: resp.data,
-        });
-      })
-      .catch((error: AxiosError) => {
-        reject(error);
-      });
-  });
-});
-
 export const UserSlice = createSlice({
-  name: "getUserInfo",
+  name: "user",
   initialState,
   reducers: {
     updateStateMessage: (state, action: PayloadAction<string>) => {
       state.stateMessage = action.payload;
     },
+    setUserInfo: (state, action: PayloadAction<UserInfoInterface>) => {
+      state.userInfo = action.payload;
+      state.state = State.success;
+      state.errorMessage = null;
+    },
+    clearUserInfo: (state) => {
+      state.userInfo = null;
+      state.state = State.idle;
+      state.errorMessage = null;
+    },
   },
   extraReducers: (builder) => {
+    // Listen to RTK Query getUserInfo lifecycle
     builder
-      .addCase(getUserInfo.pending, (state, action) => {
+      .addMatcher(userApi.endpoints.getUserInfo.matchPending, (state) => {
         state.state = State.loading;
         state.stateMessage = "Checking User Info...";
       })
-      .addCase(getUserInfo.fulfilled, (state, action) => {
-        state.userInfo = action.payload.UserInfo;
+      .addMatcher(userApi.endpoints.getUserInfo.matchFulfilled, (state, action) => {
+        state.userInfo = action.payload;
         state.state = State.success;
+        state.stateMessage = "Successfully fetched user info";
+        state.errorMessage = null;
       })
-      .addCase(getUserInfo.rejected, (state, action) => {
+      .addMatcher(userApi.endpoints.getUserInfo.matchRejected, (state, action) => {
         state.state = State.failed;
-        if (action.error.code === AxiosError.ERR_BAD_REQUEST) {
+        state.stateMessage = null;
+        if (action.payload?.status === 401) {
           state.errorMessage =
             "Oops! Looks like you are not authorized to access this application.";
         } else {
-          state.errorMessage =
-            "Something went wrong while authenticating the user.";
+          state.errorMessage = "Something went wrong while authenticating the user.";
         }
       });
   },
 });
 
-export const { updateStateMessage } = UserSlice.actions;
+export const { updateStateMessage, setUserInfo, clearUserInfo } = UserSlice.actions;
 
 export default UserSlice.reducer;

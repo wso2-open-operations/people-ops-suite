@@ -47,5 +47,7 @@ export const AppConfig = {
     visitors: ServiceBaseUrl + "/visitors",
     visits: ServiceBaseUrl + "/visits",
     invitations: ServiceBaseUrl + "/invitations",
+    employeesInfo: ServiceBaseUrl + "/employees",
+    buildingResources: ServiceBaseUrl + "/building-resources",
   },
 };

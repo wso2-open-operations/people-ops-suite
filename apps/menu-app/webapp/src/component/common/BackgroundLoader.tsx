@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,14 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import Backdrop from "@mui/material/Backdrop";
-import CircularProgress from "@mui/material/CircularProgress";
 import { Typography } from "@mui/material";
-import LinearProgress, {
-  LinearProgressProps,
-} from "@mui/material/LinearProgress";
+import Backdrop from "@mui/material/Backdrop";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import LinearProgress, { LinearProgressProps } from "@mui/material/LinearProgress";
 
 const BackgroundLoader = (props: {
   open: boolean;
@@ -52,10 +49,7 @@ const BackgroundLoader = (props: {
       {props.linearProgress && (
         <Box sx={{ width: "40%" }}>
           <LinearProgressWithLabel
-            value={
-              (props.linearProgress.completed / props.linearProgress.total) *
-              100
-            }
+            value={(props.linearProgress.completed / props.linearProgress.total) * 100}
           />
           <Typography variant="h5" sx={{ marginTop: "20px" }}>
             {props.message}
@@ -66,9 +60,7 @@ const BackgroundLoader = (props: {
   );
 };
 
-function LinearProgressWithLabel(
-  props: LinearProgressProps & { value: number }
-) {
+function LinearProgressWithLabel(props: LinearProgressProps & { value: number }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Box sx={{ width: "100%", mr: 1 }}>
@@ -76,7 +68,7 @@ function LinearProgressWithLabel(
       </Box>
       <Box sx={{ minWidth: 35 }}>
         <Typography variant="body2" color="text.secondary">{`${Math.round(
-          props.value
+          props.value,
         )}%`}</Typography>
       </Box>
     </Box>

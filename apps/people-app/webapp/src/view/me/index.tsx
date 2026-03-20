@@ -27,6 +27,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import {
   Accordion,
   AccordionDetails,
@@ -46,10 +47,14 @@ import {
 import IconButton from "@mui/material/IconButton";
 import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
-import { fetchEmployee } from "@root/src/slices/employeeSlice/employee";
+import {
+  fetchEmployee,
+  resetEmployee,
+} from "@root/src/slices/employeeSlice/employee";
 import {
   EmployeePersonalInfo,
   fetchEmployeePersonalInfo,
+  resetPersonalInfo,
   updateEmployeePersonalInfo,
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import {
@@ -66,8 +71,10 @@ import {
   FormikValues,
   getIn,
 } from "formik";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { array, object, string } from "yup";
+import { Role, selectRoles } from "@slices/authSlice/auth";
 import { useAppDispatch, useAppSelector } from "../../slices/store";
 
 const ReadOnly = ({
@@ -143,11 +150,12 @@ const FieldInput = ({
 export const getEmployeeStatusChipStyles =
   (status?: string) => (theme: Theme) => {
     const normalized = (status ?? "").trim().toLowerCase();
-    const isActive = normalized === "active";
-
-    const mainColor = isActive
-      ? theme.palette.success.main
-      : theme.palette.error.main;
+    const mainColor =
+      normalized === "active"
+        ? theme.palette.success.main
+        : normalized === "marked leaver"
+          ? theme.palette.warning.main
+          : theme.palette.error.main;
 
     return {
       borderRadius: 999,
@@ -196,7 +204,10 @@ export default function Me({
   readOnly = false,
 }: { employeeId?: string; readOnly?: boolean } = {}) {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { showConfirmation } = useConfirmationModalContext();
+  const roles = useAppSelector(selectRoles);
   const { userInfo } = useAppSelector((state) => state.user);
   const targetEmployeeId = employeeId ?? userInfo?.employeeId;
   const { employee, state: employeeState } = useAppSelector(
@@ -220,6 +231,14 @@ export default function Me({
   const serviceText = formatServiceLength(serviceLength);
 
   const age = personalInfo?.dob ? calculateAge(personalInfo.dob) : null;
+
+  const designationText = useMemo(() => {
+    if (!employee) return "-";
+    const parts = [employee.designation, employee.secondaryJobTitle].filter(
+      Boolean,
+    );
+    return parts.length > 0 ? parts.join(" — ") : "-";
+  }, [employee]);
 
   useEffect(() => {
     const has = (personalInfo?.emergencyContacts?.length ?? 0) > 0;
@@ -275,6 +294,8 @@ export default function Me({
   useEffect(() => {
     if (!targetEmployeeId) return;
 
+    dispatch(resetEmployee());
+    dispatch(resetPersonalInfo());
     dispatch(fetchEmployee(targetEmployeeId));
     dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
   }, [targetEmployeeId, dispatch]);
@@ -427,69 +448,106 @@ export default function Me({
           direction={{ xs: "column", sm: "row" }}
           spacing={2.5}
           alignItems={{ xs: "flex-start", sm: "center" }}
+          justifyContent="space-between"
         >
-          <Avatar
-            src={employee?.employeeThumbnail ?? undefined}
-            sx={(theme) => avatarSx(theme)}
+          <Stack
+            direction="row"
+            spacing={2.5}
+            alignItems="center"
+            sx={{ minWidth: 0, flex: 1 }}
           >
-            {employee?.firstName?.[0]?.toUpperCase() ?? "M"}
-          </Avatar>
+            {employeeState === "loading" ? (
+              <>
+                <Skeleton variant="circular" width={72} height={72} sx={{ flexShrink: 0 }} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Skeleton width={220} height={44} />
+                  <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+                    <Skeleton width={90} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={150} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={200} height={32} sx={{ borderRadius: 4 }} />
+                    <Skeleton width={130} height={32} sx={{ borderRadius: 4 }} />
+                  </Stack>
+                </Box>
+              </>
+            ) : (
+              <>
+                <Avatar
+                  src={employee?.employeeThumbnail ?? undefined}
+                  sx={(theme) => avatarSx(theme)}
+                >
+                  {employee?.firstName?.[0]?.toUpperCase() ?? ""}
+                </Avatar>
 
-          <Box sx={{ flex: 1, minWidth: 0, pl: 0.5 }}>
-            <Typography variant="h4" fontWeight={850} noWrap>
-              {employee
-                ? `${employee.firstName} ${employee.lastName}`
-                : "My Profile"}
-            </Typography>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="h4" fontWeight={850} noWrap>
+                    {employee ? `${employee.firstName} ${employee.lastName}` : ""}
+                  </Typography>
 
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
-            >
-              {employee?.employeeId && (
-                <Chip
-                  size="medium"
-                  icon={<BadgeOutlined />}
-                  label={`ID: ${employee.employeeId}`}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ mt: 1.25, flexWrap: "wrap", rowGap: 1 }}
+                  >
+                    {employee?.employeeId && (
+                      <Chip
+                        size="medium"
+                        icon={<BadgeOutlined />}
+                        label={`ID: ${employee.employeeId}`}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-              {employee?.designation && (
-                <Chip
-                  size="medium"
-                  icon={<WorkOutline />}
-                  label={employee.designation}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+                    {employee?.designation && (
+                      <Chip
+                        size="medium"
+                        icon={<WorkOutline />}
+                        label={designationText}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-              {employee?.workEmail && (
-                <Chip
-                  size="medium"
-                  icon={<EmailOutlined />}
-                  label={employee.workEmail}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
+                    {employee?.workEmail && (
+                      <Chip
+                        size="medium"
+                        icon={<EmailOutlined />}
+                        label={employee.workEmail}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
 
-              {employee?.businessUnit && (
-                <Chip
-                  size="medium"
-                  icon={<BusinessOutlined />}
-                  label={employee.businessUnit}
-                  sx={(theme) => chipSx(theme)}
-                />
-              )}
-            </Stack>
-          </Box>
+                    {employee?.businessUnit && (
+                      <Chip
+                        size="medium"
+                        icon={<BusinessOutlined />}
+                        label={employee.businessUnit}
+                        sx={(theme) => chipSx(theme)}
+                      />
+                    )}
+                  </Stack>
+                </Box>
+              </>
+            )}
+          </Stack>
+          {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
+            <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<EditOutlinedIcon />}
+                sx={{ textTransform: "none", whiteSpace: "nowrap" }}
+                onClick={() => navigate(`/employees/${targetEmployeeId}/edit`)}
+              >
+                Edit
+              </Button>
+            </Box>
+          )}
         </Stack>
       </Paper>
       <Accordion
         defaultExpanded
         sx={{
           borderRadius: 2,
+          mt: 2,
           mb: 2,
           boxShadow: 0,
           border: 1,
@@ -561,15 +619,7 @@ export default function Me({
                     Designation
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.designation}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Secondary Job Title
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.secondaryJobTitle || "N/A"}
+                    {designationText}
                   </Typography>
                 </Grid>
               </Grid>
@@ -610,18 +660,18 @@ export default function Me({
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Office
+                    Company
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.office || "-"}
+                    {employee.company || "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Employment Location
+                    Office
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {employee.employmentLocation || "-"}
+                    {employee.office || "-"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
@@ -849,6 +899,9 @@ export default function Me({
                     </Grid>
                     <Grid item xs={12} sm={6} md={3}>
                       <ReadOnly label="Last Name" value={values.lastName} />
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3}>
+                      <ReadOnly label="Full Name" value={values.fullName} />
                     </Grid>
                   </Grid>
                   <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>

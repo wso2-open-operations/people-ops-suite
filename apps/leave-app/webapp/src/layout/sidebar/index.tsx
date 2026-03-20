@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { NavState } from "@/types/types";
 import SidebarNavItem from "@component/layout/SidebarNavItem";
@@ -33,13 +34,41 @@ interface SidebarProps {
 
 const Sidebar = (props: SidebarProps) => {
   const allRoutes = useMemo(() => getActiveRouteDetails(props.roles), [props.roles]);
+  const effectivePath = props.currentPath === "/" ? "/apply/general" : props.currentPath;
+
+  // Determine if route is active based on current path
+  const isRouteActive = (routePath: string) => {
+    if (routePath === "") {
+      return effectivePath === "/" || effectivePath === "";
+    }
+    return effectivePath === `/${routePath}` || effectivePath.startsWith(`/${routePath}/`);
+  };
+
+  const findExpandedIndex = useCallback(() => {
+    const path = effectivePath;
+    const idx = allRoutes.findIndex(
+      (route) =>
+        !route.bottomNav &&
+        route.children &&
+        route.children.length > 0 &&
+        (path === `/${route.path}` || path.startsWith(`/${route.path}/`)),
+    );
+    return idx >= 0 ? idx : null;
+  }, [effectivePath, allRoutes]);
 
   // Single state object for nav state
   const [navState, setNavState] = useState<NavState>({
     active: null,
     hovered: null,
-    expanded: null,
+    expanded: findExpandedIndex(),
   });
+
+  useEffect(() => {
+    const idx = findExpandedIndex();
+    if (idx !== null) {
+      setNavState((prev) => ({ ...prev, expanded: idx }));
+    }
+  }, [findExpandedIndex]);
 
   // Handlers
   const handleClick = (idx: number) => {
@@ -78,7 +107,7 @@ const Sidebar = (props: SidebarProps) => {
           background: "none",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: props.open ? "flex-start" : "center",
           gap: theme.spacing(1),
           color: theme.palette.customNavigation.text,
           transition: "all 0.2s ease-in-out",
@@ -112,7 +141,7 @@ const Sidebar = (props: SidebarProps) => {
                 color: theme.palette.neutral.white,
                 padding: theme.spacing(0.75, 1),
                 borderRadius: "4px",
-                fontSize: "12px",
+                fontSize: theme.typography.caption.fontSize,
                 boxShadow: theme.shadows[8],
               },
             },
@@ -140,13 +169,13 @@ const Sidebar = (props: SidebarProps) => {
           <Box
             sx={{
               height: "100%",
-              paddingY: "16px",
-              paddingX: "12px",
+              py: "16px",
+              px: "12px",
               backgroundColor: theme.palette.surface.secondary.active,
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
-              width: props.open ? "200px" : "fit-content",
+              width: "fit-content",
               overflow: "visible",
             }}
           >
@@ -174,7 +203,7 @@ const Sidebar = (props: SidebarProps) => {
                       <SidebarNavItem
                         route={route}
                         open={props.open}
-                        isActive={navState.active === idx}
+                        isActive={isRouteActive(route.path)}
                         isHovered={navState.hovered === idx}
                         isExpanded={navState.expanded === idx}
                         onClick={() => handleClick(idx)}
@@ -193,7 +222,7 @@ const Sidebar = (props: SidebarProps) => {
               gap={1}
               sx={{
                 paddingBottom: "20px",
-                alignItems: "center",
+                alignItems: "flex-start",
               }}
             >
               {/* Theme Toggle */}

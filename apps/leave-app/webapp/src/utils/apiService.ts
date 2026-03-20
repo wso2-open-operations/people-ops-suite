@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,21 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import * as rax from "retry-axios";
 import axios, { AxiosInstance, CancelTokenSource } from "axios";
+import * as rax from "retry-axios";
 
 export class APIService {
   private static _instance: AxiosInstance;
   private static _idToken: string;
   private static _cancelTokenSource = axios.CancelToken.source();
   private static _cancelTokenMap: Map<string, CancelTokenSource> = new Map();
-  private static callback: () => Promise<{ accessToken: string }>;
+  private static callback: () => Promise<{ idToken: string }>;
 
   private static _isRefreshing = false;
-  private static _refreshPromise: Promise<{ accessToken: string }> | null = null;
+  private static _refreshPromise: Promise<{ idToken: string }> | null = null;
 
-  constructor(idToken: string, callback: () => Promise<{ accessToken: string }>) {
+  constructor(idToken: string, callback: () => Promise<{ idToken: string }>) {
     APIService._instance = axios.create();
     rax.attach(APIService._instance);
 
@@ -37,24 +36,16 @@ export class APIService {
     (APIService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
       retry: 3,
       instance: APIService._instance,
-      httpMethodsToRetry: [
-        "GET",
-        "HEAD",
-        "OPTIONS",
-        "DELETE",
-        "POST",
-        "PATCH",
-        "PUT",
-      ],
+      httpMethodsToRetry: ["GET", "HEAD", "OPTIONS", "DELETE", "POST", "PATCH", "PUT"],
       statusCodesToRetry: [[401, 401]],
       retryDelay: 100,
 
-      onRetryAttempt: async () => {
+      onRetryAttempt: async (err) => {
         if (!APIService._isRefreshing) {
           APIService._isRefreshing = true;
           APIService._refreshPromise = APIService.callback()
             .then((res) => {
-              APIService.updateTokens(res.accessToken);
+              APIService.updateTokens(res.idToken);
               APIService._instance.interceptors.request.clear();
               APIService.updateRequestInterceptor();
               return res;
@@ -89,14 +80,13 @@ export class APIService {
   private static updateRequestInterceptor() {
     APIService._instance.interceptors.request.use(
       (config) => {
-        // config.headers.set("Authorization", "Bearer " + APIService._idToken);
-        config.headers.set("x-jwt-assertion", APIService._idToken);
+        config.headers.set("Authorization", "Bearer " + APIService._idToken);
 
         const endpoint = config.url || "";
 
         const existingToken = APIService._cancelTokenMap.get(endpoint);
         if (existingToken) {
-          existingToken.cancel(`Request cancelled for endpoint: ${endpoint}`);
+          existingToken.cancel(`Request canceled for endpoint: ${endpoint}`);
         }
 
         const newTokenSource = axios.CancelToken.source();
@@ -105,8 +95,8 @@ export class APIService {
         return config;
       },
       (error) => {
-        return Promise.reject(error);
-      }
+        Promise.reject(error);
+      },
     );
   }
 }

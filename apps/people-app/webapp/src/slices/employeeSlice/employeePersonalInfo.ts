@@ -16,7 +16,7 @@
 
 import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
-import { HttpStatusCode } from "axios";
+import { HttpStatusCode, isCancel } from "axios";
 import { APIService } from "@utils/apiService";
 import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
@@ -28,6 +28,7 @@ export interface EmployeePersonalInfo {
   nicOrPassport: string;
   firstName: string;
   lastName: string;
+  fullName: string;
   title: string;
   dob: string;
   gender: string;
@@ -45,16 +46,24 @@ export interface EmployeePersonalInfo {
 }
 
 export interface EmployeePersonalInfoUpdate {
-  personalEmail: string | null;
-  personalPhone: string | null;
-  residentNumber: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  stateOrProvince: string | null;
-  postalCode: string | null;
-  country: string | null;
-  emergencyContacts: EmergencyContact[] | null;
+  nicOrPassport?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName?: string | null;
+  title?: string | null;
+  dob?: string | null;
+  gender?: string | null;
+  personalEmail?: string | null;
+  personalPhone?: string | null;
+  residentNumber?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  stateOrProvince?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  nationality?: string | null;
+  emergencyContacts?: EmergencyContact[] | null;
 }
 
 interface EmployeePersonalInfoState {
@@ -80,6 +89,7 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
       );
       return response.data as EmployeePersonalInfo;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
         error.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.fetchEmployee
@@ -98,17 +108,15 @@ export const fetchEmployeePersonalInfo = createAsyncThunk(
   },
 );
 
-export const updateEmployeePersonalInfo = createAsyncThunk(
+export const updateEmployeePersonalInfo = createAsyncThunk<
+  void,
+  { employeeId: string; data: EmployeePersonalInfoUpdate },
+  { rejectValue: string }
+>(
   "employees/updateEmployeePersonalInfo",
-  async (
-    {
-      employeeId,
-      data,
-    }: { employeeId: string; data: EmployeePersonalInfoUpdate },
-    { dispatch, rejectWithValue },
-  ) => {
+  async ({ employeeId, data }, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().put(
+      await APIService.getInstance().patch(
         AppConfig.serviceUrls.employeePersonalInfo(employeeId),
         data,
       );
@@ -119,12 +127,13 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "success",
         }),
       );
-      return response.data;
+      return;
     } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
       const errorMessage =
-        error.response?.status === HttpStatusCode.InternalServerError
+        error?.response?.status === HttpStatusCode.InternalServerError
           ? SnackMessage.error.updateEmployeePersonalInfo
-          : error.response?.data?.message ||
+          : error?.response?.data?.message ||
             "An unknown error occurred while updating employee personal information.";
 
       dispatch(
@@ -133,7 +142,6 @@ export const updateEmployeePersonalInfo = createAsyncThunk(
           type: "error",
         }),
       );
-
       return rejectWithValue(errorMessage);
     }
   },
@@ -180,9 +188,6 @@ const EmployeePersonalInfoSlice = createSlice({
         state.state = State.success;
         state.stateMessage =
           "Successfully updated employee personal information!";
-        if (action.payload) {
-          state.personalInfo = action.payload;
-        }
         state.errorMessage = null;
       })
       .addCase(updateEmployeePersonalInfo.rejected, (state, action) => {

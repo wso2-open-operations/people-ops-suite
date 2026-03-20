@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS sub_team;
 DROP TABLE IF EXISTS team;
 DROP TABLE IF EXISTS business_unit;
 DROP TABLE IF EXISTS office;
+DROP TABLE IF EXISTS companies_allowed_locations;
 DROP TABLE IF EXISTS company;
 DROP TABLE IF EXISTS designation;
 DROP TABLE IF EXISTS career_function;
@@ -157,6 +158,7 @@ CREATE TABLE `office` (
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
+  KEY `idx_office_company_id_id` (`company_id`, `id`),
   CONSTRAINT `fk_office_company`
     FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
@@ -206,12 +208,13 @@ CREATE TABLE `personal_info` (
   `nic_or_passport` VARCHAR(20) NOT NULL UNIQUE,
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) NOT NULL,
+  `full_name` VARCHAR(255) NOT NULL DEFAULT (CONCAT(first_name, ' ', last_name)),
   `title` VARCHAR(100) NOT NULL,
   `dob` DATE NOT NULL,
   `gender` VARCHAR(20) NOT NULL DEFAULT 'Not Specified',
   `personal_email` VARCHAR(254),
-  `personal_phone` VARCHAR(20),
-  `resident_number` VARCHAR(20),
+  `personal_phone` VARCHAR(100),
+  `resident_number` VARCHAR(100),
   `address_line_1` VARCHAR(255),
   `address_line_2` VARCHAR(255),
   `city` VARCHAR(100),
@@ -281,26 +284,26 @@ CREATE TABLE `employee` (
   `first_name` VARCHAR(150) NOT NULL,
   `last_name` VARCHAR(150) NOT NULL,
   `epf` VARCHAR(45) NULL,
-  `employment_location` VARCHAR(255) NOT NULL,
   `work_location` VARCHAR(100) NOT NULL,
   `work_email` VARCHAR(254) NOT NULL,
-  `start_date` DATE NULL,
-  `secondary_job_title` VARCHAR(100) NOT NULL,
+  `start_date` DATE NOT NULL,
+  `secondary_job_title` VARCHAR(100) NULL,
   `manager_email` VARCHAR(254) NOT NULL,
   `employee_status` VARCHAR(50) NOT NULL,
   `continuous_service_record` VARCHAR(99) NULL,
-  `employee_thumbnail` VARCHAR(512) NULL,
+  `employee_thumbnail` VARCHAR(2048) NULL,
   `probation_end_date` DATE NULL,
   `agreement_end_date` DATE NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-  `employment_type_id` INT NULL,
+  `employment_type_id` INT NOT NULL,
   `designation_id` INT NOT NULL,
-  `office_id` INT NOT NULL,
+  `company_id` int NOT NULL,
+  `office_id` INT NULL,
   `team_id` INT NOT NULL,
-  `sub_team_id` INT NULL,
+  `sub_team_id` INT NOT NULL,
   `business_unit_id` INT NOT NULL,
   `unit_id` INT NULL,
   `personal_info_id` INT NOT NULL,
@@ -310,8 +313,10 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`employment_type_id`) REFERENCES `employment_type` (`id`),
   CONSTRAINT `fk_emp_designation`
     FOREIGN KEY (`designation_id`) REFERENCES `designation` (`id`),
-  CONSTRAINT `fk_emp_office`
-    FOREIGN KEY (`office_id`) REFERENCES `office` (`id`),
+  CONSTRAINT `fk_emp_company`
+    FOREIGN KEY (`company_id`) REFERENCES `company` (`id`),
+  CONSTRAINT `fk_emp_office_company`
+    FOREIGN KEY (`company_id`, `office_id`) REFERENCES `office` (`company_id`, `id`),
   CONSTRAINT `fk_emp_team`
     FOREIGN KEY (`team_id`) REFERENCES `team` (`id`),
   CONSTRAINT `fk_emp_subteam`
@@ -346,12 +351,11 @@ BEFORE INSERT ON employee
 FOR EACH ROW
 BEGIN
   DECLARE v_prefix VARCHAR(20);
-  -- Look up the company prefix once for this office
+  -- Look up the company prefix from the company
   SELECT c.prefix
     INTO v_prefix
-    FROM office o
-    JOIN company c ON c.id = o.company_id
-   WHERE o.id = NEW.office_id
+    FROM company c
+   WHERE c.id = NEW.company_id
    LIMIT 1;
 
   IF NEW.employee_id IS NOT NULL AND TRIM(NEW.employee_id) <> '' THEN
@@ -368,7 +372,7 @@ BEGIN
     -- No employee_id supplied: require a prefix and auto-generate
     IF v_prefix IS NULL OR v_prefix = '' THEN
       SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid office_id or missing company prefix.';
+        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid company_id or missing company prefix.';
     END IF;
 
     SET NEW.employee_id = CONCAT(
@@ -380,23 +384,22 @@ BEGIN
     );
   END IF;
 END//
-//
 DELIMITER ;
 
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `employee_id` INT NOT NULL,
+  `employee_pk_id` INT NOT NULL,
   `additional_manager_email` VARCHAR(254) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `updated_by` VARCHAR(254) NOT NULL,
   `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_eam_employee_email` (`employee_id`, `additional_manager_email`),
+  UNIQUE KEY `uk_eam_employee_email` (`employee_pk_id`, `additional_manager_email`),
   KEY `idx_eam_manager_email` (`additional_manager_email`),
   CONSTRAINT `fk_eam_employee`
-    FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
+    FOREIGN KEY (`employee_pk_id`) REFERENCES `employee` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -419,3 +422,66 @@ CREATE TABLE `personal_info_emergency_contacts` (
     FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Companies allowed locations table
+CREATE TABLE `companies_allowed_locations` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `company_id` INT NOT NULL,
+  `allowed_location` VARCHAR(255) NOT NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_by` VARCHAR(254) NOT NULL,
+  `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updated_by` VARCHAR(254) NOT NULL,
+  `updated_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_cal_company_location` (`company_id`, `allowed_location`),
+  KEY `idx_cal_company_id` (`company_id`),
+  KEY `idx_cal_location` (`allowed_location`),
+  CONSTRAINT `fk_cal_company`
+    FOREIGN KEY (`company_id`) REFERENCES `company` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `parking_floor` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(45) NOT NULL,
+  `display_order` int NOT NULL DEFAULT 0,
+  `coins_per_slot` decimal(10, 4) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `created_by` varchar(100) NOT NULL,
+  `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE `parking_slot` (
+  `slot_id` varchar(10) NOT NULL,
+  `floor_id` int NOT NULL,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `created_by` varchar(100) NOT NULL,
+  `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(100) NOT NULL,
+  PRIMARY KEY (`slot_id`),
+  CONSTRAINT `fk_ps_floor` FOREIGN KEY (`floor_id`) REFERENCES `parking_floor` (`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE `parking_reservation` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `slot_id` varchar(10) NOT NULL,
+  `booking_date` date NOT NULL,
+  `employee_email` varchar(100) NOT NULL,
+  `vehicle_id` int NOT NULL,
+  `status` enum('PENDING','CONFIRMED') NOT NULL DEFAULT 'PENDING',
+  `transaction_hash` varchar(255) DEFAULT NULL,
+  `coins_amount` decimal(10, 4) NOT NULL,
+  `created_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `created_by` varchar(100) NOT NULL,
+  `updated_on` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `updated_by` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_pr_slot` FOREIGN KEY (`slot_id`) REFERENCES `parking_slot` (`slot_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pr_vehicle` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicle` (`vehicle_id`) ON DELETE RESTRICT,
+  UNIQUE KEY `uk_slot_booking_date` (`slot_id`, `booking_date`),
+  UNIQUE KEY `uk_parking_reservation_tx_hash` (`transaction_hash`)
+);

@@ -14,16 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { State } from "../../types/types";
-import { AppConfig } from "@config/config";
-import { APIService } from "@utils/apiService";
-import type { UserState, UserInfoInterface } from "@slices/authSlice/auth";
-import {
-  createSlice,
-  createAsyncThunk,
-  type PayloadAction,
-} from "@reduxjs/toolkit";
+import { type PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { AxiosError } from "axios";
+
+import { AppConfig } from "@config/config";
+import type { UserInfoInterface, UserState } from "@slices/authSlice/auth";
+import { APIService } from "@utils/apiService";
+
+import { State } from "../../types/types";
+import { RootState } from "../store";
 
 const initialState: UserState = {
   state: State.idle,
@@ -73,13 +72,13 @@ export const UserSlice = createSlice({
           state.errorMessage =
             "Oops! Looks like you are not authorized to access this application.";
         } else {
-          state.errorMessage =
-            "Something went wrong while authenticating the user.";
+          state.errorMessage = "Something went wrong while authenticating the user.";
         }
       });
   },
 });
 
 export const { updateStateMessage } = UserSlice.actions;
+export const selectUser = (state: RootState) => state.user.userInfo;
 
 export default UserSlice.reducer;

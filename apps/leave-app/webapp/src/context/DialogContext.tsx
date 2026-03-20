@@ -13,10 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import CloseIcon from "@mui/icons-material/Close";
-import DoneIcon from "@mui/icons-material/Done";
-import SaveAltIcon from "@mui/icons-material/SaveAlt";
-import SendIcon from "@mui/icons-material/Send";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { IconButton, Stack, TextField } from "@mui/material";
 import Button from "@mui/material/Button";
@@ -87,7 +85,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
   const [content, setContent] = useState<{
     title: string;
     message: string | React.ReactNode;
-    type: ConfirmationType
+    type: ConfirmationType;
     action: (value?: string) => void;
     okText?: string;
     cancelText?: string;
@@ -160,7 +158,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
             open={show}
             sx={{
               ".MuiDialog-paper": {
-                maxWidth: 350,
+                maxWidth: 450,
                 borderRadius: 3,
               },
               backdropFilter: "blur(10px)",
@@ -190,12 +188,12 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
             >
               <CloseIcon />
             </IconButton>
-            <DialogContent sx={{ p: 0, m: 0, paddingX: 2 }}>
+            <DialogContent sx={{ p: 0, m: 0, px: 2 }}>
               <DialogContentText variant="body2">{content?.message}</DialogContentText>
             </DialogContent>
             {content.inputObj && (
               <TextField
-                sx={{ marginX: 2, mt: 2, maxWidth: 350 }}
+                sx={{ marginX: 2, mt: 2, maxWidth: 450 }}
                 value={comment}
                 label={content.inputObj?.label}
                 type="text"
@@ -207,7 +205,7 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
               />
             )}
 
-            <DialogActions sx={{ pb: 2, pt: 0, mt: 0, paddingX: 2 }}>
+            <DialogActions sx={{ pb: 2, pt: 0, mt: 0, px: 2 }}>
               <Stack flexDirection={"row"} sx={{ mt: 1 }} gap={1}>
                 {/* Cancel button */}
                 <Button
@@ -234,16 +232,6 @@ const ConfirmationModalContextProvider: React.FC<ConfirmationModalContextProvide
                   size="small"
                   disabled={content?.inputObj?.mandatory && comment === ""}
                   onClick={() => (content?.inputObj ? handleOk(comment) : handleOk())}
-                  loadingPosition="start"
-                  startIcon={
-                    content.type === "update" ? (
-                      <SaveAltIcon />
-                    ) : content.type === "send" ? (
-                      <SendIcon />
-                    ) : (
-                      <DoneIcon />
-                    )
-                  }
                 >
                   {content?.okText ? content.okText : "Yes"}
                 </LoadingButton>

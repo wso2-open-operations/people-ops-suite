@@ -18,7 +18,6 @@ import { State } from "@/types/types";
 import { AppConfig } from "@config/config";
 import axios, { HttpStatusCode } from "axios";
 import { APIService } from "@utils/apiService";
-import { SnackMessage } from "@config/constant";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
@@ -50,21 +49,21 @@ export interface Visitor extends AddVisitorPayload {
 }
 
 export interface AddVisitorPayload {
-  nicHash: string;
-  name: string;
-  nicNumber: string;
-  email: string | null;
-  contactNumber: string;
+  firstName?: string;
+  lastName?: string;
+  idHash: string;
+  contactNumber?: string;
+  email?: string;
 }
 
 export const fetchVisitor = createAsyncThunk(
   "visitor/fetchVisitor",
-  async (hashedNic: string, { dispatch, rejectWithValue }) => {
+  async (hashedEmailOrContact: string, { dispatch, rejectWithValue }) => {
     APIService.getCancelToken().cancel();
     const newCancelTokenSource = APIService.updateCancelToken();
     return new Promise<Visitor>((resolve, reject) => {
       APIService.getInstance()
-        .get(AppConfig.serviceUrls.visitors + `/${hashedNic}`, {
+        .get(AppConfig.serviceUrls.visitors + `/${hashedEmailOrContact}`, {
           cancelToken: newCancelTokenSource.token,
         })
         .then((response) => {
@@ -84,13 +83,13 @@ export const fetchVisitor = createAsyncThunk(
                     ? error.response?.data?.message
                     : "An unknown error occurred.",
                 type: "error",
-              })
+              }),
             );
             reject(error);
           }
         });
     });
-  }
+  },
 );
 
 export const addVisitor = createAsyncThunk(
@@ -107,6 +106,10 @@ export const addVisitor = createAsyncThunk(
           resolve(response.data);
         })
         .catch((error) => {
+          if (error.response?.status === HttpStatusCode.Conflict) {
+            reject(error);
+            return;
+          }
           const errorMessage =
             error.response?.data?.message ||
             (error.response?.status === HttpStatusCode.InternalServerError
@@ -116,12 +119,12 @@ export const addVisitor = createAsyncThunk(
             enqueueSnackbarMessage({
               message: errorMessage,
               type: "error",
-            })
+            }),
           );
           reject(error);
         });
     });
-  }
+  },
 );
 
 const VisitorSlice = createSlice({

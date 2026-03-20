@@ -19,13 +19,13 @@ import Typography from "@mui/material/Typography";
 
 import React from "react";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
+import Wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
+import Wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
-import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 import { RootState, useAppSelector } from "@slices/store";
 
-const Header = () => {
+const Header = ({ sidebarOpen }: { sidebarOpen: boolean }) => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -50,23 +50,29 @@ const Header = () => {
       <Toolbar
         variant="dense"
         sx={{
-          paddingY: 0.3,
+          py: "0.5rem",
           display: "flex",
-          gap: 0.5,
+          gap: 2,
           "&.MuiToolbar-root": {
-            pl: 0.3,
+            pl: 1,
           },
         }}
       >
-        <img
-          alt="wso2"
-          style={{
-            height: "40px",
-            maxWidth: "100px",
-          }}
+        <Box
+          key={String(sidebarOpen)}
           onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
-        ></img>
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <img
+            alt="wso2"
+            style={{ height: "45px", width: "auto", objectFit: "contain" }}
+            src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
+          />
+        </Box>
 
         <Box
           sx={{
@@ -82,23 +88,23 @@ const Header = () => {
             variant="h5"
             sx={{
               color: theme.palette.customText.primary.p1.active,
+              fontWeight: "600",
             }}
           >
             {APP_NAME}
           </Typography>
-          <BasicBreadcrumbs />
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>
           {user.userInfo && (
             <>
-              <Stack flexDirection={"row"} alignItems={"center"} gap={1}>
+              <Stack flexDirection={"row-reverse"} alignItems={"center"} gap={1.5}>
                 <Tooltip title="Open settings">
                   <Avatar
                     onClick={handleOpenUserMenu}
                     sx={{
-                      width: 48,
-                      height: 48,
+                      width: "2.5rem",
+                      height: "2.5rem",
                       border: 1,
                       borderColor: theme.palette.customBorder.territory.active,
                     }}

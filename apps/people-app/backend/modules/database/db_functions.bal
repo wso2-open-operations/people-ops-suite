@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 import ballerina/sql;
 
 # Fetch employee basic information.
@@ -33,13 +34,43 @@ public isolated function getAllEmployeesBasicInfo() returns EmployeeBasicInfo[]|
         select employeesBasicInfo;
 }
 
+# Get employee ID by EPF.
+#
+# + epf - Employee Provident Fund number
+# + return - Employee ID string, nil if not found, or error
+public isolated function getEmployeeIdByEpf(string epf) returns string|error? {
+    string|error result = databaseClient->queryRow(getEmployeeIdByEpfQuery(epf));
+    return result is sql:NoRowsError ? () : result;
+}
+
 # Fetch employee detailed information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Employee detailed information
-public isolated function getEmployeeInfo(string id) returns Employee|error? {
-    Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(id));
+public isolated function getEmployeeInfo(string employeeId) returns Employee|error? {
+    Employee|error employeeInfo = databaseClient->queryRow(getEmployeeInfoQuery(employeeId));
     return employeeInfo is sql:NoRowsError ? () : employeeInfo;
+}
+
+# Fetch employees with filters.
+#
+# + payload - Get employees filter payload
+# + leadEmail - If provided, restricts results to subordinates of this lead
+# + return - List of employees or error
+public isolated function getEmployees(EmployeeSearchPayload payload, string? leadEmail = ()) returns EmployeesResponse|error {
+    stream<EmployeeRecord, error?> resultStream = databaseClient->query(getEmployeesQuery(payload, leadEmail));
+
+    int totalCount = 0;
+    Employee[] employees = [];
+
+    check from EmployeeRecord employeeRecord in resultStream
+        do {
+            EmployeeRecord {totalCount: count, ...employeeData} = employeeRecord;
+            totalCount = count;
+            employees.push(employeeData);
+        };
+
+    return {employees, totalCount};
 }
 
 # Fetch continuous service record by work email.
@@ -71,10 +102,10 @@ public isolated function searchEmployeePersonalInfo(SearchEmployeePersonalInfoPa
 
 # Fetch employee personal information.
 #
-# + id - Employee ID
+# + employeeId - Employee ID
 # + return - Employee personal information
-public isolated function getEmployeePersonalInfo(string id) returns EmployeePersonalInfo|error? {
-    EmployeePersonalInfo|error employeePersonalInfo = databaseClient->queryRow(getEmployeePersonalInfoQuery(id));
+public isolated function getEmployeePersonalInfo(string employeeId) returns EmployeePersonalInfo|error? {
+    EmployeePersonalInfo|error employeePersonalInfo = databaseClient->queryRow(getEmployeePersonalInfoQuery(employeeId));
 
     if employeePersonalInfo is sql:NoRowsError {
         return ();
@@ -84,7 +115,7 @@ public isolated function getEmployeePersonalInfo(string id) returns EmployeePers
     }
 
     stream<EmergencyContact, error?> contactsStream =
-        databaseClient->query(getEmergencyContactsByPersonalInfoIdQuery(employeePersonalInfo.id));
+        databaseClient->query(getEmergencyContactsByEmployeeIdQuery(employeeId));
 
     employeePersonalInfo.emergencyContacts = check from EmergencyContact contact in contactsStream
         select contact;
@@ -130,6 +161,21 @@ public isolated function getUnits(int? subTeamId = ()) returns Unit[]|error {
         select unit;
 }
 
+# Fetch organization structure with business units, teams, sub-teams and units.
+#
+# + return - Organization structure data or error
+public isolated function getFullOrganizationStructure() returns OrgStructureBusinessUnit[]|error {
+    stream<OrgStructureBusinessUnitRow, sql:Error?> orgStructureStream =
+        databaseClient->query(getFullOrganizationStructureQuery());
+
+    return from OrgStructureBusinessUnitRow row in orgStructureStream
+        select {
+            id: row.id,
+            name: row.name,
+            teams: check row.teams.fromJsonWithType()
+        };
+}
+
 # Get career functions.
 #
 # + return - Career functions
@@ -149,11 +195,21 @@ public isolated function getDesignations(int? careerFunctionId = ()) returns Des
         select designation;
 }
 
+# Get companies.
+#
+# + return - Companies
+public isolated function getCompanies() returns Company[]|error {
+    stream<Company, error?> companyStream = databaseClient->query(getCompaniesQuery());
+    return from Company company in companyStream
+        select company;
+}
+
 # Get offices.
 #
+# + companyId - Company ID (optional)
 # + return - Offices
-public isolated function getOffices() returns Office[]|error {
-    stream<Office, error?> officeStream = databaseClient->query(getOfficesQuery());
+public isolated function getOffices(int? companyId = ()) returns Office[]|error {
+    stream<Office, error?> officeStream = databaseClient->query(getOfficesQuery(companyId));
     return from Office office in officeStream
         select office;
 }
@@ -167,59 +223,154 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Get managers.
+#
+# + return - Managers
+public isolated function getManagers() returns Manager[]|error {
+    stream<Manager, error?> managerStream = databaseClient->query(getManagersQuery());
+    return from Manager manager in managerStream
+        select manager;
+}
+
+# Check if a target employee is a direct or additional subordinate of a lead.
+#
+# + leadEmail - Work email of the potential lead
+# + employeeId - Employee ID of the target employee
+# + return - True if the employee is a subordinate, false if not, or error
+public isolated function isSubordinateOfLead(string leadEmail, string employeeId) returns boolean|error {
+    int|error result = databaseClient->queryRow(isSubordinateOfLeadQuery(leadEmail, employeeId));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
+}
+
+# Check if an employee is a lead (manages at least one employee).
+#
+# + leadEmail - Work email of the employee
+# + return - True if the employee is a lead, false if not, or error
+public isolated function isLead(string leadEmail) returns boolean|error {
+    int|error result = databaseClient->queryRow(isLeadQuery(leadEmail));
+    if result is sql:NoRowsError {
+        return false;
+    }
+    if result is error {
+        return result;
+    }
+    return true;
+}
+
 # Add new employee.
 #
-# + payload - Add employee payload
+# + payload - Add employee payload  
 # + createdBy - Creator of the employee record
 # + return - Created employee ID or error
 public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
     transaction {
-        sql:ExecutionResult personalInfoResult = check databaseClient->execute(addEmployeePersonalInfoQuery(
-                payload.personalInfo, createdBy));
-        int personalInfoId = check personalInfoResult.lastInsertId.ensureType(int);
-
-        EmergencyContact[] contacts = payload.personalInfo.emergencyContacts ?: [];
-
-        sql:ParameterizedQuery[] emergencyInsertQueries = from EmergencyContact contact in contacts
-            select addPersonalInfoEmergencyContactQuery(personalInfoId, contact, createdBy);
-        if emergencyInsertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(emergencyInsertQueries);
-        }
-
-        sql:ExecutionResult employeeResult = check databaseClient->execute(addEmployeeQuery(payload, createdBy,
-                personalInfoId));
-        int employeeId = check employeeResult.lastInsertId.ensureType(int);
-
-        sql:ParameterizedQuery[] managerInsertQueries = from string managerEmail in payload.additionalManagerEmails
-            select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
-        if managerInsertQueries.length() > 0 {
-            _ = check databaseClient->batchExecute(managerInsertQueries);
-        }
-
+        int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
+        int lastInsertedEmployeeId = check addEmployeeRecord(payload, createdBy, personalInfoId);
+        string employeeId = check getGeneratedEmployeeId(lastInsertedEmployeeId);
+        check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
+        check addAdditionalManagers(lastInsertedEmployeeId, payload.additionalManagerEmails, createdBy);
         check commit;
-        return employeeId;
+        return lastInsertedEmployeeId;
     }
+}
+
+# Add employee personal information.
+#
+# + personalInfo - Personal information of the employee
+# + createdBy - Creator of the personal info record
+# + return - Created personal info ID or error
+isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string createdBy) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeePersonalInfoQuery(personalInfo, createdBy));
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Add employee record.
+#
+# + payload - Add employee payload
+# + createdBy - Creator of the employee record
+# + personalInfoId - Personal info ID to be linked with the employee record
+# + return - Created employee ID or error
+isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+    returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
+    return check result.lastInsertId.ensureType(int);
+}
+
+# Get the generated employee ID based on the last inserted employee record ID.
+#
+# + lastInsertedEmployeeId - Last inserted employee record ID
+# + return - Generated employee ID or error
+isolated function getGeneratedEmployeeId(int lastInsertedEmployeeId) returns string|error {
+    return check databaseClient->queryRow(getEmployeeIdQuery(lastInsertedEmployeeId));
+}
+
+# Add emergency contacts for the employee.
+#
+# + employeeId - Employee ID
+# + contacts - Emergency contacts to be added
+# + createdBy - Creator of the emergency contact records
+# + return - Nil if the operation was successful or error
+isolated function addEmergencyContacts(string employeeId, EmergencyContact[] contacts, string createdBy)
+    returns error? {
+    sql:ParameterizedQuery[] emergencyInsertQueries =
+        from EmergencyContact contact in contacts
+    select addPersonalInfoEmergencyContactQuery(employeeId, contact, createdBy);
+
+    if emergencyInsertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(emergencyInsertQueries);
+    }
+    return;
+}
+
+# Add additional managers for the employee.
+#
+# + employeeId - Employee ID
+# + additionalManagerEmails - List of additional manager email addresses to be added
+# + createdBy - Creator of the additional manager records
+# + return - Nil if the operation was successful or error
+isolated function addAdditionalManagers(int employeeId, Email[] additionalManagerEmails, string createdBy)
+    returns error? {
+    sql:ParameterizedQuery[] managerInsertQueries =
+        from Email managerEmail in additionalManagerEmails
+    select addEmployeeAdditionalManagerQuery(employeeId, managerEmail, createdBy);
+
+    if managerInsertQueries.length() > 0 {
+        _ = check databaseClient->batchExecute(managerInsertQueries);
+    }
+    return;
 }
 
 # Update employee personal information.
 #
-# + id - Personal information ID
+# + employeeId - Employee ID
 # + payload - Personal info update payload
 # + updatedBy - Updater of the personal info record
-# + return - True if the update was successful or error
-public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePersonalInfoPayload payload, string updatedBy)
+# + return - Nil if the update was successful or error
+public isolated function updateEmployeePersonalInfo(string employeeId, UpdateEmployeePersonalInfoPayload payload,
+        string updatedBy)
     returns error? {
 
     transaction {
-        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(id, payload,
-                updatedBy));
+        sql:ExecutionResult executionResult = check databaseClient->execute(updateEmployeePersonalInfoQuery(employeeId,
+                payload, updatedBy));
 
         check checkAffectedCount(executionResult.affectedRowCount);
+
         EmergencyContact[]? contactsOpt = payload.emergencyContacts;
         if contactsOpt is EmergencyContact[] {
-            _ = check databaseClient->execute(deleteEmergencyContactsByPersonalInfoIdQuery(id));
-            sql:ParameterizedQuery[] insertQueries = from EmergencyContact contact in contactsOpt
-                select addPersonalInfoEmergencyContactQuery(id, contact, updatedBy);
+
+            _ = check databaseClient->execute(deleteEmergencyContactsByEmployeeIdQuery(employeeId));
+
+            sql:ParameterizedQuery[] insertQueries =
+                from EmergencyContact contact in contactsOpt
+            select addPersonalInfoEmergencyContactQuery(employeeId, contact, updatedBy);
+
             if insertQueries.length() > 0 {
                 _ = check databaseClient->batchExecute(insertQueries);
             }
@@ -229,18 +380,58 @@ public isolated function updateEmployeePersonalInfo(int id, UpdateEmployeePerson
     return;
 }
 
+# Update employee job information.
+#
+# + employeeId - Employee ID
+# + payload - Job information update payload
+# + updatedBy - Updater of the job info record
+# + return - Nil if the update was successful or error
+public isolated function updateEmployeeJobInfo(string employeeId, UpdateEmployeeJobInfoPayload payload, string updatedBy)
+    returns error? {
+
+    transaction {
+        sql:ExecutionResult executionResult =
+            check databaseClient->execute(updateEmployeeJobInfoQuery(employeeId, payload, updatedBy));
+
+        check checkAffectedCount(executionResult.affectedRowCount);
+
+        Email[]? additionalManagerEmails = payload.additionalManagerEmails;
+        if additionalManagerEmails is Email[] {
+
+            int|error pkIdResult = databaseClient->queryRow(
+                `SELECT id FROM employee WHERE employee_id = ${employeeId}`
+            );
+
+            int employeePkId = check pkIdResult.ensureType(int);
+            _ = check databaseClient->execute(deleteAdditionalManagersByEmployeeIdQuery(employeePkId));
+
+            sql:ParameterizedQuery[] insertQueries =
+                from Email email in additionalManagerEmails
+            select addEmployeeAdditionalManagerQuery(employeePkId, email, updatedBy);
+
+            if insertQueries.length() > 0 {
+                _ = check databaseClient->batchExecute(insertQueries);
+            }
+        }
+
+        check commit;
+    }
+    return;
+}
+
 # Fetch vehicles.
 #
 # + owner - Filter : owner of the vehicles  
 # + vehicleStatus - Filter :  status of the vehicle
+# + vehicleType - Filter :  type of the vehicle (e.g. CAR for parking booking, excluding bikes)
 # + 'limit - Limit of the response  
 # + offset - Offset of the response
 # + return - Vehicles | Error
-public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicleStatus = (), int? 'limit = (),
-        int? offset = ()) returns Vehicles|error {
+public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicleStatus = (),
+        VehicleTypes? vehicleType = (), int? 'limit = (), int? offset = ()) returns Vehicles|error {
 
     stream<FetchVehicleResponse, error?> vehiclesResponse = databaseClient->query(
-            fetchVehiclesQuery(owner, vehicleStatus, 'limit, offset));
+            fetchVehiclesQuery(owner, vehicleStatus, vehicleType, 'limit, offset));
 
     Vehicle[] vehicles = [];
     int totalCount = 0;
@@ -267,6 +458,21 @@ public isolated function fetchVehicles(string? owner = (), VehicleStatus? vehicl
     };
 }
 
+# Get owner email of a vehicle by id.
+#
+# + vehicleId - Vehicle identifier
+# + return - Owner email or error
+public isolated function getVehicleOwner(int vehicleId) returns string|error? {
+    record {|string owner;|}|error row = databaseClient->queryRow(getVehicleOwnerQuery(vehicleId));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    if row is error {
+        return row;
+    }
+    return row.owner;
+}
+
 # Persist new vehicle.
 #
 # + payload - Payload containing the vehicle details
@@ -286,4 +492,125 @@ public isolated function updateVehicle(UpdateVehiclePayload payload) returns boo
         return true;
     }
     return false;
+}
+
+# Get active parking floors.
+#
+# + return - Parking floors
+public isolated function getParkingFloors() returns ParkingFloor[]|error {
+    stream<ParkingFloor, error?> floorStream = databaseClient->query(getParkingFloorsQuery());
+    return from ParkingFloor f in floorStream
+        select f;
+}
+
+# Get parking slots for a floor for a date.
+#
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Parking slots (with isBooked)
+public isolated function getParkingSlotsByFloor(int floorId, string bookingDate) returns ParkingSlot[]|error {
+    stream<ParkingSlotRow, error?> slotStream = databaseClient->query(getParkingSlotsByFloorQuery(floorId, bookingDate));
+    return from ParkingSlotRow r in slotStream
+        select {
+            slotId: r.slotId,
+            floorId: r.floorId,
+            floorName: r.floorName,
+            coinsPerSlot: r.coinsPerSlot,
+            isBooked: r.isBooked == 1
+        };
+}
+
+# Get parking slot by ID.
+#
+# + slotId - Slot id
+# + return - Parking slot or nil
+public isolated function getParkingSlotById(string slotId) returns ParkingSlot|error? {
+    ParkingSlotRow|error row = databaseClient->queryRow(getParkingSlotByIdQuery(slotId));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    if row is error {
+        return row;
+    }
+    return {
+        slotId: row.slotId,
+        floorId: row.floorId,
+        floorName: row.floorName,
+        coinsPerSlot: row.coinsPerSlot,
+        isBooked: row.isBooked == 1
+    };
+}
+
+# Check if slot is unavailable for date.
+#
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - True if slot has an active reservation (PENDING/CONFIRMED), false otherwise, or error
+public isolated function isParkingSlotBookedForDate(string slotId, string bookingDate) returns boolean|error {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getConfirmedParkingReservationForSlotDateQuery(slotId, bookingDate));
+    if row is sql:NoRowsError {
+        return false;
+    }
+    if row is error {
+        return row;
+    }
+    return true;
+}
+
+# Create parking reservation (PENDING).
+#
+# + payload - Reservation payload
+# + return - New reservation id
+public isolated function addParkingReservation(AddParkingReservationPayload payload) returns int|error {
+    sql:ExecutionResult result = check databaseClient->execute(addParkingReservationQuery(payload));
+    return result.lastInsertId.ensureType(int);
+}
+
+# Get parking reservation by ID.
+#
+# + reservationId - Reservation id
+# + return - Reservation details or nil
+public isolated function getParkingReservationById(int reservationId) returns ParkingReservationDetails|error? {
+    ParkingReservationDetails|error row = databaseClient->queryRow(getParkingReservationByIdQuery(reservationId));
+    return row is sql:NoRowsError ? () : row;
+}
+
+# Get parking reservation id by transaction hash.
+#
+# + transactionHash - Blockchain transaction hash
+# + return - Reservation id or nil
+public isolated function getParkingReservationByTransactionHash(string transactionHash)
+        returns ReservationIdRow|error? {
+    ReservationIdRow|error row = databaseClient->queryRow(
+        getParkingReservationByTransactionHashQuery(transactionHash));
+    if row is sql:NoRowsError {
+        return ();
+    }
+    return row;
+}
+
+# Update reservation status and optional transaction_hash.
+#
+# + payload - Update payload
+# + return - True if updated
+public isolated function updateParkingReservationStatus(UpdateParkingReservationStatusPayload payload)
+    returns boolean|error {
+    sql:ExecutionResult result = check databaseClient->execute(
+        updateParkingReservationStatusQuery(payload));
+    return result.affectedRowCount > 0;
+}
+
+# Get parking reservations by employee.
+#
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Reservations
+public isolated function getParkingReservationsByEmployee(string employeeEmail, string? fromDate = (),
+        string? toDate = ()) returns ParkingReservationDetails[]|error {
+    stream<ParkingReservationDetails, error?> resStream = databaseClient->query(
+        getParkingReservationsByEmployeeQuery(employeeEmail, fromDate, toDate));
+    return from ParkingReservationDetails r in resStream
+        select r;
 }

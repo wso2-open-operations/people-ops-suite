@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, Typography, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link, matchPath, useLocation } from "react-router-dom";
@@ -34,7 +35,9 @@ const SubLink = (props: SubLinkProps) => {
 
   const fullPath = parentPath.replace(/\/$/, "") + "/" + to.replace(/^\//, "");
 
-  const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
+  // "/" route treated as "/apply/general"
+  const currentPath = location.pathname === "/" ? "/apply/general" : location.pathname;
+  const isActive = !!matchPath({ path: fullPath, end: true }, currentPath);
 
   return (
     <>
@@ -46,12 +49,14 @@ const SubLink = (props: SubLinkProps) => {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            paddingX: "8px",
-            paddingY: "8px",
+            px: "8px",
+            py: "8px",
             borderRadius: "8px",
             justifyContent: "flex-start",
             textDecoration: "none",
-            color: isActive ? theme.palette.customNavigation.textClicked : theme.palette.customNavigation.text,
+            color: isActive
+              ? theme.palette.customNavigation.textClicked
+              : theme.palette.customNavigation.text,
             "&:hover": {
               ...(!isActive && {
                 backgroundColor: theme.palette.customNavigation.hoverBg,
@@ -74,7 +79,7 @@ const SubLink = (props: SubLinkProps) => {
           {open && (
             <Typography
               sx={{
-                fontSize: "14px",
+                fontSize: theme.typography.body2.fontSize,
                 fontWeight: 500,
                 lineHeight: "150%",
                 letterSpacing: "-0.03em",
@@ -106,7 +111,7 @@ const SubLink = (props: SubLinkProps) => {
                     color: theme.palette.neutral.white,
                     padding: theme.spacing(0.75, 1.5),
                     borderRadius: "4px",
-                    fontSize: "14px",
+                    fontSize: theme.typography.body2.fontSize,
                     boxShadow: theme.shadows[8],
                   },
                 },

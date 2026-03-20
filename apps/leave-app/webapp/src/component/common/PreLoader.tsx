@@ -14,11 +14,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { Box, Container, LinearProgress, Typography, useTheme } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { Box, Container, LinearProgress, Typography } from "@mui/material";
+
+import { useWso2Logo } from "@src/hooks/useWso2Logo";
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
+  const theme = useTheme();
+  const wso2Logo = useWso2Logo();
   return (
     <Box
       sx={{
@@ -26,6 +30,7 @@ const PreLoader = (props: PreLoaderProps) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
+        alignItems: "center",
         height: "100vh",
       }}
     >
@@ -38,7 +43,10 @@ const PreLoader = (props: PreLoaderProps) => {
             alignItems="center"
             spacing={2}
           >
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
+              <img alt="logo" width="150" height="auto" src={wso2Logo} />
+            </Grid>
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
               {props.isLoading && (
                 <LinearProgress
                   sx={{
@@ -47,11 +55,11 @@ const PreLoader = (props: PreLoaderProps) => {
                 />
               )}
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }} sx={{ display: "flex", justifyContent: "center" }}>
               <Typography
                 variant="inherit"
                 sx={{
-                  fontSize: "14px",
+                  fontSize: theme.typography.body2.fontSize,
                   fontWeight: 500,
                   color: (theme) =>
                     theme.palette.mode === "light"

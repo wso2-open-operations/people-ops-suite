@@ -16,15 +16,27 @@
 
 import React from "react";
 
-import { NonIndexRouteObject } from "react-router-dom";
+import {
+  Navigate,
+  NonIndexRouteObject,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
+import PersonOffIcon from "@mui/icons-material/PersonOff";
+import GroupAddIcon from "@mui/icons-material/GroupAdd";
+import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import { Role } from "@slices/authSlice/auth";
 import { isIncludedRole } from "@utils/utils";
 import { View } from "@view/index";
+import { BadgeSharp, Groups } from "@mui/icons-material";
 
 export interface RouteObjectWithRole extends NonIndexRouteObject {
   allowRoles: string[];
+  /** Route is excluded from the router and sidebar if the user has any of these roles. */
+  excludeRoles?: string[];
   icon:
     | React.ReactElement<any, string | React.JSXElementConstructor<any>>
     | undefined;
@@ -37,14 +49,31 @@ export interface RouteObjectWithRole extends NonIndexRouteObject {
 export interface RouteDetail {
   path: string;
   allowRoles: string[];
+  excludeRoles?: string[];
   icon:
     | React.ReactElement<any, string | React.JSXElementConstructor<any>>
     | undefined;
   text: string;
-  children?: RouteObjectWithRole[];
+  children?: RouteDetail[];
   bottomNav?: boolean;
   hideFromSidebar?: boolean;
 }
+
+const EmployeesRoot = () => {
+  const { pathname } = useLocation();
+  if (pathname === "/employees") {
+    return React.createElement(Navigate, { to: "/employees/view", replace: true });
+  }
+  return React.createElement(Outlet);
+};
+
+const ReportsRoot = () => {
+  const { pathname } = useLocation();
+  if (pathname === "/reports") {
+    return React.createElement(Navigate, { to: "/reports/active-employees", replace: true });
+  }
+  return React.createElement(Outlet);
+};
 
 export const routes: RouteObjectWithRole[] = [
   {
@@ -52,14 +81,70 @@ export const routes: RouteObjectWithRole[] = [
     text: "Me",
     icon: React.createElement(AccountCircleIcon),
     element: React.createElement(View.me),
-    allowRoles: [Role.ADMIN],
+    allowRoles: [Role.ADMIN, Role.EMPLOYEE],
   },
   {
-    path: "/onboarding",
-    text: "Onboarding",
-    icon: React.createElement(GroupsIcon),
-    element: React.createElement(View.employees),
+    path: "/employees",
+    text: "Employees",
+    icon: React.createElement(BadgeSharp),
+    element: React.createElement(EmployeesRoot),
     allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/employees/view",
+        text: "All",
+        element: React.createElement(View.employeesList),
+        icon: React.createElement(Groups),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/employees/onboarding",
+        text: "Onboarding",
+        icon: React.createElement(GroupAddIcon),
+        element: React.createElement(View.employeeOnboarding),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/employees/my-team",
+        text: "My Team",
+        icon: React.createElement(PeopleAltIcon),
+        element: React.createElement(View.myTeamView),
+        allowRoles: [Role.LEAD],
+      },
+    ],
+  },
+  // Top-level My Team entry shown only for lead-only users (hidden when the user also has admin
+  // access, since admin+lead users see My Team nested under Employees instead).
+  {
+    path: "/employees/my-team",
+    text: "My Team",
+    icon: React.createElement(PeopleAltIcon),
+    element: React.createElement(View.myTeamView),
+    allowRoles: [Role.LEAD],
+    excludeRoles: [Role.ADMIN],
+  },
+  {
+    path: "/reports",
+    text: "Reports",
+    icon: React.createElement(AssessmentIcon),
+    element: React.createElement(ReportsRoot),
+    allowRoles: [Role.ADMIN],
+    children: [
+      {
+        path: "/reports/active-employees",
+        text: "Active Employees",
+        icon: React.createElement(Groups),
+        element: React.createElement(View.activeEmployeesReport),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/reports/inactive-employees",
+        text: "Resignations",
+        icon: React.createElement(PersonOffIcon),
+        element: React.createElement(View.resignationReport),
+        allowRoles: [Role.ADMIN],
+      },
+    ],
   },
   // Todo: Uncomment when help view is ready
   // {
@@ -75,10 +160,26 @@ export const routes: RouteObjectWithRole[] = [
     text: "Employees",
     icon: React.createElement(GroupsIcon),
     element: React.createElement(View.employeeDetails),
+    allowRoles: [Role.ADMIN, Role.LEAD],
+    hideFromSidebar: true,
+  },
+  {
+    path: "/employees/:employeeId/edit",
+    text: "Edit Employee",
+    icon: React.createElement(GroupsIcon),
+    element: React.createElement(View.employeeEdit),
     allowRoles: [Role.ADMIN],
     hideFromSidebar: true,
   },
 ];
+
+function isRouteActive(routeObj: RouteObjectWithRole, roles: string[]): boolean {
+  return (
+    isIncludedRole(roles, routeObj.allowRoles) &&
+    !(routeObj.excludeRoles && isIncludedRole(roles, routeObj.excludeRoles))
+  );
+}
+
 export const getActiveRoutesV2 = (
   routes: RouteObjectWithRole[] | undefined,
   roles: string[],
@@ -86,9 +187,10 @@ export const getActiveRoutesV2 = (
   if (!routes) return [];
   var routesObj: RouteObjectWithRole[] = [];
   routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
+    if (isRouteActive(routeObj, roles)) {
       routesObj.push({
         ...routeObj,
+        children: routeObj.children ? getActiveRoutesV2(routeObj.children, roles) : undefined,
       });
     }
   });
@@ -96,14 +198,16 @@ export const getActiveRoutesV2 = (
 };
 
 export const getActiveRouteDetails = (roles: string[]): RouteDetail[] => {
-  var routesObj: RouteDetail[] = [];
-  routes.forEach((routeObj) => {
-    if (isIncludedRole(roles, routeObj.allowRoles)) {
-      routesObj.push({
-        path: routeObj.path ? routeObj.path : "",
-        ...routeObj,
-      });
-    }
-  });
-  return routesObj;
+  const filterRoutes = (routeList: RouteObjectWithRole[]): RouteDetail[] =>
+    routeList.reduce<RouteDetail[]>((acc, routeObj) => {
+      if (isRouteActive(routeObj, roles)) {
+        acc.push({
+          ...routeObj,
+          path: routeObj.path ?? "",
+          children: routeObj.children ? filterRoutes(routeObj.children) : undefined,
+        });
+      }
+      return acc;
+    }, []);
+  return filterRoutes(routes);
 };

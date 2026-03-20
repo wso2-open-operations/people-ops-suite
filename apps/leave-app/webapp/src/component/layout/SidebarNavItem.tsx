@@ -13,6 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import { Box, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link } from "react-router-dom";
@@ -63,7 +64,7 @@ function SidebarNavItem({
               color: theme.palette.neutral.white,
               padding: theme.spacing(0.75, 1.5),
               borderRadius: "4px",
-              fontSize: "12px",
+              fontSize: theme.typography.caption.fontSize,
               boxShadow: theme.shadows[8],
             },
           },
@@ -74,14 +75,14 @@ function SidebarNavItem({
           },
         }}
       >
-        {route.element ? (
+        {route.element && !(route.children && route.children.length > 0) ? (
           <Link
             to={route.path}
             style={{ width: "100%", display: "block", textDecoration: "none" }}
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}
@@ -104,7 +105,7 @@ function SidebarNavItem({
             onClick={onClick}
           >
             <LinkItem
-              label={route.text}
+              label={route.text ?? ""}
               icon={route.icon}
               open={open}
               isActive={isActive}
@@ -129,7 +130,7 @@ function SidebarNavItem({
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
             borderLeft: open ? `1px solid ${theme.palette.neutral["1000"]}` : "none",
-            paddingX: "8px",
+            px: "8px",
           }}
         >
           <SidebarSubMenu parentRoute={route} open={open} />
