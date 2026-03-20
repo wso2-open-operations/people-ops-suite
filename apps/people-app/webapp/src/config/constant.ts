@@ -41,7 +41,7 @@ export const SEARCH_MAX_LENGTH = 100;
 
 export const EmployeeFormSteps = ["Personal Info", "Job Info", "Review"];
 
-export const EmployeeTitle = ["Mr.", "Mrs.", "Miss.", "Ms.", "Dr.", "Prof."];
+export const EmployeeTitle = ["Mr", "Mrs", "Miss", "Ms", "Dr", "Prof"];
 
 export const EmployeeGenders = ["Male", "Female", "Not Specified"];
 
