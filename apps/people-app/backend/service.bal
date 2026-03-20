@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import people.'transaction as tx;
 import people.authorization;
 import people.database;
 import people.gsheet;
-import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
@@ -105,6 +106,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
             privileges.push(authorization:ADMIN_PRIVILEGE);
         }
+
         boolean|error isLeadUser = database:isLead(userInfo.email);
         if isLeadUser is error {
             string customErr = "Error occurred while checking lead status";
@@ -115,6 +117,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 }
             };
         }
+
         if isLeadUser {
             privileges.push(authorization:LEAD_PRIVILEGE);
         }
@@ -1359,11 +1362,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: {employeeStatus: status},
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: {employeeStatus: status},
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1380,7 +1383,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         string csvContent = status == database:EMPLOYEE_LEFT
             ? database:buildResignationCsv(allEmployees)
             : database:buildEmployeeCsv(allEmployees);
-        string statusLabel = status is () ? "all" : re` `.replaceAll(status.toLowerAscii(), "_");
+        string statusLabel = status is () ? "all" : re ` `.replaceAll(status.toLowerAscii(), "_");
         string filename = statusLabel + "_employees_report_" + time:utcToString(time:utcNow()).substring(0, 10) + ".csv";
 
         http:Response response = new;
@@ -1440,7 +1443,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
-            reservation.coinsAmount);
+                reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
@@ -1478,12 +1481,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
-                reservationId = confirmedReservation.id);
+                    reservationId = confirmedReservation.id);
         }
 
         return confirmedReservation;
     }
-
 
     # Get organization details (full hierarchy with business units, teams, sub-teams, units).
     #
@@ -1793,7 +1795,6 @@ service http:InterceptableService / on new http:Listener(9090) {
         };
     }
 
-
     # Create a BusinessUnit-Team mapping.
     #
     # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
@@ -1954,10 +1955,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateBusinessUnit(
-            {
-                ...payload,
-                updatedBy: workEmail
-            }, buId);
+                {
+                    ...payload,
+                    updatedBy: workEmail
+                }, buId);
         if updateResult is error {
             log:printError("Error while updating business unit : ", updateResult);
             return <http:InternalServerError>{
@@ -2015,9 +2016,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateTeam({
-            ...payload,
-            updatedBy: workEmail
-        }, teamId);
+                                                      ...payload,
+                                                      updatedBy: workEmail
+                                                  }, teamId);
         if updateResult is error {
             log:printError("Error while updating team : ", updateResult, teamId = teamId);
             return <http:InternalServerError>{
@@ -2075,9 +2076,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateSubTeam({
-            ...payload,
-            updatedBy: workEmail
-        }, subTeamId);
+                                                         ...payload,
+                                                         updatedBy: workEmail
+                                                     }, subTeamId);
         if updateResult is error {
             log:printError("Error while updating sub team : ", updateResult, subTeamId = subTeamId);
             return <http:InternalServerError>{
@@ -2135,9 +2136,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? updateResult = database:updateUnit({
-            ...payload,
-            updatedBy: workEmail
-        }, unitId);
+                                                      ...payload,
+                                                      updatedBy: workEmail
+                                                  }, unitId);
         if updateResult is error {
             log:printError("Error while updating unit : ", updateResult, unitId = unitId);
             return <http:InternalServerError>{
