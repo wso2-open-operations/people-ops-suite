@@ -155,7 +155,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    addTeam: builder.mutation<void, { buId: string; payload: OrgNodePayload }>({
+    addTeams: builder.mutation<void, { buId: string; payload: OrgNodePayload }>({
       queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/teams`,
@@ -167,7 +167,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    addSubTeam: builder.mutation<void, { teamId: string; payload: OrgNodePayload }>({
+    addSubTeams: builder.mutation<void, { teamId: string; payload: OrgNodePayload }>({
       queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/sub-teams`,
@@ -179,7 +179,7 @@ export const organizationApi = createApi({
       invalidatesTags: ["BU", "TEAM", "SUB_TEAM", "UNIT"],
     }),
 
-    addUnit: builder.mutation<void, { subTeamId: string; payload: OrgNodePayload }>({
+    addUnits: builder.mutation<void, { subTeamId: string; payload: OrgNodePayload }>({
       queryFn: async ({ payload }, { getState }, _extraOptions, baseQuery) => {
         const data = await baseQuery({
           url: `${AppConfig.serviceUrls.organization}/units`,
@@ -379,9 +379,9 @@ export const organizationApi = createApi({
 export const {
   useGetOrgStructureQuery,
   useAddBusinessUnitsMutation,
-  useAddTeamMutation,
-  useAddSubTeamMutation,
-  useAddUnitMutation,
+  useAddTeamsMutation,
+  useAddSubTeamsMutation,
+  useAddUnitsMutation,
   useUpdateBusinessUnitMutation,
   useUpdateTeamMutation,
   useUpdateSubTeamMutation,

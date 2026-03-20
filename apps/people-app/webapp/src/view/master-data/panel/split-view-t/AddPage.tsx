@@ -42,9 +42,9 @@ import { NodeType } from "@root/src/utils/types";
 import {
   OrgNodePayload,
   useAddBusinessUnitsMutation,
-  useAddSubTeamMutation,
-  useAddTeamMutation,
-  useAddUnitMutation,
+  useAddSubTeamsMutation,
+  useAddTeamsMutation,
+  useAddUnitsMutation,
 } from "@services/organization";
 
 import { SectionHeader } from "../../components/edit-modal/SectionHeader";
@@ -81,11 +81,12 @@ export default function AddPage(props: AddPageProps) {
   const { open, orgInfo, nodeType, parentId, onClose } = props;
 
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
-  const theme = useTheme();
   const [addBusinessUnits] = useAddBusinessUnitsMutation();
-  const [addTeam] = useAddTeamMutation();
-  const [addSubTeam] = useAddSubTeamMutation();
-  const [addUnit] = useAddUnitMutation();
+  const [addTeams] = useAddTeamsMutation();
+  const [addSubTeams] = useAddSubTeamsMutation();
+  const [addUnits] = useAddUnitsMutation();
+
+  const theme = useTheme();
 
   const {
     control,
@@ -126,28 +127,28 @@ export default function AddPage(props: AddPageProps) {
       // Route API call based on nodeType
       switch (nodeType) {
         case NodeType.BusinessUnit:
-          await addBusinessUnits(apiPayload);
+          await addBusinessUnits(apiPayload).unwrap();
           break;
         case NodeType.Team:
           if (!parentId) {
             console.error("Parent Business Unit ID is required");
             return;
           }
-          await addTeam({ buId: parentId, payload: apiPayload });
+          await addTeams({ buId: parentId, payload: apiPayload }).unwrap();
           break;
         case NodeType.SubTeam:
           if (!parentId) {
             console.error("Parent Team ID is required");
             return;
           }
-          await addSubTeam({ teamId: parentId, payload: apiPayload });
+          await addSubTeams({ teamId: parentId, payload: apiPayload }).unwrap();
           break;
         case NodeType.Unit:
           if (!parentId) {
             console.error("Parent Sub Team ID is required");
             return;
           }
-          await addUnit({ subTeamId: parentId, payload: apiPayload });
+          await addUnits({ subTeamId: parentId, payload: apiPayload }).unwrap();
           break;
         default:
           console.error("Invalid node type");
