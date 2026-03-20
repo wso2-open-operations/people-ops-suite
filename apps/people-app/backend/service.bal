@@ -766,7 +766,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if generatedEmployeeId is http:BadRequest|http:InternalServerError {
             return generatedEmployeeId;
         }
-        string employeeId = <string>generatedEmployeeId;
+        string employeeId = generatedEmployeeId;
 
         int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
         if newEmployeeId is error {
