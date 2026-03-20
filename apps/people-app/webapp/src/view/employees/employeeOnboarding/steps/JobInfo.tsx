@@ -57,6 +57,7 @@ import {
   fetchCompanies,
   fetchOffices,
   fetchEmploymentTypes,
+  fetchHouses,
 } from "@slices/organizationSlice/organization";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -68,6 +69,7 @@ import {
   SupervisorAccountOutlined,
   InfoOutlined,
   Close,
+  WidgetsOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -77,6 +79,7 @@ const SECTION_ICONS = {
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
   supervisor: <SupervisorAccountOutlined />,
+  other: <WidgetsOutlined />,
 };
 
 const SECTION_HEADER_BOX_SX = {
@@ -249,6 +252,7 @@ export default function JobInfoStep() {
     companies,
     offices,
     employmentTypes,
+    houses,
   } = useAppSelector((state) => state.organization);
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
@@ -329,6 +333,7 @@ export default function JobInfoStep() {
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
+    dispatch(fetchHouses());
 
     return () => {
       dispatch(resetContinuousService());
@@ -1380,6 +1385,45 @@ export default function JobInfoStep() {
                     : values.managerEmail
                       ? "No other managers available"
                       : "Select primary manager first"}
+                </MenuItem>
+              )}
+            </TextField>
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box>
+        <SectionHeader
+          icon={SECTION_ICONS.other}
+          title="Other"
+          headerBoxSx={SECTION_HEADER_BOX_SX}
+          iconBoxSx={iconBoxSx}
+        />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField
+              select
+              fullWidth
+              label="House"
+              name="houseId"
+              value={values.houseId || 0}
+              onChange={(e) =>
+                setFieldValue("houseId", Number(e.target.value))
+              }
+              onBlur={handleBlur}
+              sx={textFieldSx}
+            >
+              {houses.length ? (
+                houses.map((h) => (
+                  <MenuItem key={h.id} value={h.id}>
+                    {h.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {organizationState === "loading"
+                    ? "Loading houses..."
+                    : "No houses found"}
                 </MenuItem>
               )}
             </TextField>

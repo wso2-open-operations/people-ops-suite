@@ -109,6 +109,7 @@ const toFormValues = (
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
+    base.houseId = employee.houseId ?? 0;
   }
 
   if (personal) {
@@ -170,6 +171,7 @@ const toJobUpdatePayload = (
   subTeamId: values.subTeamId > 0 ? values.subTeamId : null,
   businessUnitId: values.businessUnitId > 0 ? values.businessUnitId : null,
   unitId: values.unitId > 0 ? values.unitId : null,
+  houseId: values.houseId > 0 ? values.houseId : null,
   continuousServiceRecord: values.isRelocation
     ? (values.continuousServiceRecord ?? null)
     : null,
@@ -683,6 +685,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
+                houseId: values.houseId > 0 ? values.houseId : undefined,
                 ...(values.isRelocation && values.continuousServiceRecord
                   ? { continuousServiceRecord: values.continuousServiceRecord }
                   : {}),
