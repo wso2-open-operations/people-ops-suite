@@ -762,29 +762,19 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        string|error generatedEmployeeId = generateEmployeeId(payload);
-        if generatedEmployeeId is error {
-            string customErr = generatedEmployeeId.message();
-            log:printError("Error occurred while resolving employee ID", generatedEmployeeId);
-            boolean isValidationError =
-            customErr.includes("must be provided manually") ||
-            customErr.includes("is reserved for auto-generation") ||
-            customErr.includes("already in use");
-            if isValidationError {
-                return <http:BadRequest>{
-                    body: {
-                        message: customErr
-                    }
-                };
-            }
-            return <http:InternalServerError>{
-                body: {
-                    message: ERROR_EMPLOYEE_CREATION_FAILED
-                }
-            };
+        string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
+        if generatedEmployeeId is http:BadRequest {
+            log:printWarn("Employee ID generation failed due to invalid input", payload = payload.employeeId);
+            return generatedEmployeeId;
+        }
+        if generatedEmployeeId is http:InternalServerError {
+            log:printError("Error occurred while generating employee ID");
+            return generatedEmployeeId;
         }
 
-        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, generatedEmployeeId);
+        string employeeId = <string>generatedEmployeeId;
+
+        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
         if newEmployeeId is error {
             log:printError(ERROR_EMPLOYEE_CREATION_FAILED, newEmployeeId);
             return <http:InternalServerError>{
