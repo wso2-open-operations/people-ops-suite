@@ -30,6 +30,8 @@ import {
 } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 
+import { useState } from "react";
+
 import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
@@ -41,8 +43,11 @@ import {
 import { NodeType } from "@root/src/utils/types";
 import {
   OrgNodePayload,
+  useAddBusinessUnitTeamMutation,
   useAddBusinessUnitsMutation,
+  useAddSubTeamUnitMutation,
   useAddSubTeamsMutation,
+  useAddTeamSubTeamMutation,
   useAddTeamsMutation,
   useAddUnitsMutation,
 } from "@services/organization";
@@ -66,25 +71,30 @@ interface AddPageProps {
 }
 
 interface AddOrgItemFormValues {
-  team: OrgOption | null;
-  teamHead: EmployeeBasicInfo | null;
+  orgNode: OrgOption | null;
+  orgNodeHead: EmployeeBasicInfo | null;
   functionalLead: EmployeeBasicInfo | null;
 }
 
 interface AddOrgItemPayload {
-  team: OrgOption;
-  teamHead: EmployeeBasicInfo;
+  orgNode: OrgOption;
+  orgNodeHead: EmployeeBasicInfo;
   functionalLead: EmployeeBasicInfo | null;
 }
 
 export default function AddPage(props: AddPageProps) {
   const { open, orgInfo, nodeType, parentId, onClose } = props;
 
+  const [isNewItem, setIsNewItem] = useState<boolean>(false);
+
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const [addBusinessUnits] = useAddBusinessUnitsMutation();
   const [addTeams] = useAddTeamsMutation();
   const [addSubTeams] = useAddSubTeamsMutation();
   const [addUnits] = useAddUnitsMutation();
+  const [addBusinessUnitTeam] = useAddBusinessUnitTeamMutation();
+  const [addTeamSubTeam] = useAddTeamSubTeamMutation();
+  const [addSubTeamUnit] = useAddSubTeamUnitMutation();
 
   const theme = useTheme();
 
@@ -96,25 +106,25 @@ export default function AddPage(props: AddPageProps) {
     formState: { errors },
   } = useForm<AddOrgItemFormValues>({
     defaultValues: {
-      team: null,
-      teamHead: null,
+      orgNode: null,
+      orgNodeHead: null,
       functionalLead: null,
     },
   });
 
-  const selectedTeam = watch("team");
+  const selectedOrgNode = watch("orgNode");
 
   const onSubmit = async (data: AddOrgItemFormValues) => {
-    const { team, teamHead, functionalLead } = data as AddOrgItemPayload;
+    const { orgNode, orgNodeHead, functionalLead } = data as AddOrgItemPayload;
 
-    if (!team || !team.name || !teamHead || !parentId) {
-      console.error("Team and team head are required");
+    if (!orgNode || !orgNode.name || !orgNodeHead || !parentId) {
+      console.error("Org node and org node head are required");
       return;
     }
 
     const apiPayload: OrgNodePayload = {
-      name: team.name,
-      headEmail: teamHead.workEmail,
+      name: orgNode.name,
+      headEmail: orgNodeHead.workEmail,
       ...(functionalLead && {
         orgNodeLinkInfo: {
           id: parentId,
@@ -123,33 +133,72 @@ export default function AddPage(props: AddPageProps) {
       }),
     };
 
+    const mappingLeadEmail = functionalLead?.workEmail ?? "";
+    const existingChildId = isNewItem && orgNode.id ? orgNode.id : undefined;
+
     try {
-      // Route API call based on nodeType
       switch (nodeType) {
         case NodeType.BusinessUnit:
           await addBusinessUnits(apiPayload).unwrap();
           break;
-        case NodeType.Team:
+
+        case NodeType.Team: {
           if (!parentId) {
             console.error("Parent Business Unit ID is required");
             return;
           }
-          await addTeams({ buId: parentId, payload: apiPayload }).unwrap();
+          if (existingChildId) {
+            await addBusinessUnitTeam({
+              payload: {
+                parentId,
+                childId: existingChildId,
+                functionalLeadEmail: mappingLeadEmail,
+              },
+            }).unwrap();
+          } else {
+            await addTeams({ buId: parentId, payload: apiPayload }).unwrap();
+          }
           break;
-        case NodeType.SubTeam:
+        }
+
+        case NodeType.SubTeam: {
           if (!parentId) {
-            console.error("Parent Team ID is required");
+            console.error("Parent Team mapping ID is required");
             return;
           }
-          await addSubTeams({ teamId: parentId, payload: apiPayload }).unwrap();
+          if (existingChildId) {
+            await addTeamSubTeam({
+              payload: {
+                parentId,
+                childId: existingChildId,
+                functionalLeadEmail: mappingLeadEmail,
+              },
+            }).unwrap();
+          } else {
+            await addSubTeams({ teamId: parentId, payload: apiPayload }).unwrap();
+          }
           break;
-        case NodeType.Unit:
+        }
+
+        case NodeType.Unit: {
           if (!parentId) {
-            console.error("Parent Sub Team ID is required");
+            console.error("Parent Sub Team mapping ID is required");
             return;
           }
-          await addUnits({ subTeamId: parentId, payload: apiPayload }).unwrap();
+          if (existingChildId) {
+            await addSubTeamUnit({
+              payload: {
+                parentId,
+                childId: existingChildId,
+                functionalLeadEmail: mappingLeadEmail,
+              },
+            }).unwrap();
+          } else {
+            await addUnits({ subTeamId: parentId, payload: apiPayload }).unwrap();
+          }
           break;
+        }
+
         default:
           console.error("Invalid node type");
           return;
@@ -252,9 +301,9 @@ export default function AddPage(props: AddPageProps) {
           onSubmit={handleSubmit(onSubmit)}
         >
           <Controller
-            name="team"
+            name="orgNode"
             control={control}
-            rules={{ required: "Team is required " }}
+            rules={{ required: "Org node is required " }}
             render={({ field }) => (
               <Autocomplete<OrgOption>
                 {...field}
@@ -271,6 +320,8 @@ export default function AddPage(props: AddPageProps) {
                     (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
                   );
 
+                  setIsNewItem(!isExisting);
+
                   // If user typed something and it doesn't exist, add "Create" option
                   if (inputValue !== "" && !isExisting) {
                     filtered.push({
@@ -281,7 +332,6 @@ export default function AddPage(props: AddPageProps) {
 
                   return filtered;
                 }}
-
                 onChange={(_, data) => {
                   if (data && "inputValue" in data && data.inputValue) {
                     field.onChange(data as OrgOption);
@@ -310,9 +360,9 @@ export default function AddPage(props: AddPageProps) {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    placeholder="Select or create a team"
-                    error={!!errors.team}
-                    helperText={errors.team?.message}
+                    placeholder="Select or create an org node"
+                    error={!!errors.orgNode}
+                    helperText={errors.orgNode?.message}
                     slotProps={{
                       input: {
                         ...params.InputProps,
@@ -332,9 +382,9 @@ export default function AddPage(props: AddPageProps) {
           />
 
           <Controller
-            name="teamHead"
+            name="orgNodeHead"
             control={control}
-            rules={{ required: "Team head is required" }}
+            rules={{ required: "Org node head is required" }}
             render={({ field }) => (
               <Autocomplete
                 {...field}
@@ -353,9 +403,9 @@ export default function AddPage(props: AddPageProps) {
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    placeholder="Select a team head"
-                    error={!!errors.teamHead}
-                    helperText={errors.teamHead?.message}
+                    placeholder="Select a head"
+                    error={!!errors.orgNodeHead}
+                    helperText={errors.orgNodeHead?.message}
                     slotProps={{
                       input: {
                         ...params.InputProps,
@@ -374,7 +424,7 @@ export default function AddPage(props: AddPageProps) {
             )}
           />
 
-          {nodeType !== NodeType.BusinessUnit && selectedTeam && selectedTeam.inputValue && (
+          {nodeType !== NodeType.BusinessUnit && selectedOrgNode && selectedOrgNode.inputValue && (
             <Controller
               name="functionalLead"
               control={control}
