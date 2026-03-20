@@ -501,15 +501,18 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
 
   const initialValues = initialEditValues ?? emptyCreateEmployeeValues;
 
-  const isLoadingEditData =
-    isEditMode &&
-    (employeeSlice.state === State.loading ||
-      personalSlice.state === State.loading);
-
   const isFailedEditData =
     isEditMode &&
     (employeeSlice.state === State.failed ||
       personalSlice.state === State.failed);
+
+  const isLoadingEditData =
+    isEditMode &&
+    !isFailedEditData &&
+    (employeeSlice.state === State.loading ||
+      personalSlice.state === State.loading ||
+      !employee ||
+      !personalInfo);
 
   const handleCreateEmployeeWithConfirm = async (
     payload: CreateEmployeePayload,
@@ -549,20 +552,20 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     }
   };
 
-  if (isEditMode && isLoadingEditData) {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography>Loading employee data...</Typography>
-      </Box>
-    );
-  }
-
   if (isEditMode && isFailedEditData) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography color="error">
           Failed to load employee data. Please try again.
         </Typography>
+      </Box>
+    );
+  }
+
+  if (isEditMode && isLoadingEditData) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>Loading employee data...</Typography>
       </Box>
     );
   }
