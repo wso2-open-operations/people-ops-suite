@@ -763,15 +763,9 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
-        if generatedEmployeeId is http:BadRequest {
-            log:printWarn("Employee ID generation failed due to invalid input", payload = payload.employeeId);
+        if generatedEmployeeId is http:BadRequest|http:InternalServerError {
             return generatedEmployeeId;
         }
-        if generatedEmployeeId is http:InternalServerError {
-            log:printError("Error occurred while generating employee ID");
-            return generatedEmployeeId;
-        }
-
         string employeeId = <string>generatedEmployeeId;
 
         int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);

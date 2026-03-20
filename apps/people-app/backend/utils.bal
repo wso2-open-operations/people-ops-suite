@@ -17,6 +17,7 @@ import people.database;
 
 import ballerina/http;
 import ballerina/lang.regexp;
+import ballerina/log;
 
 # Generate the next employee ID for the given payload.
 #
@@ -29,9 +30,11 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
             payload.companyId, payload.employmentTypeId
     );
     if ctx is error {
+        string customErr = "Error occurred while fetching employee ID context";
+        log:printError(customErr, ctx);
         return <http:InternalServerError>{
             body: {
-                message: "Error occurred while fetching employee ID context"
+                message: customErr
             }
         };
     }
@@ -42,9 +45,11 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                     ctx.companyPrefix, [ctx.employmentType]
             );
             if row is error {
+                string customErr = "Error occurred while fetching last employee numeric suffix";
+                log:printError(customErr, row, employmentType = ctx.employmentType, companyPrefix = ctx.companyPrefix);
                 return <http:InternalServerError>{
                     body: {
-                        message: "Error occurred while fetching last employee numeric suffix"
+                        message: customErr
                     }
                 };
             }
@@ -59,9 +64,11 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
                     ]
             );
             if row is error {
+                string customErr = "Error occurred while fetching last employee numeric suffix";
+                log:printError(customErr, row, employmentType = ctx.employmentType);
                 return <http:InternalServerError>{
                     body: {
-                        message: "Error occurred while fetching last employee numeric suffix"
+                        message: customErr
                     }
                 };
             }
@@ -70,9 +77,11 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
         database:FIXED_TERM => {
             string manualId = (payload.employeeId ?: "").trim();
             if manualId.length() == 0 {
+                string customErr = "Employee ID must be provided manually for fixed-term employment type";
+                log:printWarn(customErr);
                 return <http:BadRequest>{
                     body: {
-                        message: "Employee ID must be provided manually for fixed-term employment type"
+                        message: customErr
                     }
                 };
             }
@@ -80,41 +89,51 @@ public isolated function generateEmployeeId(database:CreateEmployeePayload paylo
             regexp:RegExp|error companyPattern = regexp:fromString(ctx.companyPrefix + "[0-9]+");
             regexp:RegExp|error consultancyPattern = regexp:fromString(database:CONSULTANCY_ID_PREFIX + "[0-9]+");
             if companyPattern is error || consultancyPattern is error {
+                string customErr = "Error occurred while validating employee ID pattern";
+                log:printError(customErr);
                 return <http:InternalServerError>{
                     body: {
-                        message: "Error occurred while validating employee ID pattern"
+                        message: customErr
                     }
                 };
             }
             if manualId.matches(companyPattern) || manualId.matches(consultancyPattern) {
+                string customErr = string `Employee ID '${manualId}' is reserved for auto-generation and cannot be assigned manually`;
+                log:printWarn(customErr, employeeId = manualId);
                 return <http:BadRequest>{
                     body: {
-                        message: string `Employee ID '${manualId}' is reserved for auto-generation and cannot be assigned manually`
+                        message: customErr
                     }
                 };
             }
 
             database:Employee|error? existing = database:getEmployeeInfo(manualId);
             if existing is error {
+                string customErr = "Error occurred while checking existing employee ID";
+                log:printError(customErr, existing, employeeId = manualId);
                 return <http:InternalServerError>{
                     body: {
-                        message: "Error occurred while checking existing employee ID"
+                        message: customErr
                     }
                 };
             }
             if existing is database:Employee {
+                string customErr = string `Employee ID already in use: ${manualId}`;
+                log:printWarn(customErr, employeeId = manualId);
                 return <http:BadRequest>{
                     body: {
-                        message: string `Employee ID already in use: ${manualId}`
+                        message: customErr
                     }
                 };
             }
             return manualId;
         }
         _ => {
+            string customErr = string `Unsupported employment type: ${ctx.employmentType}`;
+            log:printError(customErr, employmentType = ctx.employmentType);
             return <http:InternalServerError>{
                 body: {
-                    message: string `Unsupported employment type: ${ctx.employmentType}`
+                    message: customErr
                 }
             };
         }
