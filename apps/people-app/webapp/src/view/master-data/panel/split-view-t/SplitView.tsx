@@ -257,17 +257,17 @@ export default function SplitView() {
 
   const handleTeamAdd = () => {
     if (!selectedBusinessUnitId) return;
-    onAdd(selectedTeams, NodeType.Team, selectedBusinessUnitId);
+    onAdd(orgItems.teams, NodeType.Team, selectedBusinessUnitId);
   };
 
   const handleSubTeamAdd = () => {
     if (!selectedTeamId) return;
-    onAdd(selectedSubTeams, NodeType.SubTeam, selectedTeamId);
+    onAdd(orgItems.subTeams, NodeType.SubTeam, selectedTeamId);
   };
 
   const handleUnitAdd = () => {
     if (!selectedSubTeamId) return;
-    onAdd(selectedUnits, NodeType.Unit, selectedSubTeamId);
+    onAdd(orgItems.units, NodeType.Unit, selectedSubTeamId);
   };
 
   // Global search handlers
