@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
+import people.'transaction as tx;
 import people.authorization;
 import people.database;
 import people.gsheet;
-import people.'transaction as tx;
 
 import ballerina/http;
 import ballerina/log;
@@ -698,8 +699,17 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get houses.
     #
+    # + ctx - Request context
     # + return - Houses
-    resource function get houses() returns database:House[]|http:InternalServerError {
+    resource function get houses(http:RequestContext ctx) returns database:House[]|http:Forbidden|http:InternalServerError {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to view houses", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to view houses"}};
+        }
         database:House[]|error houses = database:getHouses();
         if houses is error {
             string customError = "Error while fetching Houses";
@@ -711,8 +721,17 @@ service http:InterceptableService / on new http:Listener(9090) {
 
     # Get the house with the fewest active employees.
     #
+    # + ctx - Request context
     # + return - The suggested house, 404 if none found, or 500 on error
-    resource function get houses/suggested() returns database:House|http:NotFound|http:InternalServerError {
+    resource function get houses/suggested(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to view suggested house", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to view suggested house"}};
+        }
         database:House|error? house = database:getHouseWithLeastActiveEmployees();
         if house is error {
             log:printError("Error while fetching suggested house", house);
@@ -1072,12 +1091,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error vehicleResult = database:addVehicle({
-            owner: userInfo.email,
-            vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
-            vehicleType: vehicle.vehicleType,
-            vehicleStatus: database:ACTIVE,
-            createdBy: userInfo.email
-        });
+                                                          owner: userInfo.email,
+                                                          vehicleRegistrationNumber: vehicle.vehicleRegistrationNumber,
+                                                          vehicleType: vehicle.vehicleType,
+                                                          vehicleStatus: database:ACTIVE,
+                                                          createdBy: userInfo.email
+                                                      });
         if vehicleResult is error {
             string customError = string `Error occurred while adding vehicle!`;
             log:printError(customError, vehicleResult);
@@ -1114,10 +1133,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updateResult = database:updateVehicle({
-            vehicleId: vehicleId,
-            vehicleStatus: database:INACTIVE,
-            updatedBy: userInfo.email
-        });
+                                                                vehicleId: vehicleId,
+                                                                vehicleStatus: database:INACTIVE,
+                                                                updatedBy: userInfo.email
+                                                            });
 
         if updateResult is error {
             string customError = string `Error occurred while updating vehicle!`;
@@ -1281,13 +1300,13 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         int|error reservationId = database:addParkingReservation({
-            slotId: body.slotId,
-            bookingDate: body.bookingDate,
-            employeeEmail: userInfo.email,
-            vehicleId: body.vehicleId,
-            coinsAmount: slot.coinsPerSlot,
-            createdBy: userInfo.email
-        });
+                                                                     slotId: body.slotId,
+                                                                     bookingDate: body.bookingDate,
+                                                                     employeeEmail: userInfo.email,
+                                                                     vehicleId: body.vehicleId,
+                                                                     coinsAmount: slot.coinsPerSlot,
+                                                                     createdBy: userInfo.email
+                                                                 });
         if reservationId is error {
             log:printError("Error creating parking reservation", reservationId);
             return <http:InternalServerError>{
@@ -1382,11 +1401,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: {employeeStatus: status},
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: {employeeStatus: status},
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1463,7 +1482,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
-            reservation.coinsAmount);
+                reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
             return <http:BadRequest>{
@@ -1472,11 +1491,11 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         boolean|error updated = database:updateParkingReservationStatus({
-            reservationId: reservation.id,
-            status: database:CONFIRMED,
-            transactionHash: body.transactionHash,
-            updatedBy: userInfo.email
-        });
+                                                                            reservationId: reservation.id,
+                                                                            status: database:CONFIRMED,
+                                                                            transactionHash: body.transactionHash,
+                                                                            updatedBy: userInfo.email
+                                                                        });
         if updated is error {
             log:printError("Error confirming reservation", updated);
             return <http:InternalServerError>{
@@ -1501,7 +1520,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
-                reservationId = confirmedReservation.id);
+                    reservationId = confirmedReservation.id);
         }
 
         return confirmedReservation;
