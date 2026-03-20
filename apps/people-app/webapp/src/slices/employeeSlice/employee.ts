@@ -59,6 +59,7 @@ export interface Employee {
   teamId: number;
   subTeamId: number;
   unitId: number | null;
+  house: string | null;
 }
 
 export enum EmployeeStatus {

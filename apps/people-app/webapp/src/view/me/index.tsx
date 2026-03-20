@@ -186,7 +186,7 @@ const emergencyContactItemSchema = object().shape({
     .required("Relationship is required")
     .max(50, "Relationship must be at most 50 characters"),
   telephone: string()
-    .required("Telephone is required")
+    .nullable()
     .matches(
       /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
       "Invalid telephone number format",
@@ -281,14 +281,14 @@ export default function Me({
       .max(20, "Postal code must be at most 20 characters"),
     emergencyContacts: shouldRequireEmergencyContacts
       ? array()
-          .required("At least one emergency contact is required")
-          .min(1, "At least one emergency contact is required")
-          .max(4, "Maximum 4 emergency contacts allowed")
-          .of(emergencyContactItemSchema)
+        .required("At least one emergency contact is required")
+        .min(1, "At least one emergency contact is required")
+        .max(4, "Maximum 4 emergency contacts allowed")
+        .of(emergencyContactItemSchema)
       : array()
-          .nullable()
-          .max(4, "Maximum 4 emergency contacts allowed")
-          .of(emergencyContactItemSchema),
+        .nullable()
+        .max(4, "Maximum 4 emergency contacts allowed")
+        .of(emergencyContactItemSchema),
   });
 
   useEffect(() => {
@@ -726,6 +726,45 @@ export default function Me({
                 </Grid>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+                    House
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    {employee.house ? (
+                      <Chip
+                        label={employee.house}
+                        size="small"
+                        variant="outlined"
+                        sx={(theme) => ({
+                          borderRadius: 999,
+                          height: 24,
+                          fontWeight: 600,
+                          px: 0,
+                          color: theme.palette.secondary.contrastText,
+                          borderColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            0.45,
+                          ),
+                          backgroundColor: alpha(
+                            theme.palette.secondary.contrastText,
+                            theme.palette.mode === "dark" ? 0.14 : 0.1,
+                          ),
+                          "& .MuiChip-label": {
+                            px: 0.75,
+                            py: 0,
+                            fontSize: 12,
+                            lineHeight: 1,
+                          },
+                        })}
+                      />
+                    ) : (
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        -
+                      </Typography>
+                    )}
+                  </Box>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
                     Employee Status
                   </Typography>
 
@@ -1115,7 +1154,7 @@ export default function Me({
                           </Box>
 
                           {!values.emergencyContacts ||
-                          values.emergencyContacts.length === 0 ? (
+                            values.emergencyContacts.length === 0 ? (
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -1174,7 +1213,7 @@ export default function Me({
 
                               {touched.emergencyContacts &&
                                 typeof errors.emergencyContacts ===
-                                  "string" && (
+                                "string" && (
                                   <Typography
                                     color="error"
                                     variant="body2"
@@ -1185,7 +1224,7 @@ export default function Me({
                                 )}
 
                               {!values.emergencyContacts ||
-                              values.emergencyContacts.length === 0 ? (
+                                values.emergencyContacts.length === 0 ? (
                                 <Typography
                                   variant="body2"
                                   color="text.secondary"
@@ -1241,7 +1280,6 @@ export default function Me({
                                         errors={errors}
                                         touched={touched}
                                         isSavingChanges={isSavingChanges}
-                                        isRequired
                                       />
                                     </Grid>
 
@@ -1325,18 +1363,18 @@ export default function Me({
 
                                 {(values.emergencyContacts?.length ?? 0) >=
                                   4 && (
-                                  <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    sx={{
-                                      display: "block",
-                                      textAlign: "center",
-                                      mt: 1,
-                                    }}
-                                  >
-                                    Maximum 4 emergency contacts reached.
-                                  </Typography>
-                                )}
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{
+                                        display: "block",
+                                        textAlign: "center",
+                                        mt: 1,
+                                      }}
+                                    >
+                                      Maximum 4 emergency contacts reached.
+                                    </Typography>
+                                  )}
                               </>
                             </Box>
                           )}
