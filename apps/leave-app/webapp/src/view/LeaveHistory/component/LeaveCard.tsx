@@ -15,25 +15,10 @@
 // under the License.
 
 import DeleteIcon from "@mui/icons-material/Delete";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { Box, Card, CardContent, IconButton, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 
-import { useState } from "react";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
+import { ConfirmationType } from "@root/src/types/types";
 
 export interface LeaveCardProps {
   id: number;
@@ -59,19 +44,17 @@ export default function LeaveCard({
   onDelete,
 }: LeaveCardProps) {
   const theme = useTheme();
-  const [openDialog, setOpenDialog] = useState(false);
+  const { showConfirmation } = useConfirmationModalContext();
 
-  const handleOpenDialog = () => {
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-  };
-
-  const handleConfirmDelete = () => {
-    onDelete?.(id);
-    setOpenDialog(false);
+  const handleDelete = () => {
+    showConfirmation(
+      "Do you want to cancel this leave?",
+      `This will cancel your ${formattedLabel} (${startDate} – ${endDate}). This action cannot be undone.`,
+      ConfirmationType.accept,
+      () => onDelete?.(id),
+      "Yes, Cancel",
+      "No, Keep It",
+    );
   };
 
   const isCancelDisabled = () => {
@@ -119,7 +102,7 @@ export default function LeaveCard({
                 <span>
                   <IconButton
                     size="small"
-                    onClick={handleOpenDialog}
+                    onClick={handleDelete}
                     disabled={isCancelDisabled()}
                     sx={{
                       width: "32px",
@@ -227,35 +210,6 @@ export default function LeaveCard({
         </Stack>
       </CardContent>
 
-      {/* Confirmation Dialog */}
-      <Dialog
-        open={openDialog}
-        onClose={handleCloseDialog}
-        aria-labelledby="alert-dialog-title"
-        aria-describedby="alert-dialog-description"
-      >
-        <DialogTitle id="alert-dialog-title">Cancel Leave Request</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Are you sure you want to cancel this leave request? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog} color="primary" disabled={cancelling}>
-            No, Keep It
-          </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            color="error"
-            variant="contained"
-            startIcon={cancelling ? <CircularProgress size={16} color="inherit" /> : null}
-            disabled={cancelling}
-            autoFocus
-          >
-            {cancelling ? "Cancelling..." : "Yes, Cancel"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Card>
   );
 }

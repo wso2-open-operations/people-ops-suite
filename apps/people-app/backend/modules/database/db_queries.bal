@@ -1308,12 +1308,12 @@ isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) r
         ps.floor_id as 'floorId',
         pf.name as 'floorName',
         pf.coins_per_slot as 'coinsPerSlot',
-        CASE WHEN EXISTS (
+        (CASE WHEN EXISTS (
             SELECT 1 FROM parking_reservation pr
             WHERE pr.slot_id = ps.slot_id
               AND pr.booking_date = ${bookingDate}
-              AND pr.status = ${CONFIRMED}
-        ) THEN 1 ELSE 0 END as 'isBooked'
+              AND pr.status IN (${PENDING}, ${CONFIRMED})
+        ) THEN 1 ELSE 0 END) as 'isBooked'
     FROM parking_slot ps
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.floor_id = ${floorId}
@@ -1335,18 +1335,18 @@ isolated function getParkingSlotByIdQuery(string slotId) returns sql:Parameteriz
     INNER JOIN parking_floor pf ON ps.floor_id = pf.id
     WHERE ps.slot_id = ${slotId}`;
 
-# Get confirmed reservation id for slot and date (existence check).
+# Get active reservation id for slot and date (existence check).
 #
 # + slotId - Slot id
 # + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get reservation id if booked
+# + return - Query to get reservation id if slot is unavailable
 isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
     returns sql:ParameterizedQuery =>
     `SELECT id
     FROM parking_reservation
     WHERE slot_id = ${slotId}
       AND booking_date = ${bookingDate}
-      AND status = ${CONFIRMED}
+      AND status IN (${PENDING}, ${CONFIRMED})
     LIMIT 1`;
 
 # Insert parking reservation (PENDING).

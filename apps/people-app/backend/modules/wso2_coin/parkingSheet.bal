@@ -22,10 +22,8 @@ import people.database;
 # + reservation - Confirmed parking reservation details
 # + return - () on success, error if failed
 public isolated function appendParkingReservation(database:ParkingReservationDetails reservation) returns error? {
-    string now = getCurrentTimestamp();
-    // Columns: Timestamp | Booking Date | Employee Email | Vehicle Number | Slot Id | Floor
+    // Columns: Booking Date | Employee Email | Vehicle Number | Slot Id | Floor
     string[] row = [
-        now,
         reservation.bookingDate,
         reservation.employeeEmail,
         reservation.vehicleRegistrationNumber,

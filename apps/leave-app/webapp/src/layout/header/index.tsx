@@ -13,20 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
 import React from "react";
 
-import Wso2Logo from "@assets/images/wso2-logo.svg";
+import Wso2LogoBlack from "@assets/images/wso2-logo_black.svg";
+import Wso2LogoWhite from "@assets/images/wso2-logo_white.svg";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
-import BasicBreadcrumbs from "@layout/BreadCrumbs/BreadCrumbs";
 import { RootState, useAppSelector } from "@slices/store";
 
-const Header = () => {
+const Header = ({ sidebarOpen }: { sidebarOpen: boolean }) => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
@@ -53,21 +52,27 @@ const Header = () => {
         sx={{
           py: "0.5rem",
           display: "flex",
-          gap: 0.5,
+          gap: 2,
           "&.MuiToolbar-root": {
-            pl: 0.3,
+            pl: 1,
           },
         }}
       >
-        <img
-          alt="wso2"
-          style={{
-            height: "40px",
-            maxWidth: "100px",
-          }}
+        <Box
+          key={String(sidebarOpen)}
           onClick={() => (window.location.href = "/")}
-          src={Wso2Logo}
-        ></img>
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <img
+            alt="wso2"
+            style={{ height: "45px", width: "auto", objectFit: "contain" }}
+            src={theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2LogoBlack}
+          />
+        </Box>
 
         <Box
           sx={{
@@ -88,7 +93,6 @@ const Header = () => {
           >
             {APP_NAME}
           </Typography>
-          <BasicBreadcrumbs />
         </Box>
 
         <Box sx={{ flexGrow: 0 }}>

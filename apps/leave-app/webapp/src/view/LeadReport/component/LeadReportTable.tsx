@@ -14,124 +14,141 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { useTheme } from "@mui/material";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import Brightness5Icon from "@mui/icons-material/Brightness5";
+import { Chip, Stack, Typography, alpha, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import dayjs from "dayjs";
 
-import { useMemo } from "react";
+import { LeaveType, PeriodType, SingleLeaveHistory } from "@root/src/types/types";
 
-import { LeadReportResponse } from "@root/src/types/types";
+const LEAVE_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+  [LeaveType.CASUAL]: { label: "Casual", color: "#ff9800" },
+  [LeaveType.ANNUAL]: { label: "Annual", color: "#3f51b5" },
+  [LeaveType.SICK]: { label: "Sick", color: "#2196f3" },
+  [LeaveType.SABBATICAL]: { label: "Sabbatical", color: "#9c27b0" },
+  [LeaveType.MATERNITY]: { label: "Maternity", color: "#4caf50" },
+  [LeaveType.PATERNITY]: { label: "Paternity", color: "#009688" },
+  [LeaveType.LIEU]: { label: "Lieu", color: "#00bcd4" },
+  [LeaveType.CONGES_PAYES]: { label: "Congés Payés", color: "#607d8b" },
+  [LeaveType.RTT]: { label: "RTT", color: "#795548" },
+  [LeaveType.SPAIN_ANNUAL]: { label: "Annual (ES)", color: "#3f51b5" },
+  [LeaveType.SPAIN_CASUAL]: { label: "Casual (ES)", color: "#ff9800" },
+};
+
+const PERIOD_CONFIG: Record<string, { label: string; icon: React.ReactNode }> = {
+  [PeriodType.ONE]: { label: "Full Day", icon: <CalendarTodayIcon sx={{ fontSize: 13 }} /> },
+  [PeriodType.MULTIPLE]: { label: "Multiple Days", icon: <CalendarMonthIcon sx={{ fontSize: 13 }} /> },
+  [PeriodType.HALF]: { label: "Half Day", icon: <Brightness5Icon sx={{ fontSize: 13 }} /> },
+};
+
+function formatDate(raw: string): string {
+  const d = dayjs(raw.substring(0, 10));
+  return d.isValid() ? d.format("MMM D, YYYY") : raw;
+}
 
 interface LeadReportTableProps {
-  reportData: LeadReportResponse | null;
+  rows: SingleLeaveHistory[];
   loading: boolean;
 }
 
-export default function LeadReportTable({ reportData, loading }: LeadReportTableProps) {
+export default function LeadReportTable({ rows, loading }: LeadReportTableProps) {
   const theme = useTheme();
-  const rows = useMemo(() => {
-    if (!reportData) return [];
-
-    return Object.entries(reportData).map(([email, data]) => ({
-      id: email,
-      employee: email,
-      annual: data.casual || 0, // since annual and casual are combined
-      congesPayes: data.conges_payes || 0,
-      rtt: data.rtt || 0,
-      spainAnnual: data.spain_annual || 0,
-      spainCasual: data.spain_casual || 0,
-      sick: data.sick || 0,
-      paternity: data.paternity || 0,
-      maternity: data.maternity || 0,
-      lieu: data.lieu || 0,
-      sabbatical: data.sabbatical || 0,
-      totalExclLieu: data.totalExLieu || 0,
-      total: data.total || 0,
-    }));
-  }, [reportData]);
+  const totalDays = rows.reduce((sum, r) => sum + (r.numberOfDays ?? 0), 0);
+  const uniqueEmails = new Set(rows.map((r) => r.email));
+  const isMultipleEmployees = uniqueEmails.size > 1;
 
   const columns: GridColDef[] = [
     {
-      field: "employee",
-      headerName: "Employee Name",
-      flex: 1,
+      field: "email",
+      headerName: "Employee",
+      flex: 1.5,
     },
     {
-      field: "annual",
-      headerName: "Annual/Casual",
-      type: "number",
+      field: "leaveType",
+      headerName: "Leave Type",
       flex: 1,
+      renderCell: (params) => {
+        const key = String(params.value ?? "");
+        const cfg = LEAVE_TYPE_CONFIG[key];
+        const label = cfg?.label ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const color = cfg?.color ?? "#607d8b";
+        return (
+          <Chip
+            label={label}
+            size="small"
+            sx={{
+              bgcolor: alpha(color, 0.1),
+              color,
+              fontWeight: 600,
+              fontSize: 11,
+              height: 22,
+              border: "none",
+            }}
+          />
+        );
+      },
     },
     {
-      field: "congesPayes",
-      headerName: "Congés Payés",
-      type: "number",
+      field: "startDate",
+      headerName: "Start Date",
       flex: 1,
+      renderCell: (params) => (
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        </Stack>
+      ),
     },
     {
-      field: "rtt",
-      headerName: "RTT",
-      type: "number",
+      field: "endDate",
+      headerName: "End Date",
       flex: 1,
+      renderCell: (params) => (
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2">{formatDate(String(params.value ?? ""))}</Typography>
+        </Stack>
+      ),
     },
     {
-      field: "spainAnnual",
-      headerName: "Annual (ES)",
-      type: "number",
-      flex: 1,
+      field: "numberOfDays",
+      headerName: "Days",
+      flex: 0.6,
+      renderCell: (params) => (
+        <Stack height="100%" justifyContent="center">
+          <Typography variant="body2" fontWeight={700}>{params.value}</Typography>
+        </Stack>
+      ),
     },
     {
-      field: "spainCasual",
-      headerName: "Casual (ES)",
-      type: "number",
+      field: "periodType",
+      headerName: "Period",
       flex: 1,
-    },
-    {
-      field: "sick",
-      headerName: "Sick",
-      type: "number",
-      flex: 1,
-    },
-    {
-      field: "paternity",
-      headerName: "Paternity",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "maternity",
-      headerName: "Maternity",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "lieu",
-      headerName: "Lieu",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "sabbatical",
-      headerName: "Sabbatical",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "totalExclLieu",
-      headerName: "Total (Excl. Lieu)",
-      flex: 1,
-      type: "number",
-    },
-    {
-      field: "total",
-      headerName: "Total",
-      flex: 1,
-      type: "number",
+      renderCell: (params) => {
+        const key = String(params.value ?? "");
+        const cfg = PERIOD_CONFIG[key];
+        return (
+          <Stack direction="row" alignItems="center" gap={0.5} height="100%" color="text.secondary">
+            {cfg?.icon}
+            <Typography variant="caption">{cfg?.label ?? key}</Typography>
+          </Stack>
+        );
+      },
     },
   ];
 
   return (
     <Box sx={{ width: "100%" }}>
+      {!isMultipleEmployees && rows.length > 0 && (
+        <Stack direction="row" justifyContent="flex-end" mb={1}>
+          <Chip
+            label={`Total: ${totalDays} day${totalDays !== 1 ? "s" : ""}`}
+            size="small"
+            color="primary"
+          />
+        </Stack>
+      )}
       <DataGrid
         rows={rows}
         columns={columns}
@@ -140,6 +157,7 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
         pageSizeOptions={[5, 10, 25]}
         disableRowSelectionOnClick
         showToolbar
+        rowHeight={52}
         slotProps={{
           columnsPanel: {
             sx: {
@@ -147,6 +165,16 @@ export default function LeadReportTable({ reportData, loading }: LeadReportTable
                 color: theme.palette.text.primary,
               },
             },
+          },
+        }}
+        sx={{
+          "& .MuiDataGrid-columnHeader": {
+            bgcolor:
+              theme.palette.mode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)",
+          },
+          "& .MuiDataGrid-row:hover": {
+            bgcolor:
+              theme.palette.mode === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)",
           },
         }}
       />

@@ -13,10 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerina/time;
+import { useTheme } from "@mui/material";
 
-# Get the current date and time in ISO-8601 UTC format for logging in Google Sheets.
-#
-# + return - Current timestamp in ISO-8601 UTC format as a string
-public isolated function getCurrentTimestamp() returns string =>
-    time:utcToString(time:utcNow());
+import wso2LogoBlack from "@assets/images/WSO2-Logo-Black.png";
+import wso2LogoWhite from "@assets/images/WSO2-Logo-White.png";
+
+export const useWso2Logo = (): string => {
+  const theme = useTheme();
+  return theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack;
+};

@@ -12,11 +12,13 @@
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
-// under the License. 
+// under the License.
 import ballerina/http;
+import ballerinax/googleapis.sheets as sheets;
 
 configurable ClientAuthConfig clientAuthConfig = ?;
 configurable string transactionEndpoint = ?;
+configurable ParkingSheetConfig parkingSheetConfig = ?;
 
 final http:Client transactionClient = check new (transactionEndpoint, {
     auth: {
@@ -25,3 +27,18 @@ final http:Client transactionClient = check new (transactionEndpoint, {
     httpVersion: http:HTTP_1_1,
     http1Settings: {keepAlive: http:KEEPALIVE_NEVER}
 });
+
+final sheets:ConnectionConfig parkingSheetsConfig = {
+    auth: {
+        clientId: parkingSheetConfig.clientId,
+        clientSecret: parkingSheetConfig.clientSecret,
+        refreshToken: parkingSheetConfig.refreshToken,
+        refreshUrl: parkingSheetConfig.tokenUrl
+    },
+    retryConfig: {
+        count: GSHEET_CONFIG_RETRY_COUNT,
+        interval: GSHEET_CONFIG_RETRY_INTERVAL
+    }
+};
+
+public final sheets:Client parkingSpreadsheetClient = check new (parkingSheetsConfig);
