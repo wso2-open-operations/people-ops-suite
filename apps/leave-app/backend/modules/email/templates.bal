@@ -345,6 +345,14 @@ public final string sabbaticalApprovalTemplate = string `
           color: #a2a3a4 !important;
         }
 
+        .footerLogoLight {
+          display: none !important;
+        }
+
+        .footerLogoDark {
+          display: block !important;
+        }
+
         .Summitfotter {
           background-color: #ced6e0 !important;
         }
@@ -622,12 +630,13 @@ public final string sabbaticalApprovalTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -637,7 +646,8 @@ public final string sabbaticalApprovalTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                    </a>
                                   </td>
                                   <!-- <td align="right" class="wso2_orange preheaderContent" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;color: #949494;font-family: 'Roboto', Helvetica,sans-serif;font-size: 11px;line-height: 12.5px;text-align: right;padding: 20px 10px 30px 0;vertical-align: middle;" valign="top"><a href="{{view_online}}" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #1e1e1e;font-weight: normal;text-decoration: underline;" target="_blank">View online</a></td> -->
                                 </tr>
@@ -1256,11 +1266,13 @@ public final string sabbaticalApprovalTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        id="footerImageLight"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
+                                        class="footerLogoLight"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -1270,7 +1282,25 @@ public final string sabbaticalApprovalTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                      <img
+                                        alt="WSO2 Logo"
+                                        height="40"
+                                        id="footerImageDark"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        class="footerLogoDark"
+                                        style="
+                                          width: 100px;
+                                          -ms-interpolation-mode: bicubic;
+                                          height: auto;
+                                          outline: none;
+                                          text-decoration: none;
+                                          border: 0;
+                                          display: none;
+                                        "
+                                        width="100"
+                                      />
+                                      </a>
                                   </td>
                                 </tr>
                                 <tr>
@@ -1705,6 +1735,14 @@ public final string sabbaticalApplicationTemplate = string `
           color: #a2a3a4 !important;
         }
 
+        .footerLogoLight {
+          display: none !important;
+        }
+
+        .footerLogoDark {
+          display: block !important;
+        }
+
         .Summitfotter {
           background-color: #ced6e0 !important;
         }
@@ -1982,12 +2020,13 @@ public final string sabbaticalApplicationTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -1997,7 +2036,8 @@ public final string sabbaticalApplicationTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                    </a>
                                   </td>
                                   <!-- <td align="right" class="wso2_orange preheaderContent" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;color: #949494;font-family: 'Roboto', Helvetica,sans-serif;font-size: 11px;line-height: 12.5px;text-align: right;padding: 20px 10px 30px 0;vertical-align: middle;" valign="top"><a href="{{view_online}}" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #1e1e1e;font-weight: normal;text-decoration: underline;" target="_blank">View online</a></td> -->
                                 </tr>
@@ -2665,11 +2705,13 @@ public final string sabbaticalApplicationTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        id="footerImageLight"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
+                                        class="footerLogoLight"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -2679,7 +2721,25 @@ public final string sabbaticalApplicationTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                      <img
+                                        alt="WSO2 Logo"
+                                        height="40"
+                                        id="footerImageDark"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        class="footerLogoDark"
+                                        style="
+                                          width: 100px;
+                                          -ms-interpolation-mode: bicubic;
+                                          height: auto;
+                                          outline: none;
+                                          text-decoration: none;
+                                          border: 0;
+                                          display: none;
+                                        "
+                                        width="100"
+                                      />
+                                      </a>
                                   </td>
                                 </tr>
                                 <tr>
@@ -3115,6 +3175,14 @@ public final string sabbaticalCancellationTemplate = string `
           color: #a2a3a4 !important;
         }
 
+        .footerLogoLight {
+          display: none !important;
+        }
+
+        .footerLogoDark {
+          display: block !important;
+        }
+
         .Summitfotter {
           background-color: #ced6e0 !important;
         }
@@ -3392,12 +3460,13 @@ public final string sabbaticalCancellationTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -3407,7 +3476,8 @@ public final string sabbaticalCancellationTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                    </a>
                                   </td>
                                   <!-- <td align="right" class="wso2_orange preheaderContent" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;mso-table-lspace: 0pt;mso-table-rspace: 0pt;color: #949494;font-family: 'Roboto', Helvetica,sans-serif;font-size: 11px;line-height: 12.5px;text-align: right;padding: 20px 10px 30px 0;vertical-align: middle;" valign="top"><a href="{{view_online}}" style="-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;color: #1e1e1e;font-weight: normal;text-decoration: underline;" target="_blank">View online</a></td> -->
                                 </tr>
@@ -4027,11 +4097,13 @@ public final string sabbaticalCancellationTemplate = string `
                                       href="https://wso2.com/"
                                       style="text-decoration: none"
                                       target="_blank"
-                                      ><img
+                                      >
+                                        <img
                                         alt="WSO2 Logo"
                                         height="40"
-                                        id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        id="footerImageLight"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
+                                        class="footerLogoLight"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -4041,7 +4113,25 @@ public final string sabbaticalCancellationTemplate = string `
                                           border: 0;
                                         "
                                         width="100"
-                                    /></a>
+                                    />
+                                      <img
+                                        alt="WSO2 Logo"
+                                        height="40"
+                                        id="footerImageDark"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
+                                        class="footerLogoDark"
+                                        style="
+                                          width: 100px;
+                                          -ms-interpolation-mode: bicubic;
+                                          height: auto;
+                                          outline: none;
+                                          text-decoration: none;
+                                          border: 0;
+                                          display: none;
+                                        "
+                                        width="100"
+                                      />
+                                      </a>
                                   </td>
                                 </tr>
                                 <tr>
