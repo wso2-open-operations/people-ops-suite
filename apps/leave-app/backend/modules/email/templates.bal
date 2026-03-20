@@ -627,7 +627,7 @@ public final string sabbaticalApprovalTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -1260,7 +1260,7 @@ public final string sabbaticalApprovalTemplate = string `
                                         alt="WSO2 Logo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -1351,8 +1351,6 @@ public final string sabbaticalApprovalTemplate = string `
                                     "
                                     valign="top"
                                   >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
                                   </td>
                                 </tr>
                               </tbody>
@@ -1987,7 +1985,7 @@ public final string sabbaticalApplicationTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -2669,7 +2667,7 @@ public final string sabbaticalApplicationTemplate = string `
                                         alt="WSO2 Logo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -2760,8 +2758,6 @@ public final string sabbaticalApplicationTemplate = string `
                                     "
                                     valign="top"
                                   >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
                                   </td>
                                 </tr>
                               </tbody>
@@ -3397,7 +3393,7 @@ public final string sabbaticalCancellationTemplate = string `
                                         class="darkLogo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/images/wso2-logo-white-new.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-White.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -4031,7 +4027,7 @@ public final string sabbaticalCancellationTemplate = string `
                                         alt="WSO2 Logo"
                                         height="40"
                                         id="headerImage"
-                                        src="https://wso2.cachefly.net/wso2/sites/all/2022/images/wso2-logo-footer.png"
+                                        src="https://wso2.cachefly.net/wso2/sites/all/image_resources/logos/WSO2-Logo-Black.png"
                                         style="
                                           width: 100px;
                                           -ms-interpolation-mode: bicubic;
@@ -4122,8 +4118,6 @@ public final string sabbaticalCancellationTemplate = string `
                                     "
                                     valign="top"
                                   >
-                                    This mail was sent by WSO2 Inc. 3080 Olcott
-                                    St., Suite C220, Santa Clara, CA 95054, USA
                                   </td>
                                 </tr>
                               </tbody>
