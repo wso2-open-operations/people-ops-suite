@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License. 
 
-import people.'transaction as tx;
 import people.authorization;
 import people.database;
 import people.wso2_coin;
