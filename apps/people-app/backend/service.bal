@@ -13,25 +13,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
-
-import people.'transaction as tx;
 import people.authorization;
 import people.database;
-import people.gsheet;
+import people.wso2_coin;
 
 import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
 import ballerina/time;
-
-# Master wallet address for car park O2C payments.
-configurable string masterWalletAddress = ?;
-
-# Reservation start hour in Sri Lanka time.
-configurable int reservationWindowStartHour = 5;
-
-# Reservation end hour in Sri Lanka time.
-configurable int reservationWindowEndHour = 7;
 
 @display {
     label: "People Service",
@@ -1133,7 +1122,7 @@ service http:InterceptableService / on new http:Listener(9090) {
                 body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}
             };
         }
-        return {publicWalletAddress: masterWalletAddress};
+        return {publicWalletAddress: wso2_coin:masterWalletAddress};
     }
 
     # List parking floors.
@@ -1220,10 +1209,10 @@ service http:InterceptableService / on new http:Listener(9090) {
             int|error parsedHour = int:fromString(hourStr);
             hour = parsedHour is int ? parsedHour : 0;
         }
-        if hour < reservationWindowStartHour || hour >= reservationWindowEndHour {
+        if hour < wso2_coin:reservationWindowStartHour || hour >= wso2_coin:reservationWindowEndHour {
             return <http:BadRequest>{
                 body: {
-                    message: string `Reservations are only allowed from ${reservationWindowStartHour}:00 to ${reservationWindowEndHour}:00.`
+                    message: string `Reservations are only allowed from ${wso2_coin:reservationWindowStartHour}:00 to ${wso2_coin:reservationWindowEndHour}:00.`
                 }
             };
         }
@@ -1374,11 +1363,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                                                                                    searchString: (),
-                                                                                    filters: {employeeStatus: status},
-                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
-                                                                                });
+                searchString: (),
+                filters: {employeeStatus: status},
+                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                sort: {sortField: "employeeId", sortOrder: "ASC"}
+            });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{
@@ -1454,7 +1443,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        error? confirmErr = tx:confirmTransaction(body.transactionHash, masterWalletAddress,
+        error? confirmErr = wso2_coin:confirmTransaction(body.transactionHash, wso2_coin:masterWalletAddress,
                 reservation.coinsAmount);
         if confirmErr is error {
             log:printError("Error confirming transaction", confirmErr);
@@ -1490,7 +1479,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         // Append to Google Sheet.
-        error? sheetErr = gsheet:appendParkingReservation(confirmedReservation);
+        error? sheetErr = wso2_coin:appendParkingReservation(confirmedReservation);
         if sheetErr is error {
             log:printError("Failed to append parking reservation to Google Sheet", sheetErr,
                     reservationId = confirmedReservation.id);
