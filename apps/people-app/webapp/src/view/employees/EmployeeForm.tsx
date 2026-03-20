@@ -70,6 +70,7 @@ import {
 } from "@root/src/slices/employeeSlice/employeePersonalInfo";
 import { resetEmployee } from "@slices/employeeSlice/employee";
 import { resetPersonalInfo } from "@root/src/slices/employeeSlice/employeePersonalInfo";
+import { fetchSuggestedHouse } from "@slices/organizationSlice/organization";
 
 const deriveFullName = (
   full: string | null | undefined,
@@ -496,12 +497,25 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
     dispatch(fetchEmployeePersonalInfo(employeeId));
   }, [dispatch, isEditMode, employeeId]);
 
+  useEffect(() => {
+    if (!isEditMode) {
+      dispatch(fetchSuggestedHouse());
+    }
+  }, [dispatch, isEditMode]);
+
+  const { suggestedHouseId } = useAppSelector((s) => s.organization);
+
   const initialEditValues = useMemo(() => {
     if (!isEditMode || !employee || !personalInfo) return null;
     return toFormValues(employee, personalInfo);
   }, [isEditMode, employee, personalInfo]);
 
-  const initialValues = initialEditValues ?? emptyCreateEmployeeValues;
+  const initialValues = useMemo(() => {
+    if (initialEditValues) return initialEditValues;
+    return suggestedHouseId
+      ? { ...emptyCreateEmployeeValues, houseId: suggestedHouseId }
+      : emptyCreateEmployeeValues;
+  }, [initialEditValues, suggestedHouseId]);
 
   const isFailedEditData =
     isEditMode &&

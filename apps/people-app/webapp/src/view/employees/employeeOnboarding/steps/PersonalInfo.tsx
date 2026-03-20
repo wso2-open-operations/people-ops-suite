@@ -136,6 +136,7 @@ export const personalInfoValidationSchema = Yup.object().shape({
             .required("Relationship is required")
             .max(100, "Relationship must be at most 100 characters"),
           telephone: Yup.string()
+            .transform((value) => (value === "" ? null : value))
             .nullable()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
