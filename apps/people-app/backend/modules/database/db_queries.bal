@@ -672,6 +672,18 @@ isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
 isolated function getHousesQuery() returns sql:ParameterizedQuery =>
     `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
 
+# Get the house with the fewest active employees query.
+#
+# + return - Query to get the house with the least active employees
+isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY COUNT(e.id) ASC
+     LIMIT 1`;
+
 # Add employee personal information query.
 #
 # + payload - Create personal info payload
@@ -785,6 +797,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             sub_team_id,
             business_unit_id,
             unit_id,
+            house_id,
             created_by,
             updated_by
         )
@@ -812,6 +825,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.subTeamId},
             ${payload.businessUnitId},
             ${payload.unitId},
+            ${payload.houseId},
             ${createdBy},
             ${createdBy}
         );`;

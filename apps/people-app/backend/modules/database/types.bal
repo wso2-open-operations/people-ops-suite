@@ -651,6 +651,8 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # House ID
+    int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();

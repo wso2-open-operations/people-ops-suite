@@ -709,6 +709,21 @@ service http:InterceptableService / on new http:Listener(9090) {
         return houses;
     }
 
+    # Get the house with the fewest active employees.
+    #
+    # + return - The suggested house, 404 if none found, or 500 on error
+    resource function get houses/suggested() returns database:House|http:NotFound|http:InternalServerError {
+        database:House|error? house = database:getHouseWithLeastActiveEmployees();
+        if house is error {
+            log:printError("Error while fetching suggested house", house);
+            return <http:InternalServerError>{body: {message: "Error while fetching suggested house"}};
+        }
+        if house is () {
+            return <http:NotFound>{body: {message: "No active houses found"}};
+        }
+        return house;
+    }
+
     # Create a new employee.
     #
     # + return - The created employee ID as an integer, or HTTP errors
