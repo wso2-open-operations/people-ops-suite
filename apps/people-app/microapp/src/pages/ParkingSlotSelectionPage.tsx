@@ -1,3 +1,19 @@
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
+//
+// WSO2 LLC. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -5,8 +21,8 @@ import { AccessTimeSharp, KeyboardBackspaceSharp, Search } from "@mui/icons-mate
 import { CircularProgress, IconButton } from "@mui/material";
 
 import { PageTransitionWrapper, BottomNav } from "@/components/shared";
-import type { ParkingFloor, ParkingSlot } from "@/types";
-import useHttp, { executeWithTokenHandling } from "@/utils/http";
+import type { ParkingFloor, ParkingSlot, VehicleResponse } from "@/types";
+import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
 import { serviceUrls } from "@/config/config";
 import { getTodayBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
@@ -35,6 +51,8 @@ function ParkingSlotSelectionPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [busyPayment, setBusyPayment] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesSetupRequired, setVehiclesSetupRequired] = useState(false);
 
   const fetchFloors = () => {
     setLoadingFloors(true);
@@ -78,6 +96,52 @@ function ParkingSlotSelectionPage() {
   useEffect(() => {
     clearPaymentStage2State();
     fetchFloors();
+    let cancelled = false;
+
+    const initVehicles = async () => {
+      try {
+        setVehiclesLoading(true);
+        const email = await getEmailAsync();
+        if (cancelled) return;
+
+        executeWithTokenHandling(
+          handleRequest,
+          handleRequestWithNewToken,
+          serviceUrls.fetchVehicles(email),
+          "GET",
+          null,
+          (data) => {
+            if (cancelled) return;
+            const res = data as { vehicles?: VehicleResponse[] | null };
+            const rawVehicles = res?.vehicles ?? null;
+            const hasVehicles =
+              Array.isArray(rawVehicles) && rawVehicles.length > 0;
+
+            setVehiclesSetupRequired(!hasVehicles);
+            setVehiclesLoading(false);
+          },
+          () => {
+            if (cancelled) return;
+            setVehiclesSetupRequired(true);
+            setVehiclesLoading(false);
+          },
+          (loading) => {
+            if (!cancelled) setVehiclesLoading(loading);
+          },
+        );
+      } catch {
+        if (cancelled) return;
+        setVehiclesSetupRequired(true);
+        setVehiclesLoading(false);
+      }
+    };
+
+    void initVehicles();
+
+    return () => {
+      cancelled = true;
+    };
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,7 +157,12 @@ function ParkingSlotSelectionPage() {
   }, [search, slots]);
 
   const handleProceedToPayment = () => {
-    if (!selectedSlot || busyPayment) return;
+    if (!selectedSlot || busyPayment || vehiclesLoading || vehiclesSetupRequired) {
+      if (!vehiclesLoading && vehiclesSetupRequired) {
+        navigate("/services/vehicles");
+      }
+      return;
+    }
     setBusyPayment(true);
     setError(undefined);
 
@@ -287,11 +356,31 @@ function ParkingSlotSelectionPage() {
                 <button
                   type="button"
                   className="w-full p-[0.85rem] text-lg font-semibold rounded-[0.7rem] bg-primary text-white disabled:bg-[#F4F4F4] disabled:text-[#A7A7A7]"
-                  disabled={busyPayment || selectedSlot.isBooked}
+                  disabled={
+                    busyPayment ||
+                    selectedSlot.isBooked ||
+                    vehiclesLoading ||
+                    vehiclesSetupRequired
+                  }
                   onClick={handleProceedToPayment}
                 >
-                  {busyPayment ? "Redirecting..." : "Proceed to Payment ->"}
+                  {busyPayment
+                    ? "Redirecting..."
+                    : vehiclesLoading
+                      ? "Checking vehicles..."
+                      : vehiclesSetupRequired
+                        ? "Add a vehicle to continue"
+                        : "Proceed to Payment"}
                 </button>
+                {vehiclesSetupRequired && !vehiclesLoading && (
+                  <button
+                    type="button"
+                    className="mt-3 w-full p-[0.75rem] text-[14px] font-semibold rounded-[0.7rem] border border-[#E5E5E5] bg-white text-[#1F2A44]"
+                    onClick={() => navigate("/services/vehicles")}
+                  >
+                    Manage Personal Vehicles
+                  </button>
+                )}
               </div>
             </div>
           )}
