@@ -1521,7 +1521,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                 'id', CAST(t.id AS CHAR),
-                                'mappingId', CAST(but.id AS CHAR),
+                                'businessUnitTeamId', CAST(bu.id AS CHAR),
                                 'name', t.name,
                                 'headCount', COALESCE((
                                     SELECT COUNT(*) FROM employee e
@@ -1548,7 +1548,8 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                     (
                                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                             'id', CAST(st.id AS CHAR),
-                                            'mappingId', CAST(butst.id AS CHAR),
+                                            'businessUnitTeamId', CAST(but.id AS CHAR),
+                                            'businessUnitId', CAST(bu.id AS CHAR),
                                             'name', st.name,
                                             'headCount', COALESCE((
                                                 SELECT COUNT(*) FROM employee e
@@ -1577,7 +1578,9 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                 (
                                                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                                         'id', CAST(u.id AS CHAR),
-                                                        'mappingId', CAST(butstu.id AS CHAR),
+                                                        'businessUnitTeamSubTeamId', CAST(butst.id AS CHAR),
+                                                        'businessUnitTeamId', CAST(but.id AS CHAR),
+                                                        'businessUnitId', CAST(bu.id AS CHAR),
                                                         'name', u.name,
                                                         'headCount', COALESCE((
                                                             SELECT COUNT(*) FROM employee e

@@ -817,7 +817,6 @@ public type UpdateVehiclePayload record {|
     string updatedBy;
 |};
 
-
 # [Database] Parking floor.
 public type ParkingFloor record {|
     # Floor identifier
@@ -944,8 +943,12 @@ public type ReservationIdRow record {|
 public type OrgUnit record {|
     # Unique identifier of the unit
     string id;
-    # Unique identifier of the business_unit_team_sub_team_unit mapping row
-    string mappingId;
+    # Parent mapping: business_unit_team_sub_team.id
+    string businessUnitTeamSubTeamId;
+    # Parent mapping: business_unit_team.id
+    string businessUnitTeamId;
+    # Parent: business_unit.id
+    string businessUnitId;
     # Display name of the unit
     string name;
     # Total number of employees or members in the unit
@@ -960,8 +963,10 @@ public type OrgUnit record {|
 public type OrgSubTeam record {|
     # Unique identifier of the sub-team
     string id;
-    # Unique identifier of the business_unit_team_sub_team mapping row
-    string mappingId;
+    # Parent mapping: business_unit_team.id
+    string businessUnitTeamId;
+    # Parent: business_unit.id
+    string businessUnitId;
     # Display name of the sub-team
     string name;
     # Total number of employees or members in the sub-team
@@ -980,6 +985,8 @@ public type OrgTeam record {|
     string id;
     # Unique identifier of the business_unit_team mapping row
     string mappingId;
+    # Parent: business_unit.id
+    string businessUnitId;
     # Display name of the team
     string name;
     # Total number of employees or members in the team
