@@ -732,7 +732,7 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
 # Map an existing team to a business unit.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Mapping details; `parentId` = business unit ID, `childId` = team ID
+# + payload - Business unit ID, team ID, and functional lead email
 # + return - Created mapping ID or error
 public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUnitTeamPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
@@ -742,7 +742,7 @@ public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUni
 # Map an existing sub-team to a business unit-team.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Mapping details; `parentId` = business_unit_team ID, `childId` = sub-team ID
+# + payload - Business unit-team ID, sub-team ID, and functional lead email
 # + return - Created mapping ID or error
 public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
@@ -752,7 +752,7 @@ public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusi
 # Map an existing unit to a business unit-team-sub-team.
 #
 # + userEmail - Email of the user creating the record
-# + payload - Mapping details; `parentId` = business_unit_team_sub_team ID, `childId` = unit ID
+# + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
 # + return - Created mapping ID or error
 public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));

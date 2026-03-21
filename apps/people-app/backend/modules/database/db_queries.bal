@@ -1747,10 +1747,10 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
   )
 `;
 
-# Build query to insert a new business-unit-team.
+# Build query to insert a new business-unit-team mapping.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload
+# + payload - Business unit ID, team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business-unit-team
 isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team(
@@ -1772,10 +1772,10 @@ isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitT
   )
 `;
 
-# Build query to insert a new sub team into a business unit-team mapping.
+# Build query to insert a new business-unit-team-sub-team mapping.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload
+# + payload - Business unit-team ID, sub-team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
 isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team(
@@ -1797,10 +1797,10 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusine
   )
 `;
 
-# Build query to insert a new unit into a business unit-team-sub team mapping.
+# Build query to insert a new business-unit-team-sub-team-unit mapping.
 #
 # + userEmail - Email of the user performing the action
-# + payload - Mapping payload
+# + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
 isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team_unit(
