@@ -1752,7 +1752,7 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
 # + userEmail - Email of the user performing the action
 # + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business-unit-team
-isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team(
     business_unit_id,
     team_id,
@@ -1762,8 +1762,8 @@ isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPaylo
     updated_by,
     updated_on
   ) VALUES (
-    ${payload.parentId},
-    ${payload.childId},
+    ${payload.businessUnitId},
+    ${payload.teamId},
     ${payload.functionalLeadEmail},
     ${userEmail},
     current_timestamp,
@@ -1777,7 +1777,7 @@ isolated function addBusinessUnitTeamQuery(string userEmail, OrgNodeMappingPaylo
 # + userEmail - Email of the user performing the action
 # + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
-isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team(
     business_unit_team_id,
     sub_team_id,
@@ -1787,8 +1787,8 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappi
     updated_by,
     updated_on
   ) VALUES (
-    ${payload.parentId},
-    ${payload.childId},
+    ${payload.businessUnitTeamId},
+    ${payload.subTeamId},
     ${payload.functionalLeadEmail},
     ${userEmail},
     current_timestamp,
@@ -1802,7 +1802,7 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, OrgNodeMappi
 # + userEmail - Email of the user performing the action
 # + payload - Mapping payload
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
-isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeMappingPayload payload) returns sql:ParameterizedQuery => `
+isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns sql:ParameterizedQuery => `
   INSERT INTO business_unit_team_sub_team_unit(
     business_unit_team_sub_team_id,
     unit_id,
@@ -1812,8 +1812,8 @@ isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, OrgNodeM
     updated_by,
     updated_on
   ) VALUES (
-    ${payload.parentId},
-    ${payload.childId},
+    ${payload.businessUnitTeamSubTeamId},
+    ${payload.unitId},
     ${payload.functionalLeadEmail},
     ${userEmail},
     current_timestamp,
