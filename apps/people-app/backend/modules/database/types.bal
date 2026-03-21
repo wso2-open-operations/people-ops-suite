@@ -939,6 +939,26 @@ public type ReservationIdRow record {|
     int id;
 |};
 
+# Represents a head or leader of an organization unit.
+public type Head record {|
+    # Display name of the head
+    string name;
+    # Work email of the head
+    string email;
+    # Optional URL to the head's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a functional lead responsible for an organization unit.
+public type FunctionalLead record {|
+    # Display name of the functional lead
+    string name;
+    # Work email of the functional lead
+    string email;
+    # Optional URL to the functional lead's avatar or profile image
+    string? avatar = ();
+|};
+
 # Represents a unit within the organization hierarchy.
 public type OrgUnit record {|
     # Unique identifier of the unit
@@ -1077,26 +1097,6 @@ public type UpdateSubTeamUnitPayload record {|
     # Email of the user performing the update
     @sql:Column {name: "updated_by"}
     string updatedBy;
-|};
-
-# Represents a head or leader of an organization unit.
-public type Head record {|
-    # Display name of the head
-    string name;
-    # Work email of the head
-    string email;
-    # Optional URL to the head's avatar or profile image
-    string? avatar = ();
-|};
-
-# Represents a functional lead responsible for an organization unit.
-public type FunctionalLead record {|
-    # Display name of the functional lead
-    string name;
-    # Work email of the functional lead
-    string email;
-    # Optional URL to the functional lead's avatar or profile image
-    string? avatar = ();
 |};
 
 # Payload for adding a new organization node (business unit, team, sub-team, or unit).
