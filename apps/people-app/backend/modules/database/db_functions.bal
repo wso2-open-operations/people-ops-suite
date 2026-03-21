@@ -670,8 +670,8 @@ public isolated function addTeamWithMapping(string userEmail, CreateTeamPayload 
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamQuery(userEmail, {
-                parentId: payload.businessUnit.businessUnitId,
-                childId: teamId.toString(),
+                businessUnitId: payload.businessUnit.businessUnitId,
+                teamId: teamId.toString(),
                 functionalLeadEmail: payload.businessUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -694,8 +694,8 @@ public isolated function addSubTeamWithMapping(string userEmail, CreateSubTeamPa
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamQuery(userEmail, {
-                parentId: payload.businessUnitTeam.businessUnitTeamId,
-                childId: subTeamId.toString(),
+                businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
+                subTeamId: subTeamId.toString(),
                 functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -718,8 +718,8 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamUnitQuery(userEmail, {
-                parentId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
-                childId: unitId.toString(),
+                businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
+                unitId: unitId.toString(),
                 functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -734,7 +734,7 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
 # + userEmail - Email of the user creating the record
 # + payload - Mapping details; `parentId` = business unit ID, `childId` = team ID
 # + return - Created mapping ID or error
-public isolated function addBusinessUnitTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+public isolated function addBusinessUnitTeam(string userEmail, CreateBusinessUnitTeamPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
@@ -744,7 +744,7 @@ public isolated function addBusinessUnitTeam(string userEmail, OrgNodeMappingPay
 # + userEmail - Email of the user creating the record
 # + payload - Mapping details; `parentId` = business_unit_team ID, `childId` = sub-team ID
 # + return - Created mapping ID or error
-public isolated function addBusinessUnitTeamSubTeam(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+public isolated function addBusinessUnitTeamSubTeam(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
@@ -754,7 +754,7 @@ public isolated function addBusinessUnitTeamSubTeam(string userEmail, OrgNodeMap
 # + userEmail - Email of the user creating the record
 # + payload - Mapping details; `parentId` = business_unit_team_sub_team ID, `childId` = unit ID
 # + return - Created mapping ID or error
-public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, OrgNodeMappingPayload payload) returns int|error {
+public isolated function addBusinessUnitTeamSubTeamUnit(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns int|error {
     sql:ExecutionResult executionResult = check databaseClient->execute(addBusinessUnitTeamSubTeamUnitQuery(userEmail, payload));
     return executionResult.lastInsertId.ensureType(int);
 }
