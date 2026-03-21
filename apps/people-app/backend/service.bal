@@ -1519,7 +1519,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Business-unit details
     # + return - HTTP Created on success, or HTTP errors on failure 
-    resource function post organization/business\-units(http:RequestContext ctx, OrgNodeInfo payload)
+    resource function post organization/business\-units(http:RequestContext ctx, CreateBusinessUnitPayload payload)
         returns http:InternalServerError|http:Forbidden|http:BadRequest|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =

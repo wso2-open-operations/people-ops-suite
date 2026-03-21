@@ -169,27 +169,6 @@ public type OrgCompany record {|
     OrgBusinessUnit[] businessUnits = [];
 |};
 
-# Payload for adding a new organization node (business unit, team, sub-team, or unit).
-public type OrgNodeInfo record {|
-    # Name of the node
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Name cannot be empty and should contains valid characters"
-        }
-    }
-    string name;
-    # Email of the head of the node
-    @constraint:String {
-        pattern: {
-            value: WSO2_EMAIL,
-            message: string `Head ${ERROR_INVALID_EMAIL} `
-        }
-    }
-    string headEmail;
-|};
-
-
 public type CreateBusinessUnitPayload record {|
     # Name of the business unit
     @constraint:String {
