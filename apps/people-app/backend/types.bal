@@ -92,49 +92,6 @@ type CarParkConfigResponse record {|
     string publicWalletAddress;
 |};
 
-
-# Reference to a parent organization node with mapping details.
-public type OrgNodeLinkInfo record {|
-    # ID of the parent node
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Corrupted id: Id cannpt be empty and should contains valid characters"
-        }
-    }
-    string id;
-    # Functional lead email for the mapping
-    @constraint:String {
-        pattern: {
-            value: WSO2_EMAIL,
-            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
-        }
-    }
-    string functionalLeadEmail;
-|};
-
-# Payload for adding any organization node.
-public type OrgNodePayload record {|
-    # Name of the node
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Name cannot be empty and should contains valid characters"
-        }
-    }
-    string name;
-    # Head email of the node
-    @constraint:String {
-        pattern: {
-            value: WSO2_EMAIL,
-            message: string `Head ${ERROR_INVALID_EMAIL} `
-        }
-    }
-    string headEmail;
-    # Parent node link details — required for mapping nodes only
-    OrgNodeLinkInfo orgNodeLinkInfo?;
-|};
-
 # Internal payload for inserting a row into any org-node mapping table.
 public type OrgNodeMappingPayload record {|
     # ID of the parent junction row
@@ -230,4 +187,144 @@ public type OrgNodeInfo record {|
         }
     }
     string headEmail;
+|};
+
+
+public type CreateBusinessUnitPayload record {|
+    # Name of the business unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the business unit
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+|};
+
+public type CreateBusinessUnitTeamPayload record {|
+    # ID of the business unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Business unit ID cannot be empty and should contain valid characters"
+        }
+    }
+    string businessUnitId;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateTeamPayload record {|
+    # Name of the team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the team
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team mapping details — required only when mapping to a business unit
+    CreateBusinessUnitTeamPayload businessUnit?;
+|};
+
+public type CreateBusinessUnitTeamSubTeamPayload record {|
+    # ID of the business unit-team mapping
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Business unit-team ID cannot be empty and should contain valid characters"
+        }
+    }
+    string businessUnitTeamId;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateSubTeamPayload record {|
+    # Name of the sub-team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the sub-team
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team-sub-team mapping details — required only when mapping to a business unit-team
+    CreateBusinessUnitTeamSubTeamPayload businessUnitTeam?;
+|};
+
+public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
+    # ID of the business unit-team-sub-team mapping
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Business unit-team-sub-team ID cannot be empty and should contain valid characters"
+        }
+    }
+    string businessUnitTeamSubTeamId;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateUnitPayload record {|
+    # Name of the unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the unit
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team-sub-team-unit mapping details — required only when mapping to a business unit-team-sub-team
+    CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit?;
 |};

@@ -1117,20 +1117,57 @@ public type OrgNodeMappingPayload record {|
     string functionalLeadEmail;
 |};
 
-# Reference to a parent organization node with mapping details.
-public type OrgNodeLinkInfo record {|
-    # ID of the parent node
-    string id;
-    # Functional lead email for the mapping
+public type CreateBusinessUnitPayload record {|
+    # Name of the business unit
+    string name;
+    # Email of the head of the business unit
+    string headEmail;
+|};
+
+public type CreateBusinessUnitTeamPayload record {|
+    # ID of the business unit
+    string businessUnitId;
+    # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};
 
-# Payload for adding any organization node.
-public type OrgNodePayload record {|
-    # Name of the node
+public type CreateTeamPayload record {|
+    # Name of the team
     string name;
-    # Head email of the node
+    # Email of the head of the team
     string headEmail;
-    # Parent node link details — required for mapping nodes only
-    OrgNodeLinkInfo orgNodeLinkInfo;
+    # Business unit-team mapping details
+    CreateBusinessUnitTeamPayload businessUnit;
+|};
+
+public type CreateBusinessUnitTeamSubTeamPayload record {|
+    # ID of the business unit-team mapping
+    string businessUnitTeamId;
+    # Email of the functional lead for the mapping
+    string functionalLeadEmail;
+|};
+
+public type CreateSubTeamPayload record {|
+    # Name of the sub-team
+    string name;
+    # Email of the head of the sub-team
+    string headEmail;
+    # Business unit-team-sub-team mapping details
+    CreateBusinessUnitTeamSubTeamPayload businessUnitTeam;
+|};
+
+public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
+    # ID of the business unit-team-sub-team mapping
+    string businessUnitTeamSubTeamId;
+    # Email of the functional lead for the mapping
+    string functionalLeadEmail;
+|};
+
+public type CreateUnitPayload record {|
+    # Name of the unit
+    string name;
+    # Email of the head of the unit
+    string headEmail;
+    # Business unit team sub-team details
+    CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit;
 |};
