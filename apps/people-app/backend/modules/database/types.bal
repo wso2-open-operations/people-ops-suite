@@ -1127,6 +1127,8 @@ public type CreateBusinessUnitPayload record {|
 public type CreateBusinessUnitTeamPayload record {|
     # ID of the business unit
     string businessUnitId;
+    # ID of the team
+    string teamId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};
@@ -1143,6 +1145,8 @@ public type CreateTeamPayload record {|
 public type CreateBusinessUnitTeamSubTeamPayload record {|
     # ID of the business unit-team mapping
     string businessUnitTeamId;
+    # ID of the sub-team
+    string subTeamId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};
@@ -1159,6 +1163,8 @@ public type CreateSubTeamPayload record {|
 public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # ID of the business unit-team-sub-team mapping
     string businessUnitTeamSubTeamId;
+    # ID of the unit
+    string unitId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};

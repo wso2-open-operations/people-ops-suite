@@ -218,6 +218,14 @@ public type CreateBusinessUnitTeamPayload record {|
         }
     }
     string businessUnitId;
+    # ID of the team — required only when mapping an existing team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Team ID cannot be empty and should contain valid characters"
+        }
+    }
+    string teamId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
@@ -258,6 +266,14 @@ public type CreateBusinessUnitTeamSubTeamPayload record {|
         }
     }
     string businessUnitTeamId;
+    # ID of the sub-team — required only when mapping an existing sub-team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Sub-team ID cannot be empty and should contain valid characters"
+        }
+    }
+    string subTeamId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
@@ -298,6 +314,14 @@ public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
         }
     }
     string businessUnitTeamSubTeamId;
+    # ID of the unit — required only when mapping an existing unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Unit ID cannot be empty and should contain valid characters"
+        }
+    }
+    string unitId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
