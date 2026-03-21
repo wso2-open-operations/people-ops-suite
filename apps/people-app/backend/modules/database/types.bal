@@ -940,68 +940,6 @@ public type ReservationIdRow record {|
     int id;
 |};
 
-# Payload for updating an organization unit.
-public type UpdateOrgUnitPayload record {|
-    # New name for the unit
-    string name?;
-    # Email of the new head of the unit
-    @sql:Column {name: "head_email"}
-    string headEmail?;
-    # Email of the user performing the update
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for updating a business unit-team mapping.
-public type UpdateBusinessUnitTeamPayload record {|
-    # Email of the functional lead for the mapping
-    @sql:Column {name: "head_email"}
-    string functionalLeadEmail?;
-    # Email of the user performing the update
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for updating a team-sub team mapping.
-public type UpdateTeamSubTeamPayload record {|
-    # Email of the functional lead for the mapping
-    @sql:Column {name: "head_email"}
-    string functionalLeadEmail?;
-    # Email of the user performing the update
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Payload for updating a sub team-unit mapping.
-public type UpdateSubTeamUnitPayload record {|
-    # Email of the functional lead for the mapping
-    @sql:Column {name: "head_email"}
-    string functionalLeadEmail?;
-    # Email of the user performing the update
-    @sql:Column {name: "updated_by"}
-    string updatedBy;
-|};
-
-# Represents a head or leader of an organization unit.
-public type Head record {|
-    # Display name of the head
-    string name;
-    # Work email of the head
-    string email;
-    # Optional URL to the head's avatar or profile image
-    string? avatar = ();
-|};
-
-# Represents a functional lead responsible for an organization unit.
-public type FunctionalLead record {|
-    # Display name of the functional lead
-    string name;
-    # Work email of the functional lead
-    string email;
-    # Optional URL to the functional lead's avatar or profile image
-    string? avatar = ();
-|};
-
 # Represents a unit within the organization hierarchy.
 public type OrgUnit record {|
     # Unique identifier of the unit
@@ -1090,6 +1028,68 @@ public type CompanyRaw record {|
     int headCount;
     # List of business units belonging to the company
     json businessUnits = [];
+|};
+
+# Payload for updating an organization unit.
+public type UpdateOrgUnitPayload record {|
+    # New name for the unit
+    string name?;
+    # Email of the new head of the unit
+    @sql:Column {name: "head_email"}
+    string headEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a business unit-team mapping.
+public type UpdateBusinessUnitTeamPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a team-sub team mapping.
+public type UpdateTeamSubTeamPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Payload for updating a sub team-unit mapping.
+public type UpdateSubTeamUnitPayload record {|
+    # Email of the functional lead for the mapping
+    @sql:Column {name: "head_email"}
+    string functionalLeadEmail?;
+    # Email of the user performing the update
+    @sql:Column {name: "updated_by"}
+    string updatedBy;
+|};
+
+# Represents a head or leader of an organization unit.
+public type Head record {|
+    # Display name of the head
+    string name;
+    # Work email of the head
+    string email;
+    # Optional URL to the head's avatar or profile image
+    string? avatar = ();
+|};
+
+# Represents a functional lead responsible for an organization unit.
+public type FunctionalLead record {|
+    # Display name of the functional lead
+    string name;
+    # Work email of the functional lead
+    string email;
+    # Optional URL to the functional lead's avatar or profile image
+    string? avatar = ();
 |};
 
 # Payload for adding a new organization node (business unit, team, sub-team, or unit).
