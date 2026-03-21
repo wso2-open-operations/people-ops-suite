@@ -1799,7 +1799,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit ID, `childId` = team ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-unit/team(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/business\-unit/team(http:RequestContext ctx, CreateBusinessUnitTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1807,6 +1807,15 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        string? teamId = payload.teamId;
+        if teamId is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Team ID is required"
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1832,7 +1841,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit-team ID, `childId` = subTeam ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/team/sub\-team(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/team/sub\-team(http:RequestContext ctx, CreateBusinessUnitTeamSubTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1840,6 +1849,15 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        string? subTeamId = payload.subTeamId;
+        if subTeamId is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Sub-team ID is required"
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
@@ -1865,7 +1883,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - Mapping details; `parentId` = businessUnit-team-subTeam ID, `childId` = unit ID
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-team\-unit(http:RequestContext ctx, OrgNodeMappingPayload payload)
+    resource function post organization/sub\-team\-unit(http:RequestContext ctx, CreateBusinessUnitTeamSubTeamUnitPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -1873,6 +1891,15 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
+        }
+
+        string? unitId = payload.unitId;
+        if unitId is () {
+            return <http:BadRequest>{
+                body: {
+                    message: "Unit ID is required"
+                }
+            };
         }
 
         string workEmail = validatedUserInfo.email;
