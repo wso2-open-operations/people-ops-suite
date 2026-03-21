@@ -33,13 +33,14 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 #
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
+    `SELECT
         employee_id,
         first_name,
         last_name,
         work_email,
         employee_thumbnail
-    FROM employee;`;
+    FROM employee
+    WHERE employee_status = 'Active';`;
 
 # Fetch employee ID by primary key ID.
 #
