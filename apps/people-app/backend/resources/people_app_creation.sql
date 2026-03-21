@@ -344,48 +344,6 @@ CREATE TABLE `resignation` (
     FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`)
 );
 
--- Trigger to set employee.employee_id before insertion
-DELIMITER //
-CREATE TRIGGER trg_employee_set_employee_id
-BEFORE INSERT ON employee
-FOR EACH ROW
-BEGIN
-  DECLARE v_prefix VARCHAR(20);
-  -- Look up the company prefix from the company
-  SELECT c.prefix
-    INTO v_prefix
-    FROM company c
-   WHERE c.id = NEW.company_id
-   LIMIT 1;
-
-  IF NEW.employee_id IS NOT NULL AND TRIM(NEW.employee_id) <> '' THEN
-    -- Keep caller-provided value if provided
-    IF v_prefix IS NOT NULL AND v_prefix <> ''
-       AND NOT REGEXP_LIKE(TRIM(NEW.employee_id), CONCAT('^', v_prefix, '[0-9]+$'))
-    THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'employee_id does not match company prefix';
-    END IF;
-
-    SET NEW.employee_id = TRIM(NEW.employee_id);
-  ELSE
-    -- No employee_id supplied: require a prefix and auto-generate
-    IF v_prefix IS NULL OR v_prefix = '' THEN
-      SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot derive company prefix: invalid company_id or missing company prefix.';
-    END IF;
-
-    SET NEW.employee_id = CONCAT(
-      v_prefix,
-      (SELECT AUTO_INCREMENT
-         FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME   = 'employee')
-    );
-  END IF;
-END//
-DELIMITER ;
-
 -- Additional_managers table
 CREATE TABLE `employee_additional_managers` (
   `id` INT NOT NULL AUTO_INCREMENT,

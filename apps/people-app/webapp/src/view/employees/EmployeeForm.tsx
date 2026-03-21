@@ -44,7 +44,7 @@ import JobInfoStep from "./employeeOnboarding/steps/JobInfo";
 import ReviewStep from "./employeeOnboarding/steps/Review";
 import { Check, ArrowBack, ArrowForward } from "@mui/icons-material";
 import { personalInfoValidationSchema } from "./employeeOnboarding/steps/PersonalInfo";
-import { jobInfoValidationSchema } from "./employeeOnboarding/steps/JobInfo";
+import { createJobInfoValidationSchema } from "./employeeOnboarding/steps/JobInfo";
 import {
   CreateEmployeeFormValues,
   emptyCreateEmployeeValues,
@@ -109,6 +109,7 @@ const toFormValues = (
     base.careerFunctionId = employee.careerFunctionId ?? 0;
     base.designationId = employee.designationId ?? 0;
     base.secondaryJobTitle = employee.secondaryJobTitle ?? "";
+    base.employeeId = employee.employeeId ?? "";
   }
 
   if (personal) {
@@ -470,6 +471,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
 
   const personalSlice = useAppSelector((s) => s.employeePersonalInfo);
   const personalInfo = personalSlice.personalInfo;
+  const employmentTypes = useAppSelector((s) => s.organization.employmentTypes);
 
   const [activeStep, setActiveStep] = useState(0);
   const [formKey, setFormKey] = useState(0);
@@ -541,7 +543,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
       case 0:
         return <PersonalInfoStep />;
       case 1:
-        return <JobInfoStep />;
+        return <JobInfoStep isEditMode={isEditMode} />;
       case 2:
         return <ReviewStep />;
       default:
@@ -641,7 +643,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
             activeStep === 0
               ? personalInfoValidationSchema
               : activeStep === 1
-                ? jobInfoValidationSchema
+                ? createJobInfoValidationSchema(employmentTypes)
                 : undefined
           }
           onSubmit={async (values, actions) => {
@@ -680,6 +682,7 @@ export default function EmployeeForm({ mode }: EmployeeFormProps) {
                 subTeamId: values.subTeamId,
                 businessUnitId: values.businessUnitId,
                 unitId: values.unitId > 0 ? values.unitId : undefined,
+                employeeId: values.employeeId?.trim() || undefined,
                 ...(values.isRelocation && values.continuousServiceRecord
                   ? { continuousServiceRecord: values.continuousServiceRecord }
                   : {}),

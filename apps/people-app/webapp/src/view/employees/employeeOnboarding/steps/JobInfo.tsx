@@ -87,57 +87,77 @@ const SECTION_HEADER_BOX_SX = {
   mt: 4,
 } as const;
 
-export const jobInfoValidationSchema = Yup.object().shape({
-  workEmail: Yup.string()
-    .required("Work email is required")
-    .email("Invalid email format")
-    .max(254, "Email must be at most 254 characters"),
-  epf: Yup.string()
-    .max(45, "EPF must be at most 45 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  businessUnitId: Yup.number()
-    .required("Business unit is required")
-    .min(1, "Select a valid business unit"),
-  teamId: Yup.number()
-    .required("Team is required")
-    .min(1, "Select a valid team"),
-  subTeamId: Yup.number()
-    .required("Sub Team is required")
-    .min(1, "Select a valid sub team"),
-  unitId: Yup.number().optional(),
-  careerFunctionId: Yup.number()
-    .required("Career function is required")
-    .min(1, "Select a valid career function"),
-  designationId: Yup.number()
-    .required("Designation is required")
-    .min(1, "Select a valid designation"),
-  secondaryJobTitle: Yup.string()
-    .max(20, "Secondary job title must be at most 20 characters")
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  companyId: Yup.number()
-    .required("Company is required")
-    .min(1, "Select a valid company"),
-  officeId: Yup.number().optional(),
-  workLocation: Yup.string()
-    .required("Work location is required")
-    .min(1, "Select a valid work location"),
-  employmentTypeId: Yup.number()
-    .required("Employment type is required")
-    .min(1, "Select a valid employment type"),
-  startDate: Yup.string().required("Start date is required"),
-  probationEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  agreementEndDate: Yup.string()
-    .transform((value) => (value === "" ? null : value))
-    .nullable(),
-  managerEmail: Yup.string().required("Manager email is required"),
-  additionalManagerEmail: Yup.array()
-    .of(Yup.string().email("Invalid email format"))
-    .nullable(),
-});
+export const createJobInfoValidationSchema = (
+  employmentTypes?: { id: number; name: string }[],
+) =>
+  Yup.object().shape({
+    workEmail: Yup.string()
+      .required("Work email is required")
+      .email("Invalid email format")
+      .max(254, "Email must be at most 254 characters"),
+    epf: Yup.string()
+      .max(45, "EPF must be at most 45 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    businessUnitId: Yup.number()
+      .required("Business unit is required")
+      .min(1, "Select a valid business unit"),
+    teamId: Yup.number()
+      .required("Team is required")
+      .min(1, "Select a valid team"),
+    subTeamId: Yup.number()
+      .required("Sub Team is required")
+      .min(1, "Select a valid sub team"),
+    unitId: Yup.number().optional(),
+    careerFunctionId: Yup.number()
+      .required("Career function is required")
+      .min(1, "Select a valid career function"),
+    designationId: Yup.number()
+      .required("Designation is required")
+      .min(1, "Select a valid designation"),
+    secondaryJobTitle: Yup.string()
+      .max(20, "Secondary job title must be at most 20 characters")
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    companyId: Yup.number()
+      .required("Company is required")
+      .min(1, "Select a valid company"),
+    officeId: Yup.number().optional(),
+    workLocation: Yup.string()
+      .required("Work location is required")
+      .min(1, "Select a valid work location"),
+    employmentTypeId: Yup.number()
+      .required("Employment type is required")
+      .min(1, "Select a valid employment type"),
+    startDate: Yup.string().required("Start date is required"),
+    probationEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    agreementEndDate: Yup.string()
+      .transform((value) => (value === "" ? null : value))
+      .nullable(),
+    managerEmail: Yup.string().required("Lead email is required"),
+    additionalManagerEmail: Yup.array()
+      .of(Yup.string().email("Invalid email format"))
+      .nullable(),
+    employeeId: Yup.string()
+      .trim()
+      .transform((value) => (value === "" ? null : value))
+      .nullable()
+      .when("employmentTypeId", (employmentTypeId: number, schema: any) => {
+        if (!employmentTypeId) return schema;
+        if (!employmentTypes || employmentTypes.length === 0) return schema;
+        const selected = employmentTypes.find(
+          (et) => et.id === employmentTypeId,
+        );
+        const isFixed = selected
+          ? FIXED_TERM_EMPLOYMENT_TYPE.test((selected.name || "").trim())
+          : false;
+        return isFixed
+          ? schema.required("Employee ID is required for fixed-term employment")
+          : schema;
+      }),
+  });
 
 const SectionHeader = React.memo(
   ({ icon, title, headerBoxSx, iconBoxSx }: any) => {
@@ -177,8 +197,11 @@ const ContinuousServiceTooltip = React.memo(
           ? dayjs(record.startDate).format("YYYY-MM-DD")
           : null,
       },
-      { label: "Manager Email", value: record.managerEmail },
-      { label: "Additional Managers", value: record.additionalManagerEmails },
+      { label: "Lead Email", value: record.managerEmail },
+      {
+        label: "Additional Lead Emails",
+        value: record.additionalManagerEmails,
+      },
       { label: "Business Unit", value: record.businessUnit },
       { label: "Team", value: record.team },
       ...(record.subTeam ? [{ label: "Sub Team", value: record.subTeam }] : []),
@@ -219,8 +242,12 @@ const InfoTooltipAdornment = React.memo(
     </InputAdornment>
   ),
 );
+export const AUTO_ID_EMPLOYMENT_TYPES =
+  /^(permanent|internship|consultancy|advisory consultancy|part time consultancy)$/i;
 
-export default function JobInfoStep() {
+export const FIXED_TERM_EMPLOYMENT_TYPE = /^fixed\s+term\s+contract$/i;
+
+export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
@@ -262,7 +289,7 @@ export default function JobInfoStep() {
     designations: false,
     offices: false,
   });
-  
+
   const latestEpfRef = useRef<string>("");
 
   const textFieldSx = useMemo(
@@ -419,12 +446,21 @@ export default function JobInfoStep() {
     );
   }, [internshipTypeId, values.employmentTypeId]);
 
+  const isFixedTerm = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    if (!selectedType) return false;
+    return FIXED_TERM_EMPLOYMENT_TYPE.test(selectedType.name.trim());
+  }, [employmentTypes, values.employmentTypeId]);
+
   const showAgreementEndDate = useMemo(() => {
-  const normalized = employmentTypes
+    const normalized = employmentTypes
       .find((e) => e.id === values.employmentTypeId)
       ?.name?.trim()
       .toLowerCase();
-    return normalized === "internship" || normalized === "consultancy";
+    if (!normalized) return false;
+    return /internship|consultancy/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {
@@ -444,33 +480,26 @@ export default function JobInfoStep() {
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
 
-      const isNewInternship =
-        internshipTypeId !== null && newEmploymentTypeId === internshipTypeId;
-
-      const isPermanent = employmentTypes
-        .find((e) => e.id === newEmploymentTypeId)
-        ?.name?.match(/^permanent$/i);
+      const selectedType = employmentTypes.find(
+        (e) => e.id === newEmploymentTypeId,
+      );
+      const typeName = selectedType?.name?.trim() ?? "";
+      const isNewInternship = /^internship$/i.test(typeName);
+      const isPermanent = /^permanent$/i.test(typeName);
+      const isNewFixedTerm = !AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
+        setFieldValue("employeeId", "");
         const computed = computeAgreementEndDate(values.startDate ?? null, 6);
-        if (computed) {
-          setFieldValue("agreementEndDate", computed);
-        }
+        if (computed) setFieldValue("agreementEndDate", computed);
       } else {
         setInternshipDurationMonths(0);
-        if (isPermanent) {
-          setFieldValue("agreementEndDate", null);
-        }
+        if (isPermanent) setFieldValue("agreementEndDate", null);
+        if (!isNewFixedTerm) setFieldValue("employeeId", "");
       }
     },
-    [
-      setFieldValue,
-      internshipTypeId,
-      employmentTypes,
-      values.startDate,
-      computeAgreementEndDate,
-    ],
+    [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
   );
 
   const handleInternshipDurationChange = useCallback(
@@ -1182,6 +1211,23 @@ export default function JobInfoStep() {
               </TextField>
             </Grid>
           ) : null}
+          {isFixedTerm ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                fullWidth
+                required
+                label="Employee ID"
+                name="employeeId"
+                value={values.employeeId ?? ""}
+                onChange={(e) => setFieldValue("employeeId", e.target.value)}
+                onBlur={handleBlur}
+                error={Boolean(touched.employeeId && errors.employeeId)}
+                helperText={touched.employeeId && (errors.employeeId as string)}
+                sx={textFieldSx}
+                InputProps={{ readOnly: Boolean(isEditMode) }}
+              />
+            </Grid>
+          ) : null}
           <Grid item xs={12} sm={6} md={3}>
             <DatePicker
               label="Start Date"
@@ -1266,7 +1312,7 @@ export default function JobInfoStep() {
       <Box>
         <SectionHeader
           icon={SECTION_ICONS.supervisor}
-          title="Manager & Reports"
+          title="Lead & Reports"
           headerBoxSx={SECTION_HEADER_BOX_SX}
           iconBoxSx={iconBoxSx}
         />
@@ -1276,8 +1322,8 @@ export default function JobInfoStep() {
               select
               fullWidth
               required
-              label="Manager Email"
-              name="managerEmail"
+              label="Lead Email"
+              name="leadEmail"
               value={values.managerEmail || ""}
               onChange={(e) => setFieldValue("managerEmail", e.target.value)}
               onBlur={handleBlur}
@@ -1306,8 +1352,8 @@ export default function JobInfoStep() {
             <TextField
               select
               fullWidth
-              label="Additional Manager Email"
-              name="additionalManagerEmail"
+              label="Additional Lead Emails"
+              name="additionalLeadEmail"
               value={values.additionalManagerEmail || []}
               onChange={(e) => {
                 const value = e.target.value;
@@ -1378,8 +1424,8 @@ export default function JobInfoStep() {
                   {employeeBasicInfoState === "loading"
                     ? "Loading employees..."
                     : values.managerEmail
-                      ? "No other managers available"
-                      : "Select primary manager first"}
+                      ? "No other leads available"
+                      : "Select primary lead first"}
                 </MenuItem>
               )}
             </TextField>
