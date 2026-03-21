@@ -1157,7 +1157,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1192,7 +1192,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </TextField>
           </Grid>
           {isInternship ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 select
                 fullWidth
@@ -1217,7 +1217,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {isFixedTerm ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 required
@@ -1233,7 +1233,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               />
             </Grid>
           ) : null}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1249,7 +1249,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Probation End Date"
               value={
@@ -1276,7 +1276,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             />
           </Grid>
           {showAgreementEndDate ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Agreement End Date"
                 value={
@@ -1446,7 +1446,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1457,6 +1457,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                 setFieldValue("houseId", Number(e.target.value))
               }
               onBlur={handleBlur}
+              helperText="Auto-assigned to the house with the fewest active employees"
               sx={textFieldSx}
             >
               {houses.length ? (

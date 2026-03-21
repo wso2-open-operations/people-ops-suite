@@ -435,8 +435,6 @@ export default function PersonalInfoStep() {
               )}
               helperText={
                 touched.personalInfo?.fullName && errors.personalInfo?.fullName
-                  ? errors.personalInfo?.fullName
-                  : "Fill according to your NIC or birth certificate"
               }
               sx={textFieldSx}
             />
