@@ -281,19 +281,42 @@ public isolated function isLead(string leadEmail) returns boolean|error {
 
 # Add new employee.
 #
-# + payload - Add employee payload  
+# + payload - Add employee payload
 # + createdBy - Creator of the employee record
-# + return - Created employee ID or error
-public isolated function addEmployee(CreateEmployeePayload payload, string createdBy) returns int|error {
-    transaction {
+# + employeeId - Pre-resolved employee ID string
+# + return - Created employee record ID or error
+public isolated function addEmployee(CreateEmployeePayload payload, string createdBy, string employeeId)
+        returns int|error {
+    int lastInsertedId = 0;
+
+    retry transaction {
         int personalInfoId = check addPersonalInfo(payload.personalInfo, createdBy);
-        int lastInsertedEmployeeId = check addEmployeeRecord(payload, createdBy, personalInfoId);
-        string employeeId = check getGeneratedEmployeeId(lastInsertedEmployeeId);
+        lastInsertedId = check addEmployeeRecord(payload, createdBy, personalInfoId, employeeId);
         check addEmergencyContacts(employeeId, payload.personalInfo.emergencyContacts ?: [], createdBy);
-        check addAdditionalManagers(lastInsertedEmployeeId, payload.additionalManagerEmails, createdBy);
+        check addAdditionalManagers(lastInsertedId, payload.additionalManagerEmails, createdBy);
         check commit;
-        return lastInsertedEmployeeId;
     }
+    return lastInsertedId;
+}
+
+# Fetch employee ID generation context.
+#
+# + companyId - Company ID of the new employee
+# + employmentTypeId - Employment type ID of the new employee
+# + return - EmployeeIdContext or error
+public isolated function getEmployeeIdContext(int companyId, int employmentTypeId)
+        returns EmployeeIdContext|error {
+    return databaseClient->queryRow(getEmployeeIdContextQuery(companyId, employmentTypeId));
+}
+
+# Fetch and lock the last numeric suffix for the given prefix and employment types.
+#
+# + prefix - The ID prefix to lock on (company prefix or consultancy prefix)
+# + employmentTypes - Employment type names that share this sequence
+# + return - EmployeeIdSequence or error
+public isolated function getLastEmployeeNumericSuffix(string prefix, EmploymentTypeName[] employmentTypes)
+        returns EmployeeIdSequence|error {
+    return databaseClient->queryRow(getAndLockLastEmployeeNumericSuffixQuery(prefix, employmentTypes));
 }
 
 # Add employee personal information.
@@ -311,10 +334,11 @@ isolated function addPersonalInfo(CreatePersonalInfoPayload personalInfo, string
 # + payload - Add employee payload
 # + createdBy - Creator of the employee record
 # + personalInfoId - Personal info ID to be linked with the employee record
+# + employeeId - Employee ID to be used in the employee record
 # + return - Created employee ID or error
-isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId)
+isolated function addEmployeeRecord(CreateEmployeePayload payload, string createdBy, int personalInfoId, string employeeId)
     returns int|error {
-    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId));
+    sql:ExecutionResult result = check databaseClient->execute(addEmployeeQuery(payload, createdBy, personalInfoId, employeeId));
     return check result.lastInsertId.ensureType(int);
 }
 

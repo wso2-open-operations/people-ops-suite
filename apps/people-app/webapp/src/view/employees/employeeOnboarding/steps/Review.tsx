@@ -479,20 +479,20 @@ export default function ReviewStep() {
         </Grid>
       </Box>
 
-      {/* Manager & Reports */}
+      {/* Lead & Reports */}
       <Box sx={sectionBoxSx}>
         <SectionHeader
           icon={REVIEW_ICONS.supervisor}
-          title="Manager & Reports"
+          title="Lead & Reports"
         />
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={4}>
-            <ReviewField label="Manager Email" value={values.managerEmail} />
+            <ReviewField label="Lead Email" value={values.managerEmail} />
           </Grid>
 
           <Grid item xs={12} sm={6} md={4}>
             <ReviewField
-              label="Additional Manager Emails"
+              label="Additional Lead Emails"
               value={
                 values.additionalManagerEmail?.length
                   ? values.additionalManagerEmail.join(", ")

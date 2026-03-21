@@ -237,7 +237,7 @@ export default function Me({
     const parts = [employee.designation, employee.secondaryJobTitle].filter(
       Boolean,
     );
-    return parts.length > 0 ? parts.join(" — ") : "-";
+    return parts.length > 0 ? parts.join(" ") : "-";
   }, [employee]);
 
   useEffect(() => {
@@ -823,7 +823,7 @@ export default function Me({
               <Grid container rowSpacing={1.5} columnSpacing={3} mt={0.5}>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
-                    Manager Email
+                    Lead Email
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
                     {employee.managerEmail || "-"}
@@ -834,7 +834,7 @@ export default function Me({
                     color="text.secondary"
                     sx={{ fontWeight: 500, mb: 0.75 }}
                   >
-                    Additional Manager Emails
+                    Additional Lead Emails
                   </Typography>
 
                   {employee.additionalManagerEmails ? (

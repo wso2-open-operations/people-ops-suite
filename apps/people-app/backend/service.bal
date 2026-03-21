@@ -808,16 +808,23 @@ service http:InterceptableService / on new http:Listener(9090) {
             }
         }
 
-        int|error employeeId = database:addEmployee(payload, userInfo.email);
-        if employeeId is error {
-            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, employeeId);
+        string|http:BadRequest|http:InternalServerError generatedEmployeeId = generateEmployeeId(payload);
+        if generatedEmployeeId is http:BadRequest|http:InternalServerError {
+            return generatedEmployeeId;
+        }
+        string employeeId = generatedEmployeeId;
+
+        int|error newEmployeeId = database:addEmployee(payload, userInfo.email, employeeId);
+        if newEmployeeId is error {
+            log:printError(ERROR_EMPLOYEE_CREATION_FAILED, newEmployeeId);
             return <http:InternalServerError>{
                 body: {
                     message: ERROR_EMPLOYEE_CREATION_FAILED
                 }
             };
         }
-        return employeeId;
+        return newEmployeeId;
+
     }
 
     # Update employee personal information.
