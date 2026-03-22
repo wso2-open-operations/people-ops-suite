@@ -697,7 +697,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + return - Houses
-    resource function get houses(http:RequestContext ctx) returns database:House[]|http:Forbidden|http:InternalServerError {
+    resource function get houses(http:RequestContext ctx)
+        returns database:House[]|http:Forbidden|http:InternalServerError {
+
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
