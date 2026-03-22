@@ -2662,6 +2662,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? functionalLead = payload.functionalLeadEmail;
+        if functionalLead is string {
+            EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLead);
+            if leadsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating functional lead's email"
+                    }
+                };
+            }
+
+            if leadsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No functional lead is found for given email"
+                    }
+                };
+            }
+        }
+
         string workEmail = validatedUserInfo.email;
         error|boolean updateResult = database:updateBusinessUnitTeam({...payload, updatedBy: workEmail}, buId, teamId);
         if updateResult is error {
@@ -2743,6 +2763,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? functionalLead = payload.functionalLeadEmail;
+        if functionalLead is string {
+            EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLead);
+            if leadsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating functional lead's email"
+                    }
+                };
+            }
+
+            if leadsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No functional lead is found for given email"
+                    }
+                };
+            }
+        }
+
         string workEmail = validatedUserInfo.email;
         error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
         if updateResult is error {
@@ -2813,6 +2853,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             return <http:BadRequest>{
                 body: {message: string `Unit with ID ${unitId} not found`}
             };
+        }
+
+        string? functionalLead = payload.functionalLeadEmail;
+        if functionalLead is string {
+            EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLead);
+            if leadsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating functional lead's email"
+                    }
+                };
+            }
+
+            if leadsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No functional lead is found for given email"
+                    }
+                };
+            }
         }
 
         string workEmail = validatedUserInfo.email;
