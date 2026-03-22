@@ -1548,6 +1548,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+
         string workEmail = validatedUserInfo.email;
         int|error result = database:addBusinessUnit(workEmail, payload);
         if result is error {
@@ -1600,9 +1620,87 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+        
+
         string workEmail = validatedUserInfo.email;
         CreateBusinessUnitTeamPayload? businessUnit = payload.businessUnit;
         if businessUnit is CreateBusinessUnitTeamPayload {
+            boolean|error buExists = database:businessUnitExists(businessUnit.businessUnitId);
+            if buExists is error {
+                log:printError("Error while validating business unit", buExists, businessUnitId = businessUnit.businessUnitId);
+                return <http:InternalServerError>{
+                    body: {message: "Error while validating the business unit"}
+                };
+            }
+
+            if !buExists {
+                return <http:BadRequest>{
+                    body: {message: string `Business unit with ID ${businessUnit.businessUnitId} not found`}
+                };
+            }
+
+            int? teamId = businessUnit.teamId;
+            if teamId is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "Team ID is required"
+                    }
+                };
+            }
+
+            boolean|error teamExists = database:teamExists(teamId);
+            if teamExists is error {
+                log:printError("Error while validating team", teamExists, teamId = teamId);
+                return <http:InternalServerError>{
+                    body: {message: "Error while validating the team"}
+                };
+            }
+
+            if !teamExists {
+                return <http:BadRequest>{
+                    body: {message: string `Team with ID ${teamId} not found`}
+                };
+            }
+
+            string? functionalLeadEmail = businessUnit.functionalLeadEmail;
+            if functionalLeadEmail is string {
+                EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLeadEmail);
+                if leadsBasicInfo is error {
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Error while validating functional lead's email"
+                        }
+                    };
+                }
+
+                if leadsBasicInfo is () {
+                    return <http:BadRequest>{
+                        body: {
+                            message: "No functional lead is found for given email"
+                        }
+                    };
+                }
+            }
+
             int|error result = database:addTeamWithMapping(
                     workEmail,
                     {name: payload.name, headEmail: payload.headEmail, businessUnit}
@@ -1676,9 +1774,68 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+
         string workEmail = validatedUserInfo.email;
         CreateBusinessUnitTeamSubTeamPayload? businessUnitTeam = payload.businessUnitTeam;
         if businessUnitTeam is CreateBusinessUnitTeamSubTeamPayload {
+            boolean|error buTeamMappingExists = 
+                database:businessUnitTeamMappingExists(businessUnitTeam.businessUnitTeamId);
+                
+            if buTeamMappingExists is error {
+                log:printError("Error while validating business unit-team mapping", buTeamMappingExists,
+                    businessUnitTeamId = businessUnitTeam.businessUnitTeamId);
+                return <http:InternalServerError>{
+                    body: {message: "Error while validating the business unit-team mapping"}
+                };
+            }
+
+            if !buTeamMappingExists {
+                return <http:BadRequest>{
+                    body: {
+                        message: string `Business unit-team mapping with ID ${businessUnitTeam.businessUnitTeamId} not found`
+                    }
+                };
+            }
+
+            string? functionalLeadEmail = businessUnitTeam.functionalLeadEmail;
+            if functionalLeadEmail is string {
+                EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLeadEmail);
+                if leadsBasicInfo is error {
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Error while validating functional lead's email"
+                        }
+                    };
+                }
+
+                if leadsBasicInfo is () {
+                    return <http:BadRequest>{
+                        body: {
+                            message: "No functional lead is found for given email"
+                        }
+                    };
+                }
+            }
+
             int|error result = database:addSubTeamWithMapping(
                     workEmail,
                     {name: payload.name, headEmail: payload.headEmail, businessUnitTeam}
@@ -1752,9 +1909,68 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+
         string workEmail = validatedUserInfo.email;
         CreateBusinessUnitTeamSubTeamUnitPayload? businessUnitTeamSubTeamUnit = payload.businessUnitTeamSubTeamUnit;
         if businessUnitTeamSubTeamUnit is CreateBusinessUnitTeamSubTeamUnitPayload {
+            boolean|error buTeamSubTeamMappingExists =
+                database:businessUnitTeamSubTeamMappingExists(businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
+
+            if buTeamSubTeamMappingExists is error {
+                log:printError("Error while validating business unit-team-sub-team mapping", buTeamSubTeamMappingExists,
+                    businessUnitTeamSubTeamId = businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
+                return <http:InternalServerError>{
+                    body: {message: "Error while validating the business unit-team-sub-team mapping"}
+                };
+            }
+
+            if !buTeamSubTeamMappingExists {
+                return <http:BadRequest>{
+                    body: {
+                        message: string `Business unit-team-sub-team mapping with ID ${businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId} not found`
+                    }
+                };
+            }
+
+            string? functionalLeadEmail = businessUnitTeamSubTeamUnit.functionalLeadEmail;
+            if functionalLeadEmail is string {
+                EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLeadEmail);
+                if leadsBasicInfo is error {
+                    return <http:InternalServerError>{
+                        body: {
+                            message: "Error while validating functional lead's email"
+                        }
+                    };
+                }
+
+                if leadsBasicInfo is () {
+                    return <http:BadRequest>{
+                        body: {
+                            message: "No functional lead is found for given email"
+                        }
+                    };
+                }
+            }
+
             int|error result = database:addUnitWithMapping(
                     workEmail,
                     {name: payload.name, headEmail: payload.headEmail, businessUnitTeamSubTeamUnit}
