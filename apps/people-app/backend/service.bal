@@ -2977,34 +2977,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        boolean|error buExists = database:businessUnitExists(businessUnitId);
-        if buExists is error {
-            log:printError("Error while validating business unit", buExists, businessUnitId = businessUnitId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the business unit"}
-            };
-        }
-
-        if !buExists {
-            return <http:BadRequest>{
-                body: {message: string `Business unit with ID ${businessUnitId} not found`}
-            };
-        }
-
-        boolean|error teamExistsResult = database:teamExists(teamId);
-        if teamExistsResult is error {
-            log:printError("Error while validating team", teamExistsResult, teamId = teamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the team"}
-            };
-        }
-
-        if !teamExistsResult {
-            return <http:BadRequest>{
-                body: {message: string `Team with ID ${teamId} not found`}
-            };
-        }
-
         boolean|error hasChildren = database:businessUnitTeamHasChildren(businessUnitId, teamId);
         if hasChildren is error {
             string customErr = "Error while checking business unit team children";
@@ -3073,37 +3045,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        boolean|error buTeamMappingExists = database:businessUnitTeamMappingExists(teamId);
-        if buTeamMappingExists is error {
-            log:printError("Error while validating business unit-team mapping", buTeamMappingExists,
-                businessUnitTeamId = teamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the business unit-team mapping"}
-            };
-        }
-
-        if !buTeamMappingExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Business unit-team mapping with ID ${teamId} not found`
-                }
-            };
-        }
-
-        boolean|error subTeamExistsResult = database:subTeamExists(subTeamId);
-        if subTeamExistsResult is error {
-            log:printError("Error while validating sub-team", subTeamExistsResult, subTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the sub-team"}
-            };
-        }
-
-        if !subTeamExistsResult {
-            return <http:BadRequest>{
-                body: {message: string `Sub-team with ID ${subTeamId} not found`}
-            };
-        }
-
         boolean|error hasChildren = database:teamSubTeamHasChildren(teamId, subTeamId);
         if hasChildren is error {
             string customErr = "Error while checking team sub-team children";
@@ -3170,37 +3111,6 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
             return validatedUserInfo;
-        }
-
-        boolean|error buTeamSubTeamMappingExists = database:businessUnitTeamSubTeamMappingExists(subTeamId);
-        if buTeamSubTeamMappingExists is error {
-            log:printError("Error while validating business unit-team-sub-team mapping", buTeamSubTeamMappingExists,
-                businessUnitTeamSubTeamId = subTeamId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the business unit-team-sub-team mapping"}
-            };
-        }
-
-        if !buTeamSubTeamMappingExists {
-            return <http:BadRequest>{
-                body: {
-                    message: string `Business unit-team-sub-team mapping with ID ${subTeamId} not found`
-                }
-            };
-        }
-
-        boolean|error unitExistsResult = database:unitExists(unitId);
-        if unitExistsResult is error {
-            log:printError("Error while validating unit", unitExistsResult, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {message: "Error while validating the unit"}
-            };
-        }
-
-        if !unitExistsResult {
-            return <http:BadRequest>{
-                body: {message: string `Unit with ID ${unitId} not found`}
-            };
         }
 
         boolean|error hasChildren = database:subTeamUnitHasChildren(subTeamId, unitId);
