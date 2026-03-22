@@ -2151,19 +2151,6 @@ isolated function businessUnitTeamSubTeamMappingExistsQuery(int id) returns sql:
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
-# Build query to check whether a business unit has child teams.
-#
-# + buId - Business unit ID
-# + return - Query returning `exists_flag` (1 if children exist, else 0)
-isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
-    SELECT
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM business_unit_team
-        WHERE is_active = 1 AND business_unit_id = ${buId}
-      ) THEN 1 ELSE 0 END AS exists_flag
-`;
-
 # Build query to check whether a business unit-team mapping has child sub-teams.
 #
 # + businessUnitId - Business unit ID

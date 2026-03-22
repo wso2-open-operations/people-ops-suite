@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import HistoryIcon from "@mui/icons-material/History";
@@ -31,6 +30,7 @@ import GeneralLeave from "@view/GeneralLeave/GeneralLeave";
 import AdminSabbaticalTab from "@view/LeadReport/panel/AdminSabbaticalTab";
 import LeadReportTab from "@view/LeadReport/panel/LeadReportTab";
 import SabbaticalLeaveHistory from "@view/LeaveHistory/SabbaticalLeaveHistory";
+import ApproveHistoryTab from "@view/SabbaticalLeave/Panel/ApproveHistoryTab";
 import ApproveLeaveTab from "@view/SabbaticalLeave/Panel/ApproveLeaveTab";
 import SabbaticalLeave from "@view/SabbaticalLeave/SabbaticalLeave";
 
@@ -91,6 +91,13 @@ export const routes: RouteObjectWithMeta[] = [
         text: "Sabbatical",
         icon: React.createElement(EventAvailableIcon),
         element: React.createElement(ApproveLeaveTab),
+        allowRoles: [Role.LEAD],
+      },
+      {
+        path: "approval-history",
+        text: "Approval History",
+        icon: React.createElement(HistoryIcon),
+        element: React.createElement(ApproveHistoryTab),
         allowRoles: [Role.LEAD],
       },
     ],

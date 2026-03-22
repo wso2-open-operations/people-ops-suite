@@ -1,4 +1,4 @@
-// Copyright (c) 2025 WSO2 LLC. (https://www.wso2.com).
+// Copyright (c) 2026 WSO2 LLC. (https://www.wso2.com).
 //
 // WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { CircularProgress, Stack, useTheme } from "@mui/material";
 
 import { useEffect } from "react";
@@ -28,28 +27,24 @@ import {
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { LeaveType, OrderBy, State, Status } from "@root/src/types/types";
 
-import ApproveLeaveTable from "../component/ApproveLeaveTable";
+import ApprovalHistoryTable from "../component/ApprovalHistoryTable";
 
-export default function ApproveLeaveTab() {
+export default function ApproveHistoryTab() {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const leaveState = useAppSelector(selectLeaveState);
   const leaves = useAppSelector(selectLeaves);
   const loading = leaveState === State.loading;
 
-  const handleRefresh = () => {
+  useEffect(() => {
     dispatch(
       fetchLeaveHistory({
         subordinatesLeaves: true,
         leaveCategory: [LeaveType.SABBATICAL],
-        statuses: [Status.PENDING],
+        statuses: [Status.APPROVED, Status.REJECTED],
         orderBy: OrderBy.DESC,
       }),
     );
-  };
-
-  useEffect(() => {
-    handleRefresh();
   }, []);
 
   return (
@@ -61,14 +56,14 @@ export default function ApproveLeaveTab() {
         borderBottom={`1px solid ${theme.palette.divider}`}
         pb="1rem"
       >
-        <Title firstWord="Sabbatical" secondWord=" Leave Approval" borderEnabled={false} />
+        <Title firstWord="Sabbatical" secondWord=" Leave History" borderEnabled={false} />
       </Stack>
       {loading ? (
         <Stack alignItems="center" justifyContent="center" minHeight="200px">
           <CircularProgress size={30} />
         </Stack>
       ) : (
-        <ApproveLeaveTable rows={leaves} onRefresh={handleRefresh} />
+        <ApprovalHistoryTable rows={leaves} />
       )}
     </Stack>
   );

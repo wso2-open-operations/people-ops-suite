@@ -98,6 +98,7 @@ export const cancelLeaveRequest = async (id: number) => {
  */
 export const getLeaveHistory = async (
   params: LeaveHistoryQueryParam,
+  signal?: AbortSignal,
 ): Promise<LeaveHistoryResponse> => {
   const apiInstance = APIService.getInstance();
   const {
@@ -110,6 +111,8 @@ export const getLeaveHistory = async (
     orderBy,
     limit,
     offset,
+    employeeStatuses,
+    subordinatesLeaves,
   } = params;
 
   // Build query parameters
@@ -147,11 +150,18 @@ export const getLeaveHistory = async (
   if (offset !== undefined && offset !== null) {
     queryParts.push(`offset=${encodeURIComponent(String(offset))}`);
   }
+  if (Array.isArray(employeeStatuses) && employeeStatuses.length > 0) {
+    employeeStatuses.forEach((s) => queryParts.push(`employeeStatuses=${encodeURIComponent(String(s))}`));
+  }
+  if (subordinatesLeaves) {
+    queryParts.push(`subordinatesLeaves=true`);
+  }
 
   const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
 
   const response = await apiInstance.get<LeaveHistoryResponse>(
     `${AppConfig.serviceUrls.leaves}${queryString}`,
+    { signal },
   );
 
   return response.data;

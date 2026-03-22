@@ -21,6 +21,7 @@ import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import {
   formatDateForApi,
   getLeaveEntitlement,
@@ -28,6 +29,7 @@ import {
 } from "@root/src/services/leaveService";
 import { useAppSelector } from "@root/src/slices/store";
 import {
+  ConfirmationType,
   DayPortion,
   EmployeeLocation,
   LeaveLabel,
@@ -44,6 +46,7 @@ import NotifyPeople from "@root/src/view/GeneralLeave/component/NotifyPeople";
 export default function GeneralLeave() {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { showConfirmation } = useConfirmationModalContext();
   const userInfo = useAppSelector((state) => state.user.userInfo);
   const userLocation = userInfo?.location ?? null;
   const email = userInfo?.workEmail ?? "";
@@ -99,62 +102,18 @@ export default function GeneralLeave() {
     setSelectedLeaveType(getDefaultLeaveType(userLocation));
   }, [userLocation]);
 
-  const handleSubmit = async () => {
-    setDateError(false);
-    if (!startDate || !endDate) {
-      setDateError(true);
-      enqueueSnackbar("Please select start and end dates", { variant: "error" });
-      return;
-    }
-
-    if (workingDays <= 0) {
-      setDateError(true);
-      enqueueSnackbar("Working days must be at least 1 to submit a leave request", {
-        variant: "error",
-      });
-      return;
-    }
-
-    if (!selectedDayPortion) {
-      enqueueSnackbar("Please select a portion of the day", { variant: "error" });
-      return;
-    }
-
-    if (!selectedLeaveType) {
-      enqueueSnackbar("Please select a leave type", { variant: "error" });
-      return;
-    }
-
+  const executeSubmit = async (periodType: PeriodType, isMorningLeave: boolean | null) => {
     try {
       setIsSubmitting(true);
 
-      let periodType: PeriodType;
-      let isMorningLeave: boolean | null = null;
-
-      switch (selectedDayPortion) {
-        case DayPortion.FULL:
-          periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
-          break;
-        case DayPortion.FIRST:
-          periodType = PeriodType.HALF;
-          isMorningLeave = true;
-          break;
-        case DayPortion.SECOND:
-          periodType = PeriodType.HALF;
-          isMorningLeave = false;
-          break;
-        default:
-          periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
-          break;
-      }
       const filteredEmailRecipients = emailRecipients.filter(
         (recipientEmail) => !mandatoryEmails.includes(recipientEmail),
       );
 
       const payload = {
         periodType,
-        startDate: formatDateForApi(startDate),
-        endDate: formatDateForApi(endDate),
+        startDate: formatDateForApi(startDate!),
+        endDate: formatDateForApi(endDate!),
         isMorningLeave,
         comment,
         leaveType: selectedLeaveType as any,
@@ -195,13 +154,79 @@ export default function GeneralLeave() {
       setComment("");
       setIsPublicComment(false);
     } catch (error: any) {
-      console.error("Error submitting leave request:", error);
       const errorMessage =
         error?.response?.data?.message || "Failed to submit leave request. Please try again.";
       enqueueSnackbar(errorMessage, { variant: "error" });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = () => {
+    setDateError(false);
+    if (!startDate || !endDate) {
+      setDateError(true);
+      enqueueSnackbar("Please select start and end dates", { variant: "error" });
+      return;
+    }
+
+    if (workingDays <= 0) {
+      setDateError(true);
+      enqueueSnackbar("Working days must be at least 1 to submit a leave request", {
+        variant: "error",
+      });
+      return;
+    }
+
+    if (!selectedDayPortion) {
+      enqueueSnackbar("Please select a portion of the day", { variant: "error" });
+      return;
+    }
+
+    if (!selectedLeaveType) {
+      enqueueSnackbar("Please select a leave type", { variant: "error" });
+      return;
+    }
+
+    let periodType: PeriodType;
+    let isMorningLeave: boolean | null = null;
+
+    switch (selectedDayPortion) {
+      case DayPortion.FULL:
+        periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+        break;
+      case DayPortion.FIRST:
+        periodType = PeriodType.HALF;
+        isMorningLeave = true;
+        break;
+      case DayPortion.SECOND:
+        periodType = PeriodType.HALF;
+        isMorningLeave = false;
+        break;
+      default:
+        periodType = daysSelected === 1 ? PeriodType.ONE : PeriodType.MULTIPLE;
+        break;
+    }
+
+    const leaveLabel = LEAVE_TYPE_LABEL_MAP[selectedLeaveType] ?? selectedLeaveType;
+    const portionLabel =
+      selectedDayPortion === DayPortion.FULL
+        ? "Full day"
+        : selectedDayPortion === DayPortion.FIRST
+          ? "Morning"
+          : "Afternoon";
+    const dateRange = startDate!.isSame(endDate, "day")
+      ? startDate!.format("MMM D, YYYY")
+      : `${startDate!.format("MMM D")} – ${endDate!.format("MMM D, YYYY")}`;
+
+    showConfirmation(
+      "Do you want to submit this leave?",
+      `This will submit a ${leaveLabel} request for ${workingDays} working day${workingDays !== 1 ? "s" : ""} (${dateRange}, ${portionLabel}). This action cannot be undone.`,
+      ConfirmationType.send,
+      () => executeSubmit(periodType, isMorningLeave),
+      "Yes",
+      "No",
+    );
   };
 
   const sectionCard = {

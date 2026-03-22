@@ -177,12 +177,12 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
     switch (appState) {
       case AppState.Loading:
         return (
-          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Authenticating ..." />
+          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Authenticating user" />
         );
 
       case AppState.Authenticating:
         return (
-          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Loading User Info ..." />
+          <PreLoader hideImage={false} marqueeOn={true} isLoading message="Loading user information" />
         );
 
       case AppState.Authenticated:

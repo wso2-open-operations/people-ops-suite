@@ -13,23 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import ballerinax/googleapis.sheets as sheets;
+import { useMemo } from "react"
 
-# Create Google Sheets client for parking reservations.
-configurable ParkingSheetConfig parkingSheetConfig = ?;
+export const isDodTimeActive = useMemo(() => {
+  const now = new Date();
+  const startTime = new Date(now);
+  startTime.setHours(16, 0, 0, 0);
+  const endTime = new Date(now);
+  endTime.setHours(19, 0, 0, 0);
 
-final sheets:ConnectionConfig parkingSheetsConfig = {
-    auth: {
-        clientId: parkingSheetConfig.clientId,
-        clientSecret: parkingSheetConfig.clientSecret,
-        refreshToken: parkingSheetConfig.refreshToken,
-        refreshUrl: parkingSheetConfig.tokenUrl
-    },
-    retryConfig: {
-        count: GSHEET_CONFIG_RETRY_COUNT,
-        interval: GSHEET_CONFIG_RETRY_INTERVAL
-    }
-};
+  return now >= startTime && now <= endTime;
+}, []);
 
-public final sheets:Client parkingSpreadsheetClient = check new (parkingSheetsConfig);
 

@@ -89,10 +89,10 @@ public isolated function cancelLeave(int id) returns error? {
 # + leaveId - ID of the sabbatical leave application
 # + approvalStatus - Approval status to be set (APPROVED, REJECTED, CANCELLED...etc)
 # + return - Nil on success, error on failure
-public isolated function setLeaveStatus(int leaveId, Status approvalStatus)
-returns sql:ExecutionResult|error {
+public isolated function setLeaveStatus(int leaveId, Status approvalStatus, string? approverEmail = ())
+    returns sql:ExecutionResult|error {
 
-    sql:ParameterizedQuery sqlQuery = setLeaveStatusQuery(approvalStatus, leaveId);
+    sql:ParameterizedQuery sqlQuery = setLeaveStatusQuery(approvalStatus, leaveId, approverEmail);
     return check leaveDbClient->execute(sqlQuery);
 }
 

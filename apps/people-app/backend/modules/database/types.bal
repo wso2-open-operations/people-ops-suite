@@ -843,6 +843,20 @@ public type ParkingSlot record {|
     boolean isBooked;
 |};
 
+# [Database] Parking slot row mapping.
+public type ParkingSlotRow record {|
+    # Slot identifier (e.g. B-01)
+    string slotId;
+    # Floor identifier
+    int floorId;
+    # Floor name
+    string floorName;
+    # Number of coins per slot
+    decimal coinsPerSlot;
+    # Booked status flag (0 = available, 1 = booked)
+    int isBooked;
+|};
+
 # [Database] Parking reservation.
 public type ParkingReservation record {|
     # Reservation identifier

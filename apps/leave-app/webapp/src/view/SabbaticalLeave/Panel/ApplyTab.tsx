@@ -13,18 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import {
   Alert,
   Box,
-  Button,
   Checkbox,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   FormControlLabel,
   Link,
   Stack,
@@ -43,6 +36,7 @@ import CustomButton from "@root/src/component/common/CustomButton";
 import { FormContainer } from "@root/src/component/common/FormContainer";
 import Title from "@root/src/component/common/Title";
 import { PAGE_MAX_WIDTH } from "@root/src/config/ui";
+import { useConfirmationModalContext } from "@root/src/context/DialogContext";
 import {
   fetchLeaveHistory,
   resetLeaveState,
@@ -53,7 +47,14 @@ import {
 } from "@root/src/slices/leaveSlice/leave";
 import { useAppDispatch, useAppSelector } from "@root/src/slices/store";
 import { selectUser } from "@root/src/slices/userSlice/user";
-import { EligibilityResponse, LeaveType, OrderBy, State, Status } from "@root/src/types/types";
+import {
+  ConfirmationType,
+  EligibilityResponse,
+  LeaveType,
+  OrderBy,
+  State,
+  Status,
+} from "@root/src/types/types";
 
 interface ApplyTabProps {
   sabbaticalPolicyUrl: string;
@@ -72,6 +73,7 @@ export default function ApplyTab({
 }: ApplyTabProps) {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { showConfirmation } = useConfirmationModalContext();
   const dispatch = useAppDispatch();
   const userInfo = useAppSelector(selectUser);
   const leaveState = useAppSelector(selectLeaveState);
@@ -101,7 +103,6 @@ export default function ApplyTab({
   const [managerApprovalChecked, setManagerApprovalChecked] = useState(false);
   const [policyReadChecked, setPolicyReadChecked] = useState(false);
   const [resignationAcknowledgeChecked, setResignationAcknowledgeChecked] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [canRenderSabbaticalFormField, setCanRenderSabbaticalFormField] = useState(true);
   const [startDateError, setStartDateError] = useState(false);
   const [endDateError, setEndDateError] = useState(false);
@@ -339,11 +340,16 @@ export default function ApplyTab({
       return;
     }
 
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
+    const dateRange = `${leaveStartDate!.format("YYYY-MM-DD")} to ${leaveEndDate!.format("YYYY-MM-DD")}`;
+    const leadInfo = userInfo?.leadEmail ? ` to ${userInfo.leadEmail}` : "";
+    showConfirmation(
+      "Do you want to submit this sabbatical leave?",
+      `This will submit your sabbatical leave request for ${dateRange} and send it${leadInfo} for approval.`,
+      ConfirmationType.send,
+      handleConfirmSubmit,
+      "Yes",
+      "No",
+    );
   };
 
   const handleConfirmSubmit = async () => {
@@ -362,7 +368,6 @@ export default function ApplyTab({
     );
 
     if (submitLeave.fulfilled.match(result)) {
-      handleCloseDialog();
       setLeaveStartDate(null);
       setLeaveEndDate(null);
       setAdditionalComment("");
@@ -589,43 +594,6 @@ export default function ApplyTab({
           </FormContainer>
         </Stack>
       )}
-
-      {/* Confirmation Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Confirm Sabbatical Leave Application</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to submit your sabbatical leave request for the period from{" "}
-            {leaveStartDate?.format("YYYY-MM-DD")} to {leaveEndDate?.format("YYYY-MM-DD")}?
-            <br />
-            <br />
-            Your request will be sent to your reporting lead
-            {userInfo?.leadEmail ? (
-              <>
-                {" "}
-                <strong>{userInfo.leadEmail}</strong>
-              </>
-            ) : (
-              ""
-            )}{" "}
-            for approval.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseDialog} disabled={isSubmitting} variant="outlined">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmSubmit}
-            disabled={isSubmitting}
-            variant="contained"
-            color="primary"
-            startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : null}
-          >
-            {isSubmitting ? "Submitting..." : "Confirm"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 }

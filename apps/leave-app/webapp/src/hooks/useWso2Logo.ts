@@ -13,10 +13,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { useTheme } from "@mui/material";
 
-# Google Sheet retry configuration for max retry attempts.
-const int GSHEET_CONFIG_RETRY_COUNT = 3;
+import wso2LogoBlack from "@src/assets/images/wso2-logo_black.svg";
+import wso2LogoWhite from "@src/assets/images/wso2-logo_white.svg";
 
-# Google Sheet retry configuration for wait interval in seconds.
-const decimal GSHEET_CONFIG_RETRY_INTERVAL = 3.0;
-
+export const useWso2Logo = (): string => {
+  const theme = useTheme();
+  return theme.palette.mode === "dark" ? wso2LogoWhite : wso2LogoBlack;
+};
