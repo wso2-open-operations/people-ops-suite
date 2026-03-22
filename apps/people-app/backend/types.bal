@@ -26,52 +26,6 @@ public type JwtPayloadUserInfo record {|
     string[] groups;
 |};
 
-# Payload for adding a vehicle.
-type NewVehicle record {|
-    # Registration number of the vehicle
-    @constraint:String {
-        pattern: {
-            value: re `^([A-Za-z]{1,3}|\d{1,3}) \d{4}$`,
-            message: "Vehicle registration number should be a valid pattern in Sri Lanka."
-        }
-    }
-    string vehicleRegistrationNumber;
-    # Type of the vehicle
-    database:VehicleTypes vehicleType;
-|};
-
-# Base open payload for all organization hierarchy PATCH requests.
-type OrgPatchPayload record {
-    # Email of the user performing the update
-    string updatedBy;
-};
-
-# Payload for updating a standalone organization unit.
-type UnitPayload record {|
-    # New name for the unit
-    string name?;
-    # Email of the new head of the unit
-    string headEmail?;
-|};
-
-# Payload for updating a business unit-team mapping.
-type UpdateBusinessUnitTeamPayload record {|
-    # Email of the functional lead for the mapping
-    string functionalLeadEmail?;
-|};
-
-# Payload for updating a team-sub team mapping.
-type UpdateTeamSubTeamPayload record {|
-    # Email of the functional lead for the mapping
-    string functionalLeadEmail?;
-|};
-
-# Payload for updating a sub team-unit mapping.
-type UpdateSubTeamUnitPayload record {|
-    # Email of the functional lead for the mapping
-    string functionalLeadEmail?;
-|};
-
 # Employee basic information.
 public type EmployeeBasicInfo record {|
     # Employee ID of the user
@@ -86,58 +40,20 @@ public type EmployeeBasicInfo record {|
     string? employeeThumbnail;
 |};
 
-# Represents the database organization business unit.
-public type OrgBusinessUnit record {|
-    *database:OrgBusinessUnit;
+# Payload for adding a vehicle.
+type NewVehicle record {|
+    # Registration number of the vehicle
+    @constraint:String {
+        pattern: {
+            value: re `^([A-Za-z]{1,3}|\d{1,3}) \d{4}$`,
+            message: "Vehicle registration number should be a valid pattern in Sri Lanka."
+        }
+    }
+    string vehicleRegistrationNumber;
+    # Type of the vehicle
+    database:VehicleTypes vehicleType;
 |};
 
-# Represents the top-level company in the organization hierarchy.
-public type OrgCompany record {|
-    # Unique identifier of the company
-    string id;
-    # Display name of the company
-    string name;
-    # Total number of employees or members in the company
-    int headCount;
-    # List of business units belonging to the company
-    OrgBusinessUnit[] businessUnits = [];
-|};
-
-# Payload for adding a new organization node (business unit, team, sub-team, or unit).
-public type OrgNodeInfo record {|
-    # Name of the node
-    string name;
-    # Email of the head of the node
-    string headEmail;
-|};
-
-# Internal payload for inserting a row into any org-node mapping table.
-public type OrgNodeMappingPayload record {|
-    # ID of the parent junction row
-    string parentId;
-    # ID of the newly created child node
-    string childId;
-    # Functional lead email for the mapping
-    string functionalLeadEmail;
-|};
-
-# Reference to a parent organization node with mapping details.
-public type OrgNodeLinkInfo record {|
-    # ID of the parent node
-    string id;
-    # Functional lead email for the mapping
-    string functionalLeadEmail;
-|};
-
-# Payload for adding any organization node.
-public type OrgNodePayload record {|
-    # Name of the node
-    string name;
-    # Head email of the node
-    string headEmail;
-    # Parent node link details — required for mapping nodes only
-    OrgNodeLinkInfo orgNodeLinkInfo?;
-|};
 # Request body for creating a parking reservation (before payment).
 type CreateParkingReservationRequest record {|
     # Slot identifier (e.g. B-01)
@@ -174,4 +90,208 @@ type ConfirmParkingReservationRequest record {|
 type CarParkConfigResponse record {|
     # Master wallet address for O2C car park payments (0x-prefixed).
     string publicWalletAddress;
+|};
+
+# Internal payload for inserting a row into any org-node mapping table.
+public type OrgNodeMappingPayload record {|
+    # ID of the parent junction row
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Corrupted parent-id: Id cannot be empty & should contains valid characters"
+        }
+    }
+    string parentId;
+    # ID of the newly created child node
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Corrupted child-id: Id cannot be empty & should contains valid characters"
+        }
+    }
+    string childId;
+    # Functional lead email for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+# Payload for updating a standalone organization unit.
+type UnitPayload record {|
+    # New name for the unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contains valid characters"
+        }
+    }
+    string name?;
+    # Email of the new head of the unit
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail?;
+|};
+
+# Payload for updating a business unit-team mapping.
+type UpdateOrgUnitPayload record {|
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+# Represents the database organization business unit.
+public type OrgBusinessUnit record {|
+    *database:OrgBusinessUnit;
+|};
+
+# Represents the top-level company in the organization hierarchy.
+public type OrgCompany record {|
+    # Unique identifier of the company
+    int id;
+    # Display name of the company
+    string name;
+    # Total number of employees or members in the company
+    int headCount;
+    # List of business units belonging to the company
+    OrgBusinessUnit[] businessUnits = [];
+|};
+
+public type CreateBusinessUnitPayload record {|
+    # Name of the business unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the business unit
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+|};
+
+public type CreateBusinessUnitTeamPayload record {|
+    # ID of the business unit
+    int businessUnitId;
+    # ID of the team — required only when mapping an existing team
+    int teamId?;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateTeamPayload record {|
+    # Name of the team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the team
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team mapping details — required only when mapping to a business unit
+    CreateBusinessUnitTeamPayload businessUnit?;
+|};
+
+public type CreateBusinessUnitTeamSubTeamPayload record {|
+    # ID of the business unit-team mapping
+    int businessUnitTeamId;
+    # ID of the sub-team — required only when mapping an existing sub-team
+    int subTeamId?;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateSubTeamPayload record {|
+    # Name of the sub-team
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the sub-team
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team-sub-team mapping details — required only when mapping to a business unit-team
+    CreateBusinessUnitTeamSubTeamPayload businessUnitTeam?;
+|};
+
+public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
+    # ID of the business unit-team-sub-team mapping
+    int businessUnitTeamSubTeamId;
+    # ID of the unit — required only when mapping an existing unit
+    int unitId?;
+    # Email of the functional lead for the mapping
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Functional lead ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string functionalLeadEmail;
+|};
+
+public type CreateUnitPayload record {|
+    # Name of the unit
+    @constraint:String {
+        pattern: {
+            value: PRINTABLE_CHARACTERS_FORMAT,
+            message: "Name cannot be empty and should contain valid characters"
+        }
+    }
+    string name;
+    # Email of the head of the unit
+    @constraint:String {
+        pattern: {
+            value: WSO2_EMAIL,
+            message: string `Head ${ERROR_INVALID_EMAIL} `
+        }
+    }
+    string headEmail;
+    # Business unit-team-sub-team-unit mapping details — required only when mapping to a business unit-team-sub-team
+    CreateBusinessUnitTeamSubTeamUnitPayload businessUnitTeamSubTeamUnit?;
 |};
