@@ -1666,29 +1666,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
 
-            int? teamId = businessUnit.teamId;
-            if teamId is () {
-                return <http:BadRequest>{
-                    body: {
-                        message: "Team ID is required"
-                    }
-                };
-            }
-
-            boolean|error teamExists = database:teamExists(teamId);
-            if teamExists is error {
-                log:printError("Error while validating team", teamExists, teamId = teamId);
-                return <http:InternalServerError>{
-                    body: {message: "Error while validating the team"}
-                };
-            }
-
-            if !teamExists {
-                return <http:BadRequest>{
-                    body: {message: string `Team with ID ${teamId} not found`}
-                };
-            }
-
             string? functionalLeadEmail = businessUnit.functionalLeadEmail;
             if functionalLeadEmail is string {
                 EmployeeBasicInfo|error? leadsBasicInfo = database:getEmployeeBasicInfo(functionalLeadEmail);
