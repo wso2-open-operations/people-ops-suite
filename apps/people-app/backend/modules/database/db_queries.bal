@@ -1492,7 +1492,7 @@ isolated function deleteSubTeamUnitQuery(string email, int subTeamId, int unitId
 # + return - Query to get the full organization hierarchy
 isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery =>
     `SELECT 
-        CAST(c.id AS CHAR) AS id,
+        c.id AS id,
         c.name AS name,
         COALESCE((
             SELECT COUNT(*)
@@ -1503,7 +1503,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
         COALESCE(
             (
                 SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                    'id', CAST(bu.id AS CHAR),
+                    'id', bu.id,
                     'name', bu.name,
                     'headCount', COALESCE((
                         SELECT COUNT(*) FROM employee e
@@ -1520,8 +1520,8 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                     'teams', COALESCE(
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                                'id', CAST(t.id AS CHAR),
-                                'businessUnitId', CAST(bu.id AS CHAR),
+                                'id', t.id,
+                                'businessUnitId', bu.id,
                                 'name', t.name,
                                 'headCount', COALESCE((
                                     SELECT COUNT(*) FROM employee e
@@ -1547,9 +1547,9 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                 'subTeams', COALESCE(
                                     (
                                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                                            'id', CAST(st.id AS CHAR),
-                                            'businessUnitTeamId', CAST(but.id AS CHAR),
-                                            'businessUnitId', CAST(bu.id AS CHAR),
+                                            'id', st.id,
+                                            'businessUnitTeamId', but.id,
+                                            'businessUnitId', bu.id,
                                             'name', st.name,
                                             'headCount', COALESCE((
                                                 SELECT COUNT(*) FROM employee e
@@ -1577,10 +1577,10 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                             'units', COALESCE(
                                                 (
                                                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
-                                                        'id', CAST(u.id AS CHAR),
-                                                        'businessUnitTeamSubTeamId', CAST(butst.id AS CHAR),
-                                                        'businessUnitTeamId', CAST(but.id AS CHAR),
-                                                        'businessUnitId', CAST(bu.id AS CHAR),
+                                                        'id', u.id,
+                                                        'businessUnitTeamSubTeamId', butst.id,
+                                                        'businessUnitTeamId', but.id,
+                                                        'businessUnitId', bu.id,
                                                         'name', u.name,
                                                         'headCount', COALESCE((
                                                             SELECT COUNT(*) FROM employee e
