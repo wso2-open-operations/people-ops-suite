@@ -937,53 +937,6 @@ public isolated function validateUnitNameUniqueness(string unitName) returns boo
     return result.exists_flag == 0;
 }
 
-# Check whether a business unit has child teams (active mappings).
-#
-# + buId - Business unit ID
-# + return - True if it has child teams, false otherwise (or error on failure)
-public isolated function businessUnitHasChildren(int buId) returns boolean|error {
-    ExistsFlagResult result =
-        check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
-
-    return result.exists_flag == 1;
-}
-
-# Check whether a business unit-team mapping has child sub-teams (active mappings).
-#
-# + businessUnitId - Business unit ID
-# + teamId - Team ID
-# + return - True if it has child sub-teams, false otherwise (or error on failure)
-public isolated function businessUnitTeamHasChildren(int businessUnitId, int teamId) returns boolean|error {
-    ExistsFlagResult result =
-        check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
-
-    return result.exists_flag == 1;
-}
-
-# Check whether a team-sub-team mapping has child units (active mappings).
-#
-# + teamId - Team ID
-# + subTeamId - Sub-team ID
-# + return - True if it has child units, false otherwise (or error on failure)
-public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) returns boolean|error {
-    ExistsFlagResult result =
-        check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
-
-    return result.exists_flag == 1;
-}
-
-# Check whether a sub-team unit mapping has assigned employees.
-#
-# + businessUnitTeamSubTeamId - BusinessUnit-team-sub-team mapping ID
-# + unitId - Unit ID
-# + return - True if assigned employees exist, false otherwise (or error on failure)
-public isolated function subTeamUnitHasChildren(int businessUnitTeamSubTeamId, int unitId) returns boolean|error {
-    ExistsFlagResult result =
-        check databaseClient->queryRow(subTeamUnitHasChildrenQuery(businessUnitTeamSubTeamId, unitId));
-
-    return result.exists_flag == 1;
-}
-
 # Check whether a BusinessUnit exists by ID.
 #
 # + buId - Business unit ID
@@ -1046,6 +999,41 @@ public isolated function businessUnitTeamMappingExists(int id) returns boolean|e
 public isolated function businessUnitTeamSubTeamMappingExists(int id) returns boolean|error {
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitTeamSubTeamMappingExistsQuery(id));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a business unit has child teams (active mappings).
+#
+# + buId - Business unit ID
+# + return - True if it has child teams, false otherwise (or error on failure)
+public isolated function businessUnitHasChildren(int buId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a business unit-team mapping has child sub-teams (active mappings).
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + return - True if it has child sub-teams, false otherwise (or error on failure)
+public isolated function businessUnitTeamHasChildren(int businessUnitId, int teamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
+
+    return result.exists_flag == 1;
+}
+
+# Check whether a team-sub-team mapping has child units (active mappings).
+#
+# + teamId - Team ID
+# + subTeamId - Sub-team ID
+# + return - True if it has child units, false otherwise (or error on failure)
+public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) returns boolean|error {
+    ExistsFlagResult result =
+        check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
 
     return result.exists_flag == 1;
 }
