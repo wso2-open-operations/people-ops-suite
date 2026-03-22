@@ -671,7 +671,7 @@ public isolated function addTeamWithMapping(string userEmail, CreateTeamPayload 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamQuery(userEmail, {
                 businessUnitId: payload.businessUnit.businessUnitId,
-                teamId: teamId.toString(),
+                teamId: teamId,
                 functionalLeadEmail: payload.businessUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -695,7 +695,7 @@ public isolated function addSubTeamWithMapping(string userEmail, CreateSubTeamPa
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamQuery(userEmail, {
                 businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
-                subTeamId: subTeamId.toString(),
+                subTeamId: subTeamId,
                 functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -719,7 +719,7 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamUnitQuery(userEmail, {
                 businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
-                unitId: unitId.toString(),
+                unitId: unitId,
                 functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -974,12 +974,12 @@ public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) retur
 
 # Check whether a sub-team unit mapping has assigned employees.
 #
-# + subTeamMappingId - business_unit_team_sub_team mapping ID
+# + businessUnitTeamSubTeamId - BusinessUnit-team-sub-team mapping ID
 # + unitId - Unit ID
 # + return - True if assigned employees exist, false otherwise (or error on failure)
-public isolated function subTeamUnitHasChildren(int subTeamMappingId, int unitId) returns boolean|error {
+public isolated function subTeamUnitHasChildren(int businessUnitTeamSubTeamId, int unitId) returns boolean|error {
     ExistsFlagResult result =
-        check databaseClient->queryRow(subTeamUnitHasChildrenQuery(subTeamMappingId, unitId));
+        check databaseClient->queryRow(subTeamUnitHasChildrenQuery(businessUnitTeamSubTeamId, unitId));
 
     return result.exists_flag == 1;
 }

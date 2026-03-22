@@ -1521,7 +1521,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                 'id', CAST(t.id AS CHAR),
-                                'businessUnitTeamId', CAST(bu.id AS CHAR),
+                                'businessUnitId', CAST(bu.id AS CHAR),
                                 'name', t.name,
                                 'headCount', COALESCE((
                                     SELECT COUNT(*) FROM employee e
@@ -1927,16 +1927,16 @@ isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns
 
 # Build query to check whether a sub-team unit mapping has assigned employees.
 #
-# + subTeamMappingId - business_unit_team_sub_team mapping ID
+# + businessUnitTeamSubTeamId - BusinessUnit-team-sub-team mapping ID
 # + unitId - Unit ID
 # + return - Query returning `exists_flag` (1 if assigned employees exist, else 0)
-isolated function subTeamUnitHasChildrenQuery(int subTeamMappingId, int unitId) returns sql:ParameterizedQuery => `
+isolated function subTeamUnitHasChildrenQuery(int businessUnitTeamSubTeamId, int unitId) returns sql:ParameterizedQuery => `
     SELECT
       CASE WHEN EXISTS (
         SELECT 1
         FROM employee e
         INNER JOIN business_unit_team_sub_team butst
-          ON butst.id = ${subTeamMappingId}
+          ON butst.id = ${businessUnitTeamSubTeamId}
         INNER JOIN business_unit_team but
           ON but.id = butst.business_unit_team_id
         WHERE e.unit_id = ${unitId}
