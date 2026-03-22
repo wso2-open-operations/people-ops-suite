@@ -98,7 +98,7 @@ public type OrgNodeMappingPayload record {|
     @constraint:String {
         pattern: {
             value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Corrupted parent-id: Id cannot be empty & should contains valid characters"
+            message: "Corrupted parent-id: Id cannot be empty & should contain valid characters"
         }
     }
     string parentId;
@@ -106,7 +106,7 @@ public type OrgNodeMappingPayload record {|
     @constraint:String {
         pattern: {
             value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Corrupted child-id: Id cannot be empty & should contains valid characters"
+            message: "Corrupted child-id: Id cannot be empty & should contain valid characters"
         }
     }
     string childId;
@@ -126,7 +126,7 @@ type UnitPayload record {|
     @constraint:String {
         pattern: {
             value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Name cannot be empty and should contains valid characters"
+            message: "Name cannot be empty and should contain valid characters"
         }
     }
     string name?;

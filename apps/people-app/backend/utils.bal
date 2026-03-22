@@ -21,7 +21,7 @@ import ballerina/http;
 import ballerina/log;
 import ballerina/regex;
 
-# Validate and authorize organization entity patch requests.
+# Validate and authorize organization requests.
 #
 # + ctx - Request context
 # + return - `JwtPayloadUserInfo` when valid, otherwise corresponding http error response
