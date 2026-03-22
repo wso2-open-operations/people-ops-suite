@@ -1322,34 +1322,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <DatePicker
-              label="Probation End Date"
-              value={
-                values.probationEndDate ? dayjs(values.probationEndDate) : null
-              }
-              onChange={(val) =>
-                setFieldValue(
-                  "probationEndDate",
-                  val ? val.format("YYYY-MM-DD") : null,
-                )
-              }
-              slotProps={{
-                field: { clearable: true },
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(
-                    touched.probationEndDate && errors.probationEndDate,
-                  ),
-                  helperText:
-                    touched.probationEndDate && errors.probationEndDate,
-                  sx: textFieldSx,
-                },
-              }}
-            />
-          </Grid>
           {isPermanent ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Probation End Date"
                 value={
@@ -1566,9 +1540,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               label="House"
               name="houseId"
               value={values.houseId || 0}
-              onChange={(e) =>
-                setFieldValue("houseId", Number(e.target.value))
-              }
+              onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
               onBlur={handleBlur}
               helperText="Auto-assigned to the house with the fewest active employees"
               sx={textFieldSx}
