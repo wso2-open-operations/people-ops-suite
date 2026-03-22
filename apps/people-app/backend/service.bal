@@ -3113,31 +3113,6 @@ service http:InterceptableService / on new http:Listener(9090) {
             return validatedUserInfo;
         }
 
-        boolean|error hasChildren = database:subTeamUnitHasChildren(subTeamId, unitId);
-        if hasChildren is error {
-            string customErr = "Error while checking sub-team unit children";
-            log:printError(customErr, hasChildren, subTeamId = subTeamId, unitId = unitId);
-            return <http:InternalServerError>{
-                body: {
-                    message: customErr
-                }
-            };
-        }
-
-        if hasChildren {
-            log:printWarn(
-                    "Cannot delete sub-team unit mapping because it has assigned employees",
-                    subTeamId = subTeamId,
-                    unitId = unitId,
-                    invokerEmail = validatedUserInfo.email
-            );
-            return <http:BadRequest>{
-                body: {
-                    message: "Cannot delete this sub-team unit mapping because it has assigned employees. Reassign employees first."
-                }
-            };
-        }
-
         string workEmail = validatedUserInfo.email;
         error|boolean deleteResult = database:deleteSubTeamUnit(workEmail, subTeamId, unitId);
         if deleteResult is error {
