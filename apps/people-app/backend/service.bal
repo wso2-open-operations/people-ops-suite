@@ -719,14 +719,14 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + ctx - Request context
     # + return - The suggested house, 404 if none found, or 500 on error
-    resource function get houses/suggested(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
+    resource function get houses/least\-occupied(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
         if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
-            log:printWarn("User is not authorized to view suggested house", invokerEmail = userInfo.email);
-            return <http:Forbidden>{body: {message: "You are not authorized to view suggested house"}};
+            log:printWarn("User is not authorized to view least occupied house", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to view least occupied house"}};
         }
         database:House|error? house = database:getHouseWithLeastActiveEmployees();
         if house is error {

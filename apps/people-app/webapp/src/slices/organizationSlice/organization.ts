@@ -492,7 +492,7 @@ export const fetchSuggestedHouse = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const resp = await APIService.getInstance().get(
-        `${AppConfig.serviceUrls.houses}/suggested`,
+        `${AppConfig.serviceUrls.houses}/least-occupied`,
       );
       return (resp.data as House).id;
     } catch (error: any) {
