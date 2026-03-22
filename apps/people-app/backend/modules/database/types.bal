@@ -962,13 +962,13 @@ public type FunctionalLead record {|
 # Represents a unit within the organization hierarchy.
 public type OrgUnit record {|
     # Unique identifier of the unit
-    string id;
+    int id;
     # Parent mapping: business_unit_team_sub_team.id
-    string businessUnitTeamSubTeamId;
+    int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
-    string businessUnitTeamId;
+    int businessUnitTeamId;
     # Parent: business_unit.id
-    string businessUnitId;
+    int businessUnitId;
     # Display name of the unit
     string name;
     # Total number of employees or members in the unit
@@ -982,11 +982,11 @@ public type OrgUnit record {|
 # Represents a sub-team within the organization hierarchy.
 public type OrgSubTeam record {|
     # Unique identifier of the sub-team
-    string id;
+    int id;
     # Parent mapping: business_unit_team.id
-    string businessUnitTeamId;
+    int businessUnitTeamId;
     # Parent: business_unit.id
-    string businessUnitId;
+    int businessUnitId;
     # Display name of the sub-team
     string name;
     # Total number of employees or members in the sub-team
@@ -1002,11 +1002,9 @@ public type OrgSubTeam record {|
 # Represents a team within the organization hierarchy.
 public type OrgTeam record {|
     # Unique identifier of the team
-    string id;
-    # Unique identifier of the business_unit_team mapping row
-    string mappingId;
+    int id;
     # Parent: business_unit.id
-    string businessUnitId;
+    int businessUnitId;
     # Display name of the team
     string name;
     # Total number of employees or members in the team
@@ -1022,7 +1020,7 @@ public type OrgTeam record {|
 # Represents a business unit within the organization hierarchy.
 public type OrgBusinessUnit record {|
     # Unique identifier of the business unit
-    string id;
+    int id;
     # Display name of the business unit
     string name;
     # Total number of employees or members in the business unit
@@ -1036,7 +1034,7 @@ public type OrgBusinessUnit record {|
 # Represents the top-level company in the organization hierarchy.
 public type OrgCompany record {|
     # Unique identifier of the company
-    string id;
+    int id;
     # Display name of the company
     string name;
     # Total number of employees or members in the company
@@ -1048,7 +1046,7 @@ public type OrgCompany record {|
 # Raw database row type for the top-level company organization response.
 public type CompanyRaw record {|
     # Unique identifier of the company
-    string id;
+    int id;
     # Display name of the company
     string name;
     # Total number of employees or members in the company
@@ -1107,16 +1105,6 @@ public type OrgNodeInfo record {|
     string headEmail;
 |};
 
-# Internal payload for inserting a row into any org-node mapping table.
-public type OrgNodeMappingPayload record {|
-    # ID of the parent junction row
-    string parentId;
-    # ID of the newly created child node
-    string childId;
-    # Functional lead email for the mapping
-    string functionalLeadEmail;
-|};
-
 public type CreateBusinessUnitPayload record {|
     # Name of the business unit
     string name;
@@ -1126,9 +1114,9 @@ public type CreateBusinessUnitPayload record {|
 
 public type CreateBusinessUnitTeamPayload record {|
     # ID of the business unit
-    string businessUnitId;
+    int businessUnitId;
     # ID of the team
-    string teamId?;
+    int teamId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};
@@ -1144,9 +1132,9 @@ public type CreateTeamPayload record {|
 
 public type CreateBusinessUnitTeamSubTeamPayload record {|
     # ID of the business unit-team mapping
-    string businessUnitTeamId;
+    int businessUnitTeamId;
     # ID of the sub-team
-    string subTeamId?;
+    int subTeamId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};
@@ -1162,9 +1150,9 @@ public type CreateSubTeamPayload record {|
 
 public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # ID of the business unit-team-sub-team mapping
-    string businessUnitTeamSubTeamId;
+    int businessUnitTeamSubTeamId;
     # ID of the unit
-    string unitId?;
+    int unitId?;
     # Email of the functional lead for the mapping
     string functionalLeadEmail;
 |};

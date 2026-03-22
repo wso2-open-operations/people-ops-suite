@@ -160,7 +160,7 @@ public type OrgBusinessUnit record {|
 # Represents the top-level company in the organization hierarchy.
 public type OrgCompany record {|
     # Unique identifier of the company
-    string id;
+    int id;
     # Display name of the company
     string name;
     # Total number of employees or members in the company
@@ -190,21 +190,9 @@ public type CreateBusinessUnitPayload record {|
 
 public type CreateBusinessUnitTeamPayload record {|
     # ID of the business unit
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Business unit ID cannot be empty and should contain valid characters"
-        }
-    }
-    string businessUnitId;
+    int businessUnitId;
     # ID of the team — required only when mapping an existing team
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Team ID cannot be empty and should contain valid characters"
-        }
-    }
-    string teamId?;
+    int teamId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
@@ -238,21 +226,9 @@ public type CreateTeamPayload record {|
 
 public type CreateBusinessUnitTeamSubTeamPayload record {|
     # ID of the business unit-team mapping
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Business unit-team ID cannot be empty and should contain valid characters"
-        }
-    }
-    string businessUnitTeamId;
+    int businessUnitTeamId;
     # ID of the sub-team — required only when mapping an existing sub-team
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Sub-team ID cannot be empty and should contain valid characters"
-        }
-    }
-    string subTeamId?;
+    int subTeamId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
@@ -286,21 +262,9 @@ public type CreateSubTeamPayload record {|
 
 public type CreateBusinessUnitTeamSubTeamUnitPayload record {|
     # ID of the business unit-team-sub-team mapping
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Business unit-team-sub-team ID cannot be empty and should contain valid characters"
-        }
-    }
-    string businessUnitTeamSubTeamId;
+    int businessUnitTeamSubTeamId;
     # ID of the unit — required only when mapping an existing unit
-    @constraint:String {
-        pattern: {
-            value: PRINTABLE_CHARACTERS_FORMAT,
-            message: "Unit ID cannot be empty and should contain valid characters"
-        }
-    }
-    string unitId?;
+    int unitId?;
     # Email of the functional lead for the mapping
     @constraint:String {
         pattern: {
