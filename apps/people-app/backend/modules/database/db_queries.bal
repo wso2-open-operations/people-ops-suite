@@ -1255,236 +1255,203 @@ isolated function updateVehicleQuery(UpdateVehiclePayload payload) returns sql:P
     return sql:queryConcat(mainQuery, subQuery);
 }
 
-# Build query to update a business unit.
+# Get parking floors.
 #
-# + payload - Fields to update in the business unit
-# + buId - ID of the business unit to update
-# + return - Parameterized UPDATE query for the business unit
-isolated function updateBusinessUnitQuery(UpdateOrgUnitPayload payload, int buId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        business_unit
-      SET
-    `;
-    return buildOrganizationUnitUpdateQuery(mainQuery, payload, buId);
-}
+# + return - Query to get parking floors
+isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
+    `SELECT
+        id,
+        name,
+        display_order as 'displayOrder',
+        coins_per_slot as 'coinsPerSlot'
+    FROM parking_floor
+    WHERE is_active = 1
+    ORDER BY display_order ASC, id ASC`;
 
-# Build query to update a team.
+# Get parking slots for a floor for a date.
 #
-# + payload - Fields to update in the team
-# + teamId - ID of the team to update
-# + return - Parameterized UPDATE query for the team
-isolated function updateTeamQuery(UpdateOrgUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        team
-      SET
-    `;
-    return buildOrganizationUnitUpdateQuery(mainQuery, payload, teamId);
-}
+# + floorId - Floor id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get parking slots with isBooked
+isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
+    `SELECT
+        ps.slot_id as 'slotId',
+        ps.floor_id as 'floorId',
+        pf.name as 'floorName',
+        pf.coins_per_slot as 'coinsPerSlot',
+        CASE WHEN EXISTS (
+            SELECT 1 FROM parking_reservation pr
+            WHERE pr.slot_id = ps.slot_id
+              AND pr.booking_date = ${bookingDate}
+              AND pr.status = ${CONFIRMED}
+        ) THEN 1 ELSE 0 END as 'isBooked'
+    FROM parking_slot ps
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    WHERE ps.floor_id = ${floorId}
+    ORDER BY ps.slot_id ASC
+`;
 
-# Build query to update a sub team.
+# Get parking slot by id.
 #
-# + payload - Fields to update in the sub team
-# + subTeamId - ID of the sub team to update
-# + return - Parameterized UPDATE query for the sub team
-isolated function updateSubTeamQuery(UpdateOrgUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        sub_team
-      SET
-    `;
-    return buildOrganizationUnitUpdateQuery(mainQuery, payload, subTeamId);
-}
+# + slotId - Slot id
+# + return - Query to get parking slot
+isolated function getParkingSlotByIdQuery(string slotId) returns sql:ParameterizedQuery =>
+    `SELECT
+        ps.slot_id as 'slotId',
+        ps.floor_id as 'floorId',
+        pf.name as 'floorName',
+        pf.coins_per_slot as 'coinsPerSlot',
+        0 as 'isBooked'
+    FROM parking_slot ps
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    WHERE ps.slot_id = ${slotId}`;
 
-# Build query to update a unit.
+# Get confirmed reservation id for slot and date (existence check).
 #
-# + payload - Fields to update in the unit
-# + unitId - ID of the unit to update
-# + return - Parameterized UPDATE query for the unit
-isolated function updateUnitQuery(UpdateOrgUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        unit
-      SET
-    `;
-    return buildOrganizationUnitUpdateQuery(mainQuery, payload, unitId);
-}
+# + slotId - Slot id
+# + bookingDate - Booking date (YYYY-MM-DD)
+# + return - Query to get reservation id if booked
+isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
+    returns sql:ParameterizedQuery =>
+    `SELECT id
+    FROM parking_reservation
+    WHERE slot_id = ${slotId}
+      AND booking_date = ${bookingDate}
+      AND status = ${CONFIRMED}
+    LIMIT 1`;
 
-# Build query to update the functional lead of a business unit-team mapping.
+# Insert parking reservation (PENDING).
 #
-# + payload - Fields to update in the business unit-team mapping
-# + buId - ID of the business unit
-# + teamId - ID of the team
-# + return - Parameterized UPDATE query for the business_unit_team mapping
-isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        business_unit_team
-      SET
-    `;
+# + payload - Reservation payload
+# + return - Query to insert parking reservation
+isolated function addParkingReservationQuery(AddParkingReservationPayload payload) returns sql:ParameterizedQuery =>
+    `
+    INSERT INTO parking_reservation
+    (
+        slot_id, 
+        booking_date, 
+        employee_email, 
+        vehicle_id, 
+        status, 
+        coins_amount, 
+        created_by, 
+        updated_by
+    )
+    VALUES
+    (
+        ${payload.slotId},
+        ${payload.bookingDate}, 
+        ${payload.employeeEmail}, 
+        ${payload.vehicleId},
+        ${PENDING}, 
+        ${payload.coinsAmount}, 
+        ${payload.createdBy}, 
+        ${payload.createdBy}
+    );
+`;
 
-    sql:ParameterizedQuery subQuery = `
-      WHERE business_unit_id = ${buId} AND team_id = ${teamId}
-    `;
+# Get parking reservation by id.
+#
+# + reservationId - Reservation id
+# + return - Query to get reservation details
+isolated function getParkingReservationByIdQuery(int reservationId) returns sql:ParameterizedQuery =>
+    `SELECT
+        pr.id,
+        pr.slot_id as 'slotId',
+        pr.booking_date as 'bookingDate',
+        pr.employee_email as 'employeeEmail',
+        pr.vehicle_id as 'vehicleId',
+        v.vehicle_registration_number as 'vehicleRegistrationNumber',
+        v.vehicle_type as 'vehicleType',
+        pr.status,
+        pr.transaction_hash as 'transactionHash',
+        pr.coins_amount as 'coinsAmount',
+        pf.name as 'floorName',
+        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
+        pr.created_by as 'createdBy',
+        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
+        pr.updated_by as 'updatedBy'
+    FROM parking_reservation pr
+    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
+    WHERE pr.id = ${reservationId}`;
 
-    sql:ParameterizedQuery[] filters = [];
+# Get parking reservation id by transaction hash.
+#
+# + transactionHash - Blockchain transaction hash
+# + return - Query to get reservation id if hash is already used
+isolated function getParkingReservationByTransactionHashQuery(string transactionHash)
+    returns sql:ParameterizedQuery =>
+    `SELECT
+        id
+    FROM parking_reservation
+    WHERE transaction_hash = ${transactionHash}
+    LIMIT 1`;
 
-    if payload.functionalLeadEmail is string {
-        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+# Update parking reservation status and optional transaction_hash.
+#
+# + payload - Update payload
+# + return - Query to update reservation
+isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
+    returns sql:ParameterizedQuery {
+
+    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
+
+    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
+
+    if payload.transactionHash is string {
+        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
     }
 
-    filters.push(` updated_by = ${payload.updatedBy}`);
+    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
 
-    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
-
-    return sql:queryConcat(mainQuery, subQuery);
+    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
 }
 
-# Build query to update the functional lead of a team-sub team mapping.
+# Get parking reservations by employee.
 #
-# + payload - Fields to update in the team-sub team mapping
-# + teamId - ID of the team
-# + subTeamId - ID of the sub team
-# + return - Parameterized UPDATE query for the business_unit_team_sub_team mapping
-isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns sql:ParameterizedQuery {
+# + employeeEmail - Employee email
+# + fromDate - From date (optional)
+# + toDate - To date (optional)
+# + return - Query to get reservations
+isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, string? fromDate, string? toDate)
+    returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        business_unit_team_sub_team
-      SET
-    `;
+    SELECT
+        pr.id,
+        pr.slot_id as 'slotId',
+        pr.booking_date as 'bookingDate',
+        pr.employee_email as 'employeeEmail',
+        pr.vehicle_id as 'vehicleId',
+        v.vehicle_registration_number as 'vehicleRegistrationNumber',
+        v.vehicle_type as 'vehicleType',
+        pr.status,
+        pr.transaction_hash as 'transactionHash',
+        pr.coins_amount as 'coinsAmount',
+        pf.name as 'floorName',
+        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
+        pr.created_by as 'createdBy',
+        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
+        pr.updated_by as 'updatedBy'
+    FROM parking_reservation pr
+    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
+    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
+    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id`;
 
-    sql:ParameterizedQuery subQuery = `
-      WHERE business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
-    `;
+    sql:ParameterizedQuery[] filters = [` pr.employee_email = ${employeeEmail}`];
 
-    sql:ParameterizedQuery[] filters = [];
-
-    if payload.functionalLeadEmail is string {
-        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    if fromDate is string {
+        filters.push(` pr.booking_date >= ${fromDate}`);
+    }
+    if toDate is string {
+        filters.push(` pr.booking_date <= ${toDate}`);
     }
 
-    filters.push(` updated_by = ${payload.updatedBy}`);
+    mainQuery = buildSqlSelectQuery(mainQuery, filters);
 
-    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
-
-    return sql:queryConcat(mainQuery, subQuery);
-}
-
-# Build query to update the functional lead of a sub team-unit mapping.
-#
-# + payload - Fields to update in the sub team-unit mapping
-# + subTeamId - ID of the sub team
-# + unitId - ID of the unit
-# + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
-isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery mainQuery = `
-      UPDATE
-        business_unit_team_sub_team_unit
-      SET
-    `;
-
-    sql:ParameterizedQuery subQuery = `
-      WHERE business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
-    `;
-
-    sql:ParameterizedQuery[] filters = [];
-
-    if payload.functionalLeadEmail is string {
-        filters.push(` head_email = ${payload.functionalLeadEmail}`);
-    }
-
-    filters.push(` updated_by = ${payload.updatedBy}`);
-
-    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
-
-    return sql:queryConcat(mainQuery, subQuery);
-}
-
-# Build query to soft delete a business unit.
-#
-# + email - Email of the user performing the update
-# + buId - ID of the business unit to delete
-# + return - Parameterized UPDATE query for soft deletion
-isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-      UPDATE
-        business_unit
-      SET
-        is_active = 0,
-        updated_by = ${email},
-        updated_on = current_timestamp
-      WHERE 
-        id = ${buId}
-    `;
-
-    return query;
-};
-
-# Build query to soft delete a business unit-team mapping.
-#
-# + email - Email of the user performing the update
-# + buId - ID of the business unit
-# + teamId - ID of the team
-# + return - Parameterized UPDATE query for soft deletion
-isolated function deleteBusinessUnitTeamQuery(string email, int buId, int teamId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-      UPDATE
-        business_unit_team
-      SET
-        is_active = 0,
-        updated_by = ${email},
-        updated_on = current_timestamp
-      WHERE
-        business_unit_id = ${buId} AND team_id = ${teamId}
-    `;
-
-    return query;
-}
-
-# Build query to soft delete a team-sub team mapping.
-#
-# + email - Email of the user performing the update
-# + teamId - ID of the team
-# + subTeamId - ID of the sub team
-# + return - Parameterized UPDATE query for soft deletion
-isolated function deleteTeamSubTeamQuery(string email, int teamId, int subTeamId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-      UPDATE
-        business_unit_team_sub_team
-      SET
-        is_active = 0,
-        updated_by = ${email},
-        updated_on = current_timestamp
-      WHERE
-        business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
-    `;
-
-    return query;
-}
-
-# Build query to soft delete a sub team-unit mapping.
-#
-# + email - Email of the user performing the update
-# + subTeamId - ID of the sub team
-# + unitId - ID of the unit
-# + return - Parameterized UPDATE query for soft deletion
-isolated function deleteSubTeamUnitQuery(string email, int subTeamId, int unitId)
-    returns sql:ParameterizedQuery {
-    sql:ParameterizedQuery query = `
-      UPDATE
-        business_unit_team_sub_team_unit
-      SET
-        is_active = 0,
-        updated_by = ${email},
-        updated_on = current_timestamp
-      WHERE
-        business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
-    `;
-
-    return query;
+    return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
 }
 
 # Fetch the organization structure with business units, teams, sub-teams, units,
@@ -1822,6 +1789,238 @@ isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBu
   )
 `;
 
+# Build query to update a business unit.
+#
+# + payload - Fields to update in the business unit
+# + buId - ID of the business unit to update
+# + return - Parameterized UPDATE query for the business unit
+isolated function updateBusinessUnitQuery(UpdateOrgUnitPayload payload, int buId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, buId);
+}
+
+# Build query to update a team.
+#
+# + payload - Fields to update in the team
+# + teamId - ID of the team to update
+# + return - Parameterized UPDATE query for the team
+isolated function updateTeamQuery(UpdateOrgUnitPayload payload, int teamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        team
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, teamId);
+}
+
+# Build query to update a sub team.
+#
+# + payload - Fields to update in the sub team
+# + subTeamId - ID of the sub team to update
+# + return - Parameterized UPDATE query for the sub team
+isolated function updateSubTeamQuery(UpdateOrgUnitPayload payload, int subTeamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        sub_team
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, subTeamId);
+}
+
+# Build query to update a unit.
+#
+# + payload - Fields to update in the unit
+# + unitId - ID of the unit to update
+# + return - Parameterized UPDATE query for the unit
+isolated function updateUnitQuery(UpdateOrgUnitPayload payload, int unitId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        unit
+      SET
+    `;
+    return buildOrganizationUnitUpdateQuery(mainQuery, payload, unitId);
+}
+
+# Build query to update the functional lead of a business unit-team mapping.
+#
+# + payload - Fields to update in the business unit-team mapping
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for the business_unit_team mapping
+isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update the functional lead of a team-sub team mapping.
+#
+# + payload - Fields to update in the team-sub team mapping
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team mapping
+isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to update the functional lead of a sub team-unit mapping.
+#
+# + payload - Fields to update in the sub team-unit mapping
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
+isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery mainQuery = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+    `;
+
+    sql:ParameterizedQuery subQuery = `
+      WHERE business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    sql:ParameterizedQuery[] filters = [];
+
+    if payload.functionalLeadEmail is string {
+        filters.push(` head_email = ${payload.functionalLeadEmail}`);
+    }
+
+    filters.push(` updated_by = ${payload.updatedBy}`);
+
+    mainQuery = buildSqlUpdateQuery(mainQuery, filters);
+
+    return sql:queryConcat(mainQuery, subQuery);
+}
+
+# Build query to soft delete a business unit.
+#
+# + email - Email of the user performing the update
+# + buId - ID of the business unit to delete
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitQuery(string email, int buId) returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE 
+        id = ${buId}
+    `;
+
+    return query;
+};
+
+# Build query to soft delete a business unit-team mapping.
+#
+# + email - Email of the user performing the update
+# + buId - ID of the business unit
+# + teamId - ID of the team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteBusinessUnitTeamQuery(string email, int buId, int teamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_id = ${buId} AND team_id = ${teamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a team-sub team mapping.
+#
+# + email - Email of the user performing the update
+# + teamId - ID of the team
+# + subTeamId - ID of the sub team
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteTeamSubTeamQuery(string email, int teamId, int subTeamId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_id = ${teamId} AND sub_team_id = ${subTeamId}
+    `;
+
+    return query;
+}
+
+# Build query to soft delete a sub team-unit mapping.
+#
+# + email - Email of the user performing the update
+# + subTeamId - ID of the sub team
+# + unitId - ID of the unit
+# + return - Parameterized UPDATE query for soft deletion
+isolated function deleteSubTeamUnitQuery(string email, int subTeamId, int unitId)
+    returns sql:ParameterizedQuery {
+    sql:ParameterizedQuery query = `
+      UPDATE
+        business_unit_team_sub_team_unit
+      SET
+        is_active = 0,
+        updated_by = ${email},
+        updated_on = current_timestamp
+      WHERE
+        business_unit_team_sub_team_id = ${subTeamId} AND unit_id = ${unitId}
+    `;
+
+    return query;
+}
+
 # Build query to check if a business unit name is unique.
 #
 # + businessUnitName - Business unit name to check
@@ -1871,78 +2070,6 @@ isolated function validateUnitNameUniquenessQuery(string unitName) returns sql:P
         SELECT 1
         FROM unit
         WHERE is_active = 1 AND name = ${unitName}
-      ) THEN 1 ELSE 0 END AS exists_flag
-`;
-
-# Build query to check whether a business unit has child teams.
-#
-# + buId - Business unit ID
-# + return - Query returning `exists_flag` (1 if children exist, else 0)
-isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
-    SELECT
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM business_unit_team
-        WHERE is_active = 1 AND business_unit_id = ${buId}
-      ) THEN 1 ELSE 0 END AS exists_flag
-`;
-
-# Build query to check whether a business unit-team mapping has child sub-teams.
-#
-# + businessUnitId - Business unit ID
-# + teamId - Team ID
-# + return - Query returning `exists_flag` (1 if children exist, else 0)
-isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamId) returns sql:ParameterizedQuery => `
-    SELECT
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM business_unit_team_sub_team butst
-        INNER JOIN business_unit_team but
-          ON butst.business_unit_team_id = but.id
-        WHERE but.business_unit_id = ${businessUnitId}
-          AND but.team_id = ${teamId}
-          AND but.is_active = 1
-          AND butst.is_active = 1
-      ) THEN 1 ELSE 0 END AS exists_flag
-`;
-
-# Build query to check whether a team-sub-team mapping has child units.
-#
-# + teamId - Team ID
-# + subTeamId - Sub-team ID
-# + return - Query returning `exists_flag` (1 if children exist, else 0)
-isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns sql:ParameterizedQuery => `
-    SELECT
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM business_unit_team_sub_team_unit butstu
-        INNER JOIN business_unit_team_sub_team butst
-          ON butstu.business_unit_team_sub_team_id = butst.id
-        WHERE butst.business_unit_team_id = ${teamId}
-          AND butst.sub_team_id = ${subTeamId}
-          AND butst.is_active = 1
-          AND butstu.is_active = 1
-      ) THEN 1 ELSE 0 END AS exists_flag
-`;
-
-# Build query to check whether a sub-team unit mapping has assigned employees.
-#
-# + businessUnitTeamSubTeamId - BusinessUnit-team-sub-team mapping ID
-# + unitId - Unit ID
-# + return - Query returning `exists_flag` (1 if assigned employees exist, else 0)
-isolated function subTeamUnitHasChildrenQuery(int businessUnitTeamSubTeamId, int unitId) returns sql:ParameterizedQuery => `
-    SELECT
-      CASE WHEN EXISTS (
-        SELECT 1
-        FROM employee e
-        INNER JOIN business_unit_team_sub_team butst
-          ON butst.id = ${businessUnitTeamSubTeamId}
-        INNER JOIN business_unit_team but
-          ON but.id = butst.business_unit_team_id
-        WHERE e.unit_id = ${unitId}
-          AND e.sub_team_id = butst.sub_team_id
-          AND e.team_id = but.team_id
-          AND e.business_unit_id = but.business_unit_id
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
 
@@ -2023,201 +2150,54 @@ isolated function businessUnitTeamSubTeamMappingExistsQuery(int id) returns sql:
         WHERE is_active = 1 AND id = ${id}
       ) THEN 1 ELSE 0 END AS exists_flag
 `;
-# Get parking floors.
+
+# Build query to check whether a business unit has child teams.
 #
-# + return - Query to get parking floors
-isolated function getParkingFloorsQuery() returns sql:ParameterizedQuery =>
-    `SELECT
-        id,
-        name,
-        display_order as 'displayOrder',
-        coins_per_slot as 'coinsPerSlot'
-    FROM parking_floor
-    WHERE is_active = 1
-    ORDER BY display_order ASC, id ASC`;
-
-# Get parking slots for a floor for a date.
-#
-# + floorId - Floor id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get parking slots with isBooked
-isolated function getParkingSlotsByFloorQuery(int floorId, string bookingDate) returns sql:ParameterizedQuery =>
-    `SELECT
-        ps.slot_id as 'slotId',
-        ps.floor_id as 'floorId',
-        pf.name as 'floorName',
-        pf.coins_per_slot as 'coinsPerSlot',
-        CASE WHEN EXISTS (
-            SELECT 1 FROM parking_reservation pr
-            WHERE pr.slot_id = ps.slot_id
-              AND pr.booking_date = ${bookingDate}
-              AND pr.status = ${CONFIRMED}
-        ) THEN 1 ELSE 0 END as 'isBooked'
-    FROM parking_slot ps
-    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    WHERE ps.floor_id = ${floorId}
-    ORDER BY ps.slot_id ASC
-`;
-
-# Get parking slot by id.
-#
-# + slotId - Slot id
-# + return - Query to get parking slot
-isolated function getParkingSlotByIdQuery(string slotId) returns sql:ParameterizedQuery =>
-    `SELECT
-        ps.slot_id as 'slotId',
-        ps.floor_id as 'floorId',
-        pf.name as 'floorName',
-        pf.coins_per_slot as 'coinsPerSlot',
-        0 as 'isBooked'
-    FROM parking_slot ps
-    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    WHERE ps.slot_id = ${slotId}`;
-
-# Get confirmed reservation id for slot and date (existence check).
-#
-# + slotId - Slot id
-# + bookingDate - Booking date (YYYY-MM-DD)
-# + return - Query to get reservation id if booked
-isolated function getConfirmedParkingReservationForSlotDateQuery(string slotId, string bookingDate)
-    returns sql:ParameterizedQuery =>
-    `SELECT id
-    FROM parking_reservation
-    WHERE slot_id = ${slotId}
-      AND booking_date = ${bookingDate}
-      AND status = ${CONFIRMED}
-    LIMIT 1`;
-
-# Insert parking reservation (PENDING).
-#
-# + payload - Reservation payload
-# + return - Query to insert parking reservation
-isolated function addParkingReservationQuery(AddParkingReservationPayload payload) returns sql:ParameterizedQuery =>
-    `
-    INSERT INTO parking_reservation
-    (
-        slot_id, 
-        booking_date, 
-        employee_email, 
-        vehicle_id, 
-        status, 
-        coins_amount, 
-        created_by, 
-        updated_by
-    )
-    VALUES
-    (
-        ${payload.slotId},
-        ${payload.bookingDate}, 
-        ${payload.employeeEmail}, 
-        ${payload.vehicleId},
-        ${PENDING}, 
-        ${payload.coinsAmount}, 
-        ${payload.createdBy}, 
-        ${payload.createdBy}
-    );
-`;
-
-# Get parking reservation by id.
-#
-# + reservationId - Reservation id
-# + return - Query to get reservation details
-isolated function getParkingReservationByIdQuery(int reservationId) returns sql:ParameterizedQuery =>
-    `SELECT
-        pr.id,
-        pr.slot_id as 'slotId',
-        pr.booking_date as 'bookingDate',
-        pr.employee_email as 'employeeEmail',
-        pr.vehicle_id as 'vehicleId',
-        v.vehicle_registration_number as 'vehicleRegistrationNumber',
-        v.vehicle_type as 'vehicleType',
-        pr.status,
-        pr.transaction_hash as 'transactionHash',
-        pr.coins_amount as 'coinsAmount',
-        pf.name as 'floorName',
-        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        pr.created_by as 'createdBy',
-        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        pr.updated_by as 'updatedBy'
-    FROM parking_reservation pr
-    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
-    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id
-    WHERE pr.id = ${reservationId}`;
-
-# Get parking reservation id by transaction hash.
-#
-# + transactionHash - Blockchain transaction hash
-# + return - Query to get reservation id if hash is already used
-isolated function getParkingReservationByTransactionHashQuery(string transactionHash)
-    returns sql:ParameterizedQuery =>
-    `SELECT
-        id
-    FROM parking_reservation
-    WHERE transaction_hash = ${transactionHash}
-    LIMIT 1`;
-
-# Update parking reservation status and optional transaction_hash.
-#
-# + payload - Update payload
-# + return - Query to update reservation
-isolated function updateParkingReservationStatusQuery(UpdateParkingReservationStatusPayload payload)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery mainQuery = `UPDATE parking_reservation SET`;
-
-    sql:ParameterizedQuery[] setClauses = [` status = ${payload.status}`, ` updated_by = ${payload.updatedBy}`];
-
-    if payload.transactionHash is string {
-        setClauses.push(` transaction_hash = ${payload.transactionHash}`);
-    }
-
-    mainQuery = buildSqlUpdateQuery(mainQuery, setClauses);
-
-    return sql:queryConcat(mainQuery, ` WHERE id = ${payload.reservationId}`);
-}
-
-# Get parking reservations by employee.
-#
-# + employeeEmail - Employee email
-# + fromDate - From date (optional)
-# + toDate - To date (optional)
-# + return - Query to get reservations
-isolated function getParkingReservationsByEmployeeQuery(string employeeEmail, string? fromDate, string? toDate)
-    returns sql:ParameterizedQuery {
-
-    sql:ParameterizedQuery mainQuery = `
+# + buId - Business unit ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function businessUnitHasChildrenQuery(int buId) returns sql:ParameterizedQuery => `
     SELECT
-        pr.id,
-        pr.slot_id as 'slotId',
-        pr.booking_date as 'bookingDate',
-        pr.employee_email as 'employeeEmail',
-        pr.vehicle_id as 'vehicleId',
-        v.vehicle_registration_number as 'vehicleRegistrationNumber',
-        v.vehicle_type as 'vehicleType',
-        pr.status,
-        pr.transaction_hash as 'transactionHash',
-        pr.coins_amount as 'coinsAmount',
-        pf.name as 'floorName',
-        DATE_FORMAT(pr.created_on, '%Y-%m-%d %H:%i:%s') AS 'createdOn',
-        pr.created_by as 'createdBy',
-        DATE_FORMAT(pr.updated_on, '%Y-%m-%d %H:%i:%s') AS 'updatedOn',
-        pr.updated_by as 'updatedBy'
-    FROM parking_reservation pr
-    INNER JOIN parking_slot ps ON pr.slot_id = ps.slot_id
-    INNER JOIN parking_floor pf ON ps.floor_id = pf.id
-    INNER JOIN vehicle v ON pr.vehicle_id = v.vehicle_id`;
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team
+        WHERE is_active = 1 AND business_unit_id = ${buId}
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
 
-    sql:ParameterizedQuery[] filters = [` pr.employee_email = ${employeeEmail}`];
+# Build query to check whether a business unit-team mapping has child sub-teams.
+#
+# + businessUnitId - Business unit ID
+# + teamId - Team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function businessUnitTeamHasChildrenQuery(int businessUnitId, int teamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team butst
+        INNER JOIN business_unit_team but
+          ON butst.business_unit_team_id = but.id
+        WHERE but.business_unit_id = ${businessUnitId}
+          AND but.team_id = ${teamId}
+          AND but.is_active = 1
+          AND butst.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
 
-    if fromDate is string {
-        filters.push(` pr.booking_date >= ${fromDate}`);
-    }
-    if toDate is string {
-        filters.push(` pr.booking_date <= ${toDate}`);
-    }
-
-    mainQuery = buildSqlSelectQuery(mainQuery, filters);
-
-    return sql:queryConcat(mainQuery, ` ORDER BY pr.booking_date DESC, pr.created_on DESC`);
-}
+# Build query to check whether a team-sub-team mapping has child units.
+#
+# + teamId - Team ID
+# + subTeamId - Sub-team ID
+# + return - Query returning `exists_flag` (1 if children exist, else 0)
+isolated function teamSubTeamHasChildrenQuery(int teamId, int subTeamId) returns sql:ParameterizedQuery => `
+    SELECT
+      CASE WHEN EXISTS (
+        SELECT 1
+        FROM business_unit_team_sub_team_unit butstu
+        INNER JOIN business_unit_team_sub_team butst
+          ON butstu.business_unit_team_sub_team_id = butst.id
+        WHERE butst.business_unit_team_id = ${teamId}
+          AND butst.sub_team_id = ${subTeamId}
+          AND butst.is_active = 1
+          AND butstu.is_active = 1
+      ) THEN 1 ELSE 0 END AS exists_flag
+`;
