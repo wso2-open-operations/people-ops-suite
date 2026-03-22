@@ -57,6 +57,7 @@ import {
   fetchCompanies,
   fetchOffices,
   fetchEmploymentTypes,
+  fetchHouses,
 } from "@slices/organizationSlice/organization";
 import { CreateEmployeeFormValues } from "@root/src/types/types";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -68,6 +69,7 @@ import {
   SupervisorAccountOutlined,
   InfoOutlined,
   Close,
+  WidgetsOutlined,
 } from "@mui/icons-material";
 import dayjs from "dayjs";
 
@@ -77,6 +79,7 @@ const SECTION_ICONS = {
   location: <LocationOnOutlined />,
   event: <EventOutlined />,
   supervisor: <SupervisorAccountOutlined />,
+  other: <WidgetsOutlined />,
 };
 
 const SECTION_HEADER_BOX_SX = {
@@ -276,6 +279,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     companies,
     offices,
     employmentTypes,
+    houses,
   } = useAppSelector((state) => state.organization);
 
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(
@@ -356,6 +360,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     dispatch(fetchCareerFunctions());
     dispatch(fetchEmployeesBasicInfo());
     dispatch(fetchEmploymentTypes());
+    dispatch(fetchHouses());
 
     return () => {
       dispatch(resetContinuousService());
@@ -1152,7 +1157,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
           iconBoxSx={iconBoxSx}
         />
         <Grid container spacing={3}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <TextField
               select
               fullWidth
@@ -1187,7 +1192,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </TextField>
           </Grid>
           {isInternship ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 select
                 fullWidth
@@ -1212,7 +1217,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             </Grid>
           ) : null}
           {isFixedTerm ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <TextField
                 fullWidth
                 required
@@ -1228,7 +1233,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               />
             </Grid>
           ) : null}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Start Date"
               value={values.startDate ? dayjs(values.startDate) : null}
@@ -1244,7 +1249,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={4}>
             <DatePicker
               label="Probation End Date"
               value={
@@ -1271,7 +1276,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
             />
           </Grid>
           {showAgreementEndDate ? (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid item xs={12} sm={6} md={4}>
               <DatePicker
                 label="Agreement End Date"
                 value={
@@ -1426,6 +1431,46 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                     : values.managerEmail
                       ? "No other leads available"
                       : "Select primary lead first"}
+                </MenuItem>
+              )}
+            </TextField>
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box>
+        <SectionHeader
+          icon={SECTION_ICONS.other}
+          title="Other"
+          headerBoxSx={SECTION_HEADER_BOX_SX}
+          iconBoxSx={iconBoxSx}
+        />
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              select
+              fullWidth
+              label="House"
+              name="houseId"
+              value={values.houseId || 0}
+              onChange={(e) =>
+                setFieldValue("houseId", Number(e.target.value))
+              }
+              onBlur={handleBlur}
+              helperText="Auto-assigned to the house with the fewest active employees"
+              sx={textFieldSx}
+            >
+              {houses.length ? (
+                houses.map((h) => (
+                  <MenuItem key={h.id} value={h.id}>
+                    {h.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem disabled>
+                  {organizationState === "loading"
+                    ? "Loading houses..."
+                    : "No houses found"}
                 </MenuItem>
               )}
             </TextField>

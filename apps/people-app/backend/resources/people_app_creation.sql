@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS resignation;
 DROP TABLE IF EXISTS vehicle;
 DROP TABLE IF EXISTS employee_additional_managers;
 DROP TABLE IF EXISTS employee;
+DROP TABLE IF EXISTS house;
 DROP TABLE IF EXISTS recruit;
 DROP TABLE IF EXISTS business_unit_team_sub_team_unit;
 DROP TABLE IF EXISTS business_unit_team_sub_team;
@@ -277,6 +278,21 @@ CREATE TABLE `recruit` (
     FOREIGN KEY (`employment_type`) REFERENCES `employment_type` (`id`)
 );
 
+-- House table
+CREATE TABLE `house` (
+  `id`        INT          NOT NULL AUTO_INCREMENT,
+  `name`      VARCHAR(100) NOT NULL,
+  `is_active` TINYINT(1)   NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_house_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO `house` (`name`) VALUES
+  ('CloudBots'),
+  ('Titans'),
+  ('Legions'),
+  ('Wild Boars');
+
 -- Employee table
 CREATE TABLE `employee` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
@@ -306,6 +322,7 @@ CREATE TABLE `employee` (
   `sub_team_id` INT NOT NULL,
   `business_unit_id` INT NOT NULL,
   `unit_id` INT NULL,
+  `house_id` INT NULL DEFAULT NULL,
   `personal_info_id` INT NOT NULL,
   CONSTRAINT `fk_emp_personal_info`
     FOREIGN KEY (`personal_info_id`) REFERENCES `personal_info` (`id`),
@@ -325,6 +342,8 @@ CREATE TABLE `employee` (
     FOREIGN KEY (`business_unit_id`) REFERENCES `business_unit` (`id`),
   CONSTRAINT `fk_emp_unit`
     FOREIGN KEY (`unit_id`) REFERENCES `unit` (`id`),
+  CONSTRAINT `fk_emp_house`
+    FOREIGN KEY (`house_id`) REFERENCES `house` (`id`),
   CONSTRAINT `fk_emp_continuous_service_record`
     FOREIGN KEY (`continuous_service_record`) REFERENCES `employee` (`employee_id`)
 );
@@ -367,7 +386,7 @@ CREATE TABLE `personal_info_emergency_contacts` (
   `personal_info_id` INT NOT NULL,
   `name` VARCHAR(150) NOT NULL,
   `mobile` VARCHAR(20) NOT NULL,
-  `telephone` VARCHAR(20) NOT NULL,
+  `telephone` VARCHAR(20) NULL,
   `relationship` VARCHAR(100) NOT NULL,
   `created_by` VARCHAR(254) NOT NULL,
   `created_on` TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),

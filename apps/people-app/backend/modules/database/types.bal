@@ -171,6 +171,10 @@ public type Employee record {|
     string? unit;
     # Unit ID
     int? unitId;
+    # House
+    string? house;
+    # House ID
+    int? houseId;
     # Computed field: number of subordinates this employee manages
     int subordinateCount;
 |};
@@ -516,6 +520,14 @@ public type EmploymentType record {|
     string name;
 |};
 
+# House.
+public type House record {|
+    # House ID
+    int id;
+    # House name
+    string name;
+|};
+
 # Manager payload.
 public type Manager record {|
     # Employee ID of the manager
@@ -539,7 +551,7 @@ public type EmergencyContact record {|
     # Relationship with the employee
     string relationship;
     # Telephone number of the emergency contact
-    string telephone;
+    string? telephone;
     # Mobile number of the emergency contact
     string mobile;
 |};
@@ -653,6 +665,8 @@ public type CreateEmployeePayload record {|
     int businessUnitId;
     # Unit ID
     int? unitId = ();
+    # House ID
+    int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();
@@ -769,6 +783,8 @@ public type UpdateEmployeeJobInfoPayload record {|
     int? businessUnitId = ();
     # Unit ID
     int? unitId = ();
+    # House ID
+    int? houseId = ();
     # Continuous service record
     @constraint:String {maxLength: 99}
     string? continuousServiceRecord = ();

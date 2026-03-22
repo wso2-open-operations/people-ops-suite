@@ -693,6 +693,54 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employmentTypes;
     }
 
+    # Get houses.
+    #
+    # + ctx - Request context
+    # + return - Houses
+    resource function get houses(http:RequestContext ctx)
+        returns database:House[]|http:Forbidden|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to view houses", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to view houses"}};
+        }
+        database:House[]|error houses = database:getHouses();
+        if houses is error {
+            string customError = "Error while fetching Houses";
+            log:printError(customError, houses);
+            return <http:InternalServerError>{body: {message: customError}};
+        }
+        return houses;
+    }
+
+    # Get the house with the fewest active employees.
+    #
+    # + ctx - Request context
+    # + return - The suggested house, 404 if none found, or 500 on error
+    resource function get houses/suggested(http:RequestContext ctx) returns database:House|http:Forbidden|http:NotFound|http:InternalServerError {
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+        if !authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups) {
+            log:printWarn("User is not authorized to view suggested house", invokerEmail = userInfo.email);
+            return <http:Forbidden>{body: {message: "You are not authorized to view suggested house"}};
+        }
+        database:House|error? house = database:getHouseWithLeastActiveEmployees();
+        if house is error {
+            log:printError("Error while fetching suggested house", house);
+            return <http:InternalServerError>{body: {message: "Error while fetching suggested house"}};
+        }
+        if house is () {
+            return <http:NotFound>{body: {message: "No active houses found"}};
+        }
+        return house;
+    }
+
     # Create a new employee.
     #
     # + return - The created employee ID as an integer, or HTTP errors
@@ -1371,11 +1419,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         while fetchMore {
             database:EmployeesResponse|error pageResult = database:getEmployees({
-                searchString: (),
-                filters: {employeeStatus: status},
-                pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
-                sort: {sortField: "employeeId", sortOrder: "ASC"}
-            });
+                                                                                    searchString: (),
+                                                                                    filters: {employeeStatus: status},
+                                                                                    pagination: {'limit: database:DEFAULT_LIMIT, offset: offset},
+                                                                                    sort: {sortField: "employeeId", sortOrder: "ASC"}
+                                                                                });
             if pageResult is error {
                 log:printError("Error fetching employees for report", pageResult);
                 return <http:InternalServerError>{

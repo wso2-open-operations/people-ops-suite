@@ -59,6 +59,8 @@ export interface Employee {
   teamId: number;
   subTeamId: number;
   unitId: number | null;
+  house: string | null;
+  houseId: number | null;
 }
 
 export enum EmployeeStatus {
@@ -163,6 +165,7 @@ export type CreateEmployeePayload = {
   subTeamId: number;
   businessUnitId: number;
   unitId?: number;
+  houseId?: number;
   continuousServiceRecord?: string | null;
   personalInfo: CreatePersonalInfoPayload;
 };
@@ -186,6 +189,7 @@ export type UpdateEmployeeJobInfoPayload = {
   subTeamId?: number | null;
   businessUnitId?: number | null;
   unitId?: number | null;
+  houseId?: number | null;
   continuousServiceRecord?: string | null;
 };
 

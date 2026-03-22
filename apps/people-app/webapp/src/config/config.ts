@@ -74,5 +74,6 @@ export const AppConfig = {
     subTeams: SERVICE_BASE_URL + "/sub-teams",
     units: SERVICE_BASE_URL + "/units",
     offices: SERVICE_BASE_URL + "/offices",
+    houses: SERVICE_BASE_URL + "/houses",
   },
 };

@@ -223,6 +223,22 @@ public isolated function getEmploymentTypes() returns EmploymentType[]|error {
         select employmentType;
 }
 
+# Get houses.
+#
+# + return - Houses
+public isolated function getHouses() returns House[]|error {
+    stream<House, sql:Error?> resultStream = databaseClient->query(getHousesQuery());
+    return from House house in resultStream select house;
+}
+
+# Get the house with the fewest active employees.
+#
+# + return - House with the least active employees, nil if no active houses, or error
+public isolated function getHouseWithLeastActiveEmployees() returns House|error? {
+    House|error result = databaseClient->queryRow(getHouseWithLeastActiveEmployeesQuery());
+    return result is sql:NoRowsError ? () : result;
+}
+
 # Get managers.
 #
 # + return - Managers

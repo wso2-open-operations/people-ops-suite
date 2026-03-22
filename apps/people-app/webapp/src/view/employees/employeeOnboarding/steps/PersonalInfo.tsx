@@ -142,11 +142,12 @@ export const personalInfoValidationSchema = Yup.object().shape({
             .required("Relationship is required")
             .max(100, "Relationship must be at most 100 characters"),
           telephone: Yup.string()
+            .transform((value) => (value === "" ? null : value))
+            .nullable()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
               "Invalid telephone number format",
-            )
-            .required("Telephone is required"),
+            ),
           mobile: Yup.string()
             .matches(
               /^[0-9+\-()\s]*[0-9][0-9+\-()\s]*$/,
@@ -434,8 +435,6 @@ export default function PersonalInfoStep() {
               )}
               helperText={
                 touched.personalInfo?.fullName && errors.personalInfo?.fullName
-                  ? errors.personalInfo?.fullName
-                  : "Fill according to your NIC or birth certificate"
               }
               sx={textFieldSx}
             />
@@ -596,7 +595,7 @@ export default function PersonalInfoStep() {
                               <Field
                                 as={TextField}
                                 fullWidth
-                                required
+                                required={field !== "telephone"}
                                 name={fieldName}
                                 label={
                                   field.charAt(0).toUpperCase() + field.slice(1)

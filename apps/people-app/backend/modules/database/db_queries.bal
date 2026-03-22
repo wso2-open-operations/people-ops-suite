@@ -33,13 +33,14 @@ isolated function getEmployeeBasicInfoQuery(string email) returns sql:Parameteri
 #
 # + return - Query to get all employees basic information
 isolated function getAllEmployeesBasicInfoQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
+    `SELECT
         employee_id,
         first_name,
         last_name,
         work_email,
         employee_thumbnail
-    FROM employee;`;
+    FROM employee
+    WHERE employee_status = 'Active';`;
 
 # Fetch employee ID by primary key ID.
 #
@@ -98,13 +99,15 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         st.name AS subTeam,
         e.sub_team_id AS subTeamId,
         u.name AS unit,
-        e.unit_id AS unitId
+        e.unit_id AS unitId,
+        h.name AS house,
+        e.house_id AS houseId
     FROM
         employee e
         LEFT JOIN (
-            SELECT 
+            SELECT
                 employee_pk_id,
-                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',') 
+                GROUP_CONCAT(additional_manager_email ORDER BY additional_manager_email SEPARATOR ',')
                 AS additionalManagerEmails
             FROM employee_additional_managers
             GROUP BY employee_pk_id
@@ -117,6 +120,7 @@ isolated function getEmployeeInfoQuery(string employeeId) returns sql:Parameteri
         INNER JOIN sub_team st ON e.sub_team_id = st.id
         INNER JOIN business_unit bu ON e.business_unit_id = bu.id
         LEFT JOIN unit u ON e.unit_id = u.id
+        LEFT JOIN house h ON e.house_id = h.id
     WHERE
         e.employee_id = ${employeeId};`;
 
@@ -658,10 +662,28 @@ isolated function getOfficesQuery(int? companyId = ()) returns sql:Parameterized
 #
 # + return - Employment types query
 isolated function getEmploymentTypesQuery() returns sql:ParameterizedQuery =>
-    `SELECT 
+    `SELECT
         id,
         name
     FROM employment_type;`;
+
+# Get houses query.
+#
+# + return - Houses query
+isolated function getHousesQuery() returns sql:ParameterizedQuery =>
+    `SELECT id, name FROM house WHERE is_active = 1 ORDER BY name`;
+
+# Get the house with the fewest active employees query.
+#
+# + return - Query to get the house with the least active employees
+isolated function getHouseWithLeastActiveEmployeesQuery() returns sql:ParameterizedQuery =>
+    `SELECT h.id, h.name
+     FROM house h
+     LEFT JOIN employee e ON e.house_id = h.id AND e.employee_status = 'Active'
+     WHERE h.is_active = 1
+     GROUP BY h.id, h.name
+     ORDER BY COUNT(e.id) ASC
+     LIMIT 1`;
 
 # Add employee personal information query.
 #
@@ -829,6 +851,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             sub_team_id,
             business_unit_id,
             unit_id,
+            house_id,
             created_by,
             updated_by
         )
@@ -857,6 +880,7 @@ isolated function addEmployeeQuery(CreateEmployeePayload payload, string created
             ${payload.subTeamId},
             ${payload.businessUnitId},
             ${payload.unitId},
+            ${payload.houseId},
             ${createdBy},
             ${createdBy}
         );`;
@@ -1129,6 +1153,12 @@ isolated function updateEmployeeJobInfoQuery(string employeeId, UpdateEmployeeJo
         updates.push(`unit_id = ${payload.unitId}`);
     } else if payload.unitId is () {
         updates.push(`unit_id = NULL`);
+    }
+
+    if payload.houseId is int {
+        updates.push(`house_id = ${payload.houseId}`);
+    } else if payload.houseId is () {
+        updates.push(`house_id = NULL`);
     }
 
     if payload.continuousServiceRecord is string {
