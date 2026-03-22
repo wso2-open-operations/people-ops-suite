@@ -1799,7 +1799,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         if businessUnitTeam is CreateBusinessUnitTeamSubTeamPayload {
             boolean|error buTeamMappingExists = 
                 database:businessUnitTeamMappingExists(businessUnitTeam.businessUnitTeamId);
-                
+
             if buTeamMappingExists is error {
                 log:printError("Error while validating business unit-team mapping", buTeamMappingExists,
                     businessUnitTeamId = businessUnitTeam.businessUnitTeamId);
@@ -2409,6 +2409,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+
         error? updateResult = database:updateTeam({
                                                       ...payload,
                                                       updatedBy: workEmail
@@ -2469,6 +2489,26 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
+        }
+
         error? updateResult = database:updateSubTeam({
                                                          ...payload,
                                                          updatedBy: workEmail
@@ -2527,6 +2567,26 @@ service http:InterceptableService / on new http:Listener(9090) {
                     message: customErr
                 }
             };
+        }
+
+        string? headEmail = payload.headEmail;
+        if headEmail is string {
+            EmployeeBasicInfo|error? headsBasicInfo = database:getEmployeeBasicInfo(headEmail);
+            if headsBasicInfo is error {
+                return <http:InternalServerError>{
+                    body: {
+                        message: "Error while validating head's email"
+                    }
+                };
+            }
+
+            if headsBasicInfo is () {
+                return <http:BadRequest>{
+                    body: {
+                        message: "No head is found for given email"
+                    }
+                };
+            }
         }
 
         error? updateResult = database:updateUnit({
