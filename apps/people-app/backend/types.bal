@@ -149,7 +149,7 @@ type UpdateOrgUnitPayload record {|
             message: string `Functional lead ${ERROR_INVALID_EMAIL} `
         }
     }
-    string functionalLeadEmail?;
+    string functionalLeadEmail;
 |};
 
 # Represents the database organization business unit.
