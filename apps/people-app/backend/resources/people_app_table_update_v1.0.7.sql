@@ -18,3 +18,5 @@ INSERT IGNORE INTO `house` (`name`) VALUES
 ALTER TABLE `employee`
   ADD COLUMN `house_id` INT NULL DEFAULT NULL AFTER `unit_id`,
   ADD CONSTRAINT `fk_emp_house` FOREIGN KEY (`house_id`) REFERENCES `house` (`id`);
+ALTER TABLE `companies_allowed_locations`
+ADD COLUMN `probation_period` TINYINT UNSIGNED NULL AFTER `is_active`;

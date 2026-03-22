@@ -444,6 +444,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     },
     [],
   );
+  const isPermanent = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    return /^permanent$/i.test(selectedType?.name?.trim() ?? "");
+  }, [employmentTypes, values.employmentTypeId]);
 
   const isInternship = useMemo(() => {
     return (
@@ -465,7 +471,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       ?.name?.trim()
       .toLowerCase();
     if (!normalized) return false;
-    return /internship|consultancy/.test(normalized);
+    return /internship|consultancy|fixed\s+term/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {
@@ -481,6 +487,47 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     computeAgreementEndDate,
   ]);
 
+  const matchedProbationLocation = useMemo(() => {
+    if (!values.companyId || !values.workLocation || !companies.length)
+      return null;
+
+    const company = companies.find((c) => c.id === values.companyId);
+    return (
+      company?.allowedLocations?.find(
+        (item) =>
+          item.location.trim().toUpperCase() ===
+          values.workLocation.trim().toUpperCase(),
+      ) ?? null
+    );
+  }, [values.companyId, values.workLocation, companies]);
+
+  useEffect(() => {
+    if (!isPermanent) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+    if (!values.startDate || !matchedProbationLocation) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    const probationMonths = matchedProbationLocation.probationPeriod ?? null;
+
+    if (probationMonths === null) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    try {
+      const computed = dayjs(values.startDate)
+        .add(probationMonths, "month")
+        .format("YYYY-MM-DD");
+      setFieldValue("probationEndDate", computed);
+    } catch {
+      setFieldValue("probationEndDate", null);
+    }
+  }, [isPermanent, values.startDate, matchedProbationLocation, setFieldValue]);
+
   const handleEmploymentTypeChange = useCallback(
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
@@ -492,6 +539,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       const isNewInternship = /^internship$/i.test(typeName);
       const isPermanent = /^permanent$/i.test(typeName);
       const isNewFixedTerm = !AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
+      const isConsultancy = /consultancy/i.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
@@ -501,6 +549,8 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       } else {
         setInternshipDurationMonths(0);
         if (isPermanent) setFieldValue("agreementEndDate", null);
+        if (isConsultancy || isNewFixedTerm)
+          setFieldValue("agreementEndDate", null);
         if (!isNewFixedTerm) setFieldValue("employeeId", "");
       }
     },
@@ -1130,9 +1180,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               {values.companyId && companies.length ? (
                 companies
                   .find((company) => company.id === values.companyId)
-                  ?.allowedLocations?.map((location) => (
-                    <MenuItem key={location} value={location}>
-                      {location}
+                  ?.allowedLocations?.map((locationItem) => (
+                    <MenuItem
+                      key={locationItem.location}
+                      value={locationItem.location}
+                    >
+                      {locationItem.location}
                     </MenuItem>
                   )) || <MenuItem disabled>No locations available</MenuItem>
               ) : (
@@ -1275,6 +1328,44 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
+          {isPermanent ? (
+            <Grid item xs={12} sm={6} md={3}>
+              <DatePicker
+                label="Probation End Date"
+                value={
+                  values.probationEndDate
+                    ? dayjs(values.probationEndDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "probationEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    error: Boolean(
+                      touched.probationEndDate && errors.probationEndDate,
+                    ),
+                    helperText: (() => {
+                      if (touched.probationEndDate && errors.probationEndDate) {
+                        return errors.probationEndDate;
+                      }
+                      if (!matchedProbationLocation) return undefined;
+
+                      return matchedProbationLocation.probationPeriod === null
+                        ? "N/A — No probation for this location"
+                        : `Auto-calculated: ${matchedProbationLocation.probationPeriod} months from start date`;
+                    })(),
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+          ) : null}
           {showAgreementEndDate ? (
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker

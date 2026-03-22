@@ -455,7 +455,7 @@ public type OrgStructureBusinessUnit record {|
     OrgStructureTeam[] teams = [];
 |};
 
-# Raw database result with JSON teams that needs to be parsed
+# [Database] Organization structure business unit row with teams as a JSON string.
 type OrgStructureBusinessUnitRow record {|
     # Business unit ID
     int id;
@@ -485,8 +485,8 @@ public type Designation record {|
     int jobBand;
 |};
 
-# Company.
-public type Company record {|
+# [Database] Company record with allowed locations as a JSON string.
+public type CompanyRow record {|
     # Company ID
     int id;
     # Company name
@@ -497,6 +497,28 @@ public type Company record {|
     string location;
     # Allowed locations
     string? allowedLocations;
+|};
+
+# Allowed location with probation period.
+public type AllowedLocation record {|
+    # Work location name
+    string location;
+    # Probation period in months
+    int? probationPeriod;
+|};
+
+# Company with parsed allowed locations.
+public type CompanyResponse record {|
+    # Company ID
+    int id; 
+    # Company name
+    string name;
+    # Company prefix
+    string prefix;
+    # Company location
+    string location;
+    # Allowed work locations with probation periods
+    AllowedLocation[] allowedLocations;
 |};
 
 # Office.

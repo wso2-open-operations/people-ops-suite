@@ -634,7 +634,16 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
         c.name,
         c.prefix,
         c.location,
-        GROUP_CONCAT(cal.allowed_location ORDER BY cal.allowed_location SEPARATOR ',') AS allowedLocations
+        CASE 
+            WHEN COUNT(cal.id) = 0 THEN NULL
+            ELSE CONCAT('[', GROUP_CONCAT(
+                JSON_OBJECT(
+                    'location', cal.allowed_location,
+                    'probationPeriod', cal.probation_period
+                )
+                ORDER BY cal.allowed_location SEPARATOR ','
+            ), ']')
+        END AS allowedLocations
     FROM company c
     LEFT JOIN companies_allowed_locations cal 
         ON c.id = cal.company_id AND cal.is_active = 1
