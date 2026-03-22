@@ -62,8 +62,7 @@ export interface Company {
   name: string;
   prefix: string;
   location: string;
-  allowedLocations: { location: string; probationPeriod?: number | null }[];
-}
+  allowedLocations: { location: string; probationPeriod: number | null }[];}
 
 export interface Office {
   id: number;

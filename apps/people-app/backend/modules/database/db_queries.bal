@@ -636,14 +636,18 @@ isolated function getCompaniesQuery() returns sql:ParameterizedQuery =>
         c.location,
         CASE 
             WHEN COUNT(cal.id) = 0 THEN NULL
-            ELSE CONCAT('[', GROUP_CONCAT(
-                JSON_OBJECT(
-                    'location', cal.allowed_location,
-                    'probationPeriod', cal.probation_period
+            ELSE (
+                SELECT JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                        'location', cal2.allowed_location,
+                        'probationPeriod', cal2.probation_period
                 )
-                ORDER BY cal.allowed_location SEPARATOR ','
-            ), ']')
-        END AS allowedLocations
+            )
+        FROM companies_allowed_locations cal2
+        WHERE cal2.company_id = c.id AND cal2.is_active = 1
+        ORDER BY cal2.allowed_location
+        )
+    END AS allowedLocations
     FROM company c
     LEFT JOIN companies_allowed_locations cal 
         ON c.id = cal.company_id AND cal.is_active = 1
@@ -818,8 +822,8 @@ isolated function getAndLockLastEmployeeNumericSuffixQuery(string prefix, Employ
             e.employee_id LIKE ${prefix + "%"}
             AND e.employee_id NOT LIKE ${prefix + "_%-%"}
             AND UPPER(et.name) IN (`,
-        inClause,
-        `)
+            inClause,
+            `)
         ORDER BY CAST(SUBSTRING(e.employee_id, ${prefix.length() + 1}) AS UNSIGNED) DESC
         LIMIT 1
         FOR UPDATE`

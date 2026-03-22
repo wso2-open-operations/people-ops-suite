@@ -506,6 +506,9 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       setFieldValue("probationEndDate", null);
       return;
     }
+
+    if (isEditMode && values.probationEndDate) return;
+
     if (!values.startDate || !matchedProbationLocation) {
       setFieldValue("probationEndDate", null);
       return;
@@ -518,15 +521,23 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       return;
     }
 
-    try {
-      const computed = dayjs(values.startDate)
-        .add(probationMonths, "month")
-        .format("YYYY-MM-DD");
-      setFieldValue("probationEndDate", computed);
-    } catch {
+    const startDate = dayjs(values.startDate);
+    if (!startDate.isValid()) {
       setFieldValue("probationEndDate", null);
+      return;
     }
-  }, [isPermanent, values.startDate, matchedProbationLocation, setFieldValue]);
+    const computed = startDate
+      .add(probationMonths, "month")
+      .format("YYYY-MM-DD");
+    setFieldValue("probationEndDate", computed);
+  }, [
+    isPermanent,
+    isEditMode,
+    values.startDate,
+    values.probationEndDate,
+    matchedProbationLocation,
+    setFieldValue,
+  ]);
 
   const handleEmploymentTypeChange = useCallback(
     (newEmploymentTypeId: number) => {
@@ -537,9 +548,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       );
       const typeName = selectedType?.name?.trim() ?? "";
       const isNewInternship = /^internship$/i.test(typeName);
-      const isPermanent = /^permanent$/i.test(typeName);
-      const isNewFixedTerm = !AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
-      const isConsultancy = /consultancy/i.test(typeName);
+      const isNewPermanent = /^permanent$/i.test(typeName);
+      const isNewFixedTerm = FIXED_TERM_EMPLOYMENT_TYPE.test(typeName);
+      const isNewConsultancy = /consultancy/i.test(typeName);
+      const isAutoIdType = AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
@@ -548,10 +560,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
         if (computed) setFieldValue("agreementEndDate", computed);
       } else {
         setInternshipDurationMonths(0);
-        if (isPermanent) setFieldValue("agreementEndDate", null);
-        if (isConsultancy || isNewFixedTerm)
+        if (isNewPermanent) setFieldValue("agreementEndDate", null);
+        if (isNewConsultancy || isNewFixedTerm)
           setFieldValue("agreementEndDate", null);
-        if (!isNewFixedTerm) setFieldValue("employeeId", "");
+        if (isAutoIdType) setFieldValue("employeeId", "");
       }
     },
     [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
@@ -1178,16 +1190,24 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {values.companyId && companies.length ? (
-                companies
-                  .find((company) => company.id === values.companyId)
-                  ?.allowedLocations?.map((locationItem) => (
-                    <MenuItem
-                      key={locationItem.location}
-                      value={locationItem.location}
-                    >
-                      {locationItem.location}
-                    </MenuItem>
-                  )) || <MenuItem disabled>No locations available</MenuItem>
+                (() => {
+                  const allowedLocations =
+                    companies.find((company) => company.id === values.companyId)
+                      ?.allowedLocations ?? [];
+
+                  return allowedLocations.length ? (
+                    allowedLocations.map((locationItem) => (
+                      <MenuItem
+                        key={locationItem.location}
+                        value={locationItem.location}
+                      >
+                        {locationItem.location}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No locations available</MenuItem>
+                  );
+                })()
               ) : (
                 <MenuItem disabled>
                   {!values.companyId || values.companyId === 0
@@ -1356,9 +1376,11 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
                       }
                       if (!matchedProbationLocation) return undefined;
 
-                      return matchedProbationLocation.probationPeriod === null
+                      const probationMonths =
+                        matchedProbationLocation.probationPeriod ?? null;
+                      return probationMonths === null
                         ? "N/A — No probation for this location"
-                        : `Auto-calculated: ${matchedProbationLocation.probationPeriod} months from start date`;
+                        : `Auto-calculated: ${probationMonths} months from start date`;
                     })(),
                     sx: textFieldSx,
                   },
