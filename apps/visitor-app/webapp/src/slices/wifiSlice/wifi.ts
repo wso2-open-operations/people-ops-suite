@@ -21,21 +21,24 @@ import { APIService } from "@utils/apiService";
 import { AppConfig } from "@config/config";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 
-interface WifiInfo {
+interface WifiState {
   ssid: string;
-  password: string;
   loading: boolean;
   error: string | null;
 }
 
-const initialState: WifiInfo = {
+export interface WifiCredentials {
+  ssid: string;
+  password: string;
+}
+
+const initialState: WifiState = {
   ssid: "",
-  password: "",
   loading: false,
   error: null,
 };
 
-export const createWifiAccount = createAsyncThunk<WifiInfo, string>(
+export const createWifiAccount = createAsyncThunk<WifiCredentials, string>(
   "wifi/createWifiAccount",
   async (username, { dispatch, rejectWithValue }) => {
     try {
@@ -43,17 +46,13 @@ export const createWifiAccount = createAsyncThunk<WifiInfo, string>(
         AppConfig.serviceUrls.wifi,
         null,
         {
-          params: {
-            username,
-          },
+          params: { username },
         },
       );
 
       return {
         ssid: response.data.username,
         password: response.data.password,
-        loading: false,
-        error: null,
       };
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -66,6 +65,7 @@ export const createWifiAccount = createAsyncThunk<WifiInfo, string>(
           );
         }
       }
+
       return rejectWithValue("Failed to create WiFi account");
     }
   },
@@ -84,14 +84,18 @@ export const wifiSlice = createSlice({
       .addCase(createWifiAccount.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
+
+        // Store only SSID in Redux
         state.ssid = action.payload.ssid;
-        state.password = action.payload.password;
       })
       .addCase(createWifiAccount.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error?.message || "Failed to create WiFi account";
+        state.error =
+          (action.payload as string) ||
+          action.error?.message ||
+          "Failed to create WiFi account";
+
         state.ssid = "";
-        state.password = "";
       });
   },
 });

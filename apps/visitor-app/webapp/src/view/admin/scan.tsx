@@ -42,6 +42,7 @@ import {
   fetchSingleVisit,
   visitStatusUpdate,
   FloorRoom,
+  UpdateVisitPayload,
 } from "@slices/visitSlice/visit";
 import { State, VisitStatus, VisitAction } from "@/types/types";
 import { Formik, Form, Field } from "formik";
@@ -107,14 +108,14 @@ function Scan({ onClose }: ScanProps) {
     if (!currentVisit) return;
 
     try {
-      const payload = {
+      const payload: UpdateVisitPayload = {
         visitId: currentVisit.id,
-        passNumber: passNumber.trim() || null,
         status: VisitAction.approve,
-        accessibleLocations:
-          accessibleLocations.length > 0 ? accessibleLocations : null,
-        rejectionReason: null,
       };
+
+      if (accessibleFloors.length > 0)
+        payload.accessibleLocations = accessibleLocations;
+      if (passNumber.trim()) payload.passNumber = passNumber.trim();
 
       setIsApprovalModalOpen(false);
 
@@ -139,9 +140,6 @@ function Scan({ onClose }: ScanProps) {
         const payload = {
           visitId: currentVisit.id,
           status: VisitAction.complete,
-          passNumber: null,
-          accessibleLocations: null,
-          rejectionReason: null,
         };
 
         await dispatch(visitStatusUpdate(payload));

@@ -14,7 +14,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import * as React from "react";
+import { useState, useEffect } from "react";
+
+import ErrorHandler from "@component/common/ErrorHandler";
+
 import {
   Card,
   CardContent,
@@ -28,33 +31,27 @@ import {
   Box,
   Divider,
 } from "@mui/material";
-
 import WifiRoundedIcon from "@mui/icons-material/WifiRounded";
 import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
 import VisibilityOffRoundedIcon from "@mui/icons-material/VisibilityOffRounded";
 
-import {
-  RootState,
-  useAppDispatch,
-  useAppSelector,
-} from "@root/src/slices/store";
-
+import { RootState, useAppDispatch, useAppSelector } from "@slices/store";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { createWifiAccount } from "@slices/wifiSlice/wifi";
-import ErrorHandler from "@component/common/ErrorHandler";
-import { enqueueSnackbarMessage } from "@root/src/slices/commonSlice/common";
 
 const WifiCard = () => {
   const dispatch = useAppDispatch();
 
-  const { ssid, password, loading, error } = useAppSelector(
+  const { ssid, loading, error } = useAppSelector(
     (store: RootState) => store.wifi,
   );
 
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [copied, setCopied] = React.useState<
-    "ssid" | "password" | "both" | null
-  >(null);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState<"ssid" | "password" | "both" | null>(
+    null,
+  );
 
   const handleCopy = async (
     text: string,
@@ -84,8 +81,10 @@ const WifiCard = () => {
     }
   };
 
-  React.useEffect(() => {
-    dispatch(createWifiAccount("admin"));
+  useEffect(() => {
+    dispatch(createWifiAccount("visitor")).then((res: any) => {
+      setPassword(res.payload.password);
+    });
   }, [dispatch]);
 
   if (loading) {
@@ -110,7 +109,7 @@ const WifiCard = () => {
   }
 
   if (error) {
-    return <ErrorHandler message="Failed to load WiFi information." />;
+    return <ErrorHandler message={error} />;
   }
 
   const fullCredentials = `SSID: ${ssid}\nPassword: ${password}`;
