@@ -542,8 +542,9 @@ export const fetchEmployeeQrCode = createAsyncThunk(
   "employee/fetchEmployeeQrCode",
   async (employeeId: string, { dispatch, rejectWithValue }) => {
     try {
-      const response = await APIService.getInstance().get(
-        AppConfig.serviceUrls.employeeQrCode(employeeId),
+      const response = await APIService.getInstance().post(
+        AppConfig.serviceUrls.qrCodesBulk,
+        { employeeIds: [employeeId] },
         { responseType: "blob" },
       );
       return URL.createObjectURL(response.data as Blob);

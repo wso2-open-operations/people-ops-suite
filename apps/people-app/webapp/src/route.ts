@@ -26,6 +26,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonOffIcon from "@mui/icons-material/PersonOff";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import { Role } from "@slices/authSlice/auth";
@@ -142,6 +143,13 @@ export const routes: RouteObjectWithRole[] = [
         text: "Resignations",
         icon: React.createElement(PersonOffIcon),
         element: React.createElement(View.resignationReport),
+        allowRoles: [Role.ADMIN],
+      },
+      {
+        path: "/reports/qr-codes",
+        text: "QR Codes",
+        icon: React.createElement(QrCode2Icon),
+        element: React.createElement(View.qrCodesReport),
         allowRoles: [Role.ADMIN],
       },
     ],
