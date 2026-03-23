@@ -117,9 +117,8 @@ function QrCodesReportContent() {
     setIsDownloading(true);
     try {
       for (const emp of selected) {
-        const response = await APIService.getInstance().post(
-          AppConfig.serviceUrls.qrCodesBulk,
-          { employeeIds: [emp.employeeId] },
+        const response = await APIService.getInstance().get(
+          AppConfig.serviceUrls.employeeQrCode(emp.employeeId),
           { responseType: "blob" },
         );
         const url = URL.createObjectURL(response.data as Blob);

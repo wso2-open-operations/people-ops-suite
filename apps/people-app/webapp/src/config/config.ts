@@ -60,7 +60,7 @@ export const AppConfig = {
       SERVICE_BASE_URL + `/employees/${employeeId}/personal-info`,
     jobInfo: (employeeId: string) =>
       SERVICE_BASE_URL + `/employees/${employeeId}/job-info`,
-    qrCodesBulk: SERVICE_BASE_URL + "/qr-codes/generate",
+    employeeQrCode: (employeeId: string) => `${SERVICE_BASE_URL}/employees/${employeeId}/qr-code`,
 
     reportsEmployees: (status?: string) =>
       SERVICE_BASE_URL + `/reports/employees/generate` +
