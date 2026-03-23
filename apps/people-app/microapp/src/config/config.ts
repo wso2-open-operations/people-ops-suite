@@ -23,7 +23,6 @@ declare global {
       ASGARDEO_BASE_URL: string;
       IS_MICROAPP: boolean;
       BACKEND_BASE_URL: string;
-      WALLET_MICROAPP_PACKAGE_ID?: string;
     };
   }
 }
@@ -35,10 +34,6 @@ export const ASGARDEO_BASE_URL = window.config.ASGARDEO_BASE_URL;
 export const IS_MICROAPP = window.config.IS_MICROAPP;
 
 const baseUrl = window.config.BACKEND_BASE_URL;
-
-export const WALLET_MICROAPP_PACKAGE_ID =
-  window.config.WALLET_MICROAPP_PACKAGE_ID ??
-  "com.wso2.superapp.microapp.wallet";
 
 export const serviceUrls = {
   fetchVehicles: (email: string) =>

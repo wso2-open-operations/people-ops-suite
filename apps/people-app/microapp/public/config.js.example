@@ -5,5 +5,4 @@ window.config = {
   ASGARDEO_BASE_URL: "",
   IS_MICROAPP: true,
   BACKEND_BASE_URL: "",
-  WALLET_MICROAPP_PACKAGE_ID: "",
 };
