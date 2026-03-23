@@ -228,6 +228,8 @@ interface EmployeesState {
   updateJobInfoState: State;
   updateJobInfoMessage: string | null;
   totalActiveEmployeeCount: number | null;
+  qrCodeUrl: string | null;
+  qrCodeState: State;
 }
 
 const initialState: EmployeesState = {
@@ -262,6 +264,8 @@ const initialState: EmployeesState = {
   updateJobInfoState: State.idle,
   updateJobInfoMessage: null,
   totalActiveEmployeeCount: null,
+  qrCodeUrl: null,
+  qrCodeState: State.idle,
 };
 
 export const fetchEmployee = createAsyncThunk(
@@ -534,6 +538,25 @@ export const validateEpf = createAsyncThunk(
   },
 );
 
+export const fetchEmployeeQrCode = createAsyncThunk(
+  "employee/fetchEmployeeQrCode",
+  async (employeeId: string, { dispatch, rejectWithValue }) => {
+    try {
+      const response = await APIService.getInstance().get(
+        AppConfig.serviceUrls.employeeQrCode(employeeId),
+        { responseType: "blob" },
+      );
+      return URL.createObjectURL(response.data as Blob);
+    } catch (error: any) {
+      if (isCancel(error)) return rejectWithValue("cancelled");
+      const errorMessage =
+        error.response?.data?.message ?? "Failed to generate QR code";
+      dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
+      return rejectWithValue(errorMessage);
+    }
+  },
+);
+
 const EmployeeSlice = createSlice({
   name: "employee",
   initialState,
@@ -575,6 +598,11 @@ const EmployeeSlice = createSlice({
     clearFilteredEmployees(state) {
       state.filteredEmployeesResponse = { employees: [], totalCount: 0 };
       state.filteredEmployeesResponseState = State.idle;
+    },
+    resetQrCode(state) {
+      if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+      state.qrCodeUrl = null;
+      state.qrCodeState = State.idle;
     },
   },
   extraReducers: (builder) => {
@@ -701,6 +729,20 @@ const EmployeeSlice = createSlice({
         state.stateMessage = "Failed to fetch continuous service record!";
         state.errorMessage = action.payload as string;
         state.continuousServiceRecord = [];
+      })
+      .addCase(fetchEmployeeQrCode.pending, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeUrl = null;
+        state.qrCodeState = State.loading;
+      })
+      .addCase(fetchEmployeeQrCode.fulfilled, (state, action) => {
+        state.qrCodeState = State.success;
+        state.qrCodeUrl = action.payload as string;
+      })
+      .addCase(fetchEmployeeQrCode.rejected, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeState = State.failed;
+        state.qrCodeUrl = null;
       });
   },
 });
@@ -714,5 +756,6 @@ export const {
   resetUpdateEmployeeJobInfoState,
   resetContinuousService,
   clearFilteredEmployees,
+  resetQrCode,
 } = EmployeeSlice.actions;
 export default EmployeeSlice.reducer;

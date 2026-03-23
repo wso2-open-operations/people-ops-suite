@@ -35,4 +35,11 @@ ADMIN_ROLE = ""
     clientSecret = ""
     sheetId = ""
     sheetName = ""
-    
+
+[people.qr]
+    qrGenerationServiceEndpoint = ""
+
+[people.qr.qrClientAuthConfig]
+    tokenUrl = ""
+    clientId = ""
+    clientSecret = ""
