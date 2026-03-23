@@ -16,6 +16,7 @@
 
 import people.authorization;
 import people.database;
+import people.qr;
 import people.wso2_coin;
 
 import ballerina/http;
@@ -287,6 +288,74 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
         return employeePersonalInfo;
+    }
+
+    # Generate a QR code image for an employee.
+    #
+    # + employeeId - Employee ID
+    # + return - PNG image bytes, or HTTP errors
+    resource function get employees/[string employeeId]/qr\-code(http:RequestContext ctx)
+            returns http:Response|http:Forbidden|http:BadRequest|http:NotFound|http:InternalServerError {
+
+        authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
+        if userInfo is error {
+            return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
+        }
+
+        database:Employee|error? employee = database:getEmployeeInfo(employeeId);
+        if employee is error {
+            string customErr = string `Error occurred while fetching employee information for ID: ${employeeId}`;
+            log:printError(customErr, employee, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        boolean hasAdminAccess = authorization:checkPermissions([authorization:authorizedRoles.ADMIN_ROLE],
+                userInfo.groups);
+        boolean isSelf = employee != () && employee.workEmail == userInfo.email;
+        if !hasAdminAccess && !isSelf {
+            boolean|error isSubordinate = database:isSubordinateOfLead(userInfo.email, employeeId);
+            if isSubordinate is error {
+                string customErr = string `Error occurred while checking lead authorization for ID: ${employeeId}`;
+                log:printError(customErr, isSubordinate, employeeId = employeeId);
+                return <http:InternalServerError>{body: {message: customErr}};
+            }
+            if !isSubordinate {
+                log:printWarn("User is not authorized to generate QR for this employee", invokerEmail = userInfo.email);
+                return <http:Forbidden>{
+                    body: {message: "You are not authorized to generate a QR code for this employee"}
+                };
+            }
+        }
+
+        if employee is () {
+            string customErr = "Employee not found";
+            log:printWarn(customErr, employeeId = employeeId);
+            return <http:NotFound>{body: {message: customErr}};
+        }
+
+        string? house = employee.house;
+        if house is () {
+            string customErr = "Employee does not have a house assigned, cannot generate QR code";
+            log:printError(customErr, employeeId = employeeId);
+            return <http:BadRequest>{body: {message: customErr}};
+        }
+
+        byte[]|error imageBytes = qr:generateEmployeeQrCode
+                ({
+                     employeeNumber: employee.employeeId,
+                     firstName: employee.firstName,
+                     lastName: employee.lastName,
+                     house
+                 });
+        if imageBytes is error {
+            string customErr = "Error occurred while generating QR code";
+            log:printError(customErr, imageBytes, employeeId = employeeId);
+            return <http:InternalServerError>{body: {message: customErr}};
+        }
+
+        http:Response response = new;
+        response.setPayload(imageBytes);
+        return response;
     }
 
     # Fetch managers.
