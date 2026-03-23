@@ -14,15 +14,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-export { default as Home } from "@/pages/HomePage";
-export { default as VehicleManagement } from "@/pages/VehicleManagementPage";
-export { default as ParkingSlotSelection } from "@/pages/ParkingSlotSelectionPage";
-export {
-  default as ParkingBookingSummary,
-} from "@/pages/ParkingBookingSummaryPage";
-export {
-  default as ParkingBookingConfirmation,
-} from "@/pages/ParkingBookingConfirmationPage";
-export {
-  default as MyParkingBookings,
-} from "@/pages/MyParkingBookingsPage";
+import type { DecimalLike } from "@/types/parking";
+
+export function toNumber(value: DecimalLike): number {
+  return typeof value === "string" ? Number(value) : value;
+}
+
+export function formatCoins(value: DecimalLike, fractionDigits = 2): string {
+  const n = toNumber(value);
+  if (!Number.isFinite(n)) return "0.00";
+  return n.toFixed(fractionDigits);
+}
