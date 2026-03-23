@@ -163,3 +163,25 @@ A user may hold more than one role simultaneously (e.g., `[EMPLOYEE, LEAD]` or `
 | `/reports/inactive-employees` | `ADMIN` | — | Admins only |
 
 The dual `/employees/my-team` route entries ensure that lead+admin users see **My Team** nested under the **Employees** group, while lead-only users see it as a standalone top-level entry. The `excludeRoles` guard on the top-level entry prevents duplication for admin+lead users.
+
+---
+
+## Coding Standards & Reuse Guidelines
+
+### Webapp (React)
+
+- **Reuse components first** — check `src/component/` before creating a new one; use existing MUI components as the base.
+- **API endpoints** — always add new URLs to `AppConfig.serviceUrls` in `src/config/config.ts`; never hard-code URLs in components or thunks.
+- **HTTP calls** — always use `APIService.getInstance()`; never import raw axios or fetch.
+- **Redux thunks** — follow the existing `createAsyncThunk` pattern: check `isCancel(error)` first, dispatch `enqueueSnackbarMessage` on error, return `rejectWithValue`.
+- **Async state** — use the existing `State` enum (`idle | loading | success | failed`) for every async operation in a slice.
+- **Types** — add new interfaces/types in the relevant slice file alongside existing ones; use `field: T | null` (not `field?: T`) for nullable fields.
+- **Path aliases** — always use `@slices/`, `@component/`, `@utils/`, `@view/`, etc.; never use relative `../../` imports.
+- **Styling** — MUI `sx` prop + `useTheme()` for component styles; Tailwind utility classes for layout.
+- **Forms** — reuse Formik + Yup; do not introduce other form libraries.
+
+### Backend (Ballerina)
+
+- **Config** — every new `configurable` value must be added to `Config.toml.local` (with an empty/default placeholder) in the same commit.
+- **Module structure** — keep resource functions in `service.bal`; put business logic in the appropriate module.
+- **Helpers** — reuse existing `authorization` and `database` module functions before writing new ones.

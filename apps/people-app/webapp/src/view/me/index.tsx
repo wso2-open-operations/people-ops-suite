@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import { ConfirmationType } from "@/types/types";
+import { ConfirmationType, State } from "@/types/types";
 import { useConfirmationModalContext } from "@context/DialogContext";
 import {
   BadgeOutlined,
@@ -28,6 +28,8 @@ import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SaveIcon from "@mui/icons-material/Save";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import {
   Accordion,
   AccordionDetails,
@@ -36,6 +38,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Grid,
   Paper,
   Skeleton,
@@ -49,7 +55,9 @@ import type { Theme } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
 import {
   fetchEmployee,
+  fetchEmployeeQrCode,
   resetEmployee,
+  resetQrCode,
 } from "@root/src/slices/employeeSlice/employee";
 import {
   EmployeePersonalInfo,
@@ -217,6 +225,9 @@ export default function Me({
     (state) => state.employeePersonalInfo,
   );
   const [isSavingChanges, setSavingChanges] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrImageNaturalSize, setQrImageNaturalSize] = useState<number | null>(null);
+  const { qrCodeUrl, qrCodeState } = useAppSelector((state) => state.employee);
   const initialHasEmergencyContactsRef = useRef<boolean>(
     !!personalInfo?.emergencyContacts?.length,
   );
@@ -441,6 +452,26 @@ export default function Me({
     };
   };
 
+  const handleQrOpen = () => {
+    setQrDialogOpen(true);
+    if (targetEmployeeId) dispatch(fetchEmployeeQrCode(targetEmployeeId));
+  };
+
+  const handleQrClose = () => {
+    setQrDialogOpen(false);
+    dispatch(resetQrCode());
+  };
+
+  const handleQrDownload = () => {
+    if (!qrCodeUrl || !targetEmployeeId) return;
+    const a = document.createElement("a");
+    a.href = qrCodeUrl;
+    a.download = `qr-${targetEmployeeId}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <Box sx={{ mt: 1, pb: 5 }}>
       <Paper elevation={0} sx={(theme) => headerSx(theme)}>
@@ -528,8 +559,20 @@ export default function Me({
               </>
             )}
           </Stack>
-          {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
-            <Box sx={{ alignSelf: { xs: "flex-start", sm: "flex-start" } }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{ alignSelf: "center" }}
+          >
+            {employee && (
+              <Tooltip title="View QR Code">
+                <IconButton color="secondary" onClick={handleQrOpen} sx={{ p: 0.5 }}>
+                  <QrCode2Icon sx={{ fontSize: 32 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {readOnly && targetEmployeeId && roles.includes(Role.ADMIN) && !location.state?.fromMyTeam && (
               <Button
                 variant="contained"
                 color="secondary"
@@ -539,8 +582,8 @@ export default function Me({
               >
                 Edit
               </Button>
-            </Box>
-          )}
+            )}
+          </Stack>
         </Stack>
       </Paper>
       <Accordion
@@ -1430,6 +1473,60 @@ export default function Me({
           )}
         </AccordionDetails>
       </Accordion>
+
+      <Dialog open={qrDialogOpen} onClose={handleQrClose} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          Employee QR Code
+          {employee?.workEmail && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {employee.workEmail}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          {qrCodeState === State.loading && (
+            <Skeleton
+              variant="rectangular"
+              width={qrImageNaturalSize ?? 256}
+              height={qrImageNaturalSize ?? 256}
+            />
+          )}
+          {qrCodeState === State.success && qrCodeUrl && (
+            <img
+              src={qrCodeUrl}
+              alt="Employee QR Code"
+              style={{ maxWidth: "100%", display: "block", borderRadius: 12 }}
+              onLoad={(e) => {
+                const img = e.target as HTMLImageElement;
+                if (img.naturalWidth) setQrImageNaturalSize(img.naturalWidth);
+              }}
+            />
+          )}
+          {qrCodeState === State.failed && (
+            <Typography color="error">Failed to load QR code.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {qrCodeState === State.success && qrCodeUrl && (
+            <Button
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={handleQrDownload}
+              sx={{ textTransform: "none" }}
+            >
+              Download
+            </Button>
+          )}
+          <Button onClick={handleQrClose} sx={{ textTransform: "none" }}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
