@@ -27,8 +27,8 @@ import { serviceUrls } from "@/config/config";
 import { getTodayBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearPaymentStage2State,
-  setPaymentStage2State,
+  clearParkingPaymentContextState,
+  setParkingPaymentContextState,
 } from "@/utils/parkingStorage";
 
 function ParkingSlotSelectionPage() {
@@ -94,7 +94,7 @@ function ParkingSlotSelectionPage() {
   };
 
   useEffect(() => {
-    clearPaymentStage2State();
+    clearParkingPaymentContextState();
     fetchFloors();
     let cancelled = false;
 
@@ -167,7 +167,7 @@ function ParkingSlotSelectionPage() {
     setError(undefined);
 
     // Stage 1 UI step: persist chosen slot and navigate to summary.
-    setPaymentStage2State({
+    setParkingPaymentContextState({
       slotId: selectedSlot.slotId,
       floorName: selectedSlot.floorName,
       coinsAmount: selectedSlot.coinsPerSlot,

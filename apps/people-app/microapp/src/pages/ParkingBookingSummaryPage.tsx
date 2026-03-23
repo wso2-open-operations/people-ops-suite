@@ -36,9 +36,9 @@ import type {
 import { getTodayBookingDate, formatBookingDate } from "@/utils/helpers/date";
 import { formatCoins } from "@/utils/helpers/coins";
 import {
-  clearPaymentStage2State,
-  getPaymentStage2State,
-  setPaymentStage2State,
+  clearParkingPaymentContextState,
+  getParkingPaymentContextState,
+  setParkingPaymentContextState,
   setConfirmationState,
 } from "@/utils/parkingStorage";
 import { Logger } from "@/utils/logger";
@@ -57,11 +57,11 @@ function ParkingBookingSummaryPage() {
   const navigate = useNavigate();
   const { handleRequest, handleRequestWithNewToken } = useHttp();
 
-  const stage2 = getPaymentStage2State();
+  const paymentContext = getParkingPaymentContextState();
   const todayBookingDate = getTodayBookingDate();
 
-  const bookingDate = stage2?.bookingDate ?? todayBookingDate;
-  const expectedCoins = stage2?.coinsAmount ?? 0;
+  const bookingDate = paymentContext?.bookingDate ?? todayBookingDate;
+  const expectedCoins = paymentContext?.coinsAmount ?? 0;
 
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [vehicleId, setVehicleId] = useState<number | undefined>(undefined);
@@ -73,7 +73,7 @@ function ParkingBookingSummaryPage() {
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
 
   useEffect(() => {
-    if (!stage2) return;
+    if (!paymentContext) return;
 
     let cancelled = false;
 
@@ -147,13 +147,14 @@ function ParkingBookingSummaryPage() {
     return () => {
       cancelled = true;
     };
-  }, [stage2, handleRequest, handleRequestWithNewToken]);
+  }, [paymentContext, handleRequest, handleRequestWithNewToken]);
 
   const createReservation = () => {
-    if (!stage2 || !vehicleId) return Promise.reject("Vehicle not selected");
+    if (!paymentContext || !vehicleId)
+      return Promise.reject("Vehicle not selected");
 
     const body = {
-      slotId: stage2.slotId,
+      slotId: paymentContext.slotId,
       bookingDate,
       vehicleId,
     };
@@ -239,7 +240,7 @@ function ParkingBookingSummaryPage() {
   };
 
   const handleConfirmAndPay = async () => {
-    if (!stage2 || !vehicleId) return;
+    if (!paymentContext || !vehicleId) return;
     if (busyConfirm) return;
 
     setBusyConfirm(true);
@@ -250,8 +251,8 @@ function ParkingBookingSummaryPage() {
       // Stage 1: create a pending reservation in backend.
       const reservation = await createReservation();
 
-      setPaymentStage2State({
-        ...stage2,
+      setParkingPaymentContextState({
+        ...paymentContext,
         reservationId: reservation.reservationId,
         coinsAmount: reservation.coinsAmount,
       });
@@ -277,7 +278,6 @@ function ParkingBookingSummaryPage() {
       await saveLocalDataAsync(PEOPLE_WALLET_PAYMENT_TX_HASH_KEY, "");
       await saveLocalDataAsync("people_parking_payment_error", "");
 
-      // Stage 2 (PR #17-style): open wallet micro-app and pass launch context.
       // Wallet will use launchData to set the "send" form and navigate to confirm.
       requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
         initialRoute: "#/send",
@@ -300,7 +300,7 @@ function ParkingBookingSummaryPage() {
       );
 
       setConfirmationState(confirmed);
-      clearPaymentStage2State();
+      clearParkingPaymentContextState();
       navigate("/services/parking/confirmation", {
         state: { reservationId: confirmed.id },
       });
@@ -314,7 +314,7 @@ function ParkingBookingSummaryPage() {
     }
   };
 
-  if (!stage2) {
+  if (!paymentContext) {
     return (
       <PageTransitionWrapper type="secondary">
         <div className="h-screen bg-white grid place-items-center px-6">
@@ -355,10 +355,10 @@ function ParkingBookingSummaryPage() {
             PARKING SLOT
           </div>
           <div className="text-[34px] font-extrabold text-[#1F2A44] leading-none mt-1">
-            {stage2.slotId}
+            {paymentContext.slotId}
           </div>
           <div className="mt-2 px-3 py-1 rounded-full bg-[#F4F4F4] text-[13px] font-semibold text-[#1F2A44]">
-            {stage2.floorName}
+            {paymentContext.floorName}
           </div>
         </div>
 

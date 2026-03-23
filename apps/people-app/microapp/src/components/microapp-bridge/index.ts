@@ -178,7 +178,7 @@ export const getLocalDataAsync = async <T = unknown>(key: string) => {
 
 /**
  * Request the super app to open another micro app.
- * Used for switching to the Wallet microapp for stage 2 payment.
+ * Used for switching to the Wallet microapp for payment.
  */
 export const requestOpenMicroApp = (
   targetAppId: string,

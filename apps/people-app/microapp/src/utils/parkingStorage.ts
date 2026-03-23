@@ -16,40 +16,41 @@
 
 import type { DecimalLike, ParkingReservationDetails } from "@/types/parking";
 
-export type ParkingPaymentStage2State = {
+export type ParkingPaymentContextState = {
   slotId: string;
   floorName: string;
   coinsAmount: DecimalLike;
   bookingDate: string; // YYYY-MM-DD
-  // Created on stage 1 (reservation creation)
   reservationId?: number;
-  // Set on stage 2 (wallet payment result)
+  // Set after Wallet payment returns.
   paymentStatus?: "SUCCESS" | "FAILED";
   transactionHash?: string;
   error?: string;
 };
 
-const STAGE2_KEY = "people_parking_stage2";
+const PAYMENT_CONTEXT_KEY = "people_parking_payment_context";
 const CONFIRMATION_KEY = "people_parking_confirmation";
 
-export function setPaymentStage2State(state: ParkingPaymentStage2State) {
-  sessionStorage.setItem(STAGE2_KEY, JSON.stringify(state));
+export function setParkingPaymentContextState(
+  state: ParkingPaymentContextState,
+) {
+  sessionStorage.setItem(PAYMENT_CONTEXT_KEY, JSON.stringify(state));
 }
 
-export function getPaymentStage2State():
-  | ParkingPaymentStage2State
+export function getParkingPaymentContextState():
+  | ParkingPaymentContextState
   | undefined {
-  const raw = sessionStorage.getItem(STAGE2_KEY);
+  const raw = sessionStorage.getItem(PAYMENT_CONTEXT_KEY);
   if (!raw) return undefined;
   try {
-    return JSON.parse(raw) as ParkingPaymentStage2State;
+    return JSON.parse(raw) as ParkingPaymentContextState;
   } catch {
     return undefined;
   }
 }
 
-export function clearPaymentStage2State() {
-  sessionStorage.removeItem(STAGE2_KEY);
+export function clearParkingPaymentContextState() {
+  sessionStorage.removeItem(PAYMENT_CONTEXT_KEY);
 }
 
 export function setConfirmationState(reservation: ParkingReservationDetails) {
