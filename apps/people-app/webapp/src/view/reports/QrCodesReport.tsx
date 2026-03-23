@@ -64,11 +64,13 @@ function QrCodesReportContent() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSequenceRef = useRef(0);
 
   const selectedIds = new Set(selected.map((e) => e.employeeId));
   const atLimit = selected.length >= QR_EXPORT_LIMIT;
 
   async function performSearch(inputValue: string) {
+    const seq = ++searchSequenceRef.current;
     setSearchLoading(true);
     const action = await dispatch(
       fetchFilteredEmployees({
@@ -79,6 +81,7 @@ function QrCodesReportContent() {
         leadOnly: false,
       }),
     );
+    if (seq !== searchSequenceRef.current) return;
     if (fetchFilteredEmployees.fulfilled.match(action)) {
       setSearchOptions(action.payload.employees);
     }
@@ -121,8 +124,9 @@ function QrCodesReportContent() {
   async function handleDownload() {
     if (selected.length === 0 || isDownloading) return;
     setIsDownloading(true);
-    try {
-      for (const emp of selected) {
+    const failed: string[] = [];
+    for (const emp of selected) {
+      try {
         const response = await APIService.getInstance().get(
           AppConfig.serviceUrls.employeeQrCode(emp.employeeId),
           { responseType: "blob" },
@@ -136,13 +140,19 @@ function QrCodesReportContent() {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 100);
+      } catch {
+        failed.push(`${emp.firstName} ${emp.lastName} (${emp.employeeId})`);
       }
-    } catch (error: any) {
-      const msg = error.response?.data?.message ?? "Failed to export QR codes";
-      dispatch(enqueueSnackbarMessage({ message: msg, type: "error" }));
-    } finally {
-      setIsDownloading(false);
     }
+    if (failed.length > 0) {
+      dispatch(
+        enqueueSnackbarMessage({
+          message: `Failed to export QR code for: ${failed.join(", ")}`,
+          type: "error",
+        }),
+      );
+    }
+    setIsDownloading(false);
   }
 
   return (
