@@ -731,6 +731,8 @@ const EmployeeSlice = createSlice({
         state.continuousServiceRecord = [];
       })
       .addCase(fetchEmployeeQrCode.pending, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
+        state.qrCodeUrl = null;
         state.qrCodeState = State.loading;
       })
       .addCase(fetchEmployeeQrCode.fulfilled, (state, action) => {
@@ -738,6 +740,7 @@ const EmployeeSlice = createSlice({
         state.qrCodeUrl = action.payload as string;
       })
       .addCase(fetchEmployeeQrCode.rejected, (state) => {
+        if (state.qrCodeUrl) URL.revokeObjectURL(state.qrCodeUrl);
         state.qrCodeState = State.failed;
         state.qrCodeUrl = null;
       });

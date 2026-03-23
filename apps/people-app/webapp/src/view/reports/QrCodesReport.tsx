@@ -35,6 +35,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { AppConfig } from "@config/config";
+import { SEARCH_MAX_LENGTH, SEARCH_REGEX } from "@config/constant";
 import {
   Employee,
   EmployeeStatus,
@@ -94,7 +95,12 @@ function QrCodesReportContent() {
   function handleInputChange(_: unknown, inputValue: string) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     // Strip characters outside the backend-allowed pattern (e.g. parentheses from option labels)
-    const sanitized = inputValue.replace(/[^\p{L}\p{M}0-9\s@._'+-]/gu, "").trim();
+    const sanitized = inputValue
+      .split("")
+      .filter((ch) => SEARCH_REGEX.test(ch))
+      .join("")
+      .trim()
+      .slice(0, SEARCH_MAX_LENGTH);
     debounceRef.current = setTimeout(() => performSearch(sanitized), SEARCH_DEBOUNCE_MS);
   }
 
@@ -124,7 +130,8 @@ function QrCodesReportContent() {
         const url = URL.createObjectURL(response.data as Blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${emp.employeeId}-${emp.firstName}_${emp.lastName}.png`;
+        const safeName = `${emp.firstName}_${emp.lastName}`.replace(/[^\w\s-]/g, "").trim();
+        a.download = `${emp.employeeId}-${safeName}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

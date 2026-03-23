@@ -311,6 +311,12 @@ export default function Me({
     dispatch(fetchEmployeePersonalInfo(targetEmployeeId));
   }, [targetEmployeeId, dispatch]);
 
+  useEffect(() => {
+    return () => {
+      dispatch(resetQrCode());
+    };
+  }, [dispatch]);
+
   const handleSaveChanges = async (values: EmployeePersonalInfo) => {
     showConfirmation(
       "Confirm Save",
