@@ -16,7 +16,6 @@
 
 import ballerina/http;
 
-
 # Generate a QR code PNG for an employee.
 #
 # + details - Employee details to encode in the QR
