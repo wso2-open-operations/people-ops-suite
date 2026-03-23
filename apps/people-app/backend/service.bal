@@ -1499,17 +1499,9 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + return - Organization hierarchy with head, functional lead, and headcount per node
     resource function get organization(http:RequestContext ctx)
-        returns http:InternalServerError|http:Forbidden|http:BadRequest|OrgCompany {
-
-        http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
-            validateOrganizationRequest(ctx);
-
-        if validatedUserInfo is http:InternalServerError|http:Forbidden|http:BadRequest {
-            return validatedUserInfo;
-        }
-
+        returns http:InternalServerError|OrgCompany {
+            
         OrgCompany|error orgStructure = database:getOrganizationDetails();
-
         if orgStructure is error {
             string customErr = "Error while fetching organization details";
             log:printError(customErr, orgStructure);
@@ -1647,8 +1639,6 @@ service http:InterceptableService / on new http:Listener(9090) {
                 };
             }
         }
-        
-
         string workEmail = validatedUserInfo.email;
         CreateBusinessUnitTeamPayload? businessUnit = payload.businessUnit;
         if businessUnit is CreateBusinessUnitTeamPayload {
@@ -1782,12 +1772,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         CreateBusinessUnitTeamSubTeamPayload? businessUnitTeam = payload.businessUnitTeam;
         if businessUnitTeam is CreateBusinessUnitTeamSubTeamPayload {
-            boolean|error buTeamMappingExists = 
+            boolean|error buTeamMappingExists =
                 database:businessUnitTeamMappingExists(businessUnitTeam.businessUnitTeamId);
 
             if buTeamMappingExists is error {
                 log:printError("Error while validating business unit-team mapping", buTeamMappingExists,
-                    businessUnitTeamId = businessUnitTeam.businessUnitTeamId);
+                        businessUnitTeamId = businessUnitTeam.businessUnitTeamId);
                 return <http:InternalServerError>{
                     body: {message: "Error while validating the business unit-team mapping"}
                 };
@@ -1922,7 +1912,7 @@ service http:InterceptableService / on new http:Listener(9090) {
 
             if buTeamSubTeamMappingExists is error {
                 log:printError("Error while validating business unit-team-sub-team mapping", buTeamSubTeamMappingExists,
-                    businessUnitTeamSubTeamId = businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
+                        businessUnitTeamSubTeamId = businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
                 return <http:InternalServerError>{
                     body: {message: "Error while validating the business unit-team-sub-team mapping"}
                 };
@@ -2112,7 +2102,7 @@ service http:InterceptableService / on new http:Listener(9090) {
         boolean|error buTeamMappingExists = database:businessUnitTeamMappingExists(payload.businessUnitTeamId);
         if buTeamMappingExists is error {
             log:printError("Error while validating business unit-team mapping", buTeamMappingExists,
-                businessUnitTeamId = payload.businessUnitTeamId);
+                    businessUnitTeamId = payload.businessUnitTeamId);
             return <http:InternalServerError>{
                 body: {message: "Error while validating the business unit-team mapping"}
             };
@@ -2206,7 +2196,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             database:businessUnitTeamSubTeamMappingExists(payload.businessUnitTeamSubTeamId);
         if buTeamSubTeamMappingExists is error {
             log:printError("Error while validating business unit-team-sub-team mapping", buTeamSubTeamMappingExists,
-                businessUnitTeamSubTeamId = payload.businessUnitTeamSubTeamId);
+                    businessUnitTeamSubTeamId = payload.businessUnitTeamSubTeamId);
             return <http:InternalServerError>{
                 body: {message: "Error while validating the business unit-team-sub-team mapping"}
             };
@@ -2682,7 +2672,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(string `No BusinessUnit-Team found for businessUnitId ${buId} and teamId ${teamId} to update`);
             return <http:BadRequest>{
                 body: {
-                    message: string `Unknown error while updating BusinessUnit-Team`    
+                    message: string `Unknown error while updating BusinessUnit-Team`
                 }
             };
         }
@@ -2803,7 +2793,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
             (http:RequestContext ctx, UpdateOrgUnitPayload payload)
-        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {   
+        returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
             validateOrganizationRequest(ctx);
