@@ -197,11 +197,33 @@ public isolated function getDesignations(int? careerFunctionId = ()) returns Des
 
 # Get companies.
 #
-# + return - Companies
-public isolated function getCompanies() returns Company[]|error {
-    stream<Company, error?> companyStream = databaseClient->query(getCompaniesQuery());
-    return from Company company in companyStream
-        select company;
+# + return - Companies with allowed locations and probation periods
+public isolated function getCompanies() returns CompanyResponse[]|error {
+    stream<CompanyRow, error?> companyStream = databaseClient->query(getCompaniesQuery());
+
+    return check from CompanyRow company in companyStream
+        select check mapToCompanyResponse(company);
+}
+
+# Map company DB row to CompanyResponse.
+#
+# + company - Raw company record from DB
+# + return - CompanyResponse with parsed allowedLocations
+isolated function mapToCompanyResponse(CompanyRow company) returns CompanyResponse|error {
+    AllowedLocation[] allowedLocations = [];
+
+    string? rawLocations = company.allowedLocations;
+    if rawLocations is string {
+        allowedLocations = check rawLocations.fromJsonStringWithType();
+    }
+
+    return {
+        id: company.id,
+        name: company.name,
+        prefix: company.prefix,
+        location: company.location,
+        allowedLocations: allowedLocations
+    };
 }
 
 # Get offices.

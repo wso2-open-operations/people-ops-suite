@@ -444,6 +444,12 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     },
     [],
   );
+  const isPermanent = useMemo(() => {
+    const selectedType = employmentTypes.find(
+      (et) => et.id === values.employmentTypeId,
+    );
+    return /^permanent$/i.test(selectedType?.name?.trim() ?? "");
+  }, [employmentTypes, values.employmentTypeId]);
 
   const isInternship = useMemo(() => {
     return (
@@ -465,7 +471,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       ?.name?.trim()
       .toLowerCase();
     if (!normalized) return false;
-    return /internship|consultancy/.test(normalized);
+    return /internship|consultancy|fixed\s+term/.test(normalized);
   }, [employmentTypes, values.employmentTypeId]);
 
   const computedAgreementDate = useMemo(() => {
@@ -481,6 +487,58 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
     computeAgreementEndDate,
   ]);
 
+  const matchedProbationLocation = useMemo(() => {
+    if (!values.companyId || !values.workLocation || !companies.length)
+      return null;
+
+    const company = companies.find((c) => c.id === values.companyId);
+    return (
+      company?.allowedLocations?.find(
+        (item) =>
+          item.location.trim().toUpperCase() ===
+          values.workLocation.trim().toUpperCase(),
+      ) ?? null
+    );
+  }, [values.companyId, values.workLocation, companies]);
+
+  useEffect(() => {
+    if (!isPermanent) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    if (isEditMode && values.probationEndDate) return;
+
+    if (!values.startDate || !matchedProbationLocation) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    const probationMonths = matchedProbationLocation.probationPeriod ?? null;
+
+    if (probationMonths === null) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+
+    const startDate = dayjs(values.startDate);
+    if (!startDate.isValid()) {
+      setFieldValue("probationEndDate", null);
+      return;
+    }
+    const computed = startDate
+      .add(probationMonths, "month")
+      .format("YYYY-MM-DD");
+    setFieldValue("probationEndDate", computed);
+  }, [
+    isPermanent,
+    isEditMode,
+    values.startDate,
+    values.probationEndDate,
+    matchedProbationLocation,
+    setFieldValue,
+  ]);
+
   const handleEmploymentTypeChange = useCallback(
     (newEmploymentTypeId: number) => {
       setFieldValue("employmentTypeId", newEmploymentTypeId);
@@ -490,8 +548,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
       );
       const typeName = selectedType?.name?.trim() ?? "";
       const isNewInternship = /^internship$/i.test(typeName);
-      const isPermanent = /^permanent$/i.test(typeName);
-      const isNewFixedTerm = !AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
+      const isNewPermanent = /^permanent$/i.test(typeName);
+      const isNewFixedTerm = FIXED_TERM_EMPLOYMENT_TYPE.test(typeName);
+      const isNewConsultancy = /consultancy/i.test(typeName);
+      const isAutoIdType = AUTO_ID_EMPLOYMENT_TYPES.test(typeName);
 
       if (isNewInternship) {
         setInternshipDurationMonths(6);
@@ -500,8 +560,10 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
         if (computed) setFieldValue("agreementEndDate", computed);
       } else {
         setInternshipDurationMonths(0);
-        if (isPermanent) setFieldValue("agreementEndDate", null);
-        if (!isNewFixedTerm) setFieldValue("employeeId", "");
+        if (isNewPermanent) setFieldValue("agreementEndDate", null);
+        if (isNewConsultancy || isNewFixedTerm)
+          setFieldValue("agreementEndDate", null);
+        if (isAutoIdType) setFieldValue("employeeId", "");
       }
     },
     [setFieldValue, employmentTypes, computeAgreementEndDate, values.startDate],
@@ -1128,13 +1190,24 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               sx={textFieldSx}
             >
               {values.companyId && companies.length ? (
-                companies
-                  .find((company) => company.id === values.companyId)
-                  ?.allowedLocations?.map((location) => (
-                    <MenuItem key={location} value={location}>
-                      {location}
-                    </MenuItem>
-                  )) || <MenuItem disabled>No locations available</MenuItem>
+                (() => {
+                  const allowedLocations =
+                    companies.find((company) => company.id === values.companyId)
+                      ?.allowedLocations ?? [];
+
+                  return allowedLocations.length ? (
+                    allowedLocations.map((locationItem) => (
+                      <MenuItem
+                        key={locationItem.location}
+                        value={locationItem.location}
+                      >
+                        {locationItem.location}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No locations available</MenuItem>
+                  );
+                })()
               ) : (
                 <MenuItem disabled>
                   {!values.companyId || values.companyId === 0
@@ -1249,32 +1322,46 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <DatePicker
-              label="Probation End Date"
-              value={
-                values.probationEndDate ? dayjs(values.probationEndDate) : null
-              }
-              onChange={(val) =>
-                setFieldValue(
-                  "probationEndDate",
-                  val ? val.format("YYYY-MM-DD") : null,
-                )
-              }
-              slotProps={{
-                field: { clearable: true },
-                textField: {
-                  fullWidth: true,
-                  error: Boolean(
-                    touched.probationEndDate && errors.probationEndDate,
-                  ),
-                  helperText:
-                    touched.probationEndDate && errors.probationEndDate,
-                  sx: textFieldSx,
-                },
-              }}
-            />
-          </Grid>
+          {isPermanent ? (
+            <Grid item xs={12} sm={6} md={4}>
+              <DatePicker
+                label="Probation End Date"
+                value={
+                  values.probationEndDate
+                    ? dayjs(values.probationEndDate)
+                    : null
+                }
+                onChange={(val) =>
+                  setFieldValue(
+                    "probationEndDate",
+                    val ? val.format("YYYY-MM-DD") : null,
+                  )
+                }
+                slotProps={{
+                  field: { clearable: true },
+                  textField: {
+                    fullWidth: true,
+                    error: Boolean(
+                      touched.probationEndDate && errors.probationEndDate,
+                    ),
+                    helperText: (() => {
+                      if (touched.probationEndDate && errors.probationEndDate) {
+                        return errors.probationEndDate;
+                      }
+                      if (!matchedProbationLocation) return undefined;
+
+                      const probationMonths =
+                        matchedProbationLocation.probationPeriod ?? null;
+                      return probationMonths === null
+                        ? "N/A — No probation for this location"
+                        : `Auto-calculated: ${probationMonths} months from start date`;
+                    })(),
+                    sx: textFieldSx,
+                  },
+                }}
+              />
+            </Grid>
+          ) : null}
           {showAgreementEndDate ? (
             <Grid item xs={12} sm={6} md={4}>
               <DatePicker
@@ -1453,9 +1540,7 @@ export default function JobInfoStep({ isEditMode }: { isEditMode?: boolean }) {
               label="House"
               name="houseId"
               value={values.houseId || 0}
-              onChange={(e) =>
-                setFieldValue("houseId", Number(e.target.value))
-              }
+              onChange={(e) => setFieldValue("houseId", Number(e.target.value))}
               onBlur={handleBlur}
               helperText="Auto-assigned to the house with the fewest active employees"
               sx={textFieldSx}

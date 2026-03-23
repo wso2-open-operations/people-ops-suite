@@ -644,8 +644,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     # Get companies.
     #
     # + return - Companies
-    resource function get companies() returns database:Company[]|http:InternalServerError {
-        database:Company[]|error companies = database:getCompanies();
+    resource function get companies() returns database:CompanyResponse[]|http:InternalServerError {
+        database:CompanyResponse[]|error companies = database:getCompanies();
         if companies is error {
             string customErr = "Error while fetching Companies";
             log:printError(customErr, companies);
