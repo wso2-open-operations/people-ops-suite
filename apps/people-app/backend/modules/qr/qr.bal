@@ -21,7 +21,6 @@ import ballerina/http;
 # + details - Employee details to encode in the QR
 # + return - PNG image bytes, or error on failure
 public isolated function generateEmployeeQrCode(EmployeeQrDetails details) returns byte[]|error {
-
     string content = string `${details.employeeNumber}-${details.firstName} ${details.lastName}-${details.house}`;
 
     http:Response response = check qrClient->/generate.post(content);
