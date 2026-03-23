@@ -26,12 +26,6 @@ public type EmployeeQrDetails record {|
     string house;
 |};
 
-# QR code generation request payload.
-public type QrGeneratePayload record {|
-    # Array of employee IDs to generate QR codes for
-    string[] employeeIds;
-|};
-
 # OAuth2 client auth configurations.
 public type ClientAuthConfig record {|
     # Token URL

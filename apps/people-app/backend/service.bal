@@ -290,29 +290,22 @@ service http:InterceptableService / on new http:Listener(9090) {
         return employeePersonalInfo;
     }
 
-    # Generate QR code(s) for one or more employees.
-    # Returns a PNG for a single employee, or a ZIP of PNGs for multiple.
     # Generate a QR code PNG for a single employee.
     # Non-admins may only request their own QR code or that of a subordinate.
     #
-    # + payload - Request containing the employee ID
+    # + employeeId - Employee ID to generate QR for
     # + return - PNG binary, or HTTP errors
-    resource function post qr\-codes/generate(http:RequestContext ctx, qr:QrGeneratePayload payload)
-            returns http:Response|http:Forbidden|http:BadRequest|http:NotFound|http:InternalServerError {
+    resource function get employees/[string employeeId]/qr\-code(http:RequestContext ctx)
+            returns byte[]|http:Forbidden|http:BadRequest|http:NotFound|http:InternalServerError {
 
         authorization:CustomJwtPayload|error userInfo = ctx.getWithType(authorization:HEADER_USER_INFO);
         if userInfo is error {
             return <http:InternalServerError>{body: {message: ERROR_USER_INFORMATION_HEADER_NOT_FOUND}};
         }
 
-        if payload.employeeIds.length() != 1 {
-            return <http:BadRequest>{body: {message: "Exactly one employee ID is required"}};
-        }
-
         boolean hasAdminAccess = authorization:checkPermissions(
                 [authorization:authorizedRoles.ADMIN_ROLE], userInfo.groups);
 
-        string employeeId = payload.employeeIds[0];
         database:Employee|error? employee = database:getEmployeeInfo(employeeId);
         if employee is error {
             string customErr = string `Error fetching employee: ${employeeId}`;
@@ -359,10 +352,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             log:printError(customErr, imageBytes);
             return <http:InternalServerError>{body: {message: customErr}};
         }
-
-        http:Response response = new;
-        response.setPayload(imageBytes);
-        return response;
+        return imageBytes;
     }
 
     # Fetch managers.
