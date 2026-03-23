@@ -27,7 +27,7 @@ import { CircularProgress, IconButton, MenuItem, Select } from "@mui/material";
 
 import { PageTransitionWrapper } from "@/components/shared";
 import useHttp, { executeWithTokenHandling, getEmailAsync } from "@/utils/http";
-import { serviceUrls } from "@/config/config";
+import { serviceUrls, WALLET_MICROAPP_PACKAGE_ID } from "@/config/config";
 import type {
   CreateParkingReservationResponse,
   ParkingReservationDetails,
@@ -279,7 +279,7 @@ function ParkingBookingSummaryPage() {
       await saveLocalDataAsync("people_parking_payment_error", "");
 
       // Wallet will use launchData to set the "send" form and navigate to confirm.
-      requestOpenMicroApp("com.wso2.superapp.microapp.wallet", {
+      requestOpenMicroApp(WALLET_MICROAPP_PACKAGE_ID, {
         initialRoute: "#/send",
         wallet_address: carParkConfig.publicWalletAddress,
         coin_amount: reservation.coinsAmount,

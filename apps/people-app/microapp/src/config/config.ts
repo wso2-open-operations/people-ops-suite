@@ -23,12 +23,7 @@ declare global {
       ASGARDEO_BASE_URL: string;
       IS_MICROAPP: boolean;
       BACKEND_BASE_URL: string;
-      // Wallet micro app (used for parking payments).
-      WALLET_MICROAPP_WEBVIEW_URI?: string;
-      WALLET_MICROAPP_APP_NAME?: string;
-      WALLET_MICROAPP_CLIENT_ID?: string;
-      WALLET_MICROAPP_APP_ID?: string;
-      WALLET_MICROAPP_DISPLAY_MODE?: string;
+      WALLET_MICROAPP_PACKAGE_ID?: string;
     };
   }
 }
@@ -40,6 +35,10 @@ export const ASGARDEO_BASE_URL = window.config.ASGARDEO_BASE_URL;
 export const IS_MICROAPP = window.config.IS_MICROAPP;
 
 const baseUrl = window.config.BACKEND_BASE_URL;
+
+export const WALLET_MICROAPP_PACKAGE_ID =
+  window.config.WALLET_MICROAPP_PACKAGE_ID ??
+  "com.wso2.superapp.microapp.wallet";
 
 export const serviceUrls = {
   fetchVehicles: (email: string) =>
