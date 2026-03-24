@@ -32,6 +32,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { useState } from "react";
 
+import ErrorHandler from "@root/src/component/common/ErrorHandler";
 import BackdropProgress from "@root/src/component/ui/BackdropProgress";
 import { EmployeeBasicInfo, useGetEmployeesBasicInfoQuery } from "@root/src/services/employee";
 import {
@@ -42,7 +43,6 @@ import {
 } from "@root/src/slices/organizationSlice/organizationStructure";
 import { NodeType } from "@root/src/utils/types";
 import {
-  OrgNodePayload,
   useAddBusinessUnitTeamMutation,
   useAddBusinessUnitsMutation,
   useAddSubTeamUnitMutation,
@@ -56,18 +56,19 @@ import { SectionHeader } from "../../components/edit-modal/SectionHeader";
 import EmployeeOption from "./EmployeeOption";
 
 type OrgOption =
-  | (Partial<BusinessUnitState> & { inputValue?: string })
-  | (Partial<TeamState> & { inputValue?: string })
-  | (Partial<SubTeamState> & { inputValue?: string })
-  | (Partial<UnitState> & { inputValue?: string });
+  | (Partial<BusinessUnitState> & { inputValue?: string; canAdd?: boolean })
+  | (Partial<TeamState> & { inputValue?: string; canAdd?: boolean })
+  | (Partial<SubTeamState> & { inputValue?: string; canAdd?: boolean })
+  | (Partial<UnitState> & { inputValue?: string; canAdd?: boolean });
 
 const filter = createFilterOptions<OrgOption>();
+
 interface AddPageProps {
   open: boolean;
-  orgInfo: OrgOption[] | null;
-  nodeType: NodeType | null;
-  parentId: string | null;
+  orgInfo: OrgOption[];
+  nodeType: NodeType;
   onClose: () => void;
+  selectedNode: BusinessUnitState | TeamState | SubTeamState | UnitState | null;
 }
 
 interface AddOrgItemFormValues {
@@ -76,24 +77,18 @@ interface AddOrgItemFormValues {
   functionalLead: EmployeeBasicInfo | null;
 }
 
-interface AddOrgItemPayload {
-  orgNode: OrgOption;
-  orgNodeHead: EmployeeBasicInfo;
-  functionalLead: EmployeeBasicInfo | null;
-}
-
 export default function AddPage(props: AddPageProps) {
-  const { open, orgInfo, nodeType, parentId, onClose } = props;
+  const { open, orgInfo, selectedNode, nodeType, onClose } = props;
 
   const [isNewItem, setIsNewItem] = useState<boolean>(false);
 
   const { data: employees = [], isLoading } = useGetEmployeesBasicInfoQuery();
   const [addBusinessUnits] = useAddBusinessUnitsMutation();
+  const [addBusinessUnitTeam] = useAddBusinessUnitTeamMutation();
   const [addTeams] = useAddTeamsMutation();
   const [addSubTeams] = useAddSubTeamsMutation();
-  const [addUnits] = useAddUnitsMutation();
-  const [addBusinessUnitTeam] = useAddBusinessUnitTeamMutation();
   const [addTeamSubTeam] = useAddTeamSubTeamMutation();
+  const [addUnits] = useAddUnitsMutation();
   const [addSubTeamUnit] = useAddSubTeamUnitMutation();
 
   const theme = useTheme();
@@ -114,109 +109,131 @@ export default function AddPage(props: AddPageProps) {
 
   const selectedOrgNode = watch("orgNode");
 
-  const onSubmit = async (data: AddOrgItemFormValues) => {
-    const { orgNode, orgNodeHead, functionalLead } = data as AddOrgItemPayload;
+  const createNewMapping = (
+    data: AddOrgItemFormValues,
+    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
+  ) => {
+    const { orgNode, functionalLead } = data;
 
-    if (!orgNode || !orgNode.name || !orgNodeHead || !parentId) {
-      console.error("Org node and org node head are required");
+    if (!orgNode?.id || !functionalLead?.workEmail) return;
+
+    switch (nodeType) {
+      case NodeType.Team: {
+        addBusinessUnitTeam({
+          payload: {
+            businessUnitId: parent.id,
+            teamId: orgNode.id,
+            functionalLeadEmail: functionalLead.workEmail,
+          },
+        });
+        break;
+      }
+      case NodeType.SubTeam: {
+        addTeamSubTeam({
+          payload: {
+            businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
+            subTeamId: orgNode.id,
+            functionalLeadEmail: functionalLead.workEmail,
+          },
+        });
+        break;
+      }
+      case NodeType.Unit: {
+        addSubTeamUnit({
+          payload: {
+            businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
+            unitId: orgNode.id,
+            functionalLeadEmail: functionalLead.workEmail,
+          },
+        });
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
+  const createNewOrgItem = (
+    data: AddOrgItemFormValues,
+    parent: BusinessUnitState | TeamState | SubTeamState | UnitState,
+  ) => {
+    const { orgNode, orgNodeHead, functionalLead } = data;
+
+    if (!nodeType || !orgNode?.name || !orgNodeHead?.workEmail) {
       return;
     }
 
-    const apiPayload: OrgNodePayload = {
-      name: orgNode.name,
-      headEmail: orgNodeHead.workEmail,
-      ...(functionalLead && {
-        orgNodeLinkInfo: {
-          id: parentId,
-          functionalLeadEmail: functionalLead.workEmail,
-        },
-      }),
-    };
-
-    const mappingLeadEmail = functionalLead?.workEmail ?? "";
-    const existingChildId = isNewItem && orgNode.id ? orgNode.id : undefined;
-
-    try {
-      switch (nodeType) {
-        case NodeType.BusinessUnit:
-          await addBusinessUnits(apiPayload).unwrap();
-          break;
-
-        case NodeType.Team: {
-          if (!parentId) {
-            console.error("Parent Business Unit ID is required");
-            return;
-          }
-          if (existingChildId) {
-            await addBusinessUnitTeam({
-              payload: {
-                parentId,
-                childId: existingChildId,
-                functionalLeadEmail: mappingLeadEmail,
-              },
-            }).unwrap();
-          } else {
-            await addTeams({ buId: parentId, payload: apiPayload }).unwrap();
-          }
-          break;
-        }
-
-        case NodeType.SubTeam: {
-          if (!parentId) {
-            console.error("Parent Team mapping ID is required");
-            return;
-          }
-          if (existingChildId) {
-            await addTeamSubTeam({
-              payload: {
-                parentId,
-                childId: existingChildId,
-                functionalLeadEmail: mappingLeadEmail,
-              },
-            }).unwrap();
-          } else {
-            await addSubTeams({ teamId: parentId, payload: apiPayload }).unwrap();
-          }
-          break;
-        }
-
-        case NodeType.Unit: {
-          if (!parentId) {
-            console.error("Parent Sub Team mapping ID is required");
-            return;
-          }
-          if (existingChildId) {
-            await addSubTeamUnit({
-              payload: {
-                parentId,
-                childId: existingChildId,
-                functionalLeadEmail: mappingLeadEmail,
-              },
-            }).unwrap();
-          } else {
-            await addUnits({ subTeamId: parentId, payload: apiPayload }).unwrap();
-          }
-          break;
-        }
-
-        default:
-          console.error("Invalid node type");
-          return;
+    switch (nodeType) {
+      case NodeType.BusinessUnit: {
+        addBusinessUnits({
+          name: orgNode.name,
+          headEmail: orgNodeHead.workEmail,
+        });
+        break;
       }
 
-      reset();
-      onClose();
-    } catch (error) {
-      console.error("Error submitting form:", error);
+      case NodeType.Team: {
+        addTeams({
+          buId: String(parent!.id),
+          payload: {
+            name: orgNode.name,
+            headEmail: orgNodeHead.workEmail,
+            businessUnit: {
+              businessUnitId: parent!.id,
+              functionalLeadEmail: functionalLead!.workEmail,
+            },
+          },
+        });
+        break;
+      }
+
+      case NodeType.SubTeam: {
+        addSubTeams({
+          teamId: String(parent!.id),
+          payload: {
+            name: orgNode.name,
+            headEmail: orgNodeHead.workEmail,
+            businessUnitTeam: {
+              businessUnitTeamId: (parent as TeamState).businessUnitTeamId,
+              functionalLeadEmail: functionalLead!.workEmail,
+            },
+          },
+        });
+        break;
+      }
+
+      case NodeType.Unit: {
+        addUnits({
+          subTeamId: String(parent!.id),
+          payload: {
+            name: orgNode.name,
+            headEmail: orgNodeHead.workEmail,
+            businessUnitTeamSubTeamUnit: {
+              businessUnitTeamSubTeamId: (parent as SubTeamState).businessUnitTeamSubTeamId,
+              functionalLeadEmail: functionalLead!.workEmail,
+            },
+          },
+        });
+        break;
+      }
+
+      default:
+        break;
     }
+  };
+
+  if (!selectedNode) {
+    return <ErrorHandler message="Parent node is required" />;
+  }
+
+  const onSubmit = async (data: AddOrgItemFormValues) => {
+    isNewItem ? createNewOrgItem(data, selectedNode) : createNewMapping(data, selectedNode);
   };
 
   const handleCancel = () => {
     reset();
     onClose();
   };
-
-  if (!orgInfo) return;
 
   return (
     <Dialog
@@ -310,6 +327,7 @@ export default function AddPage(props: AddPageProps) {
                 value={field.value}
                 options={orgInfo as OrgOption[]}
                 loading={isLoading}
+                getOptionDisabled={(option) => option.canAdd === false}
                 getOptionLabel={(option) => option.name ?? ""}
                 filterOptions={(options, params) => {
                   const filtered = filter(options as OrgOption[], params);
@@ -320,9 +338,8 @@ export default function AddPage(props: AddPageProps) {
                     (option) => inputValue.toLowerCase() === (option.name ?? "").toLowerCase(),
                   );
 
-                  setIsNewItem(!isExisting);
+                  setIsNewItem(inputValue !== "" && !isExisting);
 
-                  // If user typed something and it doesn't exist, add "Create" option
                   if (inputValue !== "" && !isExisting) {
                     filtered.push({
                       name: inputValue,
@@ -381,50 +398,52 @@ export default function AddPage(props: AddPageProps) {
             )}
           />
 
-          <Controller
-            name="orgNodeHead"
-            control={control}
-            rules={{ required: "Org node head is required" }}
-            render={({ field }) => (
-              <Autocomplete
-                {...field}
-                value={field.value}
-                onChange={(_, data) => field.onChange(data)}
-                options={employees}
-                loading={isLoading}
-                getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
-                renderOption={(props, employee) => (
-                  <EmployeeOption
-                    key={employee.employeeId}
-                    listItemProps={props}
-                    employee={employee}
-                  />
-                )}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    placeholder="Select a head"
-                    error={!!errors.orgNodeHead}
-                    helperText={errors.orgNodeHead?.message}
-                    slotProps={{
-                      input: {
-                        ...params.InputProps,
-                        sx: { padding: "4px !important" },
-                        endAdornment: (
-                          <>
-                            {isLoading && <CircularProgress size={14} />}
-                            {params.InputProps.endAdornment}
-                          </>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-            )}
-          />
+          {(nodeType === NodeType.BusinessUnit || (selectedOrgNode && isNewItem)) && (
+            <Controller
+              name="orgNodeHead"
+              control={control}
+              rules={{ required: "Org node head is required" }}
+              render={({ field }) => (
+                <Autocomplete
+                  {...field}
+                  value={field.value}
+                  onChange={(_, data) => field.onChange(data)}
+                  options={employees}
+                  loading={isLoading}
+                  getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+                  renderOption={(props, employee) => (
+                    <EmployeeOption
+                      key={employee.employeeId}
+                      listItemProps={props}
+                      employee={employee}
+                    />
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select a head"
+                      error={!!errors.orgNodeHead}
+                      helperText={errors.orgNodeHead?.message}
+                      slotProps={{
+                        input: {
+                          ...params.InputProps,
+                          sx: { padding: "4px !important" },
+                          endAdornment: (
+                            <>
+                              {isLoading && <CircularProgress size={14} />}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
+          )}
 
-          {nodeType !== NodeType.BusinessUnit && selectedOrgNode && selectedOrgNode.inputValue && (
+          {nodeType !== NodeType.BusinessUnit && (
             <Controller
               name="functionalLead"
               control={control}
