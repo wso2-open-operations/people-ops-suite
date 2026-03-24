@@ -61,43 +61,35 @@ const useHttp = () => {
       const token = getAccessToken();
       if (!token) throw new Error("Token not found");
 
-      const encodedUrl = encodeURI(url);
       const defaultHeaders: Record<string, string> = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       };
 
-      const response = await fetch(encodedUrl, {
+      const response = await fetch(url, {
         method,
         body: body ? JSON.stringify(body) : null,
         headers: { ...defaultHeaders, ...headers },
       });
 
-      let responseBody: any = "";
+      const responseText = await response.text();
 
-      try {
-        responseBody = await response.json();
-      } catch (e) {
-        Logger.error("Failed to parse JSON response", e);
-      } finally {
-        if (response.status >= 200 && response.status < 300) {
-          successFn(responseBody);
-          if (loadingFn) loadingFn(false);
-        } else {
-          if (response.status === 401 && currentTry < MAX_TRIES) {
-            handleRequestWithNewToken(() => {
-              handleRequest({
-                url,
-                method,
-                body,
-                successFn,
-                failFn,
-                loadingFn,
-                headers,
-                currentTry: currentTry + 1,
-              });
-            });
-          } else if (currentTry < MAX_TRIES && response.status !== 404) {
+      let responseBody: any = "";
+      if (responseText) {
+        try {
+          responseBody = JSON.parse(responseText);
+        } catch (e) {
+          Logger.error("Failed to parse JSON response", e);
+          responseBody = responseText;
+        }
+      }
+
+      if (response.status >= 200 && response.status < 300) {
+        successFn(responseBody);
+        if (loadingFn) loadingFn(false);
+      } else {
+        if (response.status === 401 && currentTry < MAX_TRIES) {
+          handleRequestWithNewToken(() => {
             handleRequest({
               url,
               method,
@@ -108,14 +100,30 @@ const useHttp = () => {
               headers,
               currentTry: currentTry + 1,
             });
-          } else {
-            Logger.error(
-              (responseBody && responseBody.error) || response.status,
-            );
-            if (failFn)
-              failFn((responseBody && responseBody.error) || response.status);
-            if (loadingFn) loadingFn(false);
-          }
+          });
+        } else if (currentTry < MAX_TRIES && response.status !== 404) {
+          handleRequest({
+            url,
+            method,
+            body,
+            successFn,
+            failFn,
+            loadingFn,
+            headers,
+            currentTry: currentTry + 1,
+          });
+        } else {
+          const errorMessage =
+            responseBody &&
+            typeof responseBody === "object" &&
+            "error" in responseBody &&
+            (responseBody as { error?: unknown }).error
+              ? (responseBody as { error?: unknown }).error
+              : response.status;
+
+          Logger.error(String(errorMessage));
+          if (failFn) failFn(String(errorMessage));
+          if (loadingFn) loadingFn(false);
         }
       }
     } catch (err) {
@@ -174,7 +182,6 @@ const useHttp = () => {
 
   const processTokenQueue = () => {
     if (isTokenRequestInProgress || tokenRequestQueue.length === 0) return;
-
     isTokenRequestInProgress = true;
 
     const callback = tokenRequestQueue.shift();
