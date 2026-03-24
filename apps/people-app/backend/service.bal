@@ -1540,7 +1540,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if nameUniqueness == false {
+        if !nameUniqueness {
             return <http:BadRequest>{
                 body: {
                     message: "Business unit name already exists"
@@ -1612,7 +1612,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if nameUniqueness == false {
+        if !nameUniqueness {
             return <http:BadRequest>{
                 body: {
                     message: "Team name already exists"
@@ -1742,7 +1742,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if nameUniqueness == false {
+        if !nameUniqueness {
             return <http:BadRequest>{
                 body: {
                     message: "Sub-team name already exists"
@@ -1878,7 +1878,7 @@ service http:InterceptableService / on new http:Listener(9090) {
             };
         }
 
-        if nameUniqueness == false {
+        if !nameUniqueness {
             return <http:BadRequest>{
                 body: {
                     message: "Unit name already exists"
