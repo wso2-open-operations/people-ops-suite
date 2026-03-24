@@ -87,53 +87,55 @@ const SubLink = (props: SubLinkProps) => {
           )}
         </Box>
       ) : (
-        <Box
-          component={Link}
-          to={fullPath}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            textDecoration: "none",
+        <Tooltip
+          title={primary}
+          placement="right"
+          arrow
+          slotProps={{
+            tooltip: {
+              sx: {
+                backgroundColor: theme.palette.neutral[10],
+                color: theme.palette.neutral.white,
+                padding: theme.spacing(0.75, 1.5),
+                borderRadius: "4px",
+                fontSize: theme.typography.body2.fontSize,
+                boxShadow: theme.shadows[8],
+              },
+            },
+            arrow: {
+              sx: {
+                color: theme.palette.neutral[10],
+              },
+            },
           }}
         >
-          {icon && React.isValidElement(icon) ? (
-            <Tooltip
-              title={primary}
-              placement="right"
-              arrow
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    backgroundColor: theme.palette.neutral[10],
-                    color: theme.palette.neutral.white,
-                    padding: theme.spacing(0.75, 1.5),
-                    borderRadius: "4px",
-                    fontSize: theme.typography.body2.fontSize,
-                    boxShadow: theme.shadows[8],
-                  },
-                },
-                arrow: {
-                  sx: {
-                    color: theme.palette.neutral[10],
-                  },
-                },
-              }}
-            >
-              {React.cloneElement(icon as React.ReactElement<any>, {
-                size: 24,
-                style: {
-                  width: "17px",
-                  height: "17px",
-                  color: isActive
-                    ? theme.palette.customNavigation.textClicked
-                    : theme.palette.customNavigation.text,
-                },
-              })}
-            </Tooltip>
-          ) : (
-            icon
-          )}
-        </Box>
+          <Box
+            component={Link}
+            to={fullPath}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              borderRadius: "8px",
+              textDecoration: "none",
+              color: isActive
+                ? theme.palette.customNavigation.textClicked
+                : theme.palette.customNavigation.text,
+              transition: "all 0.2s",
+              "&:hover": {
+                ...(!isActive && {
+                  backgroundColor: theme.palette.customNavigation.hoverBg,
+                  color: theme.palette.customNavigation.hover,
+                }),
+              },
+              "& svg": { width: "17px", height: "17px" },
+            }}
+          >
+            {icon}
+          </Box>
+        </Tooltip>
       )}
     </>
   );

@@ -125,12 +125,12 @@ function SidebarNavItem({
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: theme.spacing(1.5),
+            gap: open ? theme.spacing(1.5) : theme.spacing(0.5),
             alignItems: "center",
             justifyContent: "center",
             marginLeft: open ? theme.spacing(2.5) : 0,
             borderLeft: open ? `1px solid ${theme.palette.neutral["1000"]}` : "none",
-            px: "8px",
+            px: open ? "8px" : 0,
           }}
         >
           <SidebarSubMenu parentRoute={route} open={open} />
