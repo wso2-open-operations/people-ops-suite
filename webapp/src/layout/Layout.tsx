@@ -90,7 +90,9 @@ export default function Layout() {
             sx={{
               flex: 1,
               height: "100%",
-              padding: theme.spacing(3),
+              padding: "10px",
+              boxSizing: "border-box",
+              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
               minWidth: 0,

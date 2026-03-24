@@ -31,7 +31,7 @@ export default function Title({ firstWord, secondWord, borderEnabled = true, ico
         <Box
             sx={{
                 width: "100%",
-                pb: borderEnabled ? 2 : 0,
+                pb: borderEnabled ? 1 : 0,
                 borderBottom: borderEnabled
                     ? `1px solid ${theme.palette.customBorder.territory.active}`
                     : "none",
