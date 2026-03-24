@@ -58,7 +58,6 @@ export const getToken = (callback: Callback<string>): void => {
   if (isNativeTokenRequestInProgress) return;
 
   isNativeTokenRequestInProgress = true;
-  window.nativebridge.requestToken();
   window.nativebridge.resolveToken = (token: string) => {
     const queue = nativeTokenCallbackQueue;
     nativeTokenCallbackQueue = [];
@@ -72,6 +71,26 @@ export const getToken = (callback: Callback<string>): void => {
       }
     });
   };
+
+  try {
+    window.nativebridge.requestToken();
+  } catch (error) {
+    Logger.error("Failed to request token from native bridge", error);
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+    window.nativebridge.resolveToken = () => {};
+    queue.forEach((cb) => {
+      try {
+        cb();
+      } catch (callbackError) {
+        Logger.error(
+          "Error while executing native token callback after request failure",
+          callbackError,
+        );
+      }
+    });
+  }
 };
 
 /**
