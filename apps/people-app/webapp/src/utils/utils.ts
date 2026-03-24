@@ -94,26 +94,39 @@ export type ChildItem = BusinessUnit | Team | SubTeam | Unit;
 // Child type labels
 export type ChildTypeLabel = "Business Units" | "Teams" | "Sub-Teams" | "Units";
 
+export const generateOrgNodeUniqueId = (nodeType: NodeType, segments: Array<string | number>) =>
+  [nodeType, ...segments].join(":");
+
 export function normalizeCompanyToOrganizationState(companyDto: Company): OrganizationInfo {
   const businessUnits: BusinessUnitState[] = [];
   const teams: TeamState[] = [];
   const subTeams: SubTeamState[] = [];
   const units: UnitState[] = [];
-  const company: CompanyState = { ...companyDto, type: NodeType.Company };
+  const companyUniqueId = generateOrgNodeUniqueId(NodeType.Company, [companyDto.id]);
+  const company: CompanyState = {
+    ...companyDto,
+    uniqueId: companyUniqueId,
+    type: NodeType.Company,
+  };
 
   for (const bu of companyDto.businessUnits) {
     const transformedTeams: TeamState[] = [];
+    const buUniqueId = generateOrgNodeUniqueId(NodeType.BusinessUnit, [bu.id]);
 
     for (const team of bu.teams) {
       const transformedSubTeams: SubTeamState[] = [];
+      const teamUniqueId = generateOrgNodeUniqueId(NodeType.Team, [bu.id, team.id]);
 
       for (const subTeam of team.subTeams) {
         const transformedUnits: UnitState[] = [];
+        const subTeamUniqueId = generateOrgNodeUniqueId(NodeType.SubTeam, [bu.id, team.id, subTeam.id]);
 
         for (const unit of subTeam.units) {
+          const unitUniqueId = generateOrgNodeUniqueId(NodeType.Unit, [bu.id, team.id, subTeam.id, unit.id]);
           const transformedUnit: UnitState = {
             ...unit,
-            parentId: subTeam.id,
+            uniqueId: unitUniqueId,
+            parentId: subTeamUniqueId,
             type: NodeType.Unit,
           };
           transformedUnits.push(transformedUnit);
@@ -122,7 +135,8 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
 
         const transformedSubTeam: SubTeamState = {
           ...subTeam,
-          parentId: team.id,
+          uniqueId: subTeamUniqueId,
+          parentId: teamUniqueId,
           type: NodeType.SubTeam,
           units: transformedUnits,
         };
@@ -132,7 +146,8 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
 
       const transformedTeam: TeamState = {
         ...team,
-        parentId: bu.id,
+        uniqueId: teamUniqueId,
+        parentId: buUniqueId,
         type: NodeType.Team,
         subTeams: transformedSubTeams,
       };
@@ -142,7 +157,8 @@ export function normalizeCompanyToOrganizationState(companyDto: Company): Organi
 
     const transformedBU: BusinessUnitState = {
       ...bu,
-      parentId: companyDto.id,
+      uniqueId: buUniqueId,
+      parentId: companyUniqueId,
       type: NodeType.BusinessUnit,
       teams: transformedTeams,
     };
