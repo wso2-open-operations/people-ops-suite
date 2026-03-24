@@ -99,9 +99,10 @@ export const TeamSummary = ({
   // Stores the search term for the teams list
   const [searchTerm, setSearchTerm] = useState("");
   // Stores the selected rows in the data grid
-  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>(
-    [] as unknown as GridRowSelectionModel
-  );
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
   // Stores state of 360 reminder confirmation open/ close
   const [is360ReminderDialogOpen, setIs360ReminderDialogOpen] = useState(false);
   // Stores the state of the dialog to confirm the bulk share
@@ -710,7 +711,7 @@ export const TeamSummary = ({
               </Box>
             </Grid>
 
-            <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+            <Box sx={{ flex: 1, overflowY: "auto", overflowX: "hidden", width: "100%", minHeight: 400 }}>
               <DataGrid
                 sx={{
                   border: "none",
@@ -724,7 +725,6 @@ export const TeamSummary = ({
                 columns={columns}
                 rowHeight={50}
                 checkboxSelection
-                autoHeight
                 pageSizeOptions={[10, 20, 25]}
                 initialState={{
                   pagination: {

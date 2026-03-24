@@ -74,8 +74,10 @@ const EmployeeReportView = () => {
   const currentCycle = useAppSelector(selectCurrentCycle);
   const reportStatus = useAppSelector(selectReportStatus);
 
-  // FIX: Properly type the selection model for DataGrid v6+
-  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>([] as any);
+  const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set(),
+  });
 
 
   const [isParCycleDatesOpen, setIsParCycleDatesOpen] = useState(false);
@@ -434,6 +436,7 @@ const EmployeeReportView = () => {
                   height: "auto",
                 }}
               >
+                <Box sx={{ width: "100%", minHeight: 400 }}>
                 <DataGrid
                   sx={{
                     border: "none",
@@ -452,7 +455,6 @@ const EmployeeReportView = () => {
                   rowSelectionModel={selectionModel}
                   onRowSelectionModelChange={handleSelectionModelChange}
 
-                  autoHeight
                   loading={reportStatus === RequestState.LOADING}
                   initialState={{
                     pagination: {
@@ -464,6 +466,7 @@ const EmployeeReportView = () => {
                   }}
                   rows={getFilteredRows() as unknown as ParRatingShort[]}
                 />
+                </Box>
               </Card>
             </Box>
           )}
