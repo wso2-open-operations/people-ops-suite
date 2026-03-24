@@ -836,10 +836,7 @@ public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload pa
     sql:ExecutionResult executionResults = 
         check databaseClient->execute(updateBusinessUnitTeamQuery(payload, buId, teamId));
 
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResults.affectedRowCount > 0;
 }
 
 # Update the functional lead of a team-sub team mapping.
@@ -854,10 +851,7 @@ public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int
     sql:ExecutionResult executionResults = 
         check databaseClient->execute(updateTeamSubTeamQuery(payload, teamId, subTeamId));
 
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResults.affectedRowCount > 0;
 }
 
 # Update the functional lead of a sub team-unit mapping.
@@ -872,10 +866,7 @@ public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int
     sql:ExecutionResult executionResults = 
         check databaseClient->execute(updateSubTeamUnitQuery(payload, subTeamId, unitId));
 
-    if executionResults.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResults.affectedRowCount > 0;
 }
 
 # Delete a business unit.
@@ -887,10 +878,7 @@ public isolated function deleteBusinessUnit(string userEmail, int buId) returns 
     sql:ExecutionResult executionResult = 
         check databaseClient->execute(deleteBusinessUnitQuery(userEmail, buId));
     
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResult.affectedRowCount > 0;
 }
 
 # Delete a business unit-team mapping.
@@ -904,10 +892,7 @@ public isolated function deleteBusinessUnitTeam(string userEmail, int buId, int 
     sql:ExecutionResult executionResult = 
         check databaseClient->execute(deleteBusinessUnitTeamQuery(userEmail, buId, teamId));
 
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResult.affectedRowCount > 0;
 }
 
 # Delete a team-sub team mapping.
@@ -920,10 +905,7 @@ public isolated function deleteTeamSubTeam(string userEmail, int teamId, int sub
     sql:ExecutionResult executionResult = 
         check databaseClient->execute(deleteTeamSubTeamQuery(userEmail, teamId, subTeamId));
 
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResult.affectedRowCount > 0;
 }
 
 # Delete a sub team-unit mapping.
@@ -936,10 +918,7 @@ public isolated function deleteSubTeamUnit(string userEmail, int subTeamId, int 
     sql:ExecutionResult executionResult = 
         check databaseClient->execute(deleteSubTeamUnitQuery(userEmail, subTeamId, unitId));
 
-    if executionResult.affectedRowCount > 0 {
-        return true;
-    }
-    return false;
+    return executionResult.affectedRowCount > 0;
 }
 
 # Check whether a business unit name is unique among active rows.
