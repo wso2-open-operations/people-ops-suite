@@ -22,28 +22,33 @@ import { organizationApi } from "@services/organization";
 import { State } from "@slices/authSlice/auth";
 
 export interface CompanyState extends Company {
+  uniqueId: string;
   type: NodeType;
 }
 
 export interface BusinessUnitState extends BusinessUnit {
+  uniqueId: string;
   parentId: string;
   type: NodeType;
   teams: TeamState[];
 }
 
 export interface TeamState extends Team {
+  uniqueId: string;
   parentId: string;
   type: NodeType;
   subTeams: SubTeamState[];
 }
 
 export interface SubTeamState extends SubTeam {
+  uniqueId: string;
   parentId: string;
   type: NodeType;
   units: UnitState[];
 }
 
 export interface UnitState extends Unit {
+  uniqueId: string;
   parentId: string;
   type: NodeType;
 }
