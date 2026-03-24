@@ -283,6 +283,9 @@ function ParkingBookingSummaryPage() {
         initialRoute: "#/send",
         wallet_address: carParkConfig.publicWalletAddress,
         coin_amount: reservation.coinsAmount,
+        source_app_id: "com.wso2.superapp.microapp.people",
+        return_app_id: "com.wso2.superapp.microapp.people",
+        return_route: "#/services/parking/summary",
       });
 
       const paymentResult = await waitForWalletPaymentResult();
