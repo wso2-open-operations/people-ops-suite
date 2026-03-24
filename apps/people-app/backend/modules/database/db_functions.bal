@@ -829,7 +829,7 @@ public isolated function updateUnit(UpdateOrgUnitPayload payload, int unitId) re
 # + payload - Fields to update in the business unit-team mapping
 # + buId - ID of the business unit
 # + teamId - ID of the team
-# + return - Nil on success, error if the update fails
+# + return - True if updated, false if not found, error if the update fails
 public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) 
     returns boolean|error {
 
@@ -844,7 +844,7 @@ public isolated function updateBusinessUnitTeam(UpdateBusinessUnitTeamPayload pa
 # + payload - Fields to update in the team-sub team mapping
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
-# + return - Nil on success, error if the update fails
+# + return - True if updated, false if not found, error if the update fails
 public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) 
     returns boolean|error {
         
@@ -859,7 +859,7 @@ public isolated function updateTeamSubTeam(UpdateTeamSubTeamPayload payload, int
 # + payload - Fields to update in the sub team-unit mapping
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
-# + return - Nil on success, error if the update fails
+# + return - True if updated, false if not found, error if the update fails
 public isolated function updateSubTeamUnit(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) 
     returns boolean|error {
 
