@@ -1500,7 +1500,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + return - Organization hierarchy with head, functional lead, and headcount per node
     resource function get organization(http:RequestContext ctx)
         returns http:InternalServerError|OrgCompany {
-            
+
         OrgCompany|error orgStructure = database:getOrganizationDetails();
         if orgStructure is error {
             string customErr = "Error while fetching organization details";
@@ -1644,7 +1644,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if businessUnit is CreateBusinessUnitTeamPayload {
             boolean|error buExists = database:businessUnitExists(businessUnit.businessUnitId);
             if buExists is error {
-                log:printError("Error while validating business unit", buExists, businessUnitId = businessUnit.businessUnitId);
+                log:printError("Error while validating business unit",
+                    buExists, businessUnitId = businessUnit.businessUnitId);
                 return <http:InternalServerError>{
                     body: {message: "Error while validating the business unit"}
                 };
@@ -1786,7 +1787,8 @@ service http:InterceptableService / on new http:Listener(9090) {
             if !buTeamMappingExists {
                 return <http:BadRequest>{
                     body: {
-                        message: string `Business unit-team mapping with ID ${businessUnitTeam.businessUnitTeamId} not found`
+                        message: 
+                            string `Business unit-team mapping with ID ${businessUnitTeam.businessUnitTeamId} not found`
                     }
                 };
             }
@@ -1911,7 +1913,8 @@ service http:InterceptableService / on new http:Listener(9090) {
                 database:businessUnitTeamSubTeamMappingExists(businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
 
             if buTeamSubTeamMappingExists is error {
-                log:printError("Error while validating business unit-team-sub-team mapping", buTeamSubTeamMappingExists,
+                log:printError("Error while validating business unit-team-sub-team mapping", 
+                        buTeamSubTeamMappingExists,
                         businessUnitTeamSubTeamId = businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId);
                 return <http:InternalServerError>{
                     body: {message: "Error while validating the business unit-team-sub-team mapping"}
@@ -1921,7 +1924,9 @@ service http:InterceptableService / on new http:Listener(9090) {
             if !buTeamSubTeamMappingExists {
                 return <http:BadRequest>{
                     body: {
-                        message: string `Business unit-team-sub-team mapping with ID ${businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId} not found`
+                        message: string 
+                            `Business unit-team-sub-team mapping with ID 
+                            ${businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId} not found`
                     }
                 };
             }
@@ -1990,7 +1995,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit ID, team ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/business\-unit/team(http:RequestContext ctx, CreateBusinessUnitTeamPayload payload)
+    resource function post organization/business\-unit/team
+        (http:RequestContext ctx, CreateBusinessUnitTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2080,7 +2086,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit-team ID, sub-team ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/team/sub\-team(http:RequestContext ctx, CreateBusinessUnitTeamSubTeamPayload payload)
+    resource function post organization/team/sub\-team
+        (http:RequestContext ctx, CreateBusinessUnitTeamSubTeamPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2173,7 +2180,8 @@ service http:InterceptableService / on new http:Listener(9090) {
     #
     # + payload - BusinessUnit-team-subTeam ID, unit ID, and functional lead email
     # + return - HTTP Created on success, or HTTP errors on failure
-    resource function post organization/sub\-team\-unit(http:RequestContext ctx, CreateBusinessUnitTeamSubTeamUnitPayload payload)
+    resource function post organization/sub\-team/unit
+        (http:RequestContext ctx, CreateBusinessUnitTeamSubTeamUnitPayload payload)
         returns http:InternalServerError|http:BadRequest|http:Forbidden|http:Created {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2205,7 +2213,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         if !buTeamSubTeamMappingExists {
             return <http:BadRequest>{
                 body: {
-                    message: string `Business unit-team-sub-team mapping with ID ${payload.businessUnitTeamSubTeamId} not found`
+                    message: string 
+                        `Business unit-team-sub-team mapping with ID ${payload.businessUnitTeamSubTeamId} not found`
                 }
             };
         }
@@ -2669,7 +2678,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if !updateResult {
-            log:printError(string `No BusinessUnit-Team found for businessUnitId ${buId} and teamId ${teamId} to update`);
+            log:printError(string `
+                No BusinessUnit-Team found for businessUnitId ${buId} and teamId ${teamId} to update`);
             return <http:BadRequest>{
                 body: {
                     message: string `Unknown error while updating BusinessUnit-Team`
@@ -2704,7 +2714,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean|error mappingExists = database:businessUnitTeamMappingExists(businessUnitTeamId);
         if mappingExists is error {
-            log:printError("Error while validating BusinessUnit-Team", mappingExists, businessUnitTeamId = businessUnitTeamId);
+            log:printError(
+                "Error while validating BusinessUnit-Team",
+                mappingExists,
+                businessUnitTeamId = businessUnitTeamId
+            );
             return <http:InternalServerError>{
                 body: {
                     message: "Error while validating the BusinessUnit-Team"
@@ -2759,9 +2773,15 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateTeamSubTeam({...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
+        error|boolean updateResult = database:updateTeamSubTeam(
+            {...payload, updatedBy: workEmail}, businessUnitTeamId, subTeamId);
         if updateResult is error {
-            log:printError("Error while updating BusinessUnit-Team-SubTeam", updateResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
+            log:printError(
+                "Error while updating BusinessUnit-Team-SubTeam",
+                updateResult,
+                businessUnitTeamId = businessUnitTeamId,
+                subTeamId = subTeamId
+            );
             return <http:InternalServerError>{
                 body: {
                     message: "Error while updating the BusinessUnit-Team-SubTeam"
@@ -2770,10 +2790,14 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if !updateResult {
-            log:printError(string `No BusinessUnit-Team-SubTeam  found for businessUnitTeamId ${businessUnitTeamId} and subTeamId ${subTeamId} to update`);
+            log:printError( string `No BusinessUnit-Team-SubTeam found for businessUnitTeamId 
+                ${businessUnitTeamId} and subTeamId ${subTeamId} to update`
+            );
             return <http:BadRequest>{
                 body: {
-                    message: string `BusinessUnit-Team-SubTeam not found for businessUnitTeamId ${businessUnitTeamId} and subTeamId ${subTeamId}`
+                    message: string 
+                        `BusinessUnit-Team-SubTeam not found for businessUnitTeamId ${businessUnitTeamId} 
+                        and subTeamId ${subTeamId}`
                 }
             };
         }
@@ -2792,7 +2816,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + payload - functionalLeadEmail to update in the mapping
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function patch organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
-            (http:RequestContext ctx, UpdateOrgUnitPayload payload)
+        (http:RequestContext ctx, UpdateOrgUnitPayload payload)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2804,7 +2828,11 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         boolean|error mappingExists = database:businessUnitTeamSubTeamMappingExists(businessUnitTeamSubTeamId);
         if mappingExists is error {
-            log:printError("Error while validating BusinessUnit-Team-SubTeam", mappingExists, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId);
+            log:printError(
+                "Error while validating BusinessUnit-Team-SubTeam",
+                mappingExists,
+                businessUnitTeamSubTeamId = businessUnitTeamSubTeamId
+            );
             return <http:InternalServerError>{
                 body: {message: "Error while validating the BusinessUnit-Team-SubTeam"}
             };
@@ -2851,18 +2879,33 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         string workEmail = validatedUserInfo.email;
-        error|boolean updateResult = database:updateSubTeamUnit({...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
+        error|boolean updateResult = database:updateSubTeamUnit(
+            {...payload, updatedBy: workEmail}, businessUnitTeamSubTeamId, unitId);
         if updateResult is error {
-            log:printError("Error while updating BusinessUnit-Team-SubTeam-Unit", updateResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
+            log:printError(
+                "Error while updating BusinessUnit-Team-SubTeam-Unit",
+                updateResult,
+                businessUnitTeamSubTeamId = businessUnitTeamSubTeamId,
+                unitId = unitId
+            );
             return <http:InternalServerError>{
-                body: {message: "Error while updating the BusinessUnit-Team-SubTeam-Unit"}
+                body: {
+                    message: "Error while updating the BusinessUnit-Team-SubTeam-Unit"
+                }
             };
         }
 
         if !updateResult {
-            log:printError(string `No BusinessUnit-Team-SubTeam-Unit found for businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId} to update`);
+            log:printError( string 
+                `No BusinessUnit-Team-SubTeam-Unit found for businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} 
+                and unitId ${unitId} to update`
+            );
             return <http:BadRequest>{
-                body: {message: string `No BusinessUnit-Team-SubTeam-Unit found for businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId}`}
+                body: {
+                    message: string 
+                        `No BusinessUnit-Team-SubTeam-Unit found for 
+                        businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId}`
+                }
             };
         }
 
@@ -2898,13 +2941,14 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                    "Cannot delete BusinessUnit because it has child teams",
-                    buId = buId,
-                    invokerEmail = validatedUserInfo.email
+                "Cannot delete BusinessUnit because it has child teams",
+                buId = buId,
+                invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
-                    message: "Cannot delete BusinessUnit because it has child teams. Remove or deactivate child teams first."
+                    message: string 
+                        `Cannot delete BusinessUnit because it has child teams. Remove or deactivate child teams first.`
                 }
             };
         }
@@ -2942,7 +2986,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + teamId - ID of the Team
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/business\-unit/[int businessUnitId]/team/[int teamId]
-            (http:RequestContext ctx)
+        (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -2965,14 +3009,16 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                    "Cannot delete BusinessUnit-Team because it has child sub-teams",
-                    buId = businessUnitId,
-                    teamId = teamId,
-                    invokerEmail = validatedUserInfo.email
+                "Cannot delete BusinessUnit-Team because it has child sub-teams",
+                buId = businessUnitId,
+                teamId = teamId,
+                invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
-                    message: "Cannot delete this BusinessUnit-Team because it has child sub-teams. Remove or deactivate child sub-teams first."
+                    message: string 
+                        `Cannot delete this BusinessUnit-Team because it has child sub-teams. 
+                        Remove or deactivate child sub-teams first.`
                 }
             };
         }
@@ -2980,7 +3026,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         error|boolean deleteResult = database:deleteBusinessUnitTeam(workEmail, businessUnitId, teamId);
         if deleteResult is error {
-            log:printError("Error while deleting BusinessUnit-Team : ", deleteResult, buId = businessUnitId, teamId = teamId);
+            log:printError(
+                "Error while deleting BusinessUnit-Team : ",
+                deleteResult,
+                buId = businessUnitId,
+                teamId = teamId
+            );
             return <http:InternalServerError>{
                 body: {
                     message: "Error while deleting the BusinessUnit-Team"
@@ -2989,7 +3040,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if deleteResult == false {
-            log:printError(string `No BusinessUnit-Team found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
+            log:printError(
+                string `No BusinessUnit-Team found with businessUnitId ${businessUnitId} and teamId ${teamId}`);
             return <http:BadRequest>{
                 body: {
                     message: "No BusinessUnit-Team found to delete"
@@ -3010,7 +3062,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + subTeamId - ID of the SubTeam
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/team/[int businessUnitTeamId]/sub\-team/[int subTeamId]
-            (http:RequestContext ctx)
+        (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -3033,14 +3085,16 @@ service http:InterceptableService / on new http:Listener(9090) {
 
         if hasChildren {
             log:printWarn(
-                    "Cannot delete Team-SubTeam because it has child SubTeams",
-                    businessUnitTeamId = businessUnitTeamId,
-                    subTeamId = subTeamId,
-                    invokerEmail = validatedUserInfo.email
+                "Cannot delete Team-SubTeam because it has child SubTeams",
+                businessUnitTeamId = businessUnitTeamId,
+                subTeamId = subTeamId,
+                invokerEmail = validatedUserInfo.email
             );
             return <http:BadRequest>{
                 body: {
-                    message: "Cannot delete this Team-SubTeam because it has child SubTeams. Remove or deactivate child SubTeams first."
+                    message: string 
+                        `Cannot delete this Team-SubTeam because it has child SubTeams. 
+                        Remove or deactivate child SubTeams first.`
                 }
             };
         }
@@ -3048,7 +3102,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         error|boolean deleteResult = database:deleteTeamSubTeam(workEmail, businessUnitTeamId, subTeamId);
         if deleteResult is error {
-            log:printError("Error while deleting Team-SubTeam : ", deleteResult, businessUnitTeamId = businessUnitTeamId, subTeamId = subTeamId);
+            log:printError(
+                "Error while deleting Team-SubTeam : ",
+                deleteResult,
+                businessUnitTeamId = businessUnitTeamId,
+                subTeamId = subTeamId
+            );
             return <http:InternalServerError>{
                 body: {
                     message: "Error while deleting the Team-SubTeam"
@@ -3057,7 +3116,8 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if deleteResult == false {
-            log:printError(string `No Team-SubTeam found with teamId ${businessUnitTeamId} and subTeamId ${subTeamId}`);
+            log:printError(
+                string `No Team-SubTeam found with teamId ${businessUnitTeamId} and subTeamId ${subTeamId}`);
             return <http:BadRequest>{
                 body: {
                     message: "No Team-SubTeam found to delete"
@@ -3078,7 +3138,7 @@ service http:InterceptableService / on new http:Listener(9090) {
     # + unitId - ID of the Unit
     # + return - HTTP OK on success, or HTTP errors on failure
     resource function delete organization/sub\-team/[int businessUnitTeamSubTeamId]/unit/[int unitId]
-            (http:RequestContext ctx)
+        (http:RequestContext ctx)
         returns http:Ok|http:InternalServerError|http:Forbidden|http:BadRequest {
 
         http:InternalServerError|http:Forbidden|http:BadRequest|JwtPayloadUserInfo validatedUserInfo =
@@ -3091,7 +3151,12 @@ service http:InterceptableService / on new http:Listener(9090) {
         string workEmail = validatedUserInfo.email;
         error|boolean deleteResult = database:deleteSubTeamUnit(workEmail, businessUnitTeamSubTeamId, unitId);
         if deleteResult is error {
-            log:printError("Error while deleting SubTeam-Unit : ", deleteResult, businessUnitTeamSubTeamId = businessUnitTeamSubTeamId, unitId = unitId);
+            log:printError(
+                "Error while deleting SubTeam-Unit : ",
+                deleteResult,
+                businessUnitTeamSubTeamId = businessUnitTeamSubTeamId,
+                unitId = unitId
+            );
             return <http:InternalServerError>{
                 body: {
                     message: "Error while deleting the SubTeam-Unit"
@@ -3100,7 +3165,10 @@ service http:InterceptableService / on new http:Listener(9090) {
         }
 
         if deleteResult == false {
-            log:printError(string `No SubTeam-Unit found with businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} and unitId ${unitId}`);
+            log:printError( string `
+                No SubTeam-Unit found with businessUnitTeamSubTeamId ${businessUnitTeamSubTeamId} 
+                and unitId ${unitId}`
+            );
             return <http:BadRequest>{
                 body: {
                     message: "No SubTeam-Unit found to delete"
