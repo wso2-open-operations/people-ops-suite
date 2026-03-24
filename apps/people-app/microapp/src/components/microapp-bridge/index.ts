@@ -67,7 +67,9 @@ export const getToken = (callback: Callback<string>): void => {
     queue.forEach((cb) => {
       try {
         cb(token);
-      } catch {}
+      } catch (error) {
+        Logger.error("Error while executing native token callback", error);
+      }
     });
   };
 };
