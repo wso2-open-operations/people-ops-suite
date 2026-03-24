@@ -35,8 +35,7 @@ export const APP_THEME = "people-app-theme";
 
 export const redirectUrl = "people-app-redirect-url";
 
-export const PRIVILEGE_ADMIN = 789;
-
+export const PRIVILEGE_ADMIN = 999;
 export const PRIVILEGE_EMPLOYEE = 987;
 
 export const EmployeeTypes = [
