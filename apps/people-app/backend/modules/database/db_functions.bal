@@ -929,7 +929,7 @@ public isolated function validateBusinessUnitNameUniqueness(string businessUnitN
     ExistsFlagResult result =
         check databaseClient->queryRow(validateBusinessUnitNameUniquenessQuery(businessUnitName));
 
-    return result.exists_flag == 0;
+    return result.existsFlag == 0;
 }
 
 # Check whether a team name is unique among active rows.
@@ -940,7 +940,7 @@ public isolated function validateTeamNameUniqueness(string teamName) returns boo
     ExistsFlagResult result =
         check databaseClient->queryRow(validateTeamNameUniquenessQuery(teamName));
 
-    return result.exists_flag == 0;
+    return result.existsFlag == 0;
 }
 
 # Check whether a sub-team name is unique among active rows.
@@ -951,7 +951,7 @@ public isolated function validateSubTeamNameUniqueness(string subTeamName) retur
     ExistsFlagResult result =
         check databaseClient->queryRow(validateSubTeamNameUniquenessQuery(subTeamName));
 
-    return result.exists_flag == 0;
+    return result.existsFlag == 0;
 }
 
 # Check whether a unit name is unique among active rows.
@@ -962,7 +962,7 @@ public isolated function validateUnitNameUniqueness(string unitName) returns boo
     ExistsFlagResult result =
         check databaseClient->queryRow(validateUnitNameUniquenessQuery(unitName));
 
-    return result.exists_flag == 0;
+    return result.existsFlag == 0;
 }
 
 # Check whether a BusinessUnit exists by ID.
@@ -973,7 +973,7 @@ public isolated function businessUnitExists(int buId) returns boolean|error {
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitExistsQuery(buId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a Team exists by ID.
@@ -984,7 +984,7 @@ public isolated function teamExists(int teamId) returns boolean|error {
     ExistsFlagResult result =
         check databaseClient->queryRow(teamExistsQuery(teamId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a SubTeam exists by ID.
@@ -995,7 +995,7 @@ public isolated function subTeamExists(int subTeamId) returns boolean|error {
     ExistsFlagResult result =
         check databaseClient->queryRow(subTeamExistsQuery(subTeamId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a unit exists by ID.
@@ -1006,7 +1006,7 @@ public isolated function unitExists(int unitId) returns boolean|error {
     ExistsFlagResult result =
         check databaseClient->queryRow(unitExistsQuery(unitId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a BusinessUnit-Team mapping exists by ID.
@@ -1017,7 +1017,7 @@ public isolated function businessUnitTeamMappingExists(int id) returns boolean|e
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitTeamMappingExistsQuery(id));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a BusinessUnit-Team-SubTeam mapping exists by ID.
@@ -1028,7 +1028,7 @@ public isolated function businessUnitTeamSubTeamMappingExists(int id) returns bo
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitTeamSubTeamMappingExistsQuery(id));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a business unit has child teams (active mappings).
@@ -1039,7 +1039,7 @@ public isolated function businessUnitHasChildren(int buId) returns boolean|error
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitHasChildrenQuery(buId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a business unit-team mapping has child sub-teams (active mappings).
@@ -1051,7 +1051,7 @@ public isolated function businessUnitTeamHasChildren(int businessUnitId, int tea
     ExistsFlagResult result =
         check databaseClient->queryRow(businessUnitTeamHasChildrenQuery(businessUnitId, teamId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }
 
 # Check whether a team-sub-team mapping has child units (active mappings).
@@ -1063,5 +1063,5 @@ public isolated function teamSubTeamHasChildren(int teamId, int subTeamId) retur
     ExistsFlagResult result =
         check databaseClient->queryRow(teamSubTeamHasChildrenQuery(teamId, subTeamId));
 
-    return result.exists_flag == 1;
+    return result.existsFlag == 1;
 }

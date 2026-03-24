@@ -81,7 +81,7 @@ public type UserInfo record {|
 # Generic single-flag DB result shape for EXISTS-based checks.
 public type ExistsFlagResult record {|
     # 1 when a matching row exists, otherwise 0
-    int exists_flag;
+    int existsFlag;
 |};
 
 # Request payload for EPF uniqueness validation.
@@ -977,6 +977,7 @@ public type FunctionalLead record {|
 public type OrgUnit record {|
     # Unique identifier of the unit
     int id;
+    int businessUnitTeamSubTeamUnitId;
     # Parent mapping: business_unit_team_sub_team.id
     int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
@@ -997,6 +998,7 @@ public type OrgUnit record {|
 public type OrgSubTeam record {|
     # Unique identifier of the sub-team
     int id;
+    int businessUnitTeamSubTeamId;
     # Parent mapping: business_unit_team.id
     int businessUnitTeamId;
     # Parent: business_unit.id
@@ -1019,6 +1021,8 @@ public type OrgTeam record {|
     int id;
     # Parent: business_unit.id
     int businessUnitId;
+    # Parent mapping: business_unit_team.id
+    int businessUnitTeamId;
     # Display name of the team
     string name;
     # Total number of employees or members in the team
