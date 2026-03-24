@@ -82,7 +82,7 @@ function MyParkingBookingsPage() {
     return reservations
       .filter(
         (r) =>
-          r.bookingDate !== today && r.status === ("CONFIRMED" as ParkingReservationStatus),
+          r.bookingDate < today && r.status === ("CONFIRMED" as ParkingReservationStatus),
       )
       .sort((a, b) =>
         String(b.bookingDate).localeCompare(String(a.bookingDate)),
