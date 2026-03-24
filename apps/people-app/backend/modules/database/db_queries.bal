@@ -1488,6 +1488,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                         (
                             SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                 'id', t.id,
+                                'businessUnitTeamId', but.id,
                                 'businessUnitId', bu.id,
                                 'name', t.name,
                                 'headCount', COALESCE((
@@ -1515,6 +1516,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                     (
                                         SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                             'id', st.id,
+                                            'businessUnitTeamSubTeamId', butst.id,
                                             'businessUnitTeamId', but.id,
                                             'businessUnitId', bu.id,
                                             'name', st.name,
@@ -1537,7 +1539,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                     'name', CONCAT(st_fl.first_name, ' ', st_fl.last_name),
                                                     'email', st_fl.work_email,
                                                     'avatar', st_fl.employee_thumbnail
-                                                )
+                                                )   
                                                 ELSE CAST('null' AS JSON)
                                             END
                                             ,
@@ -1545,6 +1547,7 @@ isolated function getOrganizationStructureQuery() returns sql:ParameterizedQuery
                                                 (
                                                     SELECT JSON_ARRAYAGG(JSON_OBJECT(
                                                         'id', u.id,
+                                                        'businessUnitTeamSubTeamUnitId', butstu.id,
                                                         'businessUnitTeamSubTeamId', butst.id,
                                                         'businessUnitTeamId', but.id,
                                                         'businessUnitId', bu.id,
