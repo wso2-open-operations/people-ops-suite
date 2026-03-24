@@ -39,9 +39,14 @@ export interface RequestOptions {
 
 const tokenRequestQueue: (() => void)[] = [];
 let isTokenRequestInProgress = false;
+const RETRY_BASE_DELAY_MS = 300;
 
 const useHttp = () => {
   const MAX_TRIES = 4;
+  const getRetryDelay = (currentTry: number): number =>
+    RETRY_BASE_DELAY_MS * 2 ** (currentTry - 1);
+  const waitForRetry = (delayMs: number) =>
+    new Promise((resolve) => setTimeout(resolve, delayMs));
 
   const handleRequest = async ({
     url,
@@ -101,7 +106,11 @@ const useHttp = () => {
               currentTry: currentTry + 1,
             });
           });
-        } else if (currentTry < MAX_TRIES && response.status !== 404) {
+        } else if (
+          currentTry < MAX_TRIES &&
+          (response.status >= 500 || response.status === 429)
+        ) {
+          await waitForRetry(getRetryDelay(currentTry));
           handleRequest({
             url,
             method,
@@ -127,6 +136,19 @@ const useHttp = () => {
         }
       }
     } catch (err) {
+      if (currentTry < MAX_TRIES) {
+        await waitForRetry(getRetryDelay(currentTry));
+        return handleRequest({
+          url,
+          method,
+          body,
+          successFn,
+          failFn,
+          loadingFn,
+          headers,
+          currentTry: currentTry + 1,
+        });
+      }
       Logger.error(err as string);
       if (failFn) failFn();
       if (loadingFn) loadingFn(false);
