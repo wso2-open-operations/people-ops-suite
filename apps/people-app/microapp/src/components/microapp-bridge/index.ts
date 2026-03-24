@@ -20,6 +20,9 @@ import { Logger } from "@/utils/logger";
 
 type Callback<T> = (data?: T) => void;
 
+let isNativeTokenRequestInProgress = false;
+let nativeTokenCallbackQueue: Callback<string>[] = [];
+
 declare global {
   interface Window {
     nativebridge?: {
@@ -44,15 +47,29 @@ declare global {
 
 // Function to get token from React Native
 export const getToken = (callback: Callback<string>): void => {
-  if (window.nativebridge) {
-    window.nativebridge.requestToken();
-    window.nativebridge.resolveToken = (token: string) => {
-      callback(token);
-    };
-  } else {
+
+  if (!window.nativebridge) {
     Logger.error("Native bridge is not available");
     callback();
+    return;
   }
+
+  nativeTokenCallbackQueue.push(callback);
+  if (isNativeTokenRequestInProgress) return;
+
+  isNativeTokenRequestInProgress = true;
+  window.nativebridge.requestToken();
+  window.nativebridge.resolveToken = (token: string) => {
+    const queue = nativeTokenCallbackQueue;
+    nativeTokenCallbackQueue = [];
+    isNativeTokenRequestInProgress = false;
+
+    queue.forEach((cb) => {
+      try {
+        cb(token);
+      } catch {}
+    });
+  };
 };
 
 /**
