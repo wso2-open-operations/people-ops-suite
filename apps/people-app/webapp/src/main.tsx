@@ -18,36 +18,9 @@ import ReactDOM from "react-dom/client";
 
 import App from "./App";
 
-// Start MSW worker in development
-async function enableMocking() {
-  if (import.meta.env.DEV) {
-    const { worker } = await import("./mocks/browser");
-    return worker.start({
-      // Ignore requests for static assets and source files
-      onUnhandledRequest(request, print) {
-        // Don't warn about requests for static assets, source files, or HMR
-        if (
-          request.url.includes("/@") || // Vite internals
-          request.url.includes("/src/") || // Source files
-          request.url.includes("/node_modules/") || // Dependencies
-          request.url.includes("?t=") || // HMR timestamps
-          /\.(tsx?|jsx?|css|json|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)(\?|$)/.test(
-            request.url,
-          ) // File extensions
-        ) {
-          return;
-        }
-        print.warning();
-      },
-    });
-  }
-}
-
-enableMocking().then(() => {
-  const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
-  root.render(
-    <StyledEngineProvider injectFirst>
-      <App />
-    </StyledEngineProvider>,
-  );
-});
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+root.render(
+  <StyledEngineProvider injectFirst>
+    <App />
+  </StyledEngineProvider>,
+);
