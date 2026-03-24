@@ -1722,24 +1722,26 @@ isolated function addUnitQuery(string userEmail, OrgNodeInfo payload) returns sq
 # + userEmail - Email of the user performing the action
 # + payload - Business unit ID, team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business-unit-team
-isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload) returns sql:ParameterizedQuery => `
-  INSERT INTO business_unit_team(
-    business_unit_id,
-    team_id,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.businessUnitId},
-    ${payload.teamId},
-    ${payload.functionalLeadEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
+isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitTeamPayload payload) 
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team(
+        business_unit_id,
+        team_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitId},
+        ${payload.teamId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
 `;
 
 # Build query to insert a new business-unit-team-sub-team mapping.
@@ -1747,24 +1749,26 @@ isolated function addBusinessUnitTeamQuery(string userEmail, CreateBusinessUnitT
 # + userEmail - Email of the user performing the action
 # + payload - Business unit-team ID, sub-team ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team mapping
-isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) returns sql:ParameterizedQuery => `
-  INSERT INTO business_unit_team_sub_team(
-    business_unit_team_id,
-    sub_team_id,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.businessUnitTeamId},
-    ${payload.subTeamId},
-    ${payload.functionalLeadEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
+isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusinessUnitTeamSubTeamPayload payload) 
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team_sub_team(
+        business_unit_team_id,
+        sub_team_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitTeamId},
+        ${payload.subTeamId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
 `;
 
 # Build query to insert a new business-unit-team-sub-team-unit mapping.
@@ -1772,24 +1776,26 @@ isolated function addBusinessUnitTeamSubTeamQuery(string userEmail, CreateBusine
 # + userEmail - Email of the user performing the action
 # + payload - Business unit-team-sub-team ID, unit ID, and functional lead email
 # + return - Parameterized INSERT query for the new business_unit_team_sub_team_unit mapping
-isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) returns sql:ParameterizedQuery => `
-  INSERT INTO business_unit_team_sub_team_unit(
-    business_unit_team_sub_team_id,
-    unit_id,
-    head_email,
-    created_by,
-    created_on,
-    updated_by,
-    updated_on
-  ) VALUES (
-    ${payload.businessUnitTeamSubTeamId},
-    ${payload.unitId},
-    ${payload.functionalLeadEmail},
-    ${userEmail},
-    current_timestamp,
-    ${userEmail},
-    current_timestamp
-  )
+isolated function addBusinessUnitTeamSubTeamUnitQuery(string userEmail, CreateBusinessUnitTeamSubTeamUnitPayload payload) 
+    returns sql:ParameterizedQuery => `
+
+    INSERT INTO business_unit_team_sub_team_unit(
+        business_unit_team_sub_team_id,
+        unit_id,
+        head_email,
+        created_by,
+        created_on,
+        updated_by,
+        updated_on
+    ) VALUES (
+        ${payload.businessUnitTeamSubTeamId},
+        ${payload.unitId},
+        ${payload.functionalLeadEmail},
+        ${userEmail},
+        current_timestamp,
+        ${userEmail},
+        current_timestamp
+    )
 `;
 
 # Build query to update a business unit.
@@ -1854,7 +1860,9 @@ isolated function updateUnitQuery(UpdateOrgUnitPayload payload, int unitId) retu
 # + buId - ID of the business unit
 # + teamId - ID of the team
 # + return - Parameterized UPDATE query for the business_unit_team mapping
-isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) returns sql:ParameterizedQuery {
+isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payload, int buId, int teamId) 
+    returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit_team
@@ -1884,7 +1892,9 @@ isolated function updateBusinessUnitTeamQuery(UpdateBusinessUnitTeamPayload payl
 # + teamId - ID of the team
 # + subTeamId - ID of the sub team
 # + return - Parameterized UPDATE query for the business_unit_team_sub_team mapping
-isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) returns sql:ParameterizedQuery {
+isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int teamId, int subTeamId) 
+    returns sql:ParameterizedQuery {
+
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit_team_sub_team
@@ -1914,7 +1924,9 @@ isolated function updateTeamSubTeamQuery(UpdateTeamSubTeamPayload payload, int t
 # + subTeamId - ID of the sub team
 # + unitId - ID of the unit
 # + return - Parameterized UPDATE query for the business_unit_team_sub_team_unit mapping
-isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) returns sql:ParameterizedQuery {
+isolated function updateSubTeamUnitQuery(UpdateSubTeamUnitPayload payload, int subTeamId, int unitId) 
+returns sql:ParameterizedQuery {
+    
     sql:ParameterizedQuery mainQuery = `
       UPDATE
         business_unit_team_sub_team_unit
