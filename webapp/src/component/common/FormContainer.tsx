@@ -29,8 +29,10 @@ export const FormContainer: React.FC<Props> = ({ children }) => {
     <Stack
       direction="column"
       width="100%"
-      margin="auto"
-      padding="1rem"
+      height="100%"
+      marginLeft="auto"
+      marginRight="auto"
+      padding="10px"
       borderRadius="0.5rem"
       border={`1px solid ${theme.palette.divider}`}
       sx={{
