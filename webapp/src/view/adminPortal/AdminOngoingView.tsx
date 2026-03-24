@@ -101,7 +101,7 @@ export default function AdminOngoingView() {
 
   return (
     <Fade in={true}>
-      <Stack sx={{ height: "calc(100vh - 7rem)" }}>
+      <Stack sx={{ height: "100%" }}>
         <FormContainer>
           <Title
             firstWord="Admin"
@@ -109,7 +109,7 @@ export default function AdminOngoingView() {
             icon={<ShieldIcon fontSize="medium" />}
           />
 
-          <Box sx={{ height: "calc(100vh - 10rem)", overflowY: "auto", pb: { xs: 0, md: 0 } }}>
+          <Box sx={{ flex: 1, overflowY: "auto" }}>
 
             {(parCyclesLoadingState === RequestState.LOADING || isParCyclePending) && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />

@@ -620,14 +620,14 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
         <Box height={"100%"}>
           {selectedTeamId === null && !reviewEmployeeView && !reportView && !isParCompletionViewOpen && (
             <Box flexDirection={"column"} height={"100%"}>
-              <Grid container mb={1}>
-                <Grid size={{ xs: 12, sm: 6 }} alignContent={"center"}>
+              <Grid container mb={"5px"} mt={"5px"} spacing={2}>
+                {/* Title Section */}
+                <Grid size={{ xs: 12, md: 4 }} alignContent={"center"}>
                   {isAdminHistoryViewOn && (
                     <Box sx={{ display: "inline" }}>
                       <IconButton aria-label="back" color="primary" onClick={closeOrgSummaryView} sx={{ mb: 1, mr: 1 }}>
                         <ArrowBackIcon />
                       </IconButton>
-
                       <Link underline="hover" color="inherit" variant="h5" onClick={closeOrgSummaryView}>
                         {"History"}
                       </Link>
@@ -644,74 +644,78 @@ export const OrgSummary = ({ closeOrgSummaryView, isAdminAuditViewOn, isAdminHis
                     {dayjs(currentCycle.parCycleEndDate).format(shortDateFormat)})
                   </Typography>
                 </Grid>
+
+                {/* Actions Section (Buttons & Icons) */}
                 <Grid
-                  size={{ xs: 12, sm: 6 }}
-                  pr={2}
+                  size={{ xs: 12, md: 8 }}
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "flex-end",
+                    justifyContent: { xs: "flex-start", md: "flex-end" },
+                    flexWrap: "wrap",
                     gap: 1,
                   }}
                 >
-                  <Button variant="contained" onClick={openReportView}>
+                  <Button variant="contained" sx={{ whiteSpace: "nowrap" }} onClick={openReportView}>
                     View Reports
                   </Button>
-
                   {!isAdminHistoryViewOn && (
                     <>
-                      <Button sx={{ ml: 1 }} onClick={handleEmployeeSyncModal} variant="contained">
+                      <Button sx={{ whiteSpace: "nowrap" }} onClick={handleEmployeeSyncModal} variant="contained">
                         Sync an Employee
                       </Button>
-
-                      <Button onClick={openBulkReminderModal} variant="contained">
+                      <Button sx={{ whiteSpace: "nowrap" }} onClick={openBulkReminderModal} variant="contained">
                         Bulk Reminders
                       </Button>
-
-                      <Button color="error" variant="contained" onClick={handleParClosingDialogOpen}>
+                      <Button sx={{ whiteSpace: "nowrap" }} color="error" variant="contained" onClick={handleParClosingDialogOpen}>
                         Close Cycle
                       </Button>
-                      <Tooltip
-                        arrow
-                        title="Open Cycle Dates"
-                        enterDelay={tooltipVisibilityDelay}
-                        enterNextDelay={tooltipVisibilityDelay}
-                      >
-                        <IconButton
-                          aria-label="cycle dates"
-                          onClick={openCycleDeadlines}
-                          sx={{
-                            color: "primary.main",
-                            "&:hover": {
-                              bgcolor: "primary.main",
-                              color: "white",
-                            },
-                            mr: 1,
-                          }}
+
+                      {/* Group the icons in a flex box so they wrap to a new row together */}
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Tooltip
+                          arrow
+                          title="Open Cycle Dates"
+                          enterDelay={tooltipVisibilityDelay}
+                          enterNextDelay={tooltipVisibilityDelay}
                         >
-                          <DateRangeIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip
-                        arrow
-                        title="PAR Cycle Settings"
-                        enterDelay={tooltipVisibilityDelay}
-                        enterNextDelay={tooltipVisibilityDelay}
-                      >
-                        <IconButton
-                          aria-label="cycle settings"
-                          onClick={openParCycleSettings}
-                          sx={{
-                            color: "primary.main",
-                            "&:hover": {
-                              bgcolor: "primary.main",
-                              color: "white",
-                            },
-                          }}
+                          <IconButton
+                            aria-label="cycle dates"
+                            onClick={openCycleDeadlines}
+                            sx={{
+                              color: "primary.main",
+                              "&:hover": {
+                                bgcolor: "primary.main",
+                                color: "white",
+                              },
+                              ml: 1,
+                            }}
+                          >
+                            <DateRangeIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip
+                          arrow
+                          title="PAR Cycle Settings"
+                          enterDelay={tooltipVisibilityDelay}
+                          enterNextDelay={tooltipVisibilityDelay}
                         >
-                          <SettingsIcon />
-                        </IconButton>
-                      </Tooltip>
+                          <IconButton
+                            aria-label="cycle settings"
+                            onClick={openParCycleSettings}
+                            sx={{
+                              color: "primary.main",
+                              "&:hover": {
+                                bgcolor: "primary.main",
+                                color: "white",
+                              },
+                              mr: 1,
+                            }}
+                          >
+                            <SettingsIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </>
                   )}
                 </Grid>
