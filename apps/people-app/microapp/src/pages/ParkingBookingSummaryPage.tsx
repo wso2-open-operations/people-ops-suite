@@ -59,6 +59,7 @@ function ParkingBookingSummaryPage() {
 
   const paymentContext = getParkingPaymentContextState();
   const todayBookingDate = getTodayBookingDate();
+  const hasPaymentContext = Boolean(paymentContext);
 
   const bookingDate = paymentContext?.bookingDate ?? todayBookingDate;
   const expectedCoins = paymentContext?.coinsAmount ?? 0;
@@ -73,7 +74,7 @@ function ParkingBookingSummaryPage() {
   const [showPaymentFailureModal, setShowPaymentFailureModal] = useState(false);
 
   useEffect(() => {
-    if (!paymentContext) return;
+    if (!hasPaymentContext) return;
 
     let cancelled = false;
 
@@ -147,7 +148,7 @@ function ParkingBookingSummaryPage() {
     return () => {
       cancelled = true;
     };
-  }, [paymentContext, handleRequest, handleRequestWithNewToken]);
+  }, [hasPaymentContext, handleRequest, handleRequestWithNewToken]);
 
   const createReservation = () => {
     if (!paymentContext || !vehicleId)
