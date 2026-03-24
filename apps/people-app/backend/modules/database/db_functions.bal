@@ -615,7 +615,7 @@ public isolated function getParkingReservationsByEmployee(string employeeEmail, 
 }
 
 # Get organization details with business units, teams, sub-teams, units,
-# including head, functional lead, and headcount for each node.
+# 
 # + return - Organization details
 public isolated function getOrganizationDetails() returns OrgCompany|error {
     CompanyRaw|error companyRow = databaseClient->queryRow(getOrganizationStructureQuery());
@@ -690,7 +690,7 @@ public isolated function addTeamWithMapping(string userEmail, CreateTeamPayload 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamQuery(userEmail, {
                 businessUnitId: payload.businessUnit.businessUnitId,
-                teamId: teamId,
+                teamId,
                 functionalLeadEmail: payload.businessUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -714,7 +714,7 @@ public isolated function addSubTeamWithMapping(string userEmail, CreateSubTeamPa
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamQuery(userEmail, {
                 businessUnitTeamId: payload.businessUnitTeam.businessUnitTeamId,
-                subTeamId: subTeamId,
+                subTeamId,
                 functionalLeadEmail: payload.businessUnitTeam.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
@@ -738,7 +738,7 @@ public isolated function addUnitWithMapping(string userEmail, CreateUnitPayload 
         sql:ExecutionResult executionResultTwo = check databaseClient->execute(
             addBusinessUnitTeamSubTeamUnitQuery(userEmail, {
                 businessUnitTeamSubTeamId: payload.businessUnitTeamSubTeamUnit.businessUnitTeamSubTeamId,
-                unitId: unitId,
+                unitId,
                 functionalLeadEmail: payload.businessUnitTeamSubTeamUnit.functionalLeadEmail
             }));
         int id = check executionResultTwo.lastInsertId.ensureType(int);
