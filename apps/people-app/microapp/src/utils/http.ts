@@ -106,12 +106,13 @@ const useHttp = () => {
               currentTry: currentTry + 1,
             });
           });
+          return;
         } else if (
           currentTry < MAX_TRIES &&
           (response.status >= 500 || response.status === 429)
         ) {
           await waitForRetry(getRetryDelay(currentTry));
-          handleRequest({
+          return handleRequest({
             url,
             method,
             body,
