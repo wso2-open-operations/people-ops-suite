@@ -35,12 +35,14 @@ import {
   Container,
   Autocomplete,
   Avatar,
+  Chip,
   CircularProgress,
   InputAdornment,
 } from "@mui/material";
 import {
   Add as AddIcon,
   Business as BusinessIcon,
+  Visibility as VisibilityIcon,
   Schedule as ScheduleIcon,
   Delete as DeleteIcon,
   Person as PersonIcon,
@@ -76,6 +78,7 @@ import { PhoneNumberUtil } from "google-libphonenumber";
 import {
   fetchEmployees,
   loadMoreEmployees,
+  Employee,
 } from "@root/src/slices/employeeSlice/employees";
 import { MuiTelInput } from "mui-tel-input";
 
@@ -202,6 +205,8 @@ function CreateVisit() {
   const [entryHour, setEntryHour] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
+  const [ccInputValue, setCcInputValue] = useState("");
+  const [ccOpen, setCcOpen] = useState(false);
 
   const timeSlots = useMemo(
     () => generateTimeSlots(entryHour ?? 8, 23, 15),
@@ -353,6 +358,16 @@ function CreateVisit() {
               .toISOString();
           }
 
+          const watchListEmails = (values.watchList || [])
+            .map((employee: Employee | string) =>
+              typeof employee === "string" ? employee : employee?.workEmail,
+            )
+            .filter((email?: string) => !!email && email !== values.whoTheyMeet)
+            .filter(
+              (email: string, index: number, arr: string[]) =>
+                arr.indexOf(email) === index,
+            );
+
           const addVisitPayload: AddVisitPayload = {
             uuid: visitUUID,
             qrCode: qrCodeByteArray,
@@ -366,6 +381,7 @@ function CreateVisit() {
               ? values.accessibleLocations
               : undefined,
             purposeOfVisit: values.purposeOfVisit || undefined,
+            watchList: watchListEmails.length ? watchListEmails : undefined,
           };
 
           const addVisitAction = await dispatch(addVisit(addVisitPayload));
@@ -443,6 +459,7 @@ function CreateVisit() {
     whoTheyMeet: Yup.string().nullable(),
     whoTheyMeetName: Yup.string().nullable(),
     whoTheyMeetThumbnail: Yup.string().nullable(),
+    watchList: Yup.array().nullable(),
     purposeOfVisit: Yup.string().nullable(),
     accessibleLocations: Yup.array().nullable(),
     visitDate: Yup.string()
@@ -589,6 +606,13 @@ function CreateVisit() {
                   formik.setFieldValue(
                     "whoTheyMeetThumbnail",
                     newValue.employeeThumbnail || null,
+                  );
+                  formik.setFieldValue(
+                    "watchList",
+                    (formik.values.watchList || []).filter(
+                      (employee: Employee) =>
+                        employee.workEmail !== newValue.workEmail,
+                    ),
                   );
                 }
               }}
@@ -862,6 +886,138 @@ function CreateVisit() {
             />
           </Grid>
         </Grid>
+
+        <Divider sx={{ my: 4 }} />
+
+        <Typography
+          variant="h6"
+          gutterBottom
+          sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+        >
+          <VisibilityIcon fontSize="small" color="primary" />
+          Watch List
+        </Typography>
+
+        <Grid item xs={12} md={4} sx={{ mb: 1 }}>
+          <Autocomplete
+            multiple
+            open={ccOpen && !locked}
+            onOpen={() => !locked && setCcOpen(true)}
+            onClose={() => setCcOpen(false)}
+            disablePortal
+            options={employees}
+            value={formik.values.watchList || []}
+            isOptionEqualToValue={(option, value) =>
+              option.workEmail === value.workEmail
+            }
+            getOptionLabel={(option) =>
+              `${option?.firstName || ""} ${option?.lastName || ""}`.trim() ||
+              option.workEmail
+            }
+            onChange={(_, newValue) => {
+              if (locked) return;
+              formik.setFieldValue(
+                "watchList",
+                newValue.filter(
+                  (employee) =>
+                    employee.workEmail !== formik.values.whoTheyMeet,
+                ),
+              );
+            }}
+            inputValue={ccInputValue}
+            onInputChange={(event, newInputValue, reason) => {
+              setCcInputValue(newInputValue);
+              if (reason === "reset") return;
+              const trimmed = newInputValue.trim();
+              if (trimmed.length === 0) {
+                debouncedEmployeeSearch("");
+              } else if (trimmed.length >= 2) {
+                debouncedEmployeeSearch(trimmed);
+              }
+            }}
+            filterOptions={(x) => x}
+            loading={employeesState === State.loading || isLoadingMore}
+            autoHighlight
+            disabled={locked}
+            ListboxComponent={CustomListbox}
+            ListboxProps={{ onScroll: handleListboxScroll }}
+            noOptionsText={
+              ccInputValue.trim().length < 2
+                ? "Type at least 2 characters to search employees"
+                : employeesState === State.loading
+                  ? "Searching..."
+                  : "No employees found"
+            }
+            renderOption={(props, employee) => (
+              <li
+                {...props}
+                key={employee.workEmail}
+                style={{ display: "flex", alignItems: "center", gap: 12 }}
+              >
+                <Avatar
+                  src={employee.employeeThumbnail}
+                  sx={{ width: 32, height: 32 }}
+                >
+                  {employee.firstName?.charAt(0)?.toUpperCase() || "?"}
+                </Avatar>
+                <Box>
+                  <Typography variant="body2" noWrap>
+                    {`${employee.firstName} ${employee.lastName}`}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {employee.workEmail}
+                  </Typography>
+                </Box>
+              </li>
+            )}
+            renderTags={(value, getTagProps) =>
+              value.map((employee, index) => {
+                const fullName =
+                  `${employee.firstName || ""} ${employee.lastName || ""}`.trim();
+                const initial =
+                  employee.firstName?.charAt(0)?.toUpperCase() ||
+                  employee.workEmail?.charAt(0)?.toUpperCase() ||
+                  "?";
+
+                return (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={employee.workEmail}
+                    size="small"
+                    label={fullName || employee.workEmail}
+                    avatar={
+                      <Avatar src={employee.employeeThumbnail || undefined}>
+                        {!employee.employeeThumbnail && initial}
+                      </Avatar>
+                    }
+                  />
+                );
+              })
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Watch List"
+                placeholder="Select people to CC..."
+                disabled={locked}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pastedText = e.clipboardData?.getData("text") || "";
+                  const extractedEmail = handlePaste(pastedText);
+                  const valueToUse = extractedEmail || pastedText.trim();
+                  setCcInputValue(valueToUse);
+                  if (valueToUse.length >= 2) {
+                    debouncedEmployeeSearch(valueToUse);
+                  }
+                }}
+              />
+            )}
+          />
+        </Grid>
+
+        <Typography variant="body2" color="text.secondary">
+          Add people here to keep them informed about this visit via CC emails.
+        </Typography>
       </Box>
     );
   };
@@ -1154,6 +1310,7 @@ function CreateVisit() {
             ? `${userInfo.firstName} ${userInfo.lastName}`
             : "",
           whoTheyMeetThumbnail: userInfo?.employeeThumbnail || null,
+          watchList: [],
           purposeOfVisit: "",
           accessibleLocations: [],
           visitDate: "",

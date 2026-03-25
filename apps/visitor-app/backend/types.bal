@@ -109,6 +109,14 @@ public type AddVisitPayload record {|
     string uuid;
     # QR code in byte array format
     byte[] qrCode;
+    # List of email addresses to be notified about the visit
+    @constraint:Array {
+        minLength: {
+            value: 1,
+            message: "At least one email should be provided in the watch list."
+        }
+    }
+    string[] watchList?;
 |};
 
 # Payload for updating an existing visit.
