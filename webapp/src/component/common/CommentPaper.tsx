@@ -13,11 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Paper, Typography, useTheme } from "@mui/material";
+import DOMPurify from "dompurify";
 
 import React from "react";
-import DOMPurify from "dompurify";
-import { Paper, Typography, useTheme } from "@mui/material";
+
 import { SANITIZE_CONFIG } from "@config/constant";
+
 import { tokens } from "../../theme";
 
 interface CommentPaperProps {
@@ -37,7 +39,9 @@ const CommentPaper: React.FC<CommentPaperProps> = ({ comment, refKey }) => {
   };
 
   // Sanitize the current value for initial render
-  const sanitizedContent = comment ? DOMPurify.sanitize(decodeHTMLEntities(comment), SANITIZE_CONFIG) : "N/A";
+  const sanitizedContent = comment
+    ? DOMPurify.sanitize(decodeHTMLEntities(comment), SANITIZE_CONFIG)
+    : "N/A";
 
   return (
     <div ref={refKey}>

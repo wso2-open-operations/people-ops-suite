@@ -44,5 +44,5 @@
     },
     "types": ["vite/client"]
   },
-  "include": ["src", "src/**/*", "src/vite-env.d.ts"],
+  "include": ["src", "src/**/*", "src/vite-env.d.ts"]
 }

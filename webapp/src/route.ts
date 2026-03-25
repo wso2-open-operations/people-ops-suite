@@ -13,18 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import React from "react";
-import type { RouteObject } from "react-router-dom";
-import { View } from "@view/index";
-import { isIncludedRole } from "./utils/utils";
-
 import DataUsageIcon from "@mui/icons-material/DataUsage";
 import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryIcon from "@mui/icons-material/History";
 import ShieldIcon from "@mui/icons-material/Shield";
-import { Role } from "@utils/types";
-import type { RouteDetail, RouteObjectWithRole } from "./types/types";
 import { SettingsIcon } from "lucide-react";
+import type { RouteObject } from "react-router-dom";
+
+import React from "react";
+
+import { Role } from "@utils/types";
+import { View } from "@view/index";
+
+import type { RouteDetail, RouteObjectWithRole } from "./types/types";
+import { isIncludedRole } from "./utils/utils";
 
 export const routes: RouteObjectWithRole[] = [
   {
