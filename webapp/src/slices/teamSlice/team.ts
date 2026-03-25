@@ -4,18 +4,19 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import { AppConfig } from "../../config/config";
-import { RequestState } from "@utils/types";
-import { ApiService } from "@utils/apiService";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { AxiosError, HttpStatusCode } from "axios";
-import { calculateAllTeamsSummary, getErrorMessage } from "@utils/utils";
-import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
 import { ParRating } from "@slices/employeeHistorySlice/employeeHistory";
+import { RootState } from "@slices/store";
+import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
+import { calculateAllTeamsSummary, getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "../../config/config";
 
 interface teamState {
   teams: Team[];
@@ -113,28 +114,23 @@ export const fetchTeams = createAsyncThunk(
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.teamSlice.fetchTeams
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.teamSlice.fetchTeams);
       }
     } catch (error) {
       if (error instanceof AxiosError && error.name === "CanceledError") {
         throw error;
       }
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchTeamReport
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchTeamReport);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchTeamReport = createAsyncThunk(
@@ -142,31 +138,26 @@ export const fetchTeamReport = createAsyncThunk(
   async ({ parCycleId, teamId }: GetTeamReportRequest, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/teams/${teamId}`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/teams/${teamId}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.teamSlice.fetchTeamReport
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.teamSlice.fetchTeamReport);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchTeamReport
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchTeamReport);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const teamSlice = createSlice({
@@ -214,11 +205,8 @@ const teamSlice = createSlice({
 
 export const selectAllTeams = (state: RootState) => state.team.teams;
 export const selectTeamStatus = (state: RootState) => state.team.status;
-export const selectTeamReportStatus = (state: RootState) =>
-  state.team.reportStatus;
-export const selectTeamReport = (state: RootState) =>
-  state.team.selectedTeamReport;
-export const selectAllTeamsSummary = (state: RootState) =>
-  state.team.allTeamsSummary;
+export const selectTeamReportStatus = (state: RootState) => state.team.reportStatus;
+export const selectTeamReport = (state: RootState) => state.team.selectedTeamReport;
+export const selectAllTeamsSummary = (state: RootState) => state.team.allTeamsSummary;
 
 export default teamSlice.reducer;

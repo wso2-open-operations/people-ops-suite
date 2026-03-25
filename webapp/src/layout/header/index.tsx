@@ -13,25 +13,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Avatar, Box, Menu, MenuItem, Stack, Tooltip, useTheme } from "@mui/material";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+
 import React from "react";
-import Wso2Logo from "@assets/images/wso2-logo.png";
+
 import Wso2LogoWhite from "@assets/images/wso2-logo-white.png";
+import Wso2Logo from "@assets/images/wso2-logo.png";
 import { APP_NAME } from "@config/config";
 import { useAppAuthContext } from "@context/AuthContext";
 import { useAppSelector } from "@slices/store";
-import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
 import { selectUserInfoData } from "@slices/userSlice/user";
+
+import BasicBreadcrumbs from "../BreadCrumbs/BreadCrumbs";
 
 const Header = () => {
   const authContext = useAppAuthContext();
   const theme = useTheme();
   const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
   const userInfo = useAppSelector(selectUserInfoData);
-  const activeLogo = theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2Logo
+  const activeLogo = theme.palette.mode === "dark" ? Wso2LogoWhite : Wso2Logo;
   const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorElUser(event.currentTarget);
   };
@@ -98,7 +100,7 @@ const Header = () => {
                   sx={{
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "flex-end"
+                    alignItems: "flex-end",
                   }}
                 >
                   <Typography

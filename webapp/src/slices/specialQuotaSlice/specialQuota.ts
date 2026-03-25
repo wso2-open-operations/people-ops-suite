@@ -4,17 +4,18 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
-import { RootState } from "@slices/store";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { HttpStatusCode } from "axios";
-import { ApiService } from "@utils/apiService";
-import { getErrorMessage } from "@utils/utils";
-import { AppConfig } from "../../config/config";
+
 import { SnackMessage } from "@config/constant";
 import { sliceErrorMessages } from "@config/constant";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
 import { RequestState } from "@utils/types";
+import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "../../config/config";
 
 interface QuotaState {
   status: RequestState;
@@ -66,7 +67,6 @@ export interface SpecialRatingAllocation {
   highlight?: boolean;
 }
 
-
 const initialState: QuotaState = {
   status: RequestState.IDLE,
   quotaGroups: [],
@@ -82,21 +82,24 @@ interface GetGroupRequest {
 
 export const postQuotaGroups = createAsyncThunk(
   "specialQuota/postQuotaGroups",
-  async ({ parCycleId, parSpecialRatingGroups, specialRatingQuotas }: ParSpecialRatingQuotaGroups, { dispatch }) => {
+  async (
+    { parCycleId, parSpecialRatingGroups, specialRatingQuotas }: ParSpecialRatingQuotaGroups,
+    { dispatch },
+  ) => {
     try {
       const response = await ApiService.getInstance().post(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/special-rating-groups-quota`,
         {
           parSpecialRatingGroups,
           specialRatingQuotas,
-        }
+        },
       );
       if (response.status === HttpStatusCode.Ok || response.status === HttpStatusCode.Created) {
         dispatch(
           enqueueSnackbarMessage({
             message: SnackMessage.success.quotaSaved,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
@@ -108,11 +111,11 @@ export const postQuotaGroups = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchQuotaGroups = createAsyncThunk(
@@ -136,11 +139,11 @@ export const fetchQuotaGroups = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchQuotaGroupRatings = createAsyncThunk(
@@ -169,11 +172,11 @@ export const fetchQuotaGroupRatings = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const specialQuotaSlice = createSlice({
@@ -234,7 +237,8 @@ const specialQuotaSlice = createSlice({
 export const selectQuotaGroups = (state: RootState) => state.specialQuota.quotaGroups;
 export const selectQuotaGroupsStatus = (state: RootState) => state.specialQuota.status;
 export const selectSavedQuotaGroups = (state: RootState) => state.specialQuota.savedQuotaGroups;
-export const selectSpecialRatingAllocation = (state: RootState) => state.specialQuota.specialRatingAllocation;
+export const selectSpecialRatingAllocation = (state: RootState) =>
+  state.specialQuota.specialRatingAllocation;
 
 export default specialQuotaSlice.reducer;
 export const { updateStateMessage, resetQuotaSate } = specialQuotaSlice.actions;

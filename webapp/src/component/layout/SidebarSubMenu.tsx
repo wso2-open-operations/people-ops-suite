@@ -13,11 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { AnimatePresence, motion } from "framer-motion";
 
 import type { RouteDetail } from "../../types/types";
-
 import SubLink from "./SubLink";
 
 const container = {
@@ -37,7 +35,6 @@ const item = {
 };
 
 function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open: boolean }) {
-
   return (
     <AnimatePresence>
       {parentRoute.children && parentRoute.children.length > 0 && (
@@ -56,11 +53,7 @@ function SidebarSubMenu({ parentRoute, open }: { parentRoute: RouteDetail; open:
           }}
         >
           {parentRoute.children!.map((child) => (
-            <motion.div
-              key={child.path}
-              variants={item}
-              style={{ width: "100%" }}
-            >
+            <motion.div key={child.path} variants={item} style={{ width: "100%" }}>
               <SubLink
                 to={child.path as string}
                 parentPath={parentRoute.path}

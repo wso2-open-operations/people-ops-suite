@@ -4,13 +4,13 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import axios, { AxiosError, AxiosInstance, AxiosResponse, CancelTokenSource } from "axios";
+import { Dispatch } from "redux";
+import * as rax from "retry-axios";
 
 import { SnackMessage, USER_TIMEZONE_OFFSET } from "@config/constant";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import { createSetMaintenanceStatusAction } from "@slices/healthSlice/health";
-import axios, { AxiosInstance, AxiosResponse, AxiosError, CancelTokenSource } from "axios";
-import { Dispatch } from "redux";
-import * as rax from "retry-axios";
 
 export class ApiService {
   private static _instance: AxiosInstance;
@@ -38,7 +38,10 @@ export class ApiService {
             };
 
             if (message.isMaintenanceMode && message.maintenanceMessage) {
-              const setMaintenanceStatusAction = createSetMaintenanceStatusAction(true, message.maintenanceMessage);
+              const setMaintenanceStatusAction = createSetMaintenanceStatusAction(
+                true,
+                message.maintenanceMessage,
+              );
               dispatch(setMaintenanceStatusAction);
             }
           } catch (parseError) {
@@ -46,7 +49,7 @@ export class ApiService {
           }
         }
         return Promise.reject(error);
-      }
+      },
     );
     (ApiService._instance.defaults as unknown as rax.RaxConfig).raxConfig = {
       retry: 3,
@@ -92,7 +95,7 @@ export class ApiService {
       },
       (error) => {
         Promise.reject(error);
-      }
+      },
     );
   }
 }

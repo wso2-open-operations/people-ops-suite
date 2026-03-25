@@ -13,60 +13,60 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Stack, Typography, useTheme } from "@mui/material";
+
 import { ReactNode } from "react";
 
 interface TitleProps {
-    firstWord: string;
-    secondWord: string;
-    borderEnabled?: boolean;
-    icon?: ReactNode;
+  firstWord: string;
+  secondWord: string;
+  borderEnabled?: boolean;
+  icon?: ReactNode;
 }
 
 export default function Title({ firstWord, secondWord, borderEnabled = true, icon }: TitleProps) {
-    const theme = useTheme();
+  const theme = useTheme();
 
-    return (
-        <Box
+  return (
+    <Box
+      sx={{
+        width: "100%",
+        pb: borderEnabled ? 1 : 0,
+        borderBottom: borderEnabled
+          ? `1px solid ${theme.palette.customBorder.territory.active}`
+          : "none",
+      }}
+    >
+      <Stack
+        direction="row"
+        gap={1}
+        alignItems="center"
+        justifyContent={{ xs: "center", md: "flex-start" }}
+      >
+        {icon && (
+          <Box
             sx={{
-                width: "100%",
-                pb: borderEnabled ? 1 : 0,
-                borderBottom: borderEnabled
-                    ? `1px solid ${theme.palette.customBorder.territory.active}`
-                    : "none",
+              display: "flex",
+              color: theme.palette.brandColors.lightOrange,
             }}
+          >
+            {icon}
+          </Box>
+        )}
+        <Typography
+          variant="h5"
+          component="h2"
+          fontWeight={600}
+          sx={{
+            color: theme.palette.customText.primary.p1.active,
+          }}
         >
-            <Stack
-                direction="row"
-                gap={1}
-                alignItems="center"
-                justifyContent={{ xs: "center", md: "flex-start" }}
-            >
-                {icon && (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            color: theme.palette.brandColors.lightOrange,
-                        }}
-                    >
-                        {icon}
-                    </Box>
-                )}
-                <Typography
-                    variant="h5"
-                    component="h2"
-                    fontWeight={600}
-                    sx={{
-                        color: theme.palette.customText.primary.p1.active,
-                    }}
-                >
-                    <Box component="span" sx={{ color: theme.palette.brandColors.lightOrange }}>
-                        {firstWord}
-                    </Box>{" "}
-                    {secondWord}
-                </Typography>
-            </Stack>
-        </Box>
-    );
+          <Box component="span" sx={{ color: theme.palette.brandColors.lightOrange }}>
+            {firstWord}
+          </Box>{" "}
+          {secondWord}
+        </Typography>
+      </Stack>
+    </Box>
+  );
 }

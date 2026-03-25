@@ -13,15 +13,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RequestState } from "@root/src/utils/types";
-import { RootState } from "@slices/store";
-import { AppConfig } from "@config/config";
-import { ApiService } from "@utils/apiService";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { base64Regex, sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
+
+import { AppConfig } from "@config/config";
+import { SnackMessage, base64Regex, sliceErrorMessages } from "@config/constant";
+import { RequestState } from "@root/src/utils/types";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
 import { getErrorMessage } from "@utils/utils";
 
 interface FetchReviewers {
@@ -108,13 +108,15 @@ export const fetchRejectedReviews = createAsyncThunk(
   async ({ parCycleId }: { parCycleId: number }, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/rejected-reviews`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/rejected-reviews`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewers);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewers,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReviewers);
@@ -123,11 +125,11 @@ export const fetchRejectedReviews = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchReviewers = createAsyncThunk(
@@ -135,13 +137,15 @@ export const fetchReviewers = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchReviewers, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviewers`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviewers`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewers);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewers,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReviewers);
@@ -150,11 +154,11 @@ export const fetchReviewers = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const postReviewers = createAsyncThunk(
@@ -165,7 +169,7 @@ export const postReviewers = createAsyncThunk(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviewers`,
         {
           reviewerEmails,
-        }
+        },
       );
 
       if (response.status === HttpStatusCode.Created) {
@@ -173,11 +177,13 @@ export const postReviewers = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.postReviewers,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.postReviewers);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.postReviewers,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.postReviewers);
@@ -186,11 +192,11 @@ export const postReviewers = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchRequests = createAsyncThunk(
@@ -198,13 +204,15 @@ export const fetchRequests = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchRequests, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review-requests`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review-requests`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewerRequest);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReviewerRequest,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReviewRequests);
@@ -213,11 +221,11 @@ export const fetchRequests = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const postReviews = createAsyncThunk(
@@ -226,13 +234,15 @@ export const postReviews = createAsyncThunk(
     try {
       const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review`,
-        values
+        values,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.postReview);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.postReview,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.postThreeSixtyReview);
@@ -241,11 +251,11 @@ export const postReviews = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchReviews = createAsyncThunk(
@@ -253,13 +263,15 @@ export const fetchReviews = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchThreeSixtyReview);
@@ -268,11 +280,11 @@ export const fetchReviews = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchSelectedReview = createAsyncThunk(
@@ -280,13 +292,15 @@ export const fetchSelectedReview = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/review`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchSelectedThreeSixtyReview);
@@ -295,11 +309,11 @@ export const fetchSelectedReview = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const threeSixtyReviewSlice = createSlice({
@@ -404,10 +418,13 @@ export const { updateSelectedReview } = threeSixtyReviewSlice.actions;
 
 export const selectThreeSixtyReviewStatus = (state: RootState) => state.threeSixtyReview.status;
 export const selectThreeSixtyReviewers = (state: RootState) => state.threeSixtyReview.reviewers;
-export const selectThreeSixtyReviewRequests = (state: RootState) => state.threeSixtyReview.reviewRequests;
+export const selectThreeSixtyReviewRequests = (state: RootState) =>
+  state.threeSixtyReview.reviewRequests;
 export const selectThreeSixtyReviews = (state: RootState) => state.threeSixtyReview.reviews;
-export const selectSelectedThreeSixtyReview = (state: RootState) => state.threeSixtyReview.selectedReview;
-export const selectSelectedThreeSixtyReviewStatus = (state: RootState) => state.threeSixtyReview.selectedReviewStatus;
+export const selectSelectedThreeSixtyReview = (state: RootState) =>
+  state.threeSixtyReview.selectedReview;
+export const selectSelectedThreeSixtyReviewStatus = (state: RootState) =>
+  state.threeSixtyReview.selectedReviewStatus;
 export const selectRejectedReviews = (state: RootState) => state.threeSixtyReview.rejectedReviews;
 
 export default threeSixtyReviewSlice.reducer;

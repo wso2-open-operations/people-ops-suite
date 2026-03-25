@@ -13,12 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import {
-  SnackMessage,
-  tooltipVisibilityDelay,
-  uiMessages,
-} from "@config/constant";
+import InfoIcon from "@mui/icons-material/Info";
 import LoadingButton from "@mui/lab/LoadingButton";
 import {
   Box,
@@ -32,9 +27,22 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import InfoIcon from "@mui/icons-material/Info";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import { useFormik } from "formik";
+import { isEqual } from "lodash";
+import * as yup from "yup";
+
+import { useEffect } from "react";
+
+import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import {
+  ParEmployeeStatus,
+  ParF2fStatus,
+  ParLeadStatus,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import {
   fetchParRatingOfEmployee,
@@ -42,13 +50,6 @@ import {
   updateParRatingOfEmployee,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import dayjs from "dayjs";
-import { useFormik } from "formik";
-import { isEqual } from "lodash";
-import { useEffect } from "react";
-import * as yup from "yup";
-import { ParEmployeeStatus, ParLeadStatus, ParF2fStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
 
 interface UpdateStatusPanelProps {
   parCycle: Partial<ParCycle>;
@@ -80,8 +81,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
       parLeadStatus: employeeRating.parLeadStatus,
       parF2fStatus: employeeRating.parF2fStatus,
       parF2fDate:
-        dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD") ||
-        dayjs().format("YYYY-MM-DD"),
+        dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD") || dayjs().format("YYYY-MM-DD"),
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -107,7 +107,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
           parCycleId: parCycle.parCycleId,
           parRatingId: employeeRating.parRatingId,
           values: formValues,
-        })
+        }),
       );
 
       if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
@@ -115,37 +115,19 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
           fetchParRatingOfEmployee({
             employeeId: employeeRating.parEmployeeEmail,
             parCycleId: parCycle.parCycleId!,
-          })
+          }),
         );
-        if (
-          fetchParRatingOfEmployee.fulfilled.match(updatedRatingResultAction)
-        ) {
+        if (fetchParRatingOfEmployee.fulfilled.match(updatedRatingResultAction)) {
           setFieldValue(
             "parF2fDate",
-            dayjs(updatedRatingResultAction.payload.parF2fDate).format(
-              "YYYY-MM-DD"
-            )
+            dayjs(updatedRatingResultAction.payload.parF2fDate).format("YYYY-MM-DD"),
           );
-          setFieldValue(
-            "parEmployeeStatus",
-            updatedRatingResultAction.payload.parEmployeeStatus
-          );
-          setFieldValue(
-            "parLeadStatus",
-            updatedRatingResultAction.payload.parLeadStatus
-          );
-          setFieldValue(
-            "parF2fStatus",
-            updatedRatingResultAction.payload.parF2fStatus
-          );
+          setFieldValue("parEmployeeStatus", updatedRatingResultAction.payload.parEmployeeStatus);
+          setFieldValue("parLeadStatus", updatedRatingResultAction.payload.parLeadStatus);
+          setFieldValue("parF2fStatus", updatedRatingResultAction.payload.parF2fStatus);
         }
 
-        dispatch(
-          ShowSnackBarMessage(
-            SnackMessage.success.adminParStatusUpdate,
-            "success"
-          )
-        );
+        dispatch(ShowSnackBarMessage(SnackMessage.success.adminParStatusUpdate, "success"));
       }
     },
   });
@@ -154,10 +136,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
     setFieldValue("parEmployeeStatus", employeeRating.parEmployeeStatus);
     setFieldValue("parLeadStatus", employeeRating.parLeadStatus);
     setFieldValue("parF2fStatus", employeeRating.parF2fStatus);
-    setFieldValue(
-      "parF2fDate",
-      dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD")
-    );
+    setFieldValue("parF2fDate", dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD"));
   };
 
   const hasChanges = !isEqual(
@@ -167,7 +146,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
       parF2fStatus: employeeRating.parF2fStatus,
       parF2fDate: dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD"),
     },
-    values
+    values,
   );
 
   useEffect(() => {
@@ -177,10 +156,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
   }, [values.parLeadStatus, setFieldValue]);
 
   useEffect(() => {
-    setFieldValue(
-      "parF2fDate",
-      dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD")
-    );
+    setFieldValue("parF2fDate", dayjs(employeeRating.parF2fDate).format("YYYY-MM-DD"));
     setFieldValue("parEmployeeStatus", employeeRating.parEmployeeStatus);
     setFieldValue("parLeadStatus", employeeRating.parLeadStatus);
     setFieldValue("parF2fStatus", employeeRating.parF2fStatus);
@@ -207,9 +183,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                     },
                   }}
                 >
-                  <InfoIcon
-                    sx={{ fontSize: "1.3rem", color: "primary.main" }}
-                  />
+                  <InfoIcon sx={{ fontSize: "1.3rem", color: "primary.main" }} />
                 </IconButton>
               </Tooltip>
             </Typography>
@@ -228,9 +202,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                 onBlur={handleBlur}
                 name="parEmployeeStatus"
                 size="small"
-                error={
-                  touched.parEmployeeStatus && Boolean(errors.parEmployeeStatus)
-                }
+                error={touched.parEmployeeStatus && Boolean(errors.parEmployeeStatus)}
               >
                 <MenuItem value={ParEmployeeStatus.PENDING}>Pending</MenuItem>
                 <MenuItem value={ParEmployeeStatus.DRAFT}>Draft</MenuItem>
@@ -259,9 +231,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                     },
                   }}
                 >
-                  <InfoIcon
-                    sx={{ fontSize: "1.3rem", color: "primary.main" }}
-                  />
+                  <InfoIcon sx={{ fontSize: "1.3rem", color: "primary.main" }} />
                 </IconButton>
               </Tooltip>
             </Typography>
@@ -276,19 +246,10 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                     values.parLeadStatus === ParLeadStatus.SHARED &&
                     newValue.target.value !== ParLeadStatus.SHARED
                   ) {
-                    if (
-                      employeeRating.parEmployeeStatus ===
-                      ParEmployeeStatus.SHARED_BLOCKED
-                    ) {
-                      setFieldValue(
-                        "parEmployeeStatus",
-                        ParEmployeeStatus.DRAFT
-                      );
+                    if (employeeRating.parEmployeeStatus === ParEmployeeStatus.SHARED_BLOCKED) {
+                      setFieldValue("parEmployeeStatus", ParEmployeeStatus.DRAFT);
                     } else {
-                      setFieldValue(
-                        "parEmployeeStatus",
-                        employeeRating.parEmployeeStatus
-                      );
+                      setFieldValue("parEmployeeStatus", employeeRating.parEmployeeStatus);
                     }
                   }
                   setFieldValue("parLeadStatus", newValue.target.value);
@@ -322,9 +283,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                     },
                   }}
                 >
-                  <InfoIcon
-                    sx={{ fontSize: "1.3rem", color: "primary.main" }}
-                  />
+                  <InfoIcon sx={{ fontSize: "1.3rem", color: "primary.main" }} />
                 </IconButton>
               </Tooltip>
             </Typography>
@@ -345,9 +304,7 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
                 error={touched.parF2fStatus && Boolean(errors.parF2fStatus)}
               >
                 <MenuItem
-                  disabled={
-                    employeeRating.parF2fStatus === ParF2fStatus.COMPLETED
-                  }
+                  disabled={employeeRating.parF2fStatus === ParF2fStatus.COMPLETED}
                   value={ParF2fStatus.PENDING}
                 >
                   Pending
@@ -363,38 +320,38 @@ export const UpdateStatusPanel = ({ parCycle }: UpdateStatusPanelProps) => {
             </Grid>
 
             <Grid size={{ xs: 7 }} display={"flex"} alignItems={"center"} my={1}>
-            <DatePicker
-              label="PAR F2F Date"
-              disabled={
-                employeeRating.parF2fStatus === ParF2fStatus.COMPLETED ||
-                values.parF2fStatus !== ParF2fStatus.COMPLETED
-              }
-              // Convert string from Formik back to Dayjs for the UI
-              value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
-              onChange={(newValue) => {
-                // Save as string in Formik
-                setFieldValue(
-                  "parF2fDate",
-                  newValue ? dayjs(newValue).format("YYYY-MM-DD") : null
-                );
-              }}
-              // Use slots instead of renderInput
-              slots={{
-                textField: TextField,
-              }}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  name: "parF2fDate",
-                  onBlur: handleBlur,
-                  error: touched.parF2fDate && Boolean(errors.parF2fDate),
-                  helperText: (touched.parF2fDate && errors.parF2fDate) as string,
-                  "aria-label": "par f2f date",
-                },
-              }}
-              maxDate={dayjs()} // dayjs() is already the current date
-              minDate={dayjs(parCycle?.parCycleStartDate)}
-            />
+              <DatePicker
+                label="PAR F2F Date"
+                disabled={
+                  employeeRating.parF2fStatus === ParF2fStatus.COMPLETED ||
+                  values.parF2fStatus !== ParF2fStatus.COMPLETED
+                }
+                // Convert string from Formik back to Dayjs for the UI
+                value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
+                onChange={(newValue) => {
+                  // Save as string in Formik
+                  setFieldValue(
+                    "parF2fDate",
+                    newValue ? dayjs(newValue).format("YYYY-MM-DD") : null,
+                  );
+                }}
+                // Use slots instead of renderInput
+                slots={{
+                  textField: TextField,
+                }}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    name: "parF2fDate",
+                    onBlur: handleBlur,
+                    error: touched.parF2fDate && Boolean(errors.parF2fDate),
+                    helperText: (touched.parF2fDate && errors.parF2fDate) as string,
+                    "aria-label": "par f2f date",
+                  },
+                }}
+                maxDate={dayjs()} // dayjs() is already the current date
+                minDate={dayjs(parCycle?.parCycleStartDate)}
+              />
             </Grid>
           </LocalizationProvider>
           <Grid size={{ xs: 12 }} display={"flex"} my={5}>

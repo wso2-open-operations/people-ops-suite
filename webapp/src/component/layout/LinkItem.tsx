@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Typography, useTheme } from "@mui/material";
 import { ChevronDown as ChevronDownIcon } from "lucide-react";
 import { ChevronUp as ChevronUpIcon } from "lucide-react";
@@ -48,7 +47,9 @@ const LinkItem = (props: ListItemLinkProps) => {
         borderRadius: "8px",
         justifyContent: "space-between",
         transition: "all 0.2s",
-        backgroundColor: isActiveOrExpanded ? theme.palette.customNavigation.clickedBg : "transparent",
+        backgroundColor: isActiveOrExpanded
+          ? theme.palette.customNavigation.clickedBg
+          : "transparent",
         "&:hover": {
           ...(!isActiveOrExpanded && {
             backgroundColor: theme.palette.customNavigation.hoverBg,
@@ -56,7 +57,7 @@ const LinkItem = (props: ListItemLinkProps) => {
         },
         color: isActiveOrExpanded
           ? theme.palette.customNavigation.textClicked
-          : theme.palette.customNavigation.text 
+          : theme.palette.customNavigation.text,
       }}
     >
       <Box
@@ -91,7 +92,9 @@ const LinkItem = (props: ListItemLinkProps) => {
           </Typography>
         )}
       </Box>
-      {hasChildren && open && (isExpanded ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
+      {hasChildren &&
+        open &&
+        (isExpanded ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />)}
     </Box>
   );
 };

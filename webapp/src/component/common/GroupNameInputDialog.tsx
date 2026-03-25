@@ -13,15 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { FC, FormEvent, useEffect, useState } from "react";
-import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+
+import { FC, FormEvent, useEffect, useState } from "react";
+
 import { uiMessages } from "@config/constant";
 
 interface InputDialogProps {
@@ -31,12 +32,7 @@ interface InputDialogProps {
   onSave: (groupName: string) => void;
 }
 
-const InputDialog: FC<InputDialogProps> = ({
-  open,
-  onClose,
-  groupNames,
-  onSave,
-}) => {
+const InputDialog: FC<InputDialogProps> = ({ open, onClose, groupNames, onSave }) => {
   const [groupName, setGroupName] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -49,11 +45,7 @@ const InputDialog: FC<InputDialogProps> = ({
       return uiMessages.error.invalidGroupname;
     }
 
-    if (
-      groupNames.some(
-        (groupName) => groupName.toLowerCase() === name.toLowerCase()
-      )
-    ) {
+    if (groupNames.some((groupName) => groupName.toLowerCase() === name.toLowerCase())) {
       return uiMessages.error.existingGroupName;
     }
     return null;
@@ -93,9 +85,7 @@ const InputDialog: FC<InputDialogProps> = ({
       <form onSubmit={handleSubmit}>
         <DialogTitle>New Group</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            {uiMessages.dialog.groupNameInput.title}
-          </DialogContentText>
+          <DialogContentText>{uiMessages.dialog.groupNameInput.title}</DialogContentText>
           <TextField
             autoFocus
             required

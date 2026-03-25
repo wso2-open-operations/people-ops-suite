@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Typography, useTheme } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import { Link, matchPath, useLocation } from "react-router-dom";
@@ -33,7 +32,9 @@ const SubLink = (props: SubLinkProps) => {
   const location = useLocation();
   const theme = useTheme();
 
-  const fullPath = to.startsWith('/') ? to : `${parentPath.replace(/\/$/, "")}/${to.replace(/^\//, "")}`;
+  const fullPath = to.startsWith("/")
+    ? to
+    : `${parentPath.replace(/\/$/, "")}/${to.replace(/^\//, "")}`;
   const isActive = !!matchPath({ path: fullPath, end: true }, location.pathname);
 
   return (

@@ -13,32 +13,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useState, useEffect } from "react";
-import { Box, Button, Fade, Stack, Typography } from "@mui/material";
 import ShieldIcon from "@mui/icons-material/Shield";
+import { Box, Button, Fade, Stack, Typography } from "@mui/material";
 
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import {
-  fetchQuotaPendingParCycle,
-  fetchOpenParCycle,
-  fetchPendingParCycle,
-  resetOngoingParCycleState,
-  selectIsParCycleOngoing,
-  selectParCycleState,
-  selectIsQuotaPending,
-} from "@slices/parCycleSlice/parCycle";
-import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice/meta";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ParCycleStatus, RequestState } from "@utils/types";
-import { SnackMessage, uiMessages } from "@config/constant";
+import { useEffect, useState } from "react";
 
 import { FormContainer } from "@component/common/FormContainer";
 import Title from "@component/common/Title";
 import { LoadingEffect } from "@component/ui/Loading";
-import { ParCreationForm } from "@view/adminPortal/components/ParCreationForm";
-import { OrgSummary } from "@view/adminPortal/components/OrgSummary";
+import { SnackMessage, uiMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { fetchConfigurations, selectConfigStatus } from "@slices/metaSlice/meta";
+import {
+  fetchOpenParCycle,
+  fetchPendingParCycle,
+  fetchQuotaPendingParCycle,
+  resetOngoingParCycleState,
+  selectIsParCycleOngoing,
+  selectIsQuotaPending,
+  selectParCycleState,
+} from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { ParCycleStatus, RequestState } from "@utils/types";
 import { AssignQuota } from "@view/adminPortal/components/AssignQuota";
+import { OrgSummary } from "@view/adminPortal/components/OrgSummary";
+import { ParCreationForm } from "@view/adminPortal/components/ParCreationForm";
 
 export default function AdminOngoingView() {
   const isParCycleOngoing = useAppSelector(selectIsParCycleOngoing);
@@ -76,10 +75,7 @@ export default function AdminOngoingView() {
     const fetchData = async () => {
       try {
         await dispatch(fetchQuotaPendingParCycle());
-        if (
-          isQuotaPending !== ParCycleStatus.PENDING_QUOTA &&
-          isQuotaPending !== ""
-        ) {
+        if (isQuotaPending !== ParCycleStatus.PENDING_QUOTA && isQuotaPending !== "") {
           await dispatch(fetchOpenParCycle());
         }
       } catch (error) {
@@ -87,7 +83,7 @@ export default function AdminOngoingView() {
           enqueueSnackbarMessage({
             message: SnackMessage.error.common,
             type: "error",
-          })
+          }),
         );
       }
     };
@@ -110,14 +106,12 @@ export default function AdminOngoingView() {
           />
 
           <Box sx={{ flex: 1, overflowY: "auto" }}>
-
             {(parCyclesLoadingState === RequestState.LOADING || isParCyclePending) && (
               <LoadingEffect message={uiMessages.loading.pageLoading} />
             )}
 
             {parCyclesLoadingState === RequestState.SUCCEEDED && (
               <Stack height="100%">
-
                 {isParCycleOngoing && <OrgSummary isAdminAuditViewOn={true} />}
 
                 {isQuotaPending === ParCycleStatus.PENDING_QUOTA &&
@@ -165,4 +159,4 @@ export default function AdminOngoingView() {
       </Stack>
     </Fade>
   );
-};
+}

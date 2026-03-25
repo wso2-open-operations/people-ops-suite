@@ -13,43 +13,51 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
-  Box,
-  Grid,
-  Link,
-  Paper,
   Avatar,
-  Button,
-  TableRow,
-  TableCell,
-  TableBody,
-  IconButton,
-  Typography,
+  Box,
   Breadcrumbs,
+  Button,
+  Grid,
+  IconButton,
+  Link,
   Table as MuiTable,
+  Paper,
+  TableBody,
+  TableCell,
+  TableRow,
+  Typography,
 } from "@mui/material";
-import "jspdf-autotable";
-import jsPDF from "jspdf";
 import dayjs from "dayjs";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import autoTable, { RowInput } from "jspdf-autotable";
+
+import { useState } from "react";
+
+import { base64Regex, uiMessages } from "@config/constant";
 import {
+  ParEmployeeStatus,
+  ParLeadStatus,
+  ParSpecialRating,
+  parRatingNotAssigned,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import {
+  fetchCurrentParCycleOfEmployee,
   selectEmployeeRatings,
   updateParRatingOfEmployee,
-  fetchCurrentParCycleOfEmployee,
 } from "@slices/employeeSlice/employee";
-import { useState } from "react";
-import CommentPaper from "./CommentPaper";
-import EmployeeChip from "./EmployeeChip";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import autoTable, { RowInput } from "jspdf-autotable";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { ConfirmationDialog } from "./ConfirmationDialog";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { base64Regex, uiMessages } from "@config/constant";
 import { useAppDispatch, useAppSelector } from "@slices/store";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ParEmployeeStatus, parRatingNotAssigned, ParSpecialRating, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+
+import CommentPaper from "./CommentPaper";
+import { ConfirmationDialog } from "./ConfirmationDialog";
+import EmployeeChip from "./EmployeeChip";
 
 interface EmployeeParProp {
   closeParRatingView?: () => void;
@@ -69,12 +77,9 @@ export const EmployeePar = ({
   const employeeMap = useAppSelector(selectEmployeeMap);
   const employeeRatings = useAppSelector(selectEmployeeRatings);
   const [isUnshareInProgress, setIsUnshareInProgress] = useState(false);
-  const openUnshareConfirmationDialog = () =>
-    setIsUnshareConfirmationDialogOpen(true);
-  const closeUnshareConfirmationDialog = () =>
-    setIsUnshareConfirmationDialogOpen(false);
-  const [isUnshareConfirmationDialogOpen, setIsUnshareConfirmationDialogOpen] =
-    useState(false);
+  const openUnshareConfirmationDialog = () => setIsUnshareConfirmationDialogOpen(true);
+  const closeUnshareConfirmationDialog = () => setIsUnshareConfirmationDialogOpen(false);
+  const [isUnshareConfirmationDialogOpen, setIsUnshareConfirmationDialogOpen] = useState(false);
 
   const handleParUnshare = async () => {
     setIsUnshareInProgress(true);
@@ -84,7 +89,7 @@ export const EmployeePar = ({
         parCycleId: currentCycle.parCycleId,
         parRatingId: employeeRatings?.parRatingId,
         values: { parEmployeeStatus: ParEmployeeStatus.DRAFT },
-      })
+      }),
     );
 
     if (updateParRatingOfEmployee.fulfilled.match(resultAction) && userEmail) {
@@ -98,7 +103,7 @@ export const EmployeePar = ({
       enqueueSnackbarMessage({
         message: "Generating the PDF",
         type: "info",
-      })
+      }),
     );
 
     const doc = new jsPDF({
@@ -112,9 +117,7 @@ export const EmployeePar = ({
     const formatCommentForPDF = (html: string): string => {
       if (!html) return "-";
 
-      const decoded = base64Regex.test(html)
-        ? decodeURIComponent(atob(html))
-        : html;
+      const decoded = base64Regex.test(html) ? decodeURIComponent(atob(html)) : html;
       const tempDiv = document.createElement("div");
       tempDiv.innerHTML = decoded;
 
@@ -127,10 +130,7 @@ export const EmployeePar = ({
         if (element.tagName === "UL") {
           const items = element.querySelectorAll("li");
           items.forEach((li) => {
-            result += `${indent}• ${processElement(
-              li as HTMLElement,
-              depth + 1
-            )}\n`;
+            result += `${indent}• ${processElement(li as HTMLElement, depth + 1)}\n`;
           });
           return result;
         }
@@ -138,10 +138,7 @@ export const EmployeePar = ({
         if (element.tagName === "OL") {
           const items = element.querySelectorAll("li");
           items.forEach((li, index) => {
-            result += `${indent}${index + 1}. ${processElement(
-              li as HTMLElement,
-              depth + 1
-            )}\n`;
+            result += `${indent}${index + 1}. ${processElement(li as HTMLElement, depth + 1)}\n`;
           });
           return result;
         }
@@ -212,19 +209,23 @@ export const EmployeePar = ({
       head: [
         [
           {
-            content: ` - Employee: ${employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
+            content: ` - Employee: ${
+              employeeMap[employeeRatings.parEmployeeEmail]?.employeeName ??
               employeeRatings.parEmployeeEmail
-              }\n - PAR Rating: ${employeeRatings.parRating === parRatingNotAssigned
+            }\n - PAR Rating: ${
+              employeeRatings.parRating === parRatingNotAssigned
                 ? "Not Assigned"
                 : employeeRatings.parRating
-              }\n - Top 5%/20% Rating: ${employeeRatings.parSpecialRating !== ParSpecialRating.NONE
+            }\n - Top 5%/20% Rating: ${
+              employeeRatings.parSpecialRating !== ParSpecialRating.NONE
                 ? employeeRatings.parSpecialRating
                 : "Not Assigned"
-              }\n - PAR Shared By: ${employeeRatings.parRatingSharedBy
-                ? employeeMap[employeeRatings.parRatingSharedBy]
-                  ?.employeeName || employeeRatings.parRatingSharedBy
+            }\n - PAR Shared By: ${
+              employeeRatings.parRatingSharedBy
+                ? employeeMap[employeeRatings.parRatingSharedBy]?.employeeName ||
+                  employeeRatings.parRatingSharedBy
                 : "Not Provided"
-              }`,
+            }`,
             colSpan: 3,
             styles: {
               halign: "left",
@@ -275,26 +276,14 @@ export const EmployeePar = ({
       >
         {previousPageName && closeParRatingView && (
           <Breadcrumbs aria-label="breadcrumb" sx={{ paddingBottom: 2 }}>
-            <IconButton
-              aria-label="back"
-              color="primary"
-              onClick={closeParRatingView}
-            >
+            <IconButton aria-label="back" color="primary" onClick={closeParRatingView}>
               <ArrowBackIcon />
             </IconButton>
 
-            <Link
-              underline="hover"
-              color="inherit"
-              onClick={closeParRatingView}
-            >
+            <Link underline="hover" color="inherit" onClick={closeParRatingView}>
               {previousPageName ? previousPageName : "Home"}
             </Link>
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-            >
+            <Box display="flex" alignItems="center" justifyContent="space-between">
               <Box>
                 <Typography display="inline" variant="h5">
                   {currentCycle.parCycleName}{" "}
@@ -309,7 +298,9 @@ export const EmployeePar = ({
         )}
 
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: employeeRatings?.parLeadStatus === ParLeadStatus.SHARED ? 6 : 12 }}>
+          <Grid
+            size={{ xs: 12, sm: employeeRatings?.parLeadStatus === ParLeadStatus.SHARED ? 6 : 12 }}
+          >
             <Paper
               variant="outlined"
               sx={{
@@ -324,19 +315,11 @@ export const EmployeePar = ({
                 },
               }}
             >
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={2}
-                mb={1}
-                justifyContent="space-between"
-              >
+              <Box display="flex" alignItems="center" gap={2} mb={1} justifyContent="space-between">
                 <Box display="flex" alignItems="center" gap={2}>
                   {userEmail ? (
                     <Avatar
-                      src={
-                        employeeMap[userEmail ?? ""]?.employeeThumbnail ?? ""
-                      }
+                      src={employeeMap[userEmail ?? ""]?.employeeThumbnail ?? ""}
                       alt={employeeRatings.parLeadEmail}
                       sx={{
                         width: 48,
@@ -363,12 +346,7 @@ export const EmployeePar = ({
                   )}
 
                   <Box>
-                    <Typography
-                      variant="h5"
-                      fontWeight="700"
-                      color="primary.main"
-                      sx={{ mb: 0.5 }}
-                    >
+                    <Typography variant="h5" fontWeight="700" color="primary.main" sx={{ mb: 0.5 }}>
                       Employee PAR
                     </Typography>
                   </Box>
@@ -392,16 +370,10 @@ export const EmployeePar = ({
                   border: "1px solid #bfdbfe",
                   mb: 1,
                   minHeight:
-                    employeeRatings?.parLeadStatus === ParLeadStatus.SHARED
-                      ? "14vh"
-                      : "auto",
+                    employeeRatings?.parLeadStatus === ParLeadStatus.SHARED ? "14vh" : "auto",
                 }}
               >
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ fontStyle: "italic" }}
-                >
+                <Typography variant="body1" color="text.secondary" sx={{ fontStyle: "italic" }}>
                   {currentCycle.parCycleConfigurations?.employeeParQuestion}
                 </Typography>
               </Box>
@@ -411,7 +383,7 @@ export const EmployeePar = ({
           </Grid>
 
           {employeeRatings?.parLeadStatus === ParLeadStatus.SHARED && (
-            <Grid size={{ xs: 12, sm: 6 }} >
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Paper
                 variant="outlined"
                 sx={{
@@ -429,10 +401,7 @@ export const EmployeePar = ({
                 <Box display="flex" alignItems="center" gap={2} mb={1}>
                   {employeeRatings.parLeadEmail ? (
                     <Avatar
-                      src={
-                        employeeMap[employeeRatings.parLeadEmail ?? ""]
-                          ?.employeeThumbnail
-                      }
+                      src={employeeMap[employeeRatings.parLeadEmail ?? ""]?.employeeThumbnail}
                       alt={employeeRatings.parLeadEmail}
                       sx={{
                         width: 48,
@@ -479,10 +448,7 @@ export const EmployeePar = ({
                       overflow: "auto",
                     }}
                   >
-                    <MuiTable
-                      size="small"
-                      sx={{ width: "100%", height: "100%" }}
-                    >
+                    <MuiTable size="small" sx={{ width: "100%", height: "100%" }}>
                       <TableBody>
                         <TableRow>
                           {employeeRatings.parRating && (
@@ -503,9 +469,7 @@ export const EmployeePar = ({
                         <TableRow>
                           {employeeRatings.parSpecialRating && (
                             <>
-                              <TableCell sx={{ fontWeight: 600 }}>
-                                Top 5%/20% Rating
-                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>Top 5%/20% Rating</TableCell>
                               <TableCell>
                                 <EmployeeChip
                                   isSpecial={true}
@@ -519,18 +483,14 @@ export const EmployeePar = ({
                         <TableRow>
                           {employeeRatings.parRatingSharedBy && (
                             <>
-                              <TableCell sx={{ fontWeight: 600 }}>
-                                PAR Shared By
-                              </TableCell>
+                              <TableCell sx={{ fontWeight: 600 }}>PAR Shared By</TableCell>
                               <TableCell sx={{ textAlign: "center" }}>
                                 <Typography
                                   variant="body1"
                                   color="text.secondary"
                                   sx={{ fontStyle: "italic" }}
                                 >
-                                  {employeeMap[
-                                    employeeRatings.parRatingSharedBy
-                                  ]?.employeeName ||
+                                  {employeeMap[employeeRatings.parRatingSharedBy]?.employeeName ||
                                     employeeRatings.parRatingSharedBy ||
                                     "-"}
                                 </Typography>

@@ -13,65 +13,57 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import { AccessTime, CalendarMonth, Description, VideoCall } from "@mui/icons-material";
+import CloseIcon from "@mui/icons-material/Close";
 import {
-  Box,
-  Grid,
   Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  MenuItem,
   Paper,
   Select,
-  Button,
-  MenuItem,
-  Container,
-  TextField,
-  InputLabel,
-  Typography,
-  FormControl,
-  CircularProgress,
   SelectChangeEvent,
-  IconButton,
+  TextField,
+  Typography,
 } from "@mui/material";
-import {
-  resetAll,
-  TimeSlot,
-  createMeeting,
-  resetTimeSlot,
-  checkAvailability,
-  setMeetingDetails,
-  selectMeetingLink,
-  setSelectedTimeSlot,
-  selectMeetingStatus,
-  selectMeetingDetails,
-  selectAvailableTimeSlots,
-  selectAvailabilityStatus,
-} from "@slices/calendarSlice/calendar";
-import { useDispatch } from "react-redux";
-import { RequestState } from "@utils/types";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { AppDispatch, useAppSelector, RootState } from "@slices/store";
 // import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import dayjs, { Dayjs } from "dayjs";
+import { useDispatch } from "react-redux";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import {
-  VideoCall,
-  Description,
-  CalendarMonth,
-  AccessTime,
-} from "@mui/icons-material";
-import CloseIcon from "@mui/icons-material/Close";
-import dayjs, { Dayjs } from "dayjs";
+  TimeSlot,
+  checkAvailability,
+  createMeeting,
+  resetAll,
+  resetTimeSlot,
+  selectAvailabilityStatus,
+  selectAvailableTimeSlots,
+  selectMeetingDetails,
+  selectMeetingLink,
+  selectMeetingStatus,
+  setMeetingDetails,
+  setSelectedTimeSlot,
+} from "@slices/calendarSlice/calendar";
+import { AppDispatch, RootState, useAppSelector } from "@slices/store";
+import { RequestState } from "@utils/types";
 
 interface MeetingSchedulerPageProps {
   parRatingId: number;
   onClose: () => void;
 }
 
-const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
-  parRatingId,
-  onClose,
-}) => {
+const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({ parRatingId, onClose }) => {
   const dispatch = useDispatch<AppDispatch>();
   const meetingLink = useAppSelector(selectMeetingLink);
   const meetingStatus = useAppSelector(selectMeetingStatus);
@@ -80,17 +72,13 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
   const [validationError, setValidationError] = useState<string>("");
   const availableTimeSlots = useAppSelector(selectAvailableTimeSlots);
   const availabilityStatus = useAppSelector(selectAvailabilityStatus);
-  const meeting = useAppSelector(
-    (state: RootState) => state.calendarSlice.meetingStatus
-  );
+  const meeting = useAppSelector((state: RootState) => state.calendarSlice.meetingStatus);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const isCheckingAvailability = availabilityStatus === RequestState.LOADING;
   const isCreatingMeeting = meetingStatus === RequestState.LOADING;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     dispatch(setMeetingDetails({ [name]: value }));
   };
@@ -109,13 +97,13 @@ const MeetingSchedulerPage: React.FC<MeetingSchedulerPageProps> = ({
         checkAvailability({
           date: date,
           signal: abortController.current.signal,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
-const handleDateChange = (newValue: Dayjs | null) => {
+  const handleDateChange = (newValue: Dayjs | null) => {
     if (newValue) {
       // Dayjs makes formatting incredibly easy!
       const formattedDate = newValue.format("YYYY-MM-DD");
@@ -160,7 +148,7 @@ const handleDateChange = (newValue: Dayjs | null) => {
         parRatingId: parRatingId,
         meetingDetails,
         date: selectedDate ?? "",
-      })
+      }),
     );
   }, [dispatch, meetingDetails, selectedDate]);
 
@@ -192,7 +180,6 @@ const handleDateChange = (newValue: Dayjs | null) => {
     return "";
   };
 
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="md">
@@ -210,11 +197,7 @@ const handleDateChange = (newValue: Dayjs | null) => {
           >
             <CloseIcon />
           </IconButton>
-          <Typography
-            variant="h4"
-            gutterBottom
-            sx={{ display: "flex", alignItems: "center" }}
-          >
+          <Typography variant="h4" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
             <VideoCall sx={{ mr: 2 }} />
             Schedule a Google Meet
           </Typography>
@@ -223,9 +206,9 @@ const handleDateChange = (newValue: Dayjs | null) => {
               <Grid size={{ xs: 12 }}>
                 <DatePicker
                   label="Select Date"
-                  minDate={dayjs()} 
-                  value={getSelectedDateObject()} 
-                  onChange={handleDateChange} 
+                  minDate={dayjs()}
+                  value={getSelectedDateObject()}
+                  onChange={handleDateChange}
                   slots={{
                     textField: TextField,
                   }}
@@ -258,9 +241,7 @@ const handleDateChange = (newValue: Dayjs | null) => {
                 </Typography>
 
                 <FormControl fullWidth sx={{ mt: 2 }}>
-                  <InputLabel id="time-slot-select-label">
-                    Select a Time Slot
-                  </InputLabel>
+                  <InputLabel id="time-slot-select-label">Select a Time Slot</InputLabel>
                   <Select
                     labelId="time-slot-select-label"
                     id="time-slot-select"
@@ -279,13 +260,11 @@ const handleDateChange = (newValue: Dayjs | null) => {
               </Paper>
             )}
 
-            {availabilityStatus === RequestState.SUCCEEDED &&
-              availableTimeSlots.length === 0 && (
-                <Alert severity="info" sx={{ mt: 3 }}>
-                  No available time slots found. Both participants might be busy
-                  on this date.
-                </Alert>
-              )}
+            {availabilityStatus === RequestState.SUCCEEDED && availableTimeSlots.length === 0 && (
+              <Alert severity="info" sx={{ mt: 3 }}>
+                No available time slots found. Both participants might be busy on this date.
+              </Alert>
+            )}
 
             {meetingDetails.startTime && (
               <Box sx={{ mt: 4 }}>
@@ -303,11 +282,7 @@ const handleDateChange = (newValue: Dayjs | null) => {
                       onChange={handleInputChange}
                       required
                       InputProps={{
-                        startAdornment: (
-                          <Description
-                            sx={{ mr: 1, color: "text.secondary" }}
-                          />
-                        ),
+                        startAdornment: <Description sx={{ mr: 1, color: "text.secondary" }} />,
                       }}
                     />
                   </Grid>
@@ -372,11 +347,7 @@ const handleDateChange = (newValue: Dayjs | null) => {
                 onClick={handleCreateMeeting}
                 disabled={isCreatingMeeting || !meetingDetails.title}
                 startIcon={
-                  isCreatingMeeting ? (
-                    <CircularProgress size={24} color="inherit" />
-                  ) : (
-                    <VideoCall />
-                  )
+                  isCreatingMeeting ? <CircularProgress size={24} color="inherit" /> : <VideoCall />
                 }
                 sx={{ mt: 4 }}
               >

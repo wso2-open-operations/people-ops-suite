@@ -13,17 +13,16 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { Typography, Button, Grid, Box, Divider } from "@mui/material";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import LoadingButton from "@mui/lab/LoadingButton";
+import { Box, Button, Divider, Grid, Typography } from "@mui/material";
 import { useFormik } from "formik";
 import * as yup from "yup";
-import {
-  fetchReviewers,
-  postReviewers,
-} from "../../slices/threeSixtyReviewSlice/threeSixtyReview";
-import { EmailAutocomplete } from "../common/EmailAutoComplete";
-import LoadingButton from "@mui/lab/LoadingButton";
+
 import { selectEmployeeInfo, selectUserEmail } from "@slices/authSlice/auth";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+
+import { fetchReviewers, postReviewers } from "../../slices/threeSixtyReviewSlice/threeSixtyReview";
+import { EmailAutocomplete } from "../common/EmailAutoComplete";
 
 interface ReviewRequestModalProps {
   parCycleId: number;
@@ -48,35 +47,26 @@ export const ReviewRequestModal = ({
       .required("At least one email is required"),
   });
 
-  const {
-    values,
-    errors,
-    touched,
-    setFieldValue,
-    handleBlur,
-    handleSubmit,
-    isSubmitting,
-  } = useFormik({
-    initialValues: {
-      emails: [] as string[],
-    },
-    validationSchema,
-    onSubmit: async (values) => {
-      const resultAction = await dispatch(
-        postReviewers({
-          employeeId: selectedEmployeeEmail,
-          parCycleId,
-          reviewerEmails: values.emails,
-        })
-      );
-      if (postReviewers.fulfilled.match(resultAction)) {
-        dispatch(
-          fetchReviewers({ employeeId: selectedEmployeeEmail, parCycleId })
+  const { values, errors, touched, setFieldValue, handleBlur, handleSubmit, isSubmitting } =
+    useFormik({
+      initialValues: {
+        emails: [] as string[],
+      },
+      validationSchema,
+      onSubmit: async (values) => {
+        const resultAction = await dispatch(
+          postReviewers({
+            employeeId: selectedEmployeeEmail,
+            parCycleId,
+            reviewerEmails: values.emails,
+          }),
         );
-        onClose();
-      }
-    },
-  });
+        if (postReviewers.fulfilled.match(resultAction)) {
+          dispatch(fetchReviewers({ employeeId: selectedEmployeeEmail, parCycleId }));
+          onClose();
+        }
+      },
+    });
 
   const handleEmailBlur = () => {
     handleBlur("emails");
@@ -97,9 +87,7 @@ export const ReviewRequestModal = ({
               onChange={(emails) => setFieldValue("emails", emails)}
               onBlur={handleEmailBlur}
               error={touched.emails && Boolean(errors.emails)}
-              helperText={
-                touched.emails && errors.emails ? errors.emails.toString() : ""
-              }
+              helperText={touched.emails && errors.emails ? errors.emails.toString() : ""}
               emailsToSkip={
                 userEmail === selectedEmployeeEmail && userInfo?.leadEmail
                   ? [userInfo?.leadEmail]
@@ -107,13 +95,7 @@ export const ReviewRequestModal = ({
               }
             />
           </Grid>
-          <Grid
-            size={{ xs: 12 }}
-            display="flex"
-            justifyContent="flex-end"
-            gap={2}
-            mt={2}
-          >
+          <Grid size={{ xs: 12 }} display="flex" justifyContent="flex-end" gap={2} mt={2}>
             <Button variant="outlined" onClick={onClose}>
               Cancel
             </Button>

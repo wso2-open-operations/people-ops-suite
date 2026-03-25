@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Theme } from "@mui/material";
 import { Grid, Stack, Typography, alpha } from "@mui/material";
 

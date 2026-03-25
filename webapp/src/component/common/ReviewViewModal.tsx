@@ -13,24 +13,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { Avatar, Box, Button, Chip, Divider, Grid, Typography } from "@mui/material";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 
+import { useEffect } from "react";
+
+import { LoadingEffect } from "@component/ui/Loading";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
+  ParThreeSixtyReviewStatus,
   fetchSelectedReview,
-  updateSelectedReview,
   selectSelectedThreeSixtyReview,
   selectSelectedThreeSixtyReviewStatus,
-  ParThreeSixtyReviewStatus,
+  updateSelectedReview,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import dayjs from "dayjs";
-import { useEffect } from "react";
-import utc from "dayjs/plugin/utc";
-import CommentPaper from "./CommentPaper";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { Typography, Button, Grid, Box, Divider, Avatar, Chip } from "@mui/material";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+
+import CommentPaper from "./CommentPaper";
+
 dayjs.extend(utc);
 
 interface ReviewViewModalProps {
@@ -44,7 +47,12 @@ interface ReviewViewModalProps {
   isOfferedFeedback?: boolean;
 }
 
-export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject }: ReviewViewModalProps) => {
+export const ReviewViewModal = ({
+  onClose,
+  parCycle,
+  employeeEmail,
+  reviewObject,
+}: ReviewViewModalProps) => {
   const dispatch = useAppDispatch();
   const employeeMap = useAppSelector(selectEmployeeMap);
   const threeSixtyReviewContent = useAppSelector(selectSelectedThreeSixtyReview);
@@ -55,7 +63,7 @@ export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject
         fetchSelectedReview({
           employeeId: employeeEmail,
           parCycleId: parCycle.parCycleId!,
-        })
+        }),
       );
     } else {
       dispatch(updateSelectedReview({ ...reviewObject }));
@@ -73,7 +81,12 @@ export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject
           </Typography>
           {(threeSixtyReviewStatus === RequestState.SUCCEEDED || reviewObject) &&
             threeSixtyReviewContent.reviewStatus === ParThreeSixtyReviewStatus.REJECTED && (
-              <Chip label={threeSixtyReviewContent.reviewStatus} color="error" size="small" sx={{ ml: 2 }} />
+              <Chip
+                label={threeSixtyReviewContent.reviewStatus}
+                color="error"
+                size="small"
+                sx={{ ml: 2 }}
+              />
             )}
         </Box>
         <Divider sx={{ bgcolor: "primary.main" }} />
@@ -99,7 +112,9 @@ export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject
       </Box>
 
       {threeSixtyReviewStatus === RequestState.LOADING && (
-        <Box sx={{ minHeight: 470, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Box
+          sx={{ minHeight: 470, display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
           <LoadingEffect message={""} />
         </Box>
       )}
@@ -115,7 +130,12 @@ export const ReviewViewModal = ({ onClose, parCycle, employeeEmail, reviewObject
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 10 }}>
-                  <Chip size="small" label={threeSixtyReviewContent.reviewRating} color="primary" variant="outlined" />
+                  <Chip
+                    size="small"
+                    label={threeSixtyReviewContent.reviewRating}
+                    color="primary"
+                    variant="outlined"
+                  />
                 </Grid>
               </Grid>
             </Box>

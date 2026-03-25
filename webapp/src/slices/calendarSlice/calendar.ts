@@ -4,21 +4,22 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
-import { RootState } from "@slices/store";
-import { RequestState } from "@utils/types";
-import { ApiService } from "@utils/apiService";
-import { getErrorMessage } from "@utils/utils";
-import { AppConfig } from "../../config/config";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { AxiosError, HttpStatusCode } from "axios";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+
 import {
-  sliceErrorMessages,
   SnackMessage,
   WORKING_HOURS_END,
   WORKING_HOURS_START,
+  sliceErrorMessages,
 } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
+import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "../../config/config";
 
 export interface MeetingDetails {
   title: string;
@@ -81,16 +82,11 @@ const initialState: MeetingSchedulerState = {
 
 export const checkAvailability = createAsyncThunk(
   "meetingScheduler/checkAvailability",
-  async (
-    { date, signal }: { date: string; signal: AbortSignal },
-    { dispatch }
-  ) => {
+  async ({ date, signal }: { date: string; signal: AbortSignal }, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.calendar}/busy-times?date=${encodeURIComponent(
-          date
-        )}`,
-        { signal }
+        `${AppConfig.serviceUrls.calendar}/busy-times?date=${encodeURIComponent(date)}`,
+        { signal },
       );
 
       if (response.status === HttpStatusCode.Ok || HttpStatusCode.Created) {
@@ -99,29 +95,23 @@ export const checkAvailability = createAsyncThunk(
           date: date,
         };
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.calendarSlice.fetchCalendar
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.calendarSlice.fetchCalendar);
       }
     } catch (error) {
       if (error instanceof AxiosError && error.name === "CanceledError") {
         throw error;
       }
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.f2fCreationError
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.f2fCreationError);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const createMeeting = createAsyncThunk(
@@ -132,7 +122,7 @@ export const createMeeting = createAsyncThunk(
       meetingDetails,
       date,
     }: { parRatingId: number; meetingDetails: MeetingDetails; date: string },
-    { dispatch }
+    { dispatch },
   ) => {
     try {
       const response = await ApiService.getInstance().post(
@@ -141,7 +131,7 @@ export const createMeeting = createAsyncThunk(
           ...meetingDetails,
           date,
           parRatingId,
-        }
+        },
       );
 
       if (response.status === HttpStatusCode.Created) {
@@ -149,37 +139,28 @@ export const createMeeting = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.f2fCreated,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.calendarSlice.fetchCalendar
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.calendarSlice.fetchCalendar);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.f2fCreationError
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.f2fCreationError);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 // Helper function to generate available time slots
-export function generateAvailableTimeSlots(
-  date: string,
-  freeBusyResponse: any
-): TimeSlot[] {
+export function generateAvailableTimeSlots(date: string, freeBusyResponse: any): TimeSlot[] {
   const busySlots: BusySlot[] = [];
 
   if (freeBusyResponse.calendars) {
@@ -227,11 +208,11 @@ export function generateAvailableTimeSlots(
 
       const startLabel = formatTimeForDisplay(
         localHour.toString().padStart(2, "0"),
-        localMinute.toString().padStart(2, "0")
+        localMinute.toString().padStart(2, "0"),
       );
       const endLabel = formatTimeForDisplay(
         localEndHour.toString().padStart(2, "0"),
-        localEndMinute.toString().padStart(2, "0")
+        localEndMinute.toString().padStart(2, "0"),
       );
 
       allPossibleSlots.push({
@@ -309,7 +290,7 @@ const calendarSlice = createSlice({
         if (action.payload.data) {
           state.availableTimeSlots = generateAvailableTimeSlots(
             action.payload.date,
-            action.payload.data
+            action.payload.data,
           );
         }
 
@@ -344,17 +325,13 @@ export const {
   resetAll,
 } = calendarSlice.actions;
 
-export const selectMeetingDetails = (state: RootState) =>
-  state.calendarSlice.meetingDetails;
-export const selectFreeBusyData = (state: RootState) =>
-  state.calendarSlice.freeBusyData;
+export const selectMeetingDetails = (state: RootState) => state.calendarSlice.meetingDetails;
+export const selectFreeBusyData = (state: RootState) => state.calendarSlice.freeBusyData;
 export const selectAvailableTimeSlots = (state: RootState) =>
   state.calendarSlice.availableTimeSlots;
-export const selectMeetingLink = (state: RootState) =>
-  state.calendarSlice.meetingLink;
+export const selectMeetingLink = (state: RootState) => state.calendarSlice.meetingLink;
 export const selectAvailabilityStatus = (state: RootState) =>
   state.calendarSlice.availabilityStatus;
-export const selectMeetingStatus = (state: RootState) =>
-  state.calendarSlice.meetingStatus;
+export const selectMeetingStatus = (state: RootState) => state.calendarSlice.meetingStatus;
 
 export default calendarSlice.reducer;

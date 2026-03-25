@@ -4,8 +4,8 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import { PayloadAction, createSlice } from "@reduxjs/toolkit";
 
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "@slices/store";
 
 interface MaintenanceState {
@@ -27,7 +27,7 @@ const healthSlice = createSlice({
       action: PayloadAction<{
         maintenanceStatus: boolean;
         maintenanceMessage: string;
-      }>
+      }>,
     ) => {
       state.maintenanceStatus = action.payload.maintenanceStatus;
       state.maintenanceMessage = action.payload.maintenanceMessage;
@@ -38,15 +38,13 @@ const healthSlice = createSlice({
 export const { setMaintenanceStatus } = healthSlice.actions;
 export const createSetMaintenanceStatusAction = (
   maintenanceStatus: boolean,
-  maintenanceMessage: string
+  maintenanceMessage: string,
 ) =>
   healthSlice.actions.setMaintenanceStatus({
     maintenanceStatus,
     maintenanceMessage,
   });
 
-export const selectMaintenanceStatus = (state: RootState) =>
-  state.health.maintenanceStatus;
-export const selectMaintenanceMessage = (state: RootState) =>
-  state.health.maintenanceMessage;
+export const selectMaintenanceStatus = (state: RootState) => state.health.maintenanceStatus;
+export const selectMaintenanceMessage = (state: RootState) => state.health.maintenanceMessage;
 export default healthSlice.reducer;

@@ -4,20 +4,27 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import { AppConfig } from "../../config/config";
-import { ParCycleStatus, RequestState } from "@utils/types";
-import { ParCycleSummary } from "@slices/parCycleSlice/parCycle";
-import { ParEmployeeStatus , ParLeadStatus, ParRating, ParSpecialRating, ParF2fStatus } from "../employeeHistorySlice/employeeHistory";
-import { ApiService } from "@utils/apiService";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
+
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { ParCycleSummary } from "@slices/parCycleSlice/parCycle";
 import { fetchParCycleById } from "@slices/parCycleSlice/parCycle";
-import { base64Regex } from "../../config/constant";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { ParCycleStatus, RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "../../config/config";
+import { base64Regex } from "../../config/constant";
+import {
+  ParEmployeeStatus,
+  ParF2fStatus,
+  ParLeadStatus,
+  ParRating,
+  ParSpecialRating,
+} from "../employeeHistorySlice/employeeHistory";
 
 interface EmployeeState {
   status: RequestState;
@@ -68,14 +75,13 @@ export const fetchCurrentParCycleOfEmployee = createAsyncThunk(
   async (employeeId: string, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?email=${employeeId}&status=${ParCycleStatus.OPEN}`
+        `${AppConfig.serviceUrls.parCycles}?email=${employeeId}&status=${ParCycleStatus.OPEN}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         if (response.data.length > 0) {
           const currentCycle = response.data.find(
-            (parCycle: ParCycleSummary) =>
-              parCycle.parCycleStatus === ParCycleStatus.OPEN
+            (parCycle: ParCycleSummary) => parCycle.parCycleStatus === ParCycleStatus.OPEN,
           );
           const currentParCycleId = currentCycle?.parCycleId;
 
@@ -83,7 +89,7 @@ export const fetchCurrentParCycleOfEmployee = createAsyncThunk(
             fetchParRatingOfEmployee({
               employeeId,
               parCycleId: currentParCycleId,
-            })
+            }),
           );
 
           dispatch(fetchParCycleById(currentParCycleId));
@@ -92,25 +98,20 @@ export const fetchCurrentParCycleOfEmployee = createAsyncThunk(
 
         return { currentCycle: {} };
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.employeeSlice.getEmployee
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.employeeSlice.getEmployee);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchEmployeeParCycles
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchEmployeeParCycles);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchPreviousParCyclesOfEmployee = createAsyncThunk(
@@ -118,42 +119,34 @@ export const fetchPreviousParCyclesOfEmployee = createAsyncThunk(
   async (employeeId: string, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?email=${employeeId}&status=${ParCycleStatus.CLOSED}`
+        `${AppConfig.serviceUrls.parCycles}?email=${employeeId}&status=${ParCycleStatus.CLOSED}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.employeeSlice.getEmployee
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.employeeSlice.getEmployee);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchEmployeeParCycles
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchEmployeeParCycles);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchParRatingOfEmployee = createAsyncThunk(
   "employee/fetchParRatingOfEmployee",
-  async (
-    { employeeId, parCycleId }: FetchEmployeeRatingsParams,
-    { rejectWithValue }
-  ) => {
+  async ({ employeeId, parCycleId }: FetchEmployeeRatingsParams, { rejectWithValue }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -163,7 +156,7 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
           if (base64Regex.test(parRating?.parEmployeeComment)) {
             try {
               parRating.parEmployeeComment = decodeURIComponent(
-                atob(parRating?.parEmployeeComment)
+                atob(parRating?.parEmployeeComment),
               );
             } catch (decodeError) {
               parRating.parEmployeeComment = "";
@@ -174,9 +167,7 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
 
           if (base64Regex.test(parRating?.parLeadComment)) {
             try {
-              parRating.parLeadComment = decodeURIComponent(
-                atob(parRating?.parLeadComment)
-              );
+              parRating.parLeadComment = decodeURIComponent(atob(parRating?.parLeadComment));
             } catch (decodeError) {
               parRating.parLeadComment = "";
             }
@@ -186,9 +177,7 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
 
           if (base64Regex.test(parRating?.parAdminComment)) {
             try {
-              parRating.parAdminComment = decodeURIComponent(
-                atob(parRating?.parAdminComment)
-              );
+              parRating.parAdminComment = decodeURIComponent(atob(parRating?.parAdminComment));
             } catch (decodeError) {
               parRating.parAdminComment = "";
             }
@@ -201,42 +190,35 @@ export const fetchParRatingOfEmployee = createAsyncThunk(
         return parRating;
       } else {
         throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.employeeSlice.getEmployeeRating
+          response.data?.message || sliceErrorMessages.employeeSlice.getEmployeeRating,
         );
       }
     } catch (error) {
       return rejectWithValue(
         (error instanceof Error ? error.message : String(error)) ||
-          sliceErrorMessages.employeeSlice.getEmployeeRating
+          sliceErrorMessages.employeeSlice.getEmployeeRating,
       );
     }
-  }
+  },
 );
 
 export const updateParRatingOfEmployee = createAsyncThunk(
   "employee/updateParRatingOfEmployee",
   async (
-    {
-      employeeId,
-      parCycleId,
-      parRatingId,
-      values,
-    }: UpdateEmployeeRatingsParams,
-    { dispatch }
+    { employeeId, parCycleId, parRatingId, values }: UpdateEmployeeRatingsParams,
+    { dispatch },
   ) => {
     try {
       const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings/${parRatingId}`,
-        values
+        values,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
         throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.employeeSlice.postEmployeeRating
+          response.data?.message || sliceErrorMessages.employeeSlice.postEmployeeRating,
         );
       }
     } catch (error) {
@@ -244,25 +226,25 @@ export const updateParRatingOfEmployee = createAsyncThunk(
         error,
         values?.parF2fStatus
           ? SnackMessage.error.updateF2fStatus
-          : SnackMessage.error.updateEmployeeParRatings
+          : SnackMessage.error.updateEmployeeParRatings,
       );
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const bulkUpdateParRatingOfEmployee = createAsyncThunk(
   "employee/bulkUpdateParRatingOfEmployee",
   async (
     objects: UpdateEmployeeRatingsParams[],
-    { dispatch }
+    { dispatch },
   ): Promise<{
     passedCount: number;
     failedCount: number;
@@ -276,7 +258,7 @@ export const bulkUpdateParRatingOfEmployee = createAsyncThunk(
       try {
         const response = await ApiService.getInstance().patch(
           `${AppConfig.serviceUrls.parCycles}/${object.parCycleId}/employees/${object.employeeId}/par-ratings/${object.parRatingId}`,
-          object.values
+          object.values,
         );
         if (response.status === HttpStatusCode.Ok) {
           passedCount++;
@@ -285,10 +267,7 @@ export const bulkUpdateParRatingOfEmployee = createAsyncThunk(
           failedCount++;
         }
       } catch (error) {
-        const errorMessage = getErrorMessage(
-          error,
-          SnackMessage.error.updateEmployeeParRatings
-        );
+        const errorMessage = getErrorMessage(error, SnackMessage.error.updateEmployeeParRatings);
         reason.push(errorMessage);
         failedCount++;
       }
@@ -296,7 +275,7 @@ export const bulkUpdateParRatingOfEmployee = createAsyncThunk(
 
     const reasonMessage = reason.join(", ");
     return { passedCount, failedCount, reasonMessage };
-  }
+  },
 );
 
 export const updateParTeamIdOfEmployee = createAsyncThunk(
@@ -304,31 +283,27 @@ export const updateParTeamIdOfEmployee = createAsyncThunk(
   async ({ employeeId, parCycleId }: UpdateParTeamIdParam, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().post(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/sync`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/sync`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
         throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.employeeSlice.postEmployeeRating
+          response.data?.message || sliceErrorMessages.employeeSlice.postEmployeeRating,
         );
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.employeeSyncError
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.employeeSyncError);
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const employeeSlice = createSlice({
@@ -419,14 +394,10 @@ export const {
 
 export const selectCurrentParCycleOfEmployee = (state: RootState) =>
   state.employee.currentCycleOfEmployee;
-export const selectPreviousParCycleOfEmployee = (state: RootState) =>
-  state.employee.previousCycles;
-export const selectEmployeeRatings = (state: RootState) =>
-  state.employee.selectedRating;
+export const selectPreviousParCycleOfEmployee = (state: RootState) => state.employee.previousCycles;
+export const selectEmployeeRatings = (state: RootState) => state.employee.selectedRating;
 export const selectEmployeeStatus = (state: RootState) => state.employee.status;
-export const selectEmployeeRatingStatus = (state: RootState) =>
-  state.employee.ratingStatus;
-export const selectEmployeeRatingError = (state: RootState) =>
-  state.employee.errorMessage;
+export const selectEmployeeRatingStatus = (state: RootState) => state.employee.ratingStatus;
+export const selectEmployeeRatingError = (state: RootState) => state.employee.errorMessage;
 
 export default employeeSlice.reducer;

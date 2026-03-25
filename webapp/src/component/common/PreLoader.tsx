@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, LinearProgress, Typography, useTheme } from "@mui/material";
+
 import type { PreLoaderProps } from "@utils/types";
 
 const PreLoader = (props: PreLoaderProps) => {
@@ -43,7 +43,7 @@ const PreLoader = (props: PreLoaderProps) => {
         variant="inherit"
         sx={{
           fontSize: theme.typography.body1.fontSize,
-          color: theme.palette.customText.primary.p1.active
+          color: theme.palette.customText.primary.p1.active,
         }}
       >
         {props.message}

@@ -4,16 +4,17 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import { RequestState } from "@utils/types";
-import { AppConfig } from "../../config/config";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ApiService } from "@utils/apiService";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
+
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "../../config/config";
 
 export interface reminderState {
   state: RequestState;
@@ -28,7 +29,7 @@ export const sendAllLeadReminder = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().patch(
-        `${AppConfig.serviceUrls.reminders}/schedule-lead-reminders`
+        `${AppConfig.serviceUrls.reminders}/schedule-lead-reminders`,
       );
 
       if (response.status === HttpStatusCode.Accepted) {
@@ -36,30 +37,24 @@ export const sendAllLeadReminder = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.sendReminder,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.reminderSlice.postReminder
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.reminderSlice.postReminder);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.sendReminder
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.sendReminder);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const sendAllEmployeeReminder = createAsyncThunk(
@@ -67,7 +62,7 @@ export const sendAllEmployeeReminder = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().patch(
-        `${AppConfig.serviceUrls.reminders}/schedule-employee-reminders`
+        `${AppConfig.serviceUrls.reminders}/schedule-employee-reminders`,
       );
 
       if (response.status === HttpStatusCode.Accepted) {
@@ -75,30 +70,24 @@ export const sendAllEmployeeReminder = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.sendReminder,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.reminderSlice.postReminder
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.reminderSlice.postReminder);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.sendReminder
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.sendReminder);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const sendAllSpecialRatingReminder = createAsyncThunk(
@@ -106,7 +95,7 @@ export const sendAllSpecialRatingReminder = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().patch(
-        `${AppConfig.serviceUrls.reminders}/schedule-special-rating-reminders`
+        `${AppConfig.serviceUrls.reminders}/schedule-special-rating-reminders`,
       );
 
       if (response.status === HttpStatusCode.Accepted) {
@@ -114,30 +103,24 @@ export const sendAllSpecialRatingReminder = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.sendReminder,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.reminderSlice.postReminder
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.reminderSlice.postReminder);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.sendReminder
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.sendReminder);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const sendAllThreeSixtyReminder = createAsyncThunk(
@@ -145,7 +128,7 @@ export const sendAllThreeSixtyReminder = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().patch(
-        `${AppConfig.serviceUrls.reminders}/schedule-360-reminders`
+        `${AppConfig.serviceUrls.reminders}/schedule-360-reminders`,
       );
 
       if (response.status === HttpStatusCode.Accepted) {
@@ -153,30 +136,24 @@ export const sendAllThreeSixtyReminder = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.sendReminder,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.reminderSlice.postReminder
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.reminderSlice.postReminder);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.sendReminder
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.sendReminder);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const reminderSlice = createSlice({
@@ -225,7 +202,6 @@ const reminderSlice = createSlice({
   },
 });
 
-export const selectReminderSendingState = (state: RootState) =>
-  state.reminder.state;
+export const selectReminderSendingState = (state: RootState) => state.reminder.state;
 
 export default reminderSlice.reducer;

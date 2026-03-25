@@ -13,8 +13,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { useState, useEffect } from "react";
+import HistoryIcon from "@mui/icons-material/History";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import {
   Box,
   Button,
@@ -28,33 +28,32 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import HistoryIcon from "@mui/icons-material/History";
-import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import dayjs from "dayjs";
 
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { useEffect, useState } from "react";
+
+import { LoadingEffect } from "@component/ui/Loading";
+import { shortDateFormat, uiMessages } from "@config/constant";
 import {
   fetchClosedParCycles,
   fetchParCycleById,
   selectAllCycles,
   selectParCycleState,
 } from "@slices/parCycleSlice/parCycle";
-
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { shortDateFormat, uiMessages } from "@config/constant";
 
 import { FormContainer } from "../../component/common/FormContainer";
 import Title from "../../component/common/Title";
-import { LoadingEffect } from "@component/ui/Loading";
 import { OrgSummary } from "..//adminPortal/components/OrgSummary";
 
 export default function AdminHistoryView() {
   const dispatch = useAppDispatch();
   const allCycles = useAppSelector(selectAllCycles);
   const cycleLoadingState = useAppSelector(selectParCycleState);
-  
+
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const openOrgSummaryView = () => setIsOpen(true);
   const closeOrgSummaryView = () => setIsOpen(false);
 
@@ -76,7 +75,7 @@ export default function AdminHistoryView() {
             secondWord="Portal - History"
             icon={<HistoryIcon fontSize="medium" />}
           />
-          
+
           <Box sx={{ flexGrow: 1, overflowY: "auto", p: { xs: 2, md: 3 } }}>
             <Box sx={{ height: "100%" }}>
               {!isOpen && (
@@ -84,9 +83,7 @@ export default function AdminHistoryView() {
                   <Table stickyHeader>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ width: "50%", fontWeight: "bold" }}>
-                          Cycle Name
-                        </TableCell>
+                        <TableCell sx={{ width: "50%", fontWeight: "bold" }}>Cycle Name</TableCell>
                         <TableCell sx={{ fontWeight: "bold" }}>Start Date</TableCell>
                         <TableCell sx={{ fontWeight: "bold" }}>End Date</TableCell>
                         <TableCell sx={{ width: "10%", fontWeight: "bold" }}></TableCell>
@@ -100,7 +97,7 @@ export default function AdminHistoryView() {
                           </TableCell>
                         </TableRow>
                       )}
-                      
+
                       {cycleLoadingState === RequestState.SUCCEEDED && (
                         <>
                           {allCycles.length > 0 ? (
@@ -111,9 +108,7 @@ export default function AdminHistoryView() {
                                 key={cycle.parCycleId}
                                 onClick={() => handleRowClick(cycle.parCycleId)}
                               >
-                                <TableCell sx={{ py: 2 }}>
-                                  {cycle.parCycleName}
-                                </TableCell>
+                                <TableCell sx={{ py: 2 }}>{cycle.parCycleName}</TableCell>
                                 <TableCell sx={{ py: 2 }}>
                                   {dayjs(cycle.parCycleStartDate).format(shortDateFormat)}
                                 </TableCell>
@@ -143,11 +138,7 @@ export default function AdminHistoryView() {
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell
-                                colSpan={4}
-                                align="center"
-                                style={{ border: "none" }}
-                              >
+                              <TableCell colSpan={4} align="center" style={{ border: "none" }}>
                                 <Typography>No data available</Typography>
                               </TableCell>
                             </TableRow>
@@ -164,10 +155,7 @@ export default function AdminHistoryView() {
               )}
 
               {isOpen && cycleLoadingState === RequestState.SUCCEEDED && (
-                <OrgSummary
-                  closeOrgSummaryView={closeOrgSummaryView}
-                  isAdminHistoryViewOn={true}
-                />
+                <OrgSummary closeOrgSummaryView={closeOrgSummaryView} isAdminHistoryViewOn={true} />
               )}
             </Box>
           </Box>
@@ -175,4 +163,4 @@ export default function AdminHistoryView() {
       </Stack>
     </Fade>
   );
-};
+}

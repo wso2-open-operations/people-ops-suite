@@ -4,22 +4,20 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
-import {
-  ParCycleStatus,
-  ParCycleSummary,
-} from "@slices/parCycleSlice/parCycle";
-import { ParThreeSixtyReviewStatus} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { RequestState } from "@root/src/utils/types";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { HttpStatusCode } from "axios";
-import { RootState } from "@slices/store";
-import { getErrorMessage } from "@utils/utils";
-import { ApiService } from "@utils/apiService";
-import { base64Regex } from "../../config/constant";
-import { AppConfig, ServiceBaseUrl } from "../../config/config";
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { RequestState } from "@root/src/utils/types";
 import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
+import { ParCycleStatus, ParCycleSummary } from "@slices/parCycleSlice/parCycle";
+import { RootState } from "@slices/store";
+import { ParThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { ApiService } from "@utils/apiService";
+import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig, ServiceBaseUrl } from "../../config/config";
+import { base64Regex } from "../../config/constant";
 
 interface EmployeeState {
   ratingStatus: RequestState;
@@ -125,7 +123,7 @@ export const fetchHistoryParRatingOfEmployee = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchEmployeeRatingsParams, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/par-ratings`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -140,14 +138,16 @@ export const fetchHistoryParRatingOfEmployee = createAsyncThunk(
 
         return parRating;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.employeeSlice.getEmployeeRating);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.employeeSlice.getEmployeeRating,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchEmployeeParRatings);
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       throw error;
     }
-  }
+  },
 );
 
 export const fetchHistoryReviews = createAsyncThunk(
@@ -155,20 +155,22 @@ export const fetchHistoryReviews = createAsyncThunk(
   async ({ employeeId, parCycleId }: FetchReviews, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/employees/${employeeId}/reviews`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.threeSixtyReviewSlice.fetchReview,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchThreeSixtyReview);
       dispatch(enqueueSnackbarMessage({ message: errorMessage, type: "error" }));
       throw error;
     }
-  }
+  },
 );
 
 export const fetchParticipatedParCyclesOfEmployee = createAsyncThunk(
@@ -178,7 +180,7 @@ export const fetchParticipatedParCyclesOfEmployee = createAsyncThunk(
       const response = await ApiService.getInstance().get(
         `${AppConfig.serviceUrls.parCycles}?status=${args?.status ?? ParCycleStatus.CLOSED}${
           args?.email ? `&email=${encodeURIComponent(args.email)}` : ""
-        }`
+        }`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -193,23 +195,27 @@ export const fetchParticipatedParCyclesOfEmployee = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchParRatingSummary = createAsyncThunk(
   "employee/fetchParRatingSummary",
   async (employeeEmail: string, { dispatch }) => {
     try {
-      const response = await ApiService.getInstance().get(`${ServiceBaseUrl}/par-ratings/summary/${employeeEmail}`);
+      const response = await ApiService.getInstance().get(
+        `${ServiceBaseUrl}/par-ratings/summary/${employeeEmail}`,
+      );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(response.data?.message || sliceErrorMessages.employeeSlice.postEmployeeRating);
+        throw new Error(
+          response.data?.message || sliceErrorMessages.employeeSlice.postEmployeeRating,
+        );
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReportData);
@@ -217,11 +223,11 @@ export const fetchParRatingSummary = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const employeeHistorySlice = createSlice({
@@ -282,14 +288,21 @@ const employeeHistorySlice = createSlice({
   },
 });
 
-export const selectEmployeeHistoryRatingStatus = (state: RootState) => state.employeeHistorySlice.ratingStatus;
-export const selectEmployeeHistoryRating = (state: RootState) => state.employeeHistorySlice.parRating;
-export const selectEmployeeHistoryReviewStatus = (state: RootState) => state.employeeHistorySlice.reviewStatus;
-export const selectEmployeeHistoryReviews = (state: RootState) => state.employeeHistorySlice.reviews;
-export const selectParticipatedParCyclesOfEmployee = (state: RootState) => state.employeeHistorySlice.empPreviousCycles;
+export const selectEmployeeHistoryRatingStatus = (state: RootState) =>
+  state.employeeHistorySlice.ratingStatus;
+export const selectEmployeeHistoryRating = (state: RootState) =>
+  state.employeeHistorySlice.parRating;
+export const selectEmployeeHistoryReviewStatus = (state: RootState) =>
+  state.employeeHistorySlice.reviewStatus;
+export const selectEmployeeHistoryReviews = (state: RootState) =>
+  state.employeeHistorySlice.reviews;
+export const selectParticipatedParCyclesOfEmployee = (state: RootState) =>
+  state.employeeHistorySlice.empPreviousCycles;
 export const selectParticipatedParCyclesOfEmployeeState = (state: RootState) =>
   state.employeeHistorySlice.empPreviousCyclesStatus;
-export const selectSummarizedParHistory = (state: RootState) => state.employeeHistorySlice.parHistorySummary;
+export const selectSummarizedParHistory = (state: RootState) =>
+  state.employeeHistorySlice.parHistorySummary;
 
 export default employeeHistorySlice.reducer;
-export const { resetEmpReviewHistorySate, resetEmpRatingHistorySate } = employeeHistorySlice.actions;
+export const { resetEmpReviewHistorySate, resetEmpRatingHistorySate } =
+  employeeHistorySlice.actions;

@@ -18,22 +18,22 @@ import { enableMapSet } from "immer";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 import authReducer from "@slices/authSlice/auth";
-import commonReducer from "@slices/commonSlice/common";
-import parCycleReducer from "@slices/parCycleSlice/parCycle";
-import appConfigReducer from "@slices/configSlice/config";
-import employeeReducer from "@slices/employeeSlice/employee";
-import userReducer from "@slices/userSlice/user";
-import reminderReducer from "@slices/reminderSlice/reminder";
-import metaReducer from "@slices/metaSlice/meta";
 import calendarSlice from "@slices/calendarSlice/calendar";
-import threeSixtyReviewReducer from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
-import healthReducer from "@slices/healthSlice/health";
-import teamReducer from "@slices/teamSlice/team";
 import collectionReducer from "@slices/collections/collection";
+import commonReducer from "@slices/commonSlice/common";
+import appConfigReducer from "@slices/configSlice/config";
+import employeeHistorySlice from "@slices/employeeHistorySlice/employeeHistory";
+import employeeReducer from "@slices/employeeSlice/employee";
+import healthReducer from "@slices/healthSlice/health";
+import metaReducer from "@slices/metaSlice/meta";
+import parCycleReducer from "@slices/parCycleSlice/parCycle";
+import reminderReducer from "@slices/reminderSlice/reminder";
 import specialQuotaReducer from "@slices/specialQuotaSlice/specialQuota";
-import reportReducer from "./reportSlice/report";
+import teamReducer from "@slices/teamSlice/team";
+import threeSixtyReviewReducer from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import userReducer from "@slices/userSlice/user";
 
+import reportReducer from "./reportSlice/report";
 
 enableMapSet();
 

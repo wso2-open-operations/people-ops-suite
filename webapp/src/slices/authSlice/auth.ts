@@ -4,19 +4,11 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { AuthData, AuthFlowState, AuthState, RequestState, Role } from "../../utils/types";
 import { RootState } from "../store";
 import { UserState } from "../userSlice/user";
-import {
-  Role,
-  AuthState,
-  AuthData,
-  AuthFlowState,
-  RequestState,
-} from "../../utils/types";
-
-
 
 const initialState: AuthState = {
   isAuthenticated: false,
@@ -92,7 +84,7 @@ export const authSlice = createSlice({
     },
   },
 
-extraReducers: (builder) => {
+  extraReducers: (builder) => {
     builder
       .addCase(loadPrivileges.fulfilled, (state, action) => {
         state.roles = action.payload.roles;
@@ -134,7 +126,7 @@ export const loadPrivileges = createAsyncThunk(
     }
 
     return { roles };
-  }
+  },
 );
 
 // export const loadPrivileges = createAsyncThunk(
@@ -162,22 +154,17 @@ export const {
   setErrorMessage,
 } = authSlice.actions;
 
-export const selectIsAuthenticated = (state: RootState) =>
-  state.auth.isAuthenticated;
+export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectUserInfo = (state: RootState) => state.auth.userInfo;
 export const selectIdToken = (state: RootState) => state.auth.accessToken;
-export const selectUserEmail = (state: RootState) =>
-  state.auth.userEmail || null;
+export const selectUserEmail = (state: RootState) => state.auth.userEmail || null;
 export const selectEmployeeInfo = (state: RootState) => state.auth.employeeInfo;
 
 export const selectStatus = (state: RootState) => state.auth.status;
 export const selectRoles = (state: RootState) => state.auth.roles;
-export const selectStatusMessage = (state: RootState) =>
-  state.auth.statusMessage;
-export const isIdTokenExpired = (state: RootState) =>
-  state.auth.isIdTokenExpired;
-export const selectEmployeeInfoStatus = (state: RootState) =>
-  state.auth.employeeInfoStatus;
+export const selectStatusMessage = (state: RootState) => state.auth.statusMessage;
+export const isIdTokenExpired = (state: RootState) => state.auth.isIdTokenExpired;
+export const selectEmployeeInfoStatus = (state: RootState) => state.auth.employeeInfoStatus;
 export const { setAuthError } = authSlice.actions;
 
 export default authSlice.reducer;

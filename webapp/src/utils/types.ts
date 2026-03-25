@@ -13,9 +13,9 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 import { Collection } from "@slices/collections/collection";
-import { BasicUserInfo, DecodedIDTokenPayload } from "@asgardeo/auth-spa";
 
 export interface Employee {
   workEmail: string;
@@ -73,7 +73,6 @@ export enum RequestState {
   SUCCEEDED = "succeeded",
   FAILED = "failed",
 }
-
 
 export interface CommonCardProps {
   collection: Collection;
@@ -133,13 +132,9 @@ export interface AuthData {
   decodedIdToken: DecodedIDTokenPayload;
 }
 
-export type AuthFlowState =
-  | "start"
-  | "l_user_privileges"
-  | "e_user_privileges"
-  | "end";
+export type AuthFlowState = "start" | "l_user_privileges" | "e_user_privileges" | "end";
 
-  export interface EmployeeInfo {
+export interface EmployeeInfo {
   employeeName: string;
   employeeThumbnail: string;
   workEmail: string;

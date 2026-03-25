@@ -13,43 +13,44 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
+import SearchIcon from "@mui/icons-material/Search";
 import {
+  Alert,
   Box,
   Card,
   Chip,
   Grid,
-  Table,
+  InputAdornment,
   Paper,
-  alpha,
   Stack,
-  TableRow,
-  useTheme,
-  TableCell,
+  Table,
   TableBody,
+  TableCell,
+  TableContainer,
   TableHead,
+  TableRow,
   TextField,
   Typography,
-  TableContainer,
-  InputAdornment,
-  Alert,
+  alpha,
+  useTheme,
 } from "@mui/material";
+
+import React, { useEffect, useMemo, useState } from "react";
+
+import NoDataView from "@component/common/NoDataView";
+import { LoadingEffect } from "@component/ui/Loading";
+import { uiMessages } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
 import {
   fetchQuotaGroupRatings,
   selectQuotaGroupsStatus,
   selectSpecialRatingAllocation,
 } from "@slices/specialQuotaSlice/specialQuota";
-import { tokens } from "@src/theme";
-import { uiMessages } from "@config/constant";
-import SearchIcon from "@mui/icons-material/Search";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { LoadingEffect } from "@component/ui/Loading";
-import NoDataView from "@component/common/NoDataView";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import React, { useEffect, useMemo, useState } from "react";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { RequestState,  } from "@utils/types";
 import { SpecialRatingAllocation } from "@slices/specialQuotaSlice/specialQuota";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { tokens } from "@src/theme";
+import { RequestState } from "@utils/types";
 
 interface GroupedData {
   quotaId: number;
@@ -63,9 +64,7 @@ interface SpecialRatingAllocationViewProps {
   isAdminView: boolean;
 }
 
-const SpecialRatingAllocationView = ({
-  isAdminView,
-}: SpecialRatingAllocationViewProps) => {
+const SpecialRatingAllocationView = ({ isAdminView }: SpecialRatingAllocationViewProps) => {
   const theme = useTheme();
   const dispatch = useAppDispatch();
   const colors = tokens(theme.palette.mode);
@@ -82,12 +81,12 @@ const SpecialRatingAllocationView = ({
           fetchQuotaGroupRatings({
             parCycleId: currentCycle.parCycleId,
             leadEmail: isAdminView ? undefined : userEmail,
-          })
+          }),
         );
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isAdminView]
+    [isAdminView],
   );
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,19 +99,13 @@ const SpecialRatingAllocationView = ({
 
     specialRatingAllocation.forEach((item) => {
       // Create combined search text for more comprehensive matching
-      const combinedText =
-        `${item.parBusinessUnit} ${item.parDepartment}`.toLowerCase();
-      const businessUnitMatch = item.parBusinessUnit
-        ?.toLowerCase()
-        .includes(searchTerm);
-      const departmentMatch = item.parDepartment
-        ?.toLowerCase()
-        .includes(searchTerm);
+      const combinedText = `${item.parBusinessUnit} ${item.parDepartment}`.toLowerCase();
+      const businessUnitMatch = item.parBusinessUnit?.toLowerCase().includes(searchTerm);
+      const departmentMatch = item.parDepartment?.toLowerCase().includes(searchTerm);
       const combinedMatch = combinedText.includes(searchTerm);
 
       // Highlight if any part matches
-      const shouldHighlight =
-        searchTerm && (businessUnitMatch || departmentMatch || combinedMatch);
+      const shouldHighlight = searchTerm && (businessUnitMatch || departmentMatch || combinedMatch);
 
       if (!groups.has(item.parQuotaId)) {
         groups.set(item.parQuotaId, {
@@ -137,23 +130,17 @@ const SpecialRatingAllocationView = ({
   const highlightText = (text: string, searchTerm: string) => {
     if (!searchTerm.trim()) return text;
 
-    const regex = new RegExp(
-      `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
-    );
+    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
     const parts = text.split(regex);
 
     return parts.map((part, index) =>
       regex.test(part) ? (
-        <span
-          key={index}
-          style={{ backgroundColor: "#ffeb3b", fontWeight: "bold" }}
-        >
+        <span key={index} style={{ backgroundColor: "#ffeb3b", fontWeight: "bold" }}>
           {part}
         </span>
       ) : (
         part
-      )
+      ),
     );
   };
 
@@ -182,7 +169,7 @@ const SpecialRatingAllocationView = ({
         <Grid container spacing={3}>
           <>
             {specialRatingAllocation.length > 0 ? (
-              <Grid size={{ xs:12 }}>
+              <Grid size={{ xs: 12 }}>
                 <TextField
                   fullWidth
                   variant="outlined"
@@ -200,14 +187,14 @@ const SpecialRatingAllocationView = ({
                 />
               </Grid>
             ) : (
-              <Grid size={{ xs:12 }}>
+              <Grid size={{ xs: 12 }}>
                 <NoDataView text={uiMessages.information.noAllocations} />
               </Grid>
             )}
           </>
 
           {processedGroupedData.length === 0 && searchQuery.trim() && (
-            <Grid size={{ xs: 12 }} >
+            <Grid size={{ xs: 12 }}>
               <Typography variant="body1" color="text.secondary" align="center">
                 No results found for "{searchQuery}"
               </Typography>
@@ -215,10 +202,7 @@ const SpecialRatingAllocationView = ({
           )}
 
           {processedGroupedData.map((group) => {
-            const top20 =
-              group.top5Quota === 1 && group.top20Quota === 0
-                ? 1
-                : group.top20Quota;
+            const top20 = group.top5Quota === 1 && group.top20Quota === 0 ? 1 : group.top20Quota;
             return (
               <Grid size={{ xs: 12 }} key={group.quotaId}>
                 <Card
@@ -276,14 +260,12 @@ const SpecialRatingAllocationView = ({
                   <TableContainer component={Paper} elevation={0}>
                     {group.top5Quota === 1 && group.top20Quota === 0 && (
                       <Alert severity="warning">
-                        The total allocation for the top 5% and top 20%
-                        categories is 1 due to the small team size. This means
-                        only one team member can be placed in <b>either</b> the
-                        top 5% or the top 20%. The allocation appears as “1” for
-                        each category solely for system purposes; it does not
-                        mean you can allocate one person to each category. Once
-                        a slot is used for any of the categories, the overall
-                        quota is considered utilised
+                        The total allocation for the top 5% and top 20% categories is 1 due to the
+                        small team size. This means only one team member can be placed in{" "}
+                        <b>either</b> the top 5% or the top 20%. The allocation appears as “1” for
+                        each category solely for system purposes; it does not mean you can allocate
+                        one person to each category. Once a slot is used for any of the categories,
+                        the overall quota is considered utilised
                       </Alert>
                     )}
                     <Table size="small">
@@ -298,32 +280,14 @@ const SpecialRatingAllocationView = ({
                                 : "transparent",
                             }}
                           >
-                            <TableCell
-                              sx={{ width: "40%", wordWrap: "break-word" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                noWrap
-                                title={dept.parBusinessUnit}
-                              >
-                                {highlightText(
-                                  dept.parBusinessUnit,
-                                  searchQuery.trim()
-                                )}
+                            <TableCell sx={{ width: "40%", wordWrap: "break-word" }}>
+                              <Typography variant="body2" noWrap title={dept.parBusinessUnit}>
+                                {highlightText(dept.parBusinessUnit, searchQuery.trim())}
                               </Typography>
                             </TableCell>
-                            <TableCell
-                              sx={{ width: "60%", wordWrap: "break-word" }}
-                            >
-                              <Typography
-                                variant="body2"
-                                noWrap
-                                title={dept.parDepartment}
-                              >
-                                {highlightText(
-                                  dept.parDepartment,
-                                  searchQuery.trim()
-                                )}
+                            <TableCell sx={{ width: "60%", wordWrap: "break-word" }}>
+                              <Typography variant="body2" noWrap title={dept.parDepartment}>
+                                {highlightText(dept.parDepartment, searchQuery.trim())}
                               </Typography>
                             </TableCell>
                           </TableRow>

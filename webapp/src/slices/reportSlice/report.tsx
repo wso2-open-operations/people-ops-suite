@@ -4,17 +4,23 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import { AppConfig } from "../../config/config";
-import { RequestState } from "@utils/types";
-import { ApiService } from "@utils/apiService";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
+
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import {
+  ParEmployeeStatus,
+  ParF2fStatus,
+  ParLeadStatus,
+  ParSpecialRating,
+} from "@slices/employeeHistorySlice/employeeHistory";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
-import { ParEmployeeStatus, ParF2fStatus, ParLeadStatus, ParSpecialRating } from "@slices/employeeHistorySlice/employeeHistory";
+
+import { AppConfig } from "../../config/config";
 
 interface reportState {
   ratings: ParReportEntry[];
@@ -54,72 +60,7 @@ export const fetchReportData = createAsyncThunk(
   async (parCycleId: number, { dispatch }) => {
     try {
       const resp = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/par-ratings`
-      );
-      if (resp.status === HttpStatusCode.Ok) {
-        return resp.data;
-      } else {
-        throw new Error(
-          resp.data?.message || sliceErrorMessages.reportSlice.fetchReport
-        );
-      }
-    } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchReportData
-      );
-
-      dispatch(
-        enqueueSnackbarMessage({
-          message: errorMessage,
-          type: "error",
-        })
-      );
-      throw error;
-    }
-  }
-);
-
-export const fetchDirectAndIndirectReports = createAsyncThunk(
-  "report/fetchDirectAndIndirectReportData",
-  async (
-    { parCycleId, leadEmail }: { parCycleId: number; leadEmail: string },
-    { dispatch }
-  ) => {
-    try {
-      const resp = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/reports?leadEmail=${leadEmail}`
-      );
-      if (resp.status === HttpStatusCode.Ok) {
-        return resp.data;
-      } else {
-        throw new Error(
-          resp.data?.message || sliceErrorMessages.reportSlice.fetchReport
-        );
-      }
-    } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchReportData
-      );
-
-      dispatch(
-        enqueueSnackbarMessage({
-          message: errorMessage,
-          type: "error",
-        })
-      );
-      throw error;
-    }
-  }
-);
-
-export const fetchDirectEmployeePars = createAsyncThunk(
-  "report/fetchDirectEmployeePars",
-  async ({ parCycleId, leadEmail }: { parCycleId: number; leadEmail: string }, { dispatch }) => {
-    try {
-      const resp = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/report-levels?leadEmail=${leadEmail}`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/par-ratings`,
       );
       if (resp.status === HttpStatusCode.Ok) {
         return resp.data;
@@ -133,11 +74,63 @@ export const fetchDirectEmployeePars = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
+);
+
+export const fetchDirectAndIndirectReports = createAsyncThunk(
+  "report/fetchDirectAndIndirectReportData",
+  async ({ parCycleId, leadEmail }: { parCycleId: number; leadEmail: string }, { dispatch }) => {
+    try {
+      const resp = await ApiService.getInstance().get(
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/reports?leadEmail=${leadEmail}`,
+      );
+      if (resp.status === HttpStatusCode.Ok) {
+        return resp.data;
+      } else {
+        throw new Error(resp.data?.message || sliceErrorMessages.reportSlice.fetchReport);
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReportData);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      throw error;
+    }
+  },
+);
+
+export const fetchDirectEmployeePars = createAsyncThunk(
+  "report/fetchDirectEmployeePars",
+  async ({ parCycleId, leadEmail }: { parCycleId: number; leadEmail: string }, { dispatch }) => {
+    try {
+      const resp = await ApiService.getInstance().get(
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}/report-levels?leadEmail=${leadEmail}`,
+      );
+      if (resp.status === HttpStatusCode.Ok) {
+        return resp.data;
+      } else {
+        throw new Error(resp.data?.message || sliceErrorMessages.reportSlice.fetchReport);
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchReportData);
+
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      throw error;
+    }
+  },
 );
 
 const reportSlice = createSlice({

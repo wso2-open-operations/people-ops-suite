@@ -4,16 +4,16 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { ApiService } from "../../utils/apiService";
 import { AppConfig } from "../../config/config";
+import { ApiService } from "../../utils/apiService";
 import { RequestState } from "../../utils/types";
 
 export interface UserInfoInterface {
   employeeId: string;
   employeeName: string; // Backend sends "employeeName" (combined)
-  firstName?: string;   // Optional if backend doesn't send split names
+  firstName?: string; // Optional if backend doesn't send split names
   lastName?: string;
   workEmail: string;
   employeeThumbnail: string | null;
@@ -47,7 +47,7 @@ export const getUserInfo = createAsyncThunk("user/getUserInfo", async () => {
   return new Promise<{ UserInfo: UserInfoInterface }>((resolve, reject) => {
     // Assuming 'userInfo' is the endpoint in your config
     ApiService.getInstance()
-      .get(AppConfig.serviceUrls.userInfo || "/user-info") 
+      .get(AppConfig.serviceUrls.userInfo || "/user-info")
       .then((resp) => {
         resolve({ UserInfo: resp.data });
       })

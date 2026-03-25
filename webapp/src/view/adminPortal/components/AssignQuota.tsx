@@ -13,14 +13,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-import { useEffect, useRef, useState } from "react";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import {
   Box,
   Button,
-  Grid,
   Card,
+  Grid,
+  IconButton,
+  Menu,
+  MenuItem,
   Stack,
-  Typography,
   Table,
   TableBody,
   TableCell,
@@ -28,52 +36,52 @@ import {
   TableHead,
   TableRow,
   Tooltip,
-  IconButton,
-  Menu,
-  MenuItem,
+  Typography,
 } from "@mui/material";
 import Accordion from "@mui/material/Accordion";
-import EditIcon from "@mui/icons-material/Edit";
-import CloseIcon from "@mui/icons-material/Close";
-import DeleteIcon from "@mui/icons-material/Delete";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Chip from "@mui/material/Chip";
 import {
   DataGrid,
+  GridRowId,
   GridRowSelectionModel,
   GridToolbar,
   GridToolbarExportContainer,
-  GridRowId,
 } from "@mui/x-data-grid";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import { fetchOpenParCycle, openParCycle, selectCurrentCycle, selectParCycleState } from "@slices/parCycleSlice/parCycle";
-import { LoadingEffect } from "@component/ui/Loading";
-import ErrorComponent from "@component/ui/BackdropProgress";
-import QuotaChip from "@component/common/QuotaStatusChip";
+import dayjs from "dayjs";
+import { array, number, object, string } from "yup";
+
+import { useEffect, useRef, useState } from "react";
+
 import EditQuotaDialog from "@component/common/EditQuotaDialog";
-import NoDataView from "@component/common/NoDataView";
 import InputDialog from "@component/common/GroupNameInputDialog";
-import { RequestState, GroupedTeams, SpecialQuotaTeam } from "@utils/types";
-import { SpecialRatingQuota, PostSpecialQuotaTeam } from "@slices/specialQuotaSlice/specialQuota";
+import NoDataView from "@component/common/NoDataView";
+import QuotaChip from "@component/common/QuotaStatusChip";
+import ErrorComponent from "@component/ui/BackdropProgress";
+import { LoadingEffect } from "@component/ui/Loading";
 import { SnackMessage, tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { shortDateFormat } from "@config/constant";
-import dayjs from "dayjs";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
+import { fetchConfigurations } from "@slices/metaSlice/meta";
 import {
-  postQuotaGroups,
+  fetchOpenParCycle,
+  openParCycle,
+  selectCurrentCycle,
+  selectParCycleState,
+} from "@slices/parCycleSlice/parCycle";
+import { PostSpecialQuotaTeam, SpecialRatingQuota } from "@slices/specialQuotaSlice/specialQuota";
+import {
   fetchQuotaGroups,
+  postQuotaGroups,
+  resetQuotaSate,
   selectQuotaGroups,
   selectQuotaGroupsStatus,
-  resetQuotaSate,
 } from "@slices/specialQuotaSlice/specialQuota";
-import Chip from "@mui/material/Chip";
-import { object, number, string, array } from "yup";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import { GroupedTeams, RequestState, SpecialQuotaTeam } from "@utils/types";
+
 import { useConfirmationModalContext } from "../../../context/DialogContext";
-import { fetchConfigurations } from "@slices/metaSlice/meta";
 
 export const AssignQuota = () => {
   const dispatch = useAppDispatch();
@@ -108,7 +116,7 @@ export const AssignQuota = () => {
 
   // FIX: Explicitly type as GridRowId[] array
   const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>({
-    type: 'include',
+    type: "include",
     ids: new Set(),
   });
 
@@ -138,7 +146,7 @@ export const AssignQuota = () => {
       .test(
         "is-valid-number",
         "Allocated 5% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0
+        (value) => isValidNumber(value) && value >= 0,
       )
       .test(
         "max-allocated5Slots",
@@ -146,7 +154,7 @@ export const AssignQuota = () => {
         function (value) {
           const { default5Slots } = this.parent;
           return isValidNumber(value) && value <= default5Slots;
-        }
+        },
       )
       .integer(),
     allocated20Slots: number()
@@ -154,7 +162,7 @@ export const AssignQuota = () => {
       .test(
         "is-valid-number",
         "Allocated 20% Slots must be a valid number",
-        (value) => isValidNumber(value) && value >= 0
+        (value) => isValidNumber(value) && value >= 0,
       )
       .test(
         "max-allocated20Slots",
@@ -162,27 +170,42 @@ export const AssignQuota = () => {
         function (value) {
           const { default20Slots } = this.parent;
           return isValidNumber(value) && value <= default20Slots;
-        }
+        },
       )
       .integer(),
     default5Slots: number()
       .required("Default 5% Slots is required")
-      .test("is-valid-number", "Default 5% Slots must be a valid number", (value) => isValidNumber(value) && value >= 0)
-      .test("correct-default5Slots", "Default 5% Slots must match 5% of the total headcount", function (value) {
-        const { totalHeadCount } = this.parent;
-        const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
-        return value === calculatedValues.default5Slots;
-      })
+      .test(
+        "is-valid-number",
+        "Default 5% Slots must be a valid number",
+        (value) => isValidNumber(value) && value >= 0,
+      )
+      .test(
+        "correct-default5Slots",
+        "Default 5% Slots must match 5% of the total headcount",
+        function (value) {
+          const { totalHeadCount } = this.parent;
+          const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
+          return value === calculatedValues.default5Slots;
+        },
+      )
       .positive()
       .integer(),
     default20Slots: number()
       .required("Default 20% Slots is required")
-      .test("Default 20% Slots must be a valid number", (value) => isValidNumber(value) && value >= 0)
-      .test("correct-default5Slots", "Default 20% Slots must match 20% of the total headcount", function (value) {
-        const { totalHeadCount } = this.parent;
-        const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
-        return value === calculatedValues.default20Slots;
-      })
+      .test(
+        "Default 20% Slots must be a valid number",
+        (value) => isValidNumber(value) && value >= 0,
+      )
+      .test(
+        "correct-default5Slots",
+        "Default 20% Slots must match 20% of the total headcount",
+        function (value) {
+          const { totalHeadCount } = this.parent;
+          const calculatedValues = calculateDefaultQuotaValues(totalHeadCount);
+          return value === calculatedValues.default20Slots;
+        },
+      )
       .min(0)
       .integer(),
     totalHeadCount: number()
@@ -205,7 +228,10 @@ export const AssignQuota = () => {
 
   const postSpecialQuotaGroupSchema = object().shape({
     parCycleId: number().required("PAR Cycle ID is required").positive().integer(),
-    specialRatingGroupId: number().required("Special Rating Group ID is required").positive().integer(),
+    specialRatingGroupId: number()
+      .required("Special Rating Group ID is required")
+      .positive()
+      .integer(),
     businessUnit: string().required("Business Unit is required"),
     department: string().required("Department is required"),
     specialRatingQuotaId: number().required("Special Rating Quota ID is required").min(0).integer(),
@@ -253,15 +279,18 @@ export const AssignQuota = () => {
     setSelectionModel(newSelectionModel);
   };
 
-  const handleGroupExpand = (panel: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setIsGroupExpanded(isExpanded ? panel : false);
-  };
+  const handleGroupExpand =
+    (panel: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+      setIsGroupExpanded(isExpanded ? panel : false);
+    };
 
-  const isValidNumber = (value: any): value is number => value !== null && value !== undefined && !isNaN(value);
+  const isValidNumber = (value: any): value is number =>
+    value !== null && value !== undefined && !isNaN(value);
 
   useEffect(() => {
-    const calculateSlotTotals = (key: "default5Slots" | "default20Slots" | "allocated5Slots" | "allocated20Slots") =>
-      groupMappings.reduce((sum, group) => sum + (group[key] as number), 0);
+    const calculateSlotTotals = (
+      key: "default5Slots" | "default20Slots" | "allocated5Slots" | "allocated20Slots",
+    ) => groupMappings.reduce((sum, group) => sum + (group[key] as number), 0);
 
     const totalTop5Available = calculateSlotTotals("default5Slots");
     const totalTop20Available = calculateSlotTotals("default20Slots");
@@ -283,7 +312,7 @@ export const AssignQuota = () => {
         fetchQuotaGroups({
           parCycleId: currentCycle.parCycleId,
           signal: apiController.current.signal,
-        })
+        }),
       );
     }
     dispatch(fetchConfigurations());
@@ -320,12 +349,16 @@ export const AssignQuota = () => {
 
   useEffect(() => {
     if (!isGroupMapEmpty || groupMappings.length > 0) {
-      const groupedTeamIds = groupMappings.flatMap((group) => group.teams.map((team) => team.specialRatingGroupId));
+      const groupedTeamIds = groupMappings.flatMap((group) =>
+        group.teams.map((team) => team.specialRatingGroupId),
+      );
 
       const names = groupMappings.map((group) => group.name);
       groupNamesRef.current = names;
 
-      setFilteredTeams((prevTeams) => prevTeams.filter((team) => !groupedTeamIds.includes(team.specialRatingGroupId)));
+      setFilteredTeams((prevTeams) =>
+        prevTeams.filter((team) => !groupedTeamIds.includes(team.specialRatingGroupId)),
+      );
     }
   }, [groupMappings]);
 
@@ -336,20 +369,23 @@ export const AssignQuota = () => {
       "warning" as any,
       handleRemoveTeam,
       uiMessages.dialog.confirmTeamRemove.okText,
-      "Cancel"
+      "Cancel",
     );
   };
 
   const openConfirmChoiceDialog = () => {
-    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${groupsWithIssuesRef.current.length > 0 ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}` : ""
-      }`;
+    const message = `${uiMessages.dialog.confirmQuotaAssign.message}${
+      groupsWithIssuesRef.current.length > 0
+        ? ` Under Served Groups : ${groupsWithIssuesRef.current.join(", ")}`
+        : ""
+    }`;
     dialogContext.showConfirmation(
       uiMessages.dialog.confirmQuotaAssign.title,
       message,
       "info" as any,
       confirmAndProceed,
       uiMessages.dialog.confirmQuotaAssign.okText,
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -360,7 +396,7 @@ export const AssignQuota = () => {
       "warning" as any,
       removeGroupFromGroupMap,
       uiMessages.dialog.confirmGroupRemove.okText,
-      "Cancel"
+      "Cancel",
     );
   };
 
@@ -393,7 +429,7 @@ export const AssignQuota = () => {
   const handleGroupCreation = (name: string) => {
     if (selectionModel.ids.size > 0) {
       const selectedTeams = Array.from(selectionModel.ids).map((id) =>
-        filteredTeams.find((team) => team.specialRatingGroupId === id)
+        filteredTeams.find((team) => team.specialRatingGroupId === id),
       ) as SpecialQuotaTeam[];
 
       const totalHeadCount = calculateTotalHeads(selectedTeams);
@@ -418,7 +454,7 @@ export const AssignQuota = () => {
 
       setGroupMappings((prevGroups) => [...prevGroups, newGroup]);
       // 3. Reset the state using the new object format
-      setSelectionModel({ type: 'include', ids: new Set() });
+      setSelectionModel({ type: "include", ids: new Set() });
       setGroupIdCounter((prevCounter) => prevCounter + 1);
       dispatch(ShowSnackBarMessage(SnackMessage.success.groupCreated, "success"));
     }
@@ -459,7 +495,7 @@ export const AssignQuota = () => {
         groupMappings.some(
           (group) =>
             group.id === groupIdToRemove &&
-            group.teams.some((t) => t.specialRatingGroupId === team.specialRatingGroupId)
+            group.teams.some((t) => t.specialRatingGroupId === team.specialRatingGroupId),
         )
       ) {
         return { ...team, groupNumber: null };
@@ -473,7 +509,9 @@ export const AssignQuota = () => {
     if (groupToRemove) {
       const updatedTeams = updateTeamsGroupNumber(groupToBeRemovedRef.current);
       setFilteredTeams(updatedTeams);
-      const updatedGroupMappings = groupMappings.filter((group) => group.id !== groupToBeRemovedRef.current);
+      const updatedGroupMappings = groupMappings.filter(
+        (group) => group.id !== groupToBeRemovedRef.current,
+      );
       setGroupMappings(updatedGroupMappings);
       dispatch(ShowSnackBarMessage(SnackMessage.success.groupRemoved, "success"));
     }
@@ -489,9 +527,12 @@ export const AssignQuota = () => {
   const removeTeamFromGroup = () => {
     const updatedGroups = groupMappings.map((group) => {
       if (group.id === parentGroupIdRef.current) {
-        const updatedTeams = group.teams.filter((team) => team.specialRatingGroupId !== teamToBeRemovedRef.current);
+        const updatedTeams = group.teams.filter(
+          (team) => team.specialRatingGroupId !== teamToBeRemovedRef.current,
+        );
         const updatedTotalHeadCount = calculateTotalHeads(updatedTeams);
-        const { default5Slots, default20Slots } = calculateDefaultQuotaValues(updatedTotalHeadCount);
+        const { default5Slots, default20Slots } =
+          calculateDefaultQuotaValues(updatedTotalHeadCount);
         return {
           ...group,
           teams: updatedTeams,
@@ -539,8 +580,10 @@ export const AssignQuota = () => {
   const getUnderServedGroupNames = (groupMappings: GroupedTeams[]): string[] => {
     return groupMappings
       .map((group) => {
-        const has5SlotIssue = group.allocated5Slots === 0 || group.allocated5Slots < group.default5Slots;
-        const has20SlotIssue = group.allocated20Slots === 0 || group.allocated20Slots < group.default20Slots;
+        const has5SlotIssue =
+          group.allocated5Slots === 0 || group.allocated5Slots < group.default5Slots;
+        const has20SlotIssue =
+          group.allocated20Slots === 0 || group.allocated20Slots < group.default20Slots;
 
         if (has5SlotIssue || has20SlotIssue) {
           return group.name;
@@ -611,7 +654,7 @@ export const AssignQuota = () => {
 
   const validateQuotaData = async (
     specialRatingQuotas: SpecialRatingQuota[],
-    parSpecialRatingGroups: PostSpecialQuotaTeam[]
+    parSpecialRatingGroups: PostSpecialQuotaTeam[],
   ): Promise<{
     isValid: boolean;
     validatedSpecialRatingQuotas: SpecialRatingQuota[];
@@ -620,10 +663,14 @@ export const AssignQuota = () => {
   }> => {
     try {
       const validatedSpecialRatingQuotas =
-        (await array().of(specialRatingQuotaSchema).validate(specialRatingQuotas, { abortEarly: false })) || [];
+        (await array()
+          .of(specialRatingQuotaSchema)
+          .validate(specialRatingQuotas, { abortEarly: false })) || [];
 
       const validatedParSpecialRatingGroups =
-        (await array().of(postSpecialQuotaGroupSchema).validate(parSpecialRatingGroups, { abortEarly: false })) || [];
+        (await array()
+          .of(postSpecialQuotaGroupSchema)
+          .validate(parSpecialRatingGroups, { abortEarly: false })) || [];
 
       return {
         isValid: true,
@@ -632,7 +679,12 @@ export const AssignQuota = () => {
       };
     } catch (error) {
       const errorMessages: string[] = [];
-      if (error && typeof error === "object" && "inner" in error && Array.isArray((error as any).inner)) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "inner" in error &&
+        Array.isArray((error as any).inner)
+      ) {
         (error as any).inner.forEach((err: any) => {
           errorMessages.push(err.message);
         });
@@ -667,7 +719,7 @@ export const AssignQuota = () => {
           parCycleId: cycleID,
           parSpecialRatingGroups: validationResult.validatedParSpecialRatingGroups,
           specialRatingQuotas: validationResult.validatedSpecialRatingQuotas,
-        })
+        }),
       );
       if (postQuotaGroups.fulfilled.match(resultAction)) {
         return true;
@@ -696,7 +748,9 @@ export const AssignQuota = () => {
     <Stack sx={{ height: "100%" }}>
       {parCyclesLoadingState === RequestState.SUCCEEDED && (
         <>
-          {quotaGroupStatus === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+          {quotaGroupStatus === RequestState.LOADING && (
+            <LoadingEffect message={uiMessages.loading.pageLoading} />
+          )}
           {quotaGroupStatus === RequestState.IDLE && isDataSubmitting && (
             <LoadingEffect message={uiMessages.loading.parCycleCreation} />
           )}
@@ -849,7 +903,13 @@ export const AssignQuota = () => {
                               }}
                               expandIcon={<ExpandMoreIcon />}
                             >
-                              <Grid container direction="row" alignItems="center" spacing={1} sx={{ width: "100%" }}>
+                              <Grid
+                                container
+                                direction="row"
+                                alignItems="center"
+                                spacing={1}
+                                sx={{ width: "100%" }}
+                              >
                                 <Grid size="grow" sx={{ display: "flex", alignItems: "center" }}>
                                   <Typography variant="body2">{group.name}</Typography>
                                 </Grid>
@@ -876,8 +936,9 @@ export const AssignQuota = () => {
                                   <Chip
                                     label={
                                       group.allocatedLeads.length > 0
-                                        ? `${group.allocatedLeads.length} Lead${group.allocatedLeads.length !== 1 ? "s" : ""
-                                        } Assigned`
+                                        ? `${group.allocatedLeads.length} Lead${
+                                            group.allocatedLeads.length !== 1 ? "s" : ""
+                                          } Assigned`
                                         : "No Leads Assigned"
                                     }
                                     variant={"outlined"}
@@ -995,7 +1056,12 @@ export const AssignQuota = () => {
                               </Grid>
                             </AccordionSummary>
                             <AccordionDetails>
-                              <Grid container justifyContent="space-between" alignItems="center" key={group.id}>
+                              <Grid
+                                container
+                                justifyContent="space-between"
+                                alignItems="center"
+                                key={group.id}
+                              >
                                 <TableContainer>
                                   <Table>
                                     <TableHead>
@@ -1017,7 +1083,9 @@ export const AssignQuota = () => {
                                     <TableBody>
                                       {group.teams.map((team) => (
                                         <TableRow key={team.specialRatingGroupId}>
-                                          <TableCell>{team.businessUnit ? team.businessUnit : "No Data"}</TableCell>
+                                          <TableCell>
+                                            {team.businessUnit ? team.businessUnit : "No Data"}
+                                          </TableCell>
                                           <TableCell>{team.department}</TableCell>
                                           <TableCell align="center">{team.headCount}</TableCell>
                                           <TableCell
@@ -1043,11 +1111,14 @@ export const AssignQuota = () => {
                                                 }}
                                                 onClick={() => {
                                                   parentGroupIdRef.current = group.id;
-                                                  teamToBeRemovedRef.current = team.specialRatingGroupId;
+                                                  teamToBeRemovedRef.current =
+                                                    team.specialRatingGroupId;
                                                   openRemoveTeamDialog();
                                                 }}
                                               >
-                                                <DeleteOutlineOutlinedIcon sx={{ marginRight: 0 }} />
+                                                <DeleteOutlineOutlinedIcon
+                                                  sx={{ marginRight: 0 }}
+                                                />
                                               </IconButton>
                                             </Tooltip>
                                           </TableCell>
@@ -1136,8 +1207,8 @@ export const AssignQuota = () => {
                           quickFilterProps: {
                             debounceMs: 500,
                           },
-                          // Note: If you are using a custom search box, binding `value` and `onChange` 
-                          // to the toolbar slot directly is deprecated. Usually, you just let the 
+                          // Note: If you are using a custom search box, binding `value` and `onChange`
+                          // to the toolbar slot directly is deprecated. Usually, you just let the
                           // QuickFilter handle it internally now, but I left your logic if you have custom needs.
                         },
                       }}
@@ -1180,7 +1251,9 @@ export const AssignQuota = () => {
           )}
         </>
       )}
-      {parCyclesLoadingState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+      {parCyclesLoadingState === RequestState.LOADING && (
+        <LoadingEffect message={uiMessages.loading.pageLoading} />
+      )}
     </Stack>
   );
 };

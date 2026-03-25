@@ -13,39 +13,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+import LoadingButton from "@mui/lab/LoadingButton";
+import { Alert, AlertColor, Box, Button, TextField, Typography } from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
+import utc from "dayjs/plugin/utc";
+import { useFormik } from "formik";
+import * as yup from "yup";
 
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  AlertColor,
-  Box,
-  Button,
-  TextField,
-  Typography,
-} from "@mui/material";
+
+import MeetingSchedulerPage from "@component/common/ScheduleF2F";
+import { LoadingEffect } from "@component/ui/Loading";
+import { SnackMessage, shortDateFormat, uiMessages } from "@config/constant";
+import { ParF2fStatus, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { ShowSnackBarMessage } from "@slices/commonSlice/common";
 import {
   fetchParRatingOfEmployee,
-  selectEmployeeRatings,
   selectEmployeeRatingStatus,
+  selectEmployeeRatings,
   updateParRatingOfEmployee,
   updateSelectedParF2fFields,
 } from "@slices/employeeSlice/employee";
 import { useAppDispatch, useAppSelector } from "@slices/store";
 import { RequestState } from "@utils/types";
-import { useFormik } from "formik";
-import * as yup from "yup";
-import { LoadingEffect } from "@component/ui/Loading";
-import { shortDateFormat, SnackMessage, uiMessages } from "@config/constant";
-import { ShowSnackBarMessage } from "@slices/commonSlice/common";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import LoadingButton from "@mui/lab/LoadingButton";
-import dayjs, { Dayjs } from "dayjs";
-import utc from "dayjs/plugin/utc";
-import MeetingSchedulerPage from "@component/common/ScheduleF2F";
+
 import { CustomModal } from "./CustomModal";
-import { ParF2fStatus, ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
-import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+
 dayjs.extend(utc);
 
 interface F2fPanelProp {
@@ -54,20 +50,14 @@ interface F2fPanelProp {
   isEmployeeView?: boolean;
 }
 
-export const F2fPanel = ({
-  employeeId,
-  parCycle,
-  isEmployeeView,
-}: F2fPanelProp) => {
+export const F2fPanel = ({ employeeId, parCycle, isEmployeeView }: F2fPanelProp) => {
   const dispatch = useAppDispatch();
   const parRating = useAppSelector(selectEmployeeRatings);
   const employeeParRatingLoading = useAppSelector(selectEmployeeRatingStatus);
-  const [feedbackRequestModalOpen, setFeedbackRequestModalOpen] =
-    useState(false);
+  const [feedbackRequestModalOpen, setFeedbackRequestModalOpen] = useState(false);
   const [isDeadlinePassed, setIsDeadlinePassed] = useState(false);
 
-  const handleOpenFeedbackRequestModal = () =>
-    setFeedbackRequestModalOpen(true);
+  const handleOpenFeedbackRequestModal = () => setFeedbackRequestModalOpen(true);
   const handleCloseFeedbackRequestModal = () => {
     setFeedbackRequestModalOpen(false);
     if (parCycle?.parCycleId) {
@@ -76,14 +66,11 @@ export const F2fPanel = ({
           fetchParRatingOfEmployee({
             employeeId,
             parCycleId: parCycle.parCycleId!,
-          })
+          }),
         );
 
         if (fetchParRatingOfEmployee.fulfilled.match(resultAction)) {
-          setFieldValue(
-            "parF2fDate",
-            dayjs(resultAction.payload.parF2fDate).format("YYYY-MM-DD")
-          );
+          setFieldValue("parF2fDate", dayjs(resultAction.payload.parF2fDate).format("YYYY-MM-DD"));
         }
       };
 
@@ -100,46 +87,37 @@ export const F2fPanel = ({
     parF2fDate: yup.date().required("Required"),
   });
 
-  const {
-    values,
-    errors,
-    setFieldValue,
-    handleBlur,
-    handleSubmit,
-    touched,
-    isSubmitting,
-  } = useFormik({
-    initialValues: {
-      parF2fDate: "",
-    },
-    validationSchema,
-    onSubmit: async (values) => {
-      const selectedDate = dayjs(values.parF2fDate).format("YYYY-MM-DD");
-      const resultAction = await dispatch(
-        updateParRatingOfEmployee({
-          employeeId,
-          parCycleId: parCycle.parCycleId,
-          parRatingId: parRating?.parRatingId,
-          values: {
-            parF2fStatus: ParF2fStatus.COMPLETED,
-            parF2fDate: selectedDate,
-          },
-        })
-      );
+  const { values, errors, setFieldValue, handleBlur, handleSubmit, touched, isSubmitting } =
+    useFormik({
+      initialValues: {
+        parF2fDate: "",
+      },
+      validationSchema,
+      onSubmit: async (values) => {
+        const selectedDate = dayjs(values.parF2fDate).format("YYYY-MM-DD");
+        const resultAction = await dispatch(
+          updateParRatingOfEmployee({
+            employeeId,
+            parCycleId: parCycle.parCycleId,
+            parRatingId: parRating?.parRatingId,
+            values: {
+              parF2fStatus: ParF2fStatus.COMPLETED,
+              parF2fDate: selectedDate,
+            },
+          }),
+        );
 
-      if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
-        dispatch(
-          updateSelectedParF2fFields({
-            parF2fStatus: ParF2fStatus.COMPLETED,
-            parF2fDate: selectedDate,
-          })
-        );
-        dispatch(
-          ShowSnackBarMessage(SnackMessage.success.updateF2fStatus, "success")
-        );
-      }
-    },
-  });
+        if (updateParRatingOfEmployee.fulfilled.match(resultAction)) {
+          dispatch(
+            updateSelectedParF2fFields({
+              parF2fStatus: ParF2fStatus.COMPLETED,
+              parF2fDate: selectedDate,
+            }),
+          );
+          dispatch(ShowSnackBarMessage(SnackMessage.success.updateF2fStatus, "success"));
+        }
+      },
+    });
 
   useEffect(() => {
     if (parCycle?.parCycleId) {
@@ -148,14 +126,11 @@ export const F2fPanel = ({
           fetchParRatingOfEmployee({
             employeeId,
             parCycleId: parCycle.parCycleId!,
-          })
+          }),
         );
 
         if (fetchParRatingOfEmployee.fulfilled.match(resultAction)) {
-          setFieldValue(
-            "parF2fDate",
-            dayjs(resultAction.payload.parF2fDate).format("YYYY-MM-DD")
-          );
+          setFieldValue("parF2fDate", dayjs(resultAction.payload.parF2fDate).format("YYYY-MM-DD"));
         }
       };
 
@@ -164,11 +139,7 @@ export const F2fPanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeeId, parCycle.parCycleId, setFieldValue]);
 
-  const renderAlert = (
-    severity: AlertColor,
-    message: string,
-    iconColor: string
-  ) => (
+  const renderAlert = (severity: AlertColor, message: string, iconColor: string) => (
     <Alert
       severity={severity}
       sx={{
@@ -207,10 +178,7 @@ export const F2fPanel = ({
           disabled={parRating?.parLeadStatus !== ParLeadStatus.SHARED}
           value={values.parF2fDate ? dayjs(values.parF2fDate) : null}
           onChange={(newValue: Dayjs | null) => {
-            setFieldValue(
-              "parF2fDate",
-              newValue ? newValue.format("YYYY-MM-DD") : ""
-            );
+            setFieldValue("parF2fDate", newValue ? newValue.format("YYYY-MM-DD") : "");
           }}
           maxDate={dayjs()}
           minDate={dayjs(parCycle?.parCycleStartDate)}
@@ -253,9 +221,7 @@ export const F2fPanel = ({
         <Button
           onClick={handleOpenFeedbackRequestModal}
           variant="outlined"
-          disabled={
-            parRating?.parLeadStatus !== ParLeadStatus.SHARED || !isEmployeeView
-          }
+          disabled={parRating?.parLeadStatus !== ParLeadStatus.SHARED || !isEmployeeView}
         >
           Schedule Google Meet
         </Button>
@@ -302,7 +268,7 @@ export const F2fPanel = ({
               `The deadline for updating the F2F has passed on ${dayjs
                 .utc(parCycle.parF2FDeadline)
                 .format("D MMM 'YY")}`,
-              "error.main"
+              "error.main",
             )}
 
           {!isDeadlinePassed &&
@@ -312,7 +278,7 @@ export const F2fPanel = ({
               `Please complete your F2F meeting before the deadline : ${dayjs
                 .utc(parCycle.parF2FDeadline)
                 .format("D MMM 'YY")}`,
-              "info.main"
+              "info.main",
             )}
 
           {parRating.parLeadStatus !== ParLeadStatus.SHARED &&
@@ -322,10 +288,10 @@ export const F2fPanel = ({
           {parRating.parF2fStatus === ParF2fStatus.COMPLETED &&
             renderAlert(
               "success",
-              `${uiMessages.alert.f2fCompleted} ${dayjs(
-                parRating.parF2fDate
-              ).format(shortDateFormat)}`,
-              "success.main"
+              `${uiMessages.alert.f2fCompleted} ${dayjs(parRating.parF2fDate).format(
+                shortDateFormat,
+              )}`,
+              "success.main",
             )}
 
           {parRating.parF2fStatus !== ParF2fStatus.COMPLETED &&
@@ -336,10 +302,7 @@ export const F2fPanel = ({
             !isDeadlinePassed &&
             renderActions()}
 
-          <CustomModal
-            open={feedbackRequestModalOpen}
-            onClose={handleCloseFeedbackRequestModal}
-          >
+          <CustomModal open={feedbackRequestModalOpen} onClose={handleCloseFeedbackRequestModal}>
             {feedbackRequestModalOpen && (
               <MeetingSchedulerPage
                 parRatingId={parRating.parRatingId}

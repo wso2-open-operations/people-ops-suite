@@ -13,9 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import MailIcon from "@mui/icons-material/Mail";
+import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import SendIcon from "@mui/icons-material/Send";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
   Alert,
   Avatar,
@@ -36,36 +40,34 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import RateReviewIcon from "@mui/icons-material/RateReview";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import { RequestState } from "@utils/types";
+import dayjs from "dayjs";
+import { useLocation, useNavigate } from "react-router-dom";
+
+import React, { useEffect, useMemo, useState } from "react";
+
+import { CustomModal } from "@component/common/CustomModal";
 import ParStatusChip from "@component/common/ParStatusChip";
-import { useAppDispatch, useAppSelector } from "@slices/store";
+import { LoadingEffect } from "@component/ui/Loading";
+import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import { selectCurrentParCycleOfEmployee } from "@slices/employeeSlice/employee";
 import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
 import {
-  fetchRequests,
   ParThreeSixtyReviewStatus,
+  ThreeSixtyReviewRequest,
+  fetchRequests,
   selectThreeSixtyReviewRequests,
   selectThreeSixtyReviewStatus,
-  ThreeSixtyReviewRequest,
 } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { selectUserEmail } from "@slices/authSlice/auth";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { selectCurrentParCycleOfEmployee } from "@slices/employeeSlice/employee";
-import { ReviewProvideModal } from "@view/ongoingCycleView/components/ReviewProvideModal";
-import { CustomModal } from "@component/common/CustomModal";
+import { RequestState } from "@utils/types";
 import OfferFeedbackView from "@view/ongoingCycleView/components/OfferFeedbackView";
-import { LoadingEffect } from "@component/ui/Loading";
-import CloseIcon from "@mui/icons-material/Close";
-import dayjs from "dayjs";
-import AddIcon from "@mui/icons-material/Add";
-import { ReviewViewModal } from "./ReviewViewModal";
-import PlaylistRemoveIcon from "@mui/icons-material/PlaylistRemove";
-import MailIcon from "@mui/icons-material/Mail";
-import SendIcon from "@mui/icons-material/Send";
+import { ReviewProvideModal } from "@view/ongoingCycleView/components/ReviewProvideModal";
+
 import { tokens } from "../../theme";
 import NoDataView from "./NoDataView";
+import { ReviewViewModal } from "./ReviewViewModal";
 
 export enum FeedbackTypes {
   OFFERED = "offered",
@@ -125,7 +127,7 @@ export const ProvideFeedbackTab = () => {
         fetchRequests({
           employeeId: userEmail,
           parCycleId: currentCycle.parCycleId!,
-        })
+        }),
       );
       setIsRejectSelected(false);
     }
@@ -167,7 +169,7 @@ export const ProvideFeedbackTab = () => {
         fetchRequests({
           employeeId: userEmail,
           parCycleId: currentCycle.parCycleId,
-        })
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -214,18 +216,27 @@ export const ProvideFeedbackTab = () => {
 
   const filteredRequests = useMemo(() => {
     if (filterValue === FeedbackTypes.OFFERED) {
-      return reviewRequests.filter((request) => !request.isEmployeeRequested && !request.isLeadRequested);
+      return reviewRequests.filter(
+        (request) => !request.isEmployeeRequested && !request.isLeadRequested,
+      );
     }
 
     if (filterValue === FeedbackTypes.REQUESTED) {
-      return reviewRequests.filter((request) => request.isEmployeeRequested || request.isLeadRequested);
+      return reviewRequests.filter(
+        (request) => request.isEmployeeRequested || request.isLeadRequested,
+      );
     }
 
     return reviewRequests;
   }, [reviewRequests, filterValue]);
 
-  const noDataMessage = `No ${filterValue === FeedbackTypes.OFFERED ? "voluntary" : filterValue === FeedbackTypes.REQUESTED ? "requested" : ""
-    } feedback available`;
+  const noDataMessage = `No ${
+    filterValue === FeedbackTypes.OFFERED
+      ? "voluntary"
+      : filterValue === FeedbackTypes.REQUESTED
+        ? "requested"
+        : ""
+  } feedback available`;
 
   return (
     <React.Fragment>
@@ -267,7 +278,10 @@ export const ProvideFeedbackTab = () => {
                     <MailIcon fontSize="small" />
                     <span>Requested Feedback</span>
                     <Chip
-                      label={reviewRequests.filter((r) => r.isEmployeeRequested || r.isLeadRequested).length}
+                      label={
+                        reviewRequests.filter((r) => r.isEmployeeRequested || r.isLeadRequested)
+                          .length
+                      }
                       size="small"
                       sx={{ ml: 1 }}
                     />
@@ -287,7 +301,10 @@ export const ProvideFeedbackTab = () => {
                     <SendIcon fontSize="small" />
                     <span>Voluntary Feedback</span>
                     <Chip
-                      label={reviewRequests.filter((r) => !r.isEmployeeRequested && !r.isLeadRequested).length}
+                      label={
+                        reviewRequests.filter((r) => !r.isEmployeeRequested && !r.isLeadRequested)
+                          .length
+                      }
                       size="small"
                       sx={{ ml: 1 }}
                     />
@@ -298,7 +315,9 @@ export const ProvideFeedbackTab = () => {
             />
           </Tabs>
         </Box>
-        {reviewSliceState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+        {reviewSliceState === RequestState.LOADING && (
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        )}
 
         {reviewSliceState === RequestState.SUCCEEDED && filteredRequests.length === 0 && (
           <NoDataView text={noDataMessage} />
@@ -371,7 +390,8 @@ export const ProvideFeedbackTab = () => {
                   const isCompletedOrRejected =
                     request.reviewStatus === ParThreeSixtyReviewStatus.COMPLETED ||
                     request.reviewStatus === ParThreeSixtyReviewStatus.REJECTED;
-                  const isEmployeeOrLeadRequested = request.isEmployeeRequested || request.isLeadRequested;
+                  const isEmployeeOrLeadRequested =
+                    request.isEmployeeRequested || request.isLeadRequested;
 
                   return (
                     <TableRow
@@ -388,7 +408,9 @@ export const ProvideFeedbackTab = () => {
                       }}
                       sx={{
                         cursor:
-                          !isDeadlinePassed && (isPendingOrDraft || isCompletedOrRejected) ? "pointer" : "default",
+                          !isDeadlinePassed && (isPendingOrDraft || isCompletedOrRejected)
+                            ? "pointer"
+                            : "default",
                         "&:hover": {
                           backgroundColor: (theme) => theme.palette.action.hover,
                         },
@@ -413,8 +435,8 @@ export const ProvideFeedbackTab = () => {
                       </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         {!isEmployeeOrLeadRequested &&
-                          request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
-                          isDeadlinePassed ? (
+                        request.reviewStatus === ParThreeSixtyReviewStatus.PENDING &&
+                        isDeadlinePassed ? (
                           <Chip
                             size="small"
                             label="Abandoned"
@@ -423,13 +445,17 @@ export const ProvideFeedbackTab = () => {
                               height: "1.23rem",
                               paddingTop: "0.15rem",
                               paddingX: "0.2rem",
-                              backgroundColor: theme.palette.mode === "light"
-                                ? theme.palette.surface.primary.active
-                                : theme.palette.surface.secondary.active,
+                              backgroundColor:
+                                theme.palette.mode === "light"
+                                  ? theme.palette.surface.primary.active
+                                  : theme.palette.surface.secondary.active,
                             }}
                           />
                         ) : (
-                          <ParStatusChip content={request?.reviewStatus || ""} isDeadlinePassed={isDeadlinePassed} />
+                          <ParStatusChip
+                            content={request?.reviewStatus || ""}
+                            isDeadlinePassed={isDeadlinePassed}
+                          />
                         )}
                       </TableCell>
                       <TableCell sx={{ py: 2 }}>
@@ -437,7 +463,11 @@ export const ProvideFeedbackTab = () => {
                           <Box display="flex" gap={1}>
                             {isPendingOrDraft && (
                               <>
-                                <Tooltip arrow title="Provide Feedback" enterDelay={tooltipVisibilityDelay}>
+                                <Tooltip
+                                  arrow
+                                  title="Provide Feedback"
+                                  enterDelay={tooltipVisibilityDelay}
+                                >
                                   <IconButton
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -456,7 +486,11 @@ export const ProvideFeedbackTab = () => {
                                   </IconButton>
                                 </Tooltip>
                                 {isEmployeeOrLeadRequested && (
-                                  <Tooltip arrow title="Decline Feedback" enterDelay={tooltipVisibilityDelay}>
+                                  <Tooltip
+                                    arrow
+                                    title="Decline Feedback"
+                                    enterDelay={tooltipVisibilityDelay}
+                                  >
                                     <IconButton
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -471,14 +505,22 @@ export const ProvideFeedbackTab = () => {
                                         },
                                       }}
                                     >
-                                      {isEmployeeOrLeadRequested ? <CloseIcon /> : <PlaylistRemoveIcon />}
+                                      {isEmployeeOrLeadRequested ? (
+                                        <CloseIcon />
+                                      ) : (
+                                        <PlaylistRemoveIcon />
+                                      )}
                                     </IconButton>
                                   </Tooltip>
                                 )}
                               </>
                             )}
                             {isCompletedOrRejected && (
-                              <Tooltip arrow title="View Feedback" enterDelay={tooltipVisibilityDelay}>
+                              <Tooltip
+                                arrow
+                                title="View Feedback"
+                                enterDelay={tooltipVisibilityDelay}
+                              >
                                 <IconButton
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -552,10 +594,14 @@ export const ProvideFeedbackTab = () => {
               onClose={closeReviewProvideModal}
               parCycle={employeeCurrentParCycle}
               employeeEmail={selectedRequest.employeeEmail}
-              threeSixtyReviewQuestion={currentCycle.parCycleConfigurations.threeSixtyReviewQuestion}
+              threeSixtyReviewQuestion={
+                currentCycle.parCycleConfigurations.threeSixtyReviewQuestion
+              }
               threeSixtyReviewRatings={currentCycle.parCycleConfigurations.threeSixtyReviewRatings}
               isRejectSelected={isRejectSelected}
-              isOfferedFeedback={!selectedRequest.isEmployeeRequested && !selectedRequest.isLeadRequested}
+              isOfferedFeedback={
+                !selectedRequest.isEmployeeRequested && !selectedRequest.isLeadRequested
+              }
             />
           )}
       </CustomModal>
@@ -568,7 +614,9 @@ export const ProvideFeedbackTab = () => {
                 onClose={closeReviewViewModal}
                 parCycle={employeeCurrentParCycle}
                 employeeEmail={selectedRequest.employeeEmail}
-                isOfferedFeedback={!selectedRequest.isEmployeeRequested && !selectedRequest.isLeadRequested}
+                isOfferedFeedback={
+                  !selectedRequest.isEmployeeRequested && !selectedRequest.isLeadRequested
+                }
               />
             )}
             {employeeToOfferFeedback && (

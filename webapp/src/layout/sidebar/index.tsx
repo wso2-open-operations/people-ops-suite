@@ -13,18 +13,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { Box, Divider, Stack, Tooltip, Typography, useTheme } from "@mui/material";
 import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-
-import type { NavState } from "../../types/types";
-import SidebarNavItem from "../../component/layout/SidebarNavItem";
-import pJson from "../../../package.json";
 import { ColorModeContext } from "@src/App";
 import { getActiveRouteDetails } from "@src/route";
+
+import pJson from "../../../package.json";
+import SidebarNavItem from "../../component/layout/SidebarNavItem";
+import type { NavState } from "../../types/types";
 
 interface SidebarProps {
   open: boolean;

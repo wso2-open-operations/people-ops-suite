@@ -13,23 +13,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { RequestState } from "@utils/types";
-import { Box, Chip, IconButton, Link, Typography } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Box, Chip, IconButton, Link, Typography } from "@mui/material";
+import { DataGrid, GridColDef, GridRenderCellParams, GridToolbar } from "@mui/x-data-grid";
+
 import { useState } from "react";
-import { useAppSelector } from "@slices/store";
+
 import { LoadingEffect } from "@component/ui/Loading";
 import { uiMessages } from "@config/constant";
-import {
-  DataGrid,
-  GridColDef,
-  GridRenderCellParams,
-  GridToolbar,
-} from "@mui/x-data-grid";
-import { selectAllTeams, selectTeamStatus, Team } from "@slices/teamSlice/team";
-import { getCombinedTeams } from "@utils/utils";
 import { ParCycle } from "@root/src/slices/parCycleSlice/parCycle";
+import { useAppSelector } from "@slices/store";
+import { Team, selectAllTeams, selectTeamStatus } from "@slices/teamSlice/team";
+import { RequestState } from "@utils/types";
+import { getCombinedTeams } from "@utils/utils";
 
 interface CompletionProps {
   parCycle: Partial<ParCycle>;
@@ -51,22 +47,13 @@ export const Completion = ({
       ...team,
       id: team.parTeamId,
       employeePARCompletion: Number(
-        (
-          (team.summary.employeeParCompletedCount / team.numberOfTeamMembers) *
-          100
-        ).toFixed(1)
+        ((team.summary.employeeParCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
       ),
       leadReviewCompletion: Number(
-        (
-          (team.summary.leadsReviewCompletedCount / team.numberOfTeamMembers) *
-          100
-        ).toFixed(1)
+        ((team.summary.leadsReviewCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
       ),
       f2fCompletion: Number(
-        (
-          (team.summary.f2fCompletedCount / team.numberOfTeamMembers) *
-          100
-        ).toFixed(1)
+        ((team.summary.f2fCompletedCount / team.numberOfTeamMembers) * 100).toFixed(1),
       ),
     };
   });
@@ -118,12 +105,7 @@ export const Completion = ({
             {` History / `}
           </Typography>
         )}
-        <Link
-          underline="hover"
-          color="inherit"
-          variant="h4"
-          onClick={closeCompletionView}
-        >
+        <Link underline="hover" color="inherit" variant="h4" onClick={closeCompletionView}>
           {parCycle.parCycleName}
         </Link>
         <Typography display={"inline"} variant="h5">

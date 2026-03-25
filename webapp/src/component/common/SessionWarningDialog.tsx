@@ -13,14 +13,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import {
+  Button,
   Dialog,
-  DialogTitle,
+  DialogActions,
   DialogContent,
   DialogContentText,
-  DialogActions,
-  Button,
+  DialogTitle,
 } from "@mui/material";
 
 interface SessionWarningDialogProps {
@@ -38,13 +37,10 @@ function SessionWarningDialog(props: SessionWarningDialogProps) {
       aria-labelledby="alert-dialog-title"
       aria-describedby="alert-dialog-description"
     >
-      <DialogTitle id="alert-dialog-title">
-        {"Are you still there?"}
-      </DialogTitle>
+      <DialogTitle id="alert-dialog-title">{"Are you still there?"}</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-description">
-          It looks like you've been inactive for a while. Would you like to
-          continue?
+          It looks like you've been inactive for a while. Would you like to continue?
         </DialogContentText>
       </DialogContent>
       <DialogActions>

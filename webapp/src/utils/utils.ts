@@ -13,10 +13,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { AxiosError } from "axios";
+
+import { AllTeamsSummary, Team } from "@slices/teamSlice/team";
+
 import { ParSpecialRating } from "../slices/employeeHistorySlice/employeeHistory";
-import { Team , AllTeamsSummary } from "@slices/teamSlice/team";
 
 export const isIncludedRole = (a: string[], b: string[]): boolean => {
   return [...getCrossItems(a, b), ...getCrossItems(b, a)].length > 0;
@@ -26,22 +27,16 @@ export const capitalizeFirstLetter = (str: string) => {
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
-
 function getCrossItems<Role>(a: Role[], b: Role[]): Role[] {
   return a.filter((element) => {
     return b.includes(element);
   });
 }
 
-export const getErrorMessage = (
-  error: unknown,
-  defaultErrorMessage: string
-) => {
+export const getErrorMessage = (error: unknown, defaultErrorMessage: string) => {
   if (error instanceof AxiosError) {
     return (
-      error.response?.data?.message ||
-      error.response?.data?.error_message ||
-      defaultErrorMessage
+      error.response?.data?.message || error.response?.data?.error_message || defaultErrorMessage
     );
   }
 
@@ -52,10 +47,7 @@ export const getErrorMessage = (
   return defaultErrorMessage;
 };
 
-
-export const getSpecialRatingLabel = (
-  rating: ParSpecialRating | undefined
-): string => {
+export const getSpecialRatingLabel = (rating: ParSpecialRating | undefined): string => {
   switch (rating) {
     case ParSpecialRating.TOP_FIVE_PERCENT:
       return "Top 5%";
@@ -68,9 +60,7 @@ export const getSpecialRatingLabel = (
   }
 };
 
-export const getSpecialRatingEnum = (
-  label: string
-): ParSpecialRating | undefined => {
+export const getSpecialRatingEnum = (label: string): ParSpecialRating | undefined => {
   switch (label) {
     case "Top 5%":
       return ParSpecialRating.TOP_FIVE_PERCENT;
@@ -84,22 +74,16 @@ export const getSpecialRatingEnum = (
 };
 
 export const calculateAllTeamsSummary = (teams: Team[]): AllTeamsSummary => {
-  const totalEmployees = teams.reduce(
-    (acc, team) => acc + team.numberOfTeamMembers,
-    0
-  );
+  const totalEmployees = teams.reduce((acc, team) => acc + team.numberOfTeamMembers, 0);
   const totalEmployeeParComplete = teams.reduce(
     (acc, team) => acc + team.summary.employeeParCompletedCount,
-    0
+    0,
   );
   const totalLeadReviewComplete = teams.reduce(
     (acc, team) => acc + team.summary.leadsReviewCompletedCount,
-    0
+    0,
   );
-  const totalF2fComplete = teams.reduce(
-    (acc, team) => acc + team.summary.f2fCompletedCount,
-    0
-  );
+  const totalF2fComplete = teams.reduce((acc, team) => acc + team.summary.f2fCompletedCount, 0);
 
   return {
     totalEmployees,
@@ -110,7 +94,7 @@ export const calculateAllTeamsSummary = (teams: Team[]): AllTeamsSummary => {
 };
 
 export interface CombinedTeam {
-  parTeamId: string,
+  parTeamId: string;
   parBusinessUnit: string;
   parDepartment: string;
   parTeam: string;
@@ -150,10 +134,8 @@ export const getCombinedTeams = (teams: Team[]): CombinedTeam[] => {
     // Aggregate the values
     acc[key].numberOfTeamMembers += team.numberOfTeamMembers;
 
-    acc[key].summary.employeeParCompletedCount +=
-      team.summary.employeeParCompletedCount;
-    acc[key].summary.leadsReviewCompletedCount +=
-      team.summary.leadsReviewCompletedCount;
+    acc[key].summary.employeeParCompletedCount += team.summary.employeeParCompletedCount;
+    acc[key].summary.leadsReviewCompletedCount += team.summary.leadsReviewCompletedCount;
     acc[key].summary.f2fCompletedCount += team.summary.f2fCompletedCount;
 
     return acc;

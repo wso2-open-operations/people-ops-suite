@@ -13,7 +13,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import { SecureApp, useAuthContext } from "@asgardeo/auth-react";
 import { useIdleTimer } from "react-idle-timer";
 
@@ -109,7 +108,7 @@ const AppAuthProvider = (props: { children: React.ReactNode }) => {
         const freshIdToken = await getIDToken();
         return { idToken: freshIdToken };
       },
-      dispatch
+      dispatch,
     );
 
     await dispatch(getUserInfo());

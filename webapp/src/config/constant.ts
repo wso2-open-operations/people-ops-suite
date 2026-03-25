@@ -21,8 +21,7 @@ export const SnackMessage = {
     sendReminder: "Successfully sent",
     parCycleClosing: "Successfully closed the PAR cycle",
     parCycleUpdate: "Successfully updated the PAR settings",
-    updateGlobalParConfigs:
-      "Successfully updated the global PAR configurations",
+    updateGlobalParConfigs: "Successfully updated the global PAR configurations",
 
     postReviewers: "Successfully created 360° feedback",
     draftSaveThreeSixtyReview: "Draft saved",
@@ -63,8 +62,7 @@ export const SnackMessage = {
 
     fetchTeamReport: "Error while retrieving team info",
     sendReminder: "Error while sending reminder",
-    sendReminderMissingParId:
-      "Error while sending reminder: Missing PAR Identifier",
+    sendReminderMissingParId: "Error while sending reminder: Missing PAR Identifier",
 
     parCycleClosing: "Error while closing the PAR cycle",
     parCycleUpdate: "Error while updating the PAR cycle settings",
@@ -78,8 +76,7 @@ export const SnackMessage = {
     postThreeSixtyReview: "Error while sending 360° feedback",
     fetchThreeSixtyReview: "Error while retrieving 360° feedback",
     fetchSelectedThreeSixtyReview: "Error while retrieving 360° feedback",
-    invalidBulkShare:
-      "Unable to share selected reviews. Please select only draft reviews.",
+    invalidBulkShare: "Unable to share selected reviews. Please select only draft reviews.",
     updateF2fStatus: "Error while updating the F2F status",
 
     fetchEmployeesData: "Error while retrieving organization data",
@@ -113,8 +110,7 @@ export const uiMessages = {
     fetchCurrentCycleDetails: "Loading ongoing PAR cycle",
   },
   information: {
-    emptyGroupsView:
-      "Select teams to start creating groups and allocating quotas",
+    emptyGroupsView: "Select teams to start creating groups and allocating quotas",
     emptyTeamsView: "All the teams have been grouped",
     feedback: "360° Feedback",
     noAllocations:
@@ -134,12 +130,10 @@ export const uiMessages = {
     noHistory: "Error occurred while retrieving employee PAR summary",
   },
   warning: {
-    leadShareDisable:
-      "* Sharing lead's feedback is disabled until employee PAR is shared",
+    leadShareDisable: "* Sharing lead's feedback is disabled until employee PAR is shared",
   },
   alert: {
-    employeeParNoOngoingCycle:
-      "Currently, there is no ongoing PAR cycle available",
+    employeeParNoOngoingCycle: "Currently, there is no ongoing PAR cycle available",
     employeeParDraftSaved: "You have saved your PAR as a draft",
     employeeParShared: "Your PAR is shared with your lead",
     employeeParSharedLocked: "Your PAR is under review by your lead",
@@ -147,8 +141,7 @@ export const uiMessages = {
     leadReviewDraftSaved: "You have saved this review as a draft",
     leadReviewShared: "Lead's feedback is shared with the employee",
     leadReviewForceEdit: "You are editing the lead's feedback",
-    leadSharedReviewForceEdit:
-      "You are editing an already shared lead's feedback",
+    leadSharedReviewForceEdit: "You are editing an already shared lead's feedback",
     leadReviewIsNotShared: "Lead's feedback is not shared with the employee",
     f2fDisabled: "Lead's feedback must be completed to update F2F status",
     f2fCompleted: "F2F completed on",
@@ -164,14 +157,12 @@ export const uiMessages = {
     },
     confirmTeamRemove: {
       title: "Remove a Team",
-      message:
-        "Are you sure you want to remove the selected team? This action cannot be undone.",
+      message: "Are you sure you want to remove the selected team? This action cannot be undone.",
       okText: "Remove",
     },
     confirmGroupRemove: {
       title: "Remove a Group",
-      message:
-        "Are you sure you want to remove the selected group? This action cannot be undone.",
+      message: "Are you sure you want to remove the selected group? This action cannot be undone.",
       okText: "Remove",
     },
     confirmQuotaAssign: {
@@ -222,14 +213,12 @@ export const uiMessages = {
     },
     threeSixtyReviewReject: {
       title: "Decline 360° Feedback Request?",
-      message:
-        "This will decline the 360 Feedback request. You can't undo this action.",
+      message: "This will decline the 360 Feedback request. You can't undo this action.",
       okText: "Decline",
     },
     leadParShare: {
       title: "Share Lead's Feedback?",
-      message:
-        "This action will share your review with the employee. You can't undo this action.",
+      message: "This action will share your review with the employee. You can't undo this action.",
       okText: "Share",
     },
     leadParBulkShare: {
@@ -240,8 +229,7 @@ export const uiMessages = {
     },
     editSharedReviews: {
       title: "Edit Shared Feedback",
-      message:
-        "Do you want to edit the shared lead's feedback and employee PAR?",
+      message: "Do you want to edit the shared lead's feedback and employee PAR?",
       okText: "Edit",
     },
     editLeadReview: {
@@ -266,13 +254,10 @@ export const uiMessages = {
     adminParF2fStatusExplanation:
       "Lead's feedback must be shared to update F2F status. F2F status cannot be modified once marked as completed.",
     removeAGroupFromMap: "Remove the entire group",
-    top5TextFieldHelper:
-      "Enter 5% quota. Min : 0, Max : 5% of the group's total headcount",
-    top20TextFieldHelper:
-      "Enter 20% quota. Min : 0, Max : 20% of the group's total headcount",
+    top5TextFieldHelper: "Enter 5% quota. Min : 0, Max : 5% of the group's total headcount",
+    top20TextFieldHelper: "Enter 20% quota. Min : 0, Max : 20% of the group's total headcount",
     removeATeamFromGroup: "Remove the team from the group",
-    finishAssignQuotaButtonHelper:
-      "Confirm and save all the slot allocations for groups",
+    finishAssignQuotaButtonHelper: "Confirm and save all the slot allocations for groups",
     addATeamToGroupHelper: "Create a new group using selected teams",
     addATeamToGroupHelperDisabled: "Select relevant teams to create a group",
     editQuotaValues:
@@ -292,8 +277,7 @@ export const asgardeoLogoUrl =
 export const choreoLogoUrl =
   "https://wso2.cachefly.net/wso2/sites/all/2023/images/home-choreo-logo.webp";
 
-export const base64Regex =
-  /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+export const base64Regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
 
 export const parUiText = {
   ParSpecialRatingTopFivePercent: "Top 5%",
@@ -367,37 +351,13 @@ export const WORKING_HOURS_END = 17;
 export const USER_TIMEZONE_OFFSET = -(new Date().getTimezoneOffset() / 60);
 
 export const SANITIZE_CONFIG = {
-  ALLOWED_TAGS: [
-    "b",
-    "i",
-    "em",
-    "strong",
-    "a",
-    "p",
-    "br",
-    "li",
-    "ol",
-    "ul",
-    "div",
-    "span",
-    "u",
-  ],
+  ALLOWED_TAGS: ["b", "i", "em", "strong", "a", "p", "br", "li", "ol", "ul", "div", "span", "u"],
   ALLOWED_ATTR: ["href", "target", "class", "style", "data-list"],
-  FORBID_TAGS: [
-    "style",
-    "script",
-    "iframe",
-    "frame",
-    "object",
-    "embed",
-    "alert",
-  ],
+  FORBID_TAGS: ["style", "script", "iframe", "frame", "object", "embed", "alert"],
   FORBID_ATTR: ["on*", "onclick", "onerror", "onload", "onmouseover", "style"],
   ADD_ATTR: ["target", "href", "rel"],
-  ALLOWED_URI_REGEXP:
-    /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
-
 
 export const APP_DESC = " Internal App Product Template.";
 

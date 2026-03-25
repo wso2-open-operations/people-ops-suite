@@ -13,8 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import React, { useEffect, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
 import {
   Alert,
   Avatar,
@@ -30,22 +29,33 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { useAppDispatch, useAppSelector } from "@slices/store";
-import { fetchReviewers, selectThreeSixtyReviewers, selectThreeSixtyReviewStatus } from "@slices/threeSixtyReviewSlice/threeSixtyReview";
-import { selectEmployeeMap } from "@slices/metaSlice/meta";
-import { LoadingEffect } from "@component/ui/Loading";
-import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
-import { CustomModal } from "@component/common/CustomModal";
-import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
-import { RequestState } from "@utils/types";
-import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
-import { selectCurrentParCycleOfEmployee, selectEmployeeRatings } from "@slices/employeeSlice/employee";
-import { selectUserEmail } from "@slices/authSlice/auth";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import NoDataView from "./NoDataView";
+
+import React, { useEffect, useState } from "react";
+
+import { CustomModal } from "@component/common/CustomModal";
+import { ReviewRequestModal } from "@component/common/ReviewRequestModal";
+import { LoadingEffect } from "@component/ui/Loading";
+import { tooltipVisibilityDelay, uiMessages } from "@config/constant";
 import { ParLeadStatus } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import { selectUserEmail } from "@slices/authSlice/auth";
+import {
+  selectCurrentParCycleOfEmployee,
+  selectEmployeeRatings,
+} from "@slices/employeeSlice/employee";
+import { selectEmployeeMap } from "@slices/metaSlice/meta";
+import { selectCurrentCycle } from "@slices/parCycleSlice/parCycle";
+import { useAppDispatch, useAppSelector } from "@slices/store";
+import {
+  fetchReviewers,
+  selectThreeSixtyReviewStatus,
+  selectThreeSixtyReviewers,
+} from "@slices/threeSixtyReviewSlice/threeSixtyReview";
+import { RequestState } from "@utils/types";
+
+import NoDataView from "./NoDataView";
+
 dayjs.extend(utc);
 
 export const RequestFeedbackTab = () => {
@@ -76,7 +86,7 @@ export const RequestFeedbackTab = () => {
         fetchReviewers({
           employeeId: userEmail,
           parCycleId: currentCycle.parCycleId,
-        })
+        }),
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,12 +96,12 @@ export const RequestFeedbackTab = () => {
     ratings.parLeadStatus === ParLeadStatus.SHARED
       ? "Lead has shared the PAR"
       : isDeadlinePassed
-      ? `The deadline for requesting 360° feedback has passed on ${dayjs
-          .utc(currentCycle.parThreeSixtyRatingDeadline)
-          .format("D MMM 'YY")}`
-      : `Please request feedback before the deadline: ${dayjs
-          .utc(currentCycle.parThreeSixtyRatingDeadline)
-          .format("D MMM 'YY")}`;
+        ? `The deadline for requesting 360° feedback has passed on ${dayjs
+            .utc(currentCycle.parThreeSixtyRatingDeadline)
+            .format("D MMM 'YY")}`
+        : `Please request feedback before the deadline: ${dayjs
+            .utc(currentCycle.parThreeSixtyRatingDeadline)
+            .format("D MMM 'YY")}`;
 
   return (
     <React.Fragment>
@@ -101,7 +111,9 @@ export const RequestFeedbackTab = () => {
             {alertMessage}
           </Alert>
         )}
-        {reviewSliceState === RequestState.LOADING && <LoadingEffect message={uiMessages.loading.pageLoading} />}
+        {reviewSliceState === RequestState.LOADING && (
+          <LoadingEffect message={uiMessages.loading.pageLoading} />
+        )}
         {reviewSliceState === RequestState.SUCCEEDED && reviewers.length === 0 && (
           <NoDataView text=" No reviewers available" />
         )}

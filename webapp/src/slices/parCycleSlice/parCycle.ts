@@ -4,19 +4,17 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import {
-  RequestState,
-} from "@utils/types";
-import { AppConfig } from "@config/config";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { ApiService } from "@utils/apiService";
-import { SnackMessage, uiMessages } from "@config/constant";
 import { HttpStatusCode } from "axios";
-import { getErrorMessage } from "@utils/utils";
+
+import { AppConfig } from "@config/config";
+import { SnackMessage, uiMessages } from "@config/constant";
 import { sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { RequestState } from "@utils/types";
+import { getErrorMessage } from "@utils/utils";
 
 interface UpdateOpenParCycleRequest {
   parCycleId: number;
@@ -97,7 +95,7 @@ export const fetchQuotaPendingParCycle = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING_QUOTA}`
+        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING_QUOTA}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -113,26 +111,20 @@ export const fetchQuotaPendingParCycle = createAsyncThunk(
           };
         }
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.parCycleSlice.fetchQuotaCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.fetchQuotaCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchRequestedCycleDetails
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchRequestedCycleDetails);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchOpenParCycle = createAsyncThunk(
@@ -140,7 +132,7 @@ export const fetchOpenParCycle = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.OPEN}`
+        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.OPEN}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -158,26 +150,20 @@ export const fetchOpenParCycle = createAsyncThunk(
           };
         }
       } else {
-        throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.parCycleSlice.fetchOpenCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.fetchOpenCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchRequestedCycleDetails
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchRequestedCycleDetails);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchPendingParCycle = createAsyncThunk(
@@ -185,32 +171,28 @@ export const fetchPendingParCycle = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING}`
+        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.PENDING}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
         throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.parCycleSlice.fetchPendingCycle
+          response.data?.message || sliceErrorMessages.parCycleSlice.fetchPendingCycle,
         );
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchRequestedCycleDetails
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchRequestedCycleDetails);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchClosedParCycles = createAsyncThunk(
@@ -218,32 +200,28 @@ export const fetchClosedParCycles = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.CLOSED}`
+        `${AppConfig.serviceUrls.parCycles}?status=${ParCycleStatus.CLOSED}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
         throw new Error(
-          response.data?.message ||
-            sliceErrorMessages.parCycleSlice.fetchPendingCycle
+          response.data?.message || sliceErrorMessages.parCycleSlice.fetchPendingCycle,
         );
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchRequestedCycleDetails
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchRequestedCycleDetails);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchParCycleById = createAsyncThunk(
@@ -252,74 +230,58 @@ export const fetchParCycleById = createAsyncThunk(
     try {
       dispatch(updateStateMessage(uiMessages.loading.fetchCurrentCycleDetails));
       const response = await ApiService.getInstance().get(
-        `${AppConfig.serviceUrls.parCycles}/${parCycleId}`
+        `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
       );
 
       if (response.status === HttpStatusCode.Ok) {
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.parCycleSlice.fetchCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.fetchCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.fetchRequestedCycleDetails
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchRequestedCycleDetails);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const createParCycle = createAsyncThunk(
   "parCycle/createParCycle",
-  async (
-    values: Omit<ParCycle, "parCycleId" | "parCycleStatus">,
-    { dispatch }
-  ) => {
+  async (values: Omit<ParCycle, "parCycleId" | "parCycleStatus">, { dispatch }) => {
     try {
       dispatch(updateStateMessage(uiMessages.loading.parCycleCreation));
-      const response = await ApiService.getInstance().post(
-        AppConfig.serviceUrls.parCycles,
-        values
-      );
+      const response = await ApiService.getInstance().post(AppConfig.serviceUrls.parCycles, values);
 
       if (response.status === HttpStatusCode.Created) {
         dispatch(
           enqueueSnackbarMessage({
             message: SnackMessage.success.parCycleCreation,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.parCycleSlice.fetchCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.fetchCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.parCycleCreation
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.parCycleCreation);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const updateParCycle = createAsyncThunk(
@@ -329,7 +291,7 @@ export const updateParCycle = createAsyncThunk(
       dispatch(updateStateMessage(uiMessages.loading.parCycleCreation));
       const response = await ApiService.getInstance().patch(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
-        values
+        values,
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -337,29 +299,24 @@ export const updateParCycle = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.parCycleUpdate,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.parCycleSlice.postCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.postCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.parCycleUpdate
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.parCycleUpdate);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const openParCycle = createAsyncThunk(
@@ -370,7 +327,7 @@ export const openParCycle = createAsyncThunk(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
         {
           parCycleStatus: ParCycleStatus.OPEN,
-        }
+        },
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -378,29 +335,24 @@ export const openParCycle = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.parCycleUpdate,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.parCycleSlice.postCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.postCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.parCycleClosing
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.parCycleClosing);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const closeParCycle = createAsyncThunk(
@@ -411,7 +363,7 @@ export const closeParCycle = createAsyncThunk(
         `${AppConfig.serviceUrls.parCycles}/${parCycleId}`,
         {
           parCycleStatus: ParCycleStatus.CLOSED,
-        }
+        },
       );
 
       if (response.status === HttpStatusCode.Ok) {
@@ -419,29 +371,24 @@ export const closeParCycle = createAsyncThunk(
           enqueueSnackbarMessage({
             message: SnackMessage.success.parCycleClosing,
             type: "success",
-          })
+          }),
         );
         return response.data;
       } else {
-        throw new Error(
-          response.data?.message || sliceErrorMessages.parCycleSlice.postCycle
-        );
+        throw new Error(response.data?.message || sliceErrorMessages.parCycleSlice.postCycle);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(
-        error,
-        SnackMessage.error.parCycleClosing
-      );
+      const errorMessage = getErrorMessage(error, SnackMessage.error.parCycleClosing);
 
       dispatch(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 const parCycleSlice = createSlice({
@@ -502,16 +449,12 @@ const parCycleSlice = createSlice({
   },
 });
 
-export const selectIsParCycleOngoing = (state: RootState) =>
-  state.parCycle.isParCycleOngoing;
-export const selectCurrentCycle = (state: RootState) =>
-  state.parCycle.currentCycle;
+export const selectIsParCycleOngoing = (state: RootState) => state.parCycle.isParCycleOngoing;
+export const selectCurrentCycle = (state: RootState) => state.parCycle.currentCycle;
 export const selectAllCycles = (state: RootState) => state.parCycle.allCycles;
 export const selectParCycleState = (state: RootState) => state.parCycle.state;
-export const selectIsQuotaPending = (state: RootState) =>
-  state.parCycle.isQuotaPending;
+export const selectIsQuotaPending = (state: RootState) => state.parCycle.isQuotaPending;
 
-export const { updateStateMessage, resetOngoingParCycleState } =
-  parCycleSlice.actions;
+export const { updateStateMessage, resetOngoingParCycleState } = parCycleSlice.actions;
 
 export default parCycleSlice.reducer;

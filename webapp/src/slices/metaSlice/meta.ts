@@ -4,15 +4,15 @@
 // Dissemination of any information or reproduction of any material contained
 // herein in any form is strictly forbidden, unless permitted by WSO2 expressly.
 // You may not alter or remove any copyright or other notice from copies of this content.
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { RootState } from "@slices/store";
-import { AppConfig } from "@config/config";
-import { ParConfigurations, RequestState } from "@utils/types";
-import { ApiService } from "@utils/apiService";
-import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
-import { sliceErrorMessages, SnackMessage } from "@config/constant";
 import { HttpStatusCode } from "axios";
+
+import { AppConfig } from "@config/config";
+import { SnackMessage, sliceErrorMessages } from "@config/constant";
+import { enqueueSnackbarMessage } from "@slices/commonSlice/common";
+import { RootState } from "@slices/store";
+import { ApiService } from "@utils/apiService";
+import { ParConfigurations, RequestState } from "@utils/types";
 import { getErrorMessage } from "@utils/utils";
 
 export interface Employee {
@@ -51,31 +51,37 @@ const initialState: ConfigState = {
   subordinatesState: RequestState.IDLE,
 };
 
-export const fetchConfigurations = createAsyncThunk("globalConfig/fetchConfigurations", async (_, { dispatch }) => {
-  try {
-    const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.configurations);
-    if (resp.status === HttpStatusCode.Ok) {
-      return resp.data;
-    } else {
-      throw new Error(resp.data?.message || sliceErrorMessages.metaSlice.fetchConfigs);
+export const fetchConfigurations = createAsyncThunk(
+  "globalConfig/fetchConfigurations",
+  async (_, { dispatch }) => {
+    try {
+      const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.configurations);
+      if (resp.status === HttpStatusCode.Ok) {
+        return resp.data;
+      } else {
+        throw new Error(resp.data?.message || sliceErrorMessages.metaSlice.fetchConfigs);
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchGlobalParConfigs);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      throw error;
     }
-  } catch (error) {
-    const errorMessage = getErrorMessage(error, SnackMessage.error.fetchGlobalParConfigs);
-    dispatch(
-      enqueueSnackbarMessage({
-        message: errorMessage,
-        type: "error",
-      })
-    );
-    throw error;
-  }
-});
+  },
+);
 
 export const updateConfigurations = createAsyncThunk(
   "globalConfig/updateConfigurations",
   async (payload: ParConfigurations, { dispatch }) => {
     try {
-      const resp = await ApiService.getInstance().put(AppConfig.serviceUrls.configurations, payload);
+      const resp = await ApiService.getInstance().put(
+        AppConfig.serviceUrls.configurations,
+        payload,
+      );
       const message =
         resp.status === HttpStatusCode.Ok
           ? SnackMessage.success.updateGlobalParConfigs
@@ -94,36 +100,42 @@ export const updateConfigurations = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
-export const fetchEmployees = createAsyncThunk("globalConfig/fetchEmployees", async (_, { dispatch }) => {
-  try {
-    const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.employees);
-    if (resp.status === HttpStatusCode.Ok) {
-      return resp.data;
-    } else {
-      throw new Error(resp.data?.message || sliceErrorMessages.metaSlice.fetchEmployees);
+export const fetchEmployees = createAsyncThunk(
+  "globalConfig/fetchEmployees",
+  async (_, { dispatch }) => {
+    try {
+      const resp = await ApiService.getInstance().get(AppConfig.serviceUrls.employees);
+      if (resp.status === HttpStatusCode.Ok) {
+        return resp.data;
+      } else {
+        throw new Error(resp.data?.message || sliceErrorMessages.metaSlice.fetchEmployees);
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, SnackMessage.error.fetchEmployeesData);
+      dispatch(
+        enqueueSnackbarMessage({
+          message: errorMessage,
+          type: "error",
+        }),
+      );
+      throw error;
     }
-  } catch (error) {
-    const errorMessage = getErrorMessage(error, SnackMessage.error.fetchEmployeesData);
-    dispatch(
-      enqueueSnackbarMessage({
-        message: errorMessage,
-        type: "error",
-      })
-    );
-    throw error;
-  }
-});
+  },
+);
 
 export const fetchParticipants = createAsyncThunk(
   "employee/fetchParticipants",
-  async ({ parCycleId, leadEmail }: { parCycleId: number; leadEmail: string | null }, { dispatch }) => {
+  async (
+    { parCycleId, leadEmail }: { parCycleId: number; leadEmail: string | null },
+    { dispatch },
+  ) => {
     try {
       const url = new URL(`${AppConfig.serviceUrls.parCycles}/${parCycleId}/participants`);
       if (leadEmail) {
@@ -141,11 +153,11 @@ export const fetchParticipants = createAsyncThunk(
         enqueueSnackbarMessage({
           message: errorMessage,
           type: "error",
-        })
+        }),
       );
       throw error;
     }
-  }
+  },
 );
 
 export const fetchEntityEmployees = createAsyncThunk(
@@ -168,11 +180,11 @@ export const fetchEntityEmployees = createAsyncThunk(
         enqueueSnackbarMessage({
           message: getErrorMessage(err, "Failed to load employees"),
           type: "error",
-        })
+        }),
       );
       throw err;
     }
-  }
+  },
 );
 
 const metaSlice = createSlice({
@@ -225,7 +237,7 @@ const metaSlice = createSlice({
               employeeName: string;
               employeeThumbnail: string;
             };
-          }
+          },
         );
         state.employeeStatus = RequestState.SUCCEEDED;
       })
@@ -238,7 +250,7 @@ const metaSlice = createSlice({
           employeeName: e.employeeName,
         }));
         state.subordinatesArray = employees.sort((a, b) =>
-          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase())
+          a.workEmail.toLowerCase().localeCompare(b.workEmail.toLowerCase()),
         );
         state.subordinatesState = RequestState.SUCCEEDED;
       })

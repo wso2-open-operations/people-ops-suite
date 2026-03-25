@@ -13,19 +13,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
-import { alpha, Avatar, Chip, Tooltip, useTheme } from "@mui/material";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
-import DoneIcon from "@mui/icons-material/Done";
-import { parUiText, tooltipVisibilityDelay } from "@config/constant";
-import { capitalizeFirstLetter } from "@utils/utils";
 import CloseIcon from "@mui/icons-material/Close";
+import DoneIcon from "@mui/icons-material/Done";
 import EditIcon from "@mui/icons-material/Edit";
-import { ParEmployeeStatus, ParLeadStatus, ParF2fStatus, ParSpecialRating } from "@root/src/slices/employeeHistorySlice/employeeHistory";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import { Avatar, Chip, Tooltip, alpha, useTheme } from "@mui/material";
+
+import { parUiText, tooltipVisibilityDelay } from "@config/constant";
+import {
+  ParEmployeeStatus,
+  ParF2fStatus,
+  ParLeadStatus,
+  ParSpecialRating,
+} from "@root/src/slices/employeeHistorySlice/employeeHistory";
 import { ParThreeSixtyReviewStatus } from "@root/src/slices/threeSixtyReviewSlice/threeSixtyReview";
+import { capitalizeFirstLetter } from "@utils/utils";
 
 interface StatusChipProps {
-  content: ParEmployeeStatus | ParThreeSixtyReviewStatus | ParLeadStatus | ParF2fStatus | string | ParSpecialRating;
+  content:
+    | ParEmployeeStatus
+    | ParThreeSixtyReviewStatus
+    | ParLeadStatus
+    | ParF2fStatus
+    | string
+    | ParSpecialRating;
   countDetails?: {
     total: number;
     completed: number;
@@ -57,19 +68,22 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
   const statusConfig = {
     completed: {
       color: alpha(theme.palette.success.main, theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor: theme.palette.mode === "light" ? theme.palette.success.dark : theme.palette.success.main,
+      textColor:
+        theme.palette.mode === "light" ? theme.palette.success.dark : theme.palette.success.main,
       icon: <DoneIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Completed",
     },
     pending: {
       color: alpha(theme.palette.warning.main, theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor: theme.palette.mode === "light" ? theme.palette.warning.dark : theme.palette.warning.main,
+      textColor:
+        theme.palette.mode === "light" ? theme.palette.warning.dark : theme.palette.warning.main,
       icon: <HourglassEmptyIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Pending",
     },
     rejected: {
       color: alpha(theme.palette.error.main, theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor: theme.palette.mode === "light" ? theme.palette.error.dark : theme.palette.error.main,
+      textColor:
+        theme.palette.mode === "light" ? theme.palette.error.dark : theme.palette.error.main,
       icon: <CloseIcon sx={{ fontSize: "0.875rem" }} />,
       tooltip: "Rejected",
     },
@@ -80,8 +94,13 @@ const ParStatusChip = ({ content, countDetails, isDeadlinePassed }: StatusChipPr
       tooltip: "Draft",
     },
     default: {
-      color: alpha((theme.palette.neutral?.[1000] as string) || "#808080", theme.palette.mode === "light" ? 0.15 : 0.25),
-      textColor: (theme.palette.neutral?.[theme.palette.mode === "light" ? "1600" : "400"] as string) || "#808080",
+      color: alpha(
+        (theme.palette.neutral?.[1000] as string) || "#808080",
+        theme.palette.mode === "light" ? 0.15 : 0.25,
+      ),
+      textColor:
+        (theme.palette.neutral?.[theme.palette.mode === "light" ? "1600" : "400"] as string) ||
+        "#808080",
     },
   };
 
